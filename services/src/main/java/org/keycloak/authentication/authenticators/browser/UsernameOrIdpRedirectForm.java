@@ -107,6 +107,9 @@ public final class UsernameOrIdpRedirectForm extends UsernamePasswordForm {
 
         UserModel user = null;
         try {
+            // FIXME: user can block another user's username by changing their email to their username
+            //   if username is an email.
+            // use verified email only?
             user = KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), username);
         } catch (ModelDuplicateException mde) {
             ServicesLogger.LOGGER.modelDuplicateException(mde);

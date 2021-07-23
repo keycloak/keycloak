@@ -59,11 +59,16 @@ public class IdpAttributeAuthenticator implements Authenticator {
         // - attribute = X, use idp(x) -> alias?
         // - email domain = Y, use idp(y) -> alias?
 
+        // TODO: if user already authenticated somehow (e.g. through another idp link), present
+        //  error then redirect on action?
+        //  maybe make this configurable, then configure it that way for post idp flow?
+        //  it works at least as just a redirect.
+
         String alias = idpAliasFor(context.getUser());
         if (alias == null) {
             // or attempted?
-            // how do we require if attribute present
-            context.success();
+            // how do we require if attribute present – conditional
+            context.attempted();
             return;
         }
 
@@ -76,7 +81,7 @@ public class IdpAttributeAuthenticator implements Authenticator {
         IdentityProviderModel idp = context.getRealm().getIdentityProviderByAlias(alias);
 
         if (idp == null) {
-            context.success();
+            context.attempted();
             return;
         }
 
