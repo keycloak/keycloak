@@ -6,7 +6,7 @@ import authenticationRoutes from "./authentication/routes";
 import clientScopesRoutes from "./client-scopes/routes";
 import clientRoutes from "./clients/routes";
 import { DashboardSection } from "./dashboard/Dashboard";
-import { EventsSection } from "./events/EventsSection";
+import eventRoutes from "./events/routes";
 import { GroupsSection } from "./groups/GroupsSection";
 import { SearchGroups } from "./groups/SearchGroups";
 import {
@@ -48,16 +48,11 @@ export const routes: RouteDef[] = [
   ...authenticationRoutes,
   ...clientRoutes,
   ...clientScopesRoutes,
+  ...eventRoutes,
   ...realmRoleRoutes,
   ...realmRoutes,
   ...sessionRoutes,
   ...userRoutes,
-  {
-    path: "/:realm/events/:tab?",
-    component: EventsSection,
-    breadcrumb: (t) => t("events:title"),
-    access: "view-events",
-  },
   {
     path: "/:realm/realm-settings/:tab?",
     component: RealmSettingsSection,
