@@ -34,9 +34,7 @@ import { LdapMapperDetails } from "./user-federation/ldap/mappers/LdapMapperDeta
 import { UserFederationKerberosSettings } from "./user-federation/UserFederationKerberosSettings";
 import { UserFederationLdapSettings } from "./user-federation/UserFederationLdapSettings";
 import { UserFederationSection } from "./user-federation/UserFederationSection";
-import { UserGroups } from "./user/UserGroups";
-import { UsersSection } from "./user/UsersSection";
-import { UsersTabs } from "./user/UsersTabs";
+import userRoutes from "./user/routes";
 
 export type RouteDef = {
   path: string;
@@ -52,30 +50,7 @@ export const routes: RouteDef[] = [
   ...clientScopesRoutes,
   ...realmRoleRoutes,
   ...realmRoutes,
-  {
-    path: "/:realm/users",
-    component: UsersSection,
-    breadcrumb: (t) => t("users:title"),
-    access: "query-users",
-  },
-  {
-    path: "/:realm/users/add-user",
-    component: UsersTabs,
-    breadcrumb: (t) => t("users:createUser"),
-    access: "manage-users",
-  },
-  {
-    path: "/:realm/users/:id",
-    component: UserGroups,
-    breadcrumb: (t) => t("users:userDetails"),
-    access: "manage-users",
-  },
-  {
-    path: "/:realm/users/:id/:tab",
-    component: UsersTabs,
-    breadcrumb: (t) => t("users:userDetails"),
-    access: "manage-users",
-  },
+  ...userRoutes,
   {
     path: "/:realm/sessions",
     component: SessionsSection,
