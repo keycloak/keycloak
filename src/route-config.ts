@@ -29,7 +29,7 @@ import {
   RealmSettingsSection,
 } from "./realm-settings/RealmSettingsSection";
 import realmRoutes from "./realm/routes";
-import { SessionsSection } from "./sessions/SessionsSection";
+import sessionRoutes from "./sessions/routes";
 import { LdapMapperDetails } from "./user-federation/ldap/mappers/LdapMapperDetails";
 import { UserFederationKerberosSettings } from "./user-federation/UserFederationKerberosSettings";
 import { UserFederationLdapSettings } from "./user-federation/UserFederationLdapSettings";
@@ -50,13 +50,8 @@ export const routes: RouteDef[] = [
   ...clientScopesRoutes,
   ...realmRoleRoutes,
   ...realmRoutes,
+  ...sessionRoutes,
   ...userRoutes,
-  {
-    path: "/:realm/sessions",
-    component: SessionsSection,
-    breadcrumb: (t) => t("sessions:title"),
-    access: "view-realm",
-  },
   {
     path: "/:realm/events/:tab?",
     component: EventsSection,
