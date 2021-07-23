@@ -18,16 +18,7 @@ import { DetailSettings } from "./identity-providers/add/DetailSettings";
 import { IdentityProvidersSection } from "./identity-providers/IdentityProvidersSection";
 import { PageNotFoundSection } from "./PageNotFoundSection";
 import realmRoleRoutes from "./realm-roles/routes";
-import { AESGeneratedSettings } from "./realm-settings/key-providers/aes-generated/AESGeneratedForm";
-import { ECDSAGeneratedSettings } from "./realm-settings/key-providers/ecdsa-generated/ECDSAGeneratedForm";
-import { HMACGeneratedSettings } from "./realm-settings/key-providers/hmac-generated/HMACGeneratedForm";
-import { JavaKeystoreSettings } from "./realm-settings/key-providers/java-keystore/JavaKeystoreForm";
-import { RSAGeneratedSettings } from "./realm-settings/key-providers/rsa-generated/RSAGeneratedForm";
-import { RSASettings } from "./realm-settings/key-providers/rsa/RSAForm";
-import {
-  EditProviderCrumb,
-  RealmSettingsSection,
-} from "./realm-settings/RealmSettingsSection";
+import realmSettingRoutes from "./realm-settings/routes";
 import realmRoutes from "./realm/routes";
 import sessionRoutes from "./sessions/routes";
 import { LdapMapperDetails } from "./user-federation/ldap/mappers/LdapMapperDetails";
@@ -51,50 +42,9 @@ export const routes: RouteDef[] = [
   ...eventRoutes,
   ...realmRoleRoutes,
   ...realmRoutes,
+  ...realmSettingRoutes,
   ...sessionRoutes,
   ...userRoutes,
-  {
-    path: "/:realm/realm-settings/:tab?",
-    component: RealmSettingsSection,
-    breadcrumb: (t) => t("realmSettings"),
-    access: "view-realm",
-  },
-  {
-    path: "/:realm/realm-settings/keys/:id?/aes-generated/settings",
-    component: AESGeneratedSettings,
-    breadcrumb: () => EditProviderCrumb,
-    access: "view-realm",
-  },
-  {
-    path: "/:realm/realm-settings/keys/:id?/ecdsa-generated/settings",
-    component: ECDSAGeneratedSettings,
-    breadcrumb: () => EditProviderCrumb,
-    access: "view-realm",
-  },
-  {
-    path: "/:realm/realm-settings/keys/:id?/hmac-generated/settings",
-    component: HMACGeneratedSettings,
-    breadcrumb: () => EditProviderCrumb,
-    access: "view-realm",
-  },
-  {
-    path: "/:realm/realm-settings/keys/:id?/java-keystore/settings",
-    component: JavaKeystoreSettings,
-    breadcrumb: () => EditProviderCrumb,
-    access: "view-realm",
-  },
-  {
-    path: "/:realm/realm-settings/keys/:id?/rsa-generated/settings",
-    component: RSAGeneratedSettings,
-    breadcrumb: () => EditProviderCrumb,
-    access: "view-realm",
-  },
-  {
-    path: "/:realm/realm-settings/keys/:id?/rsa/settings",
-    component: RSASettings,
-    breadcrumb: () => EditProviderCrumb,
-    access: "view-realm",
-  },
   {
     path: "/:realm/identity-providers",
     component: IdentityProvidersSection,
