@@ -77,6 +77,28 @@ public class IdpDomainAuthenticator implements Authenticator {
         redirect(context, idp);
     }
 
+    @Override
+    public void action(AuthenticationFlowContext context) {
+    }
+
+    @Override
+    public boolean requiresUser() {
+        return false;
+    }
+
+    @Override
+    public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
+        return true;
+    }
+
+    @Override
+    public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
+    }
+
+    @Override
+    public void close() {
+    }
+
     private String emailDomainFor(AuthenticationFlowContext context) {
         UserModel user = context.getUser();
         String domain;
@@ -87,6 +109,10 @@ public class IdpDomainAuthenticator implements Authenticator {
             }
 
             String attempted = attemptedUsername(context);
+
+            if (attempted == null) {
+                return null;
+            }
 
             // extract domain
             int at = attempted.indexOf('@');
@@ -115,28 +141,6 @@ public class IdpDomainAuthenticator implements Authenticator {
 
     protected String attemptedUsername(AuthenticationFlowContext context) {
         return context.getAuthenticationSession().getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
-    }
-
-    @Override
-    public void action(AuthenticationFlowContext context) {
-    }
-
-    @Override
-    public boolean requiresUser() {
-        return false;
-    }
-
-    @Override
-    public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
-        return true;
-    }
-
-    @Override
-    public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
-    }
-
-    @Override
-    public void close() {
     }
 
     private void redirect(AuthenticationFlowContext context, IdentityProviderModel idp) {

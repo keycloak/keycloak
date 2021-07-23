@@ -27,6 +27,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.ClientSessionCode;
@@ -34,6 +35,8 @@ import org.keycloak.services.managers.ClientSessionCode;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
+import java.util.Collection;
+import java.util.Optional;
 
 // Maybe combine with domain authenticator?
 public class IdpAttributeAuthenticator implements Authenticator {
@@ -89,8 +92,11 @@ public class IdpAttributeAuthenticator implements Authenticator {
         // Can we automatically add this attribute for IdP configs if we have some first-class
         // domain concept?
         // Or a first-class mapper which can be added in combination with authenticator?
-        final String alias = user.getFirstAttribute("required.identity.provider.alias");
-        return StringUtils.trimToNull(alias);
+        return KeycloakModelUtils.resolveAttribute(user, "required.identity.provider.alias", false)
+                .stream()
+                .findFirst()
+                .map(StringUtils::trimToNull)
+                .orElse(null);
     }
 
     @Override
@@ -116,11 +122,11 @@ public class IdpAttributeAuthenticator implements Authenticator {
     }
 
     private void redirect(AuthenticationFlowContext context, IdentityProviderModel idp) {
-        String providerId = idp.getProviderId();
+        String alias = idp.getAlias();
         String accessCode = new ClientSessionCode<>(context.getSession(), context.getRealm(), context.getAuthenticationSession()).getOrGenerateCode();
         String clientId = context.getAuthenticationSession().getClient().getClientId();
         String tabId = context.getAuthenticationSession().getTabId();
-        URI location = Urls.identityProviderAuthnRequest(context.getUriInfo().getBaseUri(), providerId, context.getRealm().getName(), accessCode, clientId, tabId);
+        URI location = Urls.identityProviderAuthnRequest(context.getUriInfo().getBaseUri(), alias, context.getRealm().getName(), accessCode, clientId, tabId);
         if (context.getAuthenticationSession().getClientNote(OAuth2Constants.DISPLAY) != null) {
             location = UriBuilder.fromUri(location).queryParam(OAuth2Constants.DISPLAY, context.getAuthenticationSession().getClientNote(OAuth2Constants.DISPLAY)).build();
         }
@@ -131,7 +137,7 @@ public class IdpAttributeAuthenticator implements Authenticator {
                 Boolean.parseBoolean(idp.getConfig().get(ACCEPTS_PROMPT_NONE))) {
             context.getAuthenticationSession().setAuthNote(AuthenticationProcessor.FORWARDED_PASSIVE_LOGIN, "true");
         }
-        LOG.debugf("Redirecting to %s", providerId);
+        LOG.debugf("Redirecting to %s", alias);
         // TODO: challenge or force challenge?
         context.challenge(response);
     }
