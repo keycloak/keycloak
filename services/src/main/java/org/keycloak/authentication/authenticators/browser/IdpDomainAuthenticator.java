@@ -22,7 +22,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.Authenticator;
-import org.keycloak.constants.AdapterConstants;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -34,12 +33,10 @@ import org.keycloak.services.managers.ClientSessionCode;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
-import java.util.Objects;
-import java.util.Optional;
 
-public class DomainAuthenticator implements Authenticator {
+public class IdpDomainAuthenticator implements Authenticator {
 
-    private static final Logger LOG = Logger.getLogger(DomainAuthenticator.class);
+    private static final Logger LOG = Logger.getLogger(IdpDomainAuthenticator.class);
 
     protected static final String ACCEPTS_PROMPT_NONE = "acceptsPromptNoneForwardFromClient";
 
@@ -48,6 +45,14 @@ public class DomainAuthenticator implements Authenticator {
         // What if a user changes their email domain?
         // Or email is not mapped and registers with a different domain?
         // Maybe integrate with user profile email validator?
+
+        // Ours is also attribute based – could be group based (although you could argue attribute
+        // is more general as a group can be used to set an attribute)
+
+        // Could we generalize with conditional?
+        // If any of...
+        // - attribute = X, use idp(x) -> alias?
+        // - email domain = Y, use idp(y) -> alias?
 
         String domain = emailDomainFor(context);
         if (domain == null) {
