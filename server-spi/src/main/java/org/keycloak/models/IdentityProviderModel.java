@@ -69,6 +69,8 @@ public class IdentityProviderModel implements Serializable {
 
     private String displayName;
 
+    private DomainName domain;
+
     private IdentityProviderSyncMode syncMode;
 
     /**
@@ -237,5 +239,13 @@ public class IdentityProviderModel implements Serializable {
 
     public void setHideOnLogin(boolean hideOnLogin) {
         getConfig().put(HIDE_ON_LOGIN, String.valueOf(hideOnLogin));
+    }
+
+    public DomainName getDomain() {
+        return domain;
+    }
+
+    public void setDomain(DomainName domain) {
+        this.domain = domain;
     }
 }

@@ -22,6 +22,7 @@ import io.undertow.servlet.Servlets;
 import io.undertow.servlet.api.DefaultServletConfig;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.FilterInfo;
+import org.h2.tools.Console;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
@@ -133,6 +134,7 @@ public class KeycloakServer {
             Version.BUILD_TIME = new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date());
         }
 
+        Console.main("-browser");
         bootstrapKeycloakServer(args);
     }
 

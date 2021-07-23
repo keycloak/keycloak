@@ -29,11 +29,9 @@ import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 import org.keycloak.storage.role.RoleStorageProvider;
 import org.keycloak.storage.role.RoleStorageProviderModel;
-import org.keycloak.utils.StringUtil;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -540,6 +538,10 @@ public interface RealmModel extends RoleContainerModel {
      */
     Stream<IdentityProviderModel> getIdentityProvidersStream();
 
+    default Stream<IdentityProviderModel> getIdentityProviderByDomain(DomainName domain) {
+        return getIdentityProvidersStream().filter(idp -> idp.getDomain().equals(domain));
+    }
+
     IdentityProviderModel getIdentityProviderByAlias(String alias);
     void addIdentityProvider(IdentityProviderModel identityProvider);
     void removeIdentityProviderByAlias(String alias);
@@ -579,7 +581,6 @@ public interface RealmModel extends RoleContainerModel {
     void updateIdentityProviderMapper(IdentityProviderMapperModel mapping);
     IdentityProviderMapperModel getIdentityProviderMapperById(String id);
     IdentityProviderMapperModel getIdentityProviderMapperByName(String brokerAlias, String name);
-
 
     /**
      * Adds component model.  Will call onCreate() method of ComponentFactory
