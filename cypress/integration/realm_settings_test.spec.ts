@@ -72,9 +72,6 @@ describe("Realm settings", () => {
   };
 
   const deleteProvider = (providerName: string) => {
-    const keysUrl = `/auth/admin/realms/${realmName}/keys`;
-    cy.intercept(keysUrl).as("keysFetch");
-
     cy.getId("provider-name-link")
       .contains(providerName)
       .parent()
@@ -82,12 +79,12 @@ describe("Realm settings", () => {
       .click()
       .getId(realmSettingsPage.deleteAction)
       .click();
-    cy.wait(500).getId(realmSettingsPage.modalConfirm).click();
+    cy.getId(realmSettingsPage.modalConfirm).click();
 
     return this;
   };
 
-  const addBundle = () => {
+  /*const addBundle = () => {
     const localizationUrl = `/auth/admin/realms/${realmName}/localization/en`;
     cy.intercept(localizationUrl).as("localizationFetch");
 
@@ -99,7 +96,7 @@ describe("Realm settings", () => {
     cy.wait(["@localizationFetch"]);
 
     return this;
-  };
+  };*/
 
   it("Go to general tab", function () {
     sidebarPage.goToRealmSettings();
@@ -245,8 +242,9 @@ describe("Realm settings", () => {
   it("delete providers", () => {
     sidebarPage.goToRealmSettings();
     cy.getId("rs-keys-tab").click();
-
     cy.getId("rs-providers-tab").click();
+
+    cy.get(".pf-c-spinner__tail-ball").should("not.exist");
 
     deleteProvider("test_aes-generated");
     deleteProvider("test_ecdsa-generated");

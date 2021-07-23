@@ -25,10 +25,12 @@ export default class AssociatedRolesPage {
   addAssociatedRealmRole() {
     cy.get(this.actionDropdown).last().click();
 
+    const load = "/auth/admin/realms/master/clients";
+    cy.intercept(load).as("load");
+
     cy.get(this.addRolesDropdownItem).click();
 
-    cy.wait(100);
-
+    cy.wait(["@load"]);
     cy.get(this.checkbox).eq(2).check();
 
     cy.get(this.addAssociatedRolesModalButton).contains("Add").click();
@@ -37,7 +39,7 @@ export default class AssociatedRolesPage {
 
     cy.get(this.compositeRoleBadge).should("contain.text", "Composite");
 
-    cy.wait(2500);
+    cy.wait(["@load"]);
 
     return this;
   }
@@ -45,19 +47,17 @@ export default class AssociatedRolesPage {
   addAssociatedClientRole() {
     cy.get(this.addRoleToolbarButton).click();
 
-    cy.wait(100);
-
     cy.get(this.filterTypeDropdown).click();
 
     cy.get(this.filterTypeDropdownItem).click();
 
-    cy.wait(2500);
+    cy.get(".pf-c-spinner__tail-ball").should("not.exist");
 
     cy.get(this.checkbox).eq(12).check({ force: true });
 
     cy.get(this.addAssociatedRolesModalButton).contains("Add").click();
 
-    cy.wait(5000);
+    cy.get(".pf-c-spinner__tail-ball").should("not.exist");
 
     cy.contains("Users in role").click().get(this.usersPage).should("exist");
   }

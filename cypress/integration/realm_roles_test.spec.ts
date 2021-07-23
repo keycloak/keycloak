@@ -37,7 +37,7 @@ describe("Realm roles test", function () {
       );
     });
 
-    /*it("Realm role CRUD test", function () {
+    it("Realm role CRUD test", function () {
       itemId += "_" + (Math.random() + 1).toString(36).substring(7);
 
       // Create
@@ -51,19 +51,17 @@ describe("Realm roles test", function () {
 
       listingPage.searchItem(itemId).itemExist(itemId);
 
-      cy.wait(100);
+      const fetchUrl = "/auth/admin/realms/master/roles?first=0&max=11";
+      cy.intercept(fetchUrl).as("fetch");
 
-      // Delete
       listingPage.deleteItem(itemId);
 
-      cy.wait(500);
-
+      cy.wait(["@fetch"]);
       modalUtils.checkModalTitle("Delete role?").confirmModal();
-
       masthead.checkNotificationMessage("The role has been deleted");
 
       listingPage.itemExist(itemId, false);
-    });*/
+    });
 
     it("Associated roles test", function () {
       itemId += "_" + (Math.random() + 1).toString(36).substring(7);
