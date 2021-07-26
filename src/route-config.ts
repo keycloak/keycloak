@@ -9,13 +9,7 @@ import { DashboardSection } from "./dashboard/Dashboard";
 import eventRoutes from "./events/routes";
 import { GroupsSection } from "./groups/GroupsSection";
 import { SearchGroups } from "./groups/SearchGroups";
-import {
-  AddIdentityProvider,
-  IdentityProviderCrumb,
-} from "./identity-providers/add/AddIdentityProvider";
-import { AddOpenIdConnect } from "./identity-providers/add/AddOpenIdConnect";
-import { DetailSettings } from "./identity-providers/add/DetailSettings";
-import { IdentityProvidersSection } from "./identity-providers/IdentityProvidersSection";
+import identityProviders from "./identity-providers/routes";
 import { PageNotFoundSection } from "./PageNotFoundSection";
 import realmRoleRoutes from "./realm-roles/routes";
 import realmSettingRoutes from "./realm-settings/routes";
@@ -40,40 +34,12 @@ export const routes: RouteDef[] = [
   ...clientRoutes,
   ...clientScopesRoutes,
   ...eventRoutes,
+  ...identityProviders,
   ...realmRoleRoutes,
   ...realmRoutes,
   ...realmSettingRoutes,
   ...sessionRoutes,
   ...userRoutes,
-  {
-    path: "/:realm/identity-providers",
-    component: IdentityProvidersSection,
-    breadcrumb: (t) => t("identityProviders"),
-    access: "view-identity-providers",
-  },
-  {
-    path: "/:realm/identity-providers/oidc",
-    component: AddOpenIdConnect,
-    breadcrumb: (t) => t("identity-providers:addOpenIdProvider"),
-    access: "manage-identity-providers",
-  },
-  {
-    path: "/:realm/identity-providers/keycloak-oidc",
-    component: AddOpenIdConnect,
-    breadcrumb: (t) => t("identity-providers:addKeycloakOpenIdProvider"),
-    access: "manage-identity-providers",
-  },
-  {
-    path: "/:realm/identity-providers/:id",
-    component: AddIdentityProvider,
-    breadcrumb: () => IdentityProviderCrumb,
-    access: "manage-identity-providers",
-  },
-  {
-    path: "/:realm/identity-providers/:id/:tab?",
-    component: DetailSettings,
-    access: "manage-identity-providers",
-  },
   {
     path: "/:realm/user-federation",
     component: UserFederationSection,
