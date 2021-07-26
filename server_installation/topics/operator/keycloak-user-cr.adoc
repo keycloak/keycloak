@@ -64,9 +64,9 @@ keycloak.keycloak.org/example-user created
 
 . Search for the user that you defined in the YAML file.
 +
-The user is in the list.
+You may need to switch to a different realm to find the user.
 +
-image:images/user_list.png[]
+image:images/realm_user.png[]
 
 .Results
 
