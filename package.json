@@ -29,7 +29,7 @@
     "@patternfly/react-icons": "4.11.0",
     "@patternfly/react-table": "4.29.0",
     "file-saver": "^2.0.5",
-    "i18next": "^20.3.4",
+    "i18next": "^20.3.5",
     "keycloak-admin": "1.14.19",
     "lodash": "^4.17.20",
     "moment": "^2.29.1",
