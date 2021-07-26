@@ -72,15 +72,18 @@ describe("Realm settings", () => {
   };
 
   const deleteProvider = (providerName: string) => {
-    cy.getId("provider-name-link")
+    const url = `/auth/admin/realms/${realmName}/users/*`;
+    cy.intercept(url).as("reload");
+    cy.getId("provider-name")
       .contains(providerName)
-      .parent()
-      .siblings(".pf-c-data-list__item-action")
+      .parentsUntil(".pf-c-data-list__item-row")
+      .find(".pf-c-dropdown__toggle")
       .click()
       .getId(realmSettingsPage.deleteAction)
       .click();
     cy.getId(realmSettingsPage.modalConfirm).click();
 
+    cy.wait(["@reload"]);
     return this;
   };
 
@@ -241,10 +244,13 @@ describe("Realm settings", () => {
 
   it("delete providers", () => {
     sidebarPage.goToRealmSettings();
+    const url = `/auth/admin/realms/${realmName}/keys`;
+    cy.intercept(url).as("load");
+
     cy.getId("rs-keys-tab").click();
     cy.getId("rs-providers-tab").click();
 
-    cy.get(".pf-c-spinner__tail-ball").should("not.exist");
+    cy.wait("@load");
 
     deleteProvider("test_aes-generated");
     deleteProvider("test_ecdsa-generated");
@@ -283,12 +289,9 @@ describe("Realm settings", () => {
   it("add session data", () => {
     sidebarPage.goToRealmSettings();
 
-    cy.wait(500);
-
     cy.getId("rs-sessions-tab").click();
 
     realmSettingsPage.populateSessionsPage();
-
     realmSettingsPage.save("sessions-tab-save");
 
     masthead.checkNotificationMessage("Realm successfully updated");
@@ -297,8 +300,6 @@ describe("Realm settings", () => {
   it("check that sessions data was saved", () => {
     sidebarPage.goToAuthentication();
     sidebarPage.goToRealmSettings();
-
-    cy.wait(500);
 
     cy.getId("rs-sessions-tab").click();
 
