@@ -5,7 +5,7 @@ import type { MatchOptions } from "use-react-router-breadcrumbs";
 import authenticationRoutes from "./authentication/routes";
 import clientScopesRoutes from "./client-scopes/routes";
 import clientRoutes from "./clients/routes";
-import { DashboardSection } from "./dashboard/Dashboard";
+import dashboardRoutes from "./dashboard/routes";
 import eventRoutes from "./events/routes";
 import { GroupsSection } from "./groups/GroupsSection";
 import { SearchGroups } from "./groups/SearchGroups";
@@ -38,12 +38,7 @@ export const routes: RouteDef[] = [
   ...sessionRoutes,
   ...userFederationRoutes,
   ...userRoutes,
-  {
-    path: "/:realm/",
-    component: DashboardSection,
-    breadcrumb: (t) => t("common:home"),
-    access: "anyone",
-  },
+  ...dashboardRoutes,
   {
     path: "/:realm/groups/search",
     component: SearchGroups,
@@ -57,12 +52,6 @@ export const routes: RouteDef[] = [
     matchOptions: {
       exact: false,
     },
-  },
-  {
-    path: "/",
-    component: DashboardSection,
-    breadcrumb: (t) => t("common:home"),
-    access: "anyone",
   },
   {
     path: "*",
