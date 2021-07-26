@@ -34,6 +34,8 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.component.ComponentModel;
@@ -76,6 +78,8 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     public static final String REALM_USER_PROFILE_ENABLED = "userProfileEnabled";
     private static final String PARSED_CONFIG_COMPONENT_KEY = "kc.user.profile.metadata";
     private static final String UP_PIECE_COMPONENT_CONFIG_KEY_BASE = "config-piece-";
+
+    private static boolean isDeclarativeConfigurationEnabled;
 
     /**
      * Method used for predicate which returns true if any of the configuredScopes is requested in current auth flow.
@@ -227,12 +231,14 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     }
 
     @Override
-    public void postInit(KeycloakSessionFactory factory) {
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return Collections.emptyList();
     }
 
     @Override
-    public List<ProviderConfigProperty> getConfigProperties() {
-        return Collections.emptyList();
+    public void init(Config.Scope config) {
+        super.init(config);
+        isDeclarativeConfigurationEnabled = Profile.isFeatureEnabled(Profile.Feature.DECLARATIVE_USER_PROFILE);
     }
 
     public ComponentModel getComponentModel() {
@@ -469,6 +475,6 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
      * @return {@code true} if the declarative provider is enabled. Otherwise, {@code false}.
      */
     private Boolean isEnabled(KeycloakSession session) {
-        return session.getContext().getRealm().getAttribute(REALM_USER_PROFILE_ENABLED, false);
+        return isDeclarativeConfigurationEnabled && session.getContext().getRealm().getAttribute(REALM_USER_PROFILE_ENABLED, false);
     }
 }
