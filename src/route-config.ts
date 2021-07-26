@@ -7,8 +7,7 @@ import clientScopesRoutes from "./client-scopes/routes";
 import clientRoutes from "./clients/routes";
 import dashboardRoutes from "./dashboard/routes";
 import eventRoutes from "./events/routes";
-import { GroupsSection } from "./groups/GroupsSection";
-import { SearchGroups } from "./groups/SearchGroups";
+import groupsRoutes from "./groups/routes";
 import identityProviders from "./identity-providers/routes";
 import { PageNotFoundSection } from "./PageNotFoundSection";
 import realmRoleRoutes from "./realm-roles/routes";
@@ -26,6 +25,12 @@ export type RouteDef = {
   matchOptions?: MatchOptions;
 };
 
+const NotFoundRoute: RouteDef = {
+  path: "*",
+  component: PageNotFoundSection,
+  access: "anyone",
+};
+
 export const routes: RouteDef[] = [
   ...authenticationRoutes,
   ...clientRoutes,
@@ -39,23 +44,6 @@ export const routes: RouteDef[] = [
   ...userFederationRoutes,
   ...userRoutes,
   ...dashboardRoutes,
-  {
-    path: "/:realm/groups/search",
-    component: SearchGroups,
-    breadcrumb: (t) => t("groups:searchGroups"),
-    access: "query-groups",
-  },
-  {
-    path: "/:realm/groups",
-    component: GroupsSection,
-    access: "query-groups",
-    matchOptions: {
-      exact: false,
-    },
-  },
-  {
-    path: "*",
-    component: PageNotFoundSection,
-    access: "anyone",
-  },
+  ...groupsRoutes,
+  NotFoundRoute,
 ];
