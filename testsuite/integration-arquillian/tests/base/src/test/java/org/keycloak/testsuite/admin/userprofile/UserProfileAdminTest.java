@@ -24,22 +24,22 @@ import static org.keycloak.userprofile.DeclarativeUserProfileProvider.REALM_USER
 import static org.keycloak.userprofile.config.UPConfigUtils.readDefaultConfig;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserProfileResource;
-import org.keycloak.common.util.StreamUtil;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.userprofile.DeclarativeUserProfileProvider;
-import org.keycloak.userprofile.config.UPConfigUtils;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
+import org.keycloak.userprofile.UserProfileSpi;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
 @AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public class UserProfileAdminTest extends AbstractAdminTest {
 

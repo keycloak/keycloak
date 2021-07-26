@@ -43,6 +43,7 @@ import java.util.function.Consumer;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.Constants;
@@ -53,9 +54,12 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.userprofile.AttributeGroupMetadata;
 import org.keycloak.userprofile.DeclarativeUserProfileProvider;
+import org.keycloak.userprofile.UserProfileSpi;
 import org.keycloak.userprofile.config.UPAttribute;
 import org.keycloak.userprofile.config.UPAttributePermissions;
 import org.keycloak.userprofile.config.UPAttributeRequired;
@@ -77,7 +81,6 @@ import org.keycloak.validate.validators.LengthValidator;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public class UserProfileTest extends AbstractUserProfileTest {
 
     protected static final String ATT_ADDRESS = "address";

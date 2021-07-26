@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -34,12 +35,16 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 import org.keycloak.userprofile.UserProfileProvider;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
+@AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public abstract class AbstractUserProfileTest extends AbstractTestRealmKeycloakTest {
 
     protected static void configureAuthenticationSession(KeycloakSession session) {

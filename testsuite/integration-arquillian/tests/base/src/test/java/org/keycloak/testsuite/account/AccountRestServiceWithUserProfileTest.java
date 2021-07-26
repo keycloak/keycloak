@@ -29,9 +29,12 @@ import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.account.UserProfileAttributeMetadata;
 import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.forms.VerifyProfileTest;
 
 /**
@@ -39,6 +42,8 @@ import org.keycloak.testsuite.forms.VerifyProfileTest;
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
+@EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
+@AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTest {
     
     @Override

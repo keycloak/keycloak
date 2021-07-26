@@ -62,7 +62,8 @@ public class Profile {
         CLIENT_POLICIES(Type.DEFAULT),
         CIBA(Type.DEFAULT),
         MAP_STORAGE(Type.EXPERIMENTAL),
-        PAR(Type.DEFAULT);
+        PAR(Type.DEFAULT),
+        DECLARATIVE_USER_PROFILE(Type.PREVIEW);
 
         private final Type typeProject;
         private final Type typeProduct;

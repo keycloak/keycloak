@@ -17,15 +17,20 @@ import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.AdminEventPaths;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
+@AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public class DeclarativeUserTest extends AbstractAdminTest {
 
     @Before

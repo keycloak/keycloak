@@ -55,7 +55,7 @@
                 <kc-tooltip>{{:: 'realm-detail.userManagedAccess.tooltip' | translate}}</kc-tooltip>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" data-ng-show="serverInfo.featureEnabled('DECLARATIVE_USER_PROFILE')">
                 <label class="col-md-2 control-label" for="userProfileEnabled">{{:: 'userProfileEnabled' | translate}}</label>
                 <div class="col-md-6">
                     <input ng-model="realm.attributes['userProfileEnabled']" name="userProfileEnabled" id="userProfileEnabled" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
