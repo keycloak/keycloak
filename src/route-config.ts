@@ -15,10 +15,7 @@ import realmRoleRoutes from "./realm-roles/routes";
 import realmSettingRoutes from "./realm-settings/routes";
 import realmRoutes from "./realm/routes";
 import sessionRoutes from "./sessions/routes";
-import { LdapMapperDetails } from "./user-federation/ldap/mappers/LdapMapperDetails";
-import { UserFederationKerberosSettings } from "./user-federation/UserFederationKerberosSettings";
-import { UserFederationLdapSettings } from "./user-federation/UserFederationLdapSettings";
-import { UserFederationSection } from "./user-federation/UserFederationSection";
+import userFederationRoutes from "./user-federation/routes";
 import userRoutes from "./user/routes";
 
 export type RouteDef = {
@@ -39,53 +36,8 @@ export const routes: RouteDef[] = [
   ...realmRoutes,
   ...realmSettingRoutes,
   ...sessionRoutes,
+  ...userFederationRoutes,
   ...userRoutes,
-  {
-    path: "/:realm/user-federation",
-    component: UserFederationSection,
-    breadcrumb: (t) => t("userFederation"),
-    access: "view-realm",
-  },
-  {
-    path: "/:realm/user-federation/kerberos",
-    component: UserFederationSection,
-    access: "view-realm",
-  },
-  {
-    path: "/:realm/user-federation/kerberos/:id",
-    component: UserFederationKerberosSettings,
-    breadcrumb: (t) => t("common:settings"),
-    access: "view-realm",
-  },
-  {
-    path: "/:realm/user-federation/kerberos/new",
-    component: UserFederationKerberosSettings,
-    breadcrumb: (t) => t("common:settings"),
-    access: "view-realm",
-  },
-  {
-    path: "/:realm/user-federation/ldap",
-    component: UserFederationSection,
-    access: "view-realm",
-  },
-  {
-    path: "/:realm/user-federation/ldap/new",
-    component: UserFederationLdapSettings,
-    breadcrumb: (t) => t("user-federation:addOneLdap"),
-    access: "view-realm",
-  },
-  {
-    path: "/:realm/user-federation/ldap/:id/:tab?",
-    component: UserFederationLdapSettings,
-    breadcrumb: (t) => t("common:settings"),
-    access: "view-realm",
-  },
-  {
-    path: "/:realm/user-federation/ldap/:id/:tab/:mapperId",
-    component: LdapMapperDetails,
-    breadcrumb: (t) => t("common:mappingDetails"),
-    access: "view-realm",
-  },
   {
     path: "/:realm/",
     component: DashboardSection,
