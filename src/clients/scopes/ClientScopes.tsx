@@ -279,7 +279,6 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
             </ToolbarItem>
             <ToolbarItem>
               <Dropdown
-                onSelect={() => {}}
                 toggle={
                   <KebabToggle onToggle={() => setKebabOpen(!kebabOpen)} />
                 }

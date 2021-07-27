@@ -144,7 +144,6 @@ export const UserConsents = () => {
             icon={CubesIcon}
             message={t("users:noConsents")}
             instructions={t("users:noConsentsText")}
-            onPrimaryAction={() => {}}
           />
         }
       />

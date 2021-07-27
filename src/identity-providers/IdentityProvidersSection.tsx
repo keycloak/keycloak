@@ -196,7 +196,6 @@ export const IdentityProvidersSection = () => {
                 <ToolbarItem>
                   <Dropdown
                     data-testid="addProviderDropdown"
-                    onSelect={() => {}}
                     toggle={
                       <DropdownToggle
                         onToggle={() => setAddProviderOpen(!addProviderOpen)}

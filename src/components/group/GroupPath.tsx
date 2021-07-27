@@ -24,13 +24,13 @@ const truncatePath = (path?: string) => {
 
 export const GroupPath = ({
   group: { path },
-  onMouseEnter: onMouseEnterProp = () => {},
+  onMouseEnter: onMouseEnterProp,
   ...props
 }: GroupPathProps) => {
   const [tooltip, setTooltip] = React.useState("");
   const onMouseEnter = (event: any) => {
     setTooltip(path!);
-    onMouseEnterProp(event);
+    onMouseEnterProp?.(event);
   };
   const text = (
     <span onMouseEnter={onMouseEnter} {...props}>

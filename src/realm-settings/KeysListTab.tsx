@@ -117,7 +117,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
     messageKey: publicKey,
     continueButtonLabel: "common:close",
     continueButtonVariant: ButtonVariant.primary,
-    onConfirm: async () => {},
+    onConfirm: () => Promise.resolve(),
   });
 
   const [toggleCertificateDialog, CertificateDialog] = useConfirmDialog({
@@ -125,7 +125,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
     messageKey: certificate,
     continueButtonLabel: "common:close",
     continueButtonVariant: ButtonVariant.primary,
-    onConfirm: async () => {},
+    onConfirm: () => Promise.resolve(),
   });
 
   const goToCreate = () => history.push(`${url}/add-role`);

@@ -144,11 +144,8 @@ export const UserFederationLdapWizard = () => {
           else if (activeStep.id === "ldapAdvancedSettingsStep") {
             return (
               <>
-                <Button
-                  onClick={() => {}} //TODO: close the wizard and finish
-                >
-                  {t("common:finish")}
-                </Button>
+                {/* TODO: close the wizard and finish */}
+                <Button>{t("common:finish")}</Button>
                 <Button variant="secondary" onClick={onBack}>
                   {t("common:back")}
                 </Button>
@@ -165,10 +162,8 @@ export const UserFederationLdapWizard = () => {
               <Button variant="secondary" onClick={onBack}>
                 Back
               </Button>
-              <Button
-                variant="link"
-                onClick={() => {}} //TODO: validate last step and finish
-              >
+              {/* TODO: validate last step and finish */}
+              <Button variant="link">
                 {t("common:skipCustomizationAndFinish")}
               </Button>
               <Button variant="link" onClick={onClose}>
