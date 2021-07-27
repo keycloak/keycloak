@@ -689,7 +689,7 @@ public class OAuthClient {
     }
 
     public AccessTokenResponse doClientCredentialsGrantAccessTokenRequest(String clientSecret) throws Exception {
-        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+        try (CloseableHttpClient client = httpClient.get()) {
             HttpPost post = new HttpPost(getServiceAccountUrl());
 
             String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);

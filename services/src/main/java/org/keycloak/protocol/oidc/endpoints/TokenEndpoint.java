@@ -74,6 +74,7 @@ import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.ServiceAccountTokenRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenRefreshContext;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
 import org.keycloak.services.managers.AppAuthManager;
@@ -443,21 +444,7 @@ public class TokenEndpoint {
             responseBuilder.generateRefreshToken();
         }
 
-        // KEYCLOAK-6771 Certificate Bound Token
-        // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
-        if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseMtlsHokToken()) {
-            AccessToken.CertConf certConf = MtlsHoKTokenUtil.bindTokenWithClientCertificate(request, session);
-            if (certConf != null) {
-                responseBuilder.getAccessToken().setCertConf(certConf);
-                if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()) {
-                    responseBuilder.getRefreshToken().setCertConf(certConf);
-                }
-            } else {
-                event.error(Errors.INVALID_REQUEST);
-                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
-                    "Client Certification missing for MTLS HoK Token Binding", Response.Status.BAD_REQUEST);
-            }
-        }
+        checkMtlsHoKToken(responseBuilder, OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken());
 
         if (TokenUtil.isOIDCRequest(scopeParam)) {
             responseBuilder.generateIDToken().generateAccessTokenHash();
@@ -481,6 +468,24 @@ public class TokenEndpoint {
         event.success();
 
         return cors.builder(Response.ok(res).type(MediaType.APPLICATION_JSON_TYPE)).build();
+    }
+
+    private void checkMtlsHoKToken(TokenManager.AccessTokenResponseBuilder responseBuilder, boolean useRefreshToken) {
+        // KEYCLOAK-6771 Certificate Bound Token
+        // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
+        if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseMtlsHokToken()) {
+            AccessToken.CertConf certConf = MtlsHoKTokenUtil.bindTokenWithClientCertificate(request, session);
+            if (certConf != null) {
+                responseBuilder.getAccessToken().setCertConf(certConf);
+                if (useRefreshToken) {
+                    responseBuilder.getRefreshToken().setCertConf(certConf);
+                }
+            } else {
+                event.error(Errors.INVALID_REQUEST);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                        "Client Certification missing for MTLS HoK Token Binding", Response.Status.BAD_REQUEST);
+            }
+        }
     }
 
     private void checkParamsForPkceEnforcedClient(String codeVerifier, String codeChallenge, String codeChallengeMethod, String authUserId, String authUsername) {
@@ -753,6 +758,13 @@ public class TokenEndpoint {
         userSession.setNote(ServiceAccountConstants.CLIENT_HOST, clientConnection.getRemoteHost());
         userSession.setNote(ServiceAccountConstants.CLIENT_ADDRESS, clientConnection.getRemoteAddr());
 
+        try {
+            session.clientPolicy().triggerOnEvent(new ServiceAccountTokenRequestContext(formParams, clientSessionCtx.getClientSession()));
+        } catch (ClientPolicyException cpe) {
+            event.error(cpe.getError());
+            throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
+
         updateUserSessionFromClientAuth(userSession);
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSessionCtx)
@@ -764,6 +776,8 @@ public class TokenEndpoint {
         } else {
             responseBuilder.getAccessToken().setSessionState(null);
         }
+
+        checkMtlsHoKToken(responseBuilder, useRefreshToken);
 
         String scopeParam = clientSessionCtx.getClientSession().getNote(OAuth2Constants.SCOPE);
         if (TokenUtil.isOIDCRequest(scopeParam)) {
