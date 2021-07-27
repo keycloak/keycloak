@@ -37,6 +37,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
+import org.keycloak.services.clientpolicy.context.ServiceAccountTokenRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
 
 /**
@@ -90,6 +91,9 @@ public class ClientScopesCondition extends AbstractClientPolicyConditionProvider
                 return ClientPolicyVote.NO;
             case TOKEN_REQUEST:
                 if (isScopeMatched(((TokenRequestContext)context).getParseResult().getClientSession())) return ClientPolicyVote.YES;
+                return ClientPolicyVote.NO;
+            case SERVICE_ACCOUNT_TOKEN_REQUEST:
+                if (isScopeMatched(((ServiceAccountTokenRequestContext)context).getClientSession())) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
             case BACKCHANNEL_AUTHENTICATION_REQUEST:
                 if (isScopeMatched(((BackchannelAuthenticationRequestContext)context).getParsedRequest())) return ClientPolicyVote.YES;
