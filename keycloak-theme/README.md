@@ -12,7 +12,7 @@ mvn install
 
 The jar created with `mvn install` needs to be deployed to a Maven repository. From there, it will become part of the Keycloak server build.
 
-For development, you can also just copy the contents of `build/target/classes` to `<keycloak server>/themes/keycloak.v2`. Then restart the server.
+For development, you can also just copy the contents of `./target/classes` to `<keycloak server>/themes/keycloak.v2`. Then restart the server.
 
 # To Run
 
