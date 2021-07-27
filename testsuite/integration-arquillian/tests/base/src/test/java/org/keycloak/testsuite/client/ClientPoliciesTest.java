@@ -43,6 +43,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AdminRoles;
+import org.keycloak.models.CibaConfig;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
@@ -1808,6 +1809,9 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
                 clientRep.setAttributes(attributes);
                 // OIDD : requestUris
                 setAttributeMultivalued(clientRep, OIDCConfigAttributes.REQUEST_URIS, Arrays.asList("https://client.example.com/request/", "https://client.example.com/reqobj/"));
+                // CIBA Client Notification Endpoint
+                attributes.put(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT, "https://client.example.com/client-notification/");
+                clientRep.setAttributes(attributes);
             });
         } catch (Exception e) {
             fail();
@@ -1903,6 +1907,19 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         } catch (ClientPolicyException e) {
             assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, e.getError());
             assertEquals("Invalid requestUris", e.getErrorDetail());
+        }
+
+        try {
+            updateClientByAdmin(cid, (ClientRepresentation clientRep) -> {
+                // CIBA Client Notification Endpoint
+                Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
+                attributes.put(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT, "http://client.example.com/client-notification/");
+                clientRep.setAttributes(attributes);
+            });
+            fail();
+        } catch (ClientPolicyException e) {
+            assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, e.getError());
+            assertEquals("Invalid cibaClientNotificationEndpoint", e.getErrorDetail());
         }
     }
 
