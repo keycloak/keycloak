@@ -21,9 +21,8 @@ public class ProfileTest {
     @Test
     public void checkDefaultsKeycloak() {
         Assert.assertEquals("community", Profile.getName());
-
-        assertEquals(Profile.getDisabledFeatures(), Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.DOCKER, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.UPLOAD_SCRIPTS, Profile.Feature.MAP_STORAGE, Profile.Feature.DECLARATIVE_USER_PROFILE);
-        assertEquals(Profile.getPreviewFeatures(), Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.DECLARATIVE_USER_PROFILE);
+        assertEquals(Profile.getDisabledFeatures(), Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.ADMIN2, Profile.Feature.DOCKER, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.UPLOAD_SCRIPTS, Profile.Feature.MAP_STORAGE, Profile.Feature.DECLARATIVE_USER_PROFILE);
+        assertEquals(Profile.getPreviewFeatures(), Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.ADMIN2, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.DECLARATIVE_USER_PROFILE);
         assertEquals(Profile.getDeprecatedFeatures(), Profile.Feature.UPLOAD_SCRIPTS);
 
         Assert.assertTrue(Profile.Feature.WEB_AUTHN.hasDifferentProductType());
@@ -38,9 +37,8 @@ public class ProfileTest {
         Profile.init();
 
         Assert.assertEquals("product", Profile.getName());
-
-        assertEquals(Profile.getDisabledFeatures(), Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.DOCKER, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.UPLOAD_SCRIPTS, Profile.Feature.WEB_AUTHN, Profile.Feature.MAP_STORAGE, Profile.Feature.DECLARATIVE_USER_PROFILE);
-        assertEquals(Profile.getPreviewFeatures(), Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.WEB_AUTHN, Profile.Feature.DECLARATIVE_USER_PROFILE);
+        assertEquals(Profile.getDisabledFeatures(), Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.ADMIN2, Profile.Feature.DOCKER, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.UPLOAD_SCRIPTS, Profile.Feature.WEB_AUTHN, Profile.Feature.MAP_STORAGE, Profile.Feature.DECLARATIVE_USER_PROFILE);
+        assertEquals(Profile.getPreviewFeatures(), Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.ADMIN2, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.WEB_AUTHN, Profile.Feature.DECLARATIVE_USER_PROFILE);
         assertEquals(Profile.getDeprecatedFeatures(), Profile.Feature.UPLOAD_SCRIPTS);
 
         Assert.assertTrue(Profile.Feature.WEB_AUTHN.hasDifferentProductType());

@@ -28,7 +28,7 @@
     <name>Keycloak</name>
     <description>
         Keycloak SSO
-    </description>
+</description>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-parent</artifactId>
     <version>16.0.0-SNAPSHOT</version>
@@ -203,6 +203,9 @@
         <galleon.fork.embedded>true</galleon.fork.embedded>
         <galleon.log.time>true</galleon.log.time>
         <galleon.offline>true</galleon.offline>
+
+        <!-- Keycloak Admin Console -->
+        <org.keycloak.keycloak-admin-ui.version>0.0.1-SNAPSHOT</org.keycloak.keycloak-admin-ui.version>
 
         <!-- Properties that drive the names of various directories produced by and used in the build -->
         <server.output.dir.prefix>keycloak</server.output.dir.prefix>
@@ -1341,6 +1344,11 @@
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-quarkus-server-app</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-admin-ui</artifactId>
+                <version>${org.keycloak.keycloak-admin-ui.version}</version>
             </dependency>
 
             <!-- Openshift -->
