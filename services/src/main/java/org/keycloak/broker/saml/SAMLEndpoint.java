@@ -25,6 +25,11 @@ import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.DerUtils;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
@@ -88,6 +93,7 @@ import javax.ws.rs.core.UriInfo;
 import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.security.Key;
+import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Iterator;
@@ -415,7 +421,6 @@ public class SAMLEndpoint {
                 }
                 session.getContext().setAuthenticationSession(authSession);
 
-                KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
                 if (! isSuccessfulSamlResponse(responseType)) {
                     String statusMessage = responseType.getStatus() == null || responseType.getStatus().getStatusMessage() == null ? Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR : responseType.getStatus().getStatusMessage();
                     return callback.error(statusMessage);
@@ -433,11 +438,28 @@ public class SAMLEndpoint {
                     return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
                 }
 
-                Element assertionElement;
+                List<KeyWrapper> encRsaKeys = null;
+
+                Element assertionElement = null;
 
                 if (assertionIsEncrypted) {
-                    // This methods writes the parsed and decrypted assertion back on the responseType parameter:
-                    assertionElement = AssertionUtil.decryptAssertion(holder, responseType, keys.getPrivateKey());
+                    if(encRsaKeys == null) {
+                        encRsaKeys = session.keys()
+                                .getKeysStream(realm, KeyType.RSA, KeyUse.ENC)
+                                .filter(key -> key.getStatus().isActive())
+                                .collect(Collectors.toList());
+                    }
+                    for(KeyWrapper encRsaKey : encRsaKeys){
+                        try {
+                            PrivateKey privateKey = DerUtils.decodePrivateKey(encRsaKey.getPrivateKey().getEncoded());
+                            // This methods writes the parsed and decrypted assertion back on the responseType parameter:
+                            assertionElement = AssertionUtil.decryptAssertion(holder, responseType, privateKey);
+                            break;
+                        }
+                        catch(Exception ex){
+                            continue;
+                        }
+                    }
                 } else {
                     /* We verify the assertion using original document to handle cases where the IdP
                     includes whitespace and/or newlines inside tags. */
@@ -478,8 +500,23 @@ public class SAMLEndpoint {
                 }
 
                 if(AssertionUtil.isIdEncrypted(responseType)) {
-                    // This methods writes the parsed and decrypted id back on the responseType parameter:
-                    AssertionUtil.decryptId(responseType, keys.getPrivateKey());
+                    if(encRsaKeys == null) {
+                        encRsaKeys = session.keys()
+                                .getKeysStream(realm, KeyType.RSA, KeyUse.ENC)
+                                .filter(key -> key.getStatus().isActive())
+                                .collect(Collectors.toList());
+                    }
+                    for(KeyWrapper encRsaKey : encRsaKeys){
+                        try {
+                            PrivateKey privateKey = DerUtils.decodePrivateKey(encRsaKey.getPrivateKey().getEncoded());
+                            // This methods writes the parsed and decrypted id back on the responseType parameter:
+                            AssertionUtil.decryptId(responseType, privateKey);
+                            break;
+                        }
+                        catch(Exception ex){
+                            continue;
+                        }
+                    }
                 }
 
                 AssertionType assertion = responseType.getAssertions().get(0).getAssertion();

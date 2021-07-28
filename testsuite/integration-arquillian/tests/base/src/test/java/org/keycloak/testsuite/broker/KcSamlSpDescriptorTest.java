@@ -8,12 +8,17 @@ import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.mappers.AttributeToRoleMapper;
 import org.keycloak.broker.saml.mappers.UserAttributeMapper;
+import org.keycloak.crypto.KeyStatus;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
+import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
+import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.testsuite.Assert;
@@ -22,12 +27,17 @@ import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertTrue;
 
 public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
 
@@ -196,4 +206,59 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
             assertThat(spDescriptor.getAttributeConsumingService().get(0).getServiceName().get(0).getValue(), is("My Attribute Set"));
         }
     }
+
+
+    //KEYCLOAK-18909
+    @Test
+    public void testKeysExistenceInSpMetadata() throws IOException, ParsingException, URISyntaxException {
+        try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
+                .setAttribute(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED, "true")
+                .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, "true")
+                .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_ENCRYPTED, "true")
+                .update())
+        {
+
+            String spDescriptorString = identityProviderResource.export(null).readEntity(String.class);
+            SAMLParser parser = SAMLParser.getInstance();
+            EntityDescriptorType o = (EntityDescriptorType) parser.parse(new StringInputStream(spDescriptorString));
+            SPSSODescriptorType spDescriptor = o.getChoiceType().get(0).getDescriptors().get(0).getSpDescriptor();
+
+            //the SPSSODescriptor should have at least one KeyDescriptor for encryption and one for Signing
+            List<KeyDescriptorType> encKeyDescr = spDescriptor.getKeyDescriptor().stream().filter(k -> KeyTypes.ENCRYPTION.equals(k.getUse())).collect(Collectors.toList());
+            List<KeyDescriptorType> sigKeyDescr = spDescriptor.getKeyDescriptor().stream().filter(k -> KeyTypes.SIGNING.equals(k.getUse())).collect(Collectors.toList());
+
+            assertTrue(encKeyDescr.size() > 0);
+            assertTrue(sigKeyDescr.size() > 0);
+
+            //also, the keys should match the realm's dedicated keys for enc and sig
+
+            Set<String> encKeyDescNames = encKeyDescr.stream()
+                    .map(k-> k.getKeyInfo().getElementsByTagName("ds:KeyName").item(0).getTextContent().trim())
+                    .collect(Collectors.toCollection(HashSet::new));
+
+            Set<String> sigKeyDescNames = sigKeyDescr.stream()
+                    .map(k-> k.getKeyInfo().getElementsByTagName("ds:KeyName").item(0).getTextContent().trim())
+                    .collect(Collectors.toCollection(HashSet::new));
+
+            KeysMetadataRepresentation realmKeysMetadata = adminClient.realm(getBrokerConfiguration().consumerRealmName()).keys().getKeyMetadata();
+
+            long encMatches = realmKeysMetadata.getKeys().stream()
+                    .filter(k -> KeyStatus.valueOf(k.getStatus()).isActive())
+                    //.filter(k -> "RSA".equals(k.getType().trim()))
+                    .filter(k -> KeyUse.ENC.equals(k.getUse()))
+                    .filter(k -> encKeyDescNames.contains(k.getKid().trim()))
+                    .count();
+
+            long sigMatches = realmKeysMetadata.getKeys().stream()
+                    .filter(k -> KeyStatus.valueOf(k.getStatus()).isActive())
+                    //.filter(k -> "RSA".equals(k.getType().trim()))
+                    .filter(k -> KeyUse.SIG.equals(k.getUse()))
+                    .filter(k -> sigKeyDescNames.contains(k.getKid().trim()))
+                    .count();
+
+            assertTrue(encMatches > 0);
+            assertTrue(sigMatches > 0);
+        }
+    }
+
 }

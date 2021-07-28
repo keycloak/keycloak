@@ -92,7 +92,7 @@ public class KcSamlEncryptedIdTest extends AbstractBrokerTest {
                         SecretKey secretKey = new SecretKeySpec(secret, "AES");
 
                         // encrypt the Assertion element and replace it with a EncryptedAssertion element.
-                        XMLEncryptionUtil.encryptElement(nameIdQName, document, PemUtils.decodePublicKey(ApiUtil.findActiveSigningKey(adminClient.realm(bc.consumerRealmName())).getPublicKey()),
+                        XMLEncryptionUtil.encryptElement(nameIdQName, document, PemUtils.decodePublicKey(ApiUtil.findActiveEncryptingKey(adminClient.realm(bc.consumerRealmName())).getPublicKey()),
                                 secretKey, 128, encryptedIdElementQName, true);
                     } catch (Exception e) {
                         throw new ProcessingException("failed to encrypt", e);

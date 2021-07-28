@@ -68,7 +68,7 @@ public class FallbackKeyProviderTest extends AbstractKeycloakTest {
         String realmId = realmsResouce().realm("test").toRepresentation().getId();
 
         List<ComponentRepresentation> providers = realmsResouce().realm("test").components().query(realmId, "org.keycloak.keys.KeyProvider");
-        assertEquals(3, providers.size());
+        assertEquals(4, providers.size());
 
         for (ComponentRepresentation p : providers) {
             realmsResouce().realm("test").components().component(p.getId()).remove();
@@ -122,6 +122,7 @@ public class FallbackKeyProviderTest extends AbstractKeycloakTest {
 
         List<String> expected = new LinkedList<>();
         expected.add("rsa");
+        expected.add("rsa-enc");
         expected.add("hmac-generated");
         expected.add("aes-generated");
 

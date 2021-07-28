@@ -59,4 +59,23 @@ public class KeyUtils {
         throw new RuntimeException("Active key not found");
     }
 
+    public static KeysMetadataRepresentation.KeyMetadataRepresentation getActiveSigningKeyOfType(KeysMetadataRepresentation keys, String type) {
+        for (KeysMetadataRepresentation.KeyMetadataRepresentation k : keys.getKeys()) {
+            if (k.getType().equals(type) && KeyStatus.valueOf(k.getStatus()).isActive() && KeyUse.SIG.equals(k.getUse())) {
+                return k;
+            }
+        }
+        throw new RuntimeException("Active key not found");
+    }
+
+    public static KeysMetadataRepresentation.KeyMetadataRepresentation getActiveEncKeyOfType(KeysMetadataRepresentation keys, String type) {
+        for (KeysMetadataRepresentation.KeyMetadataRepresentation k : keys.getKeys()) {
+            if (k.getType().equals(type) && KeyStatus.valueOf(k.getStatus()).isActive() && KeyUse.ENC.equals(k.getUse())) {
+                return k;
+            }
+        }
+        throw new RuntimeException("Active key not found");
+    }
+
+
 }

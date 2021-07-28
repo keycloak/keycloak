@@ -50,6 +50,15 @@ public interface KeyManager {
     /**
      * Returns all {@code KeyWrapper} for the given realm that match given criteria.
      * @param realm {@code RealmModel}.
+     * @param type {@code KeyType}.
+     * @param use {@code KeyUse}.
+     * @return Stream of all {@code KeyWrapper} in the realm. Never returns {@code null}.
+     */
+    Stream<KeyWrapper> getKeysStream(RealmModel realm, String type, KeyUse use);
+
+    /**
+     * Returns all {@code KeyWrapper} for the given realm that match given criteria.
+     * @param realm {@code RealmModel}.
      * @param use {@code KeyUse}.
      * @param algorithm {@code String}.
      * @return Stream of all {@code KeyWrapper} in the realm. Never returns {@code null}.

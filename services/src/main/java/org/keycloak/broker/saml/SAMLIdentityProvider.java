@@ -27,7 +27,9 @@ import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyStatus;
+import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
@@ -94,6 +96,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 /**
  * @author Pedro Igor
@@ -363,18 +366,24 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             List<Element> signingKeys = new LinkedList<>();
             List<Element> encryptionKeys = new LinkedList<>();
 
-            session.keys().getKeysStream(realm, KeyUse.SIG, Algorithm.RS256)
+            Stream<KeyWrapper> sigkeys = session.keys().getKeysStream(realm, KeyType.RSA, KeyUse.SIG)
                     .filter(Objects::nonNull)
                     .filter(key -> key.getCertificate() != null)
-                    .sorted(SamlService::compareKeys)
+                    .sorted(SamlService::compareKeys);
+            Stream<KeyWrapper> enckeys = session.keys().getKeysStream(realm, KeyType.RSA, KeyUse.ENC)
+                    .filter(Objects::nonNull)
+                    .filter(key -> key.getCertificate() != null)
+                    .sorted(SamlService::compareKeys);
+
+            Stream.concat(sigkeys,enckeys)
                     .forEach(key -> {
                         try {
-                            Element element = SPMetadataDescriptor
-                                    .buildKeyInfoElement(key.getKid(), PemUtils.encodeCertificate(key.getCertificate()));
-                            signingKeys.add(element);
-
                             if (key.getStatus() == KeyStatus.ACTIVE) {
-                                encryptionKeys.add(element);
+                                Element element = SPMetadataDescriptor.buildKeyInfoElement(key.getKid(), PemUtils.encodeCertificate(key.getCertificate()));
+                                if(KeyUse.SIG.equals(key.getUse()))
+                                    signingKeys.add(element);
+                                if(KeyUse.ENC.equals(key.getUse()))
+                                    encryptionKeys.add(element);
                             }
                         } catch (ParserConfigurationException e) {
                             logger.warn("Failed to export SAML SP Metadata!", e);

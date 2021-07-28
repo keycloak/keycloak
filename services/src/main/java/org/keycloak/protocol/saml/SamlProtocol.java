@@ -25,6 +25,9 @@ import org.jboss.logging.Logger;
 import org.keycloak.broker.saml.SAMLDataMarshaller;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
@@ -85,6 +88,7 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.net.URI;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -466,9 +470,9 @@ public class SamlProtocol implements LoginProtocol {
         Document samlDocument = null;
         ResponseType samlModel = null;
         KeyManager keyManager = session.keys();
-        KeyManager.ActiveRsaKey keys = keyManager.getActiveRsaKey(realm);
+        KeyWrapper sigKey = keyManager.getActiveKey(realm, KeyUse.SIG, Algorithm.RS256);
         boolean postBinding = isPostBinding(authSession);
-        String keyName = samlClient.getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
+        String keyName = samlClient.getXmlSigKeyInfoKeyNameTransformer().getKeyName(sigKey.getKid(), sigKey.getCertificate());
         String nameId = getSAMLNameId(samlNameIdMappers, nameIdFormat, session, userSession, clientSession);
 
         if (nameId == null) {
@@ -522,7 +526,7 @@ public class SamlProtocol implements LoginProtocol {
             if (canonicalization != null) {
                 bindingBuilder.canonicalizationMethod(canonicalization);
             }
-            bindingBuilder.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(keyName, keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate());
+            bindingBuilder.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(keyName, (PrivateKey) sigKey.getPrivateKey(), (PublicKey) sigKey.getPublicKey(), sigKey.getCertificate());
 
             if (samlClient.requiresRealmSignature()) bindingBuilder.signDocument();
             if (samlClient.requiresAssertionSignature()) bindingBuilder.signAssertions();
