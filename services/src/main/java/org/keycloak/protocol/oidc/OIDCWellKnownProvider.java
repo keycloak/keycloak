@@ -35,6 +35,7 @@ import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpoint;
 import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
+import org.keycloak.protocol.oidc.representations.MTLSEndpointAliases;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.provider.Provider;
@@ -186,6 +187,9 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setPushedAuthorizationRequestEndpoint(ParEndpoint.parUrl(backendUriInfo.getBaseUriBuilder()).build(realm.getName()).toString());
         config.setRequirePushedAuthorizationRequests(Boolean.FALSE);
 
+        MTLSEndpointAliases mtlsEndpointAliases = getMtlsEndpointAliases(config);
+        config.setMtlsEndpointAliases(mtlsEndpointAliases);
+
         return config;
     }
 
@@ -250,5 +254,19 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
     private List<String> getSupportedEncryptionEnc(boolean includeNone) {
         return getSupportedAlgorithms(ContentEncryptionProvider.class, includeNone);
+    }
+
+    // Use protected method to make it easier to override in custom provider if different URLs are requested to be used as mtls_endpoint_aliases
+    protected MTLSEndpointAliases getMtlsEndpointAliases(OIDCConfigurationRepresentation config) {
+        MTLSEndpointAliases mtls_endpoints = new MTLSEndpointAliases();
+        mtls_endpoints.setTokenEndpoint(config.getTokenEndpoint());
+        mtls_endpoints.setRevocationEndpoint(config.getRevocationEndpoint());
+        mtls_endpoints.setIntrospectionEndpoint(config.getIntrospectionEndpoint());
+        mtls_endpoints.setDeviceAuthorizationEndpoint(config.getDeviceAuthorizationEndpoint());
+        mtls_endpoints.setRegistrationEndpoint(config.getRegistrationEndpoint());
+        mtls_endpoints.setUserInfoEndpoint(config.getUserinfoEndpoint());
+        mtls_endpoints.setBackchannelAuthenticationEndpoint(config.getBackchannelAuthenticationEndpoint());
+        mtls_endpoints.setPushedAuthorizationRequestEndpoint(config.getPushedAuthorizationRequestEndpoint());
+        return mtls_endpoints;
     }
 }
