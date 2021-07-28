@@ -46,6 +46,7 @@ import org.keycloak.services.clientregistration.ClientRegistrationService;
 import org.keycloak.services.clientregistration.oidc.OIDCClientRegistrationProviderFactory;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.urls.UrlType;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.wellknown.WellKnownProvider;
 
 import javax.ws.rs.core.UriBuilder;
@@ -88,10 +89,18 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
     // KEYCLOAK-7451 OAuth Authorization Server Metadata for Proof Key for Code Exchange
     public static final List<String> DEFAULT_CODE_CHALLENGE_METHODS_SUPPORTED = list(OAuth2Constants.PKCE_METHOD_PLAIN, OAuth2Constants.PKCE_METHOD_S256);
 
-    private KeycloakSession session;
+    private final KeycloakSession session;
+    private final Map<String, Object> openidConfigOverride;
+    private final boolean includeClientScopes;
 
     public OIDCWellKnownProvider(KeycloakSession session) {
+        this(session, null, true);
+    }
+
+    public OIDCWellKnownProvider(KeycloakSession session, Map<String, Object> openidConfigOverride, boolean includeClientScopes) {
         this.session = session;
+        this.openidConfigOverride = openidConfigOverride;
+        this.includeClientScopes = includeClientScopes;
     }
 
     @Override
@@ -150,12 +159,15 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setClaimTypesSupported(DEFAULT_CLAIM_TYPES_SUPPORTED);
         config.setClaimsParameterSupported(true);
 
-        List<String> scopeNames = realm.getClientScopesStream()
-                .filter(clientScope -> Objects.equals(OIDCLoginProtocol.LOGIN_PROTOCOL, clientScope.getProtocol()))
-                .map(ClientScopeModel::getName)
-                .collect(Collectors.toList());
-        scopeNames.add(0, OAuth2Constants.SCOPE_OPENID);
-        config.setScopesSupported(scopeNames);
+        // Include client scopes can be disabled in the environments with thousands of client scopes to avoid potentially expensive iteration over client scopes
+        if (includeClientScopes) {
+            List<String> scopeNames = realm.getClientScopesStream()
+                    .filter(clientScope -> Objects.equals(OIDCLoginProtocol.LOGIN_PROTOCOL, clientScope.getProtocol()))
+                    .map(ClientScopeModel::getName)
+                    .collect(Collectors.toList());
+            scopeNames.add(0, OAuth2Constants.SCOPE_OPENID);
+            config.setScopesSupported(scopeNames);
+        }
 
         config.setRequestParameterSupported(true);
         config.setRequestUriParameterSupported(true);
@@ -190,6 +202,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         MTLSEndpointAliases mtlsEndpointAliases = getMtlsEndpointAliases(config);
         config.setMtlsEndpointAliases(mtlsEndpointAliases);
 
+        config = checkConfigOverride(config);
         return config;
     }
 
@@ -268,5 +281,16 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         mtls_endpoints.setBackchannelAuthenticationEndpoint(config.getBackchannelAuthenticationEndpoint());
         mtls_endpoints.setPushedAuthorizationRequestEndpoint(config.getPushedAuthorizationRequestEndpoint());
         return mtls_endpoints;
+    }
+
+    private OIDCConfigurationRepresentation checkConfigOverride(OIDCConfigurationRepresentation config) {
+        if (openidConfigOverride != null) {
+            Map<String, Object> asMap = JsonSerialization.mapper.convertValue(config, Map.class);
+            // Override configuration
+            asMap.putAll(openidConfigOverride);
+            return JsonSerialization.mapper.convertValue(asMap, OIDCConfigurationRepresentation.class);
+        } else {
+            return config;
+        }
     }
 }
