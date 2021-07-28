@@ -954,6 +954,18 @@ public class TestingResourceProvider implements RealmResourceProvider {
         }
     }
 
+    @GET
+    @Path("/set-system-property")
+    @Consumes(MediaType.TEXT_HTML_UTF_8)
+    @NoCache
+    public void setSystemPropertyOnServer(@QueryParam("property-name") String propertyName, @QueryParam("property-value") String propertyValue) {
+        if (propertyValue == null) {
+            System.getProperties().remove(propertyName);
+        } else {
+            System.setProperty(propertyName, propertyValue);
+        }
+    }
+
     /**
      * This will send POST request to specified URL with specified form parameters. It's not easily possible to "trick" web driver to send POST
      * request with custom parameters, which are not directly available in the form.
