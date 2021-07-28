@@ -175,6 +175,9 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("pushed_authorization_request_endpoint")
     private String pushedAuthorizationRequestEndpoint;
 
+    @JsonProperty("mtls_endpoint_aliases")
+    private MTLSEndpointAliases mtlsEndpointAliases;
+
     protected Map<String, Object> otherClaims = new HashMap<String, Object>();
 
     public String getIssuer() {
@@ -523,6 +526,14 @@ public class OIDCConfigurationRepresentation {
 
     public void setRequirePushedAuthorizationRequests(Boolean requirePushedAuthorizationRequests) {
         this.requirePushedAuthorizationRequests = requirePushedAuthorizationRequests;
+    }
+
+    public MTLSEndpointAliases getMtlsEndpointAliases() {
+        return mtlsEndpointAliases;
+    }
+
+    public void setMtlsEndpointAliases(MTLSEndpointAliases mtlsEndpointAliases) {
+        this.mtlsEndpointAliases = mtlsEndpointAliases;
     }
 
     @JsonAnyGetter
