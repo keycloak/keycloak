@@ -87,7 +87,7 @@ export const DetailSettings = () => {
   const { handleSubmit, setValue, getValues, reset } = form;
 
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const history = useHistory();
   const { realm } = useRealm();
 
@@ -112,12 +112,7 @@ export const DetailSettings = () => {
       setProvider(p);
       addAlert(t("updateSuccess"), AlertVariant.success);
     } catch (error) {
-      addAlert(
-        t("updateError", {
-          error: error.response?.data?.errorMessage || error,
-        }),
-        AlertVariant.danger
-      );
+      addError("identity-providers:updateError", error);
     }
   };
 
@@ -132,7 +127,7 @@ export const DetailSettings = () => {
         addAlert(t("deletedSuccess"), AlertVariant.success);
         history.push(`/${realm}/identity-providers`);
       } catch (error) {
-        addAlert(t("deleteErrorError", { error }), AlertVariant.danger);
+        addError("identity-providers:deleteErrorError", error);
       }
     },
   });

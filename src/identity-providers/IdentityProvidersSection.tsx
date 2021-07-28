@@ -56,7 +56,7 @@ export const IdentityProvidersSection = () => {
     useState<IdentityProviderRepresentation>();
 
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   useFetch(
     async () =>
@@ -124,7 +124,7 @@ export const IdentityProvidersSection = () => {
         refresh();
         addAlert(t("deletedSuccess"), AlertVariant.success);
       } catch (error) {
-        addAlert(t("deleteError", { error }), AlertVariant.danger);
+        addError("identity-providers:deleteError", error);
       }
     },
   });

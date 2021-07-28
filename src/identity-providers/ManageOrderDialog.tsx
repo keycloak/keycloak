@@ -32,7 +32,7 @@ export const ManageOderDialog = ({
 }: ManageOderDialogProps) => {
   const { t } = useTranslation("identity-providers");
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   const [alias, setAlias] = useState("");
   const [liveText, setLiveText] = useState("");
@@ -76,7 +76,7 @@ export const ManageOderDialog = ({
                 await adminClient.identityProviders.update({ alias }, provider);
                 addAlert(t("orderChangeSuccess"), AlertVariant.success);
               } catch (error) {
-                addAlert(t("orderChangeError", { error }), AlertVariant.danger);
+                addError("identity-providers:orderChangeError", error);
               }
             });
 

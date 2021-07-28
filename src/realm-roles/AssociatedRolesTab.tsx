@@ -42,7 +42,7 @@ export const AssociatedRolesTab = ({
 }: AssociatedRolesTabProps) => {
   const { t } = useTranslation("roles");
   const history = useHistory();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const { url } = useRouteMatch();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
@@ -169,7 +169,7 @@ export const AssociatedRolesTab = ({
 
         addAlert(t("associatedRolesRemoved"), AlertVariant.success);
       } catch (error) {
-        addAlert(t("roleDeleteError", { error }), AlertVariant.danger);
+        addError("roles:roleDeleteError", error);
       }
     },
   });
@@ -194,7 +194,7 @@ export const AssociatedRolesTab = ({
           addAlert(t("associatedRolesRemoved"), AlertVariant.success);
           refresh();
         } catch (error) {
-          addAlert(`${t("roleDeleteError")} ${error}`, AlertVariant.danger);
+          addError("roles:roleDeleteError", error);
         }
       },
     });

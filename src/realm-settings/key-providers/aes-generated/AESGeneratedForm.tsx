@@ -47,7 +47,7 @@ export const AESGeneratedForm = ({
   const [isKeySizeDropdownOpen, setIsKeySizeDropdownOpen] = useState(false);
 
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   const { id } = useParams<{ id: string }>();
 
@@ -79,12 +79,7 @@ export const AESGeneratedForm = ({
         refresh?.();
       }
     } catch (error) {
-      addAlert(
-        t("saveProviderError", {
-          error: error.response?.data?.errorMessage || error,
-        }),
-        AlertVariant.danger
-      );
+      addError("realm-settings:saveProviderError", error);
     }
   };
 

@@ -33,7 +33,7 @@ export const AddHostDialog = ({
   const { t } = useTranslation("clients");
   const { register, getValues } = useForm<Host>();
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   return (
     <Modal
@@ -55,12 +55,7 @@ export const AddHostDialog = ({
               onAdded(node);
               addAlert(t("addedNodeSuccess"), AlertVariant.success);
             } catch (error) {
-              addAlert(
-                t("addedNodeFail", {
-                  error: error.response?.data?.error || error,
-                }),
-                AlertVariant.danger
-              );
+              addError("clients:addedNodeFail", error);
             }
 
             onClose();

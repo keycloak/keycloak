@@ -17,7 +17,7 @@ export const InitialAccessTokenList = () => {
   const { t } = useTranslation("clients");
 
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
 
   const history = useHistory();
@@ -41,7 +41,7 @@ export const InitialAccessTokenList = () => {
         addAlert(t("tokenDeleteSuccess"), AlertVariant.success);
         setToken(undefined);
       } catch (error) {
-        addAlert(t("tokenDeleteError", { error }), AlertVariant.danger);
+        addError("tokenDeleteError", error);
       }
     },
   });

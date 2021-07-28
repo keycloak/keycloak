@@ -23,7 +23,7 @@ export const UserConsents = () => {
   const [selectedClient, setSelectedClient] =
     useState<UserConsentRepresentation>();
   const { t } = useTranslation("roles");
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const [key, setKey] = useState(0);
 
   const adminClient = useAdminClient();
@@ -87,7 +87,7 @@ export const UserConsents = () => {
 
         addAlert(t("deleteGrantsSuccess"), AlertVariant.success);
       } catch (error) {
-        addAlert(t("deleteGrantsError", { error }), AlertVariant.danger);
+        addError("roles:deleteGrantsError", error);
       }
     },
   });

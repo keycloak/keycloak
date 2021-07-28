@@ -47,7 +47,7 @@ export const JavaKeystoreForm = ({
   const [isAlgorithmDropdownOpen, setIsAlgorithmDropdownOpen] = useState(false);
 
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   const { id } = useParams<{ id: string }>();
 
@@ -79,12 +79,7 @@ export const JavaKeystoreForm = ({
         refresh?.();
       }
     } catch (error) {
-      addAlert(
-        t("saveProviderError", {
-          error: error.response?.data?.errorMessage || error,
-        }),
-        AlertVariant.danger
-      );
+      addError("realm-settings:saveProviderError", error);
     }
   };
 

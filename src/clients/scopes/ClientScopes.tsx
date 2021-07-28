@@ -86,7 +86,7 @@ type SearchType = "client" | "assigned";
 export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   const [searchToggle, setSearchToggle] = useState(false);
   const [searchType, setSearchType] = useState<SearchType>("client");
@@ -156,7 +156,7 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
             addAlert(t("clientScopeSuccess"), AlertVariant.success);
             refresh();
           } catch (error) {
-            addAlert(t("clientScopeError", { error }), AlertVariant.danger);
+            addError("clients:clientScopeError", error);
           }
         }}
       />
@@ -186,7 +186,7 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
               addAlert(t("clientScopeSuccess"), AlertVariant.success);
               refresh();
             } catch (error) {
-              addAlert(t("clientScopeError", { error }), AlertVariant.danger);
+              addError("clients:clientScopeError", error);
             }
           }}
         />
@@ -267,10 +267,7 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
                     refresh();
                     addAlert(t("clientScopeSuccess"), AlertVariant.success);
                   } catch (error) {
-                    addAlert(
-                      t("clientScopeError", { error }),
-                      AlertVariant.danger
-                    );
+                    addError("clients:clientScopeError", error);
                   }
                 }}
               >
@@ -308,10 +305,7 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
                         );
                         refresh();
                       } catch (error) {
-                        addAlert(
-                          t("clientScopeRemoveError", { error }),
-                          AlertVariant.danger
-                        );
+                        addError("clients:clientScopeRemoveError", error);
                       }
                     }}
                   >
@@ -343,10 +337,7 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
                 addAlert(t("clientScopeRemoveSuccess"), AlertVariant.success);
                 refresh();
               } catch (error) {
-                addAlert(
-                  t("clientScopeRemoveError", { error }),
-                  AlertVariant.danger
-                );
+                addError("clients:clientScopeRemoveError", error);
               }
               return true;
             },

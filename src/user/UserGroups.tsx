@@ -35,7 +35,7 @@ export type UserFormProps = {
 
 export const UserGroups = () => {
   const { t } = useTranslation("users");
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
 
@@ -213,10 +213,7 @@ export const UserGroups = () => {
         refresh();
         addAlert(t("removedGroupMembership"), AlertVariant.success);
       } catch (error) {
-        addAlert(
-          t("removedGroupMembershipError", { error }),
-          AlertVariant.danger
-        );
+        addError("users:removedGroupMembershipError", error);
       }
     },
   });
@@ -259,10 +256,7 @@ export const UserGroups = () => {
         refresh();
         addAlert(t("addedGroupMembership"), AlertVariant.success);
       } catch (error) {
-        addAlert(
-          t("addedGroupMembershipError", { error }),
-          AlertVariant.danger
-        );
+        addError("users:addedGroupMembershipError", error);
       }
     });
   };

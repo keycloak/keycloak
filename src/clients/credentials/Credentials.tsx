@@ -46,7 +46,7 @@ export type CredentialsProps = {
 export const Credentials = ({ clientId, save }: CredentialsProps) => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   const [providers, setProviders] = useState<ClientAuthenticatorProviders[]>(
     []
@@ -97,7 +97,7 @@ export const Credentials = ({ clientId, save }: CredentialsProps) => {
       addAlert(t(`${message}Success`), AlertVariant.success);
       return data;
     } catch (error) {
-      addAlert(t(`${message}Error`, { error }), AlertVariant.danger);
+      addError(`clients:${message}Error`, error);
     }
   }
 

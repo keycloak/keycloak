@@ -32,7 +32,7 @@ export const GroupsSection = () => {
 
   const adminClient = useAdminClient();
   const { subGroups, setSubGroups, currentGroup } = useSubGroups();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
 
   const [rename, setRename] = useState<string>();
@@ -48,7 +48,7 @@ export const GroupsSection = () => {
       });
       addAlert(t("groupDelete"), AlertVariant.success);
     } catch (error) {
-      addAlert(t("groupDeleteError", { error }), AlertVariant.danger);
+      addError("groups:groupDeleteError", error);
     }
     return true;
   };

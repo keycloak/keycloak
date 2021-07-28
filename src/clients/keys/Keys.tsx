@@ -44,7 +44,7 @@ export const Keys = ({ clientId, save }: KeysProps) => {
     formState: { isDirty },
   } = useFormContext<ClientForm>();
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   const [keyInfo, setKeyInfo] = useState<CertificateRepresentation>();
   const [openGenerateKeys, setOpenGenerateKeys] = useState(false);
@@ -77,12 +77,7 @@ export const Keys = ({ clientId, save }: KeysProps) => {
       );
       addAlert(t("generateSuccess"), AlertVariant.success);
     } catch (error) {
-      addAlert(
-        t("generateError", {
-          error: error.response?.data?.errorMessage || error,
-        }),
-        AlertVariant.danger
-      );
+      addError("clients:generateError", error);
     }
   };
 
@@ -101,12 +96,7 @@ export const Keys = ({ clientId, save }: KeysProps) => {
       );
       addAlert(t("importSuccess"), AlertVariant.success);
     } catch (error) {
-      addAlert(
-        t("importError", {
-          error: error.response?.data?.errorMessage || error,
-        }),
-        AlertVariant.danger
-      );
+      addError("clients:importError", error);
     }
   };
 

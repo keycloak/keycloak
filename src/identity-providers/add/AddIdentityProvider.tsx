@@ -52,7 +52,7 @@ export const AddIdentityProvider = () => {
   } = form;
 
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const history = useHistory();
   const { realm } = useRealm();
 
@@ -66,12 +66,7 @@ export const AddIdentityProvider = () => {
       addAlert(t("createSuccess"), AlertVariant.success);
       history.push(`/${realm}/identity-providers/${id}/settings`);
     } catch (error) {
-      addAlert(
-        t("createError", {
-          error: error.response?.data?.errorMessage || error,
-        }),
-        AlertVariant.danger
-      );
+      addError("identity-providers:createError", error);
     }
   };
 

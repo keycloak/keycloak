@@ -48,7 +48,7 @@ export const LdapSettingsConnection = ({
   const { t: helpText } = useTranslation("user-federation-help");
   const adminClient = useAdminClient();
   const { realm } = useRealm();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   const testLdap = async () => {
     try {
@@ -64,8 +64,7 @@ export const LdapSettingsConnection = ({
       );
       addAlert(t("testSuccess"), AlertVariant.success);
     } catch (error) {
-      addAlert(t("testError"), AlertVariant.danger);
-      console.error(error.response?.data?.errorMessage);
+      addError("user-federation:testError", error);
     }
   };
 

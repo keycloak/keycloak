@@ -88,7 +88,7 @@ export const UserFederationKerberosSettings = () => {
 
   const { id } = useParams<{ id: string }>();
 
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   useEffect(() => {
     (async () => {
@@ -131,9 +131,9 @@ export const UserFederationKerberosSettings = () => {
         AlertVariant.success
       );
     } catch (error) {
-      addAlert(
-        `${t(id === "new" ? "createError" : "saveError")} '${error}'`,
-        AlertVariant.danger
+      addError(
+        `user-federation:${id === "new" ? "createError" : "saveError"}`,
+        error
       );
     }
   };
@@ -149,7 +149,7 @@ export const UserFederationKerberosSettings = () => {
         addAlert(t("userFedDeletedSuccess"), AlertVariant.success);
         history.replace(`/${realm}/user-federation`);
       } catch (error) {
-        addAlert(`${t("userFedDeleteError")} ${error}`, AlertVariant.danger);
+        addAlert("user-federation:userFedDeleteError", error);
       }
     },
   });

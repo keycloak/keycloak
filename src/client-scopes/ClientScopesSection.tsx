@@ -39,7 +39,7 @@ export const ClientScopesSection = () => {
   const { url } = useRouteMatch();
 
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
@@ -100,12 +100,7 @@ export const ClientScopesSection = () => {
         addAlert(t("deletedSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addAlert(
-          t("deleteError", {
-            error: error.response?.data?.errorMessage || error,
-          }),
-          AlertVariant.danger
-        );
+        addError("client-scopes:deleteError", error);
       }
     },
   });
@@ -122,7 +117,7 @@ export const ClientScopesSection = () => {
             addAlert(t("clientScopeSuccess"), AlertVariant.success);
             refresh();
           } catch (error) {
-            addAlert(t("clientScopeError", { error }), AlertVariant.danger);
+            addError("client-scopes:clientScopeError", error);
           }
         }}
       />
@@ -154,7 +149,7 @@ export const ClientScopesSection = () => {
                 addAlert(t("clientScopeSuccess"), AlertVariant.success);
                 refresh();
               } catch (error) {
-                addAlert(t("clientScopeError", { error }), AlertVariant.danger);
+                addError("client-scopes:clientScopeError", error);
               }
             });
             setChangeTypeOpen(false);

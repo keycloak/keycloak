@@ -39,7 +39,7 @@ export const NewClientForm = () => {
     directAccessGrantsEnabled: true,
     standardFlowEnabled: true,
   });
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const methods = useForm<ClientRepresentation>({ defaultValues: client });
 
   const save = async () => {
@@ -50,7 +50,7 @@ export const NewClientForm = () => {
         toClient({ realm, clientId: newClient.id, tab: "settings" })
       );
     } catch (error) {
-      addAlert(t("createError", { error }), AlertVariant.danger);
+      addError("clients:createError", error);
     }
   };
 

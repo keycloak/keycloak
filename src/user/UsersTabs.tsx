@@ -22,7 +22,7 @@ import { useRealm } from "../context/realm-context/RealmContext";
 
 export const UsersTabs = () => {
   const { t } = useTranslation("roles");
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const history = useHistory();
   const { realm } = useRealm();
 
@@ -65,12 +65,7 @@ export const UsersTabs = () => {
         history.push(`/${realm}/users/${createdUser.id}/settings`);
       }
     } catch (error) {
-      addAlert(
-        t("users:userCreateError", {
-          error: error.response?.data?.errorMessage || error,
-        }),
-        AlertVariant.danger
-      );
+      addError("users:userCreateError", error);
     }
   };
 

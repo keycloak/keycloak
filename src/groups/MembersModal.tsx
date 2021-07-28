@@ -25,7 +25,7 @@ type MemberModalProps = {
 export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
   const { t } = useTranslation("groups");
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
 
   const history = useHistory();
@@ -44,7 +44,7 @@ export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
       const users = await adminClient.users.find({ ...params });
       return _.differenceBy(users, members, "id").slice(0, max);
     } catch (error) {
-      addAlert(t("noUsersFoundError", { error }), AlertVariant.danger);
+      addError("groups:noUsersFoundError", error);
       return [];
     }
   };
@@ -73,7 +73,7 @@ export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
                 AlertVariant.success
               );
             } catch (error) {
-              addAlert(t("usersAddedError"), AlertVariant.danger);
+              addError("groups:usersAddedError", error);
             }
           }}
         >

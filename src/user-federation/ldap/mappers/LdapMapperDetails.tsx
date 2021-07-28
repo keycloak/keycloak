@@ -45,7 +45,7 @@ export const LdapMapperDetails = () => {
   const { realm } = useRealm();
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   const [isMapperDropdownOpen, setIsMapperDropdownOpen] = useState(false);
 
@@ -103,13 +103,13 @@ export const LdapMapperDetails = () => {
         AlertVariant.success
       );
     } catch (error) {
-      addAlert(
-        `${t(
+      addError(
+        `user-federation:${
           mapperId === "new"
             ? "common:mappingCreatedError"
             : "common:mappingUpdatedError"
-        )} '${error}'`,
-        AlertVariant.danger
+        }`,
+        error
       );
     }
   };

@@ -61,7 +61,7 @@ type KeysTabInnerProps = {
 
 export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
   const { t } = useTranslation("realm-settings");
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const adminClient = useAdminClient();
   const { realm } = useRealm();
   const { url } = useRouteMatch();
@@ -112,7 +112,7 @@ export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
 
         addAlert(t("deleteProviderSuccess"), AlertVariant.success);
       } catch (error) {
-        addAlert(t("deleteProviderError", { error }), AlertVariant.danger);
+        addError("realm-settings:deleteProviderError", error);
       }
     },
   });

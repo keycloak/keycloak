@@ -34,7 +34,7 @@ export const Members = () => {
   const { t } = useTranslation("groups");
   const adminClient = useAdminClient();
   const { realm } = useRealm();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const location = useLocation();
   const id = getLastId(location.pathname);
   const [includeSubGroup, setIncludeSubGroup] = useState(false);
@@ -172,7 +172,7 @@ export const Members = () => {
                           AlertVariant.success
                         );
                       } catch (error) {
-                        addAlert(t("usersLeftError"), AlertVariant.danger);
+                        addError("groups:usersLeftError", error);
                       }
 
                       refresh();
@@ -196,7 +196,7 @@ export const Members = () => {
                 });
                 addAlert(t("usersLeft", { count: 1 }), AlertVariant.success);
               } catch (error) {
-                addAlert(t("usersLeftError"), AlertVariant.danger);
+                addError("groups:usersLeftError", error);
               }
 
               return true;

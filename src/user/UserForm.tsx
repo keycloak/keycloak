@@ -57,7 +57,7 @@ export const UserForm = ({
     []
   );
 
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   const [open, setOpen] = useState(false);
 
@@ -121,10 +121,7 @@ export const UserForm = ({
         });
         addAlert(t("users:addedGroupMembership"), AlertVariant.success);
       } catch (error) {
-        addAlert(
-          t("users:addedGroupMembershipError", { error }),
-          AlertVariant.danger
-        );
+        addError("users:addedGroupMembershipError", error);
       }
     });
   };

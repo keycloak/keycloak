@@ -20,7 +20,7 @@ type ServiceAccountProps = {
 export const ServiceAccount = ({ client }: ServiceAccountProps) => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   const [hide, setHide] = useState(false);
   const [serviceAccount, setServiceAccount] = useState<UserRepresentation>();
@@ -94,12 +94,7 @@ export const ServiceAccount = ({ client }: ServiceAccountProps) => {
       );
       addAlert(t("roleMappingUpdatedSuccess"), AlertVariant.success);
     } catch (error) {
-      addAlert(
-        t("roleMappingUpdatedError", {
-          error: error.response?.data?.errorMessage || error,
-        }),
-        AlertVariant.danger
-      );
+      addError("clients:roleMappingUpdatedError", error);
     }
   };
   return (

@@ -42,7 +42,7 @@ describe("Clients test", function () {
 
       // The error should inform about duplicated name/id
       masthead.checkNotificationMessage(
-        "Could not create client: 'Error: Request failed with status code 409'"
+        "Could not create client: 'Client account already exists'"
       );
     });
 

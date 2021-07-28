@@ -41,7 +41,7 @@ type Params = {
 export const MappingDetails = () => {
   const { t } = useTranslation("client-scopes");
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   const { id, mapperId } = useParams<Params>();
   const { register, errors, setValue, control, handleSubmit } = useForm();
@@ -113,10 +113,7 @@ export const MappingDetails = () => {
         addAlert(t("common:mappingDeletedSuccess"), AlertVariant.success);
         history.push(`/${realm}/client-scopes/${id}/mappers`);
       } catch (error) {
-        addAlert(
-          t("common:mappingDeletedError", { error }),
-          AlertVariant.danger
-        );
+        addError("common:mappingDeletedError", error);
       }
     },
   });
@@ -136,7 +133,7 @@ export const MappingDetails = () => {
       }
       addAlert(t(`common:mapping${key}Success`), AlertVariant.success);
     } catch (error) {
-      addAlert(t(`common:mapping${key}Error`, { error }), AlertVariant.danger);
+      addError(`common:mapping${key}Error`, error);
     }
   };
 

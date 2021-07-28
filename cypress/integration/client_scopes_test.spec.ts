@@ -35,7 +35,7 @@ describe("Client Scopes test", function () {
 
       // The error should inform about duplicated name/id
       masthead.checkNotificationMessage(
-        "Could not create client scope: 'Error: Request failed with status code 409'"
+        "Could not create client scope: 'Client Scope address already exists'"
       );
     });
 

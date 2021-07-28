@@ -32,7 +32,7 @@ export const GroupsModal = ({
 }: GroupsModalProps) => {
   const { t } = useTranslation("groups");
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const { register, errors, handleSubmit } = useForm({
     defaultValues: { name: rename },
   });
@@ -54,7 +54,7 @@ export const GroupsModal = ({
         AlertVariant.success
       );
     } catch (error) {
-      addAlert(t("couldNotCreateGroup", { error }), AlertVariant.danger);
+      addError("groups:couldNotCreateGroup", error);
     }
   };
 

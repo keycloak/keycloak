@@ -39,7 +39,7 @@ JavaKeystoreModalProps) => {
   const { t } = useTranslation("groups");
   const serverInfo = useServerInfo();
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const { handleSubmit, control } = useForm({});
   const [isEllipticCurveDropdownOpen, setIsEllipticCurveDropdownOpen] =
     useState(false);
@@ -59,12 +59,7 @@ JavaKeystoreModalProps) => {
       addAlert(t("saveProviderSuccess"), AlertVariant.success);
       refresh();
     } catch (error) {
-      addAlert(
-        t("saveProviderError", {
-          error: error.response?.data?.errorMessage || error,
-        }),
-        AlertVariant.danger
-      );
+      addError("groups:saveProviderError", error);
     }
   };
 

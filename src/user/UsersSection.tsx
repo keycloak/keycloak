@@ -34,7 +34,7 @@ type BruteUser = UserRepresentation & {
 export const UsersSection = () => {
   const { t } = useTranslation("users");
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
   const history = useHistory();
   const { url } = useRouteMatch();
@@ -106,7 +106,7 @@ export const UsersSection = () => {
       }
       return users;
     } catch (error) {
-      addAlert(t("noUsersFoundError", { error }), AlertVariant.danger);
+      addError("users:noUsersFoundError", error);
       return [];
     }
   };
@@ -125,7 +125,7 @@ export const UsersSection = () => {
         refresh();
         addAlert(t("userDeletedSuccess"), AlertVariant.success);
       } catch (error) {
-        addAlert(t("userDeletedError", { error }), AlertVariant.danger);
+        addError("users:userDeletedError", error);
       }
     },
   });

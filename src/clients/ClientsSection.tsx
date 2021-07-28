@@ -29,7 +29,7 @@ import { toImportClient } from "./routes/ImportClient";
 
 export const ClientsSection = () => {
   const { t } = useTranslation("clients");
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   const adminClient = useAdminClient();
   const { realm } = useRealm();
@@ -64,7 +64,7 @@ export const ClientsSection = () => {
         addAlert(t("clientDeletedSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addAlert(t("clientDeleteError", { error }), AlertVariant.danger);
+        addError("client:clientDeleteError", error);
       }
     },
   });

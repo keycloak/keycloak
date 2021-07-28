@@ -40,7 +40,7 @@ export const RSAModal = ({
   const { t } = useTranslation("realm-settings");
   const serverInfo = useServerInfo();
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const { handleSubmit, control } = useForm({});
   const [isRSAalgDropdownOpen, setIsRSAalgDropdownOpen] = useState(false);
 
@@ -77,12 +77,7 @@ export const RSAModal = ({
         refresh();
       }
     } catch (error) {
-      addAlert(
-        t("saveProviderError", {
-          error: error.response?.data?.errorMessage || error,
-        }),
-        AlertVariant.danger
-      );
+      addError("realm-settings:saveProviderError", error);
     }
   };
 

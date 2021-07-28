@@ -26,7 +26,7 @@ export const NewRealmForm = () => {
   const { refresh } = useWhoAmI();
   const { refresh: realmRefresh } = useRealm();
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   const { register, handleSubmit, control, errors, setValue } =
     useForm<RealmRepresentation>({ mode: "onChange" });
@@ -49,12 +49,7 @@ export const NewRealmForm = () => {
       await realmRefresh();
       history.push(`/${realm.realm}`);
     } catch (error) {
-      addAlert(
-        t("saveRealmError", {
-          error: error.response?.data?.errorMessage || error,
-        }),
-        AlertVariant.danger
-      );
+      addError("realm:saveRealmError", error);
     }
   };
 

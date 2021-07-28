@@ -91,7 +91,7 @@ export const RoleMapping = ({
 }: RoleMappingProps) => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
@@ -159,7 +159,7 @@ export const RoleMapping = ({
         addAlert(t("clientScopeRemoveSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addAlert(t("clientScopeRemoveError", { error }), AlertVariant.danger);
+        addError("clients:clientScopeRemoveError", error);
       }
     },
   });

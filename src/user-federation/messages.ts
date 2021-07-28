@@ -92,7 +92,7 @@ export default {
     createError: "User federation provider could not be created: {{error}}",
     testSuccess: "Successfully connected to LDAP",
     testError:
-      "Error when trying to connect to LDAP. See server.log for details.",
+      "Error when trying to connect to LDAP. See server.log for details. {{error}}",
 
     learnMore: "Learn more",
     addNewProvider: "Add new provider",

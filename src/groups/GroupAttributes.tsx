@@ -23,7 +23,7 @@ import { useLocation } from "react-router-dom";
 export const GroupAttributes = () => {
   const { t } = useTranslation("groups");
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const form = useForm<AttributeForm>({ mode: "onChange" });
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -57,7 +57,7 @@ export const GroupAttributes = () => {
       form.setValue("attributes", convertAttributes(attributes));
       addAlert(t("groupUpdated"), AlertVariant.success);
     } catch (error) {
-      addAlert(t("groupUpdateError", { error }), AlertVariant.danger);
+      addError("groups:groupUpdateError", error);
     }
   };
 

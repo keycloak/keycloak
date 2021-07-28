@@ -29,7 +29,7 @@ import "./user-federation.css";
 export const UserFederationSection = () => {
   const [userFederations, setUserFederations] =
     useState<ComponentRepresentation[]>();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const { t } = useTranslation("user-federation");
   const { realm } = useRealm();
   const adminClient = useAdminClient();
@@ -87,7 +87,7 @@ export const UserFederationSection = () => {
         refresh();
         addAlert(t("userFedDeletedSuccess"), AlertVariant.success);
       } catch (error) {
-        addAlert(t("userFedDeleteError", { error }), AlertVariant.danger);
+        addError("user-federation:userFedDeleteError", error);
       }
     },
   });

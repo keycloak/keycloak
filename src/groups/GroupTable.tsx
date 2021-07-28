@@ -28,7 +28,7 @@ export const GroupTable = () => {
   const { t } = useTranslation("groups");
 
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
   const [isKebabOpen, setIsKebabOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -69,7 +69,7 @@ export const GroupTable = () => {
       );
       setSelectedRows([]);
     } catch (error) {
-      addAlert(t("groupDeleteError", { error }), AlertVariant.danger);
+      addError("groups:groupDeleteError", error);
     }
     refresh();
   };
@@ -220,12 +220,7 @@ export const GroupTable = () => {
               refresh();
               addAlert(t("moveGroupSuccess"), AlertVariant.success);
             } catch (error) {
-              addAlert(
-                t("moveGroupError", {
-                  error: error.response?.data?.errorMessage || error,
-                }),
-                AlertVariant.danger
-              );
+              addError("groups:moveGroupError", error);
             }
           }}
         />

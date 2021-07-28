@@ -28,7 +28,7 @@ export const CreateInitialAccessToken = () => {
 
   const adminClient = useAdminClient();
   const { realm } = useRealm();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   const history = useHistory();
   const [token, setToken] = useState("");
@@ -41,7 +41,7 @@ export const CreateInitialAccessToken = () => {
       );
       setToken(access.token!);
     } catch (error) {
-      addAlert(t("tokenSaveError", { error }), AlertVariant.danger);
+      addError("clients:tokenSaveError", error);
     }
   };
 

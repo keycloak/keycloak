@@ -31,7 +31,7 @@ export const ImportForm = () => {
   const form = useForm<ClientRepresentation>();
   const { register, handleSubmit, setValue } = form;
 
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   const handleFileChange = (obj: object) => {
     const defaultClient = {
@@ -61,7 +61,7 @@ export const ImportForm = () => {
         toClient({ realm, clientId: newClient.id, tab: "settings" })
       );
     } catch (error) {
-      addAlert(t("clientImportError", { error }), AlertVariant.danger);
+      addError("clients:clientImportError", error);
     }
   };
 

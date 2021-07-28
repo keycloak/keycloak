@@ -57,7 +57,7 @@ export const AdvancedTab = ({
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
   const { realm } = useRealm();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const revocationFieldName = "notBefore";
   const openIdConnect = "openid-connect";
 
@@ -143,10 +143,7 @@ export const AdvancedTab = ({
         refresh();
         addAlert(t("deleteNodeSuccess"), AlertVariant.success);
       } catch (error) {
-        addAlert(
-          t("deleteNodeFail", { error: error.response?.data?.error || error }),
-          AlertVariant.danger
-        );
+        addError("clients:deleteNodeFail", error);
       }
     },
   });

@@ -19,7 +19,7 @@ export const LdapMapperList = () => {
   const history = useHistory();
   const { t } = useTranslation("user-federation");
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const { url } = useRouteMatch();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
@@ -63,10 +63,7 @@ export const LdapMapperList = () => {
         addAlert(t("common:mappingDeletedSuccess"), AlertVariant.success);
         setSelectedMapper(undefined);
       } catch (error) {
-        addAlert(
-          t("common:mappingDeletedError", { error }),
-          AlertVariant.danger
-        );
+        addError("common:mappingDeletedError", error);
       }
     },
   });

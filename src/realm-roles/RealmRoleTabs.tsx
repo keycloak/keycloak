@@ -66,7 +66,7 @@ export const RealmRoleTabs = () => {
     []
   );
 
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   const [open, setOpen] = useState(false);
   const convert = (role: RoleRepresentation) => {
@@ -179,12 +179,7 @@ export const RealmRoleTabs = () => {
       }
       addAlert(t(id ? "roleSaveSuccess" : "roleCreated"), AlertVariant.success);
     } catch (error) {
-      addAlert(
-        t((id ? "roleSave" : "roleCreate") + "Error", {
-          error: error.response?.data?.errorMessage || error,
-        }),
-        AlertVariant.danger
-      );
+      addError(`roles:${id ? "roleSave" : "roleCreate"}Error`, error);
     }
   };
 
@@ -201,7 +196,7 @@ export const RealmRoleTabs = () => {
       refresh();
       addAlert(t("addAssociatedRolesSuccess"), AlertVariant.success);
     } catch (error) {
-      addAlert(t("addAssociatedRolesError", { error }), AlertVariant.danger);
+      addError("roles:addAssociatedRolesError", error);
     }
   };
 
@@ -225,7 +220,7 @@ export const RealmRoleTabs = () => {
         addAlert(t("roleDeletedSuccess"), AlertVariant.success);
         history.push(url.substr(0, url.indexOf("/roles") + "/roles".length));
       } catch (error) {
-        addAlert(`${t("roleDeleteError")} ${error}`, AlertVariant.danger);
+        addError("roles:roleDeleteError", error);
       }
     },
   });
@@ -300,7 +295,7 @@ export const RealmRoleTabs = () => {
         history.push(loc);
         refresh();
       } catch (error) {
-        addAlert(`${t("roleDeleteError")} ${error}`, AlertVariant.danger);
+        addError("roles:roleDeleteError", error);
       }
     },
   });

@@ -57,7 +57,7 @@ export const LocalizationTab = ({
   const [valueSelected, setValueSelected] = useState(false);
   const themeTypes = useServerInfo().themes!;
   const bundleForm = useForm<BundleForm>({ mode: "onChange" });
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const { realm: currentRealm } = useRealm();
 
   const watchSupportedLocales = useWatch({
@@ -105,12 +105,9 @@ export const LocalizationTab = ({
         realmName: currentRealm!,
       });
       refresh();
-      addAlert(t("realm-settings:pairCreatedSuccess"), AlertVariant.success);
+      addAlert(t("pairCreatedSuccess"), AlertVariant.success);
     } catch (error) {
-      addAlert(
-        t("realm-settings:pairCreatedError", { error }),
-        AlertVariant.danger
-      );
+      addError("realm-settings:pairCreatedError", error);
     }
   };
 

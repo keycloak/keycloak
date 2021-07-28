@@ -37,7 +37,7 @@ export const EventsTab = () => {
   const [addEventType, setAddEventType] = useState(false);
 
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
 
   const setupForm = (eventConfig?: RealmEventsConfigRepresentation) => {
@@ -70,12 +70,7 @@ export const EventsTab = () => {
         }
         addAlert(t(`${type}-events-cleared`), AlertVariant.success);
       } catch (error) {
-        addAlert(
-          t(`${type}-events-cleared-error`, {
-            error: error.response?.data?.errorMessage || error,
-          }),
-          AlertVariant.danger
-        );
+        addError(`realm-settings:${type}-events-cleared-error`, error);
       }
     },
   });
@@ -95,12 +90,7 @@ export const EventsTab = () => {
       setupForm({ ...events, ...eventConfig });
       addAlert(t("eventConfigSuccessfully"), AlertVariant.success);
     } catch (error) {
-      addAlert(
-        t("eventConfigError", {
-          error: error.response?.data?.errorMessage || error,
-        }),
-        AlertVariant.danger
-      );
+      addError("realm-settings:eventConfigError", error);
     }
   };
 

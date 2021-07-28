@@ -70,7 +70,7 @@ const RealmSettingsHeader = ({
 }: RealmSettingsHeaderProps) => {
   const { t } = useTranslation("realm-settings");
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const history = useHistory();
   const { refresh } = useRealm();
   const [partialImportOpen, setPartialImportOpen] = useState(false);
@@ -97,7 +97,7 @@ const RealmSettingsHeader = ({
         history.push("/master/");
         refresh();
       } catch (error) {
-        addAlert(t("deleteError", { error }), AlertVariant.danger);
+        addError("realm-settings:deleteError", error);
       }
     },
   });
@@ -147,7 +147,7 @@ export const RealmSettingsSection = () => {
   const { t } = useTranslation("realm-settings");
   const adminClient = useAdminClient();
   const { realm: realmName } = useRealm();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const form = useForm({ mode: "onChange" });
   const { control, getValues, setValue, reset: resetForm } = form;
   const [key, setKey] = useState(0);
@@ -197,10 +197,7 @@ export const RealmSettingsSection = () => {
       setRealm(realm);
       addAlert(t("saveSuccess"), AlertVariant.success);
     } catch (error) {
-      addAlert(
-        t("saveError", { error: error.response?.data?.errorMessage || error }),
-        AlertVariant.danger
-      );
+      addError("realm-settings:saveError", error);
     }
   };
 

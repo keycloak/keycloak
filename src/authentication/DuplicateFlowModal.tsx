@@ -34,7 +34,7 @@ export const DuplicateFlowModal = ({
     shouldUnregister: false,
   });
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   useEffect(() => {
     setValue("description", description);
@@ -62,7 +62,7 @@ export const DuplicateFlowModal = ({
       }
       addAlert(t("copyFlowSuccess"), AlertVariant.success);
     } catch (error) {
-      addAlert(t("copyFlowError", { error }), AlertVariant.danger);
+      addError("authentication:copyFlowError", error);
     }
     onComplete();
   };

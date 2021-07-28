@@ -52,7 +52,7 @@ export const RolesList = ({
   const { t } = useTranslation(messageBundle);
   const history = useHistory();
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const { url } = useRouteMatch();
   const { realm: realmName } = useRealm();
   const [realm, setRealm] = useState<myRealmRepresentation>();
@@ -104,7 +104,7 @@ export const RolesList = ({
         setSelectedRole(undefined);
         addAlert(t("roleDeletedSuccess"), AlertVariant.success);
       } catch (error) {
-        addAlert(`${t("roleDeleteError")} ${error}`, AlertVariant.danger);
+        addError("roles:roleDeleteError", error);
       }
     },
   });
@@ -133,7 +133,7 @@ export const RolesList = ({
               if (
                 (role as RoleRepresentation).name === realm!.defaultRole!.name
               ) {
-                addAlert(`${t("defaultRoleDeleteError")}`, AlertVariant.danger);
+                addAlert(t("defaultRoleDeleteError"), AlertVariant.danger);
               } else toggleDeleteDialog();
             },
           },

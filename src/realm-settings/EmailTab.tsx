@@ -36,7 +36,7 @@ export const RealmSettingsEmailTab = ({
   const { t } = useTranslation("realm-settings");
   const adminClient = useAdminClient();
   const { realm: realmName } = useRealm();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const { whoAmI } = useWhoAmI();
 
   const [realm, setRealm] = useState(initialRealm);
@@ -82,10 +82,7 @@ export const RealmSettingsEmailTab = ({
       setRealm(savedRealm);
       addAlert(t("saveSuccess"), AlertVariant.success);
     } catch (error) {
-      addAlert(
-        t("saveError", { error: error.response?.data?.errorMessage || error }),
-        AlertVariant.danger
-      );
+      addError("realm-settings:saveError", error);
     }
   };
 
@@ -125,7 +122,7 @@ export const RealmSettingsEmailTab = ({
       );
       addAlert(t("testConnectionSuccess"), AlertVariant.success);
     } catch (error) {
-      addAlert(t("testConnectionError"), AlertVariant.danger);
+      addError("realm-settings:testConnectionError", error);
     }
   };
 

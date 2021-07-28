@@ -39,7 +39,7 @@ export const AddOpenIdConnect = () => {
   } = form;
 
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
 
   const save = async (provider: DiscoveryIdentity) => {
@@ -52,12 +52,7 @@ export const AddOpenIdConnect = () => {
       addAlert(t("createSuccess"), AlertVariant.success);
       history.push(`/${realm}/identity-providers/${id}/settings`);
     } catch (error) {
-      addAlert(
-        t("createError", {
-          error: error.response?.data?.errorMessage || error,
-        }),
-        AlertVariant.danger
-      );
+      addError("identity-providers:createError", error);
     }
   };
 

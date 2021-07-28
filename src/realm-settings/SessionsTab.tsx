@@ -33,7 +33,7 @@ export const RealmSettingsSessionsTab = ({
   const { t } = useTranslation("realm-settings");
   const adminClient = useAdminClient();
   const { realm: realmName } = useRealm();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   const [realm, setRealm] = useState(initialRealm);
 
@@ -59,10 +59,7 @@ export const RealmSettingsSessionsTab = ({
       setRealm(savedRealm);
       addAlert(t("saveSuccess"), AlertVariant.success);
     } catch (error) {
-      addAlert(
-        t("saveError", { error: error.response?.data?.errorMessage || error }),
-        AlertVariant.danger
-      );
+      addError("realm-settings:saveError", error);
     }
   };
 
@@ -76,7 +73,7 @@ export const RealmSettingsSessionsTab = ({
     <>
       <PageSection variant="light">
         <FormPanel
-          title={t("realm-settings:SSOSessionSettings")}
+          title={t("SSOSessionSettings")}
           className="kc-sso-session-template"
         >
           <FormAccess
@@ -202,7 +199,7 @@ export const RealmSettingsSessionsTab = ({
           </FormAccess>
         </FormPanel>
         <FormPanel
-          title={t("realm-settings:clientSessionSettings")}
+          title={t(".pf-c-data-list__item-draggable-iconclientSessionSettings")}
           className="kc-client-session-template"
         >
           <FormAccess
@@ -271,7 +268,7 @@ export const RealmSettingsSessionsTab = ({
           </FormAccess>
         </FormPanel>
         <FormPanel
-          title={t("realm-settings:offlineSessionSettings")}
+          title={t("offlineSessionSettings")}
           className="kc-offline-session-template"
         >
           <FormAccess

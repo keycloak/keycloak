@@ -43,7 +43,7 @@ export const ClientScopeForm = () => {
   const adminClient = useAdminClient();
   const { id, type } = useParams<{ id: string; type: AllClientScopes }>();
 
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
@@ -126,10 +126,7 @@ export const ClientScopeForm = () => {
       }
       addAlert(t((id ? "update" : "create") + "Success"), AlertVariant.success);
     } catch (error) {
-      addAlert(
-        t((id ? "update" : "create") + "Error", { error }),
-        AlertVariant.danger
-      );
+      addError(`client-scopes:${id ? "update" : "create"}Error`, error);
     }
   };
 
@@ -146,7 +143,7 @@ export const ClientScopeForm = () => {
         await adminClient.clientScopes.del({ id });
         addAlert(t("deletedSuccess"), AlertVariant.success);
       } catch (error) {
-        addAlert(t("deleteError", { error }), AlertVariant.danger);
+        addError("client-scopes:deleteError", error);
       }
     },
   });
@@ -178,12 +175,7 @@ export const ClientScopeForm = () => {
       );
       addAlert(t("roleMappingUpdatedSuccess"), AlertVariant.success);
     } catch (error) {
-      addAlert(
-        t("roleMappingUpdatedError", {
-          error: error.response?.data?.errorMessage || error,
-        }),
-        AlertVariant.danger
-      );
+      addError("client-scopes:roleMappingUpdatedError", error);
     }
   };
 

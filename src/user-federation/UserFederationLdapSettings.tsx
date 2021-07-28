@@ -61,7 +61,7 @@ const LdapSettingsHeader = ({
   const { t } = useTranslation("user-federation");
   const { id } = useParams<{ id: string }>();
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
     titleKey: "user-federation:userFedDisableConfirmTitle",
     messageKey: "user-federation:userFedDisableConfirm",
@@ -90,7 +90,7 @@ const LdapSettingsHeader = ({
         }
       }
     } catch (error) {
-      addAlert(t("syncUsersError", { error }), AlertVariant.danger);
+      addError("user-federation:syncUsersError", error);
     }
   };
 
@@ -112,7 +112,7 @@ const LdapSettingsHeader = ({
         }
       }
     } catch (error) {
-      addAlert(t("syncUsersError", { error }), AlertVariant.danger);
+      addError("user-federation:syncUsersError", error);
     }
   };
 
@@ -123,7 +123,7 @@ const LdapSettingsHeader = ({
       }
       addAlert(t("unlinkUsersSuccess"), AlertVariant.success);
     } catch (error) {
-      addAlert(t("unlinkUsersError", { error }), AlertVariant.danger);
+      addError("user-federation:unlinkUsersError", error);
     }
   };
 
@@ -180,7 +180,7 @@ export const UserFederationLdapSettings = () => {
   const { realm } = useRealm();
 
   const { id } = useParams<{ id: string }>();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   useFetch(
     async () => {
@@ -223,7 +223,7 @@ export const UserFederationLdapSettings = () => {
       }
       addAlert(t("removeImportedUsersSuccess"), AlertVariant.success);
     } catch (error) {
-      addAlert(t("removeImportedUsersError", { error }), AlertVariant.danger);
+      addError("user-federation:removeImportedUsersError", error);
     }
   };
 
@@ -249,10 +249,7 @@ export const UserFederationLdapSettings = () => {
       }
       addAlert(t(id ? "saveSuccess" : "createSuccess"), AlertVariant.success);
     } catch (error) {
-      addAlert(
-        t(id ? "saveError" : "createError", { error }),
-        AlertVariant.danger
-      );
+      addError(`user-federation:${id ? "saveError" : "createError"}`, error);
     }
   };
 
@@ -265,7 +262,7 @@ export const UserFederationLdapSettings = () => {
         removeImportedUsers();
         addAlert(t("removeImportedUsersSuccess"), AlertVariant.success);
       } catch (error) {
-        addAlert(t("removeImportedUsersError", { error }), AlertVariant.danger);
+        addError("user-federation:removeImportedUsersError", error);
       }
     },
   });
@@ -281,7 +278,7 @@ export const UserFederationLdapSettings = () => {
         addAlert(t("userFedDeletedSuccess"), AlertVariant.success);
         history.replace(`/${realm}/user-federation`);
       } catch (error) {
-        addAlert(`${t("userFedDeleteError")} ${error}`, AlertVariant.danger);
+        addError("user-federation:userFedDeleteError", error);
       }
     },
   });

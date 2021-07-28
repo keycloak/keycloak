@@ -125,7 +125,7 @@ export type SaveOptions = {
 export const ClientDetails = () => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
 
   const history = useHistory();
@@ -164,7 +164,7 @@ export const ClientDetails = () => {
         addAlert(t("clientDeletedSuccess"), AlertVariant.success);
         history.push(toClients({ realm }));
       } catch (error) {
-        addAlert(`${t("clientDeleteError")} ${error}`, AlertVariant.danger);
+        addError("clients:clientDeleteError", error);
       }
     },
   });
@@ -227,7 +227,7 @@ export const ClientDetails = () => {
         setClient(newClient);
         addAlert(t(messageKey), AlertVariant.success);
       } catch (error) {
-        addAlert(`${t("clientSaveError")} '${error}'`, AlertVariant.danger);
+        addError("client:clientSaveError", error);
       }
     }
   };

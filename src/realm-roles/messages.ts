@@ -5,6 +5,7 @@ export default {
     associatedRolesText: "Associated roles",
     addAssociatedRolesText: "Add associated roles",
     addAssociatedRolesSuccess: "Associated roles have been added",
+    addAssociatedRolesError: "Could not associate roles {{error}}",
     associatedRolesModalTitle: "Add roles to {{name}}",
     title: "Realm roles",
     addRole: "Add role",

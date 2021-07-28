@@ -35,7 +35,7 @@ type Row = ProtocolMapperRepresentation & {
 export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
   const { t } = useTranslation("client-scopes");
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   const history = useHistory();
   const { realm } = useRealm();
@@ -75,10 +75,7 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
         refresh();
         addAlert(t("common:mappingCreatedSuccess"), AlertVariant.success);
       } catch (error) {
-        addAlert(
-          t("common:mappingCreatedError", { error }),
-          AlertVariant.danger
-        );
+        addError("common:mappingCreatedError", error);
       }
     }
   };
@@ -166,10 +163,7 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
                 );
                 refresh();
               } catch (error) {
-                addAlert(
-                  t("common:mappingDeletedError", { error }),
-                  AlertVariant.danger
-                );
+                addError("common:mappingDeletedError", error);
               }
               return true;
             },

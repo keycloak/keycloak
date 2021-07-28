@@ -54,7 +54,7 @@ export const RSAForm = ({
   const [certificateFileName, setCertificateFileName] = useState("");
 
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   const { id } = useParams<{ id: string }>();
 
@@ -86,12 +86,7 @@ export const RSAForm = ({
         refresh?.();
       }
     } catch (error) {
-      addAlert(
-        t("saveProviderError", {
-          error: error.response?.data?.errorMessage || error,
-        }),
-        AlertVariant.danger
-      );
+      addError("realm-settings:saveProviderError", error);
     }
   };
 
