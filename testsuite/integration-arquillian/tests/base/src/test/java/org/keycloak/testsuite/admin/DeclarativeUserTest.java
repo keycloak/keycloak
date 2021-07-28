@@ -12,11 +12,13 @@ import static org.keycloak.userprofile.DeclarativeUserProfileProvider.REALM_USER
 
 import javax.ws.rs.core.Response;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -102,6 +104,40 @@ public class DeclarativeUserTest extends AbstractAdminTest {
         attributes = user1.getAttributes();
         assertEquals(5, attributes.size());
         assertTrue(attributes.containsKey("custom-hidden"));
+    }
+
+    @Test
+    public void testUpdateUnsetAttributeWithEmptyValue() {
+        setUserProfileConfiguration(this.realm, "{\"attributes\": ["
+                + "{\"name\": \"username\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"firstName\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"email\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"lastName\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"attr1\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"attr2\"}]}");
+
+        UserRepresentation user1 = new UserRepresentation();
+        user1.setUsername("user1");
+        // set an attribute to later remove it from the configuration
+        user1.singleAttribute("attr1", "some-value");
+        String user1Id = createUser(user1);
+
+        // remove the attr1 attribute from the configuration
+        setUserProfileConfiguration(this.realm, "{\"attributes\": ["
+                + "{\"name\": \"username\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"firstName\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"email\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"lastName\", " + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"attr2\"}]}");
+
+        UserResource userResource = realm.users().get(user1Id);
+        user1 = userResource.toRepresentation();
+        Map<String, List<String>> attributes = user1.getAttributes();
+        attributes.put("attr2", Collections.singletonList(""));
+        // should be able to update the user when a read-only attribute has an empty or null value
+        userResource.update(user1);
+        attributes.put("attr2", null);
+        userResource.update(user1);
     }
 
     private String createUser(UserRepresentation userRep) {
