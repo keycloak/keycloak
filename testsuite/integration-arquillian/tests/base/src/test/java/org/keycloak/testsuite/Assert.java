@@ -48,6 +48,8 @@ import static org.hamcrest.Matchers.lessThanOrEqualTo;
  */
 public class Assert extends org.junit.Assert {
 
+    public static final Long DEFAULT_NUMBER_DEVIATION = 20L;
+
     public static <T> void assertNames(Set<T> actual, String... expected) {
         Arrays.sort(expected);
         String[] actualNames = names(new LinkedList<Object>(actual));
@@ -150,7 +152,11 @@ public class Assert extends org.junit.Assert {
     }
 
     public static void assertExpiration(long actual, long expected) {
-        MatcherAssert.assertThat(actual, allOf(greaterThanOrEqualTo(expected - 50), lessThanOrEqualTo(expected)));
+        assertExpiration(actual, expected, DEFAULT_NUMBER_DEVIATION);
+    }
+
+    public static void assertExpiration(long actual, long expected, long deviation) {
+        MatcherAssert.assertThat(actual, allOf(greaterThanOrEqualTo(expected - deviation), lessThanOrEqualTo(expected + deviation)));
     }
 
     public static void assertRoleAttributes(Map<String, List<String>> expected, Map<String, List<String>> actual) {
