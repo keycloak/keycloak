@@ -72,8 +72,6 @@
             <tbody>
             <tr ng-repeat="group in config.groups">
                 <td class="kc-sorter">
-                    <button data-ng-hide="flow.builtIn" data-ng-disabled="$first" class="btn btn-default btn-sm" data-ng-click="groupOrderUp($index)"><i class="fa fa-angle-up"></i></button>
-                    <button data-ng-hide="flow.builtIn" data-ng-disabled="$last" class="btn btn-default btn-sm" data-ng-click="groupOrderDown($index)"><i class="fa fa-angle-down"></i></button>
                     <span><a href="" data-ng-click="editAttributeGroup(group)">{{group.name}}</a></span>
                 </td>
                 <td>{{group.displayHeader}}</td>
