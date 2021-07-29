@@ -43,6 +43,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import javax.persistence.LockModeType;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
+import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -71,7 +72,7 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
 
         TypedQuery query = entityManager.createQuery(querybuilder);
 
-        return query.getResultStream().count();
+        return closing(query.getResultStream()).count();
     }
 
     private List<Predicate> getPredicates(CriteriaBuilder builder,
