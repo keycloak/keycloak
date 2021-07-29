@@ -7,16 +7,16 @@ export default class GroupModal {
   }
 
   typeResourceFile = (filename: string) => {
-    cy.readFile(
-      "cypress/integration/partial-import-test-data/" + filename
-    ).then((myJSON) => {
-      const text = JSON.stringify(myJSON);
+    cy.readFile("cypress/fixtures/partial-import-test-data/" + filename).then(
+      (myJSON) => {
+        const text = JSON.stringify(myJSON);
 
-      cy.get("#partial-import-file").type(text, {
-        parseSpecialCharSequences: false,
-        delay: 0
-      });
-    });
+        cy.get("#partial-import-file").type(text, {
+          parseSpecialCharSequences: false,
+          delay: 0,
+        });
+      }
+    );
   };
 
   importButton() {
