@@ -931,7 +931,17 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         }
         testRealm.getAttributes().put(REALM_USER_PROFILE_ENABLED, Boolean.TRUE.toString());
     }
-    
+
+    public static void disableDynamicUserProfile(RealmResource realm) {
+        RealmRepresentation realmRep = realm.toRepresentation();
+        if (realmRep.getAttributes() == null) {
+            realmRep.setAttributes(new HashMap<>());
+        }
+        realmRep.getAttributes().put(REALM_USER_PROFILE_ENABLED, Boolean.FALSE.toString());
+        realm.update(realmRep);
+    }
+
+
     public static void setUserProfileConfiguration(RealmResource testRealm, String configuration) {
         Response r = testRealm.users().userProfile().update(configuration);
         if (r.getStatus() != 200) {
