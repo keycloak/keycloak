@@ -61,6 +61,8 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.page.LoginPasswordUpdatePage;
@@ -101,6 +103,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -115,9 +118,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.Assert.assertNames;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
-
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -595,6 +595,12 @@ public class UserTest extends AbstractAdminTest {
             user.setFirstName("First" + i);
             user.setLastName("Last" + i);
 
+            HashMap<String, List<String>> attributes = new HashMap<>();
+            attributes.put("test", Collections.singletonList("test" + i));
+            attributes.put("test" + i, Collections.singletonList("test" + i));
+            attributes.put("attr", Collections.singletonList("common"));
+            user.setAttributes(attributes);
+
             ids.add(createUser(user));
         }
 
@@ -623,15 +629,64 @@ public class UserTest extends AbstractAdminTest {
         assertEquals(9, users.size());
     }
 
+    private String mapToSearchQuery(Map<String, String> search) {
+        return search.entrySet()
+                .stream()
+                .map(e -> String.format("%s:%s", e.getKey(), e.getValue()))
+                .collect(Collectors.joining(" "));
+    }
+
+    @Test
+    public void searchByAttribute() {
+        createUsers();
+
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put("test", "test1");
+        List<UserRepresentation> users = realm.users().searchByAttributes(mapToSearchQuery(attributes));
+        assertEquals(1, users.size());
+
+        attributes.clear();
+        attributes.put("attr", "common");
+
+        users = realm.users().searchByAttributes(mapToSearchQuery(attributes));
+        assertEquals(9, users.size());
+    }
+
+    @Test
+    public void searchByMultipleAttributes() {
+        createUsers();
+
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put("test", "test1");
+        attributes.put("attr", "common");
+        attributes.put("test1", "test1");
+
+        List<UserRepresentation> users = realm.users().searchByAttributes(mapToSearchQuery(attributes));
+        assertEquals(1, users.size());
+    }
+
+    @Test
+    public void searchByAttributesWithPagination() {
+        createUsers();
+
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put("attr", "common");
+        for (int i = 1; i < 10; i++) {
+            List<UserRepresentation> users = realm.users().searchByAttributes(i - 1, 1, null, false, mapToSearchQuery(attributes));
+            assertEquals(1, users.size());
+            assertTrue(users.get(0).getAttributes().keySet().stream().anyMatch(attributes::containsKey));
+        }
+    }
+
     @Test
     public void searchByUsernameExactMatch() {
         createUsers();
 
         UserRepresentation user = new UserRepresentation();
         user.setUsername("username11");
-        
+
         createUser(user);
-        
+
         List<UserRepresentation> users = realm.users().search("username1", true);
         assertEquals(1, users.size());
 
@@ -2022,14 +2077,14 @@ public class UserTest extends AbstractAdminTest {
         realm.flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString(), updatePasswordReqAction);
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(UserModel.RequiredAction.UPDATE_PASSWORD.toString()), updatePasswordReqAction, ResourceType.REQUIRED_ACTION);
     }
-    
+
     private RoleRepresentation getRoleByName(String name, List<RoleRepresentation> roles) {
         for(RoleRepresentation role : roles) {
             if(role.getName().equalsIgnoreCase(name)) {
                 return role;
             }
         }
-        
+
         return null;
     }
 
@@ -2042,7 +2097,7 @@ public class UserTest extends AbstractAdminTest {
         realm.update(realmRep);
 
         RoleRepresentation realmCompositeRole = RoleBuilder.create().name("realm-composite").singleAttribute("attribute1", "value1").build();
-        
+
         realm.roles().create(RoleBuilder.create().name("realm-role").build());
         realm.roles().create(realmCompositeRole);
         realm.roles().create(RoleBuilder.create().name("realm-child").build());
@@ -2054,8 +2109,8 @@ public class UserTest extends AbstractAdminTest {
         response.close();
 
         RoleRepresentation clientCompositeRole = RoleBuilder.create().name("client-composite").singleAttribute("attribute1", "value1").build();
-        
-        
+
+
         realm.clients().get(clientUuid).roles().create(RoleBuilder.create().name("client-role").build());
         realm.clients().get(clientUuid).roles().create(RoleBuilder.create().name("client-role2").build());
         realm.clients().get(clientUuid).roles().create(clientCompositeRole);
@@ -2099,12 +2154,12 @@ public class UserTest extends AbstractAdminTest {
         RoleRepresentation realmCompositeRoleFromList = getRoleByName("realm-composite", realmRolesFullRepresentations);
         assertNotNull(realmCompositeRoleFromList);
         assertTrue(realmCompositeRoleFromList.getAttributes().containsKey("attribute1"));
-        
+
         // List client roles
         assertNames(roles.clientLevel(clientUuid).listAll(), "client-role", "client-composite");
         assertNames(roles.clientLevel(clientUuid).listAvailable(), "client-role2", "client-child");
         assertNames(roles.clientLevel(clientUuid).listEffective(), "client-role", "client-composite", "client-child");
-        
+
         // List client effective role with full representation
         List<RoleRepresentation> rolesFullRepresentations = roles.clientLevel(clientUuid).listEffective(false);
         RoleRepresentation clientCompositeRoleFromList = getRoleByName("client-composite", rolesFullRepresentations);
@@ -2455,11 +2510,11 @@ public class UserTest extends AbstractAdminTest {
         Assert.assertTrue(ObjectUtil.isEqualOrBothNull(otpCredential.getUserLabel(), otpCredentialLoaded.getUserLabel()));
         Assert.assertTrue(ObjectUtil.isEqualOrBothNull(otpCredential.getPriority(), otpCredentialLoaded.getPriority()));
     }
-    
+
     @Test
     public void testGetGroupsForUserFullRepresentation() {
         RealmResource realm = adminClient.realms().realm("test");
-        
+
         String userName = "averagejoe";
         String groupName = "groupWithAttribute";
         Map<String, List<String>> attributes = new HashMap<String, List<String>>();
@@ -2469,16 +2524,16 @@ public class UserTest extends AbstractAdminTest {
                 .edit(createUserRepresentation(userName, "joe@average.com", "average", "joe", true))
                 .addPassword("password")
                 .build();
-        
+
         try (Creator<UserResource> u = Creator.create(realm, userRepresentation);
              Creator<GroupResource> g = Creator.create(realm, GroupBuilder.create().name(groupName).attributes(attributes).build())) {
-            
+
             String groupId = g.id();
             UserResource user = u.resource();
             user.joinGroup(groupId);
-            
+
             List<GroupRepresentation> userGroups = user.groups(0, 100, false);
-            
+
             assertFalse(userGroups.isEmpty());
             assertTrue(userGroups.get(0).getAttributes().containsKey("attribute1"));
         }
