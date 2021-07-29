@@ -294,7 +294,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
             Set<String> removedClientUUIDs = new HashSet<>();
 
-            clientSessionQuery.getResultStream().forEach(clientSession -> {
+            closing(clientSessionQuery.getResultStream()).forEach(clientSession -> {
                         boolean added = addClientSessionToAuthenticatedClientSessionsIfPresent(userSession, clientSession);
                         if (!added) {
                             // client was removed in the meantime
