@@ -1,4 +1,5 @@
 
+[[_oidc_clients]]
 === OIDC Clients
 
 <<_oidc,OpenID Connect>> is the preferred protocol to secure applications.  It was designed from the ground up to be web friendly
@@ -225,10 +226,6 @@ ID token encryption algorithms by CEK are also defined in the https://datatracke
 Basic features of https://datatracker.ietf.org/doc/html/draft-ietf-oauth-par[OAuth 2.0 Pushed Authorization Requests] has been supported.
 
 For more details about PAR, see https://datatracker.ietf.org/doc/html/draft-ietf-oauth-par[PAR Specification].
-
-:tech_feature_name: OAuth 2.0 Pushed Authorization Requests
-:tech_feature_setting: -Dkeycloak.profile.feature.par=enabled
-include::../templates/techpreview.adoc[]
 
 There are two configuration parameters. The former can be set up on Advanced Settings per client for activating and deactivating PAR.
 

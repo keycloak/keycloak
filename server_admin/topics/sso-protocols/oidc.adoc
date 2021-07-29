@@ -100,10 +100,6 @@ This is used by clients running on internet-connected devices that have limited 
 [[_client_initiated_backchannel_authentication_grant]]
 ===== Client Initiated Backchannel Authentication Grant
 
-:tech_feature_name: Client Initiated Backchannel Authentication Grant
-:tech_feature_setting: -Dkeycloak.profile.feature.ciba=enabled
-include::../templates/techpreview.adoc[]
-
 This is used by clients who want to initiate the authentication flow by communicating with the OpenID Provider directly without redirect through the user's browser like OAuth 2.0's authorization code grant. Here's a brief summary of the protocol:
 
 . The client requests {project_name} an auth_req_id that identifies the authentication request made by the client. {project_name} creates the auth_req_id.
@@ -126,7 +122,8 @@ The configurable items and their description follow.
 |Configuration|Description
 
 |Backchannel Token Delivery Mode
-|Specifying how the CD (Consumption Device) gets the authentication result and related tokens. There are three modes, "poll", "ping" and "push". {project_name} only supports "poll". The default setting is "poll". This configuration is required.
+|Specifying how the CD (Consumption Device) gets the authentication result and related tokens. There are three modes, "poll", "ping" and "push". {project_name} only supports "poll" and "ping" modes.
+The default setting is "poll". This configuration is used as the default mode for clients, however every client can override the mode.
  For more details, see https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#rfc.section.5[CIBA Specification].
 
 |Expires In
@@ -240,6 +237,8 @@ This field is optional and was defined by CIBA standard document.
 This field is optional and was defined by CIBA standard document.
 
 |===
+
+Besides the mentioned parameters, any custom parameter that is sent to the Backchannel Authentication Endpoint, will be forwarded to Channel Provider as well.
 
 Authentication Delegation Response:: The response is returned from the authentication entity to {project_name} to notify that the authentication entity received the authentication request from {project_name}.
 

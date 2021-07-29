@@ -219,11 +219,15 @@ Client Initiated Backchannel Authentication Grant is used by clients who want to
 
 The client requests {project_name} an auth_req_id that identifies the authentication request made by the client. {project_name} creates the auth_req_id.
 
-After receiving this auth_req_id, this client repeatedly needs to poll {project_name} to obtain an Access Token, Refresh Token and ID Token from {project_name} in return for the auth_req_id until the user is authenticated. 
+After receiving this auth_req_id, this client repeatedly needs to poll {project_name} to obtain an Access Token, Refresh Token and ID Token from {project_name} in return for the auth_req_id until the user is authenticated.
+
+In case that client uses `ping` mode, it does not need to repeatedly poll the token endpoint, but it can wait for the notification sent by {project_name} to the specified Client Notification Endpoint.
+The Client Notification Endpoint can be configured in the {project_name} Admin Console. The details of the contract for Client Notification Endpoint are described in the CIBA specification.
 
 For more details refer to https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html[OpenID Connect Client Initiated Backchannel Authentication Flow specification].
 
 Also please refer to other places of {project_name} documentation like <<_backchannel_authentication_endpoint,Backchannel Authentication Endpoint of this guide>> and link:{adminguide_link}#_client_initiated_backchannel_authentication_grant[Client Initiated Backchannel Authentication Grant section] of {adminguide_name}.
+For the details about FAPI CIBA compliance, please refer to the <<_fapi-support,FAPI section of this guide>>.
 
 ==== Redirect URIs
 

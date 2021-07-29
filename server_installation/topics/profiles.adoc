@@ -31,11 +31,16 @@ The features that can be enabled and disabled are:
 
 |ciba
 |OpenID Connect Client Initiated Backchannel Authentication (CIBA)
-|No
-|Preview
+|Yes
+|Supported
 
 |client_policies
 |Add client configuration policies
+|Yes
+|Supported
+
+|par
+|OAuth 2.0 Pushed Authorization Requests (PAR)
 |Yes
 |Supported
 
