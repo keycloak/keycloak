@@ -1895,6 +1895,7 @@
                 <apache.httpcomponents.httpcore.fuse.version>4.4.4</apache.httpcomponents.httpcore.fuse.version>
                 <ee.maven.groupId>org.wildfly</ee.maven.groupId>
                 <ee.maven.version>${wildfly.version}</ee.maven.version>
+                <product.filename.version>${project.version}</product.filename.version>
             </properties>
             <modules>
                 <module>quarkus</module>
@@ -1920,6 +1921,10 @@
                 <product.default-profile>product</product.default-profile>
                 <ee.maven.groupId>org.jboss.eap</ee.maven.groupId>
                 <ee.maven.version>${eap.version}</ee.maven.version>
+                <!-- Properties that drive the names of various directories produced by and used in the build -->
+                <server.output.dir.prefix>${product.name}</server.output.dir.prefix>
+                <!-- Version suffix that is appended to directories. Default is the maven GAV version but this can be edited to use a short form version -->
+                <server.output.dir.version>${product.filename.version}</server.output.dir.version>
             </properties>
             <build>
                 <plugins>
