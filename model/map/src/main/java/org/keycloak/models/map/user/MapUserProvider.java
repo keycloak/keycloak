@@ -637,6 +637,11 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
                     mcb = mcb.compare(SearchableFields.IDP_AND_USER, Operator.EQ, attributes.get(UserModel.IDP_ALIAS), value);
                     break;
                 }
+                case UserModel.EXACT:
+                    break;
+                default:
+                    mcb = mcb.compare(SearchableFields.ATTRIBUTE, Operator.EQ, key, value);
+                    break;
             }
         }
 
