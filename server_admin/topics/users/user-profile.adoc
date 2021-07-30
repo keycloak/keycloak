@@ -30,7 +30,7 @@ In the next sections, we'll be looking at how to use the declarative provider to
 
 [NOTE]
 ====
-In the future, the legacy behavior will no longer be supported on {project_name}. Ideally, you should start looking at the new capabilities provided by the User Profile and migrate your realms accordingly.
+In the future, the legacy behavior will no longer be supported in {project_name}. Ideally, you should start looking at the new capabilities provided by the User Profile and migrate your realms accordingly.
 ====
 
 ==== Enabling the User Profile
@@ -39,20 +39,20 @@ In the future, the legacy behavior will no longer be supported on {project_name}
 :tech_feature_setting: -Dkeycloak.profile.feature.declarative_user_profile=enabled
 include::../templates/techpreview.adoc[]
 
-In addition to enabling the `declarative_user_profile` feature, you should enable User Profile to a realm. For that, click on the `Realm Settings` link on
-the left side menu and then turn on the `User Profile Enabled` switch.
+In addition to enabling the `declarative_user_profile` feature, you should enable User Profile for a realm. To do that, click on the `Realm Settings` link on
+the left side menu and turn on the `User Profile Enabled` switch.
 
 image:images/user-profile-enabling.png[]
 
-Once you enable it and click on the `Save` button, you should be able to access the `User Profile` tab from where you can manage the configuration for user attributes.
+Once you enable it and click on the `Save` button, you can access the `User Profile` tab from where you can manage the configuration for user attributes.
 
-By enabling the user profile to a realm, {project_name} is going to impose additional constraints on how attributes are managed based on the user profile configuration. In summary, here is the list of what you should expect when the feature is enabled:
+By enabling the user profile for a realm, {project_name} is going to impose additional constraints on how attributes are managed based on the user profile configuration. In summary, here is the list of what you should expect when the feature is enabled:
 
 * From an administration point of view, the `Attributes` tab at the user details page will only show the attributes defined in the user profile configuration. The conditions defined on a per-attribute basis will also be taken into account when managing attributes.
 
 * User facing forms like registration, update profile, brokering, and personal info in the account console, are going to be rendered dynamically based on the user profile configuration. For that, {project_name} is going to rely on different templates to render these forms dynamically.
 
-In the next topics, we'll be exploring how to manage the user profile configuration and how does it affect your realm.
+In the next topics, we'll be exploring how to manage the user profile configuration and how it affects your realm.
 
 ==== Managing the User Profile
 
@@ -71,20 +71,20 @@ In the `Attribute Groups` sub-tab you can manage attribute groups. An attribute 
 For now, attribute groups are only used for rendering purposes but in the future they should also enable defining top-level configurations to the attributes they are linked to.
 ====
 
-In the `JSON Editor` sub-tab you can view and edit the configuration using a well-defined JSON schema. Any change you make when at any other tab should be reflected in the JSON configuration shown at this tab.
+In the `JSON Editor` sub-tab you can view and edit the configuration using a well-defined JSON schema. Any change you make when at any other tab are reflected in the JSON configuration shown at this tab.
 
 In the next section, you are going to learn how to manage the configuration from the `Attributes` sub-tab.
 
 ==== Managing Attributes
 
-At the `Attributes` sub-tab you should be able to create, edit, and delete the attributes associated with the user profile.
+At the `Attributes` sub-tab you can create, edit, and delete the attributes associated with the user profile.
 
 To define a new attribute and associate it with the user profile, click on the `Create` button in the top-right corner of the attribute listing.
 
 .Attribute Configuration
 image:images/user-profile-create-attribute.png[]
 
-When configuring the attribute you should be able to define the following settings:
+When configuring the attribute you can define the following settings:
 
 Name::
 The name of the attribute.
@@ -106,7 +106,7 @@ Permission::
 In this section, you can define read and write permissions for users and administrators.
 
 Validation::
-In this section, you can define the validations that should be performed when managing the attribute value. {project_name} provides a set of built-in validators you can choose from with the possibility to add your own.
+In this section, you can define the validations that will be performed when managing the attribute value. {project_name} provides a set of built-in validators you can choose from with the possibility to add your own.
 
 Annotation::
 In this section, you can associate annotations to the attribute. Annotations are mainly useful to pass over additional metadata to frontends for rendering purposes.
@@ -118,7 +118,7 @@ In the `Permission` section, you can define the level of access users and admini
 .Attribute Permission
 image:images/user-profile-permission.png[]
 
-For that, you should be able to use the following settings:
+For that, you can use the following settings:
 
 Can user view?::
 If enabled, users can view the attribute. Otherwise, users don't have access to the attribute.
@@ -170,7 +170,7 @@ image:images/user-profile-validation.png[]
 
 *max*: an integer to define the maximum allowed length.
 
-*trim-disabled*: a boolean to define whether the value should be trimmed prior to validation.
+*trim-disabled*: a boolean to define whether the value is trimmed prior to validation.
 
 |integer
 |Check if the value is an integer and within a lower and/or upper range. If no range is defined, the validator only checks whether the value is a valid number.
@@ -225,14 +225,14 @@ image:images/user-profile-validation.png[]
 ===== Managing Annotations
 
 In order to pass additional information to frontends, attributes can be decorated with
-annotations to dictate how attributes should be rendered. This capability is mainly useful when extending {project_name} themes to render pages dynamically based on the annotations associated with attributes.
+annotations to dictate how attributes are rendered. This capability is mainly useful when extending {project_name} themes to render pages dynamically based on the annotations associated with attributes.
 
 .Attribute Annotation
 image:images/user-profile-annotation.png[]
 
 ==== Managing Attribute Groups
 
-At the `Attribute Grousp` sub-tab you should be able to create, edit, and delete attribute groups. An attribute group allows you to define a container for correlated attributes so that they are rendered together when at the user-facing forms.
+At the `Attribute Groups` sub-tab you can create, edit, and delete attribute groups. An attribute group allows you to define a container for correlated attributes so that they are rendered together when at the user-facing forms.
 
 .Attribute Group List
 image:images/user-profile-attribute-group-list.png[]
@@ -247,7 +247,7 @@ To create a new group, click on the `Create` button in the top-right corner of t
 .Attribute Group Configuration
 image:images/user-profile-create-attribute-group.png[]
 
-When configuring the group you should be able to define the following settings:
+When configuring the group you can define the following settings:
 
 Name::
 The name of the group.
@@ -256,7 +256,7 @@ Display name::
 A user-friendly name for the group, mainly used when rendering user-facing forms. It supports internationalization so that values can be loaded from message bundles.
 
 Display description::
-A user-friendly text that should be displayed as a tooltip when rendering user-facing forms.
+A user-friendly text that will be displayed as a tooltip when rendering user-facing forms.
 
 Annotation::
 In this section, you can associate annotations to the attribute. Annotations are mainly useful to pass over additional metadata to frontends for rendering purposes.
@@ -342,7 +342,7 @@ To mark an attribute as required for a user and/or administrator, set the `roles
 }
 ----
 
-The `roles` property expects an array whose values can be either `user` or `admin`, depending on whether the attribute should be required by the user or the administrator, respectively.
+The `roles` property expects an array whose values can be either `user` or `admin`, depending on whether the attribute is required by the user or the administrator, respectively.
 
 Similarly, you can choose to make the attribute required when a set of one or more scopes is requested by a client when authenticating a user. For that, you can use the `scopes` property as follows:
 
@@ -438,7 +438,7 @@ The attributes order is set by clicking on the up and down arrows when at the at
 .Ordering Attributes
 image:images/user-profile-attribute-list-order.png[]
 
-The order you set in this page should be respected when fields are rendered in dynamic forms.
+The order you set in this page is respected when fields are rendered in dynamic forms.
 
 ===== Grouping Attributes
 
@@ -477,7 +477,7 @@ image:images/user-profile-register-verify-profile-action.png[]
 
 Before enabling the User Profile capabilities to a realm, there are some important considerations you should be aware of. By providing a single place to manage attribute metadata, the feature is very strict about the attributes that can be set to users and how they are managed.
 
-In terms of user management, administrators should be able to manage only the attributes defined in the user profile configuration. Any other attribute set to the user and not yet defined in the user profile configuration won't be accessible. It is recommended to update your user profile configuration with all the user attributes you want to expose either to users or administrators.
+In terms of user management, administrators are able to manage only the attributes defined in the user profile configuration. Any other attribute set to the user and not yet defined in the user profile configuration won't be accessible. It is recommended to update your user profile configuration with all the user attributes you want to expose either to users or administrators.
 
 The same recommendation applies for those accessing the User REST API to query user information.
 
