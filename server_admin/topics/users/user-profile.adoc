@@ -42,7 +42,7 @@ include::../templates/techpreview.adoc[]
 In addition to enabling the `declarative_user_profile` feature, you should enable User Profile to a realm. For that, click on the `Realm Settings` link on
 the left side menu and then turn on the `User Profile Enabled` switch.
 
-image:{project_images}/user-profile-enabling.png[]
+image:images/user-profile-enabling.png[]
 
 Once you enable it and click on the `Save` button, you should be able to access the `User Profile` tab from where you can manage the configuration for user attributes.
 
@@ -60,7 +60,7 @@ The user profile configuration is managed on a per-realm basis. For that, click 
 `Realm Settings` link on the left side menu and then click on the `User Profile` tab.
 
 .User Profile Tab
-image:{project_images}/user-profile-tab.png[]
+image:images/user-profile-tab.png[]
 
 In the `Attributes` sub-tab you have a list of the attributes currently associated with the user profile. By default, the configuration is created based on the user root attributes and each attribute is configured with some defaults in terms of validation and permissioning.
 
@@ -82,7 +82,7 @@ At the `Attributes` sub-tab you should be able to create, edit, and delete the a
 To define a new attribute and associate it with the user profile, click on the `Create` button in the top-right corner of the attribute listing.
 
 .Attribute Configuration
-image:{project_images}/user-profile-create-attribute.png[]
+image:images/user-profile-create-attribute.png[]
 
 When configuring the attribute you should be able to define the following settings:
 
@@ -116,7 +116,7 @@ In this section, you can associate annotations to the attribute. Annotations are
 In the `Permission` section, you can define the level of access users and administrators have to read and write to an attribute.
 
 .Attribute Permission
-image:{project_images}/user-profile-permission.png[]
+image:images/user-profile-permission.png[]
 
 For that, you should be able to use the following settings:
 
@@ -152,7 +152,7 @@ Make sure to set the correct permissions whenever you add a new attribute to the
 In the `Validation` section, you can choose from different forms of validation to make sure the attribute value conforms to specific rules.
 
 .Attribute Validation
-image:{project_images}/user-profile-validation.png[]
+image:images/user-profile-validation.png[]
 
 {project_name} provides different validators out of the box:
 
@@ -228,14 +228,14 @@ In order to pass additional information to frontends, attributes can be decorate
 annotations to dictate how attributes should be rendered. This capability is mainly useful when extending {project_name} themes to render pages dynamically based on the annotations associated with attributes.
 
 .Attribute Annotation
-image:{project_images}/user-profile-annotation.png[]
+image:images/user-profile-annotation.png[]
 
 ==== Managing Attribute Groups
 
 At the `Attribute Grousp` sub-tab you should be able to create, edit, and delete attribute groups. An attribute group allows you to define a container for correlated attributes so that they are rendered together when at the user-facing forms.
 
 .Attribute Group List
-image:{project_images}/user-profile-attribute-group-list.png[]
+image:images/user-profile-attribute-group-list.png[]
 
 [NOTE]
 ====
@@ -245,7 +245,7 @@ You can't delete attribute groups that are bound to attributes. For that, you sh
 To create a new group, click on the `Create` button in the top-right corner of the attribute groups listing.
 
 .Attribute Group Configuration
-image:{project_images}/user-profile-create-attribute-group.png[]
+image:images/user-profile-create-attribute-group.png[]
 
 When configuring the group you should be able to define the following settings:
 
@@ -266,7 +266,7 @@ In this section, you can associate annotations to the attribute. Annotations are
 The user profile configuration is stored using a well-defined JSON schema. You can choose from editing the user profile configuration directly by clicking on the `JSON Editor` sub-tab.
 
 .JSON Configuration
-image:{project_images}/user-profile-json-config.png[]
+image:images/user-profile-json-config.png[]
 
 The JSON schema is defined as follows:
 
@@ -436,7 +436,7 @@ The default rendering mechanism provides the following capabilities:
 The attributes order is set by clicking on the up and down arrows when at the attribute listing page.
 
 .Ordering Attributes
-image:{project_images}/user-profile-attribute-list-order.png[]
+image:images/user-profile-attribute-list-order.png[]
 
 The order you set in this page should be respected when fields are rendered in dynamic forms.
 
@@ -445,7 +445,7 @@ The order you set in this page should be respected when fields are rendered in d
 When dynamic forms are rendered, they will try to group together attributes that belong to a same attribute group.
 
 .Dynamic Update Profile Form
-image:{project_images}/user-profile-update-profile.png[]
+image:images/user-profile-update-profile.png[]
 
 [NOTE]
 ====
@@ -471,7 +471,7 @@ By default, the `VerifyProfile` action is disabled. To enabled it, click on the
 `Authentication` link on the left side menu and then click on the `Required Actions` tab. At this tab, click on the `Register` button and select the `VerifyProfile` action.
 
 .Registring the VerifyProfile Required Action
-image:{project_images}/user-profile-register-verify-profile-action.png[]
+image:images/user-profile-register-verify-profile-action.png[]
 
 ==== Migrating to User Profile
 
