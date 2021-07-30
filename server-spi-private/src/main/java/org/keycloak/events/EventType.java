@@ -147,7 +147,10 @@ public enum EventType {
     PERMISSION_TOKEN_ERROR(false),
 
     DELETE_ACCOUNT(true),
-    DELETE_ACCOUNT_ERROR(true);
+    DELETE_ACCOUNT_ERROR(true),
+    
+    // PrimeSign only
+    RESEND_SMS_TAN(true); // KEYCLOAK-111
 
     private boolean saveByDefault;
 
