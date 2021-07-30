@@ -466,6 +466,10 @@ public class SAMLEndpoint {
                     return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
                 }
 
+                if(AssertionUtil.isIdEncrypted(responseType)) {
+                    // This methods writes the parsed and decrypted id back on the responseType parameter:
+                    AssertionUtil.decryptId(responseType, keys.getPrivateKey());
+                }
                 AssertionType assertion = responseType.getAssertions().get(0).getAssertion();
                 NameIDType subjectNameID = getSubjectNameID(assertion);
                 String principal = getPrincipal(assertion);
