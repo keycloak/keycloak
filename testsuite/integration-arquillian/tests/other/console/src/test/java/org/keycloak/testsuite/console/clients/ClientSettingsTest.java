@@ -20,6 +20,8 @@ package org.keycloak.testsuite.console.clients;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.common.Profile;
+import org.keycloak.protocol.saml.SamlConfigAttributes;
+import org.keycloak.protocol.saml.util.ArtifactBindingUtils;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.console.page.clients.settings.ClientSettings;
@@ -29,6 +31,7 @@ import org.openqa.selenium.By;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
@@ -200,6 +203,23 @@ public class ClientSettingsTest extends AbstractClientTest {
         assertNotNull("Client " + newClient.getClientId() + " was not found.", found);
         assertClientSettingsEqual(newClient, found);
         assertClientSamlAttributes(getSAMLAttributes(), found.getAttributes());
+    }
+
+    @Test
+    public void updateSAML() {
+        createSAML();
+
+        final String newClientId = "new_client_id";
+
+        clientSettingsPage.form().setClientId(newClientId);
+        clientSettingsPage.form().save();
+
+        ClientRepresentation found = findClientByClientId(newClientId);
+
+        Map<String, String> samlAttributes = getSAMLAttributes();
+        samlAttributes.put(SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER, ArtifactBindingUtils.computeArtifactBindingIdentifierString(newClientId));
+
+        assertClientSamlAttributes(samlAttributes, found.getAttributes());
     }
 
     @Test

@@ -222,7 +222,7 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractBaseServle
 
             policy.setName("Required Role Policy");
             policy.addRole("user_premium", false);
-            policy.addRole("required-role", false);
+            policy.addRole(RESOURCE_SERVER_ID + "/required-role", false);
 
             RolePoliciesResource rolePolicy = getAuthorizationResource().policies().role();
 
@@ -237,7 +237,7 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractBaseServle
 
             policy.getRoles().clear();
             policy.addRole("user_premium", false);
-            policy.addRole("required-role", true);
+            policy.addRole(RESOURCE_SERVER_ID + "/required-role", true);
 
             rolePolicy.findById(policy.getId()).update(policy);
 
@@ -258,7 +258,7 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractBaseServle
 
             policy.getRoles().clear();
             policy.addRole("user_premium", false);
-            policy.addRole("required-role", false);
+            policy.addRole(RESOURCE_SERVER_ID + "/required-role", false);
 
             rolePolicy.findById(policy.getId()).update(policy);
 

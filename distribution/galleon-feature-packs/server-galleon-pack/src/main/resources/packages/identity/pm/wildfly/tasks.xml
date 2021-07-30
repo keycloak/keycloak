@@ -1,0 +1,9 @@
+<?xml version="1.0" ?>
+
+<tasks xmlns="urn:wildfly:wildfly-feature-pack-tasks:2.0">
+    <copy-path src="resources/bin" replace-props="true" relative-to="resources" target="bin"/>
+    <!-- keycloak or rh-sso path will be deleted later after server provision -->
+    <copy-path src="resources/identity-app/keycloak" replace-props="true" relative-to="resources" target="modules/system/layers/keycloak/org/jboss/as/product/keycloak"/>
+    <copy-path src="resources/identity-app/rh-sso" replace-props="true" relative-to="resources" target="modules/system/layers/keycloak/org/jboss/as/product/rh-sso"/>
+    <delete path="modules/system/layers/keycloak/org/jboss/as/product/placeholder.txt"/>
+</tasks>

@@ -93,6 +93,9 @@ public class Constants {
         static final String PROXY_URL = "proxyUrl";
         static final String TRUSTSTORE = "truststore";
         static final String TRUSTSTORE_PASSWORD = "truststorePassword";
+        static final String SOCKET_TIMEOUT = "socketTimeout";
+        static final String CONNECTION_TIMEOUT = "connectionTimeout";
+        static final String CONNECTION_TTL = "connectionTtl";
     }
 
     static class XML {
@@ -172,6 +175,9 @@ public class Constants {
         static final String PROXY_URL = "proxyUrl";
         static final String TRUSTSTORE = "truststore";
         static final String TRUSTSTORE_PASSWORD = "truststorePassword";
+        static final String SOCKET_TIMEOUT = "socketTimeout";
+        static final String CONNECTION_TIMEOUT = "connectionTimeout";
+        static final String CONNECTION_TTL = "connectionTtl";
     }
 }
 

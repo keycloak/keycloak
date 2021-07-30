@@ -563,6 +563,11 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    public ParConfig getParPolicy() {
+        return new ParConfig(this);
+    }
+
+    @Override
     public Map<String, Integer> getUserActionTokenLifespans() {
 
         Map<String, Integer> userActionTokens = new HashMap<>();
@@ -781,6 +786,11 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     @Override
     public Stream<ClientModel> searchClientByClientIdStream(String clientId, Integer firstResult, Integer maxResults) {
         return session.clients().searchClientsByClientIdStream(this, clientId, firstResult, maxResults);
+    }
+
+    @Override
+    public Stream<ClientModel> searchClientByAttributes(Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+        return session.clients().searchClientsByAttributes(this, attributes, firstResult, maxResults);
     }
 
     private static final String BROWSER_HEADER_PREFIX = "_browser_header.";

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature-group-spec name="domain-keycloak-clustered" xmlns="urn:jboss:galleon:feature-group:1.0">
+
+    <feature-group name="domain-interfaces">
+        <exclude feature-id="domain.interface:interface=unsecure"/>
+    </feature-group>
+
+    <feature spec="domain.socket-binding-group">
+        <param name="socket-binding-group" value="ha-sockets"/>
+        <param name="default-interface" value="public" />
+        <feature-group name="domain-sockets"/>
+        <feature-group name="domain-ha-sockets"/>
+        <feature-group name="domain-mail-sockets"/>
+        <feature-group name="domain-transactions-sockets"/>
+        <feature-group name="domain-server-groups"/>
+    </feature>
+
+    <feature spec="profile">
+        <param name="profile" value="auth-server-clustered"/>
+        <feature-group name="domain-ha-profile">
+            <exclude spec="subsystem.sar"/>
+            <exclude spec="subsystem.jdr"/>
+            <exclude spec="subsystem.jsf"/>
+            <exclude spec="subsystem.pojo"/>
+            <exclude spec="subsystem.webservices"/>
+            <exclude spec="subsystem.batch-jberet"/>
+            <exclude spec="subsystem.distributable-web"/>
+            <exclude spec="subsystem.discovery"/>
+            <exclude spec="subsystem.ee-security"/>
+            <exclude spec="subsystem.resource-adapters"/>
+            <exclude spec="subsystem.singleton"/>
+            <exclude spec="subsystem.weld"/>
+        </feature-group>
+        <feature-group name="keycloak-server-subsystem"/>
+        <feature-group name="datasources">
+            <feature-group name="keycloak-datasource"/>
+        </feature-group>
+        <feature-group name="infinispan-dist-keycloak"/>
+    </feature>
+
+    <feature spec="domain.system-property">
+        <param name="system-property" value="java.net.preferIPv4Stack"/>
+        <param name="value" value="true"/>
+    </feature>
+    <feature-group name="access-control"/>
+
+</feature-group-spec>

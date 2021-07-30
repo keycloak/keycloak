@@ -23,20 +23,28 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import java.security.MessageDigest;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
  *
  * @author hmlnarik
  */
-public abstract class MapClientAdapter<K> extends AbstractClientModel<MapClientEntity<K>> implements ClientModel {
+public abstract class MapClientAdapter extends AbstractClientModel<MapClientEntity> implements ClientModel {
 
-    public MapClientAdapter(KeycloakSession session, RealmModel realm, MapClientEntity<K> entity) {
+    public MapClientAdapter(KeycloakSession session, RealmModel realm, MapClientEntity entity) {
         super(session, realm, entity);
+    }
+
+    @Override
+    public String getId() {
+        return entity.getId();
     }
 
     @Override
@@ -231,8 +239,10 @@ public abstract class MapClientAdapter<K> extends AbstractClientModel<MapClientE
 
     @Override
     public void setProtocol(String protocol) {
-        entity.setProtocol(protocol);
-        session.getKeycloakSessionFactory().publish((ClientModel.ClientProtocolUpdatedEvent) () -> MapClientAdapter.this);
+        if (!Objects.equals(entity.getProtocol(), protocol)) {
+            entity.setProtocol(protocol);
+            session.getKeycloakSessionFactory().publish((ClientModel.ClientProtocolUpdatedEvent) () -> MapClientAdapter.this);
+        }
     }
 
     @Override
@@ -244,7 +254,7 @@ public abstract class MapClientAdapter<K> extends AbstractClientModel<MapClientE
             return;
         }
 
-        entity.setAttribute(name, value);
+        entity.setAttribute(name, Collections.singletonList(value));
     }
 
     @Override
@@ -254,12 +264,19 @@ public abstract class MapClientAdapter<K> extends AbstractClientModel<MapClientE
 
     @Override
     public String getAttribute(String name) {
-        return entity.getAttribute(name);
+        List<String> attribute = entity.getAttribute(name);
+        if (attribute.isEmpty()) return null;
+        return attribute.get(0);
     }
 
     @Override
     public Map<String, String> getAttributes() {
-        return entity.getAttributes();
+        return entity.getAttributes().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, 
+            entry -> {
+                if (entry.getValue().isEmpty()) return null;
+                return entry.getValue().get(0);
+            })
+        );
     }
 
     @Override

@@ -16,9 +16,11 @@
  */
 package org.keycloak.models.map.realm;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -28,6 +30,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.realm.entity.MapAuthenticationExecutionEntity;
 import org.keycloak.models.map.realm.entity.MapAuthenticationFlowEntity;
 import org.keycloak.models.map.realm.entity.MapAuthenticatorConfigEntity;
@@ -40,9 +43,9 @@ import org.keycloak.models.map.realm.entity.MapRequiredActionProviderEntity;
 import org.keycloak.models.map.realm.entity.MapRequiredCredentialEntity;
 import org.keycloak.models.map.realm.entity.MapWebAuthnPolicyEntity;
 
-public class MapRealmEntity<K> implements AbstractEntity<K> {
+public class MapRealmEntity implements AbstractEntity, UpdatableEntity {
 
-    private final K id;
+    private String id;
     private String name;
 
     private Boolean enabled = false;
@@ -110,7 +113,7 @@ public class MapRealmEntity<K> implements AbstractEntity<K> {
     private final Set<String> defaultGroupIds = new HashSet<>();
     private final Set<String> defaultClientScopes = new HashSet<>();
     private final Set<String> optionalClientScopes = new HashSet<>();
-    private final Map<String, String> attributes = new HashMap<>();
+    private final Map<String, List<String>> attributes = new HashMap<>();
     private final Map<String, Map<String, String>> localizationTexts = new HashMap<>();
     private final Map<String, MapClientInitialAccessEntity> clientInitialAccesses = new HashMap<>();
     private final Map<String, MapComponentEntity> components = new HashMap<>();
@@ -131,14 +134,12 @@ public class MapRealmEntity<K> implements AbstractEntity<K> {
         this.id = null;
     }
 
-    public MapRealmEntity(K id) {
-        Objects.requireNonNull(id, "id");
-
+    public MapRealmEntity(String id) {
         this.id = id;
     }
 
     @Override
-    public K getId() {
+    public String getId() {
         return this.id;
     }
 
@@ -664,19 +665,19 @@ public class MapRealmEntity<K> implements AbstractEntity<K> {
         this.webAuthnPolicyPasswordless = webAuthnPolicyPasswordless;
     }
 
-    public void setAttribute(String name, String value) {
-        this.updated |= !Objects.equals(this.attributes.put(name, value), value);
+    public void setAttribute(String name, List<String> values) {
+        this.updated |= ! Objects.equals(this.attributes.put(name, values), values);
     }
 
     public void removeAttribute(String name) {
         this.updated |= attributes.remove(name) != null;
     }
 
-    public String getAttribute(String name) {
-        return attributes.get(name);
+    public List<String> getAttribute(String name) {
+        return attributes.getOrDefault(name, Collections.EMPTY_LIST);
     }
 
-    public Map<String, String> getAttributes() {
+    public Map<String, List<String>> getAttributes() {
         return attributes;
     }
 
@@ -1024,7 +1025,7 @@ public class MapRealmEntity<K> implements AbstractEntity<K> {
         return removed;
     }
 
-    public Stream<MapClientInitialAccessEntity> getClientInitialAccesses() {
-        return clientInitialAccesses.values().stream();
+    public Collection<MapClientInitialAccessEntity> getClientInitialAccesses() {
+        return clientInitialAccesses.values();
     }
 }

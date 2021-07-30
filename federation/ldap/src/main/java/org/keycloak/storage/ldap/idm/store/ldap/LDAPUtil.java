@@ -110,6 +110,26 @@ public class LDAPUtil {
     }
 
     /**
+     * see http://support.novell.com/docs/Tids/Solutions/10096551.html
+     *
+     * @param guid A GUID in the form of a dashed String as the result of (@see LDAPUtil#convertToDashedString)
+     *
+     * @return A String representation in the form of \[0][1]\[2][3]\[4][5]\[6][7]\[8][9]\[10][11]\[12][13]\[14][15]
+     */
+    public static String convertGUIDToEdirectoryHexString(String guid) {
+        String withoutDash = guid.replace("-", "");
+        StringBuilder result = new StringBuilder();
+
+        for (int i = 0; i < withoutDash.length(); i++) {
+            result.append("\\");
+            result.append(withoutDash.charAt(i));
+            result.append(withoutDash.charAt(++i));
+        }
+
+        return result.toString().toUpperCase();
+    }
+
+    /**
      * <p>Decode a raw byte array representing the value of the <code>objectGUID</code> attribute retrieved from Active
      * Directory.</p>
      *

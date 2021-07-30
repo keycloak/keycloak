@@ -26,6 +26,7 @@
     || path[2] == 'theme-settings'
     || path[2] == 'localization'
     || path[2] == 'token-settings'
+    || path[2] == 'client-policies'
     || path[2] == 'client-registration'
     || path[2] == 'cache-settings'
     || path[2] == 'client-initial-access'
@@ -34,7 +35,7 @@
                 <a href="#/realms/{{realm.realm}}"><span class="pficon pficon-settings"></span> {{:: 'realm-settings' | translate}}</a>
             </li>
             <li data-ng-show="access.queryClients" data-ng-class="(path[1] == 'client' || path[2] == 'clients' || path[3] == 'clients') && 'active'"><a href="#/realms/{{realm.realm}}/clients"><i class="fa fa-cube"></i> {{:: 'clients' | translate}}</a></li>
-            <li data-ng-show="access.viewClients" data-ng-class="(path[1] == 'client-scope' || path[2] == 'client-scopes' || path[3] == 'client-scopes') && 'active'"><a href="#/realms/{{realm.realm}}/client-scopes"><i class="fa fa-cubes"></i> {{:: 'client-scopes' | translate}}</a></li>
+            <li data-ng-show="access.viewClients" data-ng-class="(path[1] == 'client-scope' || path[2] == 'client-scopes' || path[3] == 'client-scopes' || path[2] == 'default-client-scopes') && 'active'"><a href="#/realms/{{realm.realm}}/client-scopes"><i class="fa fa-cubes"></i> {{:: 'client-scopes' | translate}}</a></li>
             <li data-ng-show="access.viewRealm" data-ng-class="(path[1] == 'role' || path[2] == 'roles' || path[2] == 'default-roles') && 'active'"><a href="#/realms/{{realm.realm}}/roles"><i class="fa fa-tasks"></i> {{:: 'roles' | translate}}</a></li>
             <li data-ng-show="access.viewIdentityProviders" data-ng-class="(path[1] == 'identity-provider' || path[2] == 'identity-provider-settings' || path[2] == 'identity-provider-mappers') && 'active'"><a href="#/realms/{{realm.realm}}/identity-provider-settings"><i class="fa fa-exchange"></i> {{:: 'identity-providers' | translate}}</a></li>
             <li data-ng-show="access.viewRealm" data-ng-class="(

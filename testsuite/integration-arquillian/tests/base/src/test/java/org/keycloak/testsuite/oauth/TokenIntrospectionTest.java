@@ -471,6 +471,70 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertEquals(OAuthErrorException.INVALID_REQUEST, errorRep.getError());
     }
 
+    @Test
+    public void testIntrospectRevokeRefreshToken() throws Exception {
+        RealmRepresentation realm = adminClient.realm(oauth.getRealm()).toRepresentation();
+        realm.setRevokeRefreshToken(true);
+        adminClient.realm(oauth.getRealm()).update(realm);
+        try {
+            JsonNode jsonNode = introspectRevokedToken();
+            assertFalse(jsonNode.get("active").asBoolean());
+        } finally {
+            realm.setRevokeRefreshToken(false);
+            adminClient.realm(oauth.getRealm()).update(realm);
+        }
+    }
+
+    @Test
+    public void testIntrospectRevokeOfflineToken() throws Exception {
+        RealmRepresentation realm = adminClient.realm(oauth.getRealm()).toRepresentation();
+        realm.setRevokeRefreshToken(true);
+        adminClient.realm(oauth.getRealm()).update(realm);
+        try {
+            oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+            JsonNode jsonNode = introspectRevokedToken();
+            assertFalse(jsonNode.get("active").asBoolean());
+        } finally {
+            realm.setRevokeRefreshToken(false);
+            adminClient.realm(oauth.getRealm()).update(realm);
+        }
+    }
+
+    @Test
+    public void testIntrospectRefreshTokenAfterRefreshTokenRequest() throws Exception {
+        RealmRepresentation realm = adminClient.realm(oauth.getRealm()).toRepresentation();
+        realm.setRevokeRefreshToken(true);
+        realm.setRefreshTokenMaxReuse(1);
+        adminClient.realm(oauth.getRealm()).update(realm);
+        try {
+            oauth.doLogin("test-user@localhost", "password");
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, "password");
+            String oldRefreshToken = accessTokenResponse.getRefreshToken();
+
+            setTimeOffset(1);
+
+            accessTokenResponse = oauth.doRefreshTokenRequest(oldRefreshToken, "password");
+
+            accessTokenResponse = oauth.doRefreshTokenRequest(oldRefreshToken, "password");
+            String newRefreshToken = accessTokenResponse.getRefreshToken();
+            String tokenResponse = oauth.introspectRefreshTokenWithClientCredential("confidential-cli", "secret1",
+                newRefreshToken);
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonNode = objectMapper.readTree(tokenResponse);
+            assertTrue(jsonNode.get("active").asBoolean());
+
+            accessTokenResponse = oauth.doRefreshTokenRequest(newRefreshToken, "password");
+            tokenResponse = oauth.introspectRefreshTokenWithClientCredential("confidential-cli", "secret1", oldRefreshToken);
+            jsonNode = objectMapper.readTree(tokenResponse);
+            assertFalse(jsonNode.get("active").asBoolean());
+        } finally {
+            realm.setRevokeRefreshToken(false);
+            realm.setRefreshTokenMaxReuse(0);
+            adminClient.realm(oauth.getRealm()).update(realm);
+        }
+    }
+
     private String introspectAccessTokenWithDuplicateParams(String clientId, String clientSecret, String tokenToIntrospect) {
         HttpPost post = new HttpPost(oauth.getTokenIntrospectionUrl());
 
@@ -500,5 +564,19 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         } catch (Exception e) {
             throw new RuntimeException("Failed to retrieve access token", e);
         }
+    }
+
+    private JsonNode introspectRevokedToken() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, "password");
+        String stringRefreshToken = accessTokenResponse.getRefreshToken();
+
+        accessTokenResponse = oauth.doRefreshTokenRequest(stringRefreshToken, "password");
+
+        String tokenResponse = oauth.introspectRefreshTokenWithClientCredential("confidential-cli", "secret1",
+            stringRefreshToken);
+        ObjectMapper objectMapper = new ObjectMapper();
+        return objectMapper.readTree(tokenResponse);
     }
 }

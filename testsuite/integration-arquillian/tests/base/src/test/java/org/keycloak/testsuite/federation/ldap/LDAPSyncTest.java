@@ -17,6 +17,10 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.hamcrest.Matchers;
@@ -40,7 +44,9 @@ import org.keycloak.services.managers.UserStorageSyncManager;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.ldap.LDAPUtils;
+import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.storage.ldap.mappers.membership.MembershipType;
 import org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapper;
@@ -490,6 +496,131 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             String descriptionAttrName = LDAPTestUtils.getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
 
             Assert.assertEquals("group5 - description", kcGroup5.getFirstAttribute(descriptionAttrName));
+        });
+    }
+
+    // KEYCLOAK-14696
+    @Test
+    public void test09MembershipUsingDifferentAttributes() throws Exception {
+        final Map<String, String> previousConf = testingClient.server().fetch(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            // Remove all users from model
+            session.userLocalStorage().getUsersStream(ctx.getRealm(), true)
+                    .peek(user -> System.out.println("trying to delete user: " + user.getUsername()))
+                    .collect(Collectors.toList())
+                    .forEach(user -> {
+                        UserCache userCache = session.userCache();
+                        if (userCache != null) {
+                            userCache.evict(ctx.getRealm(), user);
+                        }
+                        session.userLocalStorage().removeUser(ctx.getRealm(), user);
+                    });
+
+            Map<String, String> orig = new HashMap<>();
+            orig.put(LDAPConstants.RDN_LDAP_ATTRIBUTE, ctx.getLdapModel().getConfig().getFirst(LDAPConstants.RDN_LDAP_ATTRIBUTE));
+            orig.put(LDAPConstants.USERS_DN, ctx.getLdapModel().getConfig().getFirst(LDAPConstants.USERS_DN));
+            orig.put(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, ctx.getLdapModel().getConfig().getFirst(LDAPConstants.USERNAME_LDAP_ATTRIBUTE));
+
+            // create an OU and this test will work below it, set RDN to CN and username to uid/samaccountname
+            LDAPTestUtils.addLdapOU(ctx.getLdapProvider(), "KC14696");
+            ctx.getLdapModel().getConfig().putSingle(LDAPConstants.USERS_DN, "ou=KC14696," + orig.get(LDAPConstants.USERS_DN));
+            ctx.getLdapModel().getConfig().putSingle(LDAPConstants.RDN_LDAP_ATTRIBUTE, LDAPConstants.CN);
+            ctx.getLdapModel().getConfig().putSingle(LDAPConstants.USERNAME_LDAP_ATTRIBUTE,
+                    ctx.getLdapProvider().getLdapIdentityStore().getConfig().isActiveDirectory()? LDAPConstants.SAM_ACCOUNT_NAME : LDAPConstants.UID);
+
+            ctx.getRealm().updateComponent(ctx.getLdapModel());
+
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "username");
+            mapperModel.getConfig().putSingle(UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE,
+                    ctx.getLdapProvider().getLdapIdentityStore().getConfig().isActiveDirectory()? LDAPConstants.SAM_ACCOUNT_NAME : LDAPConstants.UID);
+            ctx.getRealm().updateComponent(mapperModel);
+
+            LDAPTestUtils.addUserAttributeMapper(appRealm, LDAPTestUtils.getLdapProviderModel(appRealm), "cnMapper", "firstName", LDAPConstants.CN);
+
+            return orig;
+        }, Map.class);
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            // create a user8 inside the usersDn
+            LDAPObject user8 = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), ctx.getRealm(), "user8", "User8FN", "User8LN", "user8@email.org", "user8street", "126");
+
+            // create a sample ou inside usersDn
+            LDAPTestUtils.addLdapOU(ctx.getLdapProvider(), "sample-org");
+
+            // create a user below the sample org with the same common-name but different username
+            String usersDn = ctx.getLdapModel().get(LDAPConstants.USERS_DN);
+            ctx.getLdapModel().getConfig().putSingle(LDAPConstants.USERS_DN, "ou=sample-org," + usersDn);
+            ctx.getRealm().updateComponent(ctx.getLdapModel());
+            LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), ctx.getRealm(), "user8bis", "User8FN", "User8LN", "user8bis@email.org", "user8street", "126");
+
+            // get back to parent usersDn
+            ctx.getLdapModel().getConfig().putSingle(LDAPConstants.USERS_DN, usersDn);
+            ctx.getRealm().updateComponent(ctx.getLdapModel());
+
+            // create a group with user8 as a member
+            String descriptionAttrName = LDAPTestUtils.getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
+            LDAPObject user8Group = LDAPTestUtils.createLDAPGroup(session, appRealm, ctx.getLdapModel(), "user8group", descriptionAttrName, "user8group - description");
+            LDAPUtils.addMember(ctx.getLdapProvider(), MembershipType.DN, LDAPConstants.MEMBER, "not-used", user8Group, user8);
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+            SynchronizationResult syncResult = new UserStorageSyncManager().syncAllUsers(sessionFactory, "test", ctx.getLdapModel());
+            Assert.assertEquals(2, syncResult.getAdded());
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            GroupModel user8Group = KeycloakModelUtils.findGroupByPath(appRealm, "/user8group");
+            Assert.assertNotNull(user8Group);
+            UserModel user8 = session.users().getUserByUsername(appRealm, "user8");
+            Assert.assertNotNull(user8);
+            UserModel user8Bis = session.users().getUserByUsername(appRealm, "user8bis");
+            Assert.assertNotNull(user8Bis);
+            Assert.assertTrue("User user8 contains the group", user8.getGroupsStream().collect(Collectors.toSet()).contains(user8Group));
+            Assert.assertFalse("User user8bis does not contain the group", user8Bis.getGroupsStream().collect(Collectors.toSet()).contains(user8Group));
+            List<String> members = session.users().getGroupMembersStream(appRealm, user8Group).map(u -> u.getUsername()).collect(Collectors.toList());
+            Assert.assertEquals("Group contains only user8", members, Collections.singletonList("user8"));
+        });
+
+        // revert changes
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            session.users().removeImportedUsers(appRealm, ldapModelId);
+            LDAPTestUtils.removeLDAPUserByUsername(ctx.getLdapProvider(), appRealm, ctx.getLdapProvider().getLdapIdentityStore().getConfig(), "user8");
+            LDAPTestUtils.removeLDAPUserByUsername(ctx.getLdapProvider(), appRealm, ctx.getLdapProvider().getLdapIdentityStore().getConfig(), "user8bis");
+            LDAPObject ou = new LDAPObject();
+            ou.setDn(LDAPDn.fromString("ou=sample-org,ou=KC14696," + previousConf.get(LDAPConstants.USERS_DN)));
+            ctx.getLdapProvider().getLdapIdentityStore().remove(ou);
+            ou.setDn(LDAPDn.fromString("ou=KC14696," + previousConf.get(LDAPConstants.USERS_DN)));
+            ctx.getLdapProvider().getLdapIdentityStore().remove(ou);
+
+            for (Map.Entry<String, String> e : previousConf.entrySet()) {
+                if (e.getValue() == null) {
+                    ctx.getLdapModel().getConfig().remove(e.getKey());
+                } else {
+                    ctx.getLdapModel().getConfig().putSingle(e.getKey(), e.getValue());
+                }
+            }
+            ctx.getRealm().updateComponent(ctx.getLdapModel());
+
+            ComponentModel cnMapper = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ctx.getLdapModel(), "cnMapper");
+            ctx.getRealm().removeComponent(cnMapper);
+
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "username");
+            mapperModel.getConfig().putSingle(UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE, ctx.getLdapProvider().getLdapIdentityStore().getConfig().getUsernameLdapAttribute());
+            ctx.getRealm().updateComponent(mapperModel);
         });
     }
 }

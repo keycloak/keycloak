@@ -25,7 +25,9 @@ import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.events.Errors;
+import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
+import org.keycloak.protocol.saml.util.ArtifactBindingUtils;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -85,7 +87,8 @@ public class SAMLClientRegistrationTest extends AbstractClientRegistrationTest {
         ));
 
         assertThat(response.getAttributes().get("saml_single_logout_service_url_redirect"), is("https://LoadBalancer-9.siroe.com:3443/federation/SPSloRedirect/metaAlias/sp"));
-        
+        assertThat(response.getAttributes().get(SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER), is(ArtifactBindingUtils.computeArtifactBindingIdentifierString("loadbalancer-9.siroe.com")));
+
         Assert.assertNotNull(response.getProtocolMappers());
         Assert.assertEquals(1,response.getProtocolMappers().size());
         ProtocolMapperRepresentation mapper = response.getProtocolMappers().get(0);

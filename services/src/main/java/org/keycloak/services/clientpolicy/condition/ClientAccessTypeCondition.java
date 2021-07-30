@@ -24,31 +24,20 @@ import java.util.Optional;
 import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ClientAccessTypeCondition implements ClientPolicyConditionProvider<ClientAccessTypeCondition.Configuration> {
+public class ClientAccessTypeCondition extends AbstractClientPolicyConditionProvider<ClientAccessTypeCondition.Configuration> {
 
     private static final Logger logger = Logger.getLogger(ClientAccessTypeCondition.class);
 
-    // to avoid null configuration, use vacant new instance to indicate that there is no configuration set up.
-    private Configuration configuration = new Configuration();
-    private final KeycloakSession session;
-
     public ClientAccessTypeCondition(KeycloakSession session) {
-        this.session = session;
-    }
-
-    @Override
-    public void setupConfiguration(Configuration config) {
-        this.configuration = config;
+        super(session);
     }
 
     @Override
@@ -56,18 +45,7 @@ public class ClientAccessTypeCondition implements ClientPolicyConditionProvider<
         return Configuration.class;
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Configuration extends ClientPolicyConditionConfiguration {
-        @JsonProperty("is-negative-logic")
-        protected Boolean negativeLogic;
-
-        public Boolean isNegativeLogic() {
-            return negativeLogic;
-        }
-
-        public void setNegativeLogic(Boolean negativeLogic) {
-            this.negativeLogic = negativeLogic;
-        }
+    public static class Configuration extends ClientPolicyConditionConfigurationRepresentation {
 
         protected List<String> type;
 
@@ -81,11 +59,6 @@ public class ClientAccessTypeCondition implements ClientPolicyConditionProvider<
     }
 
     @Override
-    public boolean isNegativeLogic() {
-        return Optional.ofNullable(this.configuration.isNegativeLogic()).orElse(Boolean.FALSE).booleanValue();
-    }
-
-    @Override
     public String getProviderId() {
         return ClientAccessTypeConditionFactory.PROVIDER_ID;
     }
@@ -95,6 +68,7 @@ public class ClientAccessTypeCondition implements ClientPolicyConditionProvider<
         switch (context.getEvent()) {
             case AUTHORIZATION_REQUEST:
             case TOKEN_REQUEST:
+            case SERVICE_ACCOUNT_TOKEN_REQUEST:
             case TOKEN_REFRESH:
             case TOKEN_REVOKE:
             case TOKEN_INTROSPECT:

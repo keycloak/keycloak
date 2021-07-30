@@ -78,7 +78,7 @@ public interface RootAuthenticationSessionModel {
     AuthenticationSessionModel getAuthenticationSession(ClientModel client, String tabId);
 
     /**
-     * Create a new authentication session and returns it. Overwrites existing session for particular client if already exists.
+     * Create a new authentication session and returns it.
      * @param client {@code ClientModel} Can't be {@code null}.
      * @return {@code AuthenticationSessionModel} non-null fresh authentication session. Never returns {@code null}.
      */

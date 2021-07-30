@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import org.jboss.logging.Logger;
@@ -30,33 +29,26 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
+import org.keycloak.protocol.oidc.grants.ciba.channel.CIBAAuthenticationRequest;
+import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.context.BackchannelAuthenticationRequestContext;
+import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.context.BackchannelTokenRequestContext;
+import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
+import org.keycloak.services.clientpolicy.context.ServiceAccountTokenRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ClientScopesCondition implements ClientPolicyConditionProvider<ClientScopesCondition.Configuration> {
+public class ClientScopesCondition extends AbstractClientPolicyConditionProvider<ClientScopesCondition.Configuration> {
 
     private static final Logger logger = Logger.getLogger(ClientScopesCondition.class);
 
-    // to avoid null configuration, use vacant new instance to indicate that there is no configuration set up.
-    private Configuration configuration = new Configuration();
-    private final KeycloakSession session;
-
     public ClientScopesCondition(KeycloakSession session) {
-        this.session = session;
-    }
-
-    @Override
-    public void setupConfiguration(Configuration config) {
-        this.configuration = config;
+        super(session);
     }
 
     @Override
@@ -64,18 +56,7 @@ public class ClientScopesCondition implements ClientPolicyConditionProvider<Clie
         return Configuration.class;
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Configuration extends ClientPolicyConditionConfiguration {
-        @JsonProperty("is-negative-logic")
-        protected Boolean negativeLogic;
-
-        public Boolean isNegativeLogic() {
-            return negativeLogic;
-        }
-
-        public void setNegativeLogic(Boolean negativeLogic) {
-            this.negativeLogic = negativeLogic;
-        }
+    public static class Configuration extends ClientPolicyConditionConfigurationRepresentation {
 
         protected String type;
         protected List<String> scope;
@@ -98,11 +79,6 @@ public class ClientScopesCondition implements ClientPolicyConditionProvider<Clie
     }
 
     @Override
-    public boolean isNegativeLogic() {
-        return Optional.ofNullable(this.configuration.isNegativeLogic()).orElse(Boolean.FALSE).booleanValue();
-    }
-
-    @Override
     public String getProviderId() {
         return ClientScopesConditionFactory.PROVIDER_ID;
     }
@@ -115,6 +91,15 @@ public class ClientScopesCondition implements ClientPolicyConditionProvider<Clie
                 return ClientPolicyVote.NO;
             case TOKEN_REQUEST:
                 if (isScopeMatched(((TokenRequestContext)context).getParseResult().getClientSession())) return ClientPolicyVote.YES;
+                return ClientPolicyVote.NO;
+            case SERVICE_ACCOUNT_TOKEN_REQUEST:
+                if (isScopeMatched(((ServiceAccountTokenRequestContext)context).getClientSession())) return ClientPolicyVote.YES;
+                return ClientPolicyVote.NO;
+            case BACKCHANNEL_AUTHENTICATION_REQUEST:
+                if (isScopeMatched(((BackchannelAuthenticationRequestContext)context).getParsedRequest())) return ClientPolicyVote.YES;
+                return ClientPolicyVote.NO;
+            case BACKCHANNEL_TOKEN_REQUEST:
+                if (isScopeMatched(((BackchannelTokenRequestContext)context).getParsedRequest())) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
             default:
                 return ClientPolicyVote.ABSTAIN;
@@ -129,6 +114,11 @@ public class ClientScopesCondition implements ClientPolicyConditionProvider<Clie
     private boolean isScopeMatched(AuthorizationEndpointRequest request) {
         if (request == null) return false;
         return isScopeMatched(request.getScope(), session.getContext().getRealm().getClientByClientId(request.getClientId()));
+    }
+
+    private boolean isScopeMatched(CIBAAuthenticationRequest request) {
+        if (request == null || request.getClient() == null) return false;
+        return isScopeMatched(request.getScope(), session.getContext().getRealm().getClientByClientId(request.getClient().getClientId()));
     }
 
     private boolean isScopeMatched(String explicitScopes, ClientModel client) {

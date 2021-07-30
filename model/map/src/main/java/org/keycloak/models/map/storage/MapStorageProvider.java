@@ -27,13 +27,13 @@ import org.keycloak.provider.Provider;
 public interface MapStorageProvider extends Provider {
     
     /**
-     * Returns a key-value storage implementation for the particular types.
-     * @param <K> type of the primary key
+     * Returns a key-value storage implementation for the given types.
      * @param <V> type of the value
-     * @param name Name of the storage
-     * @param flags
+     * @param <M> type of the corresponding model (e.g. {@code UserModel})
+     * @param modelType Model type
+     * @param flags Flags of the returned storage. Best effort, flags may be not honored by underlying implementation
      * @return
      * @throws IllegalArgumentException If some of the types is not supported by the underlying implementation.
      */
-    <K, V extends AbstractEntity<K>, M> MapStorage<K, V, M> getStorage(Class<V> valueType, Class<M> modelType, Flag... flags);
+    <V extends AbstractEntity, M> MapStorage<V, M> getStorage(Class<M> modelType, Flag... flags);
 }

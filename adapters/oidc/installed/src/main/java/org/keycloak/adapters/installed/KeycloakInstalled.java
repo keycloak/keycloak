@@ -107,6 +107,8 @@ public class KeycloakInstalled {
     Pattern callbackPattern = Pattern.compile("callback\\s*=\\s*\"([^\"]+)\"");
     Pattern paramPattern = Pattern.compile("param=\"([^\"]+)\"\\s+label=\"([^\"]+)\"\\s+mask=(\\S+)");
     Pattern codePattern = Pattern.compile("code=([^&]+)");
+    private CallbackListener callback;
+    private DesktopProvider desktopProvider = new DesktopProvider();
 
 
     public KeycloakInstalled() {
@@ -194,7 +196,7 @@ public class KeycloakInstalled {
     }
 
     public void loginDesktop() throws IOException, VerificationException, OAuthErrorException, URISyntaxException, ServerRequest.HttpFailure, InterruptedException {
-        CallbackListener callback = new CallbackListener();
+        callback = new CallbackListener();
         callback.start();
 
         String redirectUri = getRedirectUri(callback);
@@ -203,7 +205,7 @@ public class KeycloakInstalled {
 
         String authUrl = createAuthUrl(redirectUri, state, pkce);
 
-        Desktop.getDesktop().browse(new URI(authUrl));
+        desktopProvider.browse(new URI(authUrl));
 
         try {
             callback.await();
@@ -223,6 +225,12 @@ public class KeycloakInstalled {
         processCode(callback.code, redirectUri, pkce);
 
         status = Status.LOGGED_DESKTOP;
+    }
+
+    public void close() {
+        if (callback != null) {
+            callback.stop();
+        }
     }
 
     protected String createAuthUrl(String redirectUri, String state, Pkce pkce) {
@@ -265,7 +273,7 @@ public class KeycloakInstalled {
                 .queryParam("id_token_hint", idTokenString)
                 .build().toString();
 
-        Desktop.getDesktop().browse(new URI(logoutUrl));
+        desktopProvider.browse(new URI(logoutUrl));
 
         try {
             callback.await();
@@ -623,8 +631,12 @@ public class KeycloakInstalled {
         return tokenResponse;
     }
 
+    public void setDesktopProvider(DesktopProvider desktopProvider) {
+        this.desktopProvider = desktopProvider;
+    }
+
     public boolean isDesktopSupported() {
-        return Desktop.isDesktopSupported();
+        return desktopProvider.isDesktopSupported();
     }
 
     public KeycloakDeployment getDeployment() {
@@ -685,6 +697,7 @@ public class KeycloakInstalled {
             } catch (Exception ignore) {
                 // it is OK to happen if thread is modified while stopping the server, specially when a security manager is enabled
             }
+            shutdownSignal.countDown();
         }
 
         public int getLocalPort() {
@@ -770,6 +783,16 @@ public class KeycloakInstalled {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             md.update(codeVerifier.getBytes(StandardCharsets.ISO_8859_1));
             return Base64Url.encode(md.digest());
+        }
+    }
+
+    public static class DesktopProvider {
+        public boolean isDesktopSupported() {
+            return Desktop.isDesktopSupported();
+        }
+
+        public void browse(URI uri) throws IOException {
+            Desktop.getDesktop().browse(uri);
         }
     }
 }

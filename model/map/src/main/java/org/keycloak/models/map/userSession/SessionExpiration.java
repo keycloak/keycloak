@@ -26,7 +26,7 @@ import org.keycloak.protocol.oidc.OIDCConfigAttributes;
  */
 public class SessionExpiration {
 
-    public static <K> void setClientSessionExpiration(MapAuthenticatedClientSessionEntity<K> entity, RealmModel realm, ClientModel client) {
+    public static void setClientSessionExpiration(MapAuthenticatedClientSessionEntity entity, RealmModel realm, ClientModel client) {
         if (entity.isOffline()) {
             long sessionExpires = entity.getTimestamp() + realm.getOfflineSessionIdleTimeout();
             if (realm.isOfflineSessionMaxLifespanEnabled()) {
@@ -99,7 +99,7 @@ public class SessionExpiration {
         }
     }
 
-    public static <K> void setUserSessionExpiration(MapUserSessionEntity<K> entity, RealmModel realm) {
+    public static void setUserSessionExpiration(MapUserSessionEntity entity, RealmModel realm) {
         if (entity.isOffline()) {
             long sessionExpires = entity.getLastSessionRefresh() + realm.getOfflineSessionIdleTimeout();
             if (realm.isOfflineSessionMaxLifespanEnabled()) {

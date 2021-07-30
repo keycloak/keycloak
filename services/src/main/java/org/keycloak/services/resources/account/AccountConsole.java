@@ -2,6 +2,7 @@ package org.keycloak.services.resources.account;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.common.Profile;
 import org.keycloak.authentication.requiredactions.DeleteAccount;
 import org.keycloak.common.Version;
 import org.keycloak.events.EventStoreProvider;
@@ -129,7 +130,7 @@ public class AccountConsole {
 
             EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
             map.put("isEventsEnabled", eventStore != null && realm.isEventsEnabled());
-            map.put("isAuthorizationEnabled", true);
+            map.put("isAuthorizationEnabled", Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION));
             
             boolean isTotpConfigured = false;
             boolean deleteAccountAllowed = false;

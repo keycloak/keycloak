@@ -21,6 +21,8 @@ public final class OIDCConfigAttributes {
     public static final String USER_INFO_RESPONSE_SIGNATURE_ALG = "user.info.response.signature.alg";
 
     public static final String REQUEST_OBJECT_SIGNATURE_ALG = "request.object.signature.alg";
+    public static final String REQUEST_OBJECT_ENCRYPTION_ALG = "request.object.encryption.alg";
+    public static final String REQUEST_OBJECT_ENCRYPTION_ENC = "request.object.encryption.enc";
 
     public static final String REQUEST_OBJECT_REQUIRED = "request.object.required";
     public static final String REQUEST_OBJECT_REQUIRED_REQUEST_OR_REQUEST_URI = "request or request_uri";
@@ -63,6 +65,12 @@ public final class OIDCConfigAttributes {
     public static final String USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT = "client_credentials.use_refresh_token";
 
     public static final String USE_REFRESH_TOKEN = "use.refresh.tokens";
+
+    public static final String ID_TOKEN_AS_DETACHED_SIGNATURE  = "id.token.as.detached.signature";
+
+    public static final String AUTHORIZATION_SIGNED_RESPONSE_ALG = "authorization.signed.response.alg";
+    public static final String AUTHORIZATION_ENCRYPTED_RESPONSE_ALG = "authorization.encrypted.response.alg";
+    public static final String AUTHORIZATION_ENCRYPTED_RESPONSE_ENC = "authorization.encrypted.response.enc";
 
     private OIDCConfigAttributes() {
     }

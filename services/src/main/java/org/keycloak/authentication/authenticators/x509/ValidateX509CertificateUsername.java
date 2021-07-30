@@ -75,7 +75,8 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
             CertificateValidator validator = builder.build(certs);
             validator.checkRevocationStatus()
                     .validateKeyUsage()
-                    .validateExtendedKeyUsage();
+                    .validateExtendedKeyUsage()
+                    .validateTimestamps();
         } catch(Exception e) {
             logger.error(e.getMessage(), e);
             // TODO use specific locale to load error messages

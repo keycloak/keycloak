@@ -1,0 +1,57 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/oidc/keys">{{:: 'keys' | translate}}</a></li>
+        <li class="active">{{:: 'gen-client-private-key' | translate}}</li>
+    </ol>
+
+    <h1>{{:: 'generate-private-key' | translate}}</h1>
+
+    <form class="form-horizontal" name="keyForm" novalidate kc-read-only="!client.access.configure">
+        <fieldset class="form-group col-sm-10">
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="downloadKeyFormat">{{:: 'archive-format' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="downloadKeyFormat"
+                                ng-model="jks.format"
+                                ng-options="f for f in keyFormats">
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'archive-format.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="keyAlias">{{:: 'key-alias' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" type="text" id="keyAlias" name="keyAlias" data-ng-model="jks.keyAlias" autofocus required>
+                </div>
+                <kc-tooltip>{{:: 'key-alias.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="keyPas">{{:: 'key-password' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" kc-password id="keyPas" name="keyPas" data-ng-model="jks.keyPassword" autofocus required>
+                </div>
+                <kc-tooltip>{{:: 'key-password.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="storePas">{{:: 'store-password' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" kc-password id="storePas" name="storePassword" data-ng-model="jks.storePassword" autofocus required>
+                </div>
+                <kc-tooltip>{{:: 'store-password.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <div class="col-md-10 col-md-offset-2" data-ng-show="client.access.configure">
+                    <button class="btn btn-primary" type="submit" data-ng-click="download()">{{:: 'generate-and-download' | translate}}</button>
+                    <button class="btn btn-default" type="submit" data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
+                </div>
+            </div>
+        </fieldset>
+    </form>
+</div>
+
+<kc-menu></kc-menu>

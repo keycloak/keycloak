@@ -20,7 +20,6 @@ package org.keycloak.testsuite.model.session;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.common.util.Time;
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -181,25 +180,6 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
             if (provider instanceof InfinispanUserSessionProvider) {
                 // Remove in-memory representation of the offline sessions
                 ((InfinispanUserSessionProvider) provider).removeLocalUserSessions(realm.getId(), true);
-
-                // Clear ispn cache to ensure initializerState is removed as well
-                InfinispanConnectionProvider infinispan = session.getProvider(InfinispanConnectionProvider.class);
-                if (infinispan != null) {
-                    infinispan.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME).clear();
-                }
-            }
-        });
-
-        inComittedTransaction(session -> {
-            // This is only valid in infinispan provider where the offline session is loaded upon start and never reloaded
-            UserSessionProvider provider = session.getProvider(UserSessionProvider.class);
-            if (provider instanceof InfinispanUserSessionProvider) {
-                RealmModel realm = session.realms().getRealm(realmId);
-
-                ClientModel testApp = realm.getClientByClientId("test-app");
-                ClientModel thirdparty = realm.getClientByClientId("third-party");
-                assertThat("Count of offline sessions for client 'test-app'", session.sessions().getOfflineSessionsCount(realm, testApp), is((long) 0));
-                assertThat("Count of offline sessions for client 'third-party'", session.sessions().getOfflineSessionsCount(realm, thirdparty), is((long) 0));
             }
         });
 

@@ -281,13 +281,15 @@ public class PolicyEnforcer {
                             Map<String, Map<String, Object>> cipConfig = null;
                             PolicyEnforcerConfig.EnforcementMode enforcementMode = PolicyEnforcerConfig.EnforcementMode.ENFORCING;
                             ResourceRepresentation targetResource = matchingResources.get(0);
+                            List<PolicyEnforcerConfig.MethodConfig> methodConfig = null;
 
                             if (pathConfig != null) {
                                 cipConfig = pathConfig.getClaimInformationPointConfig();
                                 enforcementMode = pathConfig.getEnforcementMode();
+                                methodConfig = pathConfig.getMethods();
                             } else {
                                 for (PathConfig existingPath : paths.values()) {
-                                    if (existingPath.getId().equals(targetResource.getId()) 
+                                    if (targetResource.getId().equals(existingPath.getId())
                                             && existingPath.isStatic()
                                             && !PolicyEnforcerConfig.EnforcementMode.DISABLED.equals(existingPath.getEnforcementMode())) {
                                         return null;
@@ -299,6 +301,10 @@ public class PolicyEnforcer {
 
                             if (cipConfig != null) {
                                 pathConfig.setClaimInformationPointConfig(cipConfig);
+                            }
+
+                            if (methodConfig != null) {
+                                pathConfig.setMethods(methodConfig);
                             }
                             
                             pathConfig.setEnforcementMode(enforcementMode);

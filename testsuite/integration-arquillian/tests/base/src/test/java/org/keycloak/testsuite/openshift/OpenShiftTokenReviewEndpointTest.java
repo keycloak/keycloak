@@ -12,6 +12,7 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
@@ -314,7 +315,9 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
         clientRep.setPublicClient(true);
         testRealm().clients().get(clientRep.getId()).update(clientRep);
         try {
-            new Review().invoke().assertError(401, "Public client is not permitted to invoke token review endpoint");
+            new Review()
+                    .clientAuthMethod(ClientIdAndSecretAuthenticator.PROVIDER_ID)
+                    .invoke().assertError(401, "Public client is not permitted to invoke token review endpoint");
         } finally {
             clientRep.setPublicClient(false);
             clientRep.setSecret("password");
@@ -332,6 +335,7 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
         private InvokeRunnable runAfterTokenRequest;
 
         private String token;
+        private String clientAuthMethod = "testsuite-client-dummy";
         private int responseStatus;
         private OpenShiftTokenReviewResponseRepresentation response;
 
@@ -342,6 +346,11 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
 
         public Review algorithm(String algorithm) {
             this.algorithm = algorithm;
+            return this;
+        }
+
+        public Review clientAuthMethod(String clientAuthMethod) {
+            this.clientAuthMethod = clientAuthMethod;
             return this;
         }
 
@@ -360,7 +369,7 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
                     String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
                     OAuthClient.AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, "password");
 
-                    events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), loginEvent.getSessionId()).detail("client_auth_method", "testsuite-client-dummy").user(userId).assertEvent();
+                    events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), loginEvent.getSessionId()).detail("client_auth_method", this.clientAuthMethod).user(userId).assertEvent();
 
                     token = accessTokenResponse.getAccessToken();
                 }

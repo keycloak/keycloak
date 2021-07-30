@@ -116,12 +116,12 @@ public class UserMapStorage implements UserLookupProvider.Streams, UserStoragePr
             user = new AbstractUserAdapterFederatedStorage.Streams(session, realm, model) {
                 @Override
                 public String getUsername() {
-                    return username;
+                    return username.toLowerCase();
                 }
 
                 @Override
                 public void setUsername(String innerUsername) {
-                    if (! Objects.equals(innerUsername, username)) {
+                    if (! Objects.equals(innerUsername, username.toLowerCase())) {
                         throw new RuntimeException("Unsupported");
                     }
                 }

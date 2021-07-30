@@ -51,13 +51,16 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
     private final KeycloakSession session;
     private final Cache<String, RootAuthenticationSessionEntity> cache;
     private final InfinispanKeyGenerator keyGenerator;
+    private final int authSessionsLimit;
     protected final InfinispanKeycloakTransaction tx;
     protected final SessionEventsSenderTransaction clusterEventsSenderTx;
 
-    public InfinispanAuthenticationSessionProvider(KeycloakSession session, InfinispanKeyGenerator keyGenerator, Cache<String, RootAuthenticationSessionEntity> cache) {
+    public InfinispanAuthenticationSessionProvider(KeycloakSession session, InfinispanKeyGenerator keyGenerator,
+                                                   Cache<String, RootAuthenticationSessionEntity> cache, int authSessionsLimit) {
         this.session = session;
         this.cache = cache;
         this.keyGenerator = keyGenerator;
+        this.authSessionsLimit = authSessionsLimit;
 
         this.tx = new InfinispanKeycloakTransaction();
         this.clusterEventsSenderTx = new SessionEventsSenderTransaction(session);
@@ -88,7 +91,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 
 
     private RootAuthenticationSessionAdapter wrap(RealmModel realm, RootAuthenticationSessionEntity entity) {
-        return entity==null ? null : new RootAuthenticationSessionAdapter(session, this, cache, realm, entity);
+        return entity==null ? null : new RootAuthenticationSessionAdapter(session, this, cache, realm, entity, authSessionsLimit);
     }
 
 

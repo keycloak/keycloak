@@ -61,6 +61,7 @@ import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
+import java.io.Closeable;
 import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.client.Client;
@@ -879,9 +880,10 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     @Test
     @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void loginRememberMeExpiredIdle() throws Exception {
-        setRememberMe(true, 1, null);
-
-        try {
+        try (Closeable c = new RealmAttributeUpdater(adminClient.realm("test"))
+          .setSsoSessionIdleTimeoutRememberMe(1)
+          .setRememberMe(true)
+          .update()) {
             // login form shown after redirect from app
             oauth.clientId("test-app");
             oauth.redirectUri(OAuthClient.APP_ROOT + "/auth");
@@ -901,17 +903,16 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
             // trying to open the account page with an expired idle timeout should redirect back to the login page.
             appPage.openAccount();
             loginPage.assertCurrent();
-        } finally {
-            setRememberMe(false);
         }
     }
 
     @Test
     @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void loginRememberMeExpiredMaxLifespan() throws Exception {
-        setRememberMe(true, null, 1);
-
-        try {
+        try (Closeable c = new RealmAttributeUpdater(adminClient.realm("test"))
+          .setSsoSessionMaxLifespanRememberMe(1)
+          .setRememberMe(true)
+          .update()) {
             // login form shown after redirect from app
             oauth.clientId("test-app");
             oauth.redirectUri(OAuthClient.APP_ROOT + "/auth");
@@ -931,8 +932,6 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
             // trying to open the account page with an expired lifespan should redirect back to the login page.
             appPage.openAccount();
             loginPage.assertCurrent();
-        } finally {
-            setRememberMe(false);
         }
     }
 

@@ -19,10 +19,8 @@
 package org.keycloak.authorization.policy.provider.user;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -30,17 +28,12 @@ import java.util.stream.Collectors;
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
-import org.keycloak.authorization.store.PolicyStore;
-import org.keycloak.authorization.store.ResourceServerStore;
-import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserModel.UserRemovedEvent;
 import org.keycloak.models.UserProvider;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
@@ -173,41 +166,7 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        factory.register(event -> {
-            if (event instanceof UserRemovedEvent) {
-                KeycloakSession keycloakSession = ((UserRemovedEvent) event).getKeycloakSession();
-                AuthorizationProvider provider = keycloakSession.getProvider(AuthorizationProvider.class);
-                StoreFactory storeFactory = provider.getStoreFactory();
-                PolicyStore policyStore = storeFactory.getPolicyStore();
-                UserModel removedUser = ((UserRemovedEvent) event).getUser();
-                RealmModel realm = ((UserRemovedEvent) event).getRealm();
-                ResourceServerStore resourceServerStore = storeFactory.getResourceServerStore();
-                realm.getClientsStream().forEach(clientModel -> {
-                    ResourceServer resourceServer = resourceServerStore.findById(clientModel.getId());
 
-                    if (resourceServer != null) {
-                        policyStore.findByType(getId(), resourceServer.getId()).forEach(policy -> {
-                            List<String> users = new ArrayList<>();
-
-                            for (String userId : getUsers(policy)) {
-                                if (!userId.equals(removedUser.getId())) {
-                                    users.add(userId);
-                                }
-                            }
-
-                            try {
-                                // just update the policy, let the UserSynchronizer to actually remove the policy if necessary
-                                if (!users.isEmpty()) {
-                                    policy.putConfig("users", JsonSerialization.writeValueAsString(users));
-                                }
-                            } catch (IOException e) {
-                                throw new RuntimeException("Error while synchronizing users with policy [" + policy.getName() + "].", e);
-                            }
-                        });
-                    }
-                });
-            }
-        });
     }
 
     @Override

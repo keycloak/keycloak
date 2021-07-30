@@ -152,11 +152,11 @@
             }
         </script>
 
+        <input type="submit"
+               class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
+               id="registerWebAuthnAIA" value="${msg("doRegister")}" onclick="registerSecurityKey()"/>
+
         <#if !isSetRetry?has_content && isAppInitiatedAction?has_content>
-            <input type="submit"
-                   class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-                   id="registerWebAuthnAIA" value="${msg("doRegister")}" onclick="registerSecurityKey()"
-            />
             <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-webauthn-settings-form"
                   method="post">
                 <button type="submit"
@@ -164,10 +164,6 @@
                         id="cancelWebAuthnAIA" name="cancel-aia" value="true"/>${msg("doCancel")}
                 </button>
             </form>
-        <#else>
-            <script>
-                registerSecurityKey();
-            </script>
         </#if>
 
     </#if>

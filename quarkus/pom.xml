@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>14.0.0-SNAPSHOT</version>
+        <version>15.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <name>Keycloak Quarkus Parent</name>
@@ -36,8 +36,8 @@
         <jackson.version>2.12.1</jackson.version>
         <jackson.databind.version>${jackson.version}</jackson.databind.version>
         <hibernate.version>5.4.29.Final</hibernate.version>
-        <mysql-connector-java.version>8.0.24</mysql-connector-java.version>
-        <postgresql.version>42.2.20</postgresql.version>
+        <mysql.driver.version>8.0.24</mysql.driver.version>
+        <postgresql.driver.version>42.2.20</postgresql.driver.version>
         <picocli.version>4.6.1</picocli.version>
         <snakeyaml.version>1.28</snakeyaml.version>
         <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
@@ -98,12 +98,12 @@
             <dependency>
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
-                <version>${mysql-connector-java.version}</version>
+                <version>${mysql.driver.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
-                <version>${postgresql.version}</version>
+                <version>${postgresql.driver.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.checkerframework</groupId>

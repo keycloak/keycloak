@@ -31,8 +31,8 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
-import org.keycloak.models.ServerInfoProvider;
 import org.keycloak.models.jpa.entities.MigrationModelEntity;
+import org.keycloak.models.DeploymentStateProvider;
 
 @RequireProvider(value=RealmProvider.class, only="jpa")
 @RequireProvider(value=ClientProvider.class, only="jpa")
@@ -67,13 +67,13 @@ public class MigrationModelTest extends KeycloakModelTest {
             Assert.assertTrue(l.get(0).getId().matches("[\\da-z]{5}"));
             Assert.assertEquals(currentVersion, l.get(0).getVersion());
 
-            MigrationModel m = session.getProvider(ServerInfoProvider.class).getMigrationModel();
+            MigrationModel m = session.getProvider(DeploymentStateProvider.class).getMigrationModel();
             Assert.assertEquals(currentVersion, m.getStoredVersion());
             Assert.assertEquals(m.getResourcesTag(), l.get(0).getId());
 
             Time.setOffset(-60000);
 
-            session.getProvider(ServerInfoProvider.class).getMigrationModel().setStoredVersion("6.0.0");
+            session.getProvider(DeploymentStateProvider.class).getMigrationModel().setStoredVersion("6.0.0");
             em.flush();
 
             Time.setOffset(0);
@@ -88,7 +88,7 @@ public class MigrationModelTest extends KeycloakModelTest {
             Assert.assertTrue(l.get(1).getId().matches("[\\da-z]{5}"));
             Assert.assertEquals("6.0.0", l.get(1).getVersion());
 
-            m = session.getProvider(ServerInfoProvider.class).getMigrationModel();
+            m = session.getProvider(DeploymentStateProvider.class).getMigrationModel();
             Assert.assertEquals(l.get(0).getId(), m.getResourcesTag());
             Assert.assertEquals(currentVersion, m.getStoredVersion());
 

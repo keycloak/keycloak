@@ -17,10 +17,8 @@
 
 package org.keycloak.broker.saml.mappers;
 
-import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ConfigConstants;
-import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.saml.SAMLEndpoint;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
@@ -28,11 +26,6 @@ import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.ArrayList;
@@ -46,7 +39,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class AttributeToRoleMapper extends AbstractIdentityProviderMapper {
+public class AttributeToRoleMapper extends AbstractAttributeToRoleMapper {
 
     public static final String[] COMPATIBLE_PROVIDERS = {SAMLIdentityProviderFactory.PROVIDER_ID};
 
@@ -55,6 +48,7 @@ public class AttributeToRoleMapper extends AbstractIdentityProviderMapper {
     public static final String ATTRIBUTE_NAME = "attribute.name";
     public static final String ATTRIBUTE_FRIENDLY_NAME = "attribute.friendly.name";
     public static final String ATTRIBUTE_VALUE = "attribute.value";
+
     private static final Set<IdentityProviderSyncMode> IDENTITY_PROVIDER_SYNC_MODES = new HashSet<>(Arrays.asList(IdentityProviderSyncMode.values()));
 
     static {
@@ -117,17 +111,7 @@ public class AttributeToRoleMapper extends AbstractIdentityProviderMapper {
         return "SAML Attribute to Role";
     }
 
-    @Override
-    public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
-        if (isAttributePresent(mapperModel, context)) {
-            RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
-            if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);
-            user.grantRole(role);
-        }
-    }
-
-    protected boolean isAttributePresent(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+    protected boolean applies(final IdentityProviderMapperModel mapperModel, final BrokeredIdentityContext context) {
         String name = mapperModel.getConfig().get(ATTRIBUTE_NAME);
         if (name != null && name.trim().equals("")) name = null;
         String friendly = mapperModel.getConfig().get(ATTRIBUTE_FRIENDLY_NAME);
@@ -147,19 +131,6 @@ public class AttributeToRoleMapper extends AbstractIdentityProviderMapper {
             }
         }
         return false;
-    }
-
-    @Override
-    public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
-        RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
-        if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);
-        if (!isAttributePresent(mapperModel, context)) {
-            user.deleteRoleMapping(role);
-        }else{
-            user.grantRole(role);
-        }
-
     }
 
     @Override

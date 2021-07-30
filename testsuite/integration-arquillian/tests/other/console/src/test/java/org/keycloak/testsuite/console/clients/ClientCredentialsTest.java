@@ -25,8 +25,10 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.testsuite.console.page.clients.Client;
 import org.keycloak.testsuite.console.page.clients.credentials.ClientCredentials;
 import org.keycloak.testsuite.console.page.clients.credentials.ClientCredentialsGeneratePrivateKeys;
+import org.keycloak.testsuite.console.page.clients.credentials.OIDCClientCredentialsForm;
 
 import static org.junit.Assert.*;
 import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
@@ -42,6 +44,13 @@ public class ClientCredentialsTest extends AbstractClientTest {
     
     @Page
     private ClientCredentials clientCredentialsPage;
+
+    @Page
+    private Client clientPage;
+
+    @Page
+    private OIDCClientCredentialsForm oidcForm;
+
     @Page
     private ClientCredentialsGeneratePrivateKeys generatePrivateKeysPage;
     
@@ -72,8 +81,7 @@ public class ClientCredentialsTest extends AbstractClientTest {
     @Test
     public void generateNewKeysAndCert() {
         generatePrivateKeysPage.setId(clientCredentialsPage.getId());
-        clientCredentialsPage.form().selectSignedJwt();
-        clientCredentialsPage.form().generateNewKeysAndCert();
+        oidcForm.generateNewKeysAndCert();
         assertCurrentUrlEquals(generatePrivateKeysPage);
         
         generatePrivateKeysPage.generateForm().clickGenerateAndDownload();

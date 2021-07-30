@@ -19,18 +19,19 @@ package org.keycloak.models.map.authorization.entity;
 
 import org.keycloak.models.map.common.AbstractEntity;
 
+import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.Objects;
 
-public class MapScopeEntity<K> implements AbstractEntity<K> {
+public class MapScopeEntity implements AbstractEntity, UpdatableEntity {
 
-    private final K id;
+    private final String id;
     private String name;
     private String displayName;
     private String iconUri;
     private String resourceServerId;
     private boolean updated = false;
 
-    public MapScopeEntity(K id) {
+    public MapScopeEntity(String id) {
         this.id = id;
     }
 
@@ -39,7 +40,7 @@ public class MapScopeEntity<K> implements AbstractEntity<K> {
     }
 
     @Override
-    public K getId() {
+    public String getId() {
         return id;
     }
 

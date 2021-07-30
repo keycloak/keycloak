@@ -275,34 +275,28 @@ public final class KeycloakModelUtils {
      * @param timeoutInSeconds
      */
     public static void runJobInTransactionWithTimeout(KeycloakSessionFactory factory, KeycloakSessionTask task, int timeoutInSeconds) {
-        JtaTransactionManagerLookup lookup = (JtaTransactionManagerLookup)factory.getProviderFactory(JtaTransactionManagerLookup.class);
         try {
-            if (lookup != null) {
-                if (lookup.getTransactionManager() != null) {
-                    try {
-                        lookup.getTransactionManager().setTransactionTimeout(timeoutInSeconds);
-                    } catch (SystemException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
-
+            setTransactionLimit(factory, timeoutInSeconds);
             runJobInTransaction(factory, task);
-
         } finally {
-            if (lookup != null) {
-                if (lookup.getTransactionManager() != null) {
-                    try {
-                        // Reset to default transaction timeout
-                        lookup.getTransactionManager().setTransactionTimeout(0);
-                    } catch (SystemException e) {
-                        // Shouldn't happen for Wildfly transaction manager
-                        throw new RuntimeException(e);
-                    }
+            setTransactionLimit(factory, 0);
+        }
+
+    }
+
+    public static void setTransactionLimit(KeycloakSessionFactory factory, int timeoutInSeconds) {
+        JtaTransactionManagerLookup lookup = (JtaTransactionManagerLookup) factory.getProviderFactory(JtaTransactionManagerLookup.class);
+        if (lookup != null) {
+            if (lookup.getTransactionManager() != null) {
+                try {
+                    // If timeout is set to 0, reset to default transaction timeout
+                    lookup.getTransactionManager().setTransactionTimeout(timeoutInSeconds);
+                } catch (SystemException e) {
+                    // Shouldn't happen for Wildfly transaction manager
+                    throw new RuntimeException(e);
                 }
             }
         }
-
     }
 
     public static Function<KeycloakSessionFactory, ComponentModel> componentModelGetter(String realmId, String componentId) {
@@ -700,13 +694,6 @@ public final class KeycloakModelUtils {
         return realm.getIdentityProvidersStream().anyMatch(idp ->
                 Objects.equals(idp.getFirstBrokerLoginFlowId(), model.getId()) ||
                 Objects.equals(idp.getPostBrokerLoginFlowId(), model.getId()));
-    }
-
-    public static boolean isClientScopeUsed(RealmModel realm, ClientScopeModel clientScope) {
-        return realm.getClientsStream()
-                .filter(c -> (c.getClientScopes(true).containsKey(clientScope.getName())) ||
-                (c.getClientScopes(false).containsKey(clientScope.getName())))
-                .findFirst().isPresent();
     }
 
     public static ClientScopeModel getClientScopeByName(RealmModel realm, String clientScopeName) {

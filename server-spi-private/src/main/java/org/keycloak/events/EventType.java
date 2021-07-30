@@ -63,6 +63,8 @@ public enum EventType {
     UPDATE_TOTP_ERROR(true),
     VERIFY_EMAIL(true),
     VERIFY_EMAIL_ERROR(true),
+    VERIFY_PROFILE(true),
+    VERIFY_PROFILE_ERROR(true),
 
     REMOVE_TOTP(true),
     REMOVE_TOTP_ERROR(true),
@@ -145,7 +147,12 @@ public enum EventType {
     PERMISSION_TOKEN_ERROR(false),
 
     DELETE_ACCOUNT(true),
-    DELETE_ACCOUNT_ERROR(true);
+    DELETE_ACCOUNT_ERROR(true),
+
+    // PAR request.
+    PUSHED_AUTHORIZATION_REQUEST(false),
+    PUSHED_AUTHORIZATION_REQUEST_ERROR(false);
+
 
     private boolean saveByDefault;
 

@@ -23,10 +23,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.UpdatableEntity;
 
-public class MapRoleEntity<K> implements AbstractEntity<K> {
+public class MapRoleEntity implements AbstractEntity, UpdatableEntity {
 
-    private K id;
+    private String id;
     private String realmId;
 
     private String name;
@@ -46,8 +47,7 @@ public class MapRoleEntity<K> implements AbstractEntity<K> {
         this.realmId = null;
     }
 
-    public MapRoleEntity(K id, String realmId) {
-        Objects.requireNonNull(id, "id");
+    public MapRoleEntity(String id, String realmId) {
         Objects.requireNonNull(realmId, "realmId");
 
         this.id = id;
@@ -55,7 +55,7 @@ public class MapRoleEntity<K> implements AbstractEntity<K> {
     }
 
     @Override
-    public K getId() {
+    public String getId() {
         return this.id;
     }
 

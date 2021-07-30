@@ -20,6 +20,7 @@ package org.keycloak.models;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import org.keycloak.provider.ProviderEvent;
 
@@ -98,14 +99,21 @@ public interface RoleContainerModel {
 
     /**
      * @deprecated Default roles are now managed by {@link org.keycloak.models.RealmModel#getDefaultRole()}. This method will be removed.
+     * @return List of default roles names or empty list if there are none. Never returns {@code null}.
      */
     @Deprecated
     default List<String> getDefaultRoles() {
-        return getDefaultRolesStream().collect(Collectors.toList());
+        Stream<String> defaultRolesStream = getDefaultRolesStream();
+        if (defaultRolesStream != null) {
+            return defaultRolesStream.collect(Collectors.toList());
+        } else {
+            return Collections.emptyList();
+        }
     }
 
     /**
      * @deprecated Default roles are now managed by {@link org.keycloak.models.RealmModel#getDefaultRole()}. This method will be removed.
+     * @return Stream of default roles names or empty stream if there are none. Never returns {@code null}.
      */
     @Deprecated
     Stream<String> getDefaultRolesStream();

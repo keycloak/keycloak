@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+
+<config xmlns="urn:jboss:galleon:config:1.0" model="standalone">
+    <packages>
+        <package name="misc.standalone"/>
+    </packages>
+</config>

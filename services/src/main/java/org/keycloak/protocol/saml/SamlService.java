@@ -71,7 +71,7 @@ import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.protocol.saml.preprocessor.SamlAuthenticationPreprocessor;
 import org.keycloak.protocol.saml.profile.ecp.SamlEcpProfileService;
 import org.keycloak.protocol.saml.profile.util.Soap;
-import org.keycloak.protocol.util.ArtifactBindingUtils;
+import org.keycloak.protocol.saml.util.ArtifactBindingUtils;
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
@@ -134,6 +134,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.PublicKey;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -340,7 +341,7 @@ public class SamlService extends AuthorizationEndpointBase {
             //Find client
             ClientModel client;
             try {
-                client = getArtifactResolver(artifact).selectSourceClient(artifact, realm.getClientsStream());
+                client = getArtifactResolver(artifact).selectSourceClient(session, artifact);
 
                 Response error = checkClientValidity(client);
                 if (error != null) {
@@ -919,9 +920,8 @@ public class SamlService extends AuthorizationEndpointBase {
     public Response idpInitiatedSSO(@PathParam("client") String clientUrlName, @QueryParam("RelayState") String relayState) {
         event.event(EventType.LOGIN);
         CacheControlUtil.noBackButtonCacheControlHeader();
-        ClientModel client = realm.getClientsStream()
-                .filter(c -> Objects.nonNull(c.getAttribute(SamlProtocol.SAML_IDP_INITIATED_SSO_URL_NAME)))
-                .filter(c -> Objects.equals(c.getAttribute(SamlProtocol.SAML_IDP_INITIATED_SSO_URL_NAME), clientUrlName))
+        ClientModel client = session.clients()
+                .searchClientsByAttributes(realm, Collections.singletonMap(SamlProtocol.SAML_IDP_INITIATED_SSO_URL_NAME, clientUrlName), 0, 1)
                 .findFirst().orElse(null);
 
         if (client == null) {

@@ -19,6 +19,7 @@ package org.keycloak.testsuite.admin.client.authorization;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 
 import java.io.BufferedInputStream;
@@ -62,6 +63,7 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.util.JsonSerialization;
@@ -73,6 +75,11 @@ import org.keycloak.util.JsonSerialization;
 public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
 
     private static Undertow httpService;
+
+    @BeforeClass
+    public static void enabled() {
+        ProfileAssume.assumeFeatureEnabled(AUTHORIZATION);
+    }
 
     @BeforeClass
     public static void onBeforeClass() {

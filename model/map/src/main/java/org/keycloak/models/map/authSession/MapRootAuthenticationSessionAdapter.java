@@ -31,10 +31,15 @@ import java.util.stream.Collectors;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public abstract class MapRootAuthenticationSessionAdapter<K> extends AbstractRootAuthenticationSessionModel<MapRootAuthenticationSessionEntity<K>> {
+public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticationSessionModel<MapRootAuthenticationSessionEntity> {
 
-    public MapRootAuthenticationSessionAdapter(KeycloakSession session, RealmModel realm, MapRootAuthenticationSessionEntity<K> entity) {
+    public MapRootAuthenticationSessionAdapter(KeycloakSession session, RealmModel realm, MapRootAuthenticationSessionEntity entity) {
         super(session, realm, entity);
+    }
+
+    @Override
+    public String getId() {
+        return entity.getId();
     }
 
     @Override
@@ -82,11 +87,14 @@ public abstract class MapRootAuthenticationSessionAdapter<K> extends AbstractRoo
         MapAuthenticationSessionEntity authSessionEntity = new MapAuthenticationSessionEntity();
         authSessionEntity.setClientUUID(client.getId());
 
+        int timestamp = Time.currentTime();
+        authSessionEntity.setTimestamp(timestamp);
+
         String tabId =  generateTabId();
         entity.getAuthenticationSessions().put(tabId, authSessionEntity);
 
         // Update our timestamp when adding new authenticationSession
-        entity.setTimestamp(Time.currentTime());
+        entity.setTimestamp(timestamp);
 
         MapAuthenticationSessionAdapter authSession = new MapAuthenticationSessionAdapter(session, this, tabId, authSessionEntity);
         session.getContext().setAuthenticationSession(authSession);

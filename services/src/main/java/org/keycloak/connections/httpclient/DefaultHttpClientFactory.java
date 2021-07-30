@@ -61,6 +61,7 @@ import org.apache.http.util.EntityUtils;
 public class DefaultHttpClientFactory implements HttpClientFactory {
 
     private static final Logger logger = Logger.getLogger(DefaultHttpClientFactory.class);
+    private static final String configScope = "keycloak.connectionsHttpClient.default.";
 
     private volatile CloseableHttpClient httpClient;
     private Config.Scope config;
@@ -146,7 +147,10 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                     String clientPrivateKeyPassword = config.get("client-key-password");
                     String[] proxyMappings = config.getArray("proxy-mappings");
                     boolean disableTrustManager = config.getBoolean("disable-trust-manager", false);
-                    
+
+                    boolean expectContinueEnabled = getBooleanConfigWithSysPropFallback("expect-continue-enabled", false);
+                    boolean resuseConnections = getBooleanConfigWithSysPropFallback("reuse-connections", true);
+
                     HttpClientBuilder builder = new HttpClientBuilder();
 
                     builder.socketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
@@ -157,7 +161,9 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                             .connectionTTL(connectionTTL, TimeUnit.MILLISECONDS)
                             .maxConnectionIdleTime(maxConnectionIdleTime, TimeUnit.MILLISECONDS)
                             .disableCookies(disableCookies)
-                            .proxyMappings(ProxyMappings.valueOf(proxyMappings));
+                            .proxyMappings(ProxyMappings.valueOf(proxyMappings))
+                            .expectContinueEnabled(expectContinueEnabled)
+                            .reuseConnections(resuseConnections);
 
                     TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
                     boolean disableTruststoreProvider = truststoreProvider == null || truststoreProvider.getTruststore() == null;
@@ -198,6 +204,15 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
 
     }
 
-
+    private boolean getBooleanConfigWithSysPropFallback(String key, boolean defaultValue) {
+        Boolean value = config.getBoolean(key);
+        if (value == null) {
+            String s = System.getProperty(configScope + key);
+            if (s != null) {
+                value = Boolean.parseBoolean(s);
+            }
+        }
+        return value != null ? value : defaultValue;
+    }
 
 }

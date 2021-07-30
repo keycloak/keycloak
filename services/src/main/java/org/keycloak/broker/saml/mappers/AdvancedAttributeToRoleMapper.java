@@ -18,21 +18,14 @@
 package org.keycloak.broker.saml.mappers;
 
 
-import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ConfigConstants;
-import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.saml.SAMLEndpoint;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.ArrayList;
@@ -49,7 +42,7 @@ import static org.keycloak.utils.RegexUtils.valueMatchesRegex;
  * <a href="mailto:external.benjamin.weimer@bosch.io">Benjamin Weimer</a>,
  * <a href="mailto:external.martin.idel@bosch.io">Martin Idel</a>,
  */
-public class AdvancedAttributeToRoleMapper extends AbstractIdentityProviderMapper {
+public class AdvancedAttributeToRoleMapper extends AbstractAttributeToRoleMapper {
 
     public static final String PROVIDER_ID = "saml-advanced-role-idp-mapper";
     public static final String ATTRIBUTE_PROPERTY_NAME = "attributes";
@@ -125,40 +118,11 @@ public class AdvancedAttributeToRoleMapper extends AbstractIdentityProviderMappe
     }
 
     @Override
-    public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
-        RoleModel role = getRoleModel(realm, roleName);
-
-        if (hasAllValues(mapperModel, context)) {
-            user.grantRole(role);
-        }
-    }
-
-    @Override
-    public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
-        RoleModel role = getRoleModel(realm, roleName);
-        if (hasAllValues(mapperModel, context)) {
-            user.grantRole(role);
-        } else {
-            user.deleteRoleMapping(role);
-        }
-    }
-
-    @Override
     public String getHelpText() {
         return "If the set of attributes exists and can be matched, grant the user the specified realm or client role.";
     }
 
-    static RoleModel getRoleModel(RealmModel realm, String roleName) {
-        RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
-        if (role == null) {
-            throw new IdentityBrokerException("Unable to find role: " + roleName);
-        }
-        return role;
-    }
-
-    boolean hasAllValues(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+    protected boolean applies(final IdentityProviderMapperModel mapperModel, final BrokeredIdentityContext context) {
         Map<String, String> attributes = mapperModel.getConfigMap(ATTRIBUTE_PROPERTY_NAME);
         boolean areAttributeValuesRegexes = Boolean.parseBoolean(mapperModel.getConfig().get(ARE_ATTRIBUTE_VALUES_REGEX_PROPERTY_NAME));
 

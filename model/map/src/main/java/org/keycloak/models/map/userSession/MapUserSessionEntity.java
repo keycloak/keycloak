@@ -22,6 +22,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.common.AbstractEntity;
 
+import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,8 +30,8 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapUserSessionEntity<K> implements AbstractEntity<K> {
-    private K id;
+public class MapUserSessionEntity implements AbstractEntity, UpdatableEntity {
+    private String id;
 
     private String realmId;
 
@@ -73,15 +74,14 @@ public class MapUserSessionEntity<K> implements AbstractEntity<K> {
         this.realmId = null;
     }
 
-    public MapUserSessionEntity(K id, String realmId) {
-        Objects.requireNonNull(id, "id");
+    public MapUserSessionEntity(String id, String realmId) {
         Objects.requireNonNull(realmId, "realmId");
 
         this.id = id;
         this.realmId = realmId;
     }
 
-    public MapUserSessionEntity(K id, RealmModel realm, UserModel user, String loginUsername, String ipAddress,
+    public MapUserSessionEntity(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress,
                                      String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId,
                                      boolean offline) {
         this.id = id;
@@ -99,7 +99,7 @@ public class MapUserSessionEntity<K> implements AbstractEntity<K> {
     }
 
     @Override
-    public K getId() {
+    public String getId() {
         return this.id;
     }
 

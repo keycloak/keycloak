@@ -23,10 +23,12 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.policy.BlacklistPasswordPolicyProvider;
+import org.keycloak.policy.MaximumLengthPasswordPolicyProviderFactory;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.RealmBuilder;
 
@@ -37,7 +39,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -62,6 +63,30 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
             Assert.assertEquals("invalidPasswordMinLengthMessage", policyManager.validate("jdoe", "123").getMessage());
             Assert.assertArrayEquals(new Object[]{4}, policyManager.validate("jdoe", "123").getParameters());
             assertNull(policyManager.validate("jdoe", "1234"));
+        });
+    }
+
+    @Test
+    public void testMaximumLength() {
+        testingClient.server("passwordPolicy").run(session -> {
+            RealmModel realmModel = session.getContext().getRealm();
+            PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
+
+            realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "maxLength"));
+
+            Assert.assertEquals("invalidPasswordMaxLengthMessage",
+                    policyManager.validate("jdoe", "12345678901234567890123456789012345678901234567890123456789012345").getMessage());
+            Assert.assertArrayEquals(new Object[]{MaximumLengthPasswordPolicyProviderFactory.DEFAULT_MAX_LENGTH},
+                    policyManager.validate("jdoe", "12345678901234567890123456789012345678901234567890123456789012345").getParameters());
+            assertNull(policyManager.validate("jdoe", "1234567890123456789012345678901234567890123456789012345678901234"));
+
+            realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "maxLength(24)"));
+
+            Assert.assertEquals("invalidPasswordMaxLengthMessage",
+                    policyManager.validate("jdoe", "1234567890123456789012345").getMessage());
+            Assert.assertArrayEquals(new Object[]{24},
+                    policyManager.validate("jdoe", "1234567890123456789012345").getParameters());
+            assertNull(policyManager.validate("jdoe", "123456789012345678901234"));
         });
     }
 
@@ -240,13 +265,14 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
             RealmModel realmModel = session.getContext().getRealm();
             PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
 
-            realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "length(8) and digits(2) and lowerCase(2) and upperCase(2) and specialChars(2) and notUsername()"));
+            realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "length(8) and maxLength(32) and digits(2) and lowerCase(2) and upperCase(2) and specialChars(2) and notUsername()"));
             Assert.assertNotNull(policyManager.validate("jdoe", "12aaBB&"));
             Assert.assertNotNull(policyManager.validate("jdoe", "aaaaBB&-"));
             Assert.assertNotNull(policyManager.validate("jdoe", "12AABB&-"));
             Assert.assertNotNull(policyManager.validate("jdoe", "12aabb&-"));
             Assert.assertNotNull(policyManager.validate("jdoe", "12aaBBcc"));
             Assert.assertNotNull(policyManager.validate("12aaBB&-", "12aaBB&-"));
+            Assert.assertNotNull(policyManager.validate("jdoe", "12aaBB&-12aaBB&-12aaBB&-12aaBB&-1"));
 
             assertNull(policyManager.validate("jdoe", "12aaBB&-"));
         });

@@ -17,7 +17,7 @@
 
 <keycloak-saml-adapter xmlns="urn:keycloak:saml:adapter"
                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                       xsi:schemaLocation="urn:keycloak:saml:adapter http://www.keycloak.org/schema/keycloak_saml_adapter_1_7.xsd">
+                       xsi:schemaLocation="urn:keycloak:saml:adapter http://www.keycloak.org/schema/keycloak_saml_adapter_1_13.xsd">
     <SP entityID="sp"
         sslPolicy="ALL"
         nameIDPolicyFormat="format"
@@ -77,6 +77,9 @@
                         disableTrustManager="true"
                         proxyUrl="pu"
                         truststore="ts" truststorePassword="tsp"
+                        socketTimeout="6000"
+                        connectionTimeout="7000"
+                        connectionTtl="200"
                         />
         </IDP>
     </SP>

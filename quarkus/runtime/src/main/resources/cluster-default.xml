@@ -37,12 +37,24 @@
             </encoding>
             <memory storage="HEAP" max-count="10000"/>
         </local-cache>
-        <distributed-cache name="sessions" owners="1"/>
-        <distributed-cache name="authenticationSessions" owners="1"/>
-        <distributed-cache name="offlineSessions" owners="1"/>
-        <distributed-cache name="clientSessions" owners="1"/>
-        <distributed-cache name="offlineClientSessions" owners="1"/>
-        <distributed-cache name="loginFailures" owners="1"/>
+        <distributed-cache name="sessions" owners="1">
+            <expiration lifespan="900000000000000000"/>
+        </distributed-cache>
+        <distributed-cache name="authenticationSessions" owners="1">
+            <expiration lifespan="900000000000000000"/>
+        </distributed-cache>
+        <distributed-cache name="offlineSessions" owners="1">
+            <expiration lifespan="900000000000000000"/>
+        </distributed-cache>
+        <distributed-cache name="clientSessions" owners="1">
+            <expiration lifespan="900000000000000000"/>
+        </distributed-cache>
+        <distributed-cache name="offlineClientSessions" owners="1">
+            <expiration lifespan="900000000000000000"/>
+        </distributed-cache>
+        <distributed-cache name="loginFailures" owners="1">
+            <expiration lifespan="900000000000000000"/>
+        </distributed-cache>
         <local-cache name="authorization">
             <encoding>
                 <key media-type="application/x-java-object"/>
@@ -50,7 +62,9 @@
             </encoding>
             <memory storage="HEAP" max-count="10000"/>
         </local-cache>
-        <replicated-cache name="work"/>
+        <replicated-cache name="work">
+            <expiration lifespan="900000000000000000"/>
+        </replicated-cache>
         <local-cache name="keys">
             <encoding>
                 <key media-type="application/x-java-object"/>
@@ -64,7 +78,7 @@
                 <key media-type="application/x-java-object"/>
                 <value media-type="application/x-java-object"/>
             </encoding>
-            <expiration max-idle="-1" interval="300000"/>
+            <expiration max-idle="-1" lifespan="900000000000000000" interval="300000"/>
             <memory storage="HEAP" max-count="-1"/>
         </distributed-cache>
     </cache-container>

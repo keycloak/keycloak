@@ -60,6 +60,8 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public static final String AUTHN_CONTEXT_DECL_REFS = "authnContextDeclRefs";
     public static final String SIGN_SP_METADATA = "signSpMetadata";
     public static final String ALLOW_CREATE = "allowCreate";
+    public static final String ATTRIBUTE_CONSUMING_SERVICE_INDEX = "attributeConsumingServiceIndex";
+    public static final String ATTRIBUTE_CONSUMING_SERVICE_NAME = "attributeConsumingServiceName";
 
     public SAMLIdentityProviderConfig() {
     }
@@ -343,6 +345,38 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
 
     public void setAllowCreated(boolean allowCreate) {
         getConfig().put(ALLOW_CREATE, String.valueOf(allowCreate));
+    }
+
+    public Integer getAttributeConsumingServiceIndex() {
+        Integer result = null;
+        String strAttributeConsumingServiceIndex = getConfig().get(ATTRIBUTE_CONSUMING_SERVICE_INDEX);
+        if (strAttributeConsumingServiceIndex != null && !strAttributeConsumingServiceIndex.isEmpty()) {
+            try {
+                result = Integer.parseInt(strAttributeConsumingServiceIndex);
+                if (result < 0) {
+                    result = null;
+                }
+            } catch (NumberFormatException e) {
+                // ignore it and use null
+            }
+        }
+        return result;
+    }
+
+    public void setAttributeConsumingServiceIndex(Integer attributeConsumingServiceIndex) {
+        if (attributeConsumingServiceIndex == null || attributeConsumingServiceIndex < 0) {
+            getConfig().remove(ATTRIBUTE_CONSUMING_SERVICE_INDEX);
+        } else {
+            getConfig().put(ATTRIBUTE_CONSUMING_SERVICE_INDEX, String.valueOf(attributeConsumingServiceIndex));
+        }
+    }
+
+    public void setAttributeConsumingServiceName(String attributeConsumingServiceName) {
+        getConfig().put(ATTRIBUTE_CONSUMING_SERVICE_NAME, attributeConsumingServiceName);
+    }
+
+    public String getAttributeConsumingServiceName() {
+        return getConfig().get(ATTRIBUTE_CONSUMING_SERVICE_NAME);
     }
 
     @Override

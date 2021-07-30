@@ -18,13 +18,14 @@ package org.keycloak.models.map.loginFailure;
 
 import org.keycloak.models.map.common.AbstractEntity;
 
+import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.Objects;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapUserLoginFailureEntity<K> implements AbstractEntity<K> {
-    private K id;
+public class MapUserLoginFailureEntity implements AbstractEntity, UpdatableEntity {
+    private String id;
     private String realmId;
     private String userId;
 
@@ -44,14 +45,14 @@ public class MapUserLoginFailureEntity<K> implements AbstractEntity<K> {
         this.userId = null;
     }
 
-    public MapUserLoginFailureEntity(K id, String realmId, String userId) {
+    public MapUserLoginFailureEntity(String id, String realmId, String userId) {
         this.id = id;
         this.realmId = realmId;
         this.userId = userId;
     }
 
     @Override
-    public K getId() {
+    public String getId() {
         return this.id;
     }
 

@@ -24,4 +24,24 @@ import org.keycloak.provider.ProviderFactory;
  */
 public interface WellKnownProviderFactory extends ProviderFactory<WellKnownProvider> {
 
+    /**
+     * Alias, which will be used as URL suffix of this well-known provider. For example if you use alias like "openid-configuration", then your WellKnown provider
+     * might be available under URL like "https://myhost/auth/realms/myrealm/.well-known/openid-configuration". If there are multiple provider factories with same alias,
+     * the one with lowest priority will be used.
+     *
+     * @see #getPriority()
+     *
+     */
+    default String getAlias() {
+        return getId();
+    }
+
+    /**
+     * Use low priority, so custom implementation with alias "openid-configuration" will win over the default implementation
+     * with alias "openid-configuration", which is provided by Keycloak (OIDCWellKnownProviderFactory).
+     *
+     */
+    default int getPriority() {
+        return 1;
+    }
 }

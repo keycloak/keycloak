@@ -27,15 +27,11 @@ import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.event.suite.AfterClass;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.logging.Logger;
-import org.junit.Assume;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainers;
 import org.keycloak.testsuite.arquillian.containers.SelfManagedAppContainerLifecycle;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.utils.fuse.FuseUtils;
-import org.wildfly.extras.creaper.commands.undertow.AddUndertowListener;
-import org.wildfly.extras.creaper.commands.undertow.RemoveUndertowListener;
-import org.wildfly.extras.creaper.commands.undertow.UndertowListenerType;
 import org.wildfly.extras.creaper.commands.web.AddConnector;
 import org.wildfly.extras.creaper.commands.web.AddConnectorSslConfig;
 import org.wildfly.extras.creaper.core.CommandFailedException;
@@ -62,6 +58,9 @@ import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
+import static org.keycloak.testsuite.arquillian.ServerTestEnricherUtil.addHttpsListener;
+import static org.keycloak.testsuite.arquillian.ServerTestEnricherUtil.reloadOrRestartTimeoutClient;
+import static org.keycloak.testsuite.arquillian.ServerTestEnricherUtil.removeHttpsListener;
 import static org.keycloak.testsuite.util.ServerURLs.getAppServerContextRoot;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
@@ -250,17 +249,11 @@ public class AppServerTestEnricher {
                 }
             }
         } else {
-            client.apply(new RemoveUndertowListener.Builder(UndertowListenerType.HTTPS_LISTENER, "https")
-                    .forDefaultServer());
-
-            administration.reloadIfRequired();
-
-            client.apply(new AddUndertowListener.HttpsBuilder("https", "default-server", "https")
-                    .securityRealm("UndertowRealm")
-                    .build());
+            removeHttpsListener(client, administration);
+            addHttpsListener(client);
         }
 
-        administration.reloadIfRequired();
+        reloadOrRestartTimeoutClient(administration);
     }
 
     public static void enableHTTPSForAppServer() throws CommandFailedException, InterruptedException, TimeoutException, IOException, CliException, OperationException {

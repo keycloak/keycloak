@@ -88,7 +88,10 @@ import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.net.URLDecoder;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -747,7 +750,11 @@ public class AuthenticationManager {
         boolean secureOnly = realm.getSslRequired().isRequired(connection);
         // remember me cookie should be persistent (hardcoded to 365 days for now)
         //NewCookie cookie = new NewCookie(KEYCLOAK_REMEMBER_ME, "true", path, null, null, realm.getCentralLoginLifespan(), secureOnly);// todo httponly , true);
-        CookieHelper.addCookie(KEYCLOAK_REMEMBER_ME, "username:" + username, path, null, null, 31536000, secureOnly, true);
+        try {
+            CookieHelper.addCookie(KEYCLOAK_REMEMBER_ME, "username:" + URLEncoder.encode(username, "UTF-8"), path, null, null, 31536000, secureOnly, true);
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("Failed to urlencode", e);
+        }
     }
 
     public static String getRememberMeUsername(RealmModel realm, HttpHeaders headers) {
@@ -757,7 +764,11 @@ public class AuthenticationManager {
                 String value = cookie.getValue();
                 String[] s = value.split(":");
                 if (s[0].equals("username") && s.length == 2) {
-                    return s[1];
+                    try {
+                        return URLDecoder.decode(s[1], "UTF-8");
+                    } catch (UnsupportedEncodingException e) {
+                        throw new RuntimeException("Failed to urldecode", e);
+                    }
                 }
             }
         }
@@ -894,9 +905,10 @@ public class AuthenticationManager {
         AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
 
         // Update userSession note with authTime. But just if flag SSO_AUTH is not set
-        boolean isSSOAuthentication = "true".equals(session.getAttribute(SSO_AUTH));
+        boolean isSSOAuthentication = "true".equals(authSession.getAuthNote(SSO_AUTH));
         if (isSSOAuthentication) {
             clientSession.setNote(SSO_AUTH, "true");
+            authSession.removeAuthNote(SSO_AUTH);
         } else {
             int authTime = Time.currentTime();
             userSession.setNote(AUTH_TIME, String.valueOf(authTime));

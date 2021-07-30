@@ -16,6 +16,8 @@
  */
 package org.keycloak.services.resources.admin;
 
+import static org.keycloak.userprofile.UserProfileContext.USER_API;
+
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
@@ -39,6 +41,8 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.UserPermissionEvaluator;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileProvider;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -146,15 +150,19 @@ public class UsersResource {
             }
         }
 
+        UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
+
+        UserProfile profile = profileProvider.create(USER_API, rep.toAttributes());
+
         try {
-            Response response = UserResource.validateUserProfile(null, rep, session);
+            Response response = UserResource.validateUserProfile(profile, null, session);
             if (response != null) {
                 return response;
             }
 
-            UserModel user = session.users().addUser(realm, username);
+            UserModel user = profile.create();
 
-            UserResource.updateUserFromRep(user, rep, session, false);
+            UserResource.updateUserFromRep(profile, user, rep, session, false);
             RepresentationToModel.createFederatedIdentities(rep, session, realm, user);
             RepresentationToModel.createGroups(rep, realm, user);
 
@@ -375,6 +383,19 @@ public class UsersResource {
         } else {
             return session.users().getUsersCount(realm, auth.groups().getGroupsWithViewPermission());
         }
+    }
+
+    /**
+     * Get representation of the user
+     *
+     * @param id User id
+     * @return
+     */
+    @Path("profile")
+    public UserProfileResource userProfile() {
+        UserProfileResource resource = new UserProfileResource(realm, auth);
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+        return resource;
     }
 
     private Stream<UserRepresentation> searchForUser(Map<String, String> attributes, RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Integer firstResult, Integer maxResults, Boolean includeServiceAccounts) {

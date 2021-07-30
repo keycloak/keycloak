@@ -44,6 +44,7 @@ public class JWKSUtilsTest {
 
         String kidRsa1 = "key1";
         String kidRsa2 = "key2";
+        String kidInvalidKey = "ignored";
         String kidEC1 = "key3";
         String kidEC2 = "key4";
         String jwksJson = "{" +
@@ -60,6 +61,12 @@ public class JWKSUtilsTest {
                 "   \"kty\": \"RSA\"," +
                 "   \"use\": \"sig\"," +
                 "   \"kid\": \"" + kidRsa2 + "\"," +
+                "   \"n\": \"soFDjoZ5mQ8XAA7reQAFg90inKAHk0DXMTizo4JuOsgzUbhcplIeZ7ks83hsEjm8mP8lUVaHMPMAHEIp3gu6Xxsg-s73ofx1dtt_Fo7aj8j383MFQGl8-FvixTVobNeGeC0XBBQjN8lEl-lIwOa4ZoERNAShplTej0ntDp7TQm0=\"," +
+                "   \"e\": \"AQAB\"" +
+                "  }," +
+                "  {" +
+                "   \"kty\": \"RSA\"," +
+                "   \"kid\": \"" + kidInvalidKey + "\"," +
                 "   \"n\": \"soFDjoZ5mQ8XAA7reQAFg90inKAHk0DXMTizo4JuOsgzUbhcplIeZ7ks83hsEjm8mP8lUVaHMPMAHEIp3gu6Xxsg-s73ofx1dtt_Fo7aj8j383MFQGl8-FvixTVobNeGeC0XBBQjN8lEl-lIwOa4ZoERNAShplTej0ntDp7TQm0=\"," +
                 "   \"e\": \"AQAB\"" +
                 "  }," +
@@ -87,28 +94,28 @@ public class JWKSUtilsTest {
 
         KeyWrapper key = keyWrappersForUse.get(kidRsa1);
         assertNotNull(key);
-        assertEquals("RS256", key.getAlgorithm());
+        assertEquals("RS256", key.getAlgorithmOrDefault());
         assertEquals(KeyUse.SIG, key.getUse());
         assertEquals(kidRsa1, key.getKid());
         assertEquals("RSA", key.getType());
 
          key = keyWrappersForUse.get(kidRsa2);
         assertNotNull(key);
-        assertEquals("RS256", key.getAlgorithm());
+        assertEquals("RS256", key.getAlgorithmOrDefault());
         assertEquals(KeyUse.SIG, key.getUse());
         assertEquals(kidRsa2, key.getKid());
         assertEquals("RSA", key.getType());
 
         key = keyWrappersForUse.get(kidEC1);
         assertNotNull(key);
-        assertEquals("ES384", key.getAlgorithm());
+        assertEquals("ES384", key.getAlgorithmOrDefault());
         assertEquals(KeyUse.SIG, key.getUse());
         assertEquals(kidEC1, key.getKid());
         assertEquals("EC", key.getType());
 
         key = keyWrappersForUse.get(kidEC2);
         assertNotNull(key);
-        assertNull(key.getAlgorithm());
+        assertNull(key.getAlgorithmOrDefault());
         assertEquals(KeyUse.SIG, key.getUse());
         assertEquals(kidEC2, key.getKid());
         assertEquals("EC", key.getType());

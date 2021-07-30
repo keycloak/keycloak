@@ -30,10 +30,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public abstract class MapPolicyAdapter<K> extends AbstractPolicyModel<MapPolicyEntity<K>> {
+public class MapPolicyAdapter extends AbstractPolicyModel<MapPolicyEntity> {
     
-    public MapPolicyAdapter(MapPolicyEntity<K> entity, StoreFactory storeFactory) {
+    public MapPolicyAdapter(MapPolicyEntity entity, StoreFactory storeFactory) {
         super(entity, storeFactory);
+    }
+
+    @Override
+    public String getId() {
+        return entity.getId();
     }
 
     @Override

@@ -61,6 +61,7 @@ public class UserAdapter implements CachedUserModel.Streams {
 
     @Override
     public String getFirstName() {
+        if (updated != null) return updated.getFirstName();
         return getFirstAttribute(FIRST_NAME);
     }
 
@@ -71,6 +72,7 @@ public class UserAdapter implements CachedUserModel.Streams {
 
     @Override
     public String getLastName() {
+        if (updated != null) return updated.getLastName();
         return getFirstAttribute(LAST_NAME);
     }
 
@@ -81,6 +83,7 @@ public class UserAdapter implements CachedUserModel.Streams {
 
     @Override
     public String getEmail() {
+        if (updated != null) return updated.getEmail();
         return getFirstAttribute(EMAIL);
     }
 
@@ -132,6 +135,7 @@ public class UserAdapter implements CachedUserModel.Streams {
 
     @Override
     public String getUsername() {
+        if (updated != null) return updated.getUsername();
         return getFirstAttribute(UserModel.USERNAME);
     }
 

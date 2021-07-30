@@ -21,7 +21,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
 import static org.junit.Assert.assertThat;
 
-@AuthServerContainerExclude({AuthServerContainerExclude.AuthServer.QUARKUS}) // Can't be done on quarkus because currently quarkus doesn't support the SetDefaultProvider annotation
+@AuthServerContainerExclude({AuthServerContainerExclude.AuthServer.QUARKUS, AuthServerContainerExclude.AuthServer.REMOTE}) // Can't be done on quarkus or remote because currently quarkus or remote doesn't support the SetDefaultProvider annotation
 @SetDefaultProvider(spi = "saml-artifact-resolver", providerId = "0005")
 public class ArtifactBindingCustomResolverTest extends ArtifactBindingTest {
 

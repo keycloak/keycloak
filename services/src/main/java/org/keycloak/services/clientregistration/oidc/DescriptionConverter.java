@@ -22,12 +22,14 @@ import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
+import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ParConfig;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -36,6 +38,8 @@ import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.PairwiseSubMapperUtils;
 import org.keycloak.protocol.oidc.utils.SubjectType;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -44,6 +48,8 @@ import org.keycloak.services.clientregistration.ClientRegistrationException;
 import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.util.JWKSUtils;
 import org.keycloak.utils.StringUtil;
+
+import com.google.common.collect.Streams;
 
 import java.net.URI;
 import java.security.PublicKey;
@@ -56,7 +62,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static org.keycloak.models.CibaConfig.CIBA_POLL_MODE;
 import static org.keycloak.models.OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED;
 import static org.keycloak.models.CibaConfig.OIDC_CIBA_GRANT_ENABLED;
 
@@ -88,8 +96,6 @@ public class DescriptionConverter {
             client.setStandardFlowEnabled(responseType.hasResponseType(OIDCResponseType.CODE));
             client.setImplicitFlowEnabled(responseType.isImplicitOrHybridFlow());
 
-            client.setPublicClient(responseType.isImplicitFlow());
-
             if (oidcGrantTypes != null) {
                 client.setDirectAccessGrantsEnabled(oidcGrantTypes.contains(OAuth2Constants.PASSWORD));
                 client.setServiceAccountsEnabled(oidcGrantTypes.contains(OAuth2Constants.CLIENT_CREDENTIALS));
@@ -100,17 +106,23 @@ public class DescriptionConverter {
         }
 
         String authMethod = clientOIDC.getTokenEndpointAuthMethod();
-        ClientAuthenticatorFactory clientAuthFactory;
-        if (authMethod == null) {
-            clientAuthFactory = (ClientAuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, KeycloakModelUtils.getDefaultClientAuthenticatorType());
+        client.setPublicClient(Boolean.FALSE);
+        if ("none".equals(authMethod)) {
+            client.setClientAuthenticatorType("none");
+            client.setPublicClient(Boolean.TRUE);
         } else {
-            clientAuthFactory = AuthorizeClientUtil.findClientAuthenticatorForOIDCAuthMethod(session, authMethod);
-        }
+            ClientAuthenticatorFactory clientAuthFactory;
+            if (authMethod == null) {
+                clientAuthFactory = (ClientAuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, KeycloakModelUtils.getDefaultClientAuthenticatorType());
+            } else {
+                clientAuthFactory = AuthorizeClientUtil.findClientAuthenticatorForOIDCAuthMethod(session, authMethod);
+            }
 
-        if (clientAuthFactory == null) {
-            throw new ClientRegistrationException("Not found clientAuthenticator for requested token_endpoint_auth_method");
+            if (clientAuthFactory == null) {
+                throw new ClientRegistrationException("Not found clientAuthenticator for requested token_endpoint_auth_method");
+            }
+            client.setClientAuthenticatorType(clientAuthFactory.getId());
         }
-        client.setClientAuthenticatorType(clientAuthFactory.getId());
 
         boolean publicKeySet = setPublicKey(clientOIDC, client);
         if (authMethod != null && authMethod.equals(OIDCLoginProtocol.PRIVATE_KEY_JWT) && !publicKeySet) {
@@ -152,6 +164,10 @@ public class DescriptionConverter {
             configWrapper.setIdTokenEncryptedResponseEnc(clientOIDC.getIdTokenEncryptedResponseEnc());
         }
 
+        configWrapper.setAuthorizationSignedResponseAlg(clientOIDC.getAuthorizationSignedResponseAlg());
+        configWrapper.setAuthorizationEncryptedResponseAlg(clientOIDC.getAuthorizationEncryptedResponseAlg());
+        configWrapper.setAuthorizationEncryptedResponseEnc(clientOIDC.getAuthorizationEncryptedResponseEnc());
+
         if (clientOIDC.getRequestUris() != null) {
             configWrapper.setRequestUris(clientOIDC.getRequestUris());
         }
@@ -172,15 +188,32 @@ public class DescriptionConverter {
             configWrapper.setBackchannelLogoutRevokeOfflineTokens(clientOIDC.getBackchannelLogoutRevokeOfflineTokens());
         }
 
+        // CIBA
         String backchannelTokenDeliveryMode = clientOIDC.getBackchannelTokenDeliveryMode();
         if (backchannelTokenDeliveryMode != null) {
-            if(isSupportedBackchannelTokenDeliveryMode(backchannelTokenDeliveryMode)) {
-                Map<String, String> attr = Optional.ofNullable(client.getAttributes()).orElse(new HashMap<>());
-                attr.put(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT, backchannelTokenDeliveryMode);
-                client.setAttributes(attr);
-            } else {
-                throw new ClientRegistrationException("Unsupported requested backchannel_token_delivery_mode");
-            }
+            Map<String, String> attr = Optional.ofNullable(client.getAttributes()).orElse(new HashMap<>());
+            attr.put(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT, backchannelTokenDeliveryMode);
+            client.setAttributes(attr);
+        }
+        String backchannelClientNotificationEndpoint = clientOIDC.getBackchannelClientNotificationEndpoint();
+        if (backchannelClientNotificationEndpoint != null) {
+            Map<String, String> attr = Optional.ofNullable(client.getAttributes()).orElse(new HashMap<>());
+            attr.put(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT, backchannelClientNotificationEndpoint);
+            client.setAttributes(attr);
+        }
+        String backchannelAuthenticationRequestSigningAlg = clientOIDC.getBackchannelAuthenticationRequestSigningAlg();
+        if (backchannelAuthenticationRequestSigningAlg != null) {
+            Map<String, String> attr = Optional.ofNullable(client.getAttributes()).orElse(new HashMap<>());
+            attr.put(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG, backchannelAuthenticationRequestSigningAlg);
+            client.setAttributes(attr);
+        }
+
+        // PAR
+        Boolean requirePushedAuthorizationRequests = clientOIDC.getRequirePushedAuthorizationRequests();
+        if (requirePushedAuthorizationRequests != null) {
+            Map<String, String> attr = Optional.ofNullable(client.getAttributes()).orElse(new HashMap<>());
+            attr.put(ParConfig.REQUIRE_PUSHED_AUTHORIZATION_REQUESTS, requirePushedAuthorizationRequests.toString());
+            client.setAttributes(attr);
         }
 
         return client;
@@ -193,9 +226,14 @@ public class DescriptionConverter {
         client.setAttributes(attributes);
     }
 
-    private static boolean isSupportedBackchannelTokenDeliveryMode(String mode) {
-        if (mode.equals(CibaConfig.DEFAULT_CIBA_POLICY_TOKEN_DELIVERY_MODE)) return true;
-        return false;
+    private static List<String> getSupportedAlgorithms(KeycloakSession session, Class<? extends Provider> clazz, boolean includeNone) {
+        Stream<String> supportedAlgorithms = session.getKeycloakSessionFactory().getProviderFactoriesStream(clazz)
+                .map(ProviderFactory::getId);
+
+        if (includeNone) {
+            supportedAlgorithms = Streams.concat(supportedAlgorithms, Stream.of("none"));
+        }
+        return supportedAlgorithms.collect(Collectors.toList());
     }
 
     private static boolean setPublicKey(OIDCClientRepresentation clientOIDC, ClientRepresentation clientRep) {
@@ -238,10 +276,14 @@ public class DescriptionConverter {
         OIDCClientRepresentation response = new OIDCClientRepresentation();
         response.setClientId(client.getClientId());
 
-        ClientAuthenticatorFactory clientAuth = (ClientAuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, client.getClientAuthenticatorType());
-        Set<String> oidcClientAuthMethods = clientAuth.getProtocolAuthenticatorMethods(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        if (oidcClientAuthMethods != null && !oidcClientAuthMethods.isEmpty()) {
-            response.setTokenEndpointAuthMethod(oidcClientAuthMethods.iterator().next());
+        if ("none".equals(client.getClientAuthenticatorType())) {
+            response.setTokenEndpointAuthMethod("none");
+        } else {
+            ClientAuthenticatorFactory clientAuth = (ClientAuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, client.getClientAuthenticatorType());
+            Set<String> oidcClientAuthMethods = clientAuth.getProtocolAuthenticatorMethods(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            if (oidcClientAuthMethods != null && !oidcClientAuthMethods.isEmpty()) {
+                response.setTokenEndpointAuthMethod(oidcClientAuthMethods.iterator().next());
+            }
         }
 
         if (client.getClientAuthenticatorType().equals(ClientIdAndSecretAuthenticator.PROVIDER_ID)) {
@@ -267,6 +309,12 @@ public class DescriptionConverter {
         if (config.getRequestObjectSignatureAlg() != null) {
             response.setRequestObjectSigningAlg(config.getRequestObjectSignatureAlg().toString());
         }
+        if (config.getRequestObjectEncryptionAlg() != null) {
+            response.setRequestObjectEncryptionAlg(config.getRequestObjectEncryptionAlg());
+        }
+        if (config.getRequestObjectEncryptionEnc() != null) {
+            response.setRequestObjectEncryptionEnc(config.getRequestObjectEncryptionEnc());
+        }
         if (config.isUseJwksUrl()) {
             response.setJwksUri(config.getJwksUrl());
         }
@@ -289,6 +337,15 @@ public class DescriptionConverter {
         if (config.getIdTokenEncryptedResponseEnc() != null) {
             response.setIdTokenEncryptedResponseEnc(config.getIdTokenEncryptedResponseEnc());
         }
+        if (config.getAuthorizationSignedResponseAlg() != null) {
+            response.setAuthorizationSignedResponseAlg(config.getAuthorizationSignedResponseAlg());
+        }
+        if (config.getAuthorizationEncryptedResponseAlg() != null) {
+            response.setAuthorizationEncryptedResponseAlg(config.getAuthorizationEncryptedResponseAlg());
+        }
+        if (config.getAuthorizationEncryptedResponseEnc() != null) {
+            response.setAuthorizationEncryptedResponseEnc(config.getAuthorizationEncryptedResponseEnc());
+        }
         if (config.getRequestUris() != null) {
             response.setRequestUris(config.getRequestUris());
         }
@@ -304,6 +361,16 @@ public class DescriptionConverter {
             if (StringUtil.isNotBlank(mode)) {
                 response.setBackchannelTokenDeliveryMode(mode);
             }
+            String clientNotificationEndpoint = client.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT);
+            if (StringUtil.isNotBlank(clientNotificationEndpoint)) {
+                response.setBackchannelClientNotificationEndpoint(clientNotificationEndpoint);
+            }
+            String alg = client.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG);
+            if (StringUtil.isNotBlank(alg)) {
+                response.setBackchannelAuthenticationRequestSigningAlg(alg);
+            }
+            Boolean requirePushedAuthorizationRequests = Boolean.valueOf(client.getAttributes().get(ParConfig.REQUIRE_PUSHED_AUTHORIZATION_REQUESTS));
+            response.setRequirePushedAuthorizationRequests(requirePushedAuthorizationRequests.booleanValue());
         }
 
         List<ProtocolMapperRepresentation> foundPairwiseMappers = PairwiseSubMapperUtils.getPairwiseSubMappers(client);

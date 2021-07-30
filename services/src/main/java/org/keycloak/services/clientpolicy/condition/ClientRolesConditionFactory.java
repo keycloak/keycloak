@@ -30,7 +30,7 @@ import org.keycloak.provider.ProviderConfigProperty;
  */
 public class ClientRolesConditionFactory implements ClientPolicyConditionProviderFactory {
 
-    public static final String PROVIDER_ID = "clientroles-condition";
+    public static final String PROVIDER_ID = "client-roles";
 
     public static final String ROLES = "roles";
 
@@ -38,7 +38,7 @@ public class ClientRolesConditionFactory implements ClientPolicyConditionProvide
 
     static {
         ProviderConfigProperty property;
-        property = new ProviderConfigProperty(ROLES, PROVIDER_ID + ".label", PROVIDER_ID + ".tooltip", ProviderConfigProperty.MULTIVALUED_STRING_TYPE, null);
+        property = new ProviderConfigProperty(ROLES, PROVIDER_ID + ".label", PROVIDER_ID + "-condition.tooltip", ProviderConfigProperty.MULTIVALUED_STRING_TYPE, null);
         configProperties.add(property);
     }
 
@@ -66,7 +66,7 @@ public class ClientRolesConditionFactory implements ClientPolicyConditionProvide
 
     @Override
     public String getHelpText() {
-        return "The condition checks whether one of the specified client roles is applied to the client to determine whether the policy is applied.";
+        return "The condition checks whether one of the specified client roles exists on the client to determine whether the policy is applied. This effectively allows client administrator to create client role of specified name on the client to make sure that particular client policy will be applied on requests of this client. Condition is checked during most of OpenID Connect requests (Authorization request, token requests, introspection endpoint request etc).";
     }
 
     @Override

@@ -26,6 +26,8 @@ import org.keycloak.provider.Spi;
  */
 public class UserProfileSpi implements Spi {
 
+    public static final String ID = "userProfile";
+
     @Override
     public boolean isInternal() {
         return true;
@@ -33,7 +35,7 @@ public class UserProfileSpi implements Spi {
 
     @Override
     public String getName() {
-        return "userProfile";
+        return ID;
     }
 
     @Override

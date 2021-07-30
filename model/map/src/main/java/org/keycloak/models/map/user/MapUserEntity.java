@@ -19,6 +19,7 @@ package org.keycloak.models.map.user;
 
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.Collection;
@@ -39,9 +40,9 @@ import java.util.stream.Stream;
  *
  * @author mhajas
  */
-public class MapUserEntity<K> implements AbstractEntity<K> {
+public class MapUserEntity implements AbstractEntity, UpdatableEntity {
 
-    private final K id;
+    private final String id;
     private final String realmId;
 
     private String username;
@@ -65,8 +66,6 @@ public class MapUserEntity<K> implements AbstractEntity<K> {
     private String serviceAccountClientLink;
     private int notBefore;
 
-    static Comparator<MapUserEntity<?>> COMPARE_BY_USERNAME = Comparator.comparing(MapUserEntity::getUsername);
-
     /**
      * Flag signalizing that any of the setters has been meaningfully used.
      */
@@ -77,8 +76,7 @@ public class MapUserEntity<K> implements AbstractEntity<K> {
         this.realmId = null;
     }
 
-    public MapUserEntity(K id, String realmId) {
-        Objects.requireNonNull(id, "id");
+    public MapUserEntity(String id, String realmId) {
         Objects.requireNonNull(realmId, "realmId");
 
         this.id = id;
@@ -86,7 +84,7 @@ public class MapUserEntity<K> implements AbstractEntity<K> {
     }
 
     @Override
-    public K getId() {
+    public String getId() {
         return this.id;
     }
 

@@ -26,6 +26,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.session.UserSessionPersisterProvider;
+import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProvider;
+import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
@@ -33,6 +36,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -42,6 +46,7 @@ import java.util.stream.Stream;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 
 /**
  *
@@ -188,6 +193,82 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
 
         reinitializeKeycloakSessionFactory();
         assertOfflineSessionsExist(realmId, offlineSessionIds);
+    }
+
+    @Test
+    @RequireProvider(UserSessionPersisterProvider.class)
+    @RequireProvider(value = UserSessionProvider.class, only = InfinispanUserSessionProviderFactory.PROVIDER_ID)
+    public void testOfflineSessionLoadingAfterCacheRemoval() {
+        List<String> offlineSessionIds = createOfflineSessions(realmId, userIds);
+        assertOfflineSessionsExist(realmId, offlineSessionIds);
+
+        // Simulate server restart
+        reinitializeKeycloakSessionFactory();
+        assertOfflineSessionsExist(realmId, offlineSessionIds);
+
+        // remove sessions from the cache
+        withRealm(realmId, (session, realm) -> {
+            // Delete local user cache (persisted sessions are still kept)
+            UserSessionProvider provider = session.getProvider(UserSessionProvider.class);
+            // Remove in-memory representation of the offline sessions
+            ((InfinispanUserSessionProvider) provider).removeLocalUserSessions(realm.getId(), true);
+
+            return null;
+        });
+
+        // assert sessions are lazily loaded from DB
+        assertOfflineSessionsExist(realmId, offlineSessionIds);
+    }
+
+    @Test
+    @RequireProvider(UserSessionPersisterProvider.class)
+    @RequireProvider(value = UserSessionProvider.class, only = InfinispanUserSessionProviderFactory.PROVIDER_ID)
+    public void testLazyClientSessionStatsFetching() {
+        List<String> clientIds = withRealm(realmId, (session, realm) -> IntStream.range(0, 5)
+                .mapToObj(cid -> session.clients().addClient(realm, "client-" + cid))
+                .map(ClientModel::getId)
+                .collect(Collectors.toList()));
+
+        List<String> offlineSessionIds = createOfflineSessions(realmId, userIds);
+        assertOfflineSessionsExist(realmId, offlineSessionIds);
+
+        Random r = new Random();
+        offlineSessionIds.stream().forEach(offlineSessionId -> createOfflineClientSession(offlineSessionId, clientIds.get(r.nextInt(5))));
+
+        // Simulate server restart
+        reinitializeKeycloakSessionFactory();
+
+        // load active client sessions stats from DB
+        Map<String, Long> sessionStats = withRealm(realmId, (session, realm) -> session.sessions().getActiveClientSessionStats(realm, true));
+
+        long client1SessionCount = sessionStats.get(clientIds.get(0));
+        int clientSessionsCount = sessionStats.values().stream().reduce(0l, Long::sum).intValue();
+        assertThat(clientSessionsCount, Matchers.is(USER_COUNT * OFFLINE_SESSION_COUNT_PER_USER));
+
+        // Simulate server restart
+        reinitializeKeycloakSessionFactory();
+
+        long actualClient1SessionCount = withRealm(realmId, (session, realm) -> {
+            ClientModel client = realm.getClientById(clientIds.get(0));
+            return session.sessions().getOfflineSessionsCount(realm, client);
+        });
+        assertThat(actualClient1SessionCount, Matchers.is(client1SessionCount));
+    }
+
+    @Test
+    @RequireProvider(UserSessionPersisterProvider.class)
+    @RequireProvider(value = UserSessionProvider.class, only = InfinispanUserSessionProviderFactory.PROVIDER_ID)
+    public void testLazyOfflineUserSessionFetching() {
+        List<String> offlineSessionIds = createOfflineSessions(realmId, userIds);
+        assertOfflineSessionsExist(realmId, offlineSessionIds);
+
+        // Simulate server restart
+        reinitializeKeycloakSessionFactory();
+
+        List<String> actualOfflineSessionIds = withRealm(realmId, (session, realm) -> session.users().getUsersStream(realm).flatMap(user ->
+                session.sessions().getOfflineUserSessionsStream(realm, user)).map(UserSessionModel::getId).collect(Collectors.toList()));
+
+        assertThat(actualOfflineSessionIds, containsInAnyOrder(offlineSessionIds.toArray()));
     }
 
     private String createOfflineClientSession(String offlineUserSessionId, String clientId) {

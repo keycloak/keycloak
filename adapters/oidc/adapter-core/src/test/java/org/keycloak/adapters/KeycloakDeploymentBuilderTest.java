@@ -17,7 +17,10 @@
 
 package org.keycloak.adapters;
 
+import org.apache.http.client.HttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
+import org.apache.http.params.CoreConnectionPNames;
+import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.keycloak.adapters.authentication.ClientIdAndSecretCredentialsProvider;
 import org.keycloak.adapters.authentication.JWTClientCredentialsProvider;
@@ -29,6 +32,7 @@ import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.enums.TokenStore;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -101,5 +105,18 @@ public class KeycloakDeploymentBuilderTest {
         assertEquals(JWTClientSecretCredentialsProvider.PROVIDER_ID, deployment.getClientAuthenticator().getId());
     }
 
+    @Test
+    public void loadHttpClientTimeoutConfiguration() {
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getClass().getResourceAsStream("/keycloak-http-client.json"));
+        assertThat(deployment, CoreMatchers.notNullValue());
 
+        HttpClient client = deployment.getClient();
+        assertThat(client, CoreMatchers.notNullValue());
+
+        long socketTimeout = client.getParams().getIntParameter(CoreConnectionPNames.SO_TIMEOUT, -2);
+        long connectionTimeout = client.getParams().getIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, -2);
+
+        assertThat(socketTimeout, CoreMatchers.is(2000L));
+        assertThat(connectionTimeout, CoreMatchers.is(6000L));
+    }
 }

@@ -107,6 +107,7 @@ public class HttpClientBuilder {
     protected TimeUnit establishConnectionTimeoutUnits = TimeUnit.MILLISECONDS;
     protected boolean disableCookies = false;
     protected ProxyMappings proxyMappings;
+    protected boolean expectContinueEnabled = false;
 
     /**
      * Socket inactivity timeout
@@ -220,6 +221,10 @@ public class HttpClientBuilder {
         return this;
     }
 
+    public HttpClientBuilder expectContinueEnabled(boolean expectContinueEnabled) {
+        this.expectContinueEnabled = expectContinueEnabled;
+        return this;
+    }
 
     static class VerifierWrapper implements X509HostnameVerifier {
         protected HostnameVerifier verifier;
@@ -287,7 +292,8 @@ public class HttpClientBuilder {
 
             RequestConfig requestConfig = RequestConfig.custom()
                     .setConnectTimeout((int) establishConnectionTimeout)
-                    .setSocketTimeout((int) socketTimeout).build();
+                    .setSocketTimeout((int) socketTimeout)
+                    .setExpectContinueEnabled(expectContinueEnabled).build();
 
             org.apache.http.impl.client.HttpClientBuilder builder = HttpClients.custom()
                     .setDefaultRequestConfig(requestConfig)
@@ -310,6 +316,11 @@ public class HttpClientBuilder {
             }
 
             if (disableCookies) builder.disableCookieManagement();
+
+            if (!reuseConnections) {
+                builder.setConnectionReuseStrategy(new NoConnectionReuseStrategy());
+            }
+
             return builder.build();
         } catch (Exception e) {
             throw new RuntimeException(e);

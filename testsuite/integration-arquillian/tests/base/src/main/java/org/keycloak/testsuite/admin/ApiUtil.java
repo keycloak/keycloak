@@ -24,6 +24,8 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyStatus;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -268,11 +270,10 @@ public class ApiUtil {
         return null;
     }
 
-    public static KeysMetadataRepresentation.KeyMetadataRepresentation findActiveKey(RealmResource realm) {
+    public static KeysMetadataRepresentation.KeyMetadataRepresentation findActiveSigningKey(RealmResource realm) {
         KeysMetadataRepresentation keyMetadata = realm.keys().getKeyMetadata();
-        String activeKid = keyMetadata.getActive().get(Algorithm.RS256);
         for (KeysMetadataRepresentation.KeyMetadataRepresentation rep : keyMetadata.getKeys()) {
-            if (rep.getKid().equals(activeKid)) {
+            if (rep.getPublicKey() != null && KeyStatus.valueOf(rep.getStatus()).isActive() && KeyUse.SIG.equals(rep.getUse())) {
                 return rep;
             }
         }

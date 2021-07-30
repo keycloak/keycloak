@@ -302,9 +302,9 @@
 
     <!-- Cross DC. Node numbering is [centre #].[node #] -->
     <group qualifier="auth-server-jboss-cross-dc">
-        <container qualifier="cache-server-cross-dc-1" mode="manual" >
+        <container qualifier="cache-server-legacy-cross-dc-1" mode="manual" >
             <configuration>
-                <property name="enabled">${auth.server.crossdc} &amp;&amp; ! ${cache.server.lifecycle.skip}</property>
+                <property name="enabled">${auth.server.crossdc} &amp;&amp; ! ${cache.server.lifecycle.skip} &amp;&amp; ${cache.server.legacy}</property>
                 <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
                 <property name="jbossHome">${cache.server.home}</property>
                 <property name="serverConfig">clustered-1.xml</property>
@@ -328,12 +328,13 @@
                 <property name="outputToConsole">${cache.server.console.output}</property>
                 <property name="managementPort">${cache.server.management.port}</property>
                 <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
+                <property name="javaHome">${cache.server.java.home}</property>
             </configuration>
         </container>
 
-        <container qualifier="cache-server-cross-dc-2" mode="manual" >
+        <container qualifier="cache-server-legacy-cross-dc-2" mode="manual" >
             <configuration>
-                <property name="enabled">${auth.server.crossdc} &amp;&amp; ! ${cache.server.lifecycle.skip}</property>
+                <property name="enabled">${auth.server.crossdc} &amp;&amp; ! ${cache.server.lifecycle.skip} &amp;&amp; ${cache.server.legacy}</property>
                 <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
                 <property name="jbossHome">${cache.server.home}</property>
                 <property name="setupCleanServerBaseDir">true</property>
@@ -359,6 +360,38 @@
                 <property name="outputToConsole">${cache.server.console.output}</property>
                 <property name="managementPort">${cache.server.2.management.port}</property>
                 <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
+                <property name="javaHome">${cache.server.java.home}</property>
+            </configuration>
+        </container>
+
+        <container qualifier="cache-server-cross-dc-1" mode="manual" >
+            <configuration>
+                <property name="enabled">${auth.server.crossdc} &amp;&amp; ! ${cache.server.lifecycle.skip} &amp;&amp; ! ${cache.server.legacy}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.containers.InfinispanServerDeployableContainer</property>
+                <property name="infinispanHome">${cache.server.home}-dc1</property>
+                <property name="serverConfig">infinispan-xsite.xml</property>
+                <property name="portOffset">${cache.server.1.port.offset}</property>
+                <property name="managementPort">${cache.server.management.port}</property>
+                <property name="javaVmArguments">
+                    -Djgroups.udp.mcast_port=46698 
+                    -Djgroups.tcpping.initial_hosts=127.0.0.1[8810],127.0.0.1[9810]
+                </property>
+                <property name="javaHome">${cache.server.java.home}</property>
+            </configuration>
+        </container>
+        <container qualifier="cache-server-cross-dc-2" mode="manual" >
+            <configuration>
+                <property name="enabled">${auth.server.crossdc} &amp;&amp; ! ${cache.server.lifecycle.skip} &amp;&amp; ! ${cache.server.legacy}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.containers.InfinispanServerDeployableContainer</property>
+                <property name="infinispanHome">${cache.server.home}-dc2</property>
+                <property name="serverConfig">infinispan-xsite.xml</property>
+                <property name="portOffset">${cache.server.2.port.offset}</property>
+                <property name="managementPort">${cache.server.2.management.port}</property>
+                <property name="javaVmArguments">
+                    -Djgroups.udp.mcast_port=47698 
+                    -Djgroups.tcpping.initial_hosts=127.0.0.1[8810],127.0.0.1[9810]
+                </property>
+                <property name="javaHome">${cache.server.java.home}</property>
             </configuration>
         </container>
 

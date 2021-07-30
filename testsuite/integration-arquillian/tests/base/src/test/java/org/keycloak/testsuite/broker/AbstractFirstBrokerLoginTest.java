@@ -22,6 +22,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailServerConfiguration;
@@ -54,6 +55,17 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
     @Drone
     @SecondBrowser
     protected WebDriver driver2;
+    
+    protected void enableDynamicUserProfile() {
+        
+        RealmResource rr = adminClient.realm(bc.consumerRealmName());
+        
+        RealmRepresentation testRealm = rr.toRepresentation();
+        
+        VerifyProfileTest.enableDynamicUserProfile(testRealm);
+
+        rr.update(testRealm);
+    }
 
 
     /**
@@ -452,18 +464,6 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
     }
 
 
-    @Test
-    public void testFirstBrokerLoginFlowUpdateProfileOff() {
-        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
-
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
-        logInWithBroker(bc);
-
-        waitForAccountManagementTitle();
-        accountUpdateProfilePage.assertCurrent();
-    }
-
-
     /**
      * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testErrorPageWhenDuplicationNotAllowed_updateProfileOff
      */
@@ -572,6 +572,10 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         updateAccountInformationPage.updateAccountInformation("test", "test@localhost.com", "FirstName", "LastName");
         waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
+        Assert.assertEquals("FirstName", accountUpdateProfilePage.getFirstName());
+        Assert.assertEquals("LastName", accountUpdateProfilePage.getLastName());
+        Assert.assertEquals("test@localhost.com", accountUpdateProfilePage.getEmail());
+        Assert.assertEquals("test", accountUpdateProfilePage.getUsername());
     }
 
 
@@ -991,6 +995,11 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
         waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
+        Assert.assertEquals("FirstName", accountUpdateProfilePage.getFirstName());
+        Assert.assertEquals("LastName", accountUpdateProfilePage.getLastName());
+        Assert.assertEquals("no-first-name@localhost.com", accountUpdateProfilePage.getEmail());
+        Assert.assertEquals("no-first-name", accountUpdateProfilePage.getUsername());
+
 
         logoutFromRealm(getProviderRoot(), bc.providerRealmName());
         logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
@@ -1009,6 +1018,10 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
         waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
+        Assert.assertEquals("FirstName", accountUpdateProfilePage.getFirstName());
+        Assert.assertEquals("LastName", accountUpdateProfilePage.getLastName());
+        Assert.assertEquals("no-last-name@localhost.com", accountUpdateProfilePage.getEmail());
+        Assert.assertEquals("no-last-name", accountUpdateProfilePage.getUsername());
 
         logoutFromRealm(getProviderRoot(), bc.providerRealmName());
         logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
@@ -1028,6 +1041,10 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
+        Assert.assertEquals("FirstName", accountUpdateProfilePage.getFirstName());
+        Assert.assertEquals("LastName", accountUpdateProfilePage.getLastName());
+        Assert.assertEquals("no-email@localhost.com", accountUpdateProfilePage.getEmail());
+        Assert.assertEquals("no-email", accountUpdateProfilePage.getUsername());
     }
 
 
@@ -1050,6 +1067,10 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
+        Assert.assertEquals("FirstName", accountUpdateProfilePage.getFirstName());
+        Assert.assertEquals("LastName", accountUpdateProfilePage.getLastName());
+        Assert.assertEquals("all-info-set@localhost.com", accountUpdateProfilePage.getEmail());
+        Assert.assertEquals("all-info-set", accountUpdateProfilePage.getUsername());
     }
 
 
@@ -1064,6 +1085,10 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         logInWithBroker(bc);
         waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
+        Assert.assertEquals("", accountUpdateProfilePage.getFirstName());
+        Assert.assertEquals("", accountUpdateProfilePage.getLastName());
+        Assert.assertEquals(bc.getUserEmail(), accountUpdateProfilePage.getEmail());
+        Assert.assertEquals(bc.getUserLogin(), accountUpdateProfilePage.getUsername());
     }
 
 

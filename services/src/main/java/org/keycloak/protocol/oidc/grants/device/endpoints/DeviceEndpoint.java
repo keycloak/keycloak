@@ -125,7 +125,7 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         int interval = realm.getOAuth2DeviceConfig().getPoolingInterval(client);
 
         OAuth2DeviceCodeModel deviceCode = OAuth2DeviceCodeModel.create(realm, client,
-            Base64Url.encode(KeycloakModelUtils.generateSecret()), request.getScope(), request.getNonce(), expiresIn, interval,
+            Base64Url.encode(KeycloakModelUtils.generateSecret()), request.getScope(), request.getNonce(), expiresIn, interval, null, null,
             request.getAdditionalReqParams());
         OAuth2DeviceUserCodeProvider userCodeProvider = session.getProvider(OAuth2DeviceUserCodeProvider.class);
         String secret = userCodeProvider.generate();

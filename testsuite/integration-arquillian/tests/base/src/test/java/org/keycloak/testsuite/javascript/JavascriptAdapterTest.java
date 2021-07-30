@@ -822,6 +822,42 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .init(defaultArguments(), this::assertInitNotAuth);
     }
 
+    // In case of incorrect/unavailable realm provided in KeycloakConfig,
+    // JavaScript Adapter init() should fail-fast and reject Promise with KeycloakError.
+    @Test
+    public void checkInitWithInvalidRealm() {
+
+        JSObjectBuilder keycloakConfig = JSObjectBuilder.create()
+                .add("url", authServerContextRootPage + "/auth")
+                .add("realm", "invalid-realm-name")
+                .add("clientId", CLIENT_ID);
+
+        JSObjectBuilder initOptions = defaultArguments().add("messageReceiveTimeout", 5000);
+
+        testExecutor
+                .configure(keycloakConfig)
+                .init(initOptions, assertErrorResponse("Timeout when waiting for 3rd party check iframe message."));
+
+    }
+
+    // In case of unavailable Authorization Server due to network or other kind of problems,
+    // JavaScript Adapter init() should fail-fast and reject Promise with KeycloakError.
+    @Test
+    public void checkInitWithUnavailableAuthServer() {
+
+        JSObjectBuilder keycloakConfig = JSObjectBuilder.create()
+                .add("url", "https://localhost:12345/auth")
+                .add("realm", REALM_NAME)
+                .add("clientId", CLIENT_ID);
+
+        JSObjectBuilder initOptions = defaultArguments().add("messageReceiveTimeout", 5000);
+
+        testExecutor
+                .configure(keycloakConfig)
+                .init(initOptions, assertErrorResponse("Timeout when waiting for 3rd party check iframe message."));
+
+    }
+
     protected void assertAdapterIsLoggedIn(WebDriver driver1, Object output, WebElement events) {
         assertTrue(testExecutor.isLoggedIn());
     }

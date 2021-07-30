@@ -61,7 +61,7 @@ public class JpaRealmProviderFactory implements RealmProviderFactory, ProviderEv
     @Override
     public JpaRealmProvider create(KeycloakSession session) {
         EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-        return new JpaRealmProvider(session, em);
+        return new JpaRealmProvider(session, em, null);
     }
 
     @Override

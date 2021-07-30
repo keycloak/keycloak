@@ -18,10 +18,12 @@
 package org.keycloak.testsuite.admin;
 
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionRepresentation;
@@ -31,6 +33,7 @@ import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.util.AdminClientUtil;
 
 import java.io.IOException;
@@ -167,12 +170,16 @@ public class UsersTest extends AbstractAdminTest {
 
     @Test
     public void countUsersWithGroupViewPermission() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, IOException {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
+
         RealmResource testRealmResource = setupTestEnvironmentWithPermissions(true);
         assertThat(testRealmResource.users().count(), is(3));
     }
 
     @Test
     public void countUsersBySearchWithGroupViewPermission() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, IOException {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
+
         RealmResource testRealmResource = setupTestEnvironmentWithPermissions(true);
         //search all
         assertThat(testRealmResource.users().count("user"), is(3));
@@ -195,6 +202,8 @@ public class UsersTest extends AbstractAdminTest {
 
     @Test
     public void countUsersByFiltersWithGroupViewPermission() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, IOException {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
+
         RealmResource testRealmResource = setupTestEnvironmentWithPermissions(true);
         //search username
         assertThat(testRealmResource.users().count(null, null, null, "user"), is(3));
@@ -230,12 +239,16 @@ public class UsersTest extends AbstractAdminTest {
 
     @Test
     public void countUsersWithNoViewPermission() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
+
         RealmResource testRealmResource = setupTestEnvironmentWithPermissions(false);
         assertThat(testRealmResource.users().count(), is(0));
     }
 
     @Test
     public void countUsersBySearchWithNoViewPermission() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, IOException {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
+
         RealmResource testRealmResource = setupTestEnvironmentWithPermissions(false);
         //search all
         assertThat(testRealmResource.users().count("user"), is(0));
@@ -258,6 +271,8 @@ public class UsersTest extends AbstractAdminTest {
 
     @Test
     public void countUsersByFiltersWithNoViewPermission() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, IOException {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
+
         RealmResource testRealmResource = setupTestEnvironmentWithPermissions(false);
         //search username
         assertThat(testRealmResource.users().count(null, null, null, "user"), is(0));

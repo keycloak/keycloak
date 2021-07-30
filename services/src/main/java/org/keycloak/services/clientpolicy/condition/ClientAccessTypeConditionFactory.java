@@ -31,7 +31,7 @@ import org.keycloak.provider.ProviderConfigProperty;
  */
 public class ClientAccessTypeConditionFactory implements ClientPolicyConditionProviderFactory {
 
-    public static final String PROVIDER_ID = "client-accesstype-condition";
+    public static final String PROVIDER_ID = "client-access-type";
 
     public static final String TYPE = "type";
 
@@ -73,7 +73,7 @@ public class ClientAccessTypeConditionFactory implements ClientPolicyConditionPr
 
     @Override
     public String getHelpText() {
-        return "It uses the client's access type (confidential, public, bearer-only) to determine whether the policy is applied.";
+        return "It uses the client's access type (confidential, public, bearer-only) to determine whether the policy is applied. Condition is checked during most of OpenID Connect requests (Authorization request, token requests, introspection endpoint request etc).";
     }
 
     @Override

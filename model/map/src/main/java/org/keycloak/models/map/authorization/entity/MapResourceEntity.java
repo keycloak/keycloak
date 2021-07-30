@@ -19,7 +19,7 @@ package org.keycloak.models.map.authorization.entity;
 
 import org.keycloak.models.map.common.AbstractEntity;
 
-import java.util.Comparator;
+import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -27,11 +27,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-public class MapResourceEntity<K> implements AbstractEntity<K> {
+public class MapResourceEntity implements AbstractEntity, UpdatableEntity {
     
-    public static final Comparator<MapResourceEntity<?>> COMPARE_BY_NAME = Comparator.comparing(MapResourceEntity::getName);
-
-    private final K id;
+    private final String id;
     private String name;
     private String displayName;
     private final Set<String> uris = new HashSet<>();
@@ -45,7 +43,7 @@ public class MapResourceEntity<K> implements AbstractEntity<K> {
     private final Map<String, List<String>> attributes = new HashMap<>();
     private boolean updated = false;
 
-    public MapResourceEntity(K id) {
+    public MapResourceEntity(String id) {
         this.id = id;
     }
 
@@ -54,7 +52,7 @@ public class MapResourceEntity<K> implements AbstractEntity<K> {
     }
 
     @Override
-    public K getId() {
+    public String getId() {
         return id;
     }
 

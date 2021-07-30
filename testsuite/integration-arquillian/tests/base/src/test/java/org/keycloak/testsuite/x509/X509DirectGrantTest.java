@@ -244,6 +244,48 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
 
     }
 
+    @Test
+    public void loginCertificateNotExpired() throws Exception {
+        X509AuthenticatorConfigModel config =
+                new X509AuthenticatorConfigModel()
+                    .setCertValidationEnabled(true)
+                    .setConfirmationPageAllowed(true)
+                    .setMappingSourceType(SUBJECTDN_EMAIL)
+                    .setUserIdentityMapperType(USERNAME_EMAIL);
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config", config.getConfig());
+        String cfgId = createConfig(directGrantExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        oauth.clientId("resource-owner");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "", null);
+
+        assertEquals(200, response.getStatusCode());
+    }
+
+    @Test
+    public void loginCertificateExpired() throws Exception {
+        X509AuthenticatorConfigModel config =
+                new X509AuthenticatorConfigModel()
+                    .setCertValidationEnabled(true)
+                    .setConfirmationPageAllowed(true)
+                    .setMappingSourceType(SUBJECTDN_EMAIL)
+                    .setUserIdentityMapperType(USERNAME_EMAIL);
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-directgrant-config", config.getConfig());
+        String cfgId = createConfig(directGrantExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        setTimeOffset(50 * 365 * 24 * 60 * 60);
+
+        oauth.clientId("resource-owner");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "", "", null);
+
+        setTimeOffset(0);
+
+        assertEquals(401, response.getStatusCode());
+        assertEquals("invalid_request", response.getError());
+        Assert.assertThat(response.getErrorDescription(), containsString("has expired on:"));
+    }
+
     private void loginForceTemporaryAccountLock() throws Exception {
         X509AuthenticatorConfigModel config = new X509AuthenticatorConfigModel()
                 .setMappingSourceType(ISSUERDN)

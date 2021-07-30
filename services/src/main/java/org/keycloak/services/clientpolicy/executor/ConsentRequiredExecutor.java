@@ -19,6 +19,7 @@ package org.keycloak.services.clientpolicy.executor;
 
 import org.keycloak.events.Errors;
 import org.keycloak.models.ClientModel;
+import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
@@ -27,7 +28,7 @@ import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ConsentRequiredExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfiguration> {
+public class ConsentRequiredExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfigurationRepresentation> {
 
     @Override
     public void executeOnEvent(ClientPolicyContext context) throws ClientPolicyException {

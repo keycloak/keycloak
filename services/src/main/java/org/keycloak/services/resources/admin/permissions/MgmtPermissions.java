@@ -30,6 +30,7 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.store.ResourceServerStore;
+import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -72,8 +73,10 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         this.session = session;
         this.realm = realm;
         KeycloakSessionFactory keycloakSessionFactory = session.getKeycloakSessionFactory();
-        AuthorizationProviderFactory factory = (AuthorizationProviderFactory) keycloakSessionFactory.getProviderFactory(AuthorizationProvider.class);
-        this.authz = factory.create(session, realm);
+        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
+            AuthorizationProviderFactory factory = (AuthorizationProviderFactory) keycloakSessionFactory.getProviderFactory(AuthorizationProvider.class);
+            this.authz = factory.create(session, realm);
+        }
     }
 
     MgmtPermissions(KeycloakSession session, RealmModel realm, AdminAuth auth) {
@@ -248,6 +251,7 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
 
     @Override
     public ResourceServer realmResourceServer() {
+        if (!Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) return null;
         if (realmResourceServer != null) return realmResourceServer;
         ClientModel client = getRealmManagementClient();
         if (client == null) return null;
@@ -258,6 +262,7 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
     }
 
     public ResourceServer initializeRealmResourceServer() {
+        if (!Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) return null;
         if (realmResourceServer != null) return realmResourceServer;
         ClientModel client = getRealmManagementClient();
         realmResourceServer = authz.getStoreFactory().getResourceServerStore().findById(client.getId());

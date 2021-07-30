@@ -67,6 +67,6 @@ public abstract class AbstractAccountTest extends AbstractUiTest {
     }
 
     protected String getAccountThemeName() {
-        return suiteContext.getAuthServerInfo().isEAP() ? ACCOUNT_THEME_NAME_RHSSO : ACCOUNT_THEME_NAME_KC;
+        return getProjectName().equals(Profile.PRODUCT_NAME) ? ACCOUNT_THEME_NAME_RHSSO : ACCOUNT_THEME_NAME_KC;
     }
 }

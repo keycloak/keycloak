@@ -19,6 +19,7 @@ package org.keycloak.testsuite.client.resources;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.protocol.oidc.grants.ciba.endpoints.ClientNotificationEndpointRequest;
 import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
 
 import javax.ws.rs.Consumes;
@@ -46,6 +47,12 @@ public interface TestOIDCEndpointsApplicationResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Path("/generate-keys")
+    Map<String, String> generateKeys(@QueryParam("jwaAlgorithm") String jwaAlgorithm,
+            @QueryParam("advertiseJWKAlgorithm") Boolean advertiseJWKAlgorithm);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
     @Path("/get-keys-as-pem")
     Map<String, String> getKeysAsPem();
 
@@ -65,12 +72,25 @@ public interface TestOIDCEndpointsApplicationResource {
     @Produces(org.keycloak.utils.MediaType.APPLICATION_JWT)
     void setOIDCRequest(@QueryParam("realmName") String realmName, @QueryParam("clientId") String clientId,
                         @QueryParam("redirectUri") String redirectUri, @QueryParam("maxAge") String maxAge,
+                        @QueryParam("state") String state,
                         @QueryParam("jwaAlgorithm") String jwaAlgorithm);
+
+    @GET
+    @Path("/set-oidc-request")
+    @Produces(org.keycloak.utils.MediaType.APPLICATION_JWT)
+    void setOIDCRequest(@QueryParam("realmName") String realmName, @QueryParam("clientId") String clientId,
+            @QueryParam("redirectUri") String redirectUri, @QueryParam("maxAge") String maxAge,
+            @QueryParam("jwaAlgorithm") String jwaAlgorithm);
 
     @GET
     @Path("/register-oidc-request")
     @Produces(org.keycloak.utils.MediaType.APPLICATION_JWT)
     void registerOIDCRequest(@QueryParam("requestObject") String encodedRequestObject, @QueryParam("jwaAlgorithm") String jwaAlgorithm);
+
+    @GET
+    @Path("/register-oidc-request-symmetric-sig")
+    @Produces(org.keycloak.utils.MediaType.APPLICATION_JWT)
+    void registerOIDCRequestSymmetricSig(@QueryParam("requestObject") String encodedRequestObject, @QueryParam("jwaAlgorithm") String jwaAlgorithm, @QueryParam("clientSecret") String clientSecret);
 
     @GET
     @Path("/get-oidc-request")
@@ -98,5 +118,31 @@ public interface TestOIDCEndpointsApplicationResource {
     @Path("/get-authentication-channel")
     @Produces(MediaType.APPLICATION_JSON)
     TestAuthenticationChannelRequest getAuthenticationChannel(@QueryParam("bindingMessage") String bindingMessage);
+
+    /**
+     * Invoke client notification endpoint. This will be called by Keycloak itself (by CIBA callback endpoint) not by testsuite
+     * @param request
+     */
+    @POST
+    @Path("/push-ciba-client-notification")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    void cibaClientNotificationEndpoint(ClientNotificationEndpointRequest request);
+
+    /**
+     * Return the authReqId in case that clientNotificationEndpoint was already called by Keycloak for the given clientNotificationToken. Otherwise underlying value of
+     * authReqId field from the returned JSON will be null in case that clientNotificationEndpoint was not yet called for the given clientNotificationToken.
+     *
+     * Pushed client notification will be removed after calling this.
+     *
+     * @param  clientNotificationToken
+     * @return
+     */
+    @GET
+    @Path("/get-pushed-ciba-client-notification")
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    ClientNotificationEndpointRequest getPushedCibaClientNotification(@QueryParam("clientNotificationToken") String clientNotificationToken);
 
 }

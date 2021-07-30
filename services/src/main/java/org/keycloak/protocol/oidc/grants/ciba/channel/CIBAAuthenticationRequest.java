@@ -92,6 +92,9 @@ public class CIBAAuthenticationRequest extends JsonWebToken {
     protected ClientModel client;
 
     @JsonIgnore
+    protected String clientNotificationToken;
+
+    @JsonIgnore
     protected UserModel user;
 
     public CIBAAuthenticationRequest() {
@@ -169,6 +172,14 @@ public class CIBAAuthenticationRequest extends JsonWebToken {
 
     public ClientModel getClient() {
         return client;
+    }
+
+    public String getClientNotificationToken() {
+        return clientNotificationToken;
+    }
+
+    public void setClientNotificationToken(String clientNotificationToken) {
+        this.clientNotificationToken = clientNotificationToken;
     }
 
     public void setUser(UserModel user) {

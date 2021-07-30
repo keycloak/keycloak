@@ -20,6 +20,7 @@ package org.keycloak.authorization.store.syncronization;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel.RealmRemovedEvent;
@@ -34,17 +35,11 @@ public class RealmSynchronizer implements Synchronizer<RealmRemovedEvent> {
         ProviderFactory<AuthorizationProvider> providerFactory = factory.getProviderFactory(AuthorizationProvider.class);
         AuthorizationProvider authorizationProvider = providerFactory.create(event.getKeycloakSession());
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
+        ResourceServerStore resourceServerStore = storeFactory.getResourceServerStore();
 
         event.getRealm().getClientsStream().forEach(clientModel -> {
-            ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
-
-            if (resourceServer != null) {
-                String id = resourceServer.getId();
-                //storeFactory.getResourceStore().findByResourceServer(id).forEach(resource -> storeFactory.getResourceStore().delete(resource.getId()));
-                //storeFactory.getScopeStore().findByResourceServer(id).forEach(scope -> storeFactory.getScopeStore().delete(scope.getId()));
-                //storeFactory.getPolicyStore().findByResourceServer(id).forEach(scope -> storeFactory.getPolicyStore().delete(scope.getId()));
-                storeFactory.getResourceServerStore().delete(id);
-            }
+            String id = clientModel.getId();
+            resourceServerStore.delete(id);
         });
     }
 }

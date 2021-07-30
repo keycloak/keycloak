@@ -32,9 +32,12 @@ import org.keycloak.storage.client.ClientStorageProviderModel;
 import org.keycloak.utils.ServicesUtils;
 
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.keycloak.models.ClientScopeModel;
+
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -114,6 +117,10 @@ public class ClientStorageManager implements ClientProvider {
                 .map(model -> type.cast(getStorageProviderInstance(session, model, getClientStorageProviderFactory(model, session))));
     }
 
+    public static boolean hasEnabledStorageProviders(KeycloakSession session, RealmModel realm, Class<?> type) {
+        return getStorageProviders(realm, session, type).anyMatch(ClientStorageProviderModel::isEnabled);
+    }
+
 
     public ClientStorageManager(KeycloakSession session, long clientStorageProviderTimeout) {
         this.session = session;
@@ -145,22 +152,52 @@ public class ClientStorageManager implements ClientProvider {
                 .orElse(null);
     }
 
-    /**
-     * Obtaining clients from an external client storage is time-bounded. In case the external client storage
-     * isn't available at least clients from a local storage are returned. For this purpose
-     * the {@link org.keycloak.services.DefaultKeycloakSessionFactory#getClientStorageProviderTimeout()} property is used.
-     * Default value is 3000 milliseconds and it's configurable.
-     * See {@link org.keycloak.services.DefaultKeycloakSessionFactory} for details.
-     */
     @Override
     public Stream<ClientModel> searchClientsByClientIdStream(RealmModel realm, String clientId, Integer firstResult, Integer maxResults) {
-        Stream<ClientModel> local = session.clientLocalStorage().searchClientsByClientIdStream(realm, clientId,  firstResult, maxResults);
-        Stream<ClientModel> ext = getEnabledStorageProviders(session, realm, ClientLookupProvider.class)
-                .flatMap(ServicesUtils.timeBound(session,
-                        clientStorageProviderTimeout,
-                        p -> ((ClientLookupProvider) p).searchClientsByClientIdStream(realm, clientId, firstResult, maxResults)));
+        return query((p, f, m) -> p.searchClientsByClientIdStream(realm, clientId, f, m), realm, firstResult, maxResults);
+    }
 
-        return Stream.concat(local, ext);
+    @Override
+    public Stream<ClientModel> searchClientsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+        return query((p, f, m) -> p.searchClientsByAttributes(realm, attributes, f, m), realm, firstResult, maxResults);
+    }
+
+    @FunctionalInterface
+    interface PaginatedQuery {
+        Stream<ClientModel> query(ClientLookupProvider provider, Integer firstResult, Integer maxResults);
+    }
+
+    protected Stream<ClientModel> query(PaginatedQuery paginatedQuery, RealmModel realm, Integer firstResult, Integer maxResults) {
+        if (maxResults != null && maxResults == 0) return Stream.empty();
+
+        // when there are external providers involved, we can't do pagination at the lower data layer as we don't know
+        // how many results there will be; i.e. we need to query the clients without paginating them and perform pagination
+        // later at this level
+        if (hasEnabledStorageProviders(session, realm, ClientLookupProvider.class)) {
+            Stream<ClientLookupProvider> providersStream = Stream.concat(Stream.of(session.clientLocalStorage()), getEnabledStorageProviders(session, realm, ClientLookupProvider.class));
+
+            /*
+              Obtaining clients from an external client storage is time-bounded. In case the external client storage
+              isn't available at least clients from a local storage are returned, otherwise both storages are used. For this purpose
+              the {@link org.keycloak.services.DefaultKeycloakSessionFactory#getClientStorageProviderTimeout()} property is used.
+              Default value is 3000 milliseconds and it's configurable.
+              See {@link org.keycloak.services.DefaultKeycloakSessionFactory} for details.
+             */
+            Function<ClientLookupProvider, Stream<? extends ClientModel>> performQueryWithTimeBound = (p) -> {
+                if (p instanceof ClientStorageProvider) {
+                    return ServicesUtils.timeBound(session, clientStorageProviderTimeout, p2 -> paginatedQuery.query((ClientLookupProvider) p2, null, null)).apply(p);
+                }
+                else {
+                    return paginatedQuery.query(p, null, null);
+                }
+            };
+
+            Stream<ClientModel> res = providersStream.flatMap(performQueryWithTimeBound);
+            return paginatedStream(res, firstResult, maxResults);
+        }
+        else {
+            return paginatedQuery.query(session.clientLocalStorage(), firstResult, maxResults);
+        }
     }
 
     @Override
@@ -224,6 +261,11 @@ public class ClientStorageManager implements ClientProvider {
             throw new RuntimeException("Federated clients do not support this operation");
         }
         session.clientLocalStorage().removeClientScope(realm, client, clientScope);
+    }
+
+    @Override
+    public Map<ClientModel, Set<String>> getAllRedirectUrisOfEnabledClients(RealmModel realm) {
+        return session.clientLocalStorage().getAllRedirectUrisOfEnabledClients(realm);
     }
 
     @Override

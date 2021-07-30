@@ -36,11 +36,15 @@
         "event-queue": {}
     },
 
-    "serverInfo": {
-        "provider": "${keycloak.serverInfo.provider:jpa}",
+    "deploymentState": {
+        "provider": "${keycloak.deploymentState.provider:jpa}",
         "map": {
             "resourcesVersionSeed": "1JZ379bzyOCFA"
         }
+    },
+
+    "dblock": {
+        "provider": "${keycloak.dblock.provider:jpa}"
     },
 
     "realm": {
@@ -68,7 +72,10 @@
     },
 
     "authenticationSessions": {
-        "provider": "${keycloak.authSession.provider:infinispan}"
+        "provider": "${keycloak.authSession.provider:infinispan}",
+        "infinispan": {
+            "authSessionsLimit": "${keycloak.authSessions.limit:300}"
+        }
     },
 
     "userSessions": {
@@ -212,7 +219,8 @@
     },
 
     "userProfile": {
-        "legacy-user-profile": {
+        "provider": "${keycloak.userProfile.provider:}",
+        "declarative-user-profile": {
             "read-only-attributes": [ "deniedFoo", "deniedBar*", "deniedSome/thing", "deniedsome*thing" ],
             "admin-read-only-attributes": [ "deniedSomeAdmin" ]
         }

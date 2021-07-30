@@ -166,8 +166,7 @@ public class JPAPolicyStore implements PolicyStore {
                     }
                 }
                     break;
-                case OWNER_IS_NOT_NULL:
-                    predicates.add(builder.isNotNull(root.get("owner")));
+                case ANY_OWNER:
                     break;
                 case CONFIG:
                     if (value.length != 2) {
@@ -186,7 +185,7 @@ public class JPAPolicyStore implements PolicyStore {
             }
         });
 
-        if (!attributes.containsKey(Policy.FilterOption.OWNER) && !attributes.containsKey(Policy.FilterOption.OWNER_IS_NOT_NULL)) {
+        if (!attributes.containsKey(Policy.FilterOption.OWNER) && !attributes.containsKey(Policy.FilterOption.ANY_OWNER)) {
             predicates.add(builder.isNull(root.get("owner")));
         }
 

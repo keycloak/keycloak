@@ -236,7 +236,7 @@ public class FlowUtil {
         return this;
     }
 
-    private List<AuthenticationExecutionModel> getExecutions() {
+    public List<AuthenticationExecutionModel> getExecutions() {
         if (executions == null) {
             executions = realm.getAuthenticationExecutionsStream(currentFlow.getId()).collect(Collectors.toList());
         }

@@ -22,13 +22,12 @@ import java.util.stream.Stream;
 
 /**
  * Implementation of this interface interacts with a persistence storage storing various entities, e.g. users, realms.
- * It contains basic object CRUD operations as well as bulk {@link #read(org.keycloak.models.map.storage.ModelCriteriaBuilder)}
- * and bulk {@link #delete(org.keycloak.models.map.storage.ModelCriteriaBuilder)} operations, 
+ * It contains basic object CRUD operations as well as bulk {@link #read(org.keycloak.models.map.storage.QueryParameters)}
+ * and bulk {@link #delete(org.keycloak.models.map.storage.QueryParameters)} operations,
  * and operation for determining the number of the objects satisfying given criteria
- * ({@link #getCount(org.keycloak.models.map.storage.ModelCriteriaBuilder)}).
+ * ({@link #getCount(org.keycloak.models.map.storage.QueryParameters)}).
  *
  * @author hmlnarik
- * @param <K> Type of the primary key. Various storages can
  * @param <V> Type of the stored values that contains all the data stripped of session state. In other words, in the entities
  *            there are only IDs and mostly primitive types / {@code String}, never references to {@code *Model} instances.
  *            See the {@code Abstract*Entity} classes in this module.
@@ -36,16 +35,18 @@ import java.util.stream.Stream;
  *            filtering via model fields in {@link ModelCriteriaBuilder} which is necessary to abstract from physical
  *            layout and thus to support no-downtime upgrade.
  */
-public interface MapStorage<K, V extends AbstractEntity<K>, M> {
+public interface MapStorage<V extends AbstractEntity, M> {
 
     /**
-     * Creates an object in the store identified by given {@code key}.
-     * @param key Key of the object as seen in the logical level
-     * @param value Entity
-     * @return Reference to the entity created in the store
-     * @throws NullPointerException if object or its {@code key} is {@code null}
+     * Creates an object in the store. ID of the {@code value} may be prescribed in id of the {@code value}.
+     * If the id is {@code null} or its format is not matching the store internal format for ID, then
+     * the {@code value}'s ID will be generated and returned in the id of the return value.
+     * @param value Entity to create in the store
+     * @throws NullPointerException if {@code value} is {@code null}
+     * @see AbstractEntity#getId()
+     * @return Entity representing the {@code value} in the store. It may or may not be the same instance as {@code value}
      */
-    V create(K key, V value);
+    V create(V value);
 
     /**
      * Returns object with the given {@code key} from the storage or {@code null} if object does not exist.
@@ -55,55 +56,54 @@ public interface MapStorage<K, V extends AbstractEntity<K>, M> {
      * @return See description
      * @throws NullPointerException if the {@code key} is {@code null}
      */
-    V read(K key);
+    V read(String key);
 
     /**
      * Returns stream of objects satisfying given {@code criteria} from the storage.
      * The criteria are specified in the given criteria builder based on model properties.
      *
-     * @param criteria Criteria filtering out the object, originally obtained 
-     *   from {@link #createCriteriaBuilder()} method of this object.
-     *   If {@code null}, it returns an empty stream.
+     * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
      * @return Stream of objects. Never returns {@code null}.
      * @throws IllegalStateException If {@code criteria} is not compatible, i.e. has not been originally created
      *   by the {@link #createCriteriaBuilder()} method of this object.
      */
-    Stream<V> read(ModelCriteriaBuilder<M> criteria);
+    Stream<V> read(QueryParameters<M> queryParameters);
 
     /**
      * Returns the number of objects satisfying given {@code criteria} from the storage.
      * The criteria are specified in the given criteria builder based on model properties.
      *
-     * @param criteria
+     * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
      * @return Number of objects. Never returns {@code null}.
      * @throws IllegalStateException If {@code criteria} is not compatible, i.e. has not been originally created
      *   by the {@link #createCriteriaBuilder()} method of this object.
      */
-    long getCount(ModelCriteriaBuilder<M> criteria);
+    long getCount(QueryParameters<M> queryParameters);
 
     /**
-     * Updates the object with the given {@code id} in the storage if it already exists.
-     * @param key Primary key of the object to update
+     * Updates the object with the key of the {@code value}'s ID in the storage if it already exists.
+     *
      * @param value Updated value
-     * @throws NullPointerException if object or its {@code id} is {@code null}
+     * @throws NullPointerException if the object or its {@code id} is {@code null}
+     * @see AbstractEntity#getId()
      */
-    V update(K key, V value);
+    V update(V value);
 
     /**
      * Deletes object with the given {@code key} from the storage, if exists, no-op otherwise.
      * @param key
      * @return Returns {@code true} if the object has been deleted or result cannot be determined, {@code false} otherwise.
      */
-    boolean delete(K key);
+    boolean delete(String key);
 
     /**
      * Deletes objects that match the given criteria.
-     * @param criteria
+     * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
      * @return Number of removed objects (might return {@code -1} if not supported)
      * @throws IllegalStateException If {@code criteria} is not compatible, i.e. has not been originally created
      *   by the {@link #createCriteriaBuilder()} method of this object.
      */
-    long delete(ModelCriteriaBuilder<M> criteria);
+    long delete(QueryParameters<M> queryParameters);
 
     
     /**
@@ -120,7 +120,6 @@ public interface MapStorage<K, V extends AbstractEntity<K>, M> {
      * @return See description. Never returns {@code null}
      */
     ModelCriteriaBuilder<M> createCriteriaBuilder();
-
     
     /**
      * Creates a {@code MapKeycloakTransaction} object that tracks a new transaction related to this storage.
@@ -130,14 +129,6 @@ public interface MapStorage<K, V extends AbstractEntity<K>, M> {
      *
      * @return See description. Never returns {@code null}
      */
-    public MapKeycloakTransaction<K, V, M> createTransaction(KeycloakSession session);
-
-    /**
-     * Returns a {@link StringKeyConvertor} that is used to convert primary keys
-     * from {@link String} to internal representation and vice versa.
-     * 
-     * @return See above. Never returns {@code null}.
-     */
-    public StringKeyConvertor<K> getKeyConvertor();
+    MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session);
 
 }

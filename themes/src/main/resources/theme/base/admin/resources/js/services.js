@@ -2112,6 +2112,16 @@ module.factory('UserGroupMapping', function($resource) {
     });
 });
 
+module.factory('UserProfile', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/users/profile', {
+        realm : '@realm'
+    }, {
+        update : {
+            method : 'PUT'
+        }
+    });
+});
+
 module.factory('DefaultGroups', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/default-groups/:groupId', {
         realm : '@realm',
@@ -2195,6 +2205,27 @@ module.factory('ClientStorageOperations', function($resource) {
 module.factory('ClientRegistrationPolicyProviders', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/client-registration-policy/providers', {
         realm : '@realm',
+    });
+});
+
+module.factory('ClientPoliciesProfiles', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-policies/profiles?include-global-profiles=:includeGlobalProfiles', {
+        realm : '@realm',
+        includeGlobalProfiles : '@includeGlobalProfiles'
+    }, {
+       update : {
+           method : 'PUT'
+       }
+    });
+});
+
+module.factory('ClientPolicies', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-policies/policies', {
+        realm : '@realm',
+    }, {
+       update : {
+           method : 'PUT'
+       }
     });
 });
 

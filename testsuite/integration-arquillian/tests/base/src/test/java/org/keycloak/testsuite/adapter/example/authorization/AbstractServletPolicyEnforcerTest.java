@@ -18,6 +18,7 @@ package org.keycloak.testsuite.adapter.example.authorization;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 
@@ -29,6 +30,7 @@ import java.util.List;
 
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.test.api.ArquillianResource;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -38,6 +40,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.UIUtils;
@@ -53,6 +56,11 @@ public class AbstractServletPolicyEnforcerTest extends AbstractExampleAdapterTes
 
     @ArquillianResource
     private Deployer deployer;
+
+    @BeforeClass
+    public static void enabled() {
+        ProfileAssume.assumeFeatureEnabled(AUTHORIZATION);
+    }
 
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {

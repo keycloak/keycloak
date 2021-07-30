@@ -18,6 +18,7 @@ package org.keycloak.models.map.authSession;
 
 import org.keycloak.models.map.common.AbstractEntity;
 
+import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,9 +26,9 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapRootAuthenticationSessionEntity<K> implements AbstractEntity<K> {
+public class MapRootAuthenticationSessionEntity implements AbstractEntity, UpdatableEntity {
 
-    private K id;
+    private String id;
     private String realmId;
 
     /**
@@ -42,8 +43,7 @@ public class MapRootAuthenticationSessionEntity<K> implements AbstractEntity<K> 
         this.realmId = null;
     }
 
-    public MapRootAuthenticationSessionEntity(K id, String realmId) {
-        Objects.requireNonNull(id, "id");
+    public MapRootAuthenticationSessionEntity(String id, String realmId) {
         Objects.requireNonNull(realmId, "realmId");
 
         this.id = id;
@@ -51,7 +51,7 @@ public class MapRootAuthenticationSessionEntity<K> implements AbstractEntity<K> 
     }
 
     @Override
-    public K getId() {
+    public String getId() {
         return this.id;
     }
 

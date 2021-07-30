@@ -28,15 +28,15 @@ import java.util.Objects;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public abstract class AbstractAuthenticatedClientSessionModel<K> implements AuthenticatedClientSessionModel {
+public abstract class AbstractAuthenticatedClientSessionModel implements AuthenticatedClientSessionModel {
     protected final KeycloakSession session;
     protected final RealmModel realm;
     protected ClientModel client;
     protected UserSessionModel userSession;
-    protected final MapAuthenticatedClientSessionEntity<K> entity;
+    protected final MapAuthenticatedClientSessionEntity entity;
 
     public AbstractAuthenticatedClientSessionModel(KeycloakSession session, RealmModel realm, ClientModel client,
-                                                   UserSessionModel userSession, MapAuthenticatedClientSessionEntity<K> entity) {
+                                                   UserSessionModel userSession, MapAuthenticatedClientSessionEntity entity) {
         Objects.requireNonNull(entity, "entity");
         Objects.requireNonNull(realm, "realm");
         Objects.requireNonNull(client, "client");

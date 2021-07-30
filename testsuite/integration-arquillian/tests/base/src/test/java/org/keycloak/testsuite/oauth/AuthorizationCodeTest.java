@@ -161,7 +161,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     // KEYCLOAK-3281
     @Test
     public void authorizationRequestFormPostResponseMode() throws IOException {
-        oauth.responseMode(OIDCResponseMode.FORM_POST.toString().toLowerCase());
+        oauth.responseMode(OIDCResponseMode.FORM_POST.value());
         oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
         oauth.doLoginGrant("test-user@localhost", "password");
 
@@ -179,7 +179,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
     @Test
     public void authorizationRequestFormPostResponseModeWithCustomState() throws IOException {
-        oauth.responseMode(OIDCResponseMode.FORM_POST.toString().toLowerCase());
+        oauth.responseMode(OIDCResponseMode.FORM_POST.value());
         oauth.stateParamHardcoded("\"><foo>bar_baz(2)far</foo>");
         oauth.doLoginGrant("test-user@localhost", "password");
 
@@ -198,7 +198,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     @Test
     public void authorizationRequestFragmentResponseModeNotKept() throws Exception {
         // Set response_mode=fragment and login
-        oauth.responseMode(OIDCResponseMode.FRAGMENT.toString().toLowerCase());
+        oauth.responseMode(OIDCResponseMode.FRAGMENT.value());
         OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         Assert.assertNotNull(response.getCode());

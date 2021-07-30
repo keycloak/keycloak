@@ -19,12 +19,12 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>galleon-feature-packs-parent</artifactId>
-        <version>14.0.0-SNAPSHOT</version>
+        <version>15.0.0-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
     
-    <groupId>${galleon-adapter-group-id}</groupId>
+    <groupId>org.keycloak</groupId>
     <artifactId>keycloak-adapter-galleon-pack</artifactId>
 
     <name>Keycloak Galleon Feature Pack: Adapter</name>
@@ -258,15 +258,6 @@
             <properties>
                 <galleon-adapter-group-id>org.keycloak</galleon-adapter-group-id>
             </properties>
-            <repositories>
-                <repository>
-                    <id>jboss</id>
-                    <url>https://repository.jboss.org/nexus/content/groups/public/</url>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                </repository>
-            </repositories>
             <dependencies>
                 <dependency>
                     <groupId>org.wildfly</groupId>
@@ -290,7 +281,7 @@
             <dependencies>
                 <dependency>
                     <groupId>org.jboss.eap</groupId>
-                    <artifactId>wildfly-galleon-pack</artifactId>
+                    <artifactId>wildfly-ee-galleon-pack</artifactId>
                     <version>${eap.version}</version>
                     <type>zip</type>
                     <scope>provided</scope>

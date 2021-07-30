@@ -18,6 +18,7 @@
 package org.keycloak.models.map.user;
 
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -35,9 +36,14 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 
-public abstract class MapUserAdapter<K> extends AbstractUserModel<MapUserEntity<K>> {
-    public MapUserAdapter(KeycloakSession session, RealmModel realm, MapUserEntity<K> entity) {
+public abstract class MapUserAdapter extends AbstractUserModel<MapUserEntity> {
+    public MapUserAdapter(KeycloakSession session, RealmModel realm, MapUserEntity entity) {
         super(session, realm, entity);
+    }
+
+    @Override
+    public String getId() {
+        return entity.getId();
     }
 
     @Override
@@ -205,7 +211,14 @@ public abstract class MapUserAdapter<K> extends AbstractUserModel<MapUserEntity<
     @Override
     public void setEmail(String email) {
         email = KeycloakModelUtils.toLowerCaseSafe(email);
-        if (email != null && email.equals(entity.getEmail())) return;
+        if (email != null) {
+            if (email.equals(entity.getEmail())) {
+                return;
+            }
+            if (ObjectUtil.isBlank(email)) {
+                email = null;
+            }
+        }
         boolean duplicatesAllowed = realm.isDuplicateEmailsAllowed();
 
         if (!duplicatesAllowed && email != null && checkEmailUniqueness(realm, email)) {

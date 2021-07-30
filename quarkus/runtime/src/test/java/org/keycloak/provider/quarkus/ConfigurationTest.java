@@ -180,6 +180,14 @@ public class ConfigurationTest {
     }
 
     @Test
+    public void testDatabaseUrlProperties() {
+        System.setProperty("kc.config.args", "--db=mariadb,--db-url=jdbc:mariadb:aurora://foo/bar?a=1&b=2");
+        SmallRyeConfig config = createConfig();
+        assertEquals(MariaDBDialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
+        assertEquals("jdbc:mariadb:aurora://foo/bar?a=1&b=2", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+    }
+
+    @Test
     public void testDatabaseDefaults() {
         System.setProperty("kc.config.args", "--db=h2-file");
         SmallRyeConfig config = createConfig();
@@ -190,6 +198,17 @@ public class ConfigurationTest {
         config = createConfig();
         assertEquals(QuarkusH2Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
         assertEquals("jdbc:h2:mem:keycloakdb", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals("h2", config.getConfigValue("quarkus.datasource.db-kind").getValue());
+    }
+
+    @Test
+    public void testDatabaseKindProperties() {
+        System.setProperty("kc.config.args", "--db=postgres-10,--db-url=jdbc:postgresql://localhost/keycloak");
+        SmallRyeConfig config = createConfig();
+        assertEquals("io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL10Dialect",
+            config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
+        assertEquals("jdbc:postgresql://localhost/keycloak", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals("postgresql", config.getConfigValue("quarkus.datasource.db-kind").getValue());
     }
 
     @Test
@@ -241,6 +260,9 @@ public class ConfigurationTest {
         Assert.assertEquals("cluster-foo.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
         System.setProperty("kc.profile", "dev");
         Assert.assertEquals("cluster-foo.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
+
+        System.setProperty("kc.config.args", "--cluster-stack=foo");
+        Assert.assertEquals("foo", initConfig("connectionsInfinispan", "quarkus").get("stack"));
     }
 
     private Config.Scope initConfig(String... scope) {

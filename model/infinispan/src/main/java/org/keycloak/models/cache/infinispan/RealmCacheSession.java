@@ -569,6 +569,11 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
+    public Map<ClientModel, Set<String>> getAllRedirectUrisOfEnabledClients(RealmModel realm) {
+        return getClientDelegate().getAllRedirectUrisOfEnabledClients(realm);
+    }
+
+    @Override
     public void removeClients(RealmModel realm) {
         getClientDelegate().removeClients(realm);
     }
@@ -1159,6 +1164,11 @@ public class RealmCacheSession implements CacheRealmProvider {
     @Override
     public Stream<ClientModel> searchClientsByClientIdStream(RealmModel realm, String clientId, Integer firstResult, Integer maxResults) {
         return getClientDelegate().searchClientsByClientIdStream(realm, clientId, firstResult, maxResults);
+    }
+
+    @Override
+    public Stream<ClientModel> searchClientsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+        return getClientDelegate().searchClientsByAttributes(realm, attributes, firstResult, maxResults);
     }
 
     @Override

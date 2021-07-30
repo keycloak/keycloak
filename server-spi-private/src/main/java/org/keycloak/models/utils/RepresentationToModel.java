@@ -52,6 +52,7 @@ import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.common.Profile;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.UriUtils;
@@ -79,6 +80,7 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
+import org.keycloak.models.ParConfig;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -137,8 +139,11 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
+import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.validation.ValidationUtil;
+
+import static org.keycloak.protocol.saml.util.ArtifactBindingUtils.computeArtifactBindingIdentifierString;
 
 public class RepresentationToModel {
 
@@ -295,6 +300,8 @@ public class RepresentationToModel {
         newRealm.setWebAuthnPolicyPasswordless(webAuthnPolicy);
 
         updateCibaSettings(rep, newRealm);
+
+        updateParSettings(rep, newRealm);
 
         Map<String, String> mappedFlows = importAuthenticationFlows(newRealm, rep);
         if (rep.getRequiredActions() != null) {
@@ -1074,6 +1081,11 @@ public class RepresentationToModel {
             renameRealm(realm, rep.getRealm());
         }
 
+        if (!Boolean.parseBoolean(rep.getAttributesOrEmpty().get("userProfileEnabled"))) {
+            UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+            provider.setConfiguration(null);
+        }
+
         // Import attributes first, so the stuff saved directly on representation (displayName, bruteForce etc) has bigger priority
         if (rep.getAttributes() != null) {
             Set<String> attrsToRemove = new HashSet<>(realm.getAttributes().keySet());
@@ -1181,6 +1193,8 @@ public class RepresentationToModel {
         realm.setWebAuthnPolicyPasswordless(webAuthnPolicy);
 
         updateCibaSettings(rep, realm);
+        updateParSettings(rep, realm);
+        session.clientPolicy().updateRealmModelFromRepresentation(realm, rep);
 
         if (rep.getSmtpServer() != null) {
             Map<String, String> config = new HashMap(rep.getSmtpServer());
@@ -1233,6 +1247,13 @@ public class RepresentationToModel {
         cibaPolicy.setExpiresIn(newAttributes.get(CibaConfig.CIBA_EXPIRES_IN));
         cibaPolicy.setPoolingInterval(newAttributes.get(CibaConfig.CIBA_INTERVAL));
         cibaPolicy.setAuthRequestedUserHint(newAttributes.get(CibaConfig.CIBA_AUTH_REQUESTED_USER_HINT));
+    }
+
+    private static void updateParSettings(RealmRepresentation rep, RealmModel realm) {
+        Map<String, String> newAttributes = rep.getAttributesOrEmpty();
+        ParConfig parPolicy = realm.getParPolicy();
+
+        parPolicy.setRequestUriLifespan(newAttributes.get(ParConfig.PAR_REQUEST_URI_LIFESPAN));
     }
 
     // Basic realm stuff
@@ -1405,6 +1426,11 @@ public class RepresentationToModel {
             }
         }
 
+        if ("saml".equals(resourceRep.getProtocol())
+                && (resourceRep.getAttributes() == null
+                    || !resourceRep.getAttributes().containsKey("saml.artifact.binding.identifier"))) {
+            client.setAttribute("saml.artifact.binding.identifier", computeArtifactBindingIdentifierString(resourceRep.getClientId()));
+        }
 
         if (resourceRep.getAuthenticationFlowBindingOverrides() != null) {
             for (Map.Entry<String, String> entry : resourceRep.getAuthenticationFlowBindingOverrides().entrySet()) {
@@ -1555,6 +1581,12 @@ public class RepresentationToModel {
             for (Map.Entry<String, String> entry : removeEmptyString(rep.getAttributes()).entrySet()) {
                 resource.setAttribute(entry.getKey(), entry.getValue());
             }
+        }
+
+        if ("saml".equals(rep.getProtocol())
+                && (rep.getAttributes() == null
+                || !rep.getAttributes().containsKey("saml.artifact.binding.identifier"))) {
+            resource.setAttribute("saml.artifact.binding.identifier", computeArtifactBindingIdentifierString(rep.getClientId()));
         }
 
         if (rep.getAuthenticationFlowBindingOverrides() != null) {
@@ -2236,7 +2268,7 @@ public class RepresentationToModel {
     }
 
     public static void importAuthorizationSettings(ClientRepresentation clientRepresentation, ClientModel client, KeycloakSession session) {
-        if (Boolean.TRUE.equals(clientRepresentation.getAuthorizationServicesEnabled())) {
+        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION) && Boolean.TRUE.equals(clientRepresentation.getAuthorizationServicesEnabled())) {
             AuthorizationProviderFactory authorizationFactory = (AuthorizationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(AuthorizationProvider.class);
             AuthorizationProvider authorization = authorizationFactory.create(session, client.getRealm());
 

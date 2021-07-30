@@ -102,7 +102,7 @@ public class RealmsAdminResource {
 
     protected RealmRepresentation toRealmRep(RealmModel realm) {
         if (AdminPermissions.realms(session, auth).canView(realm)) {
-            return ModelToRepresentation.toRepresentation(realm, false);
+            return ModelToRepresentation.toRepresentation(session, realm, false);
         } else if (AdminPermissions.realms(session, auth).isAdmin(realm)) {
             RealmRepresentation rep = new RealmRepresentation();
             rep.setRealm(realm.getName());

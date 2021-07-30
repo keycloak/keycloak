@@ -27,6 +27,8 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
 import javax.persistence.Table;
+
+import org.hibernate.annotations.Nationalized;
 import org.keycloak.models.jpa.converter.MapStringConverter;
 
 @Entity
@@ -81,6 +83,7 @@ public class RealmLocalizationTextsEntity {
     @Column(name = "LOCALE")
     private String locale;
 
+    @Nationalized
     @Column(name = "TEXTS")
     private String texts;
     // TODO: The @Convert does not work as expected on quarkus. It doesn't update the "texts" in case that updated map has same keys (but different values) as old map had

@@ -24,6 +24,7 @@ import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.protocol.oidc.grants.ciba.endpoints.ClientNotificationEndpointRequest;
 import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
@@ -50,12 +51,13 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
     private BlockingQueue<TestAvailabilityAction> testAvailabilityActions = new LinkedBlockingDeque<>();
 
     private final OIDCClientData oidcClientData = new OIDCClientData();
-    private ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests = new ConcurrentHashMap<String, TestAuthenticationChannelRequest>();
+    private ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests = new ConcurrentHashMap<>();
+    private ConcurrentMap<String, ClientNotificationEndpointRequest> cibaClientNotifications = new ConcurrentHashMap<>();
 
     @Override
     public RealmResourceProvider create(KeycloakSession session) {
         TestApplicationResourceProvider provider = new TestApplicationResourceProvider(session, adminLogoutActions,
-                backChannelLogoutTokens, pushNotBeforeActions, testAvailabilityActions, oidcClientData, authenticationChannelRequests);
+                backChannelLogoutTokens, pushNotBeforeActions, testAvailabilityActions, oidcClientData, authenticationChannelRequests, cibaClientNotifications);
 
         ResteasyProviderFactory.getInstance().injectProperties(provider);
 
@@ -86,7 +88,7 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
         private String oidcRequest;
         private List<String> sectorIdentifierRedirectUris;
         private String keyType = KeyType.RSA;
-        private String keyAlgorithm = Algorithm.RS256;
+        private String keyAlgorithm;
         private KeyUse keyUse = KeyUse.SIG;
 
         public KeyPair getSigningKeyPair() {
