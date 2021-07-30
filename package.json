@@ -30,7 +30,7 @@
     "@patternfly/react-table": "4.29.0",
     "file-saver": "^2.0.5",
     "i18next": "^20.3.5",
-    "keycloak-admin": "1.14.19",
+    "keycloak-admin": "^1.14.20",
     "lodash": "^4.17.20",
     "moment": "^2.29.1",
     "react": "^17.0.2",

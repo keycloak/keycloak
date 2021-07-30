@@ -1,9 +1,0 @@
-version: '3'
-services:
-  keycloak-admin-ui:
-    build:
-      context: .
-      args:
-        KEYCLOAK_ENDPOINT: ${KEYCLOAK_ENDPOINT:-'http:\/\/localhost:8180'}
-    ports:
-      - "80:80"
