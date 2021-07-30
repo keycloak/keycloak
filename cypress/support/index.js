@@ -14,7 +14,12 @@
 // ***********************************************************
 
 // Import commands.js using ES2015 syntax:
-import './commands'
+import "./commands";
 
 // Alternatively you can use CommonJS syntax:
 // require('./commands')
+
+// Set Keycloak server to development path if not set.
+if (!Cypress.env("KEYCLOAK_SERVER")) {
+  Cypress.env("KEYCLOAK_SERVER", "http://localhost:8180");
+}

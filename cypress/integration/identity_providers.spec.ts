@@ -97,12 +97,13 @@ describe("Identity provider test", () => {
 
     it("should create a oidc provider using discovery url", () => {
       const oidcProviderName = "oidc";
+      const keycloakServer = Cypress.env("KEYCLOAK_SERVER");
 
       createProviderPage
         .clickCreateDropdown()
         .clickItem(oidcProviderName)
         .fillDiscoveryUrl(
-          "http://localhost:8180/auth/realms/master/.well-known/openid-configuration"
+          `${keycloakServer}/auth/realms/master/.well-known/openid-configuration`
         )
         .shouldBeSuccessful()
         .fill("oidc", "123")
@@ -112,7 +113,7 @@ describe("Identity provider test", () => {
       );
 
       createProviderPage.shouldHaveAuthorizationUrl(
-        "http://localhost:8180/auth/realms/master/protocol/openid-connect/auth"
+        `${keycloakServer}/auth/realms/master/protocol/openid-connect/auth`
       );
     });
 

@@ -1,53 +1,50 @@
-name: Cypress run
-
+name: Cypress
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
-
+    branches: [master]
 jobs:
   cypress-run:
-
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [16.x]
-
     steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v2
-      with:
-        node-version: ${{ matrix.node-version }}
-        check-latest: true
+      - uses: actions/checkout@v2
 
-    - run: npm ci
-    - run: npm run build
+      - name: Build Keycloak server
+        run: docker build --tag keycloak .
 
-    - name: Run Keycloak
-      run: ./start.mjs & sleep 40
+      - name: Start Keycloak server
+        run: |
+          docker run --detach --publish 8080:8080 --env KEYCLOAK_USER=admin --env KEYCLOAK_PASSWORD=admin --name keycloak keycloak
+          sleep 10
 
-    - name: Run Admin Console
-      run: npx http-server ./build -P http://localhost:8180/ & sleep 30
+      - name: Configure Keycloak server
+        run: |
+          docker exec keycloak /opt/jboss/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user admin --password admin
+          docker exec keycloak /opt/jboss/keycloak/bin/kcadm.sh update realms/master -s "adminTheme=keycloak.v2"
 
-    - name: Admin Console client
-      run: ./import.mjs
+      - name: Setup Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16
+          check-latest: true
 
-    - name: Cypress run
-      run: npm run start:cypress-tests
+      - name: Install dependencies
+        run: npm ci
 
-    - name: Add Cypress videos artifacts
-      uses: actions/upload-artifact@v2
-      if: failure()
-      with:
-        name: cypress-videos
-        path: assets/videos
+      - name: Run Cypress
+        run: CYPRESS_BASE_URL=http://localhost:8080/auth/admin/ CYPRESS_KEYCLOAK_SERVER=http://localhost:8080 npm run start:cypress-tests
 
-    - name: Add Cypress screenshots artifacts
-      uses: actions/upload-artifact@v2
-      if: failure()
-      with:
-        name: cypress-screenshots
-        path: assets/screenshots
+      - name: Add Cypress videos artifacts
+        uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cypress-videos
+          path: assets/videos
+
+      - name: Add Cypress screenshots artifacts
+        uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: assets/screenshots

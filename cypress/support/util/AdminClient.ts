@@ -6,7 +6,7 @@ export default class AdminClient {
   private client: KeycloakAdminClient;
   constructor() {
     this.client = new KeycloakAdminClient({
-      baseUrl: "http://localhost:8180/auth",
+      baseUrl: `${Cypress.env("KEYCLOAK_SERVER")}/auth`,
       realmName: "master",
     });
   }
