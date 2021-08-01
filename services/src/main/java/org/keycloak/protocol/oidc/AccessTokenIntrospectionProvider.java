@@ -24,6 +24,7 @@ import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.Urls;
 import org.keycloak.util.JsonSerialization;
@@ -54,7 +55,17 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
             if (accessToken != null) {
                 tokenMetadata = JsonSerialization.createObjectNode(accessToken);
                 tokenMetadata.put("client_id", accessToken.getIssuedFor());
-                tokenMetadata.put("username", accessToken.getPreferredUsername());
+
+                if (!tokenMetadata.has("username")) {
+                    if (accessToken.getPreferredUsername() != null) {
+                        tokenMetadata.put("username", accessToken.getPreferredUsername());
+                    } else {
+                        UserModel userModel = session.users().getUserById(realm, accessToken.getSubject());
+                        if (userModel != null) {
+                            tokenMetadata.put("username", userModel.getUsername());
+                        }
+                    }
+                }
             } else {
                 tokenMetadata = JsonSerialization.createObjectNode();
             }
