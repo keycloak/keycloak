@@ -61,7 +61,7 @@
     "cypress": "8.1.0",
     "decompress": "^4.2.1",
     "decompress-targz": "^4.1.1",
-    "eslint": "^7.31.0",
+    "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^3.4.0",
     "eslint-plugin-react": "^7.24.0",
