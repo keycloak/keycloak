@@ -5,7 +5,7 @@ COPY . .
 
 RUN mvn -f /app/keycloak-theme/pom.xml install
 
-FROM quay.io/keycloak/keycloak:14.0.0
+FROM quay.io/keycloak/keycloak:15.0.0
 COPY --from=builder /app/keycloak-theme/target/classes /opt/jboss/keycloak/themes/keycloak.v2
 
 EXPOSE 8080
