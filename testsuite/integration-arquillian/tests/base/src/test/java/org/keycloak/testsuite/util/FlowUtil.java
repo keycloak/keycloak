@@ -82,6 +82,10 @@ public class FlowUtil {
         return copyFlow(DefaultAuthenticationFlows.REGISTRATION_FLOW, newFlowAlias);
     }
 
+    public FlowUtil copyDirectGrantFlow(String newFlowAlias) {
+        return copyFlow(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, newFlowAlias);
+    }
+
     public FlowUtil copyFlow(String original, String newFlowAlias) {
         flowAlias = newFlowAlias;
         AuthenticationFlowModel existingBrowserFlow = realm.getFlowByAlias(original);

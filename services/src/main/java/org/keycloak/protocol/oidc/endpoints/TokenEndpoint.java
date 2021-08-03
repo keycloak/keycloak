@@ -660,7 +660,7 @@ public class TokenEndpoint {
         }
         processor.evaluateRequiredActionTriggers();
         UserModel user = authSession.getAuthenticatedUser();
-        if (user.getRequiredActionsStream().count() > 0) {
+        if (user.getRequiredActionsStream().count() > 0 || authSession.getRequiredActions().size() > 0) {
             // Remove authentication session as "Resource Owner Password Credentials Grant" is single-request scoped authentication
             new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, false);
             event.error(Errors.RESOLVE_REQUIRED_ACTIONS);
