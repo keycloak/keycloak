@@ -103,6 +103,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -450,11 +451,18 @@ public class UserResource {
 
         Set<ClientModel> offlineClients = new UserSessionManager(session).findClientsWithOfflineToken(realm, user);
 
-        return Stream.concat(
-                session.users().getConsentsStream(realm, user.getId())
-                    .map(consent -> toConsent(consent, offlineClients)),
+        Set<ClientModel> clientsWithUserConsents = new HashSet<>();
+        List<UserConsentModel> userConsents = session.users().getConsentsStream(realm, user.getId())
+                 // collect clients with explicit user consents for later filtering
+                .peek(ucm -> clientsWithUserConsents.add(ucm.getClient()))
+                .collect(Collectors.toList());
 
-                offlineClients.stream().map(this::toConsent)
+        return Stream.concat(
+                userConsents.stream().map(consent -> toConsent(consent, offlineClients)),
+                offlineClients.stream()
+                        // filter out clients with explicit user consents to avoid rendering them twice
+                        .filter(c -> !clientsWithUserConsents.contains(c))
+                        .map(this::toConsent)
         );
     }
 
@@ -492,7 +500,6 @@ public class UserResource {
             offlineTokens.put("client", consent.getClient().getId());
             offlineTokens.put("key", "Offline Token");
             additionalGrants.add(offlineTokens);
-            offlineClients.remove(consent.getClient());
         }
         currentRep.put("additionalGrants", additionalGrants);
         return currentRep;
