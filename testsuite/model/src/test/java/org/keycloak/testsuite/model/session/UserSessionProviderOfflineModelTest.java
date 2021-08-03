@@ -68,6 +68,9 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
         RealmModel realm = s.realms().createRealm("test");
         realm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
+        realm.setOfflineSessionMaxLifespanEnabled(true);
+        realm.setClientOfflineSessionIdleTimeout(999999999);
+        realm.setClientOfflineSessionMaxLifespan(999999999);
         this.realmId = realm.getId();
         this.kcSession = s;
 
@@ -209,6 +212,78 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
                     Assert.assertNull(sessionManager.findOfflineUserSession(realm, userSessionId));
                 }
                 Assert.assertEquals(0, persister.getUserSessionsCount(true));
+            });
+
+        } finally {
+            Time.setOffset(0);
+            kcSession.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());
+            if (timer != null) {
+                timer.schedule(timerTaskCtx.getRunnable(), timerTaskCtx.getIntervalMillis(), PersisterLastSessionRefreshStoreFactory.DB_LSR_PERIODIC_TASK_NAME);
+            }
+
+            InfinispanTestUtil.revertTimeService();
+        }
+    }
+
+    @Test
+    public void testLoadUserSessionsWithNotDeletedOfflineClientSessions() {
+        // Suspend periodic tasks to avoid race-conditions, which may cause missing updates of lastSessionRefresh times to UserSessionPersisterProvider
+        TimerProvider timer = kcSession.getProvider(TimerProvider.class);
+        TimerProvider.TimerTaskContext timerTaskCtx = null;
+        if (timer != null) {
+            timerTaskCtx = timer.cancelTask(PersisterLastSessionRefreshStoreFactory.DB_LSR_PERIODIC_TASK_NAME);
+            log.info("Cancelled periodic task " + PersisterLastSessionRefreshStoreFactory.DB_LSR_PERIODIC_TASK_NAME);
+        }
+
+        InfinispanTestUtil.setTestingTimeService(kcSession);
+
+        try {
+            UserSessionModel[] origSessions = inComittedTransaction(session -> {
+                // Create some online sessions in infinispan
+                return UserSessionPersisterProviderTest.createSessions(session, realmId);
+            });
+
+            inComittedTransaction(session -> {
+                RealmModel realm = session.realms().getRealm(realmId);
+                sessionManager = new UserSessionManager(session);
+                persister = session.getProvider(UserSessionPersisterProvider.class);
+
+                session.sessions().getUserSessionsStream(realm, realm.getClientByClientId("test-app")).collect(Collectors.toList())
+                        .forEach(userSession -> createOfflineSessionIncludeClientSessions(session, userSession));
+            });
+
+            log.info("Persisted 3 sessions to UserSessionPersisterProvider");
+
+            inComittedTransaction(session -> {
+                persister = session.getProvider(UserSessionPersisterProvider.class);
+
+                Assert.assertEquals(3, persister.getUserSessionsCount(true));
+            });
+
+            inComittedTransaction(session -> {
+                RealmModel realm = session.realms().getRealm(realmId);
+                persister = session.getProvider(UserSessionPersisterProvider.class);
+
+                // Expire everything except offline client sessions
+                Time.setOffset(7000000);
+
+                persister.removeExpired(realm);
+            });
+
+            inComittedTransaction(session -> {
+                RealmModel realm = session.realms().getRealm(realmId);
+                sessionManager = new UserSessionManager(session);
+                persister = session.getProvider(UserSessionPersisterProvider.class);
+
+                Assert.assertEquals(0, persister.getUserSessionsCount(true));
+
+                // create two offline user sessions
+                UserSessionModel userSession = session.sessions().createUserSession(realm, session.users().getUserByUsername(realm, "user1"), "user1", "ip1", null, false, null, null);
+                session.sessions().createOfflineUserSession(userSession);
+                session.sessions().createOfflineUserSession(origSessions[0]);
+
+                // try to load user session from persister
+                Assert.assertEquals(2, persister.loadUserSessionsStream(0, 10, true, "00000000-0000-0000-0000-000000000000").count());
             });
 
         } finally {
