@@ -50,10 +50,8 @@ public class KeycloakSanitizerMethod implements TemplateMethodModelEx {
     private String fixURLs(String msg) {
         Pattern hrefs = Pattern.compile("href=\"([^\"]*)\"");
         Matcher matcher = hrefs.matcher(msg);
-        int count = 0;
         while(matcher.find()) {
-            count++;
-            String original = matcher.group(count);
+            String original = matcher.group();
             String href = original.replaceAll("&#61;", "=")
                     .replaceAll("\\.\\.", ".")
                     .replaceAll("&amp;", "&");
