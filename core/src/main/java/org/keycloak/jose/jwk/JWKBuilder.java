@@ -72,7 +72,13 @@ public class JWKBuilder {
     }
     
     public JWK rsa(Key key, X509Certificate certificate) {
-        return rsa(key, Collections.singletonList(certificate), KeyUse.SIG);
+        List<X509Certificate> certificateList;
+        if (certificate != null) {
+            certificateList = Collections.singletonList(certificate);
+        } else {
+            certificateList = Collections.EMPTY_LIST;
+        }
+        return rsa(key, certificateList, KeyUse.SIG);
     }
 
     public JWK rsa(Key key, List<X509Certificate> certificates) {
