@@ -24,7 +24,7 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-//import { LocalizationTab } from "./LocalizationTab";
+import { LocalizationTab } from "./LocalizationTab";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { toUpperCase } from "../util";
 import { RealmSettingsEmailTab } from "./EmailTab";
@@ -305,7 +305,7 @@ export const RealmSettingsSection = () => {
               <EventsTab />
             </Tab>
 
-            {/*     <Tab
+            <Tab
               id="localization"
               eventKey="localization"
               data-testid="rs-localization-tab"
@@ -320,7 +320,7 @@ export const RealmSettingsSection = () => {
                   realm={realm}
                 />
               )}
-              </Tab> */}
+            </Tab>
             <Tab
               id="securityDefences"
               eventKey="securityDefences"

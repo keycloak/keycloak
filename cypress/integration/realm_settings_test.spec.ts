@@ -87,7 +87,7 @@ describe("Realm settings", () => {
     return this;
   };
 
-  /*const addBundle = () => {
+  const addBundle = () => {
     const localizationUrl = `/auth/admin/realms/${realmName}/localization/en`;
     cy.intercept(localizationUrl).as("localizationFetch");
 
@@ -99,7 +99,7 @@ describe("Realm settings", () => {
     cy.wait(["@localizationFetch"]);
 
     return this;
-  };*/
+  };
 
   it("Go to general tab", function () {
     sidebarPage.goToRealmSettings();
@@ -264,7 +264,7 @@ describe("Realm settings", () => {
     realmSettingsPage.testSelectFilter();
   });
 
-  /* it("add locale", () => {
+  it("add locale", () => {
     sidebarPage.goToRealmSettings();
 
     cy.getId("rs-localization-tab").click();
@@ -274,7 +274,7 @@ describe("Realm settings", () => {
     masthead.checkNotificationMessage(
       "Success! The localization text has been created."
     );
-  });*/
+  });
 
   it("Realm header settings", () => {
     sidebarPage.goToRealmSettings();
