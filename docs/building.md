@@ -51,6 +51,10 @@ Classes from `org.keycloak.testsuite.*` packages aren't suitable to be used in p
 
 ---
 
+### Building Quarkus Distribution
+
+Please, take a look at this [documentation](../quarkus/README.md).
+
 ## Starting Keycloak
 
 To start Keycloak during development first build as specified above, then run:

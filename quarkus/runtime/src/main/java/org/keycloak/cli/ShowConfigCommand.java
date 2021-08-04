@@ -114,7 +114,12 @@ public final class ShowConfigCommand {
                     @Override
                     public boolean test(String s) {
                         ConfigValue configValue = getConfigValue(s);
-                        return configValue.getConfigSourceName().equals(PersistedConfigSource.NAME);
+
+                        if (configValue == null) {
+                            return false;
+                        }
+
+                        return PersistedConfigSource.NAME.equals(configValue.getConfigSourceName());
                     }
                 })
                 .filter(property -> filterByGroup(property))

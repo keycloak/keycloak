@@ -31,21 +31,37 @@
     <packaging>pom</packaging>
 
     <properties>
-        <quarkus.version>1.13.3.Final</quarkus.version>
-        <resteasy.version>4.5.9.Final</resteasy.version>
-        <jackson.version>2.12.1</jackson.version>
+        <!-- Quarkus version -->
+        <quarkus.version>2.2.2.Final</quarkus.version>
+
+        <!--
+            Override versions based on Quarkus dependencies.
+            Make sure to update these dependencies when Quarkus version changes.
+        -->
+        <resteasy.version>4.7.0.Final</resteasy.version>
+        <jackson.version>2.12.5</jackson.version>
         <jackson.databind.version>${jackson.version}</jackson.databind.version>
-        <hibernate.version>5.4.29.Final</hibernate.version>
-        <mysql.driver.version>8.0.24</mysql.driver.version>
-        <postgresql.driver.version>42.2.20</postgresql.driver.version>
-        <picocli.version>4.6.1</picocli.version>
-        <snakeyaml.version>1.28</snakeyaml.version>
-        <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
-        <wildfly.common.format.version>1.5.4.Final-format-001</wildfly.common.format.version>
-        <maven.compiler.source>1.8</maven.compiler.source>
+        <hibernate.core.version>5.6.0.Beta1</hibernate.core.version>
+        <mysql.driver.version>8.0.26</mysql.driver.version>
+        <postgresql.version>42.2.23</postgresql.version>
+        <microprofile-metrics-api.version>3.0</microprofile-metrics-api.version>
+        <wildfly.common.version>1.5.4.Final-format-001</wildfly.common.version>
+
+        <!--
+            Java EE dependencies. Not available from JDK 11+.
+            The dependencies and their versions are the same used by Wildfly distribution.
+         -->
+        <org.jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>2.0.1.Final</org.jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
+        <sun.saaj-impl.version>1.4.1.SP1</sun.saaj-impl.version>
+        <org.jvnet.staxex.version>1.8.3</org.jvnet.staxex.version>
+
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <noDeps>true</noDeps>
+        <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
+        <maven.compiler.release>11</maven.compiler.release>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+
+        <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -58,12 +74,7 @@
                 <scope>import</scope>
             </dependency>
             
-            <!-- Override the dependencies below to use the versions used by Quarkus -->
-            <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-core</artifactId>
-                <version>${hibernate.version}</version>
-            </dependency>
+            <!-- Override the dependencies below to use the versions used by Keycloak -->
             <dependency>
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-core</artifactId>
@@ -79,45 +90,74 @@
                 <artifactId>infinispan-client-hotrod</artifactId>
                 <version>${infinispan.version}</version>
             </dependency>
+
+            <!-- Dependencies removed from JDK 11 and in compliance with those used by Wildfly. -->
             <dependency>
-                <groupId>org.wildfly.common</groupId>
-                <artifactId>wildfly-common</artifactId>
-                <version>${wildfly.common.format.version}</version>
+                <groupId>org.jboss.spec.javax.xml.bind</groupId>
+                <artifactId>jboss-jaxb-api_2.3_spec</artifactId>
+                <version>${org.jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.xml.messaging.saaj</groupId>
+                <artifactId>saaj-impl</artifactId>
+                <version>${sun.saaj-impl.version}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
+                        <groupId>javax.xml.soap</groupId>
+                        <artifactId>saaj-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.jvnet.mimepull</groupId>
+                        <artifactId>mimepull</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.jvnet.staxex</groupId>
+                        <artifactId>stax-ex</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>org.yaml</groupId>
-                <artifactId>snakeyaml</artifactId>
-                <version>${snakeyaml.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>${mysql.driver.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.postgresql</groupId>
-                <artifactId>postgresql</artifactId>
-                <version>${postgresql.driver.version}</version>
+                <groupId>org.jvnet.staxex</groupId>
+                <artifactId>stax-ex</artifactId>
+                <version>${org.jvnet.staxex.version}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>org.checkerframework</groupId>
-                        <artifactId>checker-qual</artifactId>
+                        <groupId>javax.xml.stream</groupId>
+                        <artifactId>stax-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>javax.activation</groupId>
+                        <artifactId>activation</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven.compiler.plugin.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
     
     <modules>
-        <module>deployment</module>
         <module>runtime</module>
+        <module>deployment</module>
         <module>server</module>
     </modules>
+
+    <repositories>
+        <repository>
+            <id>jboss-public-repository</id>
+            <name>Jboss Public</name>
+            <url>https://repository.jboss.org/nexus/content/groups/public/</url>
+        </repository>
+    </repositories>
     
 </project>

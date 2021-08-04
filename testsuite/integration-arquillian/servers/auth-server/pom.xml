@@ -42,7 +42,7 @@
     
     <profiles>
         <profile>
-            <id>quarkus</id>
+            <id>auth-server-quarkus</id>
             <modules>
                 <module>quarkus</module>
             </modules>
