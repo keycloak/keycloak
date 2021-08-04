@@ -2,6 +2,10 @@ package org.keycloak.protocol.docker;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.specimpl.ResponseBuilderImpl;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
@@ -26,6 +30,8 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicReference;
@@ -120,12 +126,14 @@ public class DockerAuthV2Protocol implements LoginProtocol {
         try {
             // Finally, construct the response to the docker client with the token + metadata
             if (event.getEvent() != null && EventType.LOGIN.equals(event.getEvent().getType())) {
-                final KeyManager.ActiveRsaKey activeKey = session.keys().getActiveRsaKey(realm);
+
+                final KeyWrapper activeKey = session.keys().getActiveKey(realm, KeyUse.SIG, Algorithm.RS256, AuthProtocol.OTHER);
+
                 final String encodedToken = new JWSBuilder()
                         .kid(new DockerKeyIdentifier(activeKey.getPublicKey()).toString())
                         .type("JWT")
                         .jsonContent(responseToken)
-                        .rsa256(activeKey.getPrivateKey());
+                        .rsa256((PrivateKey)activeKey.getPrivateKey());
                 final String expiresInIso8601String = new SimpleDateFormat(ISO_8601_DATE_FORMAT).format(new Date(responseToken.getIssuedAt() * 1000L));
 
                 final DockerResponse responseEntity = new DockerResponse()

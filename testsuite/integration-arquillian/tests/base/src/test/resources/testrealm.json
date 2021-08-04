@@ -676,6 +676,118 @@
       }
     ]
   },
+  "components": {
+    "org.keycloak.keys.KeyProvider": [
+      {
+        "id": "13efa255-8da2-40e3-b8de-2b04100569b4",
+        "name": "rsa-enc-generated-oidc",
+        "providerId": "rsa-generated",
+        "subComponents": {
+
+        },
+        "config": {
+          "keyAuthProtocol": [
+            "oidc"
+          ],
+          "keyUse": [
+            "enc"
+          ],
+          "priority": [
+            "100"
+          ]
+        }
+      },
+      {
+        "id": "9e165853-f110-4696-a7f1-23337355d3cd",
+        "name": "rsa-enc-generated",
+        "providerId": "rsa-generated",
+        "subComponents": {
+
+        },
+        "config": {
+          "keyAuthProtocol": [
+            "saml"
+          ],
+          "keyUse": [
+            "enc"
+          ],
+          "priority": [
+            "100"
+          ]
+        }
+      },
+      {
+        "id": "4c13b8d7-9f57-4dae-8d67-8ccb5fdcb6b1",
+        "name": "hmac-generated",
+        "providerId": "hmac-generated",
+        "subComponents": {
+
+        },
+        "config": {
+          "keyAuthProtocol": [
+            "oidc"
+          ],
+          "priority": [
+            "100"
+          ],
+          "algorithm": [
+            "HS256"
+          ]
+        }
+      },
+      {
+        "id": "4651a81b-28e7-4e3c-aa57-a348b058f23b",
+        "name": "rsa-generated-oidc",
+        "providerId": "rsa-generated",
+        "subComponents": {
+
+        },
+        "config": {
+          "keyAuthProtocol": [
+            "oidc"
+          ],
+          "keyUse": [
+            "sig"
+          ],
+          "priority": [
+            "100"
+          ]
+        }
+      },
+      {
+        "id": "bc8149f1-36cd-463b-8610-486bb302262e",
+        "name": "aes-generated",
+        "providerId": "aes-generated",
+        "subComponents": {
+
+        },
+        "config": {
+          "priority": [
+            "100"
+          ]
+        }
+      },
+      {
+        "id": "5d804837-05cc-4bdd-aa11-9f2ec122b2de",
+        "name": "rsa-generated",
+        "providerId": "rsa-generated",
+        "subComponents": {
+
+        },
+        "config": {
+          "keyAuthProtocol": [
+            "saml"
+          ],
+          "keyUse": [
+            "sig"
+          ],
+          "priority": [
+            "100"
+          ]
+        }
+      }
+    ]
+  },
 
   "internationalizationEnabled": true,
   "supportedLocales": ["en", "de"],

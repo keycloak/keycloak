@@ -32,6 +32,7 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.HashProvider;
 import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -1137,7 +1138,7 @@ public class TokenManager {
         private String generateOIDCHash(String input) {
             String signatureAlgorithm = session.tokens().signatureAlgorithm(TokenCategory.ID);
             SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, signatureAlgorithm);
-            String hashAlgorithm = signatureProvider.signer().getHashAlgorithm();
+            String hashAlgorithm = signatureProvider.signer(AuthProtocol.OIDC).getHashAlgorithm();
 
             HashProvider hashProvider = session.getProvider(HashProvider.class, hashAlgorithm);
             byte[] hash = hashProvider.hash(input);

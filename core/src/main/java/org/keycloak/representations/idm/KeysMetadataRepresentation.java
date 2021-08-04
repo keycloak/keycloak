@@ -17,26 +17,39 @@
 
 package org.keycloak.representations.idm;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.keycloak.crypto.KeyUse;
+import org.keycloak.enums.AuthProtocol;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class KeysMetadataRepresentation {
 
-    private Map<String, String> active;
+    private Map<String, List<String>> active;
 
     private List<KeyMetadataRepresentation> keys;
 
-    public Map<String, String> getActive() {
+    public Map<String, List<String>> getActive() {
         return active;
     }
 
-    public void setActive(Map<String, String> active) {
+    public void setActive(Map<String, List<String>> active) {
         this.active = active;
+    }
+
+    public void addActive(String alg, String id) {
+        if(getActive()==null) setActive(new HashMap<String, List<String>>());
+        List<String> activeIds = getActive().get(alg);
+        if(activeIds == null) {
+            activeIds = new ArrayList<String>();
+            getActive().put(alg, activeIds);
+        }
+        activeIds.add(id);
     }
 
     public List<KeyMetadataRepresentation> getKeys() {
@@ -61,6 +74,7 @@ public class KeysMetadataRepresentation {
         private String publicKey;
         private String certificate;
         private List<KeyUse> uses;
+        private List<AuthProtocol> authProtocols;
 
         public String getProviderId() {
             return providerId;
@@ -133,5 +147,10 @@ public class KeysMetadataRepresentation {
         public void setUses(List<KeyUse> uses) {
             this.uses = uses;
         }
+
+        public List<AuthProtocol> getAuthProtocols() { return authProtocols; }
+
+        public void setAuthProtocols(List<AuthProtocol> authProtocols) { this.authProtocols = authProtocols; }
+
     }
 }

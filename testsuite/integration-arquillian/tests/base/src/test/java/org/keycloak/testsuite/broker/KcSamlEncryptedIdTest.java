@@ -4,6 +4,7 @@ import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.saml.RandomSecret;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
@@ -92,7 +93,7 @@ public class KcSamlEncryptedIdTest extends AbstractBrokerTest {
                         SecretKey secretKey = new SecretKeySpec(secret, "AES");
 
                         // encrypt the Assertion element and replace it with a EncryptedAssertion element.
-                        XMLEncryptionUtil.encryptElement(nameIdQName, document, PemUtils.decodePublicKey(ApiUtil.findActiveSigningKey(adminClient.realm(bc.consumerRealmName())).getPublicKey()),
+                        XMLEncryptionUtil.encryptElement(nameIdQName, document, PemUtils.decodePublicKey(ApiUtil.findActiveEncryptingKey(adminClient.realm(bc.consumerRealmName()), AuthProtocol.SAML).getPublicKey()),
                                 secretKey, 128, encryptedIdElementQName, true);
                     } catch (Exception e) {
                         throw new ProcessingException("failed to encrypt", e);

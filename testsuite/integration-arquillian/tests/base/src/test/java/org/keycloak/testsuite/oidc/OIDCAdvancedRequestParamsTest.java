@@ -37,6 +37,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.crypto.KeyUse;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jwe.JWE;
@@ -1387,7 +1388,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             if (keyId == null) {
                 KeysMetadataRepresentation.KeyMetadataRepresentation encKey = KeyUtils
                         .getActiveEncKey(testRealm().keys().getKeyMetadata(),
-                                org.keycloak.crypto.Algorithm.PS256);
+                                org.keycloak.crypto.Algorithm.PS256, AuthProtocol.OIDC);
                 keyId = encKey.getKid();
             }
 
@@ -1416,7 +1417,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     @Test
     public void testRealmPublicKeyEncryptedRequestObjectUsingKid() throws Exception {
         KeysMetadataRepresentation.KeyMetadataRepresentation encKey = KeyUtils.getActiveEncKey(testRealm().keys().getKeyMetadata(),
-                org.keycloak.crypto.Algorithm.RS256);
+                org.keycloak.crypto.Algorithm.RS256, AuthProtocol.OIDC);
         JWEHeader jweHeader = new JWEHeader(RSA_OAEP, JWEConstants.A128CBC_HS256, null, encKey.getKid());
         assertRequestObjectEncryption(jweHeader);
     }
@@ -1473,7 +1474,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
             if (keyId == null) {
                 KeysMetadataRepresentation.KeyMetadataRepresentation encKey = KeyUtils.getActiveEncKey(testRealm().keys().getKeyMetadata(),
-                        org.keycloak.crypto.Algorithm.PS256);
+                        org.keycloak.crypto.Algorithm.PS256, AuthProtocol.OIDC);
                 keyId = encKey.getKid();
             }
 

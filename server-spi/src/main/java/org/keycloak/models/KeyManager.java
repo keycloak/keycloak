@@ -19,6 +19,7 @@ package org.keycloak.models;
 
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.keys.SecretKeyMetadata;
 import org.keycloak.keys.RsaKeyMetadata;
 
@@ -36,9 +37,9 @@ import java.util.stream.Stream;
  */
 public interface KeyManager {
 
-    KeyWrapper getActiveKey(RealmModel realm, KeyUse use, String algorithm);
+    KeyWrapper getActiveKey(RealmModel realm, KeyUse use, String algorithm, AuthProtocol authProtocol);
 
-    KeyWrapper getKey(RealmModel realm, String kid, KeyUse use, String algorithm);
+    KeyWrapper getKey(RealmModel realm, String kid);
 
     /**
      * Returns all {@code KeyWrapper} for the given realm.
@@ -64,12 +65,13 @@ public interface KeyManager {
      * @param realm {@code RealmModel}.
      * @param use {@code KeyUse}.
      * @param algorithm {@code String}.
+     * @param authProtocol {@code AuthProtocol}.
      * @return List of all {@code KeyWrapper} in the realm.
-     * @deprecated Use {@link #getKeysStream(RealmModel, KeyUse, String) getKeysStream} instead.
+     * @deprecated Use {@link #getKeysStream(RealmModel, KeyUse, String, AuthProtocol) getKeysStream} instead.
      */
     @Deprecated
-    default List<KeyWrapper> getKeys(RealmModel realm, KeyUse use, String algorithm) {
-        return getKeysStream(realm, use, algorithm).collect(Collectors.toList());
+    default List<KeyWrapper> getKeys(RealmModel realm, KeyUse use, String algorithm, AuthProtocol authProtocol) {
+        return getKeysStream(realm, use, algorithm, authProtocol).collect(Collectors.toList());
     }
 
     /**
@@ -77,105 +79,10 @@ public interface KeyManager {
      * @param realm {@code RealmModel}.
      * @param use {@code KeyUse}.
      * @param algorithm {@code String}.
+     * @param authProtocol {@code AuthProtocol}.
      * @return Stream of all {@code KeyWrapper} in the realm. Never returns {@code null}.
      */
-    Stream<KeyWrapper> getKeysStream(RealmModel realm, KeyUse use, String algorithm);
-
-    @Deprecated
-    ActiveRsaKey getActiveRsaKey(RealmModel realm);
-
-    @Deprecated
-    PublicKey getRsaPublicKey(RealmModel realm, String kid);
-
-    @Deprecated
-    Certificate getRsaCertificate(RealmModel realm, String kid);
-
-    @Deprecated
-    List<RsaKeyMetadata> getRsaKeys(RealmModel realm);
-
-    @Deprecated
-    ActiveHmacKey getActiveHmacKey(RealmModel realm);
-
-    @Deprecated
-    SecretKey getHmacSecretKey(RealmModel realm, String kid);
-
-    @Deprecated
-    List<SecretKeyMetadata> getHmacKeys(RealmModel realm);
-
-    @Deprecated
-    ActiveAesKey getActiveAesKey(RealmModel realm);
-
-    @Deprecated
-    SecretKey getAesSecretKey(RealmModel realm, String kid);
-
-    @Deprecated
-    List<SecretKeyMetadata> getAesKeys(RealmModel realm);
-
-    class ActiveRsaKey {
-        private final String kid;
-        private final PrivateKey privateKey;
-        private final PublicKey publicKey;
-        private final X509Certificate certificate;
-
-        public ActiveRsaKey(String kid, PrivateKey privateKey, PublicKey publicKey, X509Certificate certificate) {
-            this.kid = kid;
-            this.privateKey = privateKey;
-            this.publicKey = publicKey;
-            this.certificate = certificate;
-        }
-
-        public String getKid() {
-            return kid;
-        }
-
-        public PrivateKey getPrivateKey() {
-            return privateKey;
-        }
-
-        public PublicKey getPublicKey() {
-            return publicKey;
-        }
-
-        public X509Certificate getCertificate() {
-            return certificate;
-        }
-    }
-
-    class ActiveHmacKey {
-        private final String kid;
-        private final SecretKey secretKey;
-
-        public ActiveHmacKey(String kid, SecretKey secretKey) {
-            this.kid = kid;
-            this.secretKey = secretKey;
-        }
-
-        public String getKid() {
-            return kid;
-        }
-
-        public SecretKey getSecretKey() {
-            return secretKey;
-        }
-    }
-
-    class ActiveAesKey {
-        private final String kid;
-        private final SecretKey secretKey;
-
-        public ActiveAesKey(String kid, SecretKey secretKey) {
-            this.kid = kid;
-            this.secretKey = secretKey;
-        }
-
-        public String getKid() {
-            return kid;
-        }
-
-        public SecretKey getSecretKey() {
-            return secretKey;
-        }
-    }
+    Stream<KeyWrapper> getKeysStream(RealmModel realm, KeyUse use, String algorithm, AuthProtocol authProtocol);
 
 
 }

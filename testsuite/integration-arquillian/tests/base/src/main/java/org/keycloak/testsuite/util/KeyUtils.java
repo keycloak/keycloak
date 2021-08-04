@@ -3,6 +3,7 @@ package org.keycloak.testsuite.util;
 import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.crypto.KeyStatus;
 import org.keycloak.crypto.KeyUse;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 
 import java.security.KeyFactory;
@@ -43,18 +44,18 @@ public class KeyUtils {
         }
     }
 
-    public static KeysMetadataRepresentation.KeyMetadataRepresentation getActiveSigningKey(KeysMetadataRepresentation keys, String algorithm) {
+    public static KeysMetadataRepresentation.KeyMetadataRepresentation getActiveSigningKey(KeysMetadataRepresentation keys, String algorithm, AuthProtocol authProtocol) {
         for (KeysMetadataRepresentation.KeyMetadataRepresentation k : keys.getKeys()) {
-            if (k.getAlgorithm().equals(algorithm) && KeyStatus.valueOf(k.getStatus()).isActive() && k.getUses().contains(KeyUse.SIG)) {
+            if (k.getAlgorithm().equals(algorithm) && KeyStatus.valueOf(k.getStatus()).isActive() && k.getUses().contains(KeyUse.SIG) && k.getAuthProtocols().contains(authProtocol)) {
                 return k;
             }
         }
         throw new RuntimeException("Active key not found");
     }
 
-    public static KeysMetadataRepresentation.KeyMetadataRepresentation getActiveEncKey(KeysMetadataRepresentation keys, String algorithm) {
+    public static KeysMetadataRepresentation.KeyMetadataRepresentation getActiveEncKey(KeysMetadataRepresentation keys, String algorithm, AuthProtocol authProtocol) {
         for (KeysMetadataRepresentation.KeyMetadataRepresentation k : keys.getKeys()) {
-            if (k.getAlgorithm().equals(algorithm) && KeyStatus.valueOf(k.getStatus()).isActive() && k.getUses().contains(KeyUse.ENC)) {
+            if (k.getAlgorithm().equals(algorithm) && KeyStatus.valueOf(k.getStatus()).isActive() && k.getUses().contains(KeyUse.ENC) && k.getAuthProtocols().contains(authProtocol)) {
                 return k;
             }
         }

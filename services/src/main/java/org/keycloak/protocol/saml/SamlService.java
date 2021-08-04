@@ -48,6 +48,7 @@ import org.keycloak.dom.saml.v2.protocol.NameIDPolicyType;
 import org.keycloak.dom.saml.v2.protocol.RequestAbstractType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -133,6 +134,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Collections;
 import java.util.Iterator;
@@ -364,13 +366,13 @@ public class SamlService extends AuthorizationEndpointBase {
                 SamlClient samlClient = new SamlClient(client);
                 if (samlClient.requiresRealmSignature()) {
                     KeyManager keyManager = session.keys();
-                    KeyManager.ActiveRsaKey keys = keyManager.getActiveRsaKey(realm);
-                    String keyName = samlClient.getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
+                    KeyWrapper key = session.keys().getActiveKey(realm, KeyUse.SIG, Algorithm.RS256, AuthProtocol.SAML);
+                    String keyName = samlClient.getXmlSigKeyInfoKeyNameTransformer().getKeyName(key.getKid(), key.getCertificate());
                     String canonicalization = samlClient.getCanonicalizationMethod();
                     if (canonicalization != null) {
                         binding.canonicalizationMethod(canonicalization);
                     }
-                    binding.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(keyName, keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument(doc);
+                    binding.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(keyName, (PrivateKey)key.getPrivateKey(), (PublicKey)key.getPublicKey(), key.getCertificate()).signDocument(doc);
                 }
                 String clientArtifactBindingURL = client.getAttribute(SamlProtocol.SAML_ARTIFACT_RESOLUTION_SERVICE_URL_ATTRIBUTE);
 
@@ -619,10 +621,10 @@ public class SamlService extends AuthorizationEndpointBase {
             boolean postBinding = SamlProtocol.SAML_POST_BINDING.equals(logoutBinding);
             if (samlClient.requiresRealmSignature()) {
                 SignatureAlgorithm algorithm = samlClient.getSignatureAlgorithm();
-                KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
-                binding.signatureAlgorithm(algorithm).signWith(keys.getKid(), keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate()).signDocument();
+                KeyWrapper key = session.keys().getActiveKey(realm, KeyUse.SIG, Algorithm.RS256, AuthProtocol.SAML);
+                binding.signatureAlgorithm(algorithm).signWith(key.getKid(), (PrivateKey)key.getPrivateKey(), (PublicKey)key.getPublicKey(), key.getCertificate()).signDocument();
                 if (! postBinding && samlClient.addExtensionsElementWithKeyInfo()) {    // Only include extension if REDIRECT binding and signing whole SAML protocol message
-                    builder.addExtension(new KeycloakKeySamlExtensionGenerator(keys.getKid()));
+                    builder.addExtension(new KeycloakKeySamlExtensionGenerator(key.getKid()));
                 }
             }
             try {
@@ -842,7 +844,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
     public static String getIDPMetadataDescriptor(UriInfo uriInfo, KeycloakSession session, RealmModel realm) {
         try {
-            List<Element> signingKeys = session.keys().getKeysStream(realm, KeyUse.SIG, Algorithm.RS256)
+            List<Element> signingKeys = session.keys().getKeysStream(realm, KeyUse.SIG, Algorithm.RS256, AuthProtocol.SAML)
                     .sorted(SamlService::compareKeys)
                     .map(key -> {
                         try {
@@ -1242,13 +1244,14 @@ public class SamlService extends AuthorizationEndpointBase {
             // Sign document/assertion if necessary, necessary to do this here, as the "inResponseTo" can only be set at this point
             if (samlClient.requiresRealmSignature() || samlClient.requiresAssertionSignature()) {
                 KeyManager keyManager = session.keys();
-                KeyManager.ActiveRsaKey keys = keyManager.getActiveRsaKey(realm);
-                String keyName = samlClient.getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
+                KeyWrapper key = session.keys().getActiveKey(realm, KeyUse.SIG, Algorithm.RS256, AuthProtocol.SAML);
+//                KeyManager.ActiveRsaKey keys = keyManager.getActiveRsaKey(realm);
+                String keyName = samlClient.getXmlSigKeyInfoKeyNameTransformer().getKeyName(key.getKid(), key.getCertificate());
                 String canonicalization = samlClient.getCanonicalizationMethod();
                 if (canonicalization != null) {
                     bindingBuilder.canonicalizationMethod(canonicalization);
                 }
-                bindingBuilder.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(keyName, keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate());
+                bindingBuilder.signatureAlgorithm(samlClient.getSignatureAlgorithm()).signWith(keyName, (PrivateKey)key.getPrivateKey(), (PublicKey)key.getPublicKey(), key.getCertificate());
 
                 if (samlClient.requiresRealmSignature()) bindingBuilder.signDocument();
                 if (samlClient.requiresAssertionSignature()) bindingBuilder.signAssertions();

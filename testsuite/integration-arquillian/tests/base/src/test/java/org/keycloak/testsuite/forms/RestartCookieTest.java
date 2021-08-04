@@ -20,6 +20,10 @@ package org.keycloak.testsuite.forms;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSBuilder;
@@ -86,7 +90,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
                 String cookieVal = OLD_RESTART_COOKIE_JSON.replace("\n", "").replace(" ", "");
                 RealmModel realm = session.realms().getRealmByName("test");
 
-                KeyManager.ActiveHmacKey activeKey = session.keys().getActiveHmacKey(realm);
+                KeyWrapper activeKey = session.keys().getActiveKey(realm, KeyUse.SIG, Algorithm.HS256, AuthProtocol.OIDC);
 
                 String encodedToken = new JWSBuilder()
                         .kid(activeKey.getKid())
@@ -125,7 +129,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
                 String cookieVal = OLD_RESTART_COOKIE_JSON.replace("\n", "").replace(" ", "");
                 RealmModel realm = session.realms().getRealmByName("test");
 
-                KeyManager.ActiveHmacKey activeKey = session.keys().getActiveHmacKey(realm);
+                KeyWrapper activeKey = session.keys().getActiveKey(realm, KeyUse.SIG, Algorithm.HS256, AuthProtocol.OIDC);
 
                 // There was no KID in the token in Keycloak 1.9.8
                 String encodedToken = new JWSBuilder()

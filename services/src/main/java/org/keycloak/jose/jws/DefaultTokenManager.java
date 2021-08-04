@@ -27,6 +27,7 @@ import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.jose.JOSEParser;
 import org.keycloak.jose.JOSE;
 import org.keycloak.jose.jwe.JWE;
@@ -77,7 +78,7 @@ public class DefaultTokenManager implements TokenManager {
         String signatureAlgorithm = signatureAlgorithm(token.getCategory());
 
         SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, signatureAlgorithm);
-        SignatureSignerContext signer = signatureProvider.signer();
+        SignatureSignerContext signer = signatureProvider.signer(AuthProtocol.OIDC);
 
         String encodedToken = new JWSBuilder().type("JWT").jsonContent(token).sign(signer);
         return encodedToken;
@@ -103,7 +104,7 @@ public class DefaultTokenManager implements TokenManager {
             // Backwards compatibility. Old offline tokens and cookies didn't have KID in the header
             if (kid == null) {
                 logger.debugf("KID is null in token. Using the realm active key to verify token signature.");
-                kid = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, signatureAlgorithm).getKid();
+                kid = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, signatureAlgorithm, AuthProtocol.OIDC).getKid();
             }
 
             boolean valid = signatureProvider.verifier(kid).verify(jws.getEncodedSignatureInput().getBytes("UTF-8"), jws.getSignature());
@@ -132,6 +133,7 @@ public class DefaultTokenManager implements TokenManager {
 
                 if (kid == null) {
                     activeKey = keys.filter(k -> k.getUses().contains(KeyUse.ENC) && k.getPublicKey() != null)
+                            .filter(k -> k.getAuthProtocols().contains(AuthProtocol.OIDC))
                             .sorted(Comparator.comparingLong(KeyWrapper::getProviderPriority).reversed())
                             .findFirst();
                 } else {

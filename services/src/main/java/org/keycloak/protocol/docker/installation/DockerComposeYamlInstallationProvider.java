@@ -2,10 +2,11 @@ package org.keycloak.protocol.docker.installation;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.enums.AuthProtocol;
+import org.keycloak.models.*;
 import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.docker.DockerAuthV2Protocol;
 import org.keycloak.protocol.docker.installation.compose.DockerComposeZipContent;
@@ -17,6 +18,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URL;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -58,7 +61,8 @@ public class DockerComposeYamlInstallationProvider implements ClientInstallation
         final ZipOutputStream zipOutput = new ZipOutputStream(byteStream);
 
         try {
-            return generateInstallation(zipOutput, byteStream, session.keys().getActiveRsaKey(realm).getCertificate(), session.getContext().getUri().getBaseUri().toURL(), realm.getName(), client.getClientId());
+            KeyWrapper key = session.keys().getActiveKey(realm, KeyUse.SIG, Algorithm.RS256, AuthProtocol.OTHER);
+            return generateInstallation(zipOutput, byteStream, key.getCertificate(), session.getContext().getUri().getBaseUri().toURL(), realm.getName(), client.getClientId());
         } catch (final IOException e) {
             try {
                 zipOutput.close();

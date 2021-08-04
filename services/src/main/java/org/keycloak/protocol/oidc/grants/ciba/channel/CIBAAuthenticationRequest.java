@@ -26,6 +26,7 @@ import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientModel;
@@ -60,8 +61,8 @@ public class CIBAAuthenticationRequest extends JsonWebToken {
      * @throws Exception
      */
     public static CIBAAuthenticationRequest deserialize(KeycloakSession session, String jwe) {
-        SecretKey aesKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, Algorithm.AES).getSecretKey();
-        SecretKey hmacKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, Algorithm.HS256).getSecretKey();
+        SecretKey aesKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, Algorithm.AES, AuthProtocol.OIDC).getSecretKey();
+        SecretKey hmacKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, Algorithm.HS256, AuthProtocol.OIDC).getSecretKey();
 
         try {
             byte[] contentBytes = TokenUtil.jweDirectVerifyAndDecode(aesKey, hmacKey, jwe);
@@ -155,10 +156,10 @@ public class CIBAAuthenticationRequest extends JsonWebToken {
     public String serialize(KeycloakSession session) {
         try {
             SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, Algorithm.HS256);
-            SignatureSignerContext signer = signatureProvider.signer();
+            SignatureSignerContext signer = signatureProvider.signer(AuthProtocol.OIDC);
             String encodedJwt = new JWSBuilder().type("JWT").jsonContent(this).sign(signer);
-            SecretKey aesKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, Algorithm.AES).getSecretKey();
-            SecretKey hmacKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, Algorithm.HS256).getSecretKey();
+            SecretKey aesKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, Algorithm.AES, AuthProtocol.OIDC).getSecretKey();
+            SecretKey hmacKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, Algorithm.HS256, AuthProtocol.OIDC).getSecretKey();
 
             return TokenUtil.jweDirectEncode(aesKey, hmacKey, encodedJwt.getBytes("UTF-8"));
         } catch (JWEException | UnsupportedEncodingException e) {

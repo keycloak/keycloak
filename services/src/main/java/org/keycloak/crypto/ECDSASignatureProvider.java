@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequenceGenerator;
 import org.bouncycastle.asn1.x9.X9IntegerConverter;
 import org.keycloak.common.VerificationException;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.models.KeycloakSession;
 
 import java.io.ByteArrayOutputStream;
@@ -24,8 +25,8 @@ public class ECDSASignatureProvider implements SignatureProvider {
     }
 
     @Override
-    public SignatureSignerContext signer() throws SignatureException {
-        return new ServerECDSASignatureSignerContext(session, algorithm);
+    public SignatureSignerContext signer(AuthProtocol authProtocol) throws SignatureException {
+        return new ServerECDSASignatureSignerContext(session, algorithm, authProtocol);
     }
 
     @Override

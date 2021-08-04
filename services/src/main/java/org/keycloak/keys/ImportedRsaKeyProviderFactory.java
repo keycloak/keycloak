@@ -46,6 +46,7 @@ public class ImportedRsaKeyProviderFactory extends AbstractRsaKeyProviderFactory
             .property(Attributes.PRIVATE_KEY_PROPERTY)
             .property(Attributes.CERTIFICATE_PROPERTY)
             .property(Attributes.KEY_USE_PROPERTY)
+            .property(Attributes.KEY_AUTH_PROTOCOL_PROPERTY)
             .build();
 
     @Override

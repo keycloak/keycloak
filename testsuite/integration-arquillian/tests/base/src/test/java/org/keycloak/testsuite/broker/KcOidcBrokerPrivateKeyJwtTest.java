@@ -18,6 +18,7 @@ package org.keycloak.testsuite.broker;
 
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -46,7 +47,7 @@ public class KcOidcBrokerPrivateKeyJwtTest extends AbstractBrokerTest {
         public List<ClientRepresentation> createProviderClients() {
             List<ClientRepresentation> clientsRepList = super.createProviderClients();
             log.info("Update provider clients to accept JWT authentication");
-            KeyMetadataRepresentation keyRep = KeyUtils.getActiveSigningKey(adminClient.realm(consumerRealmName()).keys().getKeyMetadata(), Algorithm.RS256);
+            KeyMetadataRepresentation keyRep = KeyUtils.getActiveSigningKey(adminClient.realm(consumerRealmName()).keys().getKeyMetadata(), Algorithm.RS256, AuthProtocol.OIDC);
             for (ClientRepresentation client: clientsRepList) {
                 client.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID);
                 if (client.getAttributes() == null) {

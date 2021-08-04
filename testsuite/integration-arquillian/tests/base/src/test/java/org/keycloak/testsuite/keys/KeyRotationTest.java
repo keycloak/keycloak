@@ -124,7 +124,7 @@ public class KeyRotationTest extends AbstractKeycloakTest {
     @Test
     public void testTokens() throws Exception {
         // Create keys #1
-        Map<String, String> keys1 = createKeys1();
+        Map<String, List<String>> keys1 = createKeys1();
 
         // Get token with keys #1
         oauth.doLogin("test-user@localhost", "password");
@@ -155,7 +155,7 @@ public class KeyRotationTest extends AbstractKeycloakTest {
         assertEquals(clientRep.getRegistrationAccessToken(), clientRep2.getRegistrationAccessToken());
 
         // Create keys #2
-        Map<String, String> keys2 = createKeys2();
+        Map<String, List<String>> keys2 = createKeys2();
 
         assertNotEquals(keys1.get(Algorithm.RS256), keys2.get(Algorithm.RS256));
         assertNotEquals(keys1.get(Algorithm.HS256), keys2.get(Algorithm.HS512));
@@ -219,8 +219,8 @@ public class KeyRotationTest extends AbstractKeycloakTest {
 
     @Test
     public void providerOrder() throws Exception {
-        Map<String, String> keys1 = createKeys1();
-        Map<String, String> keys2 = createKeys2();
+        Map<String, List<String>> keys1 = createKeys1();
+        Map<String, List<String>> keys2 = createKeys2();
 
         assertNotEquals(keys1.get(Algorithm.RS256), keys2.get(Algorithm.RS256));
         assertNotEquals(keys1.get(Algorithm.HS256), keys2.get(Algorithm.HS512));
@@ -232,7 +232,7 @@ public class KeyRotationTest extends AbstractKeycloakTest {
     @Test
     public void rotateKeys() throws InterruptedException {
         for (int i = 0; i < 10; i++) {
-            String activeKid = adminClient.realm("test").keys().getKeyMetadata().getActive().get(Algorithm.RS256);
+            List<String> activeKids = adminClient.realm("test").keys().getKeyMetadata().getActive().get(Algorithm.RS256);
 
             // Rotate public keys on the parent broker
             String realmId = adminClient.realm("test").toRepresentation().getId();
@@ -249,25 +249,28 @@ public class KeyRotationTest extends AbstractKeycloakTest {
             getCleanup().addComponentId(newId);
             response.close();
 
-            String updatedActiveKid = adminClient.realm("test").keys().getKeyMetadata().getActive().get(Algorithm.RS256);
-            assertNotEquals(activeKid, updatedActiveKid);
+            List<String> updatedActiveKids = adminClient.realm("test").keys().getKeyMetadata().getActive().get(Algorithm.RS256);
+            assertTrue(activeKids.size() < updatedActiveKids.size());
+            updatedActiveKids.removeAll(activeKids);
+            assertEquals(1, updatedActiveKids.size());
+
         }
     }
 
 
-    private void assertTokenKid(String expectedKid, String token) throws JWSInputException {
-        assertEquals(expectedKid, new JWSInput(token).getHeader().getKeyId());
+    private void assertTokenKid(List<String> expectedKids, String token) throws JWSInputException {
+        assertTrue(expectedKids.contains(new JWSInput(token).getHeader().getKeyId()));
     }
 
-    private Map<String, String> createKeys1() throws Exception {
+    private Map<String, List<String>> createKeys1() throws Exception {
         return createKeys("1000");
     }
 
-    private Map<String, String> createKeys2() throws Exception {
+    private Map<String, List<String>> createKeys2() throws Exception {
         return createKeys("2000");
     }
 
-    private Map<String, String> createKeys(String priority) throws Exception {
+    private Map<String, List<String>> createKeys(String priority) throws Exception {
         KeyPair keyPair = KeyUtils.generateRsaKeyPair(1024);
         String privateKeyPem = PemUtils.encodeKey(keyPair.getPrivate());
         PublicKey publicKey = keyPair.getPublic();

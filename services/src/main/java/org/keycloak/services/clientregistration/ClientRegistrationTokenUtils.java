@@ -24,6 +24,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureVerifierContext;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.ClientModel;
@@ -46,7 +47,7 @@ public class ClientRegistrationTokenUtils {
 
     public static String updateTokenSignature(KeycloakSession session, ClientRegistrationAuth auth) {
         String algorithm = session.tokens().signatureAlgorithm(TokenCategory.INTERNAL);
-        SignatureSignerContext signer = session.getProvider(SignatureProvider.class, algorithm).signer();
+        SignatureSignerContext signer = session.getProvider(SignatureProvider.class, algorithm).signer(AuthProtocol.OIDC);
 
         if (signer.getKid().equals(auth.getKid())) {
             return auth.getToken();

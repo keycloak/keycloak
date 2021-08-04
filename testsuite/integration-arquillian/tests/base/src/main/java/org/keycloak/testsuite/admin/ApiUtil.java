@@ -26,6 +26,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyStatus;
 import org.keycloak.crypto.KeyUse;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -269,14 +270,35 @@ public class ApiUtil {
         return null;
     }
 
-    public static KeysMetadataRepresentation.KeyMetadataRepresentation findActiveSigningKey(RealmResource realm) {
+//    public static KeysMetadataRepresentation.KeyMetadataRepresentation findActiveSigningKey(RealmResource realm) {
+//        KeysMetadataRepresentation keyMetadata = realm.keys().getKeyMetadata();
+//        for (KeysMetadataRepresentation.KeyMetadataRepresentation rep : keyMetadata.getKeys()) {
+//            if (rep.getPublicKey() != null && KeyStatus.valueOf(rep.getStatus()).isActive() && rep.getUses().contains(KeyUse.SIG)) {
+//                return rep;
+//            }
+//        }
+//        return null;
+//    }
+
+    public static KeysMetadataRepresentation.KeyMetadataRepresentation findActiveSigningKey(RealmResource realm, AuthProtocol authProtocol) {
         KeysMetadataRepresentation keyMetadata = realm.keys().getKeyMetadata();
         for (KeysMetadataRepresentation.KeyMetadataRepresentation rep : keyMetadata.getKeys()) {
-            if (rep.getPublicKey() != null && KeyStatus.valueOf(rep.getStatus()).isActive() && rep.getUses().contains(KeyUse.SIG)) {
+            if (rep.getPublicKey() != null && KeyStatus.valueOf(rep.getStatus()).isActive() && rep.getUses().contains(KeyUse.SIG) && rep.getAuthProtocols().contains(authProtocol)) {
                 return rep;
             }
         }
         return null;
     }
+
+    public static KeysMetadataRepresentation.KeyMetadataRepresentation findActiveEncryptingKey(RealmResource realm, AuthProtocol authProtocol) {
+        KeysMetadataRepresentation keyMetadata = realm.keys().getKeyMetadata();
+        for (KeysMetadataRepresentation.KeyMetadataRepresentation rep : keyMetadata.getKeys()) {
+            if (rep.getPublicKey() != null && KeyStatus.valueOf(rep.getStatus()).isActive() && rep.getUses().contains(KeyUse.ENC) && rep.getAuthProtocols().contains(authProtocol)) {
+                return rep;
+            }
+        }
+        return null;
+    }
+
 
 }

@@ -21,10 +21,13 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.RealmModel;
 
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -33,15 +36,17 @@ public class DefaultKeyProviders {
 
     public static void createProviders(RealmModel realm) {
         if (!hasProvider(realm, "rsa-generated")) {
-            createRsaKeyProvider("rsa-generated", KeyUse.SIG, realm);
-            createRsaKeyProvider("rsa-enc-generated", KeyUse.ENC, realm);
+            createRsaKeyProvider("rsa-generated", KeyUse.SIG, AuthProtocol.SAML, realm);
+            createRsaKeyProvider("rsa-enc-generated", KeyUse.ENC, AuthProtocol.SAML, realm);
+            createRsaKeyProvider("rsa-generated-oidc", KeyUse.SIG, AuthProtocol.OIDC, realm);
+            createRsaKeyProvider("rsa-enc-generated-oidc", KeyUse.ENC, AuthProtocol.OIDC, realm);
         }
 
-        createSecretProvider(realm);
-        createAesProvider(realm);
+        createSecretProvider(realm, KeyUse.SIG, AuthProtocol.OIDC);
+        createAesProvider(realm, AuthProtocol.getAll());
     }
 
-    private static void createRsaKeyProvider(String name, KeyUse keyUse, RealmModel realm) {
+    private static void createRsaKeyProvider(String name, KeyUse keyUse, AuthProtocol authProtocol, RealmModel realm) {
         ComponentModel generated = new ComponentModel();
         generated.setName(name);
         generated.setParentId(realm.getId());
@@ -51,12 +56,13 @@ public class DefaultKeyProviders {
         MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
         config.putSingle("priority", "100");
         config.putSingle("keyUse", keyUse.getSpecName());
+        config.putSingle("keyAuthProtocol", authProtocol.getSpecName());
         generated.setConfig(config);
 
         realm.addComponentModel(generated);
     }
 
-    public static void createSecretProvider(RealmModel realm) {
+    public static void createSecretProvider(RealmModel realm, KeyUse keyUse, AuthProtocol authProtocol) {
         if (hasProvider(realm, "hmac-generated")) return;
         ComponentModel generated = new ComponentModel();
         generated.setName("hmac-generated");
@@ -67,12 +73,15 @@ public class DefaultKeyProviders {
         MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
         config.putSingle("priority", "100");
         config.putSingle("algorithm", Algorithm.HS256);
+        config.putSingle("keyUse", keyUse.getSpecName());
+        config.putSingle("keyAuthProtocol", authProtocol.getSpecName());
+
         generated.setConfig(config);
 
         realm.addComponentModel(generated);
     }
 
-    public static void createAesProvider(RealmModel realm) {
+    public static void createAesProvider(RealmModel realm, List<AuthProtocol> authProtocols) {
         if (hasProvider(realm, "aes-generated")) return;
         ComponentModel generated = new ComponentModel();
         generated.setName("aes-generated");
@@ -82,6 +91,7 @@ public class DefaultKeyProviders {
 
         MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
         config.putSingle("priority", "100");
+        config.put("keyAuthProtocol", authProtocols.stream().map(AuthProtocol::getSpecName).collect(Collectors.toList()));
         generated.setConfig(config);
 
         realm.addComponentModel(generated);
@@ -111,8 +121,8 @@ public class DefaultKeyProviders {
             realm.addComponentModel(rsa);
         }
 
-        createSecretProvider(realm);
-        createAesProvider(realm);
+        createSecretProvider(realm, KeyUse.SIG, AuthProtocol.OIDC);
+        createAesProvider(realm, AuthProtocol.getAll());
     }
 
 }

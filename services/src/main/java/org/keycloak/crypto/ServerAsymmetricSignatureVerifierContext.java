@@ -17,6 +17,7 @@
 package org.keycloak.crypto;
 
 import org.keycloak.common.VerificationException;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.models.KeycloakSession;
 
 public class ServerAsymmetricSignatureVerifierContext extends AsymmetricSignatureVerifierContext {
@@ -26,7 +27,7 @@ public class ServerAsymmetricSignatureVerifierContext extends AsymmetricSignatur
     }
 
     static KeyWrapper getKey(KeycloakSession session, String kid, String algorithm) throws VerificationException {
-        KeyWrapper key = session.keys().getKey(session.getContext().getRealm(), kid, KeyUse.SIG, algorithm);
+        KeyWrapper key = session.keys().getKey(session.getContext().getRealm(), kid);
         if (key == null) {
             throw new VerificationException("Key not found");
         }

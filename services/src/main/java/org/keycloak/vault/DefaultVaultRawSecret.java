@@ -16,6 +16,7 @@
  */
 package org.keycloak.vault;
 
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
@@ -87,7 +88,7 @@ public class DefaultVaultRawSecret implements VaultRawSecret {
             ThreadLocalRandom.current().nextBytes(this.secretArray);
             this.secretArray = null;    // dispose of secretArray
         }
-        rawSecret.clear();
+        ((Buffer)rawSecret).clear();
         rawSecret = EMPTY_BUFFER;
     }
 }

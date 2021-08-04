@@ -27,6 +27,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.*;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.keys.PublicKeyStorageUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -39,8 +40,11 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.resources.TestingCacheResource;
 import org.keycloak.testsuite.util.OAuthClient;
 
+import java.util.Arrays;
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
@@ -137,7 +141,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         cfg.setValidateSignature(true);
         cfg.setUseJwksUrl(false);
 
-        KeysMetadataRepresentation.KeyMetadataRepresentation key = ApiUtil.findActiveSigningKey(providerRealm());
+        KeysMetadataRepresentation.KeyMetadataRepresentation key = ApiUtil.findActiveSigningKey(providerRealm(), AuthProtocol.OIDC);
         cfg.setPublicKeySignatureVerifier(key.getPublicKey());
         updateIdentityProvider(idpRep);
 
@@ -171,7 +175,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         cfg.setValidateSignature(true);
         cfg.setUseJwksUrl(false);
 
-        KeysMetadataRepresentation.KeyMetadataRepresentation key = ApiUtil.findActiveSigningKey(providerRealm());
+        KeysMetadataRepresentation.KeyMetadataRepresentation key = ApiUtil.findActiveSigningKey(providerRealm(), AuthProtocol.OIDC);
         String pemData = key.getPublicKey();
         cfg.setPublicKeySignatureVerifier(pemData);
         String expectedKeyId = KeyUtils.createKeyId(PemUtils.decodePublicKey(pemData));
@@ -272,7 +276,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
 
 
     private void rotateKeys() {
-        String activeKid = providerRealm().keys().getKeyMetadata().getActive().get(Algorithm.RS256);
+        List<String> activeKids = providerRealm().keys().getKeyMetadata().getActive().get(Algorithm.RS256);
 
         // Rotate public keys on the parent broker
         String realmId = providerRealm().toRepresentation().getId();
@@ -287,8 +291,9 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         assertEquals(201, response.getStatus());
         response.close();
 
-        String updatedActiveKid = providerRealm().keys().getKeyMetadata().getActive().get(Algorithm.RS256);
-        assertNotEquals(activeKid, updatedActiveKid);
+        List<String> updatedActiveKids = providerRealm().keys().getKeyMetadata().getActive().get(Algorithm.RS256);
+        assertTrue(!Arrays.equals(activeKids.stream().toArray(), updatedActiveKids.stream().toArray()));
+
     }
 
 

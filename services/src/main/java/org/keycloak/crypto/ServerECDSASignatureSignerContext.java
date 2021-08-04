@@ -1,11 +1,12 @@
 package org.keycloak.crypto;
 
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.models.KeycloakSession;
 
 public class ServerECDSASignatureSignerContext extends AsymmetricSignatureSignerContext {
 
-    public ServerECDSASignatureSignerContext(KeycloakSession session, String algorithm) throws SignatureException {
-        super(ServerAsymmetricSignatureSignerContext.getKey(session, algorithm));
+    public ServerECDSASignatureSignerContext(KeycloakSession session, String algorithm, AuthProtocol authProtocol) throws SignatureException {
+        super(ServerAsymmetricSignatureSignerContext.getKey(session, algorithm, authProtocol));
     }
 
     public ServerECDSASignatureSignerContext(KeyWrapper key) {

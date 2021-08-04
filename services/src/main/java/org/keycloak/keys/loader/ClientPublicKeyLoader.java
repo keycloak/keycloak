@@ -24,6 +24,7 @@ import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.keys.PublicKeyLoader;
@@ -110,6 +111,7 @@ public class ClientPublicKeyLoader implements PublicKeyLoader {
         keyWrapper.setAlgorithm(Algorithm.RS256);
         keyWrapper.setType(KeyType.RSA);
         keyWrapper.setUses(Arrays.asList(KeyUse.SIG));
+        keyWrapper.setAuthProtocols(AuthProtocol.getAll());
         String kid = null;
         if (encodedCertificate != null) {
             X509Certificate clientCert = KeycloakModelUtils.getCertificate(encodedCertificate);

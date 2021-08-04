@@ -18,6 +18,8 @@
 package org.keycloak.migration.migrators;
 
 
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -33,12 +35,12 @@ public class MigrateTo2_5_0 implements Migration {
 
     @Override
     public void migrate(KeycloakSession session) {
-        session.realms().getRealmsStream().forEach(DefaultKeyProviders::createSecretProvider);
+        session.realms().getRealmsStream().forEach(realm -> DefaultKeyProviders.createSecretProvider(realm, KeyUse.SIG, AuthProtocol.OIDC));
     }
 
     @Override
     public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
-        DefaultKeyProviders.createSecretProvider(realm);
+        DefaultKeyProviders.createSecretProvider(realm, KeyUse.SIG, AuthProtocol.OIDC);
     }
 
     @Override

@@ -140,7 +140,7 @@ public class JsonConfigComponentModel extends ComponentModel {
 
     @Override
     public List<String> getAll(String key) {
-        return getAll(key, null);
+        return getAll(key);
     }
 
 

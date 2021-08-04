@@ -19,6 +19,7 @@ package org.keycloak.keys;
 
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import static org.keycloak.provider.ProviderConfigProperty.*;
@@ -47,8 +48,12 @@ public interface Attributes {
     ProviderConfigProperty KEY_SIZE_PROPERTY = new ProviderConfigProperty(KEY_SIZE_KEY, "Key size", "Size for the generated keys", LIST_TYPE, "2048", "1024", "2048", "4096");
 
     String KEY_USE = "keyUse";
-    ProviderConfigProperty KEY_USE_PROPERTY = new ProviderConfigProperty(KEY_USE, "Key use", "Whether the key should be used for signing or encryption. Although not prohibited, it's strongly advised to configure a single use for each key.", MULTIVALUED_LIST_TYPE,
+    ProviderConfigProperty KEY_USE_PROPERTY = new ProviderConfigProperty(KEY_USE, "Key use", "Whether the key should be used for signing or encryption. Although not forbidden, it's strongly advised to configure a single use for each key.", MULTIVALUED_LIST_TYPE,
             KeyUse.SIG.getSpecName(), KeyUse.SIG.getSpecName(), KeyUse.ENC.getSpecName());
+
+    String KEY_AUTH_PROTOCOL = "keyAuthProtocol";
+    ProviderConfigProperty KEY_AUTH_PROTOCOL_PROPERTY = new ProviderConfigProperty(KEY_AUTH_PROTOCOL, "Authentication protocol", "Set 'saml' for key use with SAML protocol, 'oidc' for OIDC protocol, or 'other' for any other (generic) key use such as docker, kerberos, etc", MULTIVALUED_LIST_TYPE,
+            AuthProtocol.OTHER.getSpecName(), AuthProtocol.OTHER.getSpecName(), AuthProtocol.SAML.getSpecName(), AuthProtocol.OIDC.getSpecName());
 
     String KID_KEY = "kid";
 

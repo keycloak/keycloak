@@ -22,6 +22,7 @@ import org.keycloak.crypto.KeyStatus;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.models.RealmModel;
 
 import java.security.KeyPair;
@@ -63,6 +64,7 @@ public abstract class AbstractEcdsaKeyProvider implements KeyProvider {
 
         key.setKid(KeyUtils.createKeyId(keyPair.getPublic()));
         key.setUses(Arrays.asList(KeyUse.SIG));
+        key.setAuthProtocols(AuthProtocol.getAll());
         key.setType(KeyType.EC);
         key.setAlgorithm(AbstractEcdsaKeyProviderFactory.convertECDomainParmNistRepToAlgorithm(ecInNistRep));
         key.setStatus(status);

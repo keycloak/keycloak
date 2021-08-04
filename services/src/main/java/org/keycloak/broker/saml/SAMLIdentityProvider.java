@@ -24,11 +24,11 @@ import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProviderDataMarshaller;
 import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.broker.saml.mappers.UserAttributeMapper;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyStatus;
 import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
@@ -40,10 +40,10 @@ import org.keycloak.dom.saml.v2.metadata.RequestedAttributeType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
-import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -85,6 +85,8 @@ import javax.ws.rs.core.UriInfo;
 import javax.xml.crypto.dsig.CanonicalizationMethod;
 import javax.xml.parsers.ParserConfigurationException;
 import java.util.stream.Collectors;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import javax.xml.stream.XMLStreamWriter;
 
 import java.io.StringWriter;
@@ -95,6 +97,7 @@ import java.util.LinkedList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 /**
  * @author Pedro Igor
@@ -168,10 +171,10 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             boolean postBinding = getConfig().isPostBindingAuthnRequest();
 
             if (getConfig().isWantAuthnRequestsSigned()) {
-                KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
+                KeyWrapper key = session.keys().getActiveKey(realm, KeyUse.SIG, Algorithm.RS256, AuthProtocol.SAML);
 
-                String keyName = getConfig().getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
-                binding.signWith(keyName, keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate())
+                String keyName = getConfig().getXmlSigKeyInfoKeyNameTransformer().getKeyName(key.getKid(), key.getCertificate());
+                binding.signWith(keyName, (PrivateKey)key.getPrivateKey(), (PublicKey)key.getPublicKey(), key.getCertificate())
                         .signatureAlgorithm(getSignatureAlgorithm())
                         .signDocument();
                 if (! postBinding && getConfig().isAddExtensionsElementWithKeyInfo()) {    // Only include extension if REDIRECT binding and signing whole SAML protocol message
@@ -328,9 +331,9 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
         JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session)
                 .relayState(userSession.getId());
         if (getConfig().isWantAuthnRequestsSigned()) {
-            KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
-            String keyName = getConfig().getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
-            binding.signWith(keyName, keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate())
+            KeyWrapper key = session.keys().getActiveKey(realm, KeyUse.SIG, Algorithm.RS256, AuthProtocol.SAML);
+            String keyName = getConfig().getXmlSigKeyInfoKeyNameTransformer().getKeyName(key.getKid(), key.getCertificate());
+            binding.signWith(keyName, (PrivateKey)key.getPrivateKey(), (PublicKey)key.getPublicKey(), key.getCertificate())
                     .signatureAlgorithm(getSignatureAlgorithm())
                     .signDocument();
         }
@@ -364,18 +367,26 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             List<Element> signingKeys = new LinkedList<>();
             List<Element> encryptionKeys = new LinkedList<>();
 
-            session.keys().getKeysStream(realm, KeyUse.SIG, Algorithm.RS256)
+            Stream<KeyWrapper> sigkeys = session.keys().getKeysStream(realm, KeyUse.SIG, Algorithm.RS256, AuthProtocol.SAML)
                     .filter(Objects::nonNull)
                     .filter(key -> key.getCertificate() != null)
-                    .sorted(SamlService::compareKeys)
+                    .sorted(SamlService::compareKeys);
+            Stream<KeyWrapper> enckeys = session.keys().getKeysStream(realm, KeyUse.ENC, Algorithm.RS256, AuthProtocol.SAML)
+                    .filter(Objects::nonNull)
+                    .filter(key -> key.getCertificate() != null)
+                    .sorted(SamlService::compareKeys);
+
+            Stream.concat(sigkeys,enckeys)
                     .forEach(key -> {
                         try {
                             Element element = SPMetadataDescriptor
                                     .buildKeyInfoElement(key.getKid(), PemUtils.encodeCertificate(key.getCertificate()));
-                            signingKeys.add(element);
 
                             if (key.getStatus() == KeyStatus.ACTIVE) {
-                                encryptionKeys.add(element);
+                                if(key.getUses().contains(KeyUse.SIG))
+                                    signingKeys.add(element);
+                                if(key.getUses().contains(KeyUse.ENC))
+                                    encryptionKeys.add(element);
                             }
                         } catch (ParserConfigurationException e) {
                             logger.warn("Failed to export SAML SP Metadata!", e);
@@ -433,9 +444,9 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             // Metadata signing
             if (getConfig().isSignSpMetadata())
             {
-                KeyManager.ActiveRsaKey activeKey = session.keys().getActiveRsaKey(realm);
+                KeyWrapper activeKey = session.keys().getActiveKey(realm, KeyUse.SIG, Algorithm.RS256, AuthProtocol.SAML);
                 String keyName = getConfig().getXmlSigKeyInfoKeyNameTransformer().getKeyName(activeKey.getKid(), activeKey.getCertificate());
-                KeyPair keyPair = new KeyPair(activeKey.getPublicKey(), activeKey.getPrivateKey());
+                KeyPair keyPair = new KeyPair((PublicKey)activeKey.getPublicKey(), (PrivateKey)activeKey.getPrivateKey());
 
                 Document metadataDocument = DocumentUtil.getDocument(descriptor);
                 SAML2Signature signatureHelper = new SAML2Signature();

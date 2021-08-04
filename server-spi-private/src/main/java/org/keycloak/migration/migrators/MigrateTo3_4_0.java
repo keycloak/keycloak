@@ -17,6 +17,7 @@
 
 package org.keycloak.migration.migrators;
 
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -46,7 +47,7 @@ public class MigrateTo3_4_0 implements Migration {
     }
 
     protected void migrateRealm(RealmModel r) {
-        DefaultKeyProviders.createAesProvider(r);
+        DefaultKeyProviders.createAesProvider(r, AuthProtocol.getAll());
         Map<String, String> securityHeaders = r.getBrowserSecurityHeaders();
         if (securityHeaders != null) {
 

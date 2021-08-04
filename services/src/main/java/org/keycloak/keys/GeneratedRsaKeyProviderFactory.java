@@ -51,6 +51,7 @@ public class GeneratedRsaKeyProviderFactory extends AbstractRsaKeyProviderFactor
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = AbstractRsaKeyProviderFactory.configurationBuilder()
             .property(Attributes.KEY_SIZE_PROPERTY)
             .property(Attributes.KEY_USE_PROPERTY)
+            .property(Attributes.KEY_AUTH_PROTOCOL_PROPERTY)
             .build();
 
     @Override

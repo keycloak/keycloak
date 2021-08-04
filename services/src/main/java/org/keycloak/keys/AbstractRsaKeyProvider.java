@@ -20,6 +20,8 @@ package org.keycloak.keys;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.*;
+import org.keycloak.enums.AuthProtocol;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.models.RealmModel;
 
 import java.security.KeyPair;
@@ -62,12 +64,12 @@ public abstract class AbstractRsaKeyProvider implements KeyProvider {
         return Stream.of(key);
     }
 
-    protected KeyWrapper createKeyWrapper(KeyPair keyPair, X509Certificate certificate, List<KeyUse> keyUses) {
-        return createKeyWrapper(keyPair, certificate, Collections.emptyList(), keyUses);
+    protected KeyWrapper createKeyWrapper(KeyPair keyPair, X509Certificate certificate, List<KeyUse> keyUses, List<AuthProtocol> authProtocols) {
+        return createKeyWrapper(keyPair, certificate, Collections.emptyList(), keyUses, authProtocols);
     }
 
     protected KeyWrapper createKeyWrapper(KeyPair keyPair, X509Certificate certificate, List<X509Certificate> certificateChain,
-        List<KeyUse> keyUses) {
+                                          List<KeyUse> keyUses, List<AuthProtocol> authProtocols) {
         KeyWrapper key = new KeyWrapper();
 
         key.setProviderId(model.getId());
@@ -81,6 +83,7 @@ public abstract class AbstractRsaKeyProvider implements KeyProvider {
         key.setPrivateKey(keyPair.getPrivate());
         key.setPublicKey(keyPair.getPublic());
         key.setCertificate(certificate);
+        key.setAuthProtocols(authProtocols);
 
         if (!certificateChain.isEmpty()) {
             if (certificate != null && !certificate.equals(certificateChain.get(0))) {

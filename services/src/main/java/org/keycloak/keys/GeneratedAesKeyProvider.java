@@ -21,6 +21,10 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
+import org.keycloak.enums.AuthProtocol;
+
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -28,7 +32,7 @@ import org.keycloak.crypto.KeyUse;
 public class GeneratedAesKeyProvider extends AbstractGeneratedSecretKeyProvider implements KeyProvider {
 
     public GeneratedAesKeyProvider(ComponentModel model) {
-        super(model, KeyUse.ENC, KeyType.OCT, Algorithm.AES);
+        super(model, KeyUse.ENC, KeyType.OCT, Algorithm.AES, model.getAll(Attributes.KEY_AUTH_PROTOCOL, AuthProtocol.getAllNames()).stream().map(ap -> AuthProtocol.valueOf(ap.toUpperCase())).collect(Collectors.toList()));
     }
 
 }

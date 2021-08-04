@@ -114,6 +114,11 @@ public class ComponentModel implements Serializable {
         return s != null ? s : new ArrayList<>();
     }
 
+    public List<String> getAll(String key, List<String> defaultValues) {
+        List<String> s = config.get(key);
+        return s != null ? s : defaultValues;
+    }
+
     public List<String> getAll(String key, String defaultValue) {
         List<String> s = config.get(key);
         return s != null ? s : Arrays.asList(defaultValue);

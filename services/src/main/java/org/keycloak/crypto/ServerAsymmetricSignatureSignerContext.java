@@ -16,16 +16,17 @@
  */
 package org.keycloak.crypto;
 
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.models.KeycloakSession;
 
 public class ServerAsymmetricSignatureSignerContext extends AsymmetricSignatureSignerContext {
 
-    public ServerAsymmetricSignatureSignerContext(KeycloakSession session, String algorithm) throws SignatureException {
-        super(getKey(session, algorithm));
+    public ServerAsymmetricSignatureSignerContext(KeycloakSession session, String algorithm, AuthProtocol authProtocol) throws SignatureException {
+        super(getKey(session, algorithm, authProtocol));
     }
 
-    static KeyWrapper getKey(KeycloakSession session, String algorithm) {
-        KeyWrapper key = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, algorithm);
+    static KeyWrapper getKey(KeycloakSession session, String algorithm, AuthProtocol authProtocol) {
+        KeyWrapper key = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, algorithm, authProtocol);
         if (key == null) {
             throw new SignatureException("Active key for " + algorithm + " not found");
         }

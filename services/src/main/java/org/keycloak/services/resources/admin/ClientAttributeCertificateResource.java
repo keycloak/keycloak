@@ -24,6 +24,10 @@ import javax.ws.rs.NotAcceptableException;
 import javax.ws.rs.NotFoundException;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.StreamUtil;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.jose.jwk.JSONWebKeySet;
@@ -352,8 +356,8 @@ public class ClientAttributeCertificateResource {
 
             if (config.isRealmCertificate() == null || config.isRealmCertificate().booleanValue()) {
                 KeyManager keys = session.keys();
-                String kid = keys.getActiveRsaKey(realm).getKid();
-                Certificate certificate = keys.getRsaCertificate(realm, kid);
+                KeyWrapper key = session.keys().getActiveKey(realm, KeyUse.SIG, Algorithm.RS256, AuthProtocol.OIDC);
+                Certificate certificate = key.getCertificate();
                 String certificateAlias = config.getRealmAlias();
                 if (certificateAlias == null) certificateAlias = realm.getName();
                 keyStore.setCertificateEntry(certificateAlias, certificate);

@@ -22,6 +22,7 @@ import org.keycloak.common.util.KeyUtils;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.models.RealmModel;
 
 import java.io.FileInputStream;
@@ -79,8 +80,9 @@ public class JavaKeystoreKeyProvider extends AbstractRsaKeyProvider {
             List<KeyUse> keyUses = model.getAll(Attributes.KEY_USE, KeyUse.SIG.getSpecName()).stream()
                     .map(String::toUpperCase).map(KeyUse::valueOf).collect(Collectors.toList());
 
+            List<AuthProtocol> authProtocols = model.getAll(Attributes.KEY_AUTH_PROTOCOL, AuthProtocol.getAllNames()).stream().map(ap -> AuthProtocol.valueOf(ap.toUpperCase())).collect(Collectors.toList());
 
-            return createKeyWrapper(keyPair, certificate, loadCertificateChain(keyStore, keyAlias), keyUses);
+            return createKeyWrapper(keyPair, certificate, loadCertificateChain(keyStore, keyAlias), keyUses, authProtocols);
         } catch (KeyStoreException kse) {
             throw new RuntimeException("KeyStore error on server. " + kse.getMessage(), kse);
         } catch (FileNotFoundException fnfe) {

@@ -15,24 +15,38 @@
  * limitations under the License.
  */
 
-package org.keycloak.keys;
+package org.keycloak.enums;
 
-import org.keycloak.component.ComponentModel;
-import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.KeyType;
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.enums.AuthProtocol;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
+public enum AuthProtocol {
 
-/**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
- */
-public class GeneratedHmacKeyProvider extends AbstractGeneratedSecretKeyProvider {
+    OIDC("oidc"),
+    SAML("saml"),
+    OTHER("other");
 
-    public GeneratedHmacKeyProvider(ComponentModel model) {
-        super(model, KeyUse.SIG, KeyType.OCT, model.get(Attributes.ALGORITHM_KEY, Algorithm.HS256), model.getAll(Attributes.KEY_AUTH_PROTOCOL, AuthProtocol.getAllNames()).stream().map(ap -> AuthProtocol.valueOf(ap.toUpperCase())).collect(Collectors.toList()));
+    private String specName;
+
+    AuthProtocol(String specName) {
+        this.specName = specName;
     }
 
+    public String getSpecName() {
+        return specName;
+    }
+
+    public static List<AuthProtocol> getAll(){
+        return Arrays.asList(AuthProtocol.OIDC, AuthProtocol.SAML, AuthProtocol.OTHER);
+    }
+
+    public static List<String> getAllNames(){
+        List<String> allNames = new ArrayList<>();
+        for(AuthProtocol ap : getAll())
+            allNames.add(ap.name().toUpperCase());
+        return allNames;
+    }
 }

@@ -91,7 +91,7 @@ public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
 
         KeysMetadataRepresentation keys = adminClient.realm("test").keys().getKeyMetadata();
 
-        assertEquals(kid, keys.getActive().get(Algorithm.RS256));
+        assertTrue(keys.getActive().get(Algorithm.RS256).contains(kid));
 
         KeysMetadataRepresentation.KeyMetadataRepresentation key = keys.getKeys().get(0);
 

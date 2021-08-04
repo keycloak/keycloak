@@ -29,6 +29,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.jose.jwk.JSONWebKeySet;
@@ -229,6 +230,7 @@ public class OIDCLoginProtocolService {
 
         JWK[] jwks = session.keys().getKeysStream(realm)
                 .filter(k -> k.getStatus().isEnabled() && k.getPublicKey() != null)
+                .filter(k -> k.getAuthProtocols().contains(AuthProtocol.OIDC))
                 .flatMap(k -> {
                     JWKBuilder b = JWKBuilder.create().kid(k.getKid()).algorithm(k.getAlgorithmOrDefault());
                     List<X509Certificate> certificates = Optional.ofNullable(k.getCertificateChain())

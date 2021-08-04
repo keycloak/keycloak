@@ -16,16 +16,17 @@
  */
 package org.keycloak.crypto;
 
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.models.KeycloakSession;
 
 public class ServerMacSignatureSignerContext extends MacSignatureSignerContext {
 
-    public ServerMacSignatureSignerContext(KeycloakSession session, String algorithm) throws SignatureException {
-        super(getKey(session, algorithm));
+    public ServerMacSignatureSignerContext(KeycloakSession session, String algorithm, AuthProtocol authProtocol) throws SignatureException {
+        super(getKey(session, algorithm, authProtocol));
     }
 
-    private static KeyWrapper getKey(KeycloakSession session, String algorithm) {
-        KeyWrapper key = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, algorithm);
+    private static KeyWrapper getKey(KeycloakSession session, String algorithm, AuthProtocol authProtocol) {
+        KeyWrapper key = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, algorithm, authProtocol);
         if (key == null) {
             throw new SignatureException("Active key for " + algorithm + " not found");
         }

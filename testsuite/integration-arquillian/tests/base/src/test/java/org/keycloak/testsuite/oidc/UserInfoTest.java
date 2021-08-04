@@ -30,6 +30,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.Time;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -265,7 +266,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
                     .assertEvent();
 
             // Check signature and content
-            PublicKey publicKey = PemUtils.decodePublicKey(ApiUtil.findActiveSigningKey(adminClient.realm("test")).getPublicKey());
+            PublicKey publicKey = PemUtils.decodePublicKey(ApiUtil.findActiveSigningKey(adminClient.realm("test"), AuthProtocol.OIDC).getPublicKey());
 
             Assert.assertEquals(200, response.getStatus());
             Assert.assertEquals(response.getHeaderString(HttpHeaders.CONTENT_TYPE), MediaType.APPLICATION_JWT);

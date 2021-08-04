@@ -90,10 +90,12 @@ import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
 import java.security.Security;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -199,18 +201,18 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         assertEquals("Bearer", response.getTokenType());
 
-        String expectedKid = oauth.doCertsRequest("test").getKeys()[0].getKeyId();
+        List<String> expectedKids = Arrays.asList(oauth.doCertsRequest("test").getKeys()).stream().map(k->k.getKeyId()).collect(Collectors.toList());
 
         JWSHeader header = new JWSInput(response.getAccessToken()).getHeader();
         assertEquals("RS256", header.getAlgorithm().name());
         assertEquals("JWT", header.getType());
-        assertEquals(expectedKid, header.getKeyId());
+        assertTrue(expectedKids.contains(header.getKeyId()));
         assertNull(header.getContentType());
 
         header = new JWSInput(response.getIdToken()).getHeader();
         assertEquals("RS256", header.getAlgorithm().name());
         assertEquals("JWT", header.getType());
-        assertEquals(expectedKid, header.getKeyId());
+        assertTrue(expectedKids.contains(header.getKeyId()));
         assertNull(header.getContentType());
 
         header = new JWSInput(response.getRefreshToken()).getHeader();

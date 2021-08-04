@@ -28,6 +28,7 @@ import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -241,7 +242,7 @@ public class UserInfoEndpoint {
             String signatureAlgorithm = session.tokens().signatureAlgorithm(TokenCategory.USERINFO);
 
             SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, signatureAlgorithm);
-            SignatureSignerContext signer = signatureProvider.signer();
+            SignatureSignerContext signer = signatureProvider.signer(AuthProtocol.OIDC);
 
             String signedUserInfo = new JWSBuilder().type("JWT").jsonContent(claims).sign(signer);
 

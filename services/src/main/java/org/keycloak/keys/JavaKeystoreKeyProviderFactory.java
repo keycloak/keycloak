@@ -57,6 +57,7 @@ public class JavaKeystoreKeyProviderFactory extends AbstractRsaKeyProviderFactor
             .property(KEY_ALIAS_PROPERTY)
             .property(KEY_PASSWORD_PROPERTY)
             .property(Attributes.KEY_USE_PROPERTY)
+            .property(Attributes.KEY_AUTH_PROTOCOL_PROPERTY)
             .build();
 
     @Override

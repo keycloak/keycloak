@@ -17,11 +17,12 @@
 package org.keycloak.crypto;
 
 import org.keycloak.common.VerificationException;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.provider.Provider;
 
 public interface SignatureProvider extends Provider {
 
-    SignatureSignerContext signer() throws SignatureException;
+    SignatureSignerContext signer(AuthProtocol authProtocol) throws SignatureException;
 
     SignatureVerifierContext verifier(String kid) throws VerificationException;
 

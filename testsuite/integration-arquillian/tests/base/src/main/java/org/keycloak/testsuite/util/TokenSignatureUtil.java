@@ -23,6 +23,7 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.List;
 
 import javax.ws.rs.core.Response;
 
@@ -159,10 +160,10 @@ public class TokenSignatureUtil {
 
     private static PublicKey getRealmPublicKey(String realm, String sigAlgName, Keycloak adminClient) {
         KeysMetadataRepresentation keyMetadata = adminClient.realms().realm(realm).keys().getKeyMetadata();
-        String activeKid = keyMetadata.getActive().get(sigAlgName);
+        List<String> activeKids = keyMetadata.getActive().get(sigAlgName);
         PublicKey publicKey = null;
         for (KeysMetadataRepresentation.KeyMetadataRepresentation rep : keyMetadata.getKeys()) {
-            if (rep.getKid().equals(activeKid)) {
+            if (activeKids.contains(rep.getKid())) {
                 X509EncodedKeySpec publicKeySpec = null;
                 try {
                     publicKeySpec = new X509EncodedKeySpec(Base64.decode(rep.getPublicKey()));

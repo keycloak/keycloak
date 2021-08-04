@@ -22,12 +22,15 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.enums.AuthProtocol;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.models.RealmModel;
 
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -51,10 +54,12 @@ public class ImportedRsaKeyProvider extends AbstractRsaKeyProvider {
         KeyPair keyPair = new KeyPair(publicKey, privateKey);
         X509Certificate certificate = PemUtils.decodeCertificate(certificatePem);
 
-        List<KeyUse> keyUses = model.getAll(Attributes.KEY_USE, KeyUse.SIG.getSpecName()).stream()
+        List<KeyUse> keyUses = model.getAll(Attributes.KEY_USE, Arrays.asList(KeyUse.SIG.getSpecName(), KeyUse.ENC.getSpecName())).stream()
                 .map(String::toUpperCase).map(KeyUse::valueOf).collect(Collectors.toList());
 
-        return createKeyWrapper(keyPair, certificate, keyUses);
+        List<AuthProtocol> authProtocols = model.getAll(Attributes.KEY_AUTH_PROTOCOL, AuthProtocol.getAllNames()).stream().map(ap -> AuthProtocol.valueOf(ap.toUpperCase())).collect(Collectors.toList());
+
+        return createKeyWrapper(keyPair, certificate, keyUses, authProtocols);
     }
 
 }

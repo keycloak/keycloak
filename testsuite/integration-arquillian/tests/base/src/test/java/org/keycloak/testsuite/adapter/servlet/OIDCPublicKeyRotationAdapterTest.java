@@ -20,6 +20,7 @@ package org.keycloak.testsuite.adapter.servlet;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import javax.ws.rs.core.Response;
@@ -312,9 +313,9 @@ public class OIDCPublicKeyRotationAdapterTest extends AbstractServletsAdapterTes
 
     private String getActiveKeyProvider() {
         KeysMetadataRepresentation keyMetadata = adminClient.realm(DEMO).keys().getKeyMetadata();
-        String activeKid = keyMetadata.getActive().get(Algorithm.RS256);
+        List<String> activeKids = keyMetadata.getActive().get(Algorithm.RS256);
         for (KeysMetadataRepresentation.KeyMetadataRepresentation rep : keyMetadata.getKeys()) {
-            if (rep.getKid().equals(activeKid)) {
+            if (activeKids.contains(rep.getKid())) {
                 return rep.getProviderId();
             }
         }

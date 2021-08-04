@@ -17,6 +17,7 @@
 package org.keycloak.crypto;
 
 import org.keycloak.common.VerificationException;
+import org.keycloak.enums.AuthProtocol;
 import org.keycloak.models.KeycloakSession;
 
 public class AsymmetricSignatureProvider implements SignatureProvider {
@@ -30,8 +31,8 @@ public class AsymmetricSignatureProvider implements SignatureProvider {
     }
 
     @Override
-    public SignatureSignerContext signer() throws SignatureException {
-        return new ServerAsymmetricSignatureSignerContext(session, algorithm);
+    public SignatureSignerContext signer(AuthProtocol authProtocol) throws SignatureException {
+        return new ServerAsymmetricSignatureSignerContext(session, algorithm, authProtocol);
     }
 
     @Override
