@@ -19,6 +19,8 @@ package org.keycloak.util;
 
 import java.util.Optional;
 
+import io.quarkus.runtime.LaunchMode;
+import io.quarkus.runtime.configuration.ProfileManager;
 import org.apache.commons.lang3.SystemUtils;
 import org.keycloak.configuration.Configuration;
 
@@ -80,7 +82,12 @@ public final class Environment {
     }
 
     public static boolean isDevMode() {
-        return "dev".equalsIgnoreCase(getProfile());
+        if ("dev".equalsIgnoreCase(getProfile())) {
+            return true;
+        }
+
+        // if running in quarkus:dev mode
+        return ProfileManager.getLaunchMode() == LaunchMode.DEVELOPMENT;
     }
 
     public static boolean isWindows() {

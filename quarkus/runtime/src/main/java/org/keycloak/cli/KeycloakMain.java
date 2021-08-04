@@ -22,6 +22,7 @@ import static org.keycloak.cli.Picocli.error;
 import static org.keycloak.cli.Picocli.getCliArgs;
 import static org.keycloak.cli.Picocli.parseConfigArgs;
 import static org.keycloak.util.Environment.getProfileOrDefault;
+import static org.keycloak.util.Environment.isDevMode;
 
 import java.io.PrintWriter;
 import java.util.Arrays;
@@ -51,7 +52,10 @@ public class KeycloakMain {
         if (cliArgs.length == 0) {
             // no arguments, just start the server
             start(Collections.emptyList(), new PrintWriter(System.err));
-            System.exit(CommandLine.ExitCode.OK);
+            if (!isDevMode()) {
+                System.exit(CommandLine.ExitCode.OK);
+            }
+            return;
         }
 
         // parse arguments and execute any of the configured commands
@@ -63,9 +67,20 @@ public class KeycloakMain {
     }
 
     private static void start(List<String> cliArgs, PrintWriter errorWriter) {
-        Quarkus.run(null, (integer, throwable) -> {
-            error(cliArgs, errorWriter, String.format("Failed to start server using profile (%s).", getProfileOrDefault("none")), throwable.getCause());
-        });
+        try {
+            Quarkus.run(null, (integer, cause) -> {
+                if (cause != null) {
+                    error(cliArgs, errorWriter,
+                            String.format("Failed to start server using profile (%s)", getProfileOrDefault("none")),
+                            cause.getCause());
+                }
+            });
+        } catch (Throwable cause) {
+            error(cliArgs, errorWriter,
+                    String.format("Unexpected error when starting the server using profile (%s)", getProfileOrDefault("none")),
+                    cause.getCause());
+        }
+
         Quarkus.waitForExit();
     }
     
@@ -96,6 +111,10 @@ public class KeycloakMain {
             System.exit(cmd.getCommandSpec().exitCodeOnExecutionException());
         }
 
-        System.exit(cmd.execute(cliArgs.toArray(new String[cliArgs.size()])));
+        int exitCode = cmd.execute(cliArgs.toArray(new String[cliArgs.size()]));
+
+        if (!isDevMode()) {
+            System.exit(exitCode);
+        }
     }
 }

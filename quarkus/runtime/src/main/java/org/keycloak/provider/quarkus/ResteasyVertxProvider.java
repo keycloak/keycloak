@@ -31,7 +31,13 @@ public class ResteasyVertxProvider implements ResteasyProvider {
         R data = ResteasyContext.getContextData(type);
 
         if (data == null) {
-            return (R) ResteasyContext.getContextData(RoutingContext.class).data().get(type.getName());
+            RoutingContext contextData = ResteasyContext.getContextData(RoutingContext.class);
+
+            if (contextData == null) {
+                return null;
+            }
+
+            return (R) contextData.data().get(type.getName());
         }
 
         return data;
