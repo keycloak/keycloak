@@ -19,20 +19,6 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-quarkus-server</artifactId>
         </dependency>
-
-        <!-- This dependency should not be here but due to the structure of the modules we need to make sure it is built
-        before this module -->
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-quarkus-server-deployment</artifactId>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
     </dependencies>
 
     <build>

@@ -18,6 +18,8 @@ package org.keycloak.testsuite.forms;
 
 import static org.junit.Assert.assertEquals;
 
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ALL;
 import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ADMIN_EDITABLE;
 import static org.keycloak.testsuite.forms.VerifyProfileTest.SCOPE_DEPARTMENT;
@@ -47,7 +49,7 @@ import org.openqa.selenium.By;
  * @author Vlastimil Elias <velias@redhat.com>
  */
 @EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
-@AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
+@AuthServerContainerExclude({REMOTE, QUARKUS})
 public class RegisterWithUserProfileTest extends RegisterTest {
     
     private static final String SCOPE_LAST_NAME = "lastName";

@@ -49,6 +49,7 @@ import org.keycloak.Config;
 import org.keycloak.ServerStartupError;
 import org.keycloak.common.Version;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
+import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.migration.ModelVersion;
@@ -133,14 +134,14 @@ public final class QuarkusJpaConnectionProviderFactory implements JpaConnectionP
             session.close();
         }
 
-        if (initSchema) {
+        if (initSchema || ExportImportConfig.ACTION_EXPORT.equals(ExportImportConfig.getAction())) {
             runJobInTransaction(factory, this::initSchemaOrExport);
         }
     }
 
     @Override
     public Connection getConnection() {
-        SessionFactoryImpl entityManagerFactory = SessionFactoryImpl.class.cast(emf);
+        SessionFactoryImpl entityManagerFactory = emf.unwrap(SessionFactoryImpl.class);
 
         try {
             return entityManagerFactory.getJdbcServices().getBootstrapJdbcConnectionAccess().obtainConnection();

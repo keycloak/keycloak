@@ -18,6 +18,7 @@
 package org.keycloak.configuration;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -42,6 +43,11 @@ public class SysPropConfigSource implements ConfigSource {
     @Override
     public Map<String, String> getProperties() {
         return properties;
+    }
+
+    @Override
+    public Set<String> getPropertyNames() {
+        return properties.keySet();
     }
 
     public String getValue(final String propertyName) {
