@@ -12,7 +12,7 @@ import {
   TextArea,
 } from "@patternfly/react-core";
 import FileSaver from "file-saver";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
@@ -44,6 +44,11 @@ export const DownloadDialog = ({
   );
   const [snippet, setSnippet] = useState("");
   const [openType, setOpenType] = useState(false);
+
+  const selectedConfig = useMemo(
+    () => configFormats?.find((config) => config.id === selected) ?? null,
+    [selected]
+  );
 
   useFetch(
     async () => {
@@ -115,7 +120,7 @@ export const DownloadDialog = ({
                 value={selected}
                 selections={selected}
                 onSelect={(_, value) => {
-                  setSelected(value as string);
+                  setSelected(value.toString());
                   setOpenType(false);
                 }}
                 aria-label="Select Input"
@@ -132,28 +137,30 @@ export const DownloadDialog = ({
               </Select>
             </FormGroup>
           </StackItem>
-          <StackItem isFilled>
-            <FormGroup
-              fieldId="details"
-              label={t("clients:details")}
-              labelIcon={
-                <HelpItem
-                  helpText={t("clients-help:details")}
-                  forLabel={t("clients:details")}
-                  forID="details"
+          {!selectedConfig?.downloadOnly && (
+            <StackItem isFilled>
+              <FormGroup
+                fieldId="details"
+                label={t("clients:details")}
+                labelIcon={
+                  <HelpItem
+                    helpText={t("clients-help:details")}
+                    forLabel={t("clients:details")}
+                    forID="details"
+                  />
+                }
+              >
+                <TextArea
+                  id="details"
+                  readOnly
+                  rows={12}
+                  resizeOrientation="vertical"
+                  value={snippet}
+                  aria-label="text area example"
                 />
-              }
-            >
-              <TextArea
-                id="details"
-                readOnly
-                rows={12}
-                resizeOrientation="vertical"
-                value={snippet}
-                aria-label="text area example"
-              />
-            </FormGroup>
-          </StackItem>
+              </FormGroup>
+            </StackItem>
+          )}
         </Stack>
       </Form>
     </ConfirmDialogModal>
