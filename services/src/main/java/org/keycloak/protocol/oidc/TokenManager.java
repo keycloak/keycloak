@@ -284,11 +284,7 @@ public class TokenManager {
             }
 
             if (valid) {
-                int currentTime = Time.currentTime();
-                userSession.setLastSessionRefresh(currentTime);
-                if (clientSession != null) {
-                    clientSession.setTimestamp(currentTime);
-                }
+                userSession.setLastSessionRefresh(Time.currentTime());
             }
         }
 
