@@ -126,6 +126,7 @@ export const DownloadDialog = ({
                   setOpenType(false);
                 }}
                 aria-label="Select Input"
+                menuAppendTo={() => document.body}
               >
                 {configFormats.map((configFormat) => (
                   <SelectOption
