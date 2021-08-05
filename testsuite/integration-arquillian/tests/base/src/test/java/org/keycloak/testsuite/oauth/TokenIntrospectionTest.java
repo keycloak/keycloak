@@ -314,6 +314,8 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         AbstractOIDCScopeTest.assertScopes("openid email profile", rep.getScope());
     }
 
+
+
     @Test
     public void testIntrospectAccessTokenES256() throws Exception {
         testIntrospectAccessToken(Algorithm.ES256);
@@ -398,6 +400,28 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertEquals("test-app", rep.getClientId());
     }
 
+    @Test
+    public void testIntrospectDoesntExtendTokenLifespan() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, "password");
+        accessTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken(), "password");
+
+        setTimeOffset(1200);
+
+        String tokenResponse = oauth.introspectRefreshTokenWithClientCredential("confidential-cli", "secret1", accessTokenResponse.getRefreshToken());
+        TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+
+        assertTrue(rep.isActive());
+        assertEquals("test-user@localhost", rep.getUserName());
+        assertEquals("test-app", rep.getClientId());
+
+        setTimeOffset(1200 + 1200);
+
+        accessTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken(), "password");
+        assertEquals(400, accessTokenResponse.getStatusCode());
+        assertEquals("Token is not active", accessTokenResponse.getErrorDescription());
+    }
 
     @Test
     public void testIntrospectAccessTokenUserDisabled() throws Exception {
