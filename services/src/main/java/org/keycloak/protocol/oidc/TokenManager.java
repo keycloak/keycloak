@@ -67,7 +67,6 @@ import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
-import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.IdentityBrokerService;
@@ -218,16 +217,16 @@ public class TokenManager {
     }
 
     /**
-     * Checks if the token is valid. Intended usage is for token introspection endpoints as the session last refresh
-     * is updated if the token was valid. This is used to keep the session alive when long lived tokens are used.
+     * Checks if the token is valid. Optionally the session last refresh and client session timestamp
+     * are updated if the token was valid. This is used to keep the session alive when long lived tokens are used.
      *
      * @param session
      * @param realm
      * @param token
+     * @param updateTimestamps
      * @return
-     * @throws OAuthErrorException
      */
-    public boolean checkTokenValidForIntrospection(KeycloakSession session, RealmModel realm, AccessToken token) throws OAuthErrorException {
+    public boolean checkTokenValidForIntrospection(KeycloakSession session, RealmModel realm, AccessToken token, boolean updateTimestamps) {
         ClientModel client = realm.getClientByClientId(token.getIssuedFor());
         if (client == null || !client.isEnabled()) {
             return false;
@@ -283,7 +282,7 @@ public class TokenManager {
                 return false;
             }
 
-            if (valid) {
+            if (updateTimestamps && valid) {
                 int currentTime = Time.currentTime();
                 userSession.setLastSessionRefresh(currentTime);
                 if (clientSession != null) {
