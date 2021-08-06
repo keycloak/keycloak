@@ -34,6 +34,8 @@ import org.owasp.html.PolicyFactory;
 public class KeycloakSanitizerMethod implements TemplateMethodModelEx {
     
     private static final PolicyFactory KEYCLOAK_POLICY = KeycloakSanitizerPolicy.POLICY_DEFINITION;
+
+    private static final Pattern HREF_PATTERN = Pattern.compile("\\s+href=\"([^\"]*)\"");
     
     @Override
     public Object exec(List list) throws TemplateModelException {
@@ -48,16 +50,19 @@ public class KeycloakSanitizerMethod implements TemplateMethodModelEx {
     }
 
     private String fixURLs(String msg) {
-        Pattern hrefs = Pattern.compile("href=\"([^\"]*)\"");
-        Matcher matcher = hrefs.matcher(msg);
-        int count = 0;
-        while(matcher.find()) {
-            count++;
-            String original = matcher.group(count);
-            String href = original.replaceAll("&#61;", "=")
-                    .replaceAll("\\.\\.", ".")
-                    .replaceAll("&amp;", "&");
-            msg = msg.replace(original, href);
+        Matcher matcher = HREF_PATTERN.matcher(msg);
+        if (matcher.find()) {
+            int last = 0;
+            StringBuilder result = new StringBuilder(msg.length());
+            do {
+                String href = matcher.group(1).replaceAll("&#61;", "=")
+                        .replaceAll("\\.\\.", ".")
+                        .replaceAll("&amp;", "&");
+                result.append(msg.substring(last, matcher.start(1))).append(href);
+                last = matcher.end(1);
+            } while (matcher.find());
+            result.append(msg.substring(last));
+            return result.toString();
         }
         return msg;
     }
