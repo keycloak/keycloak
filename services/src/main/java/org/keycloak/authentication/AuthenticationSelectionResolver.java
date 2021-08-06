@@ -83,11 +83,26 @@ class AuthenticationSelectionResolver {
                         .distinct()
                         .map(credentialType -> new AuthenticationSelectionOption(processor.getSession(), typeAuthExecMap.get(credentialType)))
                         .collect(Collectors.toList());
+
+                // add non-credential-executions that are configured for this user
+                for (AuthenticationExecutionModel exec : nonCredentialExecutions) {
+                    Authenticator auth = processor.getSession().getProvider(Authenticator.class, exec.getAuthenticator());
+                    if (auth.requiresUser() &&
+                            auth.configuredFor(
+                                    processor.getSession(),
+                                    processor.getRealm(),
+                                    processor.getAuthenticationSession().getAuthenticatedUser())) {
+                        authenticationSelectionList.add(new AuthenticationSelectionOption(processor.getSession(), exec));
+                    }
+                }
+
             }
 
             //add all other authenticators
             for (AuthenticationExecutionModel exec : nonCredentialExecutions) {
-                authenticationSelectionList.add(new AuthenticationSelectionOption(processor.getSession(), exec));
+                if (!processor.getSession().getProvider(Authenticator.class, exec.getAuthenticator()).requiresUser()) {
+                    authenticationSelectionList.add(new AuthenticationSelectionOption(processor.getSession(), exec));
+                }
             }
         }
 
