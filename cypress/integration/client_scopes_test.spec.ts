@@ -49,23 +49,22 @@ describe("Client Scopes test", function () {
 
       masthead.checkNotificationMessage("Client scope created");
 
-      //TODO seems not to work on github actions temporary removed
-      // sidebarPage.goToClientScopes();
-      // cy.get(".pf-c-spinner__tail-ball").should("not.exist");
+      sidebarPage.goToClientScopes();
+      cy.get(".pf-c-spinner__tail-ball").should("not.exist");
 
-      // // Delete
-      // listingPage
-      //   .searchItem(itemId, false)
-      //   .itemExist(itemId)
-      //   .deleteItem(itemId);
+      // Delete
+      listingPage
+        .searchItem(itemId, false)
+        .itemExist(itemId)
+        .deleteItem(itemId);
 
-      // modalUtils
-      //   .checkModalMessage("Are you sure you want to delete this client scope")
-      //   .confirmModal();
+      modalUtils
+        .checkModalMessage("Are you sure you want to delete this client scope")
+        .confirmModal();
 
-      // masthead.checkNotificationMessage("The client scope has been deleted");
+      masthead.checkNotificationMessage("The client scope has been deleted");
 
-      // listingPage.itemExist(itemId, false);
+      listingPage.itemExist(itemId, false);
     });
   });
 
