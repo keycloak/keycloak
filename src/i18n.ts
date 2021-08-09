@@ -19,6 +19,7 @@ import events from "./events/messages";
 import realmSettings from "./realm-settings/messages";
 import realmSettingsHelp from "./realm-settings/help";
 import authentication from "./authentication/messages";
+import authenticationHelp from "./authentication/help";
 import userFederation from "./user-federation/messages";
 import userFederationHelp from "./user-federation/help";
 import identityProviders from "./identity-providers/messages";
@@ -47,6 +48,7 @@ const initOptions = {
       ...realmSettings,
       ...realmSettingsHelp,
       ...authentication,
+      ...authenticationHelp,
       ...identityProviders,
       ...identityProvidersHelp,
       ...userFederation,

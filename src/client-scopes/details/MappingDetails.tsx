@@ -143,7 +143,7 @@ export const MappingDetails = () => {
       <ViewHeader
         titleKey={mapping ? mapping.name! : t("common:addMapper")}
         subKey={mapperId.match(isGuid) ? mapperId : ""}
-        badge={mapping?.protocol}
+        badges={[{ text: mapping?.protocol }]}
         dropdownItems={
           mapperId.match(isGuid)
             ? [

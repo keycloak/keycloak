@@ -42,19 +42,19 @@ export const ManageOderDialog = ({
 
   const onDragStart = (id: string) => {
     setAlias(id);
-    setLiveText(t("onDragStart", { id }));
+    setLiveText(t("common:onDragStart", { item: id }));
   };
 
   const onDragMove = () => {
-    setLiveText(t("onDragMove", { alias }));
+    setLiveText(t("common:onDragMove", { item: alias }));
   };
 
   const onDragCancel = () => {
-    setLiveText(t("onDragCancel"));
+    setLiveText(t("common:onDragCancel"));
   };
 
   const onDragFinish = (providerOrder: string[]) => {
-    setLiveText(t("onDragFinish", { list: providerOrder }));
+    setLiveText(t("common:onDragFinish", { list: providerOrder }));
     setOrder(providerOrder);
   };
 

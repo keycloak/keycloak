@@ -34,10 +34,6 @@ export default {
       "List of identity providers in the order listed on the login page",
     manageOrderItemAria:
       "Press space or enter to begin dragging, and use the arrow keys to navigate up or down. Press enter to confirm the drag, or any other key to cancel the drag operation.",
-    onDragStart: "Dragging started for item {{id}}",
-    onDragMove: "Dragging item {{id}}",
-    onDragCancel: "Dragging cancelled. List is unchanged.",
-    onDragFinish: "Dragging finished {{list}}",
     orderChangeSuccess:
       "Successfully changed display order of identity providers",
     orderChangeError:

@@ -14,7 +14,13 @@ import {
   ToolbarContent,
   ToolbarItem,
 } from "@patternfly/react-core";
-import React, { ReactElement, ReactNode, useState } from "react";
+import React, {
+  ReactElement,
+  ReactNode,
+  useState,
+  isValidElement,
+  Fragment,
+} from "react";
 import { useTranslation } from "react-i18next";
 import {
   FormattedLink,
@@ -25,9 +31,7 @@ import { HelpItem } from "../help-enabler/HelpItem";
 
 export type ViewHeaderProps = {
   titleKey: string;
-  badge?: string;
-  badgeId?: string;
-  badgeIsRead?: boolean;
+  badges?: ViewHeaderBadge[];
   subKey?: string | ReactNode;
   actionsDropdownId?: string;
   subKeyLinkProps?: FormattedLinkProps;
@@ -40,11 +44,16 @@ export type ViewHeaderProps = {
   helpTextKey?: string;
 };
 
+export type ViewHeaderBadge = {
+  id?: string;
+  text?: string | ReactNode;
+  readonly?: boolean;
+};
+
 export const ViewHeader = ({
   actionsDropdownId,
   titleKey,
-  badge,
-  badgeIsRead,
+  badges,
   subKey,
   subKeyLinkProps,
   dropdownItems,
@@ -79,19 +88,24 @@ export const ViewHeader = ({
                   <Text component="h1">{t(titleKey)}</Text>
                 </TextContent>
               </LevelItem>
-              {badge && (
+              {badges && (
                 <LevelItem>
-                  <Badge
-                    data-testid="composite-role-badge"
-                    isRead={badgeIsRead}
-                  >
-                    {badge}
-                  </Badge>
+                  {badges.map((badge, index) => (
+                    <Fragment key={index}>
+                      {!isValidElement(badge.text) && (
+                        <Fragment key={badge.text as string}>
+                          <Badge data-testid={badge.id} isRead={badge.readonly}>
+                            {badge.text}
+                          </Badge>{" "}
+                        </Fragment>
+                      )}
+                      {isValidElement(badge.text) && <>{badge.text}</>}{" "}
+                    </Fragment>
+                  ))}
                 </LevelItem>
               )}
             </Level>
           </LevelItem>
-          <LevelItem></LevelItem>
           <LevelItem>
             <Toolbar className="pf-u-p-0">
               <ToolbarContent>

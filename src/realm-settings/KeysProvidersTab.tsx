@@ -118,21 +118,21 @@ export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
   });
 
   const onDragStart = (id: string) => {
-    setLiveText(t("onDragStart", { id }));
+    setLiveText(t("common:onDragStart", { item: id }));
     setId(id);
   };
 
   const onDragMove = () => {
-    setLiveText(t("onDragMove", { id }));
+    setLiveText(t("common:onDragMove", { item: id }));
   };
 
   const onDragCancel = () => {
-    setLiveText(t("onDragCancel"));
+    setLiveText(t("common:onDragCancel"));
   };
 
   const onDragFinish = (itemOrder: string[]) => {
     setItemOrder(["data", ...itemOrder.filter((i) => i !== "data")]);
-    setLiveText(t("onDragCancel"));
+    setLiveText(t("common:onDragFinish"));
   };
 
   const onSearch = () => {

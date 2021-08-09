@@ -567,8 +567,4 @@ export default {
     SKIP: "Skip",
     OVERWRITE: "Overwrite",
   },
-  onDragStart: "Dragging started for item {{id}}",
-  onDragMove: "Dragging item {{id}}",
-  onDragCancel: "Dragging cancelled. List is unchanged.",
-  onDragFinish: "Dragging finished {{list}}",
 };

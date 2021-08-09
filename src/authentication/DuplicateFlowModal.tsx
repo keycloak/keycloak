@@ -1,20 +1,18 @@
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import {
   AlertVariant,
   Button,
   ButtonVariant,
   Form,
-  FormGroup,
   Modal,
   ModalVariant,
-  TextInput,
-  ValidatedOptions,
 } from "@patternfly/react-core";
 
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
+import { NameDescription } from "./form/NameDescription";
 
 type DuplicateFlowModalProps = {
   name: string;
@@ -30,9 +28,10 @@ export const DuplicateFlowModal = ({
   onComplete,
 }: DuplicateFlowModalProps) => {
   const { t } = useTranslation("authentication");
-  const { register, errors, setValue, trigger, getValues } = useForm({
+  const form = useForm({
     shouldUnregister: false,
   });
+  const { setValue, trigger, getValues } = form;
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
@@ -74,10 +73,16 @@ export const DuplicateFlowModal = ({
       onClose={toggleDialog}
       variant={ModalVariant.small}
       actions={[
-        <Button id="modal-confirm" key="confirm" onClick={save}>
-          {t("common:save")}
+        <Button
+          id="modal-confirm"
+          key="confirm"
+          onClick={save}
+          data-testid="confirm"
+        >
+          {t("duplicate")}
         </Button>,
         <Button
+          data-testid="cancel"
           id="modal-cancel"
           key="cancel"
           variant={ButtonVariant.link}
@@ -89,35 +94,11 @@ export const DuplicateFlowModal = ({
         </Button>,
       ]}
     >
-      <Form isHorizontal>
-        <FormGroup
-          label={t("common:name")}
-          fieldId="kc-name"
-          helperTextInvalid={t("common:required")}
-          validated={
-            errors.name ? ValidatedOptions.error : ValidatedOptions.default
-          }
-          isRequired
-        >
-          <TextInput
-            type="text"
-            id="kc-name"
-            name="name"
-            ref={register({ required: true })}
-            validated={
-              errors.name ? ValidatedOptions.error : ValidatedOptions.default
-            }
-          />
-        </FormGroup>
-        <FormGroup label={t("common:description")} fieldId="kc-description">
-          <TextInput
-            type="text"
-            id="kc-description"
-            name="description"
-            ref={register()}
-          />
-        </FormGroup>
-      </Form>
+      <FormProvider {...form}>
+        <Form isHorizontal>
+          <NameDescription />
+        </Form>
+      </FormProvider>
     </Modal>
   );
 };

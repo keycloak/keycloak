@@ -80,7 +80,7 @@ const ClientDetailHeader = ({
       <ViewHeader
         titleKey={client ? client.clientId! : ""}
         subKey="clients:clientsExplain"
-        badge={client.protocol}
+        badges={[{ text: client.protocol }]}
         divider={false}
         helpTextKey="clients-help:enableDisable"
         dropdownItems={[
