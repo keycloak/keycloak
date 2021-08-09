@@ -695,7 +695,7 @@ public class AuthenticationProcessor {
                     break;
                 case USER_TEMPORARILY_DISABLED:
                     event.error(Errors.USER_TEMPORARILY_DISABLED);
-                    forms.addError(new FormMessage(Messages.INVALID_USER));
+                    forms.addError(new FormMessage(Messages.ACCOUNT_TEMPORARILY_DISABLED));
                     break;
                 case INVALID_CLIENT_SESSION:
                     event.error(Errors.INVALID_CODE);
@@ -739,7 +739,7 @@ public class AuthenticationProcessor {
                 ServicesLogger.LOGGER.failedAuthentication(e);
                 event.error(Errors.USER_TEMPORARILY_DISABLED);
                 if (e.getResponse() != null) return e.getResponse();
-                return ErrorPage.error(session,authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_USER);
+                return ErrorPage.error(session,authenticationSession, Response.Status.BAD_REQUEST, Messages.ACCOUNT_TEMPORARILY_DISABLED);
 
             } else if (e.getError() == AuthenticationFlowError.INVALID_CLIENT_SESSION) {
                 ServicesLogger.LOGGER.failedAuthentication(e);

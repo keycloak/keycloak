@@ -78,6 +78,6 @@ public class AccessTokenNoEmailLoginTest extends AbstractKeycloakTest {
     public void loginWithEmail() throws Exception {
         oauth.doLoginGrant("non-duplicate-email-user@localhost", "password");
         
-        assertEquals("Invalid username or password.", driver.findElement(By.className("kc-feedback-text")).getText());
+        assertEquals("Invalid user account.", driver.findElement(By.className("kc-feedback-text")).getText());
     }
 }

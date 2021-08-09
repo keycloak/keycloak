@@ -251,7 +251,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
             loginPage.login(bc.getUserLogin(), "invalid");
         }
 
-        assertEquals("Invalid username or password.", loginPage.getInputError());
+        assertEquals("Account is disabled, contact your administrator.", loginPage.getInputError());
 
         loginPage.clickSocial(bc.getIDPAlias());
 

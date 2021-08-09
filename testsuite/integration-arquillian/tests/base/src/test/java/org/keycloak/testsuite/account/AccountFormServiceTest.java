@@ -288,7 +288,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assert.assertEquals("Invalid user account.", loginPage.getInputError());
 
         events.expectLogin().session((String) null).error(Errors.INVALID_USER_CREDENTIALS)
                 .removeDetail(Details.CONSENT)
@@ -957,7 +957,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         loginPage.login("change-username", "password");
 
         Assert.assertTrue(loginPage.isCurrent());
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assert.assertEquals("Invalid user account.", loginPage.getInputError());
 
         loginPage.login("change-username-updated", "password");
     }
@@ -982,7 +982,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         loginPage.login("change-username@localhost", "password");
 
         Assert.assertTrue(loginPage.isCurrent());
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assert.assertEquals("Invalid user account.", loginPage.getInputError());
 
         loginPage.login("change-username-updated@localhost", "password");
     }

@@ -248,7 +248,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("login-test2", loginPage.getUsername());
         Assert.assertEquals("", loginPage.getPassword());
 
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assert.assertEquals("Invalid user account.", loginPage.getInputError());
 
         events.expectLogin().user(user2Id).session((String) null).error("invalid_user_credentials")
                 .detail(Details.USERNAME, "login-test2")
@@ -274,7 +274,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("login-test", loginPage.getUsername());
         Assert.assertEquals("", loginPage.getPassword());
 
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assert.assertEquals("Invalid user account.", loginPage.getInputError());
 
         events.expectLogin().user(userId).session((String) null).error("invalid_user_credentials")
                 .detail(Details.USERNAME, "login-test")
@@ -293,7 +293,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("login-test", loginPage.getUsername());
         Assert.assertEquals("", loginPage.getPassword());
 
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assert.assertEquals("Invalid user account.", loginPage.getInputError());
 
         events.expectLogin().user(userId).session((String) null).error("invalid_user_credentials")
                 .detail(Details.USERNAME, "login-test")
@@ -322,7 +322,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
             Assert.assertEquals("", loginPage.getPassword());
 
             // KEYCLOAK-2024
-            Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+            Assert.assertEquals("Invalid user account.", loginPage.getInputError());
 
             events.expectLogin().user(userId).session((String) null).error("invalid_user_credentials")
                     .detail(Details.USERNAME, "login-test")
@@ -401,7 +401,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("invalid", loginPage.getUsername());
         Assert.assertEquals("", loginPage.getPassword());
 
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assert.assertEquals("Invalid user account.", loginPage.getInputError());
 
         events.expectLogin().user((String) null).session((String) null).error("user_not_found")
                 .detail(Details.USERNAME, "invalid")
@@ -423,7 +423,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.assertCurrent();
 
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assert.assertEquals("Invalid user account.", loginPage.getInputError());
 
         events.expectLogin().user((String) null).session((String) null).error("user_not_found")
                 .removeDetail(Details.CONSENT)

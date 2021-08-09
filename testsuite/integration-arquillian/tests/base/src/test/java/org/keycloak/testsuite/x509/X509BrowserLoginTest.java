@@ -414,7 +414,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         Assert.assertEquals("test-user@localhost", loginPage.getUsername());
         Assert.assertEquals("", loginPage.getPassword());
 
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assert.assertEquals("Invalid user account.", loginPage.getInputError());
     }
 
     @Test

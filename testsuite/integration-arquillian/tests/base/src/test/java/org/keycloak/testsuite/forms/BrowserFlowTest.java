@@ -1097,7 +1097,7 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
         loginPage.assertCurrent();
         loginPage.login(user.getUsername(), "wrong_password");
 
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assert.assertEquals("Invalid user account.", loginPage.getInputError());
         events.clear();
 
         loginPage.assertCurrent();

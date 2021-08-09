@@ -1108,7 +1108,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         resetPasswordPage.changePassword(username);
 
         loginPage.assertCurrent();
-        assertEquals("Invalid username or password.", errorPage.getError());
+        assertEquals("Invalid user account.", errorPage.getError());
     }
 
     @Test

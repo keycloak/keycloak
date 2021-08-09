@@ -551,7 +551,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.assertCurrent();
         String src = driver.getPageSource();
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assert.assertEquals("Account is disabled, contact your administrator.", loginPage.getInputError());
         ExpectedEvent event = events.expectLogin()
                 .session((String) null)
                 .error(Errors.USER_TEMPORARILY_DISABLED)
@@ -572,7 +572,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         loginPage.login(username, "password");
 
         loginPage.assertCurrent();
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assert.assertEquals("Account is disabled, contact your administrator.", loginPage.getInputError());
         ExpectedEvent event = events.expectLogin()
             .session((String) null)
             .error(Errors.USER_DISABLED)
@@ -687,7 +687,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.assertCurrent();
 
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assert.assertEquals("Invalid user account.", loginPage.getInputError());
 
         events.clear();
     }
@@ -698,7 +698,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.assertCurrent();
 
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assert.assertEquals("Invalid user account.", loginPage.getInputError());
         events.clear();
     }
 
