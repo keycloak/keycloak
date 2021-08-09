@@ -157,6 +157,7 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
 
   return (
     <Modal
+      data-testid="addAssociatedRole"
       title={t("roles:associatedRolesModalTitle", { name })}
       isOpen={props.open}
       onClose={props.toggleDialog}

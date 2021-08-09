@@ -316,6 +316,7 @@ export const RealmRoleTabs = () => {
         titleKey={role?.name || t("createRole")}
         badges={[
           {
+            id: "composite-role-badge",
             text: additionalRoles.length > 0 ? t("composite") : "",
             readonly: true,
           },
