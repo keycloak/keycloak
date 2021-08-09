@@ -28,7 +28,7 @@
                     <label for="email" class="${properties.kcLabelClass!}">${msg("email")}</label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input type="text" id="email" name="email" value="${(user.email!'')}"
+                    <input type="email" id="email" name="email" value="${(user.email!'')}"
                            class="${properties.kcInputClass!}"
                            aria-invalid="<#if messagesPerField.existsError('email')>true</#if>"
                     />
