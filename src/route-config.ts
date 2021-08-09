@@ -21,7 +21,7 @@ export type RouteDef = {
   path: string;
   component: ComponentType;
   breadcrumb?: (t: TFunction) => string | ComponentType<any>;
-  access: AccessType;
+  access: AccessType | AccessType[];
   matchOptions?: MatchOptions;
 };
 

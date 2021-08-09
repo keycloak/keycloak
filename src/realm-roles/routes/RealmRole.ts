@@ -13,7 +13,7 @@ export const RealmRoleRoute: RouteDef = {
   path: "/:realm/roles/:id/:tab?",
   component: RealmRoleTabs,
   breadcrumb: (t) => t("roles:roleDetails"),
-  access: "view-realm",
+  access: ["view-realm", "view-users"],
 };
 
 export const toRealmRole = (

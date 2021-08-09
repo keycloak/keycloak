@@ -53,7 +53,12 @@ const RealmPathSelector = ({ children }: { children: ReactNode }) => {
 type SecuredRouteProps = { route: RouteDef };
 const SecuredRoute = ({ route }: SecuredRouteProps) => {
   const { hasAccess } = useAccess();
-  if (hasAccess(route.access)) return <route.component />;
+  const accessAllowed =
+    route.access instanceof Array
+      ? hasAccess(...route.access)
+      : hasAccess(route.access);
+
+  if (accessAllowed) return <route.component />;
 
   return <ForbiddenSection />;
 };

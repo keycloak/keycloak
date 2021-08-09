@@ -39,7 +39,17 @@ export const PageNav: React.FunctionComponent = () => {
     const route = routes.find(
       (route) => route.path.replace(/\/:.+?(\?|(?:(?!\/).)*|$)/g, "") === path
     );
-    if (!route || !hasAccess(route.access)) return <></>;
+
+    const accessAllowed =
+      route &&
+      (route.access instanceof Array
+        ? hasAccess(...route.access)
+        : hasAccess(route.access));
+
+    if (!accessAllowed) {
+      return null;
+    }
+
     //remove "/realm-name" from the start of the path
     const activeItem = history.location.pathname.substr(realm.length + 1);
     return (
