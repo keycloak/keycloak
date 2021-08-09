@@ -88,5 +88,22 @@ export default {
       "Max time a user has to complete a login. This is recommended to be relatively long, such as 30 minutes or more",
     loginActionTimeout:
       "Max time a user has to complete login related actions like update password or configure totp. This is recommended to be relatively long, such as 5 minutes or more",
+    defaultSigAlg: "Default algorithm used to sign tokens for the realm",
+    revokeRefreshToken:
+      "If enabled a refresh token can only be used up to 'Refresh Token Max Reuse' and is revoked when a different token is used. Otherwise refresh tokens are not revoked when used and can be used multiple times.",
+    refreshTokenMaxReuse:
+      "Maximum number of times a refresh token can be reused. When a different token is used, revocation is immediate.",
+    accessTokenLifespan:
+      "Max time before an access token is expired. This value is recommended to be short relative to the SSO timeout",
+    accessTokenLifespanImplicitFlow:
+      "Max time before an access token issued during OpenID Connect Implicit Flow is expired. This value is recommended to be shorter than the SSO timeout. There is no possibility to refresh token during implicit flow, that's why there is a separate timeout different to 'Access Token Lifespan'",
+    clientLoginTimeout:
+      "Max time a client has to finish the access token protocol. This should normally be 1 minute.",
+    userInitiatedActionLifespan:
+      "Maximum time before an action permit sent by a user (such as a forgot password e-mail) is expired. This value is recommended to be short because it's expected that the user would react to self-created action quickly.",
+    defaultAdminInitiatedActionLifespan:
+      "Maximum time before an action permit sent to a user by administrator is expired. This value is recommended to be long to allow administrators to send e-mails for users that are currently offline. The default timeout can be overridden immediately before issuing the token.",
+    overrideActionTokens:
+      "Override default settings of maximum time before an action permit sent by a user (such as a forgot password e-mail) is expired for specific action. This value is recommended to be short because it's expected that the user would react to self-created action quickly.",
   },
 };

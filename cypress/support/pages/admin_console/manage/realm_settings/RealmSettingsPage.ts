@@ -87,6 +87,59 @@ export default class RealmSettingsPage {
   offlineSessionMaxSwitch = "offline-session-max-switch";
   loginTimeoutInput = "login-timeout-input";
   loginActionTimeoutInput = "login-action-timeout-input";
+  selectDefaultSignatureAlgorithm = "#kc-default-sig-alg";
+  revokeRefreshTokenSwitch = "revoke-refresh-token-switch";
+  accessTokenLifespanInput = "access-token-lifespan-input";
+  accessTokenLifespanImplicitInput = "access-token-lifespan-implicit-input";
+  clientLoginTimeoutInput = "client-login-timeout-input";
+  offlineSessionMaxInput = "offline-session-max-input";
+  userInitiatedActionLifespanInput = "user-initiated-action-lifespan";
+  defaultAdminInitatedInput = "default-admin-initated-input";
+  emailVerificationInput = "email-verification-input";
+  idpEmailVerificationInput = "idp-email-verification-input";
+  forgotPasswordInput = "forgot-pw-input";
+  executeActionsInput = "execute-actions-input";
+
+  accessTokenLifespanSelectMenu = "#kc-access-token-lifespan-select-menu";
+  accessTokenLifespanSelectMenuList =
+    "#kc-access-token-lifespan-select-menu > div > ul";
+
+  accessTokenLifespanImplicitSelectMenu =
+    "#kc-access-token-lifespan-implicit-select-menu";
+  accessTokenLifespanImplicitSelectMenuList =
+    "#kc-access-token-lifespan-implicit-select-menu > div > ul";
+
+  clientLoginTimeoutSelectMenu = "#kc-client-login-timeout-select-menu";
+  clientLoginTimeoutSelectMenuList =
+    "#kc-client-login-timeout-select-menu > div > ul";
+
+  offlineSessionMaxSelectMenu = "#kc-offline-session-max-select-menu";
+  offlineSessionMaxSelectMenuList =
+    "#kc-offline-session-max-select-menu > div > ul";
+
+  userInitiatedActionLifespanSelectMenu =
+    "#kc-user-initiated-action-lifespan-select-menu";
+  userInitiatedActionLifespanSelectMenuList =
+    "#kc-user-initiated-action-lifespan-select-menu > div > ul";
+
+  defaultAdminInitatedInputSelectMenu =
+    "#kc-default-admin-initiated-select-menu";
+  defaultAdminInitatedInputSelectMenuList =
+    "#kc-default-admin-initiated-select-menu";
+
+  emailVerificationSelectMenu = "#kc-email-verification-select-menu";
+  emailVerificationSelectMenuList =
+    "#kc-email-verification-select-menu > div > ul";
+
+  idpEmailVerificationSelectMenu = "#kc-idp-email-verification-select-menu";
+  idpEmailVerificationSelectMenuList =
+    "#kc-idp-email-verification-select-menu > div > ul";
+
+  forgotPasswordSelectMenu = "#kc-forgot-pw-select-menu";
+  forgotPasswordSelectMenuList = "#kc-forgot-pw-select-menu > div > ul";
+
+  executeActionsSelectMenu = "#kc-execute-actions-select-menu";
+  executeActionsSelectMenuList = "#kc-execute-actions-select-menu > div > ul";
 
   selectLoginThemeType(themeType: string) {
     cy.get(this.selectLoginTheme).click();
@@ -311,6 +364,76 @@ export default class RealmSettingsPage {
       "Days",
       this.loginActionTimeoutSelectMenu,
       this.loginActionTimeoutSelectMenuList
+    );
+  }
+
+  populateTokensPage() {
+    this.toggleSwitch(this.revokeRefreshTokenSwitch);
+
+    cy.getId(this.accessTokenLifespanInput)
+      .focus()
+      .clear({ force: true })
+      .getId(this.accessTokenLifespanInput)
+      .clear()
+      .type("1");
+    this.changeTimeUnit(
+      "Days",
+      this.accessTokenLifespanSelectMenu,
+      this.accessTokenLifespanSelectMenuList
+    );
+    cy.getId(this.accessTokenLifespanImplicitInput).clear().type("2");
+    this.changeTimeUnit(
+      "Minutes",
+      this.accessTokenLifespanImplicitSelectMenu,
+      this.accessTokenLifespanImplicitSelectMenuList
+    );
+
+    cy.getId(this.clientLoginTimeoutInput).clear().type("3");
+    this.changeTimeUnit(
+      "Hours",
+      this.clientLoginTimeoutSelectMenu,
+      this.clientLoginTimeoutSelectMenuList
+    );
+
+    cy.getId(this.userInitiatedActionLifespanInput).clear().type("4");
+    this.changeTimeUnit(
+      "Minutes",
+      this.userInitiatedActionLifespanSelectMenu,
+      this.userInitiatedActionLifespanSelectMenuList
+    );
+
+    cy.getId(this.defaultAdminInitatedInput).clear().type("5");
+    this.changeTimeUnit(
+      "Days",
+      this.defaultAdminInitatedInputSelectMenu,
+      this.defaultAdminInitatedInputSelectMenuList
+    );
+
+    cy.getId(this.emailVerificationInput).clear().type("6");
+    this.changeTimeUnit(
+      "Days",
+      this.emailVerificationSelectMenu,
+      this.emailVerificationSelectMenuList
+    );
+
+    cy.getId(this.idpEmailVerificationInput).clear().type("7");
+    this.changeTimeUnit(
+      "Days",
+      this.idpEmailVerificationSelectMenu,
+      this.idpEmailVerificationSelectMenuList
+    );
+
+    cy.getId(this.forgotPasswordInput).clear().type("8");
+    this.changeTimeUnit(
+      "Days",
+      this.forgotPasswordSelectMenu,
+      this.forgotPasswordSelectMenuList
+    );
+    cy.getId(this.executeActionsInput).clear().type("9");
+    this.changeTimeUnit(
+      "Days",
+      this.executeActionsSelectMenu,
+      this.executeActionsSelectMenuList
     );
   }
 

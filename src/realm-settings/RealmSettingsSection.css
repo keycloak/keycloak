@@ -120,7 +120,17 @@ div#offline-session-max-label > .pf-c-form__group-label {
 .kc-client-session-idle-input,
 .kc-client-session-max-input,
 .kc-login-timeout-input,
-.kc-login-action-timeout-input {
+.kc-login-action-timeout-input,
+.kc-access-token-lifespan-input,
+.kc-user-initiated-action-lifespan-input,
+.kc-default-admin-initiated-input,
+.kc-access-token-lifespan-implicit-input,
+.kc-client-login-timeout-input,
+.kc-email-verification-input,
+.kc-idp-email-verification-input,
+.kc-idp-forgot-password-input,
+.kc-forgot-pw-input,
+.kc-execute-actions-input {
   width: 170px;
   margin-right: 12px;
 }
@@ -156,4 +166,9 @@ article.pf-c-card.pf-m-flat.kc-login-settings-template
 article.pf-c-card.pf-m-flat.kc-login-settings-template
   > .pf-c-card__body.kc-form-panel__body {
   padding: 0px;
+}
+
+.kc-override-action-tokens-subtitle {
+  font-size: var(--pf-global--FontSize--md);
+  font-weight: bold;
 }

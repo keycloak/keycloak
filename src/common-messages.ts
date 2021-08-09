@@ -107,6 +107,7 @@ export default {
       minutes: "Minutes",
       hours: "Hours",
       days: "Days",
+      years: "Years",
     },
 
     attributes: "Attributes",

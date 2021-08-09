@@ -199,7 +199,7 @@ export const RealmSettingsSessionsTab = ({
           </FormAccess>
         </FormPanel>
         <FormPanel
-          title={t(".pf-c-data-list__item-draggable-iconclientSessionSettings")}
+          title={t("clientSessionSettings")}
           className="kc-client-session-template"
         >
           <FormAccess
@@ -331,7 +331,7 @@ export const RealmSettingsSessionsTab = ({
                     label={t("common:enabled")}
                     labelOff={t("common:disabled")}
                     isChecked={value}
-                    onChange={onChange}
+                    onChange={(value) => onChange(value.toString())}
                   />
                 )}
               />

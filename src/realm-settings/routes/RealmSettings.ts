@@ -11,7 +11,8 @@ export type RealmSettingsTab =
   | "keys"
   | "events"
   | "securityDefences"
-  | "sessions";
+  | "sessions"
+  | "tokens";
 
 export type RealmSettingsParams = {
   realm: string;
