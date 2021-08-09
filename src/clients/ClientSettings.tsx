@@ -42,16 +42,16 @@ export const ClientSettings = ({ save, reset }: ClientSettingsProps) => {
       <ScrollForm
         className="pf-u-px-lg"
         sections={[
-          t("capabilityConfig"),
           t("generalSettings"),
+          t("capabilityConfig"),
           t("accessSettings"),
           t("loginSettings"),
         ]}
       >
-        <CapabilityConfig />
         <Form isHorizontal>
           <ClientDescription />
         </Form>
+        <CapabilityConfig />
         <FormAccess isHorizontal role="manage-clients">
           <FormGroup
             label={t("rootUrl")}
