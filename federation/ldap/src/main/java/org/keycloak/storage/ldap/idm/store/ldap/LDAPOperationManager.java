@@ -373,33 +373,10 @@ public class LDAPOperationManager {
         String filter = null;
 
         if (this.config.isObjectGUID()) {
-            final String strObjectGUID = "<GUID=" + id + ">";
+            byte[] objectGUID = LDAPUtil.encodeObjectGUID(id);
 
-            try {
-                Attributes attributes = execute(new LdapOperation<Attributes>() {
+            filter = "(&(objectClass=*)(" + getUuidAttributeName() + LDAPConstants.EQUAL + LDAPUtil.convertObjectGUIDToByteString(objectGUID) + "))";
 
-                    @Override
-                    public Attributes execute(LdapContext context) throws NamingException {
-                        return context.getAttributes(strObjectGUID);
-                    }
-
-
-                    @Override
-                    public String toString() {
-                        return new StringBuilder("LdapOperation: GUIDResolve\n")
-                                .append(" strObjectGUID: ").append(strObjectGUID)
-                                .toString();
-                    }
-
-
-                });
-
-                byte[] objectGUID = (byte[]) attributes.get(LDAPConstants.OBJECT_GUID).get();
-
-                filter = "(&(objectClass=*)(" + getUuidAttributeName() + LDAPConstants.EQUAL + LDAPUtil.convertObjectGUIDToByteString(objectGUID) + "))";
-            } catch (NamingException ne) {
-                filter = null;
-            }
         } else if (this.config.isEdirectoryGUID()) {
             filter = "(&(objectClass=*)(" + getUuidAttributeName().toUpperCase() + LDAPConstants.EQUAL + LDAPUtil.convertGUIDToEdirectoryHexString(id) + "))";
         }
