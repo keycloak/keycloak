@@ -14,6 +14,7 @@ import {
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
+import { TokenLifespan } from "./TokenLifespan";
 
 type AdvancedSettingsProps = {
   control: Control<Record<string, any>>;
@@ -60,32 +61,13 @@ export const AdvancedSettings = ({
       )}
       {protocol === "openid-connect" && (
         <>
-          <FormGroup
-            label={t("accessTokenLifespan")}
-            fieldId="accessTokenLifespan"
-            labelIcon={
-              <HelpItem
-                helpText="clients-help:accessTokenLifespan"
-                forLabel={t("accessTokenLifespan")}
-                forID={t(`common:helpLabel`, {
-                  label: t("accessTokenLifespan"),
-                })}
-              />
-            }
-          >
-            <Controller
-              name="attributes.access-token-lifespan"
-              defaultValue=""
-              control={control}
-              render={({ onChange, value }) => (
-                <TimeSelector
-                  units={["minutes", "days", "hours"]}
-                  value={value}
-                  onChange={onChange}
-                />
-              )}
-            />
-          </FormGroup>
+          <TokenLifespan
+            id="accessTokenLifespan"
+            name="attributes.access-token-lifespan"
+            defaultValue=""
+            units={["minutes", "days", "hours"]}
+            control={control}
+          />
 
           <FormGroup
             label={t("oAuthMutual")}

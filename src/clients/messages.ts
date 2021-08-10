@@ -245,5 +245,9 @@ export default {
     importFile: "Import file",
     importSuccess: "New certificate imported",
     importError: "Could not import certificate {{error}}",
+    tokenLifespan: {
+      expires: "Expires in",
+      never: "Never expires",
+    },
   },
 };
