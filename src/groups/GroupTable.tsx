@@ -47,7 +47,9 @@ export const GroupTable = () => {
   const loader = async () => {
     const groupsData = id
       ? (await adminClient.groups.findOne({ id })).subGroups
-      : await adminClient.groups.find();
+      : await adminClient.groups.find({
+          briefRepresentation: false,
+        } as unknown as any);
 
     if (!groupsData) {
       history.push(`/${realm}/groups`);

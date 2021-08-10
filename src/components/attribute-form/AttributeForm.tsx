@@ -177,11 +177,7 @@ export const AttributesForm = ({
           </Tbody>
         </TableComposable>
         <ActionGroup className="kc-attributes__action-group">
-          <Button
-            variant="primary"
-            type="submit"
-            isDisabled={!formState.isDirty}
-          >
+          <Button variant="primary" type="submit" isDisabled={!watchLast}>
             {t("common:save")}
           </Button>
           <Button
