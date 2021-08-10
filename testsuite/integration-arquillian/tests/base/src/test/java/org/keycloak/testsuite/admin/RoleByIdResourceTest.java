@@ -39,6 +39,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -145,6 +148,21 @@ public class RoleByIdResourceTest extends AbstractAdminTest {
 
         Set<RoleRepresentation> clientComposites = resource.getClientRoleComposites(ids.get("role-a"), clientUuid);
         Assert.assertNames(clientComposites, "role-c");
+
+        composites = resource.searchRoleComposites(ids.get("role-a"), null, null, null);
+        Assert.assertNames(composites, "role-b", "role-c");
+
+        composites = resource.searchRoleComposites(ids.get("role-a"), "b", null, null);
+        Assert.assertNames(composites, "role-b");
+
+        composites = resource.searchRoleComposites(ids.get("role-a"), null, 0, 0);
+        assertThat(composites, is(empty()));
+
+        composites = resource.searchRoleComposites(ids.get("role-a"), null, 0, 1);
+        Assert.assertNames(composites, "role-b");
+
+        composites = resource.searchRoleComposites(ids.get("role-a"), null, 1, 1);
+        Assert.assertNames(composites, "role-c");
 
         resource.deleteComposites(ids.get("role-a"), l);
         assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.roleByIdResourceCompositesPath(ids.get("role-a")), l, ResourceType.REALM_ROLE);

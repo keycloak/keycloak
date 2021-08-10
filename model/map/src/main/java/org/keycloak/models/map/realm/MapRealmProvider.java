@@ -432,6 +432,11 @@ public class MapRealmProvider implements RealmProvider {
     }
 
     @Override
+    public Stream<RoleModel> getRolesStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max) {
+        return session.roles().getRolesStream(realm, ids, search, first, max);
+    }
+
+    @Override
     @Deprecated
     public boolean removeRole(RoleModel role) {
         return session.roles().removeRole(role);

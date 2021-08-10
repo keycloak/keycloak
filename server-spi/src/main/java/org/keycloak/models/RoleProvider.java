@@ -82,6 +82,18 @@ public interface RoleProvider extends Provider, RoleLookupProvider {
     Stream<RoleModel> getRealmRolesStream(RealmModel realm, Integer first, Integer max);
 
     /**
+     * Returns a paginated stream of roles with given ids and given search value in role names.
+     *
+     * @param realm Realm. Cannot be {@code null}.
+     * @param ids Stream of ids. Returns empty {@code Stream} when {@code null}.
+     * @param search Case-insensitive string to search by role's name or description. Ignored if {@code null}.
+     * @param first Index of the first result to return. Ignored if negative or {@code null}.
+     * @param max Maximum number of results to return. Ignored if negative or {@code null}.
+     * @return Stream of desired roles. Never returns {@code null}.
+     */
+    Stream<RoleModel> getRolesStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max);
+
+    /**
      * Removes given realm role from the given realm.
      * @param role Role to be removed.
      * @return {@code true} if the role existed and has been removed, {@code false} otherwise.

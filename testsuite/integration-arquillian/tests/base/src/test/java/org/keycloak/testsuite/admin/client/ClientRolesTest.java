@@ -21,6 +21,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.RoleByIdResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.events.admin.OperationType;
@@ -39,8 +40,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.ws.rs.ClientErrorException;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -154,6 +159,47 @@ public class ClientRolesTest extends AbstractClientTest {
 
         assertFalse(rolesRsc.get("role-a").toRepresentation().isComposite());
         assertEquals(0, rolesRsc.get("role-a").getRoleComposites().size());
+    }
+
+
+    @Test
+    public void testCompositeRolesSearch() {
+        // Create main-role we will work on
+        RoleRepresentation mainRole = makeRole("main-role");
+        rolesRsc.create(mainRole);
+
+        RoleResource mainRoleRsc = rolesRsc.get("main-role");
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, "main-role"), mainRole, ResourceType.CLIENT_ROLE);
+
+        // Add composites
+        List<RoleRepresentation> createdRoles = IntStream.range(0, 20)
+                .boxed()
+                .map(i -> makeRole("role" + i))
+                .peek(rolesRsc::create)
+                .peek(role -> assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId, role.getName()), role, ResourceType.CLIENT_ROLE))
+                .map(role -> rolesRsc.get(role.getName()).toRepresentation())
+                .collect(Collectors.toList());
+
+        mainRoleRsc.addComposites(createdRoles);
+        mainRole = mainRoleRsc.toRepresentation();
+        RoleByIdResource roleByIdResource = adminClient.realm(getRealmId()).rolesById();
+
+        // Search for all composites
+        Set<RoleRepresentation> foundRoles = roleByIdResource.getRoleComposites(mainRole.getId());
+        assertThat(foundRoles, hasSize(createdRoles.size()));
+
+        // Search paginated composites
+        foundRoles = roleByIdResource.searchRoleComposites(mainRole.getId(), null, 0, 10);
+        assertThat(foundRoles, hasSize(10));
+
+        // Search for composites by string role1 (should be role1, role10-role19) without pagination
+        foundRoles = roleByIdResource.searchRoleComposites(mainRole.getId(), "role1", null, null);
+        assertThat(foundRoles, hasSize(11));
+
+        // Search for role1 with pagination
+        foundRoles.forEach(System.out::println);
+        foundRoles = roleByIdResource.searchRoleComposites(mainRole.getId(), "role1", 5, 5);
+        assertThat(foundRoles, hasSize(5));
     }
 
     @Test
