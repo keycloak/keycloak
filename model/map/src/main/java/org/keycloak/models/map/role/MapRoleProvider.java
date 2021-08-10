@@ -88,6 +88,23 @@ public class MapRoleProvider implements RoleProvider {
     }
 
     @Override
+    public Stream<RoleModel> getRolesStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max) {
+        LOG.tracef("getRolesStream(%s, %s, %s, %d, %d)%s", realm, ids, search, first, max, getShortStackTrace());
+        if (ids == null) return Stream.empty();
+
+        ModelCriteriaBuilder<RoleModel> mcb = roleStore.createCriteriaBuilder()
+                .compare(RoleModel.SearchableFields.ID, Operator.IN, ids)
+                .compare(RoleModel.SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+
+        if (search != null) {
+            mcb = mcb.compare(RoleModel.SearchableFields.NAME, Operator.ILIKE, "%" + search + "%");
+        }
+
+        return tx.read(withCriteria(mcb).pagination(first, max, RoleModel.SearchableFields.NAME))
+                .map(entityToAdapterFunc(realm));
+    }
+
+    @Override
     public Stream<RoleModel> getRealmRolesStream(RealmModel realm) {
         ModelCriteriaBuilder<RoleModel> mcb = roleStore.createCriteriaBuilder()
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
