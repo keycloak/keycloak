@@ -188,6 +188,16 @@ describe("Clients test", function () {
         .goToServiceAccountTab()
         .checkRoles(["manage-account", "offline_access", "uma_authorization"]);
     });
+
+    it("assign", () => {
+      listingPage.goToItemDetails(serviceAccountName);
+      serviceAccountTab
+        .goToServiceAccountTab()
+        .clickAssignRole(false)
+        .selectRow("create-realm")
+        .clickAssign();
+      masthead.checkNotificationMessage("Role mapping updated");
+    });
   });
 
   describe("Keys tab test", () => {

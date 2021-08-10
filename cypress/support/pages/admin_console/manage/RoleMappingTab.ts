@@ -2,7 +2,8 @@ const expect = chai.expect;
 export default class RoleMappingTab {
   private tab = "#pf-tab-serviceAccount-serviceAccount";
   private scopeTab = "scopeTab";
-  private assignRole = "no-roles-for-this-client-empty-action";
+  private assignEmptyRole = "no-roles-for-this-client-empty-action";
+  private assignRole = "assignRole";
   private unAssign = "unAssignRole";
   private assign = "assign";
   private hide = "#hideInheritedRoles";
@@ -19,8 +20,8 @@ export default class RoleMappingTab {
     return this;
   }
 
-  clickAssignRole() {
-    cy.getId(this.assignRole).click();
+  clickAssignRole(notEmpty = true) {
+    cy.getId(notEmpty ? this.assignEmptyRole : this.assignRole).click();
     return this;
   }
 
