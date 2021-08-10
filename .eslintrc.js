@@ -20,6 +20,9 @@ module.exports = {
     "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": "error",
     "@typescript-eslint/no-empty-function": "error",
+    // react/prop-types cannot handle generic props, so we need to disable it.
+    // https://github.com/yannickcr/eslint-plugin-react/issues/2777#issuecomment-814968432
+    "react/prop-types": "off",
   },
   overrides: [
     {

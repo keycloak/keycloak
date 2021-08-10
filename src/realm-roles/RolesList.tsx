@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { FunctionComponent, useState } from "react";
 import { Link, useHistory, useRouteMatch } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AlertVariant, Button, ButtonVariant } from "@patternfly/react-core";
@@ -34,11 +34,15 @@ type RolesListProps = {
   ) => Promise<RoleRepresentation[]>;
 };
 
-const RoleLink = ({ role }: { role: RoleRepresentation }) => {
+type RoleLinkProps = {
+  role: RoleRepresentation;
+};
+
+const RoleLink: FunctionComponent<RoleLinkProps> = ({ children, role }) => {
   const { url } = useRouteMatch();
   return (
     <Link key={role.id} to={`${url}/${role.id}/details`}>
-      {role.name}
+      {children}
     </Link>
   );
 };
@@ -69,7 +73,7 @@ export const RolesList = ({
 
   const RoleDetailLink = (role: RoleRepresentation) => (
     <>
-      <RoleLink role={role} />
+      <RoleLink role={role}>{role.name}</RoleLink>
       {role.name?.includes("default-role") ? (
         <HelpItem
           helpText={t("defaultRole")}
