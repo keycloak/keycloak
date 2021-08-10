@@ -1,6 +1,6 @@
 import type WhoAmIRepresentation from "keycloak-admin/lib/defs/whoAmIRepresentation";
 import type { AccessType } from "keycloak-admin/lib/defs/whoAmIRepresentation";
-import React, { useState } from "react";
+import React, { FunctionComponent, useState } from "react";
 import i18n from "../../i18n";
 import useRequiredContext from "../../utils/useRequiredContext";
 import { useAdminClient, useFetch } from "../auth/AdminClient";
@@ -50,8 +50,7 @@ export const WhoAmIContext = React.createContext<WhoAmIProps | undefined>(
 
 export const useWhoAmI = () => useRequiredContext(WhoAmIContext);
 
-type WhoAmIProviderProps = { children: React.ReactNode };
-export const WhoAmIContextProvider = ({ children }: WhoAmIProviderProps) => {
+export const WhoAmIContextProvider: FunctionComponent = ({ children }) => {
   const adminClient = useAdminClient();
   const [whoAmI, setWhoAmI] = useState<WhoAmI>(new WhoAmI());
   const [key, setKey] = useState(0);

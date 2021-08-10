@@ -1,4 +1,4 @@
-import React, { HTMLProps, ReactNode } from "react";
+import React, { FunctionComponent, HTMLProps } from "react";
 import { Title } from "@patternfly/react-core";
 
 import "./form-panel.css";
@@ -6,10 +6,9 @@ import "./form-panel.css";
 type ScrollPanelProps = HTMLProps<HTMLFormElement> & {
   title: string;
   scrollId: string;
-  children: ReactNode;
 };
 
-export const ScrollPanel = (props: ScrollPanelProps) => {
+export const ScrollPanel: FunctionComponent<ScrollPanelProps> = (props) => {
   const { title, children, scrollId, ...rest } = props;
   return (
     <section {...rest} className="kc-form-panel__panel">

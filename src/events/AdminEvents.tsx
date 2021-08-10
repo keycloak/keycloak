@@ -14,7 +14,7 @@ import {
 } from "@patternfly/react-table";
 import type AdminEventRepresentation from "keycloak-admin/lib/defs/adminEventRepresentation";
 import moment from "moment";
-import React, { ReactNode, useState } from "react";
+import React, { FunctionComponent, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
@@ -25,10 +25,13 @@ import { useRealm } from "../context/realm-context/RealmContext";
 type DisplayDialogProps = {
   titleKey: string;
   onClose: () => void;
-  children: ReactNode;
 };
 
-const DisplayDialog = ({ titleKey, onClose, children }: DisplayDialogProps) => {
+const DisplayDialog: FunctionComponent<DisplayDialogProps> = ({
+  titleKey,
+  onClose,
+  children,
+}) => {
   const { t } = useTranslation("events");
   return (
     <Modal

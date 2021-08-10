@@ -1,5 +1,5 @@
 import type { ServerInfoRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
-import React, { createContext, ReactNode } from "react";
+import React, { createContext, FunctionComponent } from "react";
 import { DataLoader } from "../../components/data-loader/DataLoader";
 import { sortProviders } from "../../util";
 import useRequiredContext from "../../utils/useRequiredContext";
@@ -15,7 +15,7 @@ export const useLoginProviders = () => {
   return sortProviders(useServerInfo().providers!["login-protocol"].providers);
 };
 
-export const ServerInfoProvider = ({ children }: { children: ReactNode }) => {
+export const ServerInfoProvider: FunctionComponent = ({ children }) => {
   const adminClient = useAdminClient();
   const loader = async () => {
     return await adminClient.serverInfo.find();

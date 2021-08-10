@@ -1,4 +1,4 @@
-import React, { ReactNode, useEffect } from "react";
+import React, { FunctionComponent, useEffect } from "react";
 import { Page } from "@patternfly/react-core";
 import {
   HashRouter as Router,
@@ -25,7 +25,7 @@ import { ErrorRenderer } from "./components/error/ErrorRenderer";
 
 export const mainPageContentId = "kc-main-content-page-container";
 
-const AppContexts = ({ children }: { children: ReactNode }) => (
+const AppContexts: FunctionComponent = ({ children }) => (
   <AccessContextProvider>
     <Help>
       <AlertProvider>
@@ -38,7 +38,7 @@ const AppContexts = ({ children }: { children: ReactNode }) => (
 );
 
 // set the realm form the path
-const RealmPathSelector = ({ children }: { children: ReactNode }) => {
+const RealmPathSelector: FunctionComponent = ({ children }) => {
   const { setRealm } = useRealm();
   const { realm } = useParams<{ realm: string }>();
   useEffect(() => {

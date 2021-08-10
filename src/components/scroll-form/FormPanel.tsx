@@ -1,4 +1,4 @@
-import React, { ReactNode } from "react";
+import React, { FunctionComponent } from "react";
 import {
   Card,
   CardBody,
@@ -12,16 +12,15 @@ import "./form-panel.css";
 type FormPanelProps = {
   title: string;
   scrollId?: string;
-  children: ReactNode;
   className?: string;
 };
 
-export const FormPanel = ({
+export const FormPanel: FunctionComponent<FormPanelProps> = ({
   title,
   children,
   scrollId,
   className,
-}: FormPanelProps) => {
+}) => {
   return (
     <Card className={className} isFlat>
       <CardHeader className="kc-form-panel__header">

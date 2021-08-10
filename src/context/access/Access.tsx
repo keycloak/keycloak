@@ -1,5 +1,10 @@
 import type { AccessType } from "keycloak-admin/lib/defs/whoAmIRepresentation";
-import React, { createContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  FunctionComponent,
+  useEffect,
+  useState,
+} from "react";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import useRequiredContext from "../../utils/useRequiredContext";
@@ -15,8 +20,7 @@ export const AccessContext = createContext<AccessContextProps | undefined>(
 
 export const useAccess = () => useRequiredContext(AccessContext);
 
-type AccessProviderProps = { children: React.ReactNode };
-export const AccessContextProvider = ({ children }: AccessProviderProps) => {
+export const AccessContextProvider: FunctionComponent = ({ children }) => {
   const { whoAmI } = useWhoAmI();
   const { realm } = useRealm();
   const [access, setAccess] = useState<readonly AccessType[]>([]);

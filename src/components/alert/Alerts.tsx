@@ -1,4 +1,4 @@
-import React, { createContext, ReactNode, useState } from "react";
+import React, { createContext, FunctionComponent, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AlertVariant } from "@patternfly/react-core";
 import type { AxiosError } from "axios";
@@ -20,7 +20,7 @@ export const AlertContext = createContext<AlertProps | undefined>(undefined);
 
 export const useAlerts = () => useRequiredContext(AlertContext);
 
-export const AlertProvider = ({ children }: { children: ReactNode }) => {
+export const AlertProvider: FunctionComponent = ({ children }) => {
   const { t } = useTranslation();
   const [alerts, setAlerts] = useState<AlertType[]>([]);
 

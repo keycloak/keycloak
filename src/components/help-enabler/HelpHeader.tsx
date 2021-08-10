@@ -9,14 +9,10 @@ import {
   TextContent,
 } from "@patternfly/react-core";
 import { ExternalLinkAltIcon, HelpIcon } from "@patternfly/react-icons";
-import React, { createContext, ReactNode, useState } from "react";
+import React, { createContext, FunctionComponent, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useRequiredContext from "../../utils/useRequiredContext";
 import "./help-header.css";
-
-type HelpProps = {
-  children: ReactNode;
-};
 
 type HelpContextProps = {
   enabled: boolean;
@@ -29,7 +25,7 @@ export const HelpContext = createContext<HelpContextProps | undefined>(
 
 export const useHelp = () => useRequiredContext(HelpContext);
 
-export const Help = ({ children }: HelpProps) => {
+export const Help: FunctionComponent = ({ children }) => {
   const [enabled, setHelp] = useState(true);
 
   function toggleHelp() {

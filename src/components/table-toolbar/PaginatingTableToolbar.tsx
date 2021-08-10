@@ -1,4 +1,4 @@
-import React, { FormEvent, ReactNode } from "react";
+import React, { FormEvent, FunctionComponent, ReactNode } from "react";
 import {
   Pagination,
   ToggleTemplateProps,
@@ -16,7 +16,6 @@ type TableToolbarProps = {
   searchTypeComponent?: ReactNode;
   toolbarItem?: ReactNode;
   subToolbar?: ReactNode;
-  children: ReactNode;
   inputGroupName?: string;
   inputGroupPlaceholder?: string;
   inputGroupOnChange?: (
@@ -26,7 +25,7 @@ type TableToolbarProps = {
   inputGroupOnEnter?: (value: string) => void;
 };
 
-export const PaginatingTableToolbar = ({
+export const PaginatingTableToolbar: FunctionComponent<TableToolbarProps> = ({
   count,
   first,
   max,
@@ -41,7 +40,7 @@ export const PaginatingTableToolbar = ({
   inputGroupPlaceholder,
   inputGroupOnChange,
   inputGroupOnEnter,
-}: TableToolbarProps) => {
+}) => {
   const page = Math.round(first / max);
   const pagination = (variant: "top" | "bottom" = "top") => (
     <Pagination

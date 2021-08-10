@@ -1,7 +1,7 @@
 import { render, waitFor } from "@testing-library/react";
 import type KeycloakAdminClient from "keycloak-admin";
 import type { ServerInfoRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
-import React, { ReactNode } from "react";
+import React, { FunctionComponent } from "react";
 import { HashRouter } from "react-router-dom";
 import { AccessContextProvider } from "../../context/access/Access";
 import { AdminClient } from "../../context/auth/AdminClient";
@@ -25,10 +25,9 @@ import { DataLoader } from "./DataLoader";
  *   </MockAdminClient>
  * @param props mock endpoints to be mocked
  */
-export const MockAdminClient = (props: {
-  children: ReactNode;
-  mock?: object;
-}) => {
+export const MockAdminClient: FunctionComponent<{ mock?: object }> = (
+  props
+) => {
   return (
     <HashRouter>
       <ServerInfoContext.Provider

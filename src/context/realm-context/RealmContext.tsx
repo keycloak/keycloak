@@ -1,6 +1,6 @@
 import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
 import _ from "lodash";
-import React, { useState } from "react";
+import React, { FunctionComponent, useState } from "react";
 import { RecentUsed } from "../../components/realm-selector/recent-used";
 import environment from "../../environment";
 import useRequiredContext from "../../utils/useRequiredContext";
@@ -17,11 +17,7 @@ export const RealmContext = React.createContext<RealmContextType | undefined>(
   undefined
 );
 
-type RealmContextProviderProps = { children: React.ReactNode };
-
-export const RealmContextProvider = ({
-  children,
-}: RealmContextProviderProps) => {
+export const RealmContextProvider: FunctionComponent = ({ children }) => {
   const [realm, setRealm] = useState(environment.loginRealm);
   const [realms, setRealms] = useState<RealmRepresentation[]>([]);
   const adminClient = useAdminClient();

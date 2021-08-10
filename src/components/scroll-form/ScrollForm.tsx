@@ -1,4 +1,4 @@
-import React, { Children, Fragment } from "react";
+import React, { Children, Fragment, FunctionComponent } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Grid,
@@ -18,19 +18,18 @@ import "./scroll-form.css";
 type ScrollFormProps = GridProps & {
   sections: string[];
   borders?: boolean;
-  children: React.ReactNode;
 };
 
 const spacesToHyphens = (string: string): string => {
   return string.replace(/\s+/g, "-");
 };
 
-export const ScrollForm = ({
+export const ScrollForm: FunctionComponent<ScrollFormProps> = ({
   sections,
   borders = false,
   children,
   ...rest
-}: ScrollFormProps) => {
+}) => {
   const { t } = useTranslation("common");
 
   const nodes = Children.toArray(children);

@@ -1,6 +1,7 @@
 import React, {
   Children,
   cloneElement,
+  FunctionComponent,
   isValidElement,
   ReactElement,
   ReactNode,
@@ -40,20 +41,19 @@ export type FormAccessProps = FormProps & {
    * @type {boolean}
    */
   unWrap?: boolean;
-  children: ReactNode;
 };
 
 /**
  * Use this in place of a patternfly Form component and add the `role` and `fineGrainedAccess` properties.
  * @param {FormAccessProps} param0 - all properties of Form + role and fineGrainedAccess
  */
-export const FormAccess = ({
+export const FormAccess: FunctionComponent<FormAccessProps> = ({
   children,
   role,
   fineGrainedAccess = false,
   unWrap = false,
   ...rest
-}: FormAccessProps) => {
+}) => {
   const { hasAccess } = useAccess();
 
   const recursiveCloneChildren = (
