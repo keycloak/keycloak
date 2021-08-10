@@ -24,6 +24,7 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { emptyFormatter } from "../util";
+import { toUser } from "./routes/User";
 import { SearchUser } from "./SearchUser";
 import "./user-section.css";
 
@@ -68,7 +69,10 @@ export const UsersSection = () => {
 
   const UserDetailLink = (user: UserRepresentation) => (
     <>
-      <Link key={user.username} to={`${url}/${user.id}/settings`}>
+      <Link
+        key={user.username}
+        to={toUser({ realm: realmName, id: user.id!, tab: "settings" })}
+      >
         {user.username}
       </Link>
     </>

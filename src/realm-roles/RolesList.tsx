@@ -15,6 +15,7 @@ import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentatio
 import { HelpItem } from "../components/help-enabler/HelpItem";
 
 import "./RealmRolesSection.css";
+import { toRealmRole } from "./routes/RealmRole";
 
 type myRealmRepresentation = RealmRepresentation & {
   defaultRole?: {
@@ -39,9 +40,10 @@ type RoleLinkProps = {
 };
 
 const RoleLink: FunctionComponent<RoleLinkProps> = ({ children, role }) => {
-  const { url } = useRouteMatch();
+  const { realm } = useRealm();
+
   return (
-    <Link key={role.id} to={`${url}/${role.id}/details`}>
+    <Link key={role.id} to={toRealmRole({ realm, id: role.id! })}>
       {children}
     </Link>
   );

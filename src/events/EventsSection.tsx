@@ -23,6 +23,8 @@ import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { toRealmSettings } from "../realm-settings/routes/RealmSettings";
+import { toUser } from "../user/routes/User";
 import { AdminEvents } from "./AdminEvents";
 import "./events-section.css";
 
@@ -78,7 +80,7 @@ export const EventsSection = () => {
     <>
       <Link
         key={`link-${event.time}-${event.type}`}
-        to={`/${realm}/users/${event.userId}/details`}
+        to={toUser({ realm, id: event.userId!, tab: "settings" })}
       >
         {event.userId}
       </Link>
@@ -108,7 +110,7 @@ export const EventsSection = () => {
           <Trans i18nKey="events:eventExplain">
             If you want to configure user events, Admin events or Event
             listeners, please enter
-            <Link to={`/${realm}/realm-settings/events`}>
+            <Link to={toRealmSettings({ realm, tab: "events" })}>
               {t("eventConfig")}
             </Link>
             page realm settings to configure.

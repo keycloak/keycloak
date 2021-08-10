@@ -8,7 +8,7 @@ export type UserTab = "settings" | "groups" | "consents";
 export type UserParams = {
   realm: string;
   id: string;
-  tab: string;
+  tab: UserTab;
 };
 
 export const UserRoute: RouteDef = {

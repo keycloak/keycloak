@@ -25,6 +25,7 @@ import { useSubGroups } from "./SubGroupsContext";
 import { MemberModal } from "./MembersModal";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { GroupPath } from "../components/group/GroupPath";
+import { toUser } from "../user/routes/User";
 
 type MembersOf = UserRepresentation & {
   membership: GroupRepresentation[];
@@ -99,7 +100,7 @@ export const Members = () => {
 
   const UserDetailLink = (user: MembersOf) => (
     <>
-      <Link key={user.id} to={`/${realm}/users/${user.id}/settings`}>
+      <Link key={user.id} to={toUser({ realm, id: user.id!, tab: "settings" })}>
         {user.username}
       </Link>
     </>

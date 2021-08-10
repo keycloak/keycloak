@@ -16,7 +16,7 @@ import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation"
 import React, { useEffect, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useHistory } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
@@ -34,6 +34,7 @@ import { KeysListTab } from "./KeysListTab";
 import { KeysProvidersTab } from "./KeysProvidersTab";
 import { RealmSettingsLoginTab } from "./LoginTab";
 import { PartialImportDialog } from "./PartialImport";
+import { toRealmSettings } from "./routes/RealmSettings";
 import { SecurityDefences } from "./security-defences/SecurityDefences";
 import { RealmSettingsSessionsTab } from "./SessionsTab";
 import { RealmSettingsThemesTab } from "./ThemesTab";
@@ -53,9 +54,13 @@ export const EditProviderCrumb = () => {
   return (
     <>
       <Breadcrumb>
-        <BreadcrumbItem to={`#/${realm}/realm-settings/keys`}>
-          {t("keys")}
-        </BreadcrumbItem>
+        <BreadcrumbItem
+          render={(props) => (
+            <Link {...props} to={toRealmSettings({ realm, tab: "keys" })}>
+              {t("keys")}
+            </Link>
+          )}
+        />
         <BreadcrumbItem>{t("providers")}</BreadcrumbItem>
         <BreadcrumbItem isActive>{t("editProvider")}</BreadcrumbItem>
       </Breadcrumb>

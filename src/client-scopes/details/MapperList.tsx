@@ -20,6 +20,7 @@ import { AddMapperDialog } from "../add/MapperDialog";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { toMapper } from "../routes/Mapper";
 
 type MapperListProps = {
   clientScope: ClientScopeRepresentation;
@@ -97,9 +98,11 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
         .sort((a, b) => a.priority - b.priority)
     );
 
-  const MapperLink = (mapper: Row) => (
+  const MapperLink = ({ id, name }: Row) => (
     <>
-      <Link to={`${url}/${mapper.id}`}>{mapper.name}</Link>
+      <Link to={toMapper({ realm, id: clientScope.id!, mapperId: id! })}>
+        {name}
+      </Link>
     </>
   );
 

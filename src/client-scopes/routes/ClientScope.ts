@@ -3,11 +3,13 @@ import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
 import { ClientScopeForm } from "../form/ClientScopeForm";
 
+export type ClientScopeTab = "settings" | "mappers" | "scope";
+
 export type ClientScopeParams = {
   realm: string;
   id: string;
   type: string;
-  tab: string;
+  tab: ClientScopeTab;
 };
 
 export const ClientScopeRoute: RouteDef = {

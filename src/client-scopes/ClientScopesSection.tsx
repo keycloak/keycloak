@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useRouteMatch } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   AlertVariant,
   Button,
@@ -32,11 +32,11 @@ import { ChangeTypeDialog } from "./ChangeTypeDialog";
 import { toNewClientScope } from "./routes/NewClientScope";
 
 import "./client-scope.css";
+import { toClientScope } from "./routes/ClientScope";
 
 export const ClientScopesSection = () => {
   const { realm } = useRealm();
   const { t } = useTranslation("client-scopes");
-  const { url } = useRouteMatch();
 
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
@@ -124,15 +124,17 @@ export const ClientScopesSection = () => {
     </>
   );
 
-  const ClientScopeDetailLink = (
-    clientScope: ClientScopeDefaultOptionalType
-  ) => (
+  const ClientScopeDetailLink = ({
+    id,
+    type,
+    name,
+  }: ClientScopeDefaultOptionalType) => (
     <>
       <Link
-        key={clientScope.id}
-        to={`${url}/${clientScope.id}/${clientScope.type}/settings`}
+        key={id}
+        to={toClientScope({ realm, id: id!, type, tab: "settings" })}
       >
-        {clientScope.name}
+        {name}
       </Link>
     </>
   );
