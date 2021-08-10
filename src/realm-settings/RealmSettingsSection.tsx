@@ -340,7 +340,7 @@ export const RealmSettingsSection = () => {
                 <TabTitleText>{t("realm-settings:sessions")}</TabTitleText>
               }
             >
-              <RealmSettingsSessionsTab key={key} realm={realm} />
+              {realm && <RealmSettingsSessionsTab key={key} realm={realm} />}
             </Tab>
             <Tab
               id="tokens"
