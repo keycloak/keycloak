@@ -63,7 +63,12 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
     private Locale getUserLocale(RealmModel realm, AuthenticationSessionModel session, UserModel user, HttpHeaders requestHeaders) {
         Locale locale;
 
-        locale = getUserSelectedLocale(realm, session);
+        locale = getUserSelectedLocale(realm);
+        if (locale != null) {
+            return locale;
+        }
+
+        locale = getAuthSessionLocale(realm, session);
         if (locale != null) {
             return locale;
         }
@@ -91,7 +96,16 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
         return null;
     }
 
-    private Locale getUserSelectedLocale(RealmModel realm, AuthenticationSessionModel session) {
+    private Locale getUserSelectedLocale(RealmModel realm) {
+        String locale = this.session.getContext().getUri().getQueryParameters().getFirst(KC_LOCALE_PARAM);
+        if (locale == null) {
+            return null;
+        } else {
+            return findLocale(realm, locale);
+        }
+    }
+
+    private Locale getAuthSessionLocale(RealmModel realm, AuthenticationSessionModel session) {
         if (session == null) {
             return null;
         }
