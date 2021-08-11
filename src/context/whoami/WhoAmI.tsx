@@ -1,6 +1,7 @@
 import type WhoAmIRepresentation from "keycloak-admin/lib/defs/whoAmIRepresentation";
 import type { AccessType } from "keycloak-admin/lib/defs/whoAmIRepresentation";
 import React, { FunctionComponent, useState } from "react";
+import environment from "../../environment";
 import i18n from "../../i18n";
 import useRequiredContext from "../../utils/useRequiredContext";
 import { useAdminClient, useFetch } from "../auth/AdminClient";
@@ -56,7 +57,7 @@ export const WhoAmIContextProvider: FunctionComponent = ({ children }) => {
   const [key, setKey] = useState(0);
 
   useFetch(
-    () => adminClient.whoAmI.find(),
+    () => adminClient.whoAmI.find({ realm: environment.loginRealm }),
     (me) => {
       const whoAmI = new WhoAmI(me);
       setWhoAmI(whoAmI);

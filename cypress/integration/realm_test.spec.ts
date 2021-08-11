@@ -20,7 +20,9 @@ describe("Realms test", () => {
 
     after(async () => {
       const client = new AdminClient();
-      await client.deleteRealm(testRealmName);
+      [testRealmName, "one", "two"].map(
+        async (realm) => await client.deleteRealm(realm)
+      );
     });
 
     it("should fail creating Master realm", () => {
@@ -37,6 +39,25 @@ describe("Realms test", () => {
       createRealmPage.fillRealmName(testRealmName).createRealm();
 
       masthead.checkNotificationMessage("Realm created");
+    });
+
+    it("should create realm from new a realm", () => {
+      sidebarPage.goToCreateRealm();
+      createRealmPage.fillRealmName("one").createRealm();
+
+      const fetchUrl = "/auth/admin/realms";
+      cy.intercept(fetchUrl).as("fetch");
+
+      masthead.checkNotificationMessage("Realm created");
+
+      cy.wait(["@fetch"]);
+
+      sidebarPage.goToCreateRealm();
+      createRealmPage.fillRealmName("two").createRealm();
+
+      masthead.checkNotificationMessage("Realm created");
+
+      cy.wait(["@fetch"]);
     });
 
     it("should change to Test realm", () => {
