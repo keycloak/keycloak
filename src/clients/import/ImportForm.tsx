@@ -7,7 +7,7 @@ import {
   TextInput,
 } from "@patternfly/react-core";
 import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
-import React from "react";
+import React, { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useHistory } from "react-router-dom";
@@ -30,6 +30,7 @@ export const ImportForm = () => {
   const { realm } = useRealm();
   const form = useForm<ClientRepresentation>();
   const { register, handleSubmit, setValue } = form;
+  const [imported, setImported] = useState<ClientRepresentation>({});
 
   const { addAlert, addError } = useAlerts();
 
@@ -48,11 +49,13 @@ export const ImportForm = () => {
         setValue(entries[0], entries[1]);
       }
     });
+    setImported(obj || defaultClient);
   };
 
   const save = async (client: ClientRepresentation) => {
     try {
       const newClient = await adminClient.clients.create({
+        ...imported,
         ...client,
         attributes: convertFormValuesToObject(client.attributes || {}),
       });
