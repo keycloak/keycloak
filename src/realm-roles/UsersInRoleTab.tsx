@@ -9,25 +9,34 @@ import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { emptyFormatter, upperCaseFormatter } from "../util";
+import type { ClientRoleParams } from "./routes/ClientRole";
 
 export const UsersInRoleTab = () => {
   const history = useHistory();
   const { realm } = useRealm();
 
   const { t } = useTranslation("roles");
-
-  const { id } = useParams<{ id: string }>();
+  const { id, clientId } = useParams<ClientRoleParams>();
 
   const adminClient = useAdminClient();
 
   const loader = async (first?: number, max?: number) => {
     const role = await adminClient.roles.findOneById({ id: id });
-    const usersWithRole = await adminClient.roles.findUsersWithRole({
+
+    if (role.clientRole) {
+      return adminClient.clients.findUsersWithRole({
+        roleName: role.name!,
+        id: clientId,
+        first,
+        max,
+      });
+    }
+
+    return adminClient.roles.findUsersWithRole({
       name: role.name!,
-      first: first!,
-      max: max!,
+      first,
+      max,
     });
-    return usersWithRole || [];
   };
 
   const { enabled } = useHelp();
