@@ -165,8 +165,8 @@ export const LdapSettingsConnection = ({
         >
           <Controller
             name="config.useTruststoreSpi[0]"
-            defaultValue=""
             control={form.control}
+            defaultValue="ldapsOnly"
             render={({ onChange, value }) => (
               <Select
                 toggleId="kc-use-truststore-spi"
@@ -175,21 +175,14 @@ export const LdapSettingsConnection = ({
                 }
                 isOpen={isTruststoreSpiDropdownOpen}
                 onSelect={(_, value) => {
-                  onChange(value as string);
+                  onChange(value.toString());
                   setIsTruststoreSpiDropdownOpen(false);
                 }}
                 selections={value}
-                variant={SelectVariant.single}
               >
-                <SelectOption key={0} value="always">
-                  {t("always")}
-                </SelectOption>
-                <SelectOption key={1} value="ldapsOnly">
-                  {t("onlyLdaps")}
-                </SelectOption>
-                <SelectOption key={2} value="never">
-                  {t("never")}
-                </SelectOption>
+                <SelectOption value="always">{t("always")}</SelectOption>
+                <SelectOption value="ldapsOnly">{t("onlyLdaps")}</SelectOption>
+                <SelectOption value="never">{t("never")}</SelectOption>
               </Select>
             )}
           ></Controller>
