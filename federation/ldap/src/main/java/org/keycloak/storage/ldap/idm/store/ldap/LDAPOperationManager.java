@@ -320,6 +320,14 @@ public class LDAPOperationManager {
                                     identityQuery.getPaginationContext().setCookie(cookie);
                                 }
                             }
+                        } else {
+                            /*
+                             * This ensures that PaginationContext#hasNextPage() will return false if we don't get ResponseControls back
+                             * from the LDAP query response. This helps to avoid an infinite loop in org.keycloak.storage.ldap.LDAPUtils.loadAllLDAPObjects
+                             * See KEYCLOAK-19036
+                             */
+                            identityQuery.getPaginationContext().setCookie(null);
+                            logger.warnf("Did not receive response controls for paginated query using DN [%s], filter [%s]. Did you hit a query result size limit?", baseDN, filter);
                         }
 
                         return result;
