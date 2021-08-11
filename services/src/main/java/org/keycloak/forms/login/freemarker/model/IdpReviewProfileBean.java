@@ -16,6 +16,8 @@
  */
 package org.keycloak.forms.login.freemarker.model;
 
+import java.util.stream.Stream;
+
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
@@ -43,8 +45,8 @@ public class IdpReviewProfileBean extends AbstractUserProfileBean {
     }
 
     @Override
-    protected String getAttributeDefaultValue(String name) {
-        return idpCtx.getFirstAttribute(name);
+    protected Stream<String> getAttributeDefaultValues(String name) {
+        return idpCtx.getAttributeStream(name);
     }
     
     @Override 
