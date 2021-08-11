@@ -14,5 +14,7 @@ export default {
       directGrant: "Direct grant",
       serviceAccount: "Service account",
     },
+    emptyTitle: "No sessions",
+    emptyInstructions: "There are no active sessions on this realm",
   },
 };

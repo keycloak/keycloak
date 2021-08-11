@@ -1,19 +1,21 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import moment from "moment";
 import {
   PageSection,
   Select,
   SelectOption,
   SelectVariant,
 } from "@patternfly/react-core";
-import moment from "moment";
-import type UserSessionRepresentation from "keycloak-admin/lib/defs/userSessionRepresentation";
+import { FilterIcon } from "@patternfly/react-icons";
 
+import type UserSessionRepresentation from "keycloak-admin/lib/defs/userSessionRepresentation";
+import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAdminClient } from "../context/auth/AdminClient";
-import { FilterIcon } from "@patternfly/react-icons";
+
 import "./SessionsSection.css";
 
 const Clients = (row: UserSessionRepresentation) => {
@@ -88,28 +90,23 @@ export const SessionsSection = () => {
               selections={filterType}
             >
               <SelectOption
-                key={0}
                 data-testid="all-sessions-option"
                 value={t("sessionsType.allSessions")}
                 isPlaceholder
               />
               <SelectOption
-                key={1}
                 data-testid="regular-sso-option"
                 value={t("sessionsType.regularSSO")}
               />
               <SelectOption
-                key={2}
                 data-testid="offline-option"
                 value={t("sessionsType.offline")}
               />
               <SelectOption
-                key={3}
                 data-testid="direct-grant-option"
                 value={t("sessionsType.directGrant")}
               />
               <SelectOption
-                key={4}
                 data-testid="service-account-option"
                 value={t("sessionsType.serviceAccount")}
               />
@@ -136,6 +133,12 @@ export const SessionsSection = () => {
               cellRenderer: Clients,
             },
           ]}
+          emptyState={
+            <ListEmptyState
+              message={t("emptyTitle")}
+              instructions={t("emptyInstructions")}
+            />
+          }
         />
       </PageSection>
     </>
