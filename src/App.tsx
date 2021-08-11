@@ -1,11 +1,6 @@
-import React, { FunctionComponent, useEffect } from "react";
+import React, { FunctionComponent } from "react";
 import { Page } from "@patternfly/react-core";
-import {
-  HashRouter as Router,
-  Route,
-  Switch,
-  useParams,
-} from "react-router-dom";
+import { HashRouter as Router, Route, Switch } from "react-router-dom";
 import { ErrorBoundary } from "react-error-boundary";
 
 import { Header } from "./PageHeader";
@@ -20,33 +15,40 @@ import { routes, RouteDef } from "./route-config";
 import { PageBreadCrumbs } from "./components/bread-crumb/PageBreadCrumbs";
 import { ForbiddenSection } from "./ForbiddenSection";
 import { SubGroups } from "./groups/SubGroupsContext";
-import { useRealm } from "./context/realm-context/RealmContext";
+import { RealmContextProvider } from "./context/realm-context/RealmContext";
 import { ErrorRenderer } from "./components/error/ErrorRenderer";
+import { AdminClient } from "./context/auth/AdminClient";
+import { WhoAmIContextProvider } from "./context/whoami/WhoAmI";
+import type KeycloakAdminClient from "keycloak-admin";
 
 export const mainPageContentId = "kc-main-content-page-container";
 
-const AppContexts: FunctionComponent = ({ children }) => (
-  <AccessContextProvider>
-    <Help>
-      <AlertProvider>
-        <ServerInfoProvider>
-          <SubGroups>{children}</SubGroups>
-        </ServerInfoProvider>
-      </AlertProvider>
-    </Help>
-  </AccessContextProvider>
-);
-
-// set the realm form the path
-const RealmPathSelector: FunctionComponent = ({ children }) => {
-  const { setRealm } = useRealm();
-  const { realm } = useParams<{ realm: string }>();
-  useEffect(() => {
-    if (realm) setRealm(realm);
-  }, []);
-
-  return <>{children}</>;
+export type AdminClientProps = {
+  adminClient: KeycloakAdminClient;
 };
+
+const AppContexts: FunctionComponent<AdminClientProps> = ({
+  children,
+  adminClient,
+}) => (
+  <Router>
+    <AdminClient.Provider value={adminClient}>
+      <WhoAmIContextProvider>
+        <RealmContextProvider>
+          <AccessContextProvider>
+            <Help>
+              <AlertProvider>
+                <ServerInfoProvider>
+                  <SubGroups>{children}</SubGroups>
+                </ServerInfoProvider>
+              </AlertProvider>
+            </Help>
+          </AccessContextProvider>
+        </RealmContextProvider>
+      </WhoAmIContextProvider>
+    </AdminClient.Provider>
+  </Router>
+);
 
 // If someone tries to go directly to a route they don't
 // have access to, show forbidden page.
@@ -63,38 +65,32 @@ const SecuredRoute = ({ route }: SecuredRouteProps) => {
   return <ForbiddenSection />;
 };
 
-export const App = () => {
+export const App = ({ adminClient }: AdminClientProps) => {
   return (
-    <AppContexts>
-      <Router>
-        <Page
-          header={<Header />}
-          isManagedSidebar
-          sidebar={<PageNav />}
-          breadcrumb={<PageBreadCrumbs />}
-          mainContainerId={mainPageContentId}
+    <AppContexts adminClient={adminClient}>
+      <Page
+        header={<Header />}
+        isManagedSidebar
+        sidebar={<PageNav />}
+        breadcrumb={<PageBreadCrumbs />}
+        mainContainerId={mainPageContentId}
+      >
+        <ErrorBoundary
+          FallbackComponent={ErrorRenderer}
+          onReset={() => window.location.reload()}
         >
-          <ErrorBoundary
-            FallbackComponent={ErrorRenderer}
-            onReset={() => window.location.reload()}
-          >
-            <Switch>
-              {routes.map((route, i) => (
-                <Route
-                  exact={route.matchOptions?.exact ?? true}
-                  key={i}
-                  path={route.path}
-                  component={() => (
-                    <RealmPathSelector>
-                      <SecuredRoute route={route} />
-                    </RealmPathSelector>
-                  )}
-                />
-              ))}
-            </Switch>
-          </ErrorBoundary>
-        </Page>
-      </Router>
+          <Switch>
+            {routes.map((route, i) => (
+              <Route
+                exact={route.matchOptions?.exact ?? true}
+                key={i}
+                path={route.path}
+                component={() => <SecuredRoute route={route} />}
+              />
+            ))}
+          </Switch>
+        </ErrorBoundary>
+      </Page>
     </AppContexts>
   );
 };
