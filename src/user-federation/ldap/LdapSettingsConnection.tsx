@@ -76,6 +76,7 @@ export const LdapSettingsConnection = ({
   const ldapBindType = useWatch({
     control: form.control,
     name: "config.authType",
+    defaultValue: ["simple"],
   });
 
   return (
@@ -248,7 +249,7 @@ export const LdapSettingsConnection = ({
         >
           <Controller
             name="config.authType[0]"
-            defaultValue="none"
+            defaultValue="simple"
             control={form.control}
             render={({ onChange, value }) => (
               <Select
@@ -266,8 +267,8 @@ export const LdapSettingsConnection = ({
                 variant={SelectVariant.single}
                 data-testid="ldap-bind-type"
               >
-                <SelectOption key={0} value="simple" />
-                <SelectOption key={1} value="none" isPlaceholder />
+                <SelectOption value="simple" />
+                <SelectOption value="none" />
               </Select>
             )}
           ></Controller>
