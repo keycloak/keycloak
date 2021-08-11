@@ -31,6 +31,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.forms.RegisterWithUserProfileTest;
 import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.openqa.selenium.By;
@@ -191,6 +192,24 @@ public class KcOidcFirstBrokerLoginWithUserProfileTest extends KcOidcFirstBroker
                 By.cssSelector("form#"+htmlFormId+" > div:nth-child(5) > div:nth-child(2) > input#email")
             ).isDisplayed()
         );
+    }
+    
+    @Test
+    public void testAttributeInputTypes() {
+        
+        updateExecutions(AbstractBrokerTest::enableUpdateProfileOnFirstLogin);
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + RegisterWithUserProfileTest.UP_CONFIG_PART_INPUT_TYPES
+                + "]}");
+
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        logInWithBroker(bc);
+        
+        waitForPage(driver, "update account information", false);
+        updateAccountInformationPage.assertCurrent();
+        
+        RegisterWithUserProfileTest.assertFieldTypes(driver);
     }
     
     @Test

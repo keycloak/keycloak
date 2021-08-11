@@ -43,6 +43,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.forms.RegisterWithUserProfileTest;
 import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.util.ClientScopeBuilder;
@@ -225,6 +226,21 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends RequiredActi
                 By.cssSelector("form#kc-update-profile-form > div:nth-child(5) > div:nth-child(2) > input#email")
             ).isDisplayed()
         );
+    }
+    
+    @Test
+    public void testAttributeInputTypes() {
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + RegisterWithUserProfileTest.UP_CONFIG_PART_INPUT_TYPES
+                + "]}");
+
+        loginPage.open();
+        loginPage.login(USERNAME1, PASSWORD);
+
+        updateProfilePage.assertCurrent();
+        
+        RegisterWithUserProfileTest.assertFieldTypes(driver);
     }
     
     @Test

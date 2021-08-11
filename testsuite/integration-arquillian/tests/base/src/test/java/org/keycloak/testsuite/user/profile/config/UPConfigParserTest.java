@@ -355,5 +355,22 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals(1, errors.size());
         Assert.assertEquals("Attribute 'username' references unknown group 'non-existing-group'", errors.get(0));
     }
+    
+    @Test
+    public void validateConfiguration_attributeAnnotationsErrors() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UPConfigParserTest::validateConfiguration_attributeAnnotationsErrors);
+    }
+
+    private static void validateConfiguration_attributeAnnotationsErrors(KeycloakSession session) throws IOException {
+        UPConfig config = loadValidConfig();
+
+        // attribute references group that is not configured
+        UPAttribute att = config.getAttributes().get(1);
+        att.getAnnotations().put("inputOptions", "");
+        att.getAnnotations().put("inputOptionLabels", "");
+        
+        List<String> errors = validate(session, config);
+        Assert.assertEquals(2, errors.size());
+    }
 
 }

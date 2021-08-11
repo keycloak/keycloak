@@ -301,6 +301,25 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
     }
     
     @Test
+    public void testAttributeInputTypes() {
+
+        setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
+        updateUser(user5Id, "ExistingFirst", "ExistingLast", null);
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"department\", " + VerifyProfileTest.PERMISSIONS_ALL + ", \"required\":{}},"
+                + RegisterWithUserProfileTest.UP_CONFIG_PART_INPUT_TYPES
+                + "]}");
+
+        loginPage.open();
+        loginPage.login("login-test5", "password");
+
+        verifyProfilePage.assertCurrent();
+        
+        RegisterWithUserProfileTest.assertFieldTypes(driver);
+    }
+    
+    @Test
     public void testEvents() {
 
         setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);

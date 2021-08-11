@@ -1759,8 +1759,12 @@ module.controller('RealmUserProfileCtrl', function($scope, Realm, realm, clientS
         for (let key in validator.config) {
             let values = validator.config[key];
 
-            for (let k in values) {
-                config[key] = values[k];
+            if (Array.isArray(values)) {
+                config[key] = values;
+            } else {
+                for (let k in values) {
+                    config[key] = values[k];
+                }
             }
         }
 
