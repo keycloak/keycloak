@@ -93,13 +93,11 @@ export const LdapSettingsKerberosIntegration = ({
                 })}
                 data-testid="kerberos-realm"
               />
-              {form.errors.config &&
-                form.errors.config.kerberosRealm &&
-                form.errors.config.kerberosRealm[0] && (
-                  <div className="error">
-                    {form.errors.config.kerberosRealm[0].message}
-                  </div>
-                )}
+              {form.errors.config?.kerberosRealm?.[0] && (
+                <div className="error">
+                  {form.errors.config.kerberosRealm[0].message}
+                </div>
+              )}
             </FormGroup>
 
             <FormGroup
@@ -127,13 +125,11 @@ export const LdapSettingsKerberosIntegration = ({
                 })}
                 data-testid="kerberos-principal"
               />
-              {form.errors.config &&
-                form.errors.config.serverPrincipal &&
-                form.errors.config.serverPrincipal[0] && (
-                  <div className="error">
-                    {form.errors.config.serverPrincipal[0].message}
-                  </div>
-                )}
+              {form.errors.config?.serverPrincipal?.[0] && (
+                <div className="error">
+                  {form.errors.config.serverPrincipal[0].message}
+                </div>
+              )}
             </FormGroup>
 
             <FormGroup
@@ -161,13 +157,11 @@ export const LdapSettingsKerberosIntegration = ({
                 })}
                 data-testid="kerberos-keytab"
               />
-              {form.errors.config &&
-                form.errors.config.keyTab &&
-                form.errors.config.keyTab[0] && (
-                  <div className="error">
-                    {form.errors.config.keyTab[0].message}
-                  </div>
-                )}
+              {form.errors.config?.keyTab?.[0] && (
+                <div className="error">
+                  {form.errors.config.keyTab[0].message}
+                </div>
+              )}
             </FormGroup>
 
             <FormGroup

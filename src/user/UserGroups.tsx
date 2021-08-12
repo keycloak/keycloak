@@ -111,8 +111,11 @@ export const UserGroups = () => {
 
     const arr = getAllSubgroupPaths(
       rootLevelGroups,
-      (x: GroupRepresentation, context: GroupRepresentation[][]) => {
-        if (x !== undefined && x.subGroups) context.push(x.subGroups);
+      (
+        x: GroupRepresentation | undefined,
+        context: GroupRepresentation[][]
+      ) => {
+        if (x?.subGroups) context.push(x.subGroups);
       },
       []
     );

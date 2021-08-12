@@ -116,13 +116,11 @@ export const LdapSettingsConnection = ({
               },
             })}
           />
-          {form.errors.config &&
-            form.errors.config.connectionUrl &&
-            form.errors.config.connectionUrl[0] && (
-              <div className="error">
-                {form.errors.config.connectionUrl[0].message}
-              </div>
-            )}
+          {form.errors.config?.connectionUrl?.[0] && (
+            <div className="error">
+              {form.errors.config.connectionUrl[0].message}
+            </div>
+          )}
         </FormGroup>
         <FormGroup
           label={t("enableStartTls")}

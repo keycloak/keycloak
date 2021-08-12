@@ -20,7 +20,7 @@ export const X509 = () => {
       }
       helperTextInvalid={t("common:required")}
       validated={
-        errors.attributes && errors.attributes["x509-subjectdn"]
+        errors.attributes?.["x509-subjectdn"]
           ? ValidatedOptions.error
           : ValidatedOptions.default
       }
@@ -32,7 +32,7 @@ export const X509 = () => {
         id="kc-subject"
         name="attributes.x509-subjectdn"
         validated={
-          errors.attributes && errors.attributes["x509-subjectdn"]
+          errors.attributes?.["x509-subjectdn"]
             ? ValidatedOptions.error
             : ValidatedOptions.default
         }

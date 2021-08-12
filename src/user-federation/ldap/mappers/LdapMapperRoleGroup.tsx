@@ -79,10 +79,10 @@ export const LdapMapperRoleGroup = ({
           ref={form.register({ required: true })}
           validated={
             isRole
-              ? form.errors.config && form.errors.config["roles-dn"]
+              ? form.errors.config?.["roles-dn"]
                 ? ValidatedOptions.error
                 : ValidatedOptions.default
-              : form.errors.config && form.errors.config["groups-dn"]
+              : form.errors.config?.["groups-dn"]
               ? ValidatedOptions.error
               : ValidatedOptions.default
           }
@@ -583,7 +583,7 @@ export const LdapMapperRoleGroup = ({
               name="config.groups-path[0]"
               ref={form.register({ required: true })}
               validated={
-                form.errors.config && form.errors.config["groups-path"]
+                form.errors.config?.["groups-path"]
                   ? ValidatedOptions.error
                   : ValidatedOptions.default
               }

@@ -72,16 +72,15 @@ const LoginFlow = ({
               )}
             </>
             <>
-              {flows &&
-                flows.map((option) => (
-                  <SelectOption
-                    selected={option.alias === value}
-                    key={option.id}
-                    value={option.alias}
-                  >
-                    {option.alias}
-                  </SelectOption>
-                ))}
+              {flows?.map((option) => (
+                <SelectOption
+                  selected={option.alias === value}
+                  key={option.id}
+                  value={option.alias}
+                >
+                  {option.alias}
+                </SelectOption>
+              ))}
             </>
           </Select>
         )}

@@ -8,7 +8,7 @@ import { useAdminClient, useFetch } from "../auth/AdminClient";
 
 export class WhoAmI {
   constructor(private me?: WhoAmIRepresentation) {
-    if (this.me !== undefined && this.me.locale) {
+    if (this.me?.locale) {
       i18n.changeLanguage(this.me.locale, (error) => {
         if (error) console.error("Unable to set locale to", this.me?.locale);
       });
@@ -28,7 +28,7 @@ export class WhoAmI {
   }
 
   public canCreateRealm(): boolean {
-    return this.me !== undefined && this.me.createRealm;
+    return !!this.me?.createRealm;
   }
 
   public getRealmAccess(): Readonly<{

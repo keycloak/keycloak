@@ -117,8 +117,7 @@ export const OpenIdConnectSettings = () => {
             />
           }
           validated={
-            (discoveryResult && discoveryResult.error) ||
-            errors.discoveryEndpoint
+            discoveryResult?.error || errors.discoveryEndpoint
               ? "error"
               : !discoveryResult
               ? "default"
@@ -141,8 +140,7 @@ export const OpenIdConnectSettings = () => {
             onChange={setDiscoveryUrl}
             onBlur={() => setDiscovering(!discovering)}
             validated={
-              (discoveryResult && discoveryResult.error) ||
-              errors.discoveryEndpoint
+              discoveryResult?.error || errors.discoveryEndpoint
                 ? "error"
                 : !discoveryResult
                 ? "default"
@@ -168,9 +166,7 @@ export const OpenIdConnectSettings = () => {
               forID="kc-import-config"
             />
           }
-          validated={
-            discoveryResult && discoveryResult.error ? "error" : "default"
-          }
+          validated={discoveryResult?.error ? "error" : "default"}
           helperTextInvalid={discoveryResult?.error?.toString()}
         >
           <JsonFileUpload
@@ -178,9 +174,7 @@ export const OpenIdConnectSettings = () => {
             helpText="identity=providers-help:jsonFileUpload"
             hideDefaultPreview
             unWrap
-            validated={
-              discoveryResult && discoveryResult.error ? "error" : "default"
-            }
+            validated={discoveryResult?.error ? "error" : "default"}
             onChange={(value) => fileUpload(value)}
           />
         </FormGroup>

@@ -49,10 +49,10 @@ export const TableToolbar: FunctionComponent<TableToolbarProps> = ({
   const onSearch = () => {
     if (searchValue !== "") {
       setSearchValue(searchValue);
-      inputGroupOnEnter && inputGroupOnEnter(searchValue);
+      inputGroupOnEnter?.(searchValue);
     } else {
       setSearchValue("");
-      inputGroupOnEnter && inputGroupOnEnter("");
+      inputGroupOnEnter?.("");
     }
   };
 
@@ -66,7 +66,7 @@ export const TableToolbar: FunctionComponent<TableToolbarProps> = ({
     value: string,
     event: FormEvent<HTMLInputElement>
   ) => {
-    inputGroupOnChange && inputGroupOnChange(value, event);
+    inputGroupOnChange?.(value, event);
     setSearchValue(value);
   };
 

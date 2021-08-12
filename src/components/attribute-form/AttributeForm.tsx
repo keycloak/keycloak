@@ -107,9 +107,7 @@ export const AttributesForm = ({
                     aria-label="key-input"
                     defaultValue={attribute.key}
                     validated={
-                      errors.attributes && errors.attributes[rowIndex]
-                        ? "error"
-                        : "default"
+                      errors.attributes?.[rowIndex] ? "error" : "default"
                     }
                   />
                 </Td>

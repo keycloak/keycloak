@@ -175,14 +175,13 @@ export const ClientSettings = ({ save, reset }: ClientSettingsProps) => {
                     {t("common:choose")}
                   </SelectOption>
                   <>
-                    {loginThemes &&
-                      loginThemes.map((theme) => (
-                        <SelectOption
-                          selected={theme.name === value}
-                          key={theme.name}
-                          value={theme.name}
-                        />
-                      ))}
+                    {loginThemes?.map((theme) => (
+                      <SelectOption
+                        selected={theme.name === value}
+                        key={theme.name}
+                        value={theme.name}
+                      />
+                    ))}
                   </>
                 </Select>
               )}

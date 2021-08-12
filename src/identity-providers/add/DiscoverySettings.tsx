@@ -37,7 +37,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
         fieldId="kc-authorization-url"
         isRequired
         validated={
-          errors.config && errors.config.authorizationUrl
+          errors.config?.authorizationUrl
             ? ValidatedOptions.error
             : ValidatedOptions.default
         }
@@ -50,7 +50,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
           name="config.authorizationUrl"
           ref={register({ required: true })}
           validated={
-            errors.config && errors.config.authorizationUrl
+            errors.config?.authorizationUrl
               ? ValidatedOptions.error
               : ValidatedOptions.default
           }
@@ -63,7 +63,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
         fieldId="tokenUrl"
         isRequired
         validated={
-          errors.config && errors.config.tokenUrl
+          errors.config?.tokenUrl
             ? ValidatedOptions.error
             : ValidatedOptions.default
         }
@@ -75,7 +75,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
           name="config.tokenUrl"
           ref={register({ required: true })}
           validated={
-            errors.config && errors.config.tokenUrl
+            errors.config?.tokenUrl
               ? ValidatedOptions.error
               : ValidatedOptions.default
           }

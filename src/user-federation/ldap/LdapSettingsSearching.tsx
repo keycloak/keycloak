@@ -106,13 +106,9 @@ export const LdapSettingsSearching = ({
               },
             })}
           />
-          {form.errors.config &&
-            form.errors.config.usersDn &&
-            form.errors.config.usersDn[0] && (
-              <div className="error">
-                {form.errors.config.usersDn[0].message}
-              </div>
-            )}
+          {form.errors.config?.usersDn?.[0] && (
+            <div className="error">{form.errors.config.usersDn[0].message}</div>
+          )}
         </FormGroup>
         <FormGroup
           label={t("usernameLdapAttribute")}
@@ -140,13 +136,11 @@ export const LdapSettingsSearching = ({
               },
             })}
           />
-          {form.errors.config &&
-            form.errors.config.usernameLDAPAttribute &&
-            form.errors.config.usernameLDAPAttribute[0] && (
-              <div className="error">
-                {form.errors.config.usernameLDAPAttribute[0].message}
-              </div>
-            )}
+          {form.errors.config?.usernameLDAPAttribute?.[0] && (
+            <div className="error">
+              {form.errors.config.usernameLDAPAttribute[0].message}
+            </div>
+          )}
         </FormGroup>
         <FormGroup
           label={t("rdnLdapAttribute")}
@@ -174,13 +168,11 @@ export const LdapSettingsSearching = ({
               },
             })}
           />
-          {form.errors.config &&
-            form.errors.config.rdnLDAPAttribute &&
-            form.errors.config.rdnLDAPAttribute[0] && (
-              <div className="error">
-                {form.errors.config.rdnLDAPAttribute[0].message}
-              </div>
-            )}
+          {form.errors.config?.rdnLDAPAttribute?.[0] && (
+            <div className="error">
+              {form.errors.config.rdnLDAPAttribute[0].message}
+            </div>
+          )}
         </FormGroup>
         <FormGroup
           label={t("uuidLdapAttribute")}
@@ -208,13 +200,11 @@ export const LdapSettingsSearching = ({
               },
             })}
           />
-          {form.errors.config &&
-            form.errors.config.uuidLDAPAttribute &&
-            form.errors.config.uuidLDAPAttribute[0] && (
-              <div className="error">
-                {form.errors.config.uuidLDAPAttribute[0].message}
-              </div>
-            )}
+          {form.errors.config?.uuidLDAPAttribute?.[0] && (
+            <div className="error">
+              {form.errors.config.uuidLDAPAttribute[0].message}
+            </div>
+          )}
         </FormGroup>
         <FormGroup
           label={t("userObjectClasses")}
@@ -242,13 +232,11 @@ export const LdapSettingsSearching = ({
               },
             })}
           />
-          {form.errors.config &&
-            form.errors.config.userObjectClasses &&
-            form.errors.config.userObjectClasses[0] && (
-              <div className="error">
-                {form.errors.config.userObjectClasses[0].message}
-              </div>
-            )}
+          {form.errors.config?.userObjectClasses?.[0] && (
+            <div className="error">
+              {form.errors.config.userObjectClasses[0].message}
+            </div>
+          )}
         </FormGroup>
         <FormGroup
           label={t("userLdapFilter")}
@@ -272,13 +260,11 @@ export const LdapSettingsSearching = ({
               },
             })}
           />
-          {form.errors.config &&
-            form.errors.config.customUserSearchFilter &&
-            form.errors.config.customUserSearchFilter[0] && (
-              <div className="error">
-                {form.errors.config.customUserSearchFilter[0].message}
-              </div>
-            )}
+          {form.errors.config?.customUserSearchFilter?.[0] && (
+            <div className="error">
+              {form.errors.config.customUserSearchFilter[0].message}
+            </div>
+          )}
         </FormGroup>
 
         <FormGroup

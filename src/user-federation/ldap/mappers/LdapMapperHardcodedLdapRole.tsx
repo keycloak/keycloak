@@ -78,7 +78,7 @@ export const LdapMapperHardcodedLdapRole = ({
             name="config.role[0]"
             ref={form.register({ required: true })}
             validated={
-              form.errors.config && form.errors.config.role
+              form.errors.config?.role
                 ? ValidatedOptions.error
                 : ValidatedOptions.default
             }

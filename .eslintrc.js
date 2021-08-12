@@ -17,6 +17,8 @@ module.exports = {
     },
   },
   rules: {
+    // Always prefer using an optional chain expression, as it's more concise and easier to read.
+    "@typescript-eslint/prefer-optional-chain": "error",
     "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": "error",
     "@typescript-eslint/no-empty-function": "error",

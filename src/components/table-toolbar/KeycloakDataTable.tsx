@@ -224,12 +224,7 @@ export function KeycloakDataTable<T>({
             }),
           },
         ];
-        if (
-          detailColumns &&
-          detailColumns[0] &&
-          detailColumns[0].enabled &&
-          detailColumns[0].enabled(value)
-        ) {
+        if (detailColumns?.[0]?.enabled?.(value)) {
           row.push({
             parent: index * 2,
             cells: detailColumns!.map((col) => {

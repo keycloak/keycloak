@@ -36,7 +36,7 @@ export const LdapMapperHardcodedLdapGroup = ({
           name="config.group[0]"
           ref={form.register({ required: true })}
           validated={
-            form.errors.config && form.errors.config.group
+            form.errors.config?.group
               ? ValidatedOptions.error
               : ValidatedOptions.default
           }

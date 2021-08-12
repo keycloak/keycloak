@@ -76,10 +76,7 @@ export const MultiLineInput = ({
               onClick={() => append({})}
               tabIndex={-1}
               aria-label={t("common:add")}
-              isDisabled={
-                rest.isDisabled ||
-                !(currentValues && currentValues[index]?.value)
-              }
+              isDisabled={rest.isDisabled || !currentValues?.[index]?.value}
             >
               <PlusCircleIcon /> {t(addButtonLabel || "common:add")}
             </Button>

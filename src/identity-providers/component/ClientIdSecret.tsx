@@ -32,7 +32,7 @@ export const ClientIdSecret = ({
         fieldId="kc-client-id"
         isRequired
         validated={
-          errors.config && errors.config.clientId
+          errors.config?.clientId
             ? ValidatedOptions.error
             : ValidatedOptions.default
         }
@@ -59,7 +59,7 @@ export const ClientIdSecret = ({
         fieldId="kc-client-secret"
         isRequired={secretRequired}
         validated={
-          errors.config && errors.config.clientSecret
+          errors.config?.clientSecret
             ? ValidatedOptions.error
             : ValidatedOptions.default
         }
