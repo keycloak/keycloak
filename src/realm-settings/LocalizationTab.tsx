@@ -73,14 +73,15 @@ export const LocalizationTab = ({
   });
 
   const loader = async () => {
-    if (realm) {
+    try {
       const result = await adminClient.realms.getRealmLocalizationTexts({
         realm: realm.realm!,
         selectedLocale: getValues("defaultLocale") || "en",
       });
       return Object.keys(result).map((key) => [key, result[key]]);
+    } catch (error) {
+      return [[]];
     }
-    return [[]];
   };
 
   const handleModalToggle = () => {
