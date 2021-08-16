@@ -40,8 +40,11 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import org.openqa.selenium.support.PageFactory;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.assertHardCodedSessionNote;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configureAutoLinkFlow;
@@ -49,6 +52,7 @@ import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.testsuite.util.DateTimeAssert.assertTimestampIsCloseToNow;
 import static org.keycloak.testsuite.util.MailAssert.assertEmailAndGetUrl;
 
 /**
@@ -968,11 +972,11 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         driver2.navigate().to(url);
 
         final WebElement proceedLink = driver2.findElement(By.linkText("» Click here to proceed"));
-        MatcherAssert.assertThat(proceedLink, Matchers.notNullValue());
+        assertThat(proceedLink, Matchers.notNullValue());
 
         // check if the initial client is preserved
         String link = proceedLink.getAttribute("href");
-        MatcherAssert.assertThat(link, Matchers.containsString("client_id=broker-app"));
+        assertThat(link, Matchers.containsString("client_id=broker-app"));
         proceedLink.click();
 
         assertThat(driver2.getPageSource(), Matchers.containsString("You successfully verified your email. Please go back to your original browser and continue there with the login."));
@@ -1193,6 +1197,53 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
 
         assertNumFederatedIdentities(realm.users().search(bc.getUserLogin()).get(0).getId(), 1);
+    }
+
+    @Test
+    public void testFirstBrokerLoginSetsExpectedUserTimestamps() {
+        updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
+
+        String username = "timestamps-test";
+        String password = "password";
+        String email = username + "@localhost";
+        String lastName = "LastName";
+        createUser(bc.providerRealmName(), username, password, null, lastName, email);
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        log.debug("Clicking social " + bc.getIDPAlias());
+        loginPage.clickSocial(bc.getIDPAlias());
+        waitForPage(driver, "sign in to", true);
+        Assert.assertTrue("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        log.debug("Logging in");
+        loginPage.login(username, password);
+
+        waitForPage(driver, "update account information", false);
+
+        updateAccountInformationPage.assertCurrent();
+        String firstName = "FirstName";
+        updateAccountInformationPage.updateAccountInformation(firstName, lastName);
+        waitForAccountManagementTitle();
+        accountUpdateProfilePage.assertCurrent();
+
+        Assert.assertEquals(firstName, accountUpdateProfilePage.getFirstName());
+        Assert.assertEquals(lastName, accountUpdateProfilePage.getLastName());
+        Assert.assertEquals(email, accountUpdateProfilePage.getEmail());
+        Assert.assertEquals(username, accountUpdateProfilePage.getUsername());
+
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
+        List<UserRepresentation> found = realm.users().search(username);
+        assertThat(found, hasSize(1));
+        UserRepresentation user = found.get(0);
+        assertInitialUserTimestamps(user);
+    }
+
+    private static void assertInitialUserTimestamps(UserRepresentation user) {
+        assertNotNull(user.getCreatedTimestamp());
+        assertNotNull(user.getAttributesUpdatedTimestamp());
+        assertTimestampIsCloseToNow(user.getCreatedTimestamp());
+        assertTimestampIsCloseToNow(user.getAttributesUpdatedTimestamp());
+        // test that attributesUpdatedTimestamp is the same as created timestamp, or greater
+        assertThat(user.getAttributesUpdatedTimestamp(), greaterThanOrEqualTo(user.getCreatedTimestamp()));
     }
 
 }

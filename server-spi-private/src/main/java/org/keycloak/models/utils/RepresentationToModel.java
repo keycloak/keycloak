@@ -1831,6 +1831,7 @@ public class RepresentationToModel {
         UserModel user = session.userLocalStorage().addUser(newRealm, userRep.getId(), userRep.getUsername(), false, false);
         user.setEnabled(userRep.isEnabled() != null && userRep.isEnabled());
         user.setCreatedTimestamp(userRep.getCreatedTimestamp());
+        user.setAttributesUpdatedTimestamp(userRep.getAttributesUpdatedTimestamp());
         user.setEmail(userRep.getEmail());
         if (userRep.isEmailVerified() != null) user.setEmailVerified(userRep.isEmailVerified());
         user.setFirstName(userRep.getFirstName());

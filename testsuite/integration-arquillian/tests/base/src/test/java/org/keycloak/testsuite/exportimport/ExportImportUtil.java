@@ -61,7 +61,6 @@ import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.util.RealmRepUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -159,8 +158,9 @@ public class ExportImportUtil {
 
         // Test role mappings
         UserRepresentation admin = findByUsername(realmRsc, "admin");
-        // user without creation timestamp in import
+        // user without timestamps in import
         Assert.assertNull(admin.getCreatedTimestamp());
+        Assert.assertNull(admin.getAttributesUpdatedTimestamp());
         Set<RoleRepresentation> allRoles = allRoles(realmRsc, admin);
         Assert.assertEquals(3, allRoles.size());
         Assert.assertTrue(containsRole(allRoles, findRealmRole(realmRsc, "admin")));
@@ -168,8 +168,9 @@ public class ExportImportUtil {
         Assert.assertTrue(containsRole(allRoles, findClientRole(realmRsc, otherApp.getId(), "otherapp-admin")));
 
         UserRepresentation wburke = findByUsername(realmRsc, "wburke");
-        // user with creation timestamp in import
+        // user with timestamps in import
         Assert.assertEquals(new Long(123654), wburke.getCreatedTimestamp());
+        Assert.assertEquals(new Long(123754), wburke.getAttributesUpdatedTimestamp());
         allRoles = allRoles(realmRsc, wburke);
         Assert.assertEquals(2, allRoles.size());
         Assert.assertFalse(containsRole(allRoles, findRealmRole(realmRsc, "admin")));
@@ -181,9 +182,9 @@ public class ExportImportUtil {
         Assert.assertEquals((Object) 159, wburke.getNotBefore());
 
         UserRepresentation loginclient = findByUsername(realmRsc, "loginclient");
-        // user with creation timestamp as string in import
+        // user with timestamps as string in import
         Assert.assertEquals(new Long(123655), loginclient.getCreatedTimestamp());
-
+        Assert.assertEquals(new Long(123755), loginclient.getAttributesUpdatedTimestamp());
         UserRepresentation hashedPasswordUser = findByUsername(realmRsc, "hashedpassworduser");
         CredentialRepresentation password = realmRsc.users().get(hashedPasswordUser.getId()).credentials().stream()
                 .filter(credential -> PasswordCredentialModel.TYPE.equals(credential.getType()))

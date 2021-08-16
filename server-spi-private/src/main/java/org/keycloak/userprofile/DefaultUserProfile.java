@@ -19,6 +19,9 @@
 
 package org.keycloak.userprofile;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -84,19 +87,26 @@ public final class DefaultUserProfile implements UserProfile {
 
         user = userSupplier.apply(this.attributes);
 
-        return updateInternal(user, false);
+        return updateInternal(user, false, Collections.emptyList());
     }
 
     @Override
-    public void update(boolean removeAttributes, AttributeChangeListener... changeListener) {
+    public void update(boolean removeAttributes, AttributeChangeListener... changeListeners) {
         if (!validated) {
             validate();
         }
 
-        updateInternal(user, removeAttributes, changeListener);
+        List<AttributeChangeListener> allChangeListeners = new ArrayList<>();
+        allChangeListeners.add(createDefaultChangeListener());
+
+        if (changeListeners != null) {
+            allChangeListeners.addAll(Arrays.asList(changeListeners));
+        }
+
+        updateInternal(user, removeAttributes, allChangeListeners);
     }
 
-    private UserModel updateInternal(UserModel user, boolean removeAttributes, AttributeChangeListener... changeListener) {
+    private UserModel updateInternal(UserModel user, boolean removeAttributes, List<AttributeChangeListener> changeListeners) {
         if (user == null) {
             throw new RuntimeException("No user model provided for persisting changes");
         }
@@ -119,7 +129,7 @@ public final class DefaultUserProfile implements UserProfile {
                         user.setEmailVerified(false);
                     }
                     
-                    for (AttributeChangeListener listener : changeListener) {
+                    for (AttributeChangeListener listener : changeListeners) {
                         listener.onChange(name, user, currentValue);
                     }
                 }
@@ -137,11 +147,11 @@ public final class DefaultUserProfile implements UserProfile {
                     if (this.attributes.isReadOnly(attr)) {
                         continue;
                     }
-                    
+
                     List<String> currentValue = user.getAttributeStream(attr).filter(Objects::nonNull).collect(Collectors.toList());
                     user.removeAttribute(attr);
-                    
-                    for (AttributeChangeListener listener : changeListener) {
+
+                    for (AttributeChangeListener listener : changeListeners) {
                         listener.onChange(attr, user, currentValue);
                     }
                 }
@@ -160,4 +170,9 @@ public final class DefaultUserProfile implements UserProfile {
     public Attributes getAttributes() {
         return attributes;
     }
+
+    protected AttributeChangeListener createDefaultChangeListener() {
+        return new DefaultAttributeChangeListener(session);
+    }
+
 }

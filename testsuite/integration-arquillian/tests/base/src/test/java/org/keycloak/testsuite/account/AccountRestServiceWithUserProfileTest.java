@@ -43,7 +43,6 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.userprofile.UserProfileContext;
-import org.keycloak.userprofile.EventAuditingAttributeChangeListener;
 
 /**
  * 

@@ -24,7 +24,6 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -48,6 +47,7 @@ public class MapUserEntity implements AbstractEntity, UpdatableEntity {
     private String username;
     private String firstName;
     private Long createdTimestamp;
+    private Long attributesUpdatedTimestamp;
     private String lastName;
     private String email;
     private boolean enabled;
@@ -125,6 +125,15 @@ public class MapUserEntity implements AbstractEntity, UpdatableEntity {
     public void setCreatedTimestamp(Long createdTimestamp) {
         this.updated |= !Objects.equals(this.createdTimestamp, createdTimestamp);
         this.createdTimestamp = createdTimestamp;
+    }
+
+    public Long getAttributesUpdatedTimestamp() {
+        return attributesUpdatedTimestamp;
+    }
+
+    public void setAttributesUpdatedTimestamp(Long attributesUpdatedTimestamp) {
+        this.updated |= !Objects.equals(this.attributesUpdatedTimestamp, attributesUpdatedTimestamp);
+        this.attributesUpdatedTimestamp = attributesUpdatedTimestamp;
     }
 
     public String getLastName() {

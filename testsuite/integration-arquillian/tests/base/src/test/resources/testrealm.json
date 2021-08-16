@@ -38,7 +38,9 @@
       "clientRoles": {
         "test-app": [ "customer-user" ],
         "account": [ "view-profile", "manage-account" ]
-      }
+      },
+      "createdTimestamp": 1183784827,
+      "attributesUpdatedTimestamp": 1183784828
     },
     {
       "username" : "john-doh@localhost",

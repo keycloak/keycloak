@@ -121,6 +121,15 @@ public interface UserModel extends RoleMapperModel {
     
     void setCreatedTimestamp(Long timestamp);
 
+    /**
+     * Get timestamp of last update to attributes. In case of new users, it will return the timestamp of creation.
+     *
+     * <p>May be null for old users last updated before this feature introduction.</p>
+     */
+    Long getAttributesUpdatedTimestamp();
+
+    void setAttributesUpdatedTimestamp(Long timestamp);
+
     boolean isEnabled();
 
     void setEnabled(boolean enabled);

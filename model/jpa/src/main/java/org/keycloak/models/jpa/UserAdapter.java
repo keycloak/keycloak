@@ -100,6 +100,16 @@ public class UserAdapter implements UserModel.Streams, JpaModel<UserEntity> {
     }
 
     @Override
+    public Long getAttributesUpdatedTimestamp() {
+        return user.getAttributesUpdatedTimestamp();
+    }
+
+    @Override
+    public void setAttributesUpdatedTimestamp(Long timestamp) {
+        user.setAttributesUpdatedTimestamp(timestamp);
+    }
+
+    @Override
     public boolean isEnabled() {
         return user.isEnabled();
     }

@@ -56,6 +56,8 @@ import java.util.List;
 
 import org.junit.Assume;
 import org.junit.BeforeClass;
+
+import static org.keycloak.testsuite.util.DateTimeAssert.assertTimestampIsCloseToNow;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 
 @EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
@@ -293,8 +295,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractTestRealmKeycloakTest 
         UserRepresentation user = getUser(userId);
         Assert.assertNotNull(user);
         Assert.assertNotNull(user.getCreatedTimestamp());
-        // test that timestamp is current with 60s tollerance
-        Assert.assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 60000);
+        assertTimestampIsCloseToNow(user.getCreatedTimestamp(), 60_000);
         // test user info is set from form
         assertEquals(username.toLowerCase(), user.getUsername());
         assertEquals(email.toLowerCase(), user.getEmail());

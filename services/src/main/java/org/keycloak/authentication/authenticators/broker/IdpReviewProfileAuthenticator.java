@@ -34,16 +34,17 @@ import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.validation.Validation;
-import org.keycloak.userprofile.UserProfileContext;
-import org.keycloak.userprofile.ValidationException;
 import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.userprofile.ValidationException;
 
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -120,6 +121,14 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
             @Override
             public Map<String, List<String>> getAttributes() {
                 return userCtx.getAttributes();
+            }
+
+            @Override
+            public void setAttributesUpdatedTimestamp(Long timestamp) {
+                /*
+                 * overwrite this method with empty implementation to prevent NPE (tracking attribute changes is not
+                 * necessary, because this authenticator is only relevant for user creation, not for update)
+                 */
             }
 
             @Override

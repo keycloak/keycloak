@@ -203,6 +203,7 @@ public class ModelToRepresentation {
         rep.setOrigin(providerId);
         rep.setUsername(user.getUsername());
         rep.setCreatedTimestamp(user.getCreatedTimestamp());
+        rep.setAttributesUpdatedTimestamp(user.getAttributesUpdatedTimestamp());
         rep.setLastName(user.getLastName());
         rep.setFirstName(user.getFirstName());
         rep.setEmail(user.getEmail());
@@ -238,6 +239,7 @@ public class ModelToRepresentation {
         rep.setId(user.getId());
         rep.setUsername(user.getUsername());
         rep.setCreatedTimestamp(user.getCreatedTimestamp());
+        rep.setAttributesUpdatedTimestamp(user.getAttributesUpdatedTimestamp());
         rep.setLastName(user.getLastName());
         rep.setFirstName(user.getFirstName());
         rep.setEmail(user.getEmail());

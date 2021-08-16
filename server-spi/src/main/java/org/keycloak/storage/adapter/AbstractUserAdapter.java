@@ -68,25 +68,25 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
 
     @Override
     public void addRequiredAction(String action) {
-        throw new ReadOnlyException("user is read only for this update");
+        throwReadOnly();
 
     }
 
     @Override
     public void removeRequiredAction(String action) {
-        throw new ReadOnlyException("user is read only for this update");
+        throwReadOnly();
 
     }
 
     @Override
     public void addRequiredAction(RequiredAction action) {
-        throw new ReadOnlyException("user is read only for this update");
+        throwReadOnly();
 
     }
 
     @Override
     public void removeRequiredAction(RequiredAction action) {
-        throw new ReadOnlyException("user is read only for this update");
+        throwReadOnly();
     }
 
     /**
@@ -119,13 +119,13 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
 
     @Override
     public void joinGroup(GroupModel group) {
-        throw new ReadOnlyException("user is read only for this update");
+        throwReadOnly();
 
     }
 
     @Override
     public void leaveGroup(GroupModel group) {
-        throw new ReadOnlyException("user is read only for this update");
+        throwReadOnly();
 
     }
 
@@ -152,7 +152,7 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
 
     @Override
     public void grantRole(RoleModel role) {
-        throw new ReadOnlyException("user is read only for this update");
+        throwReadOnly();
 
     }
 
@@ -182,7 +182,7 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
 
     @Override
     public void deleteRoleMapping(RoleModel role) {
-        throw new ReadOnlyException("user is read only for this update");
+        throwReadOnly();
 
     }
 
@@ -193,7 +193,7 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
 
     @Override
     public void setEnabled(boolean enabled) {
-        throw new ReadOnlyException("user is read only for this update");
+        throwReadOnly();
     }
 
     /**
@@ -213,7 +213,7 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
      */
     @Override
     public void setFederationLink(String link) {
-        throw new ReadOnlyException("user is read only for this update");
+        throwReadOnly();
 
     }
 
@@ -234,7 +234,7 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
      */
     @Override
     public void setServiceAccountClientLink(String clientInternalId) {
-        throw new ReadOnlyException("user is read only for this update");
+        throwReadOnly();
 
     }
 
@@ -255,6 +255,11 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
 
     @Override
     public void setUsername(String username) {
+        throwReadOnly();
+
+    }
+
+    private void throwReadOnly() {
         throw new ReadOnlyException("user is read only for this update");
     }
 
@@ -267,25 +272,35 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
 
     @Override
     public void setCreatedTimestamp(Long timestamp) {
-        throw new ReadOnlyException("user is read only for this update");
+        throwReadOnly();
 
     }
 
     @Override
+    public Long getAttributesUpdatedTimestamp() {
+        return created;
+    }
+
+    @Override
+    public void setAttributesUpdatedTimestamp(Long timestamp) {
+        throwReadOnly();
+    }
+
+    @Override
     public void setSingleAttribute(String name, String value) {
-        throw new ReadOnlyException("user is read only for this update");
+        throwReadOnly();
 
     }
 
     @Override
     public void removeAttribute(String name) {
-        throw new ReadOnlyException("user is read only for this update");
+        throwReadOnly();
 
     }
 
     @Override
     public void setAttribute(String name, List<String> values) {
-        throw new ReadOnlyException("user is read only for this update");
+        throwReadOnly();
 
     }
 
@@ -319,7 +334,7 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
 
     @Override
     public void setFirstName(String firstName) {
-        throw new ReadOnlyException("user is read only for this update");
+        throwReadOnly();
 
     }
 
@@ -330,7 +345,7 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
 
     @Override
     public void setLastName(String lastName) {
-        throw new ReadOnlyException("user is read only for this update");
+        throwReadOnly();
 
     }
 
@@ -341,7 +356,7 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
 
     @Override
     public void setEmail(String email) {
-        throw new ReadOnlyException("user is read only for this update");
+        throwReadOnly();
 
     }
 
@@ -352,7 +367,7 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
 
     @Override
     public void setEmailVerified(boolean verified) {
-        throw new ReadOnlyException("user is read only for this update");
+        throwReadOnly();
 
     }
 

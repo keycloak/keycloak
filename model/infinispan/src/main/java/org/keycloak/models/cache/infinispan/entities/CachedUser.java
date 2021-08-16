@@ -40,6 +40,7 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
     private final String realm;
     private final String username;
     private final Long createdTimestamp;
+    private final Long attributesUpdatedTimestamp;
     private final String email;
     private final boolean emailVerified;
     private final boolean enabled;
@@ -56,6 +57,7 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
         this.realm = realm.getId();
         this.username = user.getUsername();
         this.createdTimestamp = user.getCreatedTimestamp();
+        this.attributesUpdatedTimestamp = user.getAttributesUpdatedTimestamp();
         this.email = user.getEmail();
         this.emailVerified = user.isEmailVerified();
         this.enabled = user.isEnabled();
@@ -78,6 +80,10 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
 
     public Long getCreatedTimestamp() {
         return createdTimestamp;
+    }
+
+    public Long getAttributesUpdatedTimestamp() {
+        return attributesUpdatedTimestamp;
     }
 
     public String getEmail() {

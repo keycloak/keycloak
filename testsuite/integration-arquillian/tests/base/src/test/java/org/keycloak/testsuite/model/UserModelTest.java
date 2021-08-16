@@ -49,7 +49,10 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.keycloak.testsuite.util.DateTimeAssert.assertTimestampIsCloseToNow;
+
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
@@ -83,8 +86,10 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
             user.setLastName("last-name");
             user.setEmail("email");
             assertNotNull(user.getCreatedTimestamp());
-            // test that timestamp is current with 10s tollerance
-            Assert.assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
+            assertNotNull(user.getAttributesUpdatedTimestamp());
+            assertTimestampIsCloseToNow(user.getCreatedTimestamp());
+            assertTimestampIsCloseToNow(user.getAttributesUpdatedTimestamp());
+            assertEquals(user.getCreatedTimestamp(), user.getAttributesUpdatedTimestamp());
 
             user.addRequiredAction(RequiredAction.CONFIGURE_TOTP);
             user.addRequiredAction(RequiredAction.UPDATE_PASSWORD);

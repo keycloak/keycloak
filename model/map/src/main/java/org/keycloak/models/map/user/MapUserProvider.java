@@ -316,7 +316,9 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
 
         MapUserEntity entity = new MapUserEntity(id, realm.getId());
         entity.setUsername(username.toLowerCase());
-        entity.setCreatedTimestamp(Time.currentTimeMillis());
+        long now = Time.currentTimeMillis();
+        entity.setCreatedTimestamp(now);
+        entity.setAttributesUpdatedTimestamp(now);
 
         entity = tx.create(entity);
         final UserModel userModel = entityToAdapterFunc(realm).apply(entity);

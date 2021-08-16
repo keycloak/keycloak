@@ -41,6 +41,7 @@ import java.util.stream.Stream;
  */
 public class InMemoryUserAdapter extends UserModelDefaultMethods.Streams {
     private Long createdTimestamp = Time.currentTimeMillis();
+    private Long attributesUpdatedTimestamp = createdTimestamp;
     private boolean emailVerified;
     private boolean enabled;
 
@@ -102,6 +103,17 @@ public class InMemoryUserAdapter extends UserModelDefaultMethods.Streams {
     public void setCreatedTimestamp(Long timestamp) {
         checkReadonly();
         this.createdTimestamp = timestamp;
+    }
+
+    @Override
+    public Long getAttributesUpdatedTimestamp() {
+        return attributesUpdatedTimestamp;
+    }
+
+    @Override
+    public void setAttributesUpdatedTimestamp(Long timestamp) {
+        checkReadonly();
+        this.attributesUpdatedTimestamp = timestamp;
     }
 
     @Override

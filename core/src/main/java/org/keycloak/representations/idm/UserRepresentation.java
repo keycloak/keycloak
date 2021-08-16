@@ -38,6 +38,7 @@ public class UserRepresentation {
     protected String id;
     protected String origin;
     protected Long createdTimestamp;
+    protected Long attributesUpdatedTimestamp;
     protected String username;
     protected Boolean enabled;
     protected Boolean totp;
@@ -89,6 +90,14 @@ public class UserRepresentation {
 
     public void setCreatedTimestamp(Long createdTimestamp) {
         this.createdTimestamp = createdTimestamp;
+    }
+
+    public Long getAttributesUpdatedTimestamp() {
+        return attributesUpdatedTimestamp;
+    }
+
+    public void setAttributesUpdatedTimestamp(Long attributesUpdatedTimestamp) {
+        this.attributesUpdatedTimestamp = attributesUpdatedTimestamp;
     }
 
     public String getFirstName() {

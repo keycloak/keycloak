@@ -78,12 +78,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -92,10 +94,10 @@ import static org.junit.Assert.assertTrue;
 @AuthServerContainerExclude(AuthServer.REMOTE)
 @EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
 public class AccountRestServiceTest extends AbstractRestServiceTest {
-    
+
     @Rule
     public AssertEvents events = new AssertEvents(this);
-    
+
     @Test
     public void testGetUserProfileMetadata_EditUsernameAllowed() throws IOException {
         
@@ -202,9 +204,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             user.setLastName(originalLastName);
             user.setEmail(originalEmail);
             user.setAttributes(originalAttributes);
-            SimpleHttp.Response response = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
-            System.out.println(response.asString());
-            assertEquals(204, response.getStatus());
+            updateUser(user);
         }
 
     }
@@ -250,9 +250,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             adminClient.realm("test").update(realmRep);
 
             user.setEmail(originalEmail);
-            SimpleHttp.Response response = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
-            System.out.println(response.asString());
-            assertEquals(204, response.getStatus());
+            updateUser(user);
         }
 
     }
@@ -292,7 +290,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 .detail(Details.UPDATED_LAST_NAME, "Simpsons")
                 .assertEvent();
             events.assertEmpty();
-            
+
         } finally {
             RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
             realmRep.setEditUsernameAllowed(true);
@@ -303,12 +301,10 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             user.setLastName(originalLastName);
             user.setEmail(originalEmail);
             user.setAttributes(originalAttributes);
-            SimpleHttp.Response response = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
-            System.out.println(response.asString());
-            assertEquals(204, response.getStatus());
+            updateUser(user);
         }
     }
-        
+
     @Test
     public void testUpdateProfile() throws IOException {
         UserRepresentation user = getUser();
@@ -338,7 +334,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             assertEquals("val1", user.getAttributes().get("attr1").get(0));
             assertEquals(1, user.getAttributes().get("attr2").size());
             assertEquals("val2", user.getAttributes().get("attr2").get(0));
-            
+
             // Update attributes
             user.getAttributes().remove("attr1");
             user.getAttributes().get("attr2").add("val3");
@@ -432,9 +428,44 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
             user.setUsername(originalUsername);
             user.setAttributes(originalAttributes);
-            SimpleHttp.Response response = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
-            System.out.println(response.asString());
-            assertEquals(204, response.getStatus());
+            updateUser(user);
+        }
+    }
+
+    @Test
+    public void testUpdateProfileChangesAttributesUpdatedTimestamp() throws IOException {
+        UserRepresentation user = getUser();
+        org.keycloak.representations.idm.UserRepresentation apiUser = getApiUser(user.getId());
+
+        // get the timestamps before testing the updates
+        final Long initialCreatedTimestamp = apiUser.getCreatedTimestamp();
+        assertNotNull(initialCreatedTimestamp);
+        final Long initialAttributesUpdatedTimestamp = apiUser.getAttributesUpdatedTimestamp();
+        assertNotNull(initialAttributesUpdatedTimestamp);
+        assertThat(initialAttributesUpdatedTimestamp, greaterThanOrEqualTo(initialCreatedTimestamp));
+
+        final String originalLastname = user.getLastName();
+
+        try {
+            // first update: actually change an attribute (lastName)
+            final String newLastName = "Carpenter";
+            user.setLastName(newLastName);
+
+            user = updateAndGet(user);
+            apiUser = getApiUser(user.getId());
+            assertEquals(initialCreatedTimestamp, apiUser.getCreatedTimestamp());
+            final Long firstUpdateAttributesUpdatedTimestamp = apiUser.getAttributesUpdatedTimestamp();
+            assertThat(firstUpdateAttributesUpdatedTimestamp, greaterThan(initialAttributesUpdatedTimestamp));
+
+            // second update: actually change no data, thus attributesUpdatedTimestamp won't be changed
+            user = updateAndGet(user);
+            apiUser = getApiUser(user.getId());
+            assertEquals(initialCreatedTimestamp, apiUser.getCreatedTimestamp());
+            final Long secondUpdateAttributesUpdatedTimestamp = apiUser.getAttributesUpdatedTimestamp();
+            assertEquals(firstUpdateAttributesUpdatedTimestamp, secondUpdateAttributesUpdatedTimestamp);
+        } finally {
+            user.setLastName(originalLastname);
+            updateUser(user);
         }
     }
 
@@ -456,8 +487,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             assertEquals("Homer1", user.getFirstName());
         } finally {
             user.setFirstName(originalFirstname);
-            int status = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asStatus();
-            assertEquals(204, status);
+            updateUser(user);
         }
     }
 
@@ -470,8 +500,17 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             throw e;
         }    
     }
-    
+
+    private org.keycloak.representations.idm.UserRepresentation getApiUser(final String id) {
+        return adminClient.realms().realm("test").users().get(id).toRepresentation();
+    }
+
     protected UserRepresentation updateAndGet(UserRepresentation user) throws IOException {
+        updateUser(user);
+        return getUser();
+    }
+
+    private void updateUser(UserRepresentation user) throws IOException {
         SimpleHttp a = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user);
         try {
             assertEquals(204, a.asStatus());
@@ -479,7 +518,6 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             System.err.println("Error during user update: " + a.asString());
             throw e;
         }
-        return getUser();
     }
 
 

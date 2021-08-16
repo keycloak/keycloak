@@ -40,7 +40,10 @@ import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.UserProfileContext;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -100,6 +103,10 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
 
     @Test
     public void updateProfile() {
+        UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
+        Long attributesUpdatedTimestampBeforeUpdate = user.getAttributesUpdatedTimestamp();
+        assertNotNull(attributesUpdatedTimestampBeforeUpdate);
+
         loginPage.open();
 
         loginPage.login("test-user@localhost", "password");
@@ -118,13 +125,15 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
         events.expectLogin().assertEvent();
 
         // assert user is really updated in persistent store
-        UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
+        user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
         Assert.assertEquals("New first", user.getFirstName());
         Assert.assertEquals("New last", user.getLastName());
         Assert.assertEquals("new@email.com", user.getEmail());
         Assert.assertEquals("test-user@localhost", user.getUsername());
         // email changed so verify that emailVerified flag is reset
         Assert.assertEquals(false, user.isEmailVerified());
+        // attributesUpdatedTimestamp should have been updated
+        assertThat(user.getAttributesUpdatedTimestamp(), greaterThan(attributesUpdatedTimestampBeforeUpdate));
     }
 
     @Test

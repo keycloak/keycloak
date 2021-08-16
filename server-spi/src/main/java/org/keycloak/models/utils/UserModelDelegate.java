@@ -224,6 +224,16 @@ public class UserModelDelegate implements UserModel.Streams {
     }
 
     @Override
+    public Long getAttributesUpdatedTimestamp() {
+        return delegate.getAttributesUpdatedTimestamp();
+    }
+
+    @Override
+    public void setAttributesUpdatedTimestamp(Long timestamp) {
+        delegate.setAttributesUpdatedTimestamp(timestamp);
+    }
+
+    @Override
     public Stream<GroupModel> getGroupsStream() {
         return delegate.getGroupsStream();
     }

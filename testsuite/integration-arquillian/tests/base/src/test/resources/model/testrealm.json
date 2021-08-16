@@ -128,7 +128,8 @@
         {
             "username": "wburke",
             "enabled": true,
-            "createdTimestamp" : 123654,
+            "createdTimestamp": 123654,
+            "attributesUpdatedTimestamp": 123754,
             "notBefore": 159,
             "attributes": {
                 "old-email": "bburke@redhat.com"
@@ -147,6 +148,7 @@
         {
             "username": "loginclient",
             "createdTimestamp" : "123655",
+            "attributesUpdatedTimestamp" : "123755",
             "enabled": true,
             "credentials": [
                 {
