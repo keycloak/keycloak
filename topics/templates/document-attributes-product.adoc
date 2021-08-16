@@ -1,16 +1,16 @@
 :project_community: false
 :project_product: true
 :project_name: Red Hat Single Sign-On
-:project_versionMvn: 9.0.3.redhat-00002
-:project_versionNpm: 9.0.3.redhat-00002
+:project_versionMvn: 15.0.1.redhat-00002
+:project_versionNpm: 15.0.1.redhat-00002
 :project_images: rhsso-images
 
 :project_name_full: Red Hat Single Sign-On
-:project_version_base: 7.4
-:project_version: 7.4.1
-:keycloak_upgrade_version: 9.0.x
-:project_versionDoc: 7.4
-:project_templates_base_url: https://raw.githubusercontent.com/jboss-container-images/redhat-sso-7-openshift-image/sso74-dev/templates
+:project_version_base: 7.5
+:project_version: 7.5.0
+:keycloak_upgrade_version: 15.0.x
+:project_versionDoc: 7.5
+:project_templates_base_url: https://raw.githubusercontent.com/jboss-container-images/redhat-sso-7-openshift-image/sso75-cpaas-dev/templates
 :project_latest_image_tag: {project_versionDoc}
 :project_doc_base_url: https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/{project_versionDoc}/html-single
 :maven_repository: https://maven.repository.redhat.com/ga/
@@ -67,15 +67,15 @@
 :openshift_openjdk_name: Red Hat Single Sign-On for OpenShift on OpenJDK
 :openshift_openjdk_link: {project_doc_base_url}/red_hat_single_sign-on_for_openshift/
 :openshift_openjdk_platforms: x86_64
-:openshift_openjdk_image_stream: sso74-openshift-rhel8
+:openshift_openjdk_image_stream: sso75-openshift-rhel8
 :openshift_openjdk_image_repository: {openshift_image_repository_productline}/{openshift_openjdk_image_stream}
-:openshift_openjdk_project_templates_version: sso74
+:openshift_openjdk_project_templates_version: sso75
 :openshift_openj9_name: Red Hat Single Sign-On for OpenShift on Eclipse OpenJ9
 :openshift_openj9_link: {project_doc_base_url}/red_hat_single_sign-on_for_openshift_on_openj9/
 :openshift_openj9_platforms: IBM Z/IBM Power Systems
-:openshift_openj9_image_stream: sso74-openj9-openshift-rhel8
+:openshift_openj9_image_stream: sso75-openj9-openshift-rhel8
 :openshift_openj9_image_repository: {openshift_image_repository_productline}/{openshift_openj9_image_stream}
-:openshift_openj9_project_templates_version: sso74-openj9
+:openshift_openj9_project_templates_version: sso75-openj9
 
 // Aggregate various frequently referred links to the official OCP documentation
 :official_ocp_docs_link: https://docs.openshift.com/container-platform
@@ -119,7 +119,7 @@
 
 :appserver_name: JBoss EAP
 :appserver_dirref: EAP_HOME
-:appserver_version: 7.3
+:appserver_version: 7.4
 
 :appserver_doc_base_url: https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/{appserver_version}
 :appserver_config_guide_link: {appserver_doc_base_url}/html-single/configuration_guide
