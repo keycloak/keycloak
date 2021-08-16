@@ -29,22 +29,28 @@ export const GroupBreadCrumbs = () => {
           <BreadcrumbItem key="home">
             <Link to={`/${realm}/groups`}>{t("groups")}</Link>
           </BreadcrumbItem>
-          {subGroups.map((group, i) => (
-            <BreadcrumbItem key={i} isActive={subGroups.length - 1 === i}>
-              {subGroups.length - 1 !== i && (
-                <Link
-                  to={location.pathname.substr(
-                    0,
-                    location.pathname.indexOf(group.id!) + group.id!.length
-                  )}
-                  onClick={() => remove(group)}
-                >
-                  {group.name}
-                </Link>
-              )}
-              {subGroups.length - 1 === i && <>{t("groups:groupDetails")}</>}
-            </BreadcrumbItem>
-          ))}
+          {subGroups.map((group, i) => {
+            const isLastGroup = i === subGroups.length - 1;
+            return (
+              <BreadcrumbItem key={group.id} isActive={isLastGroup}>
+                {!isLastGroup && (
+                  <Link
+                    to={location.pathname.substr(
+                      0,
+                      location.pathname.indexOf(group.id!) + group.id!.length
+                    )}
+                    onClick={() => remove(group)}
+                  >
+                    {group.name}
+                  </Link>
+                )}
+                {isLastGroup &&
+                  (group.id === "search"
+                    ? group.name
+                    : t("groups:groupDetails"))}
+              </BreadcrumbItem>
+            );
+          })}
         </Breadcrumb>
       )}
     </>
