@@ -24,6 +24,7 @@ export const TimeSelector = ({
   units = ["seconds", "minutes", "hours", "days"],
   onChange,
   className,
+  min,
   ...rest
 }: TimeSelectorProps) => {
   const { t } = useTranslation("common");
@@ -84,7 +85,7 @@ export const TimeSelector = ({
           type="number"
           id={`kc-time-${new Date().getTime()}`}
           aria-label="kc-time"
-          min="0"
+          min={min || 0}
           value={timeValue}
           className={`${className}-input`}
           onChange={(value) => {

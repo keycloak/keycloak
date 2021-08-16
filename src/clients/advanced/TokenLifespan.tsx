@@ -37,6 +37,13 @@ export const TokenLifespan = ({
   const { t } = useTranslation("clients");
   const [open, setOpen] = useState(false);
 
+  const [focused, setFocused] = useState(false);
+  const onFocus = () => setFocused(true);
+  const onBlur = () => setFocused(false);
+
+  const isExpireSet = (value: string | number) =>
+    (typeof value === "number" && value !== -1) || focused;
+
   return (
     <FormGroup
       label={t(id)}
@@ -66,19 +73,22 @@ export const TokenLifespan = ({
                   onChange(value);
                   setOpen(false);
                 }}
-                selections={[
-                  typeof value === "number" && value !== -1
-                    ? t(expires)
-                    : t(never),
-                ]}
+                selections={[isExpireSet(value) ? t(expires) : t(never)]}
               >
                 <SelectOption value={-1}>{t(never)}</SelectOption>
                 <SelectOption value={60}>{t(expires)}</SelectOption>
               </Select>
             </SplitItem>
             <SplitItem>
-              {typeof value === "number" && value !== -1 && (
-                <TimeSelector units={units} value={value} onChange={onChange} />
+              {isExpireSet(value) && (
+                <TimeSelector
+                  units={units}
+                  value={value}
+                  onChange={onChange}
+                  onFocus={onFocus}
+                  onBlur={onBlur}
+                  min={1}
+                />
               )}
             </SplitItem>
           </Split>
