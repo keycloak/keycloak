@@ -341,7 +341,7 @@ export const FineGrainOpenIdConnect = ({
         />
       </FormGroup>
       <ActionGroup>
-        <Button id="fineGrainSave" variant="tertiary" onClick={save}>
+        <Button variant="secondary" id="fineGrainSave" onClick={save}>
           {t("common:save")}
         </Button>
         <Button id="fineGrainRevert" variant="link" onClick={reset}>

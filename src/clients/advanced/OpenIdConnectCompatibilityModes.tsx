@@ -49,7 +49,7 @@ export const OpenIdConnectCompatibilityModes = ({
         />
       </FormGroup>
       <ActionGroup>
-        <Button variant="tertiary" onClick={save}>
+        <Button variant="secondary" onClick={save}>
           {t("common:save")}
         </Button>
         <Button variant="link" onClick={reset}>
