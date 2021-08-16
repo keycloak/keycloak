@@ -21,6 +21,10 @@ export class WhoAmI {
     return this.me.displayName;
   }
 
+  public getRealm() {
+    return this.me?.realm ?? "";
+  }
+
   public getUserId(): string {
     if (this.me === undefined) return "";
 

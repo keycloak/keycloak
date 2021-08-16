@@ -42,5 +42,27 @@ describe("Sessions test", function () {
     it("Select 'Service account' dropdown option", () => {
       sessionsPage.selectServiceAccount();
     });
+
+    it("Set revocation notBefore", () => {
+      sessionsPage.setToNow();
+    });
+
+    it("Check if notBefore saved", () => {
+      sessionsPage.checkNotBeforeValueExists();
+    });
+
+    it("Clear revocation notBefore", () => {
+      sessionsPage.clearNotBefore();
+    });
+
+    it("Check if notBefore cleared", () => {
+      sessionsPage.checkNotBeforeCleared();
+    });
+
+    it("logout all sessions", () => {
+      sessionsPage.logoutAllSessions();
+
+      cy.get("#kc-page-title").contains("Sign in to your account");
+    });
   });
 });

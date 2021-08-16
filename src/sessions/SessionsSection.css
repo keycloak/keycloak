@@ -2,3 +2,7 @@
   margin-right: 10px;
   width: 300px;
 }
+
+.pf-c-form__group.kc-revocation-modal-form-group {
+  display: inline-block !important;
+}

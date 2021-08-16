@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import moment from "moment";
 import {
+  DropdownItem,
   PageSection,
   Select,
   SelectOption,
@@ -16,7 +17,11 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAdminClient } from "../context/auth/AdminClient";
 
+import { CubesIcon } from "@patternfly/react-icons";
 import "./SessionsSection.css";
+import { RevocationModal } from "./RevocationModal";
+import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
+import { LogoutAllSessionsModal } from "./LogoutAllSessionsModal";
 
 const Clients = (row: UserSessionRepresentation) => {
   return (
@@ -34,13 +39,28 @@ export const SessionsSection = () => {
   const { t } = useTranslation("sessions");
   const adminClient = useAdminClient();
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
+  const [revocationModalOpen, setRevocationModalOpen] = useState(false);
+  const [logoutAllSessionsModalOpen, setLogoutAllSessionsModalOpen] =
+    useState(false);
+  const [activeClientDetails, setActiveClientDetails] = useState<
+    ClientRepresentation[]
+  >([]);
   const [filterType, setFilterType] = useState(
     t("sessionsType.allSessions").toString()
   );
   const [key, setKey] = useState(0);
+  const [noSessions, setNoSessions] = useState(false);
 
   const refresh = () => {
     setKey(new Date().getTime());
+  };
+
+  const handleRevocationModalToggle = () => {
+    setRevocationModalOpen(!revocationModalOpen);
+  };
+
+  const handleLogoutAllSessionsModalToggle = () => {
+    setLogoutAllSessionsModalOpen(!logoutAllSessionsModalOpen);
   };
 
   const loader = async () => {
@@ -52,6 +72,16 @@ export const SessionsSection = () => {
         )
       )
     ).flat();
+
+    setNoSessions(clientSessions.length === 0);
+
+    const allClients = await adminClient.clients.find();
+
+    const getActiveClientDetails = allClients.filter((x) =>
+      activeClients.map((y) => y.id).includes(x.id)
+    );
+
+    setActiveClientDetails(getActiveClientDetails);
 
     const userIds = Array.from(
       new Set(clientSessions.map((session) => session.userId))
@@ -65,10 +95,48 @@ export const SessionsSection = () => {
     return userSessions;
   };
 
+  const dropdownItems = [
+    <DropdownItem
+      key="toggle-modal"
+      data-testid="revocation"
+      component="button"
+      onClick={() => handleRevocationModalToggle()}
+    >
+      {t("revocation")}
+    </DropdownItem>,
+    <DropdownItem
+      key="delete-role"
+      data-testid="logout-all"
+      component="button"
+      isDisabled={noSessions}
+      onClick={() => handleLogoutAllSessionsModalToggle()}
+    >
+      {t("signOutAllActiveSessions")}
+    </DropdownItem>,
+  ];
+
   return (
     <>
-      <ViewHeader titleKey="sessions:title" subKey="sessions:sessionExplain" />
+      <ViewHeader
+        dropdownItems={dropdownItems}
+        titleKey="sessions:title"
+        subKey="sessions:sessionExplain"
+      />
       <PageSection variant="light" className="pf-u-p-0">
+        {revocationModalOpen && (
+          <RevocationModal
+            handleModalToggle={handleRevocationModalToggle}
+            activeClients={activeClientDetails}
+            save={() => {
+              handleRevocationModalToggle();
+            }}
+          />
+        )}
+        {logoutAllSessionsModalOpen && (
+          <LogoutAllSessionsModal
+            handleModalToggle={handleLogoutAllSessionsModalToggle}
+          />
+        )}
         <KeycloakDataTable
           key={key}
           loader={loader}
@@ -135,8 +203,10 @@ export const SessionsSection = () => {
           ]}
           emptyState={
             <ListEmptyState
-              message={t("emptyTitle")}
-              instructions={t("emptyInstructions")}
+              hasIcon
+              icon={CubesIcon}
+              message={t("noSessions")}
+              instructions={t("noSessionsDescription")}
             />
           }
         />
