@@ -352,7 +352,7 @@ public class AccountRestService {
         }
 
         UserConsentManager.revokeConsentToClient(session, client, user);
-        event.success();
+        event.user(user).client(clientId).success();
 
         return Response.noContent().build();
     }
