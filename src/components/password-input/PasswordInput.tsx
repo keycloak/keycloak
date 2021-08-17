@@ -8,7 +8,15 @@ import {
 } from "@patternfly/react-core";
 import { EyeIcon, EyeSlashIcon } from "@patternfly/react-icons";
 
-const PasswordInputBase = ({ innerRef, ...rest }: TextInputProps) => {
+type PasswordInputProps = TextInputProps & {
+  hasReveal?: boolean;
+};
+
+const PasswordInputBase = ({
+  hasReveal = true,
+  innerRef,
+  ...rest
+}: PasswordInputProps) => {
   const { t } = useTranslation("common-help");
   const [hidePassword, setHidePassword] = useState(true);
   return (
@@ -18,19 +26,21 @@ const PasswordInputBase = ({ innerRef, ...rest }: TextInputProps) => {
         type={hidePassword ? "password" : "text"}
         ref={innerRef}
       />
-      <Button
-        variant="control"
-        aria-label={t("showPassword")}
-        onClick={() => setHidePassword(!hidePassword)}
-      >
-        {hidePassword ? <EyeIcon /> : <EyeSlashIcon />}
-      </Button>
+      {hasReveal && (
+        <Button
+          variant="control"
+          aria-label={t("showPassword")}
+          onClick={() => setHidePassword(!hidePassword)}
+        >
+          {hidePassword ? <EyeIcon /> : <EyeSlashIcon />}
+        </Button>
+      )}
     </InputGroup>
   );
 };
 
 export const PasswordInput = React.forwardRef(
-  (props: TextInputProps, ref: React.Ref<HTMLInputElement>) => (
+  (props: PasswordInputProps, ref: React.Ref<HTMLInputElement>) => (
     <PasswordInputBase
       {...props}
       innerRef={ref as React.MutableRefObject<any>}

@@ -27,6 +27,7 @@ export type LdapSettingsConnectionProps = {
   form: UseFormMethods;
   showSectionHeading?: boolean;
   showSectionDescription?: boolean;
+  edit?: boolean;
 };
 
 const testLdapProperties: Array<keyof TestLdapConnectionRepresentation> = [
@@ -43,6 +44,7 @@ export const LdapSettingsConnection = ({
   form,
   showSectionHeading = false,
   showSectionDescription = false,
+  edit = false,
 }: LdapSettingsConnectionProps) => {
   const { t } = useTranslation("user-federation");
   const { t: helpText } = useTranslation("user-federation-help");
@@ -319,6 +321,7 @@ export const LdapSettingsConnection = ({
               isRequired
             >
               <PasswordInput
+                hasReveal={!edit}
                 isRequired
                 id="kc-console-bind-credentials"
                 data-testid="ldap-bind-credentials"
