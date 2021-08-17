@@ -7,6 +7,7 @@ import {
   NavGroup,
   NavList,
   PageSidebar,
+  Divider,
 } from "@patternfly/react-core";
 
 import { RealmSelector } from "./components/realm-selector/RealmSelector";
@@ -90,13 +91,9 @@ export const PageNav: React.FunctionComponent = () => {
               <RealmSelector />
             </NavItem>
           </NavList>
-          {!isOnAddRealm && (
-            <NavGroup title="">
-              <LeftNav title="home" path="/" />
-            </NavGroup>
-          )}
+          <Divider />
           {showManage && !isOnAddRealm && (
-            <NavGroup title={t("manage")}>
+            <NavGroup aria-label={t("manage")} title={t("manage")}>
               <LeftNav title="clients" path="/clients" />
               <LeftNav title="clientScopes" path="/client-scopes" />
               <LeftNav title="realmRoles" path="/roles" />
@@ -108,7 +105,7 @@ export const PageNav: React.FunctionComponent = () => {
           )}
 
           {showConfigure && !isOnAddRealm && (
-            <NavGroup title={t("configure")}>
+            <NavGroup aria-label={t("configure")} title={t("configure")}>
               <LeftNav title="realmSettings" path="/realm-settings" />
               <LeftNav title="authentication" path="/authentication" />
               <LeftNav title="identityProviders" path="/identity-providers" />

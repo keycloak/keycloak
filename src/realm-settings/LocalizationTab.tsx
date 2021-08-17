@@ -5,13 +5,16 @@ import {
   ActionGroup,
   AlertVariant,
   Button,
+  Divider,
   FormGroup,
   PageSection,
   Select,
+  SelectGroup,
   SelectOption,
   SelectVariant,
   Switch,
   TextContent,
+  ToolbarItem,
 } from "@patternfly/react-core";
 
 import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
@@ -42,19 +45,21 @@ export const LocalizationTab = ({
   save,
   reset,
   realm,
-  refresh,
 }: LocalizationTabProps) => {
   const { t } = useTranslation("realm-settings");
   const adminClient = useAdminClient();
   const [addMessageBundleModalOpen, setAddMessageBundleModalOpen] =
     useState(false);
-  const [key, setKey] = useState(0);
 
   const [supportedLocalesOpen, setSupportedLocalesOpen] = useState(false);
   const [defaultLocaleOpen, setDefaultLocaleOpen] = useState(false);
+  const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
+  const [selectMenuLocale, setSelectMenuLocale] = useState("en");
 
-  const { getValues, control, handleSubmit } = useFormContext();
+  const { getValues, control, handleSubmit, formState } = useFormContext();
   const [valueSelected, setValueSelected] = useState(false);
+  const [selectMenuValueSelected, setSelectMenuValueSelected] = useState(false);
+
   const themeTypes = useServerInfo().themes!;
   const bundleForm = useForm<BundleForm>({ mode: "onChange" });
   const { addAlert, addError } = useAlerts();
@@ -76,16 +81,58 @@ export const LocalizationTab = ({
     try {
       const result = await adminClient.realms.getRealmLocalizationTexts({
         realm: realm.realm!,
-        selectedLocale: getValues("defaultLocale") || "en",
+        selectedLocale: selectMenuLocale || getValues("defaultLocale") || "en",
       });
-      return Object.keys(result).map((key) => [key, result[key]]);
+
+      return Object.entries(result);
     } catch (error) {
-      return [[]];
+      return [];
+    }
+  };
+
+  const tableLoader = async () => {
+    try {
+      const result = await adminClient.realms.getRealmLocalizationTexts({
+        realm: currentRealm,
+        selectedLocale: selectMenuLocale,
+      });
+
+      return Object.entries(result);
+    } catch (error) {
+      return [];
     }
   };
 
   const handleModalToggle = () => {
     setAddMessageBundleModalOpen(!addMessageBundleModalOpen);
+  };
+
+  const options = [
+    <SelectGroup label={t("defaultLocale")} key="group1">
+      {watchSupportedLocales
+        .filter((item) => item === realm?.defaultLocale)
+        .map((locale) => (
+          <SelectOption key={locale} value={locale}>
+            {t(`allSupportedLocales.${locale}`)}
+          </SelectOption>
+        ))}
+    </SelectGroup>,
+    <Divider key="divider" />,
+    <SelectGroup label={t("supportedLocales")} key="group2">
+      {watchSupportedLocales
+        .filter((item) => item !== realm?.defaultLocale)
+        .map((locale) => (
+          <SelectOption key={locale} value={locale}>
+            {t(`allSupportedLocales.${locale}`)}
+          </SelectOption>
+        ))}
+    </SelectGroup>,
+  ];
+
+  const [tableKey, setTableKey] = useState(0);
+
+  const refreshTable = () => {
+    setTableKey(new Date().getTime());
   };
 
   const addKeyValue = async (pair: KeyValueType): Promise<void> => {
@@ -96,7 +143,8 @@ export const LocalizationTab = ({
       await adminClient.realms.addLocalization(
         {
           realm: currentRealm!,
-          selectedLocale: getValues("defaultLocale") || "en",
+          selectedLocale:
+            selectMenuLocale || getValues("defaultLocale") || "en",
           key: pair.key,
         },
         pair.value
@@ -105,7 +153,7 @@ export const LocalizationTab = ({
       adminClient.setConfig({
         realmName: currentRealm!,
       });
-      refresh();
+      refreshTable();
       addAlert(t("pairCreatedSuccess"), AlertVariant.success);
     } catch (error) {
       addError("realm-settings:pairCreatedError", error);
@@ -230,7 +278,6 @@ export const LocalizationTab = ({
                         onSelect={(_, value) => {
                           onChange(value as string);
                           setValueSelected(true);
-                          setKey(new Date().getTime());
                           setDefaultLocaleOpen(false);
                         }}
                         selections={
@@ -269,6 +316,7 @@ export const LocalizationTab = ({
             <ActionGroup>
               <Button
                 variant="primary"
+                isDisabled={!formState.isDirty}
                 type="submit"
                 data-testid="localization-tab-save"
               >
@@ -287,12 +335,42 @@ export const LocalizationTab = ({
           </TextContent>
           <div className="tableBorder">
             <KeycloakDataTable
-              key={key}
-              loader={loader}
-              ariaLabelKey="client-scopes:clientScopeList"
+              key={tableKey}
+              isSearching
+              loader={selectMenuValueSelected ? tableLoader : loader}
+              ariaLabelKey="realm-settings:localization"
+              searchTypeComponent={
+                <ToolbarItem>
+                  <Select
+                    width={180}
+                    data-testid="filter-by-locale-select"
+                    isOpen={filterDropdownOpen}
+                    className="kc-filter-by-locale-select"
+                    variant={SelectVariant.single}
+                    isDisabled={!formState.isSubmitSuccessful}
+                    onToggle={(isExpanded) => setFilterDropdownOpen(isExpanded)}
+                    onSelect={(_, value) => {
+                      setSelectMenuLocale(value.toString());
+                      setSelectMenuValueSelected(true);
+                      refreshTable();
+                      setFilterDropdownOpen(false);
+                    }}
+                    selections={
+                      selectMenuValueSelected
+                        ? t(`allSupportedLocales.${selectMenuLocale}`)
+                        : realm.defaultLocale !== ""
+                        ? t(`allSupportedLocales.${"en"}`)
+                        : t("placeholderText")
+                    }
+                  >
+                    {options}
+                  </Select>
+                </ToolbarItem>
+              }
               toolbarItem={
                 <Button
                   data-testid="add-bundle-button"
+                  isDisabled={!formState.isSubmitSuccessful}
                   onClick={() => setAddMessageBundleModalOpen(true)}
                 >
                   {t("addMessageBundle")}

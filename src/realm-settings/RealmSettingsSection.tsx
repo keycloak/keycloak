@@ -310,7 +310,6 @@ export const RealmSettingsSection = () => {
             >
               <EventsTab />
             </Tab>
-
             <Tab
               id="localization"
               eventKey="localization"
