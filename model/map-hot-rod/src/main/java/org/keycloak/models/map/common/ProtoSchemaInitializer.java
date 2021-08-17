@@ -19,20 +19,19 @@ package org.keycloak.models.map.common;
 
 import org.infinispan.protostream.GeneratedSchema;
 import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
-//import org.keycloak.models.map.client.HotRodAttributeEntity;
-//import org.keycloak.models.map.client.HotRodClientEntity;
-//import org.keycloak.models.map.client.HotRodPair;
-//import org.keycloak.models.map.client.HotRodProtocolMapperEntity;
+import org.keycloak.models.map.client.HotRodAttributeEntity;
+import org.keycloak.models.map.client.HotRodClientEntity;
+import org.keycloak.models.map.client.HotRodProtocolMapperEntity;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
 @AutoProtoSchemaBuilder(
         includeClasses = {
-                //HotRodAttributeEntity.class,
-                //HotRodClientEntity.class,
-                //HotRodProtocolMapperEntity.class,
-                //HotRodPair.class
+                HotRodAttributeEntity.class,
+                HotRodClientEntity.class,
+                HotRodProtocolMapperEntity.class,
+                HotRodPair.class
         },
         schemaFileName = "KeycloakHotRodMapStorage.proto",
         schemaFilePath = "proto/",
