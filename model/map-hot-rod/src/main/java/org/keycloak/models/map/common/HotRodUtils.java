@@ -17,6 +17,7 @@
 package org.keycloak.models.map.common;
 
 import org.infinispan.manager.DefaultCacheManager;
+import org.infinispan.query.dsl.Query;
 import org.infinispan.rest.RestServer;
 import org.infinispan.rest.configuration.RestServerConfigurationBuilder;
 import org.infinispan.server.configuration.endpoint.SinglePortServerConfigurationBuilder;
@@ -83,5 +84,17 @@ public class HotRodUtils {
         }
 
         HotRodUtils.createHotRodMapStoreServer(new HotRodServer(), hotRodCacheManager, embeddedPort);
+    }
+
+    public static <T> Query<T> paginateQuery(Query<T> query, Integer first, Integer max) {
+        if (first != null && first > 0) {
+            query = query.startOffset(first);
+        }
+
+        if (max != null && max >= 0) {
+            query = query.maxResults(max);
+        }
+
+        return query;
     }
 }

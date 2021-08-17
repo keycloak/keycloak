@@ -135,7 +135,6 @@
     },
 
     "mapStorage": {
-        "provider": "${keycloak.mapStorage.provider:}",
         "concurrenthashmap": {
             "dir": "${project.build.directory:target}",
             "keyType.realms": "string",
@@ -247,9 +246,12 @@
 
     "connectionsHotRod": {
         "default": {
-            "embedded": "${keycloak.connectionsHotRod.embedded:true}",
-            "embeddedPort": "${keycloak.connectionsHotRod.embeddedPort:11444}",
-            "enableSecurity": "${keycloak.connectionsHotRod.enableSecurity:false}"
+            "embedded": "${keycloak.connectionsHotRod.embedded:false}",
+            "port": "${keycloak.connectionsHotRod.port:14232}",
+            "configureRemoteCaches": "${keycloak.connectionsHotRod.configureRemoteCaches:true}",
+            "username": "${keycloak.connectionsHotRod.username:myuser}",
+            "password": "${keycloak.connectionsHotRod.password:qwer1234!}",
+            "enableSecurity": "${keycloak.connectionsHotRod.enableSecurity:true}"
         }
     },
 

@@ -26,10 +26,10 @@ import org.infinispan.query.remote.client.ProtobufMetadataManagerConstants;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-//import org.keycloak.models.map.common.HotRodEntityDescriptor;
+import org.keycloak.models.map.common.HotRodEntityDescriptor;
 import org.keycloak.models.map.common.HotRodUtils;
 import org.keycloak.models.map.common.ProtoSchemaInitializer;
-//import org.keycloak.models.map.storage.hotRod.HotRodMapStorageProviderFactory;
+import org.keycloak.models.map.storage.hotRod.HotRodMapStorageProviderFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -106,9 +106,9 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
 
         if (configureRemoteCaches) {
             // access the caches to force their creation
-            /*HotRodMapStorageProviderFactory.ENTITY_DESCRIPTOR_MAP.values().stream()
+            HotRodMapStorageProviderFactory.ENTITY_DESCRIPTOR_MAP.values().stream()
                     .map(HotRodEntityDescriptor::getCacheName)
-                    .forEach(remoteCacheManager::getCache);*/
+                    .forEach(remoteCacheManager::getCache);
         }
 
         registerSchemata(ProtoSchemaInitializer.INSTANCE);
@@ -133,8 +133,8 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
             throw new RuntimeException("Cannot read the cache configuration!", e);
         }
 
-        /*HotRodMapStorageProviderFactory.ENTITY_DESCRIPTOR_MAP.values().stream()
+        HotRodMapStorageProviderFactory.ENTITY_DESCRIPTOR_MAP.values().stream()
                 .map(HotRodEntityDescriptor::getCacheName)
-                .forEach(name -> builder.remoteCache(name).configurationURI(uri));*/
+                .forEach(name -> builder.remoteCache(name).configurationURI(uri));
     }
 }
