@@ -135,7 +135,7 @@ export const OpenIdConnectSettings = () => {
             name="discoveryEndpoint"
             data-testid="discoveryEndpoint"
             id="kc-discovery-endpoint"
-            placeholder="https://hostname/.well-known/openid-configuration"
+            placeholder="https://hostname/auth/realms/master/.well-known/openid-configuration"
             value={discoveryUrl}
             onChange={setDiscoveryUrl}
             onBlur={() => setDiscovering(!discovering)}
