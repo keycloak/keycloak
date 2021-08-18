@@ -22,7 +22,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.authentication.authenticators.browser.CookieAuthenticatorFactory;
-import org.keycloak.authentication.forms.*;
+import org.keycloak.authentication.forms.RegistrationPassword;
+import org.keycloak.authentication.forms.RegistrationProfile;
+import org.keycloak.authentication.forms.RegistrationRecaptcha;
+import org.keycloak.authentication.forms.RegistrationUserCreation;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -33,16 +36,26 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
-import org.keycloak.testsuite.pages.*;
+import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
+import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.pages.VerifyEmailPage;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
+import org.keycloak.testsuite.util.FlowUtil;
+import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailUtils;
+import org.keycloak.testsuite.util.UserBuilder;
 
-import org.keycloak.testsuite.util.*;
 import javax.mail.internet.MimeMessage;
+import java.io.IOException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.jgroups.util.Util.assertTrue;
 import static org.junit.Assert.assertEquals;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
@@ -127,29 +140,64 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     }
  
     @Test
-    public void registerExistingEmailAllowed() {
-        setDuplicateEmailsAllowed(true);
-                
-        loginPage.open();
-        loginPage.clickRegister();
-        registerPage.assertCurrent();
+    public void registerExistingEmailAllowed() throws IOException {
+        try (RealmAttributeUpdater rau = setDuplicateEmailsAllowed(true).update()) {
+            loginPage.open();
+            loginPage.clickRegister();
+            registerPage.assertCurrent();
 
-        registerPage.register("firstName", "lastName", "test-user@localhost", "registerExistingEmailUser", "password", "password");
+            registerPage.register("firstName", "lastName", "test-user@localhost", "registerExistingEmailUser", "password", "password");
 
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        String userId = events.expectRegister("registerExistingEmailUser", "test-user@localhost").assertEvent().getUserId();
-        events.expectLogin().detail("username", "registerexistingemailuser").user(userId).assertEvent();
+            String userId = events.expectRegister("registerExistingEmailUser", "test-user@localhost").assertEvent().getUserId();
+            events.expectLogin().detail("username", "registerexistingemailuser").user(userId).assertEvent();
 
-        UserRepresentation user = getUser(userId);
-        Assert.assertNotNull(user);
-        assertEquals("registerexistingemailuser", user.getUsername());
-        assertEquals("test-user@localhost", user.getEmail());
-        assertEquals("firstName", user.getFirstName());
-        assertEquals("lastName", user.getLastName());
+            assertUserBasicRegisterAttributes(userId, "registerexistingemailuser", "test-user@localhost", "firstName", "lastName");
 
+            testRealm().users().get(userId).remove();
+        }
+    }
+
+    @Test
+    public void registerUpperCaseEmail() throws IOException {
+        String userId = registerUpperCaseAndGetUserId(false);
+        assertThat(userId, notNullValue());
         testRealm().users().get(userId).remove();
-        setDuplicateEmailsAllowed(false);
+    }
+
+    @Test
+    public void registerUpperCaseEmailAsUsername() throws IOException {
+        try (RealmAttributeUpdater rau = configureRealmRegistrationEmailAsUsername(true).update()) {
+            String userId = registerUpperCaseAndGetUserId(true);
+            assertThat(userId, notNullValue());
+            testRealm().users().get(userId).remove();
+        }
+    }
+
+    @Test
+    public void registerUpperCaseEmailWithChangedEmailAsUsername() throws IOException {
+        String userId = registerUpperCaseAndGetUserId(false);
+        assertThat(userId, notNullValue());
+        oauth.openLogout();
+        events.clear();
+
+        try (RealmAttributeUpdater rau = configureRealmRegistrationEmailAsUsername(true).update()) {
+            loginPage.open();
+            loginPage.assertCurrent();
+
+            final String EMAIL = "TEST@localhost";
+            loginPage.login(EMAIL, "password");
+            assertThat(RequestType.AUTH_RESPONSE, is(appPage.getRequestType()));
+
+            events.expectLogin()
+                    .detail("username", EMAIL)
+                    .user(userId)
+                    .assertEvent();
+        } finally {
+            assertThat(userId, notNullValue());
+            testRealm().users().get(userId).remove();
+        }
     }
 
     @Test
@@ -195,18 +243,8 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void registerPasswordPolicy() {
-        /*keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-            @Override
-            public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                appRealm.setPasswordPolicy(new PasswordPolicy("length"));
-            }
-        });*/
-        RealmRepresentation realm = testRealm().toRepresentation();
-        realm.setPasswordPolicy("length");
-        testRealm().update(realm);
-
-        try {
+    public void registerPasswordPolicy() throws IOException {
+        try (RealmAttributeUpdater rau = getRealmAttributeUpdater().setPasswordPolicy("length").update()) {
             loginPage.open();
             loginPage.clickRegister();
             registerPage.assertCurrent();
@@ -227,13 +265,6 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             String userId = events.expectRegister("registerPasswordPolicy", "registerPasswordPolicy@email").assertEvent().getUserId();
 
             events.expectLogin().user(userId).detail(Details.USERNAME, "registerpasswordpolicy").assertEvent();
-        } finally {
-            /*keycloakRule.configure(new KeycloakRule.KeycloakSetup() {
-                @Override
-                public void config(RealmManager manager, RealmModel adminstrationRealm, RealmModel appRealm) {
-                    appRealm.setPasswordPolicy(new PasswordPolicy(null));
-                }
-            });*/
         }
     }
 
@@ -340,23 +371,13 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         Assert.assertNotNull(user.getCreatedTimestamp());
         // test that timestamp is current with 10s tollerance
         Assert.assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
-        // test user info is set from form
-        assertEquals(username.toLowerCase(), user.getUsername());
-        assertEquals(email.toLowerCase(), user.getEmail());
-        assertEquals("firstName", user.getFirstName());
-        assertEquals("lastName", user.getLastName());
+        assertUserBasicRegisterAttributes(userId, username, email, "firstName", "lastName");
     }
 
     @Test
     @AuthServerContainerExclude(AuthServer.REMOTE) // GreenMailRule is not working atm
     public void registerUserSuccessWithEmailVerification() throws Exception {
-        RealmRepresentation realm = testRealm().toRepresentation();
-        boolean origVerifyEmail = realm.isVerifyEmail();
-
-        try {
-            realm.setVerifyEmail(true);
-            testRealm().update(realm);
-
+        try (RealmAttributeUpdater rau = setVerifyEmail(true).update()) {
             loginPage.open();
             loginPage.clickRegister();
             registerPage.assertCurrent();
@@ -392,21 +413,13 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
             // test that timestamp is current with 10s tollerance
             // test user info is set from form
-        } finally {
-            realm.setVerifyEmail(origVerifyEmail);
-            testRealm().update(realm);
         }
     }
 
     @Test
     @AuthServerContainerExclude(AuthServer.REMOTE) // GreenMailRule is not working atm
     public void registerUserSuccessWithEmailVerificationWithResend() throws Exception {
-        RealmRepresentation realm = testRealm().toRepresentation();
-        boolean origVerifyEmail = realm.isVerifyEmail();
-        try {
-            realm.setVerifyEmail(true);
-            testRealm().update(realm);
-
+        try (RealmAttributeUpdater rau = setVerifyEmail(true).update()) {
             loginPage.open();
             loginPage.clickRegister();
             registerPage.assertCurrent();
@@ -452,9 +465,6 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
             // test that timestamp is current with 10s tollerance
             // test user info is set from form
-        } finally {
-            realm.setVerifyEmail(origVerifyEmail);
-            testRealm().update(realm);
         }
     }
 
@@ -487,42 +497,39 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     // KEYCLOAK-3266
     @Test
-    public void registerUserNotUsernamePasswordPolicy() {
-        adminClient.realm("test").update(RealmBuilder.create().passwordPolicy("notUsername").build());
+    public void registerUserNotUsernamePasswordPolicy() throws IOException {
+        try (RealmAttributeUpdater rau = getRealmAttributeUpdater().setPasswordPolicy("notUsername").update()) {
+            loginPage.open();
 
-        loginPage.open();
+            assertTrue(loginPage.isCurrent());
 
-        assertTrue(loginPage.isCurrent());
+            loginPage.clickRegister();
+            registerPage.assertCurrent();
 
-        loginPage.clickRegister();
-        registerPage.assertCurrent();
+            registerPage.register("firstName", "lastName", "registerUserNotUsername@email", "registerUserNotUsername", "registerUserNotUsername", "registerUserNotUsername");
 
-        registerPage.register("firstName", "lastName", "registerUserNotUsername@email", "registerUserNotUsername", "registerUserNotUsername", "registerUserNotUsername");
+            assertTrue(registerPage.isCurrent());
+            assertEquals("Invalid password: must not be equal to the username.", registerPage.getInputPasswordErrors().getPasswordError());
 
-        assertTrue(registerPage.isCurrent());
-        assertEquals("Invalid password: must not be equal to the username.", registerPage.getInputPasswordErrors().getPasswordError());
+            adminClient.realm("test").users().create(UserBuilder.create().username("registerUserNotUsername").build());
 
-        adminClient.realm("test").users().create(UserBuilder.create().username("registerUserNotUsername").build());
+            registerPage.register("firstName", "lastName", "registerUserNotUsername@email", "registerUserNotUsername", "registerUserNotUsername", "registerUserNotUsername");
 
-        registerPage.register("firstName", "lastName", "registerUserNotUsername@email", "registerUserNotUsername", "registerUserNotUsername", "registerUserNotUsername");
+            assertTrue(registerPage.isCurrent());
+            assertEquals("Username already exists.", registerPage.getInputAccountErrors().getUsernameError());
 
-        assertTrue(registerPage.isCurrent());
-        assertEquals("Username already exists.", registerPage.getInputAccountErrors().getUsernameError());
+            registerPage.register("firstName", "lastName", "registerUserNotUsername@email", null, "password", "password");
 
-        registerPage.register("firstName", "lastName", "registerUserNotUsername@email", null, "password", "password");
-
-        assertTrue(registerPage.isCurrent());
-        assertEquals("Please specify username.", registerPage.getInputAccountErrors().getUsernameError());
+            assertTrue(registerPage.isCurrent());
+            assertEquals("Please specify username.", registerPage.getInputAccountErrors().getUsernameError());
+        }
     }
 
     // KEYCLOAK-12729
     @Test
-    public void registerUserNotEmailPasswordPolicy() {
-
-        RealmRepresentation notEmailRealm = RealmBuilder.create().passwordPolicy("notEmail").build();
-        notEmailRealm.setRegistrationEmailAsUsername(true);
-        try {
-            adminClient.realm("test").update(notEmailRealm);
+    public void registerUserNotEmailPasswordPolicy() throws IOException {
+        try (RealmAttributeUpdater rau = configureRealmRegistrationEmailAsUsername(true)
+                .setPasswordPolicy("notEmail").update()) {
 
             loginPage.open();
 
@@ -535,8 +542,6 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
             assertTrue(registerPage.isCurrent());
             assertEquals("Invalid password: must not be equal to the email.", registerPage.getInputPasswordErrors().getPasswordError());
-        } finally {
-            configureRealmRegistrationEmailAsUsername(false);
         }
     }
 
@@ -545,10 +550,8 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void registerExistingUser_emailAsUsername() {
-        configureRealmRegistrationEmailAsUsername(true);
-
-        try {
+    public void registerExistingUser_emailAsUsername() throws IOException {
+        try (RealmAttributeUpdater rau = configureRealmRegistrationEmailAsUsername(true).update()) {
             loginPage.open();
             loginPage.clickRegister();
             registerPage.assertCurrent();
@@ -559,16 +562,12 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             assertEquals("Email already exists.", registerPage.getInputAccountErrors().getEmailError());
 
             events.expectRegister("test-user@localhost", "test-user@localhost").user((String) null).error("email_in_use").assertEvent();
-        } finally {
-            configureRealmRegistrationEmailAsUsername(false);
         }
     }
 
     @Test
-    public void registerUserMissingOrInvalidEmail_emailAsUsername() {
-        configureRealmRegistrationEmailAsUsername(true);
-
-        try {
+    public void registerUserMissingOrInvalidEmail_emailAsUsername() throws IOException {
+        try (RealmAttributeUpdater rau = configureRealmRegistrationEmailAsUsername(true).update()) {
             loginPage.open();
             loginPage.clickRegister();
             registerPage.assertCurrent();
@@ -582,16 +581,12 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             registerPage.assertCurrent();
             assertEquals("Invalid email address.", registerPage.getInputAccountErrors().getEmailError());
             events.expectRegister("registerUserInvalidEmailemail", "registerUserInvalidEmailemail").error("invalid_registration").assertEvent();
-        } finally {
-            configureRealmRegistrationEmailAsUsername(false);
         }
     }
 
     @Test
-    public void registerUserSuccess_emailAsUsername() {
-        configureRealmRegistrationEmailAsUsername(true);
-
-        try {
+    public void registerUserSuccess_emailAsUsername() throws IOException {
+        try (RealmAttributeUpdater rau = configureRealmRegistrationEmailAsUsername(true).update()) {
             loginPage.open();
             loginPage.clickRegister();
             registerPage.assertCurrent();
@@ -608,9 +603,6 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             Assert.assertNotNull(user.getCreatedTimestamp());
             // test that timestamp is current with 10s tollerance
             Assert.assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
-
-        } finally {
-            configureRealmRegistrationEmailAsUsername(false);
         }
     }
 
@@ -625,16 +617,67 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         registerPage.assertCurrent();
     }
 
-    protected void configureRealmRegistrationEmailAsUsername(final boolean value) {
-        RealmRepresentation realm = testRealm().toRepresentation();
-        realm.setRegistrationEmailAsUsername(value);
-        testRealm().update(realm);
+    protected RealmAttributeUpdater configureRealmRegistrationEmailAsUsername(final boolean value) {
+        return getRealmAttributeUpdater().setRegistrationEmailAsUsername(value);
     }
 
-    private void setDuplicateEmailsAllowed(boolean allowed) {
-        RealmRepresentation testRealm = testRealm().toRepresentation();
-        testRealm.setDuplicateEmailsAllowed(allowed);
-        testRealm().update(testRealm);
+    protected RealmAttributeUpdater setDuplicateEmailsAllowed(boolean allowed) {
+        return getRealmAttributeUpdater().setDuplicateEmailsAllowed(allowed);
+    }
+
+    protected RealmAttributeUpdater setVerifyEmail(boolean value) {
+        return getRealmAttributeUpdater().setVerifyEmail(value);
+    }
+
+    private RealmAttributeUpdater getRealmAttributeUpdater() {
+        return new RealmAttributeUpdater(testRealm());
+    }
+
+    /**
+     * Helper method for registering user with upper case email
+     *
+     * @param emailAsUsername is flag `Email as username` enabled
+     * @return user ID
+     */
+    private String registerUpperCaseAndGetUserId(boolean emailAsUsername) {
+        final String EMAIL = "TEST@localhost";
+        final String USERNAME = "UPPERCASE";
+        final String EMAIL_OR_USERNAME = emailAsUsername ? EMAIL : USERNAME;
+
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        if (emailAsUsername) {
+            registerPage.registerWithEmailAsUsername("firstName", "lastName", EMAIL, "password", "password");
+        } else {
+            registerPage.register("firstName", "lastName", EMAIL, USERNAME, "password", "password");
+        }
+
+        String userId = events.expectRegister(EMAIL_OR_USERNAME, EMAIL)
+                .assertEvent()
+                .getUserId();
+
+        events.expectLogin()
+                .detail("username", EMAIL_OR_USERNAME.toLowerCase())
+                .user(userId)
+                .assertEvent();
+
+        assertUserBasicRegisterAttributes(userId, emailAsUsername ? null : USERNAME, EMAIL, "firstName", "lastName");
+
+        return userId;
+    }
+
+    private void assertUserBasicRegisterAttributes(String userId, String username, String email, String firstName, String lastName) {
+        UserRepresentation user = getUser(userId);
+        assertThat(user, notNullValue());
+
+        if (username != null) {
+            assertThat(username.toLowerCase(), is(user.getUsername()));
+        }
+        assertThat(email.toLowerCase(), is(user.getEmail()));
+        assertThat(firstName, is(user.getFirstName()));
+        assertThat(lastName, is(user.getLastName()));
     }
 
     private void configureRegistrationFlowWithCustomRegistrationPageForm(String newFlowAlias) {
