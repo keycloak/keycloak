@@ -133,7 +133,7 @@ export const DetailSettings = () => {
   });
 
   const sections = [t("generalSettings"), t("advancedSettings")];
-  const isOIDC = id.indexOf("oidc") !== -1;
+  const isOIDC = id.includes("oidc");
 
   if (isOIDC) {
     sections.splice(1, 0, t("oidcSettings"));

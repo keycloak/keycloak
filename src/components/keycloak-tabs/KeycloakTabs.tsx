@@ -15,7 +15,7 @@ const createUrl = (
   let url = path;
   for (const key in params) {
     const value = params[key];
-    if (url.indexOf(key) !== -1) {
+    if (url.includes(key)) {
       url = url.replace(new RegExp(`:${key}\\??`), value || "");
     }
   }

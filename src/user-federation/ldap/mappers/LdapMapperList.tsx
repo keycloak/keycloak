@@ -69,7 +69,7 @@ export const LdapMapperList = () => {
   });
 
   const getUrl = (url: string) => {
-    if (url.indexOf("/mappers") === -1) {
+    if (!url.includes("/mappers")) {
       return `${url}/mappers`;
     }
     return `${url}`;

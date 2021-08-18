@@ -1,6 +1,9 @@
 /** @type {import("eslint").Linter.Config } */
 module.exports = {
   root: true,
+  parserOptions: {
+    project: './tsconfig.json',
+  },
   env: {
     node: true,
   },
@@ -17,7 +20,9 @@ module.exports = {
     },
   },
   rules: {
-    // Always prefer using an optional chain expression, as it's more concise and easier to read.
+    // Prefer using `includes()` to check if values exist over `indexOf() === -1`, as it's a more appropriate API for this.
+    "@typescript-eslint/prefer-includes": "error",
+    // Prefer using an optional chain expression, as it's more concise and easier to read.
     "@typescript-eslint/prefer-optional-chain": "error",
     "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": "error",

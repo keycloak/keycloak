@@ -171,7 +171,7 @@ export const ClientsSection = () => {
                     if (client.rootUrl) {
                       if (
                         !client.rootUrl.startsWith("http") ||
-                        client.rootUrl.indexOf("$") !== -1
+                        client.rootUrl.includes("$")
                       ) {
                         client.rootUrl =
                           client.rootUrl

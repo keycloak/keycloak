@@ -16,7 +16,7 @@ export const GroupBreadCrumbs = () => {
 
   useEffect(() => {
     return history.listen(({ pathname }) => {
-      if (pathname.indexOf("/groups") === -1 || pathname.endsWith("/groups")) {
+      if (!pathname.includes("/groups") || pathname.endsWith("/groups")) {
         clear();
       }
     });
