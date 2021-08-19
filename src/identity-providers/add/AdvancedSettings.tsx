@@ -90,16 +90,25 @@ const LoginFlow = ({
 };
 
 const syncModes = ["import", "legacy", "force"];
+type AdvancedSettingsProps = { isOIDC: boolean; isSAML: boolean };
 
-export const AdvancedSettings = ({ isOIDC }: { isOIDC: boolean }) => {
+export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
   const { t } = useTranslation("identity-providers");
   const { control } = useFormContext();
   const [syncModeOpen, setSyncModeOpen] = useState(false);
   return (
     <>
-      {!isOIDC && <TextField field="config.defaultScope" label="scopes" />}
+      {!isOIDC && !isSAML && (
+        <TextField field="config.defaultScope" label="scopes" />
+      )}
       <SwitchField field="storeToken" label="storeTokens" fieldType="boolean" />
-      {!isOIDC && (
+      {isSAML && (
+        <SwitchField
+          field="config.addReadTokenRoleOnCreate"
+          label="storedTokensReadable"
+        />
+      )}
+      {!isOIDC && !isSAML && (
         <>
           <SwitchField
             field="config.acceptsPromptNoneForwardFromClient"

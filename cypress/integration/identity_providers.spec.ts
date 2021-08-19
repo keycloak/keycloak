@@ -14,6 +14,16 @@ describe("Identity provider test", () => {
   const masthead = new Masthead();
   const listingPage = new ListingPage();
   const createProviderPage = new CreateProviderPage();
+  const createSuccessMsg = "Identity provider successfully created";
+  const changeSuccessMsg =
+    "Successfully changed display order of identity providers";
+  const deletePrompt = "Delete provider?";
+  const deleteSuccessMsg = "Provider successfully deleted";
+
+  const keycloakServer = Cypress.env("KEYCLOAK_SERVER");
+  const discoveryUrl = `${keycloakServer}/auth/realms/master/.well-known/openid-configuration`;
+  const authorizationUrl = `${keycloakServer}/auth/realms/master/protocol/openid-connect/auth`;
+  const ssoServiceUrl = `${keycloakServer}/auth/realms/sso`;
 
   describe("Identity provider creation", () => {
     const identityProviderName = "github";
@@ -33,9 +43,7 @@ describe("Identity provider test", () => {
         .clickAdd()
         .checkClientIdRequiredMessage(true);
       createProviderPage.fill(identityProviderName, "123").clickAdd();
-      masthead.checkNotificationMessage(
-        "Identity provider successfully created"
-      );
+      masthead.checkNotificationMessage(createSuccessMsg);
 
       sidebarPage.goToIdentityProviders();
       listingPage.itemExist(identityProviderName);
@@ -44,9 +52,9 @@ describe("Identity provider test", () => {
     it("should delete provider", () => {
       const modalUtils = new ModalUtils();
       listingPage.deleteItem(identityProviderName);
-      modalUtils.checkModalTitle("Delete provider?").confirmModal();
+      modalUtils.checkModalTitle(deletePrompt).confirmModal();
 
-      masthead.checkNotificationMessage("Provider successfully deleted");
+      masthead.checkNotificationMessage(deleteSuccessMsg);
 
       createProviderPage.checkGitHubCardVisible();
     });
@@ -90,50 +98,60 @@ describe("Identity provider test", () => {
       orderDialog.checkOrder(["facebook", "bitbucket", identityProviderName]);
 
       orderDialog.clickSave();
-      masthead.checkNotificationMessage(
-        "Successfully changed display order of identity providers"
-      );
+      masthead.checkNotificationMessage(changeSuccessMsg);
     });
 
     it("should create a oidc provider using discovery url", () => {
       const oidcProviderName = "oidc";
-      const keycloakServer = Cypress.env("KEYCLOAK_SERVER");
-
       createProviderPage
         .clickCreateDropdown()
         .clickItem(oidcProviderName)
-        .fillDiscoveryUrl(
-          `${keycloakServer}/auth/realms/master/.well-known/openid-configuration`
-        )
+        .fillDiscoveryUrl(discoveryUrl)
         .shouldBeSuccessful()
         .fill("oidc", "123")
         .clickAdd();
-      masthead.checkNotificationMessage(
-        "Identity provider successfully created"
-      );
-
-      createProviderPage.shouldHaveAuthorizationUrl(
-        `${keycloakServer}/auth/realms/master/protocol/openid-connect/auth`
-      );
+      masthead.checkNotificationMessage(createSuccessMsg);
+      createProviderPage.shouldHaveAuthorizationUrl(authorizationUrl);
     });
 
-    // it("clean up providers", () => {
-    //   const modalUtils = new ModalUtils();
-    //   listingPage.deleteItem("bitbucket");
-    //   modalUtils.checkModalTitle("Delete provider?").confirmModal();
-    //   masthead.checkNotificationMessage("Provider successfully deleted");
+    it("should create a SAML provider using SSO service url", () => {
+      const samlProviderName = "saml";
+      createProviderPage
+        .clickCreateDropdown()
+        .clickItem(samlProviderName)
+        .toggleEntityDescriptor()
+        .fillSsoServiceUrl(ssoServiceUrl)
+        .clickAdd();
+      masthead.checkNotificationMessage(createSuccessMsg);
+    });
 
-    //   listingPage.deleteItem("facebook");
-    //   modalUtils.checkModalTitle("Delete provider?").confirmModal();
-    //   masthead.checkNotificationMessage("Provider successfully deleted");
+    it("clean up providers", () => {
+      const modalUtils = new ModalUtils();
 
-    //   listingPage.deleteItem("github");
-    //   modalUtils.checkModalTitle("Delete provider?").confirmModal();
-    //   masthead.checkNotificationMessage("Provider successfully deleted");
+      sidebarPage.goToIdentityProviders();
+      listingPage.itemExist("bitbucket").deleteItem("bitbucket");
+      modalUtils.checkModalTitle(deletePrompt).confirmModal();
+      masthead.checkNotificationMessage(deleteSuccessMsg);
 
-    //   listingPage.deleteItem("oidc");
-    //   modalUtils.checkModalTitle("Delete provider?").confirmModal();
-    //   masthead.checkNotificationMessage("Provider successfully deleted");
-    // });
+      sidebarPage.goToIdentityProviders();
+      listingPage.itemExist("facebook").deleteItem("facebook");
+      modalUtils.checkModalTitle(deletePrompt).confirmModal();
+      masthead.checkNotificationMessage(deleteSuccessMsg);
+
+      sidebarPage.goToIdentityProviders();
+      listingPage.itemExist("github").deleteItem("github");
+      modalUtils.checkModalTitle(deletePrompt).confirmModal();
+      masthead.checkNotificationMessage(deleteSuccessMsg);
+
+      sidebarPage.goToIdentityProviders();
+      listingPage.itemExist("oidc").deleteItem("oidc");
+      modalUtils.checkModalTitle(deletePrompt).confirmModal();
+      masthead.checkNotificationMessage(deleteSuccessMsg);
+
+      sidebarPage.goToIdentityProviders();
+      listingPage.itemExist("saml").deleteItem("saml");
+      modalUtils.checkModalTitle(deletePrompt).confirmModal();
+      masthead.checkNotificationMessage(deleteSuccessMsg);
+    });
   });
 });

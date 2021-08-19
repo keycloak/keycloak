@@ -84,7 +84,7 @@ export const OpenIdConnectSettings = () => {
   return (
     <>
       <Title headingLevel="h4" size="xl" className="kc-form-panel__title">
-        {t("OpenID Connect settings")}
+        {t("oidcSettings")}
       </Title>
       <FormGroup
         label={t("useDiscoveryEndpoint")}

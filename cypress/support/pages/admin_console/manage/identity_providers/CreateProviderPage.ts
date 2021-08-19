@@ -6,7 +6,9 @@ export default class CreateProviderPage {
   private clientSecretField = "clientSecret";
   private discoveryEndpoint = "discoveryEndpoint";
   private authorizationUrl = "authorizationUrl";
+  private useEntityDescriptorSwitch = "useEntityDescriptor";
   private addButton = "createProvider";
+  private ssoServiceUrl = "sso-service-url";
 
   checkVisible(name: string) {
     cy.getId(`${name}-card`).should("exist");
@@ -74,6 +76,12 @@ export default class CreateProviderPage {
     return this;
   }
 
+  fillSsoServiceUrl(value: string) {
+    cy.getId(this.ssoServiceUrl).type("x");
+    cy.getId(this.ssoServiceUrl).clear().type(value).blur();
+    return this;
+  }
+
   shouldBeSuccessful() {
     cy.getId(this.discoveryEndpoint).should("have.class", "pf-m-success");
     return this;
@@ -81,6 +89,11 @@ export default class CreateProviderPage {
 
   shouldHaveAuthorizationUrl(value: string) {
     cy.getId(this.authorizationUrl).should("have.value", value);
+    return this;
+  }
+
+  toggleEntityDescriptor() {
+    cy.getId(this.useEntityDescriptorSwitch).click({ force: true });
     return this;
   }
 }

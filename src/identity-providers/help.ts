@@ -45,6 +45,8 @@ export default {
       "The client authentication method (cfr. https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication). In case of JWT signed with private key, the realm private key is used.",
     storeTokens:
       "Enable/disable if tokens must be stored after authenticating users.",
+    storedTokensReadable:
+      "Enable/disable if new users can read any stored tokens. This assigns the broker.read-token role.",
     trustEmail:
       "If enabled, email provided by this provider is not verified even if verification is enabled for the realm.",
     accountLinkingOnly:
@@ -57,5 +59,48 @@ export default {
       'Alias of authentication flow, which is triggered after each login with this identity provider. Useful if you want additional verification of each user authenticated with this identity provider (for example OTP). Leave this to "None" if you need no any additional authenticators to be triggered after login with this identity provider. Also note that authenticator implementations must assume that user is already set in ClientSession as identity provider already set it.',
     syncMode:
       "Default sync mode for all mappers. The sync mode determines when user data will be synced using the mappers. Possible values are: 'legacy' to keep the behaviour before this option was introduced, 'import' to only import the user once during first login of the user with this identity provider, 'force' to always update the user during every login with this identity provider.",
+    serviceProviderEntityId:
+      "The Entity ID that will be used to uniquely identify this SAML Service Provider.",
+    useEntityDescriptor:
+      "Import metadata from a remote IDP SAML entity descriptor.",
+    samlEntityDescriptor:
+      "Allows you to load external IDP metadata from a config file or to download it from a URL.",
+    ssoServiceUrl:
+      "The Url that must be used to send authentication requests (SAML AuthnRequest).",
+    singleLogoutServiceUrl:
+      "The Url that must be used to send logout requests.",
+    nameIdPolicyFormat:
+      "Specifies the URI reference corresponding to a name identifier format.",
+    principalType:
+      "Way to identify and track external users from the assertion. Default is using Subject NameID, alternatively you can set up identifying attribute.",
+    httpPostBindingResponse:
+      "Indicates whether to respond to requests using HTTP-POST binding. If false, HTTP-REDIRECT binding will be used.",
+    httpPostBindingAuthnRequest:
+      "Indicates whether the AuthnRequest must be sent using HTTP-POST binding. If false, HTTP-REDIRECT binding will be used.",
+    httpPostBindingLogout:
+      "Indicates whether to respond to requests using HTTP-POST binding. If false, HTTP-REDIRECT binding will be used.",
+    wantAuthnRequestsSigned:
+      "Indicates whether the identity provider expects a signed AuthnRequest.",
+    signatureAlgorithm: "The signature algorithm to use to sign documents.",
+    samlSignatureKeyName:
+      "Signed SAML documents contain identification of signing key in KeyName element. For Keycloak / RH-SSO counterparty, use KEY_ID, for MS AD FS use CERT_SUBJECT, for others check and use NONE if no other option works.",
+    wantAssertionsSigned:
+      "Indicates whether this service provider expects a signed Assertion.",
+    wantAssertionsEncrypted:
+      "Indicates whether this service provider expects an encrypted Assertion.",
+    forceAuthentication:
+      "Indicates whether the identity provider must authenticate the presenter directly rather than rely on a previous security context.",
+    validateSignatures:
+      "Enable/disable signature validation of SAML responses.",
+    validatingX509Certs:
+      "The certificate in PEM format that must be used to check for signatures. Multiple certificates can be entered, separated by comma (,).",
+    signServiceProviderMetadata:
+      "Enable/disable signature of the provider SAML metadata.",
+    passSubject:
+      "During login phase, forward an optional login_hint query parameter to SAML AuthnRequest's Subject.",
+    comparison:
+      'Specifies the comparison method used to evaluate the requested context classes or statements. The default is "Exact".',
+    authnContextClassRefs: "Ordered list of requested AuthnContext ClassRefs.",
+    authnContextDeclRefs: "Ordered list of requested AuthnContext DeclRefs.",
   },
 };
