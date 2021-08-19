@@ -2,7 +2,7 @@ import type WhoAmIRepresentation from "keycloak-admin/lib/defs/whoAmIRepresentat
 import type { AccessType } from "keycloak-admin/lib/defs/whoAmIRepresentation";
 import React, { FunctionComponent, useState } from "react";
 import environment from "../../environment";
-import i18n from "../../i18n";
+import i18n, { DEFAULT_LOCALE } from "../../i18n";
 import useRequiredContext from "../../utils/useRequiredContext";
 import { useAdminClient, useFetch } from "../auth/AdminClient";
 
@@ -19,6 +19,10 @@ export class WhoAmI {
     if (this.me === undefined) return "";
 
     return this.me.displayName;
+  }
+
+  public getLocale() {
+    return this.me?.locale ?? DEFAULT_LOCALE;
   }
 
   public getRealm() {

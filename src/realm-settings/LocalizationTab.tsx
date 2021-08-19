@@ -27,6 +27,7 @@ import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { AddMessageBundleModal } from "./AddMessageBundleModal";
 import { useAlerts } from "../components/alert/Alerts";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { DEFAULT_LOCALE } from "../i18n";
 
 type LocalizationTabProps = {
   save: (realm: RealmRepresentation) => void;
@@ -54,7 +55,7 @@ export const LocalizationTab = ({
   const [supportedLocalesOpen, setSupportedLocalesOpen] = useState(false);
   const [defaultLocaleOpen, setDefaultLocaleOpen] = useState(false);
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
-  const [selectMenuLocale, setSelectMenuLocale] = useState("en");
+  const [selectMenuLocale, setSelectMenuLocale] = useState(DEFAULT_LOCALE);
 
   const { getValues, control, handleSubmit, formState } = useFormContext();
   const [valueSelected, setValueSelected] = useState(false);
@@ -81,7 +82,8 @@ export const LocalizationTab = ({
     try {
       const result = await adminClient.realms.getRealmLocalizationTexts({
         realm: realm.realm!,
-        selectedLocale: selectMenuLocale || getValues("defaultLocale") || "en",
+        selectedLocale:
+          selectMenuLocale || getValues("defaultLocale") || DEFAULT_LOCALE,
       });
 
       return Object.entries(result);
@@ -144,7 +146,7 @@ export const LocalizationTab = ({
         {
           realm: currentRealm!,
           selectedLocale:
-            selectMenuLocale || getValues("defaultLocale") || "en",
+            selectMenuLocale || getValues("defaultLocale") || DEFAULT_LOCALE,
           key: pair.key,
         },
         pair.value
@@ -286,7 +288,7 @@ export const LocalizationTab = ({
                             : realm.defaultLocale !== ""
                             ? t(
                                 `allSupportedLocales.${
-                                  realm.defaultLocale || "en"
+                                  realm.defaultLocale || DEFAULT_LOCALE
                                 }`
                               )
                             : t("placeholderText")
@@ -359,7 +361,7 @@ export const LocalizationTab = ({
                       selectMenuValueSelected
                         ? t(`allSupportedLocales.${selectMenuLocale}`)
                         : realm.defaultLocale !== ""
-                        ? t(`allSupportedLocales.${"en"}`)
+                        ? t(`allSupportedLocales.${DEFAULT_LOCALE}`)
                         : t("placeholderText")
                     }
                   >

@@ -25,6 +25,8 @@ import userFederationHelp from "./user-federation/help";
 import identityProviders from "./identity-providers/messages";
 import identityProvidersHelp from "./identity-providers/help";
 
+export const DEFAULT_LOCALE = "en";
+
 const initOptions = {
   defaultNS: "common",
   resources: {
@@ -55,8 +57,8 @@ const initOptions = {
       ...userFederationHelp,
     },
   },
-  lng: "en",
-  fallbackLng: "en",
+  lng: DEFAULT_LOCALE,
+  fallbackLng: DEFAULT_LOCALE,
 
   interpolation: {
     escapeValue: false,
