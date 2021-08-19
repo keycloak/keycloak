@@ -474,7 +474,8 @@ public class ModelToRepresentation {
 
         session.clientPolicy().updateRealmRepresentationFromModel(realm, rep);
 
-        rep.setAttributes(stripRealmAttributesIncludedAsFields(realm.getAttributes()));
+        // Append realm attributes to representation
+        rep.getAttributes().putAll(stripRealmAttributesIncludedAsFields(realm.getAttributes()));
 
         if (!internal) {
             rep = StripSecretsUtils.strip(rep);
