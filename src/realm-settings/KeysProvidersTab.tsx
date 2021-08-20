@@ -23,6 +23,7 @@ import {
   Toolbar,
   ToolbarGroup,
   ToolbarItem,
+  Tooltip,
 } from "@patternfly/react-core";
 import { SearchIcon } from "@patternfly/react-icons";
 
@@ -43,6 +44,7 @@ import { HMACGeneratedModal } from "./key-providers/hmac-generated/HMACGenerated
 import { ECDSAGeneratedModal } from "./key-providers/ecdsa-generated/ECDSAGeneratedModal";
 import { RSAModal } from "./RSAModal";
 import { RSAGeneratedModal } from "./key-providers/rsa-generated/RSAGeneratedModal";
+import { KEY_PROVIDER_TYPE } from "../util";
 
 type ComponentData = KeyMetadataRepresentation & {
   id?: string;
@@ -50,6 +52,7 @@ type ComponentData = KeyMetadataRepresentation & {
   name?: string;
   toggleHidden?: boolean;
   config?: any;
+  parentId?: string;
 };
 
 type KeysTabInnerProps = {
@@ -75,11 +78,9 @@ export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const serverInfo = useServerInfo();
-  const providerTypes = serverInfo.componentTypes![
-    "org.keycloak.keys.KeyProvider"
-  ].map((item) => item.id);
-
-  const itemIds = components.map((_, idx) => "data" + idx);
+  const providerTypes = (
+    serverInfo.componentTypes?.[KEY_PROVIDER_TYPE] ?? []
+  ).map((item) => item.id);
 
   const [itemOrder, setItemOrder] = useState<string[]>([]);
   const [providerDropdownOpen, setProviderDropdownOpen] = useState(false);
@@ -93,6 +94,7 @@ export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
   const [liveText, setLiveText] = useState("");
 
   useEffect(() => {
+    const itemIds = components.map((component) => component.id!);
     setItemOrder(["data", ...itemIds]);
   }, [components, searchVal]);
 
@@ -117,7 +119,7 @@ export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
     },
   });
 
-  const onDragStart = (id: string) => {
+  const onDragStart = async (id: string) => {
     setLiveText(t("common:onDragStart", { item: id }));
     setId(id);
   };
@@ -130,9 +132,40 @@ export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
     setLiveText(t("common:onDragCancel"));
   };
 
-  const onDragFinish = (itemOrder: string[]) => {
-    setItemOrder(["data", ...itemOrder.filter((i) => i !== "data")]);
+  const onDragFinish = async (itemOrder: string[]) => {
+    setItemOrder(itemOrder);
     setLiveText(t("common:onDragFinish"));
+    const updateAll = components.map((component: ComponentData) => {
+      const componentToSave = { ...component };
+      delete componentToSave.providerDescription;
+
+      return adminClient.components.update(
+        { id: component.id! },
+        {
+          ...componentToSave,
+          config: {
+            priority: [
+              (
+                itemOrder.length -
+                itemOrder.indexOf(component.id!) +
+                100
+              ).toString(),
+            ],
+          },
+        }
+      );
+    });
+
+    try {
+      await Promise.all(updateAll);
+      refresh();
+      addAlert(
+        t("realm-settings:saveProviderListSuccess"),
+        AlertVariant.success
+      );
+    } catch (error) {
+      addError("realm-settings:saveProviderError", error);
+    }
   };
 
   const onSearch = () => {
@@ -278,7 +311,6 @@ export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
             </ToolbarGroup>
           </>
         </Toolbar>
-
         <DataList
           aria-label={t("groups")}
           onDragFinish={onDragFinish}
@@ -289,25 +321,27 @@ export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
           isCompact
         >
           <DataListItem aria-labelledby={"aria"} id="data" key="data">
-            <DataListItemRow className="test" data-testid={"data-list-row"}>
+            <DataListItemRow className="test" data-testid="data-list-row">
               <DataListDragButton
                 className="header-drag-button"
                 aria-label="Reorder"
-                aria-labelledby="simple-item"
-                aria-describedby="Press space or enter to begin dragging, and use the arrow keys to navigate up or down. Press enter to confirm the drag, or any other key to cancel the drag operation."
+                aria-describedby={t("common-help:dragHelp")}
                 aria-pressed="false"
                 isDisabled
               />
               <DataListItemCells
                 className="data-list-cells"
                 dataListCells={[
-                  <DataListCell className="name" key={"1"}>
+                  <DataListCell className="name" key="name">
                     <>{t("realm-settings:name")}</>
                   </DataListCell>,
-                  <DataListCell className="provider" key={"2"}>
+                  <DataListCell className="provider" key="provider">
                     <>{t("realm-settings:provider")}</>
                   </DataListCell>,
-                  <DataListCell className="provider-description" key={"3"}>
+                  <DataListCell
+                    className="provider-description"
+                    key="provider-description"
+                  >
                     <>{t("realm-settings:providerDescription")}</>
                   </DataListCell>,
                 ]}
@@ -317,22 +351,23 @@ export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
           {(filteredComponents.length === 0
             ? components
             : filteredComponents
-          ).map((component: ComponentData, idx) => (
+          ).map((component, idx) => (
             <DataListItem
               draggable
               aria-labelledby={"aria"}
-              key={`data${idx}`}
-              id={`data${idx}`}
+              key={component.id}
+              id={component.id}
             >
-              <DataListItemRow key={idx} data-testid={"data-list-row"}>
+              <DataListItemRow data-testid="data-list-row">
                 <DataListControl>
-                  <DataListDragButton
-                    className="row-drag-button"
-                    aria-label="Reorder"
-                    aria-labelledby="simple-item2"
-                    aria-describedby="Press space or enter to begin dragging, and use the arrow keys to navigate up or down. Press enter to confirm the drag, or any other key to cancel the drag operation."
-                    aria-pressed="false"
-                  />
+                  <Tooltip content={t("dragInstruction")} position="top">
+                    <DataListDragButton
+                      className="kc-row-drag-button"
+                      aria-label="Reorder"
+                      aria-describedby={t("common-help:dragHelp")}
+                      aria-pressed="false"
+                    />
+                  </Tooltip>
                 </DataListControl>
                 <DataListItemCells
                   dataListCells={[

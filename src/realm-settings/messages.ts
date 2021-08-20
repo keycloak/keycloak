@@ -4,6 +4,7 @@ export default {
     partialExport: "Partial export",
     deleteRealm: "Delete realm",
     deleteConfirmTitle: "Delete realm?",
+    dragInstruction: "Click and drag to change priority",
     deleteConfirm:
       "If you delete this realm, all associated data will be removed.",
     deleteProviderTitle: "Delete key provider?",
@@ -19,6 +20,8 @@ export default {
     editProvider: "Edit provider",
     saveSuccess: "Realm successfully updated",
     saveProviderSuccess: "The provider has been saved successfully.",
+    saveProviderListSuccess:
+      "The priority of the provider has been updated successfully.",
     saveProviderError: "Error saving provider: ",
     saveError: "Realm could not be updated: {error}",
     general: "General",

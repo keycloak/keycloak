@@ -172,3 +172,7 @@ article.pf-c-card.pf-m-flat.kc-login-settings-template
   font-size: var(--pf-global--FontSize--md);
   font-weight: bold;
 }
+
+.kc-row-drag-button {
+  padding: var(--pf-global--spacer--sm);
+}

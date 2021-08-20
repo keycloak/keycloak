@@ -22,7 +22,7 @@ import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
 import { useParams, useRouteMatch } from "react-router-dom";
 import { FormAccess } from "../../../components/form-access/FormAccess";
 import { ViewHeader } from "../../../components/view-header/ViewHeader";
-import { convertToFormValues } from "../../../util";
+import { convertToFormValues, KEY_PROVIDER_TYPE } from "../../../util";
 import { useAlerts } from "../../../components/alert/Alerts";
 
 type ECDSAGeneratedFormProps = {
@@ -63,7 +63,7 @@ export const ECDSAGeneratedForm = ({
             ...component,
             parentId: component.parentId,
             providerId: providerType,
-            providerType: "org.keycloak.keys.KeyProvider",
+            providerType: KEY_PROVIDER_TYPE,
           }
         );
         addAlert(t("saveProviderSuccess"), AlertVariant.success);
@@ -72,7 +72,8 @@ export const ECDSAGeneratedForm = ({
           ...component,
           parentId: component.parentId,
           providerId: providerType,
-          providerType: "org.keycloak.keys.KeyProvider",
+          providerType: KEY_PROVIDER_TYPE,
+          config: { priority: ["0"] },
         });
         handleModalToggle?.();
         addAlert(t("saveProviderSuccess"), AlertVariant.success);
@@ -116,7 +117,7 @@ export const ECDSAGeneratedForm = ({
   );
 
   const allComponentTypes =
-    serverInfo.componentTypes?.["org.keycloak.keys.KeyProvider"] ?? [];
+    serverInfo.componentTypes?.[KEY_PROVIDER_TYPE] ?? [];
 
   const ecdsaEllipticCurveOptions = allComponentTypes[1].properties[3].options;
 

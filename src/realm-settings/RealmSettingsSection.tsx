@@ -26,7 +26,7 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { LocalizationTab } from "./LocalizationTab";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
-import { toUpperCase } from "../util";
+import { KEY_PROVIDER_TYPE, toUpperCase } from "../util";
 import { RealmSettingsEmailTab } from "./EmailTab";
 import { EventsTab } from "./event-config/EventsTab";
 import { RealmSettingsGeneralTab } from "./GeneralTab";
@@ -149,6 +149,19 @@ const RealmSettingsHeader = ({
   );
 };
 
+const sortByPriority = (components: ComponentRepresentation[]) => {
+  const sortedComponents = [...components].sort((a, b) => {
+    const priorityA = Number(a.config?.priority);
+    const priorityB = Number(b.config?.priority);
+
+    return (
+      (!isNaN(priorityB) ? priorityB : 0) - (!isNaN(priorityA) ? priorityA : 0)
+    );
+  });
+
+  return sortedComponents;
+};
+
 export const RealmSettingsSection = () => {
   const { t } = useTranslation("realm-settings");
   const adminClient = useAdminClient();
@@ -165,13 +178,13 @@ export const RealmSettingsSection = () => {
   const { whoAmI } = useWhoAmI();
 
   const kpComponentTypes =
-    useServerInfo().componentTypes!["org.keycloak.keys.KeyProvider"];
+    useServerInfo().componentTypes?.[KEY_PROVIDER_TYPE] ?? [];
 
   useFetch(
     async () => {
       const realm = await adminClient.realms.findOne({ realm: realmName });
       const realmComponents = await adminClient.components.find({
-        type: "org.keycloak.keys.KeyProvider",
+        type: KEY_PROVIDER_TYPE,
         realm: realmName,
       });
       const user = await adminClient.users.findOne({ id: whoAmI.getUserId()! });
@@ -179,7 +192,7 @@ export const RealmSettingsSection = () => {
       return { user, realm, realmComponents };
     },
     ({ user, realm, realmComponents }) => {
-      setRealmComponents(realmComponents);
+      setRealmComponents(sortByPriority(realmComponents));
       setCurrentUser(user);
       setRealm(realm);
     },

@@ -89,7 +89,6 @@ export const convertFormValuesToObject = (
     const newKey = firstInstanceOnly
       ? key.replace(/-/, ".")
       : key.replace(/-/g, ".");
-    console.log(newKey);
     return { [newKey]: obj[key] };
   });
   return Object.assign({}, ...keyValues);
@@ -189,3 +188,5 @@ export const interpolateTimespan = (forHumans: string) => {
     });
   }
 };
+
+export const KEY_PROVIDER_TYPE = "org.keycloak.keys.KeyProvider";

@@ -21,6 +21,7 @@ import { useAlerts } from "../components/alert/Alerts";
 import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import { KEY_PROVIDER_TYPE } from "../util";
 
 type RSAGeneratedModalProps = {
   providerType: string;
@@ -44,7 +45,7 @@ export const RSAGeneratedModal = ({
   const [isRSAalgDropdownOpen, setIsRSAalgDropdownOpen] = useState(false);
 
   const allComponentTypes =
-    serverInfo.componentTypes?.["org.keycloak.keys.KeyProvider"] ?? [];
+    serverInfo.componentTypes?.[KEY_PROVIDER_TYPE] ?? [];
 
   const save = async (component: ComponentRepresentation) => {
     try {
@@ -52,7 +53,8 @@ export const RSAGeneratedModal = ({
         ...component,
         parentId: component.parentId,
         providerId: providerType,
-        providerType: "org.keycloak.keys.KeyProvider",
+        providerType: KEY_PROVIDER_TYPE,
+        config: { priority: ["0"] },
       });
       handleModalToggle();
       addAlert(t("saveProviderSuccess"), AlertVariant.success);

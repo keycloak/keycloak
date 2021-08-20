@@ -23,6 +23,7 @@ import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepre
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useParams } from "react-router-dom";
+import { KEY_PROVIDER_TYPE } from "../util";
 
 type RSAModalProps = {
   providerType: string;
@@ -50,7 +51,7 @@ export const RSAModal = ({
   const [certificateFileName, setCertificateFileName] = useState("");
 
   const allComponentTypes =
-    serverInfo.componentTypes?.["org.keycloak.keys.KeyProvider"] ?? [];
+    serverInfo.componentTypes?.[KEY_PROVIDER_TYPE] ?? [];
 
   const save = async (component: ComponentRepresentation) => {
     try {
@@ -61,7 +62,7 @@ export const RSAModal = ({
             ...component,
             parentId: component.parentId,
             providerId: providerType,
-            providerType: "org.keycloak.keys.KeyProvider",
+            providerType: KEY_PROVIDER_TYPE,
           }
         );
         addAlert(t("saveProviderSuccess"), AlertVariant.success);
@@ -70,7 +71,8 @@ export const RSAModal = ({
           ...component,
           parentId: component.parentId,
           providerId: providerType,
-          providerType: "org.keycloak.keys.KeyProvider",
+          providerType: KEY_PROVIDER_TYPE,
+          config: { priority: ["0"] },
         });
         handleModalToggle();
         addAlert(t("saveProviderSuccess"), AlertVariant.success);
