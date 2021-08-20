@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>15.0.1</version>
+        <version>15.0.2</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
     <name>Keycloak Tomcat Integration</name>
