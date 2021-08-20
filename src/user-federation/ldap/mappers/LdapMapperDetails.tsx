@@ -104,11 +104,9 @@ export const LdapMapperDetails = () => {
       );
     } catch (error) {
       addError(
-        `user-federation:${
-          mapperId === "new"
-            ? "common:mappingCreatedError"
-            : "common:mappingUpdatedError"
-        }`,
+        mapperId === "new"
+          ? "common:mappingCreatedError"
+          : "common:mappingUpdatedError",
         error
       );
     }
