@@ -176,13 +176,13 @@
                     permissions = [];
                 }
 
-                for (i = 0; i < permissions.length; i++) {
+                for (let i = 0; i < permissions.length; i++) {
                     var resource = permissions[i];
                     var permission = resource.id;
 
                     if (resource.scopes && resource.scopes.length > 0) {
                         permission += "#";
-                        for (j = 0; j < resource.scopes.length; j++) {
+                        for (let j = 0; j < resource.scopes.length; j++) {
                             var scope = resource.scopes[j];
                             if (permission.indexOf('#') != permission.length - 1) {
                                 permission += ",";
