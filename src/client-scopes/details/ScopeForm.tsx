@@ -284,18 +284,25 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           name="attributes.gui-order"
           defaultValue={1}
           control={control}
-          render={({ onChange, value }) => (
-            <NumberInput
-              type="text"
-              id="kc-gui-order"
-              value={value}
-              onPlus={() => onChange(value + 1)}
-              onMinus={() => onChange(value - 1)}
-              onChange={(event) =>
-                onChange(Number((event.target as HTMLInputElement).value))
-              }
-            />
-          )}
+          render={({ onChange, value }) => {
+            const MIN_VALUE = 0;
+            const setValue = (newValue: number) =>
+              onChange(Math.max(newValue, MIN_VALUE));
+
+            return (
+              <NumberInput
+                id="kc-gui-order"
+                value={value}
+                min={MIN_VALUE}
+                onPlus={() => setValue(value + 1)}
+                onMinus={() => setValue(value - 1)}
+                onChange={(event) => {
+                  const newValue = Number(event.currentTarget.value);
+                  setValue(!isNaN(newValue) ? newValue : 0);
+                }}
+              />
+            );
+          }}
         />
       </FormGroup>
       <ActionGroup>
