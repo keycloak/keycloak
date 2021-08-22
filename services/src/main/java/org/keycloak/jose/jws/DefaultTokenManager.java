@@ -40,13 +40,17 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.TokenManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.ProtocolMapper;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.AbstractPairwiseSubMapper;
 import org.keycloak.representations.LogoutToken;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
@@ -55,8 +59,11 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.Key;
 import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DefaultTokenManager implements TokenManager {
@@ -338,8 +345,42 @@ public class DefaultTokenManager implements TokenManager {
         if (oidcAdvancedConfigWrapper.getBackchannelLogoutRevokeOfflineTokens()){
             token.putEvents(TokenUtil.TOKEN_BACKCHANNEL_LOGOUT_EVENT_REVOKE_OFFLINE_TOKENS, true);
         }
-        token.setSubject(user.getId());
+
+        String subject = determineSubject(user, client);
+        token.setSubject(subject);
 
         return token;
     }
+
+    /**
+     * Determines the subject identifier for the given {@link UserModel User} and {@link ClientModel Client}.
+     * If a client specific pairwise subject identifier mapping is present, it will be used to generate the subject identifier,
+     * otherwise the id of the given user is used as identifier.
+     *
+     * @param user
+     * @param client
+     * @return
+     */
+    private String determineSubject(UserModel user, ClientModel client) {
+
+        // Check if we have a PairwiseSubMapper as client procotol mapper configured
+        // Note that we assume that there is only one pairwise sub mapper configured!
+        Optional<Map.Entry<ProtocolMapperModel, ProtocolMapper>> pairwiseSubjectMapper = ProtocolMapperUtils //
+                        .getSortedProtocolMappers(session, client, mapperEntry -> mapperEntry.getValue() instanceof AbstractPairwiseSubMapper) //
+                        .findFirst();
+
+        return pairwiseSubjectMapper.map(mapperEntry -> {
+            // we have a pairwise sub mapper, take the mapper and apply the sub mapping
+            AbstractPairwiseSubMapper mapper = (AbstractPairwiseSubMapper) mapperEntry.getValue();
+            ProtocolMapperModel model = mapperEntry.getKey();
+            String sectorIdentifier = mapper.getSectorIdentifier(client, model);
+            String currentSubject = user.getId();
+            String newSubject = mapper.generateSub(model, sectorIdentifier, currentSubject);
+            return newSubject;
+        }).orElseGet(() -> {
+            // we don't have a pairwise sub mapper, thus use userId as subject
+            return user.getId();
+        });
+    }
+
 }

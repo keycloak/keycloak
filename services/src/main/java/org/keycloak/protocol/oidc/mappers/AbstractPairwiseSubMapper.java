@@ -101,7 +101,7 @@ public abstract class AbstractPairwiseSubMapper extends AbstractOIDCProtocolMapp
         return configProperties;
     }
 
-    private String getSectorIdentifier(ClientModel client, ProtocolMapperModel mappingModel) {
+    public String getSectorIdentifier(ClientModel client, ProtocolMapperModel mappingModel) {
         String sectorIdentifierUri = PairwiseSubMapperHelper.getSectorIdentifierUri(mappingModel);
         if (sectorIdentifierUri != null && !sectorIdentifierUri.isEmpty()) {
             return PairwiseSubMapperUtils.resolveValidSectorIdentifier(sectorIdentifierUri);
