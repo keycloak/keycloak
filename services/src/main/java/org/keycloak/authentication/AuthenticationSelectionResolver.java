@@ -19,6 +19,7 @@
 package org.keycloak.authentication;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +29,10 @@ import org.jboss.logging.Logger;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
  * Resolves set of AuthenticationSelectionOptions
@@ -60,34 +64,58 @@ class AuthenticationSelectionResolver {
      * @return an ordered list of the authentication selection options to present the user.
      */
     static List<AuthenticationSelectionOption> createAuthenticationSelectionList(AuthenticationProcessor processor, AuthenticationExecutionModel model) {
+
+        AuthenticationSessionModel authSession = processor.getAuthenticationSession();
+        if (authSession == null) {
+            // we have no authSession so we cannot create an authenticator list.
+            return Collections.emptyList();
+        }
+
+        Map<String, AuthenticationExecutionModel> typeAuthExecMap = new HashMap<>();
+        List<AuthenticationExecutionModel> nonCredentialExecutions = new ArrayList<>();
+
+        String topFlowId = getFlowIdOfTheHighestUsefulFlow(processor, model);
+
+        if (topFlowId == null) {
+            addSimpleAuthenticationExecution(processor, model, typeAuthExecMap, nonCredentialExecutions);
+        } else {
+            addAllExecutionsFromSubflow(processor, topFlowId, typeAuthExecMap, nonCredentialExecutions);
+        }
+
         List<AuthenticationSelectionOption> authenticationSelectionList = new ArrayList<>();
+        KeycloakSession session = processor.getSession();
+        UserModel authenticatedUser = authSession.getAuthenticatedUser();
+        // add authenticator options for the given user if present
+        if (authenticatedUser != null) {
 
-        if (processor.getAuthenticationSession() != null) {
-            Map<String, AuthenticationExecutionModel> typeAuthExecMap = new HashMap<>();
-            List<AuthenticationExecutionModel> nonCredentialExecutions = new ArrayList<>();
-
-            String topFlowId = getFlowIdOfTheHighestUsefulFlow(processor, model);
-
-            if (topFlowId == null) {
-                addSimpleAuthenticationExecution(processor, model, typeAuthExecMap, nonCredentialExecutions);
-            } else {
-                addAllExecutionsFromSubflow(processor, topFlowId, typeAuthExecMap, nonCredentialExecutions);
-            }
+            RealmModel realm = processor.getRealm();
 
             //add credential authenticators in order
-            if (processor.getAuthenticationSession().getAuthenticatedUser() != null) {
-                authenticationSelectionList = processor.getSession().userCredentialManager()
-                        .getStoredCredentialsStream(processor.getRealm(), processor.getAuthenticationSession().getAuthenticatedUser())
-                        .filter(credential -> typeAuthExecMap.containsKey(credential.getType()))
-                        .map(CredentialModel::getType)
-                        .distinct()
-                        .map(credentialType -> new AuthenticationSelectionOption(processor.getSession(), typeAuthExecMap.get(credentialType)))
-                        .collect(Collectors.toList());
-            }
+            authenticationSelectionList.addAll(session.userCredentialManager()
+                    .getStoredCredentialsStream(realm, authenticatedUser)
+                    .filter(credential -> typeAuthExecMap.containsKey(credential.getType()))
+                    .map(CredentialModel::getType)
+                    .distinct()
+                    .map(credentialType -> new AuthenticationSelectionOption(session, typeAuthExecMap.get(credentialType)))
+                    .collect(Collectors.toList()));
 
-            //add all other authenticators
+            //add authenticators that require a current user which are also configured for that user
             for (AuthenticationExecutionModel exec : nonCredentialExecutions) {
-                authenticationSelectionList.add(new AuthenticationSelectionOption(processor.getSession(), exec));
+                Authenticator authenticator = session.getProvider(Authenticator.class, exec.getAuthenticator());
+                if (!authenticator.requiresUser()) {
+                    continue;
+                }
+                if (authenticator.configuredFor(session, realm, authenticatedUser)) {
+                    authenticationSelectionList.add(new AuthenticationSelectionOption(session, exec));
+                }
+            }
+        }
+
+        //add all other authenticators that don't require a current user
+        for (AuthenticationExecutionModel exec : nonCredentialExecutions) {
+            Authenticator authenticator = session.getProvider(Authenticator.class, exec.getAuthenticator());
+            if (!authenticator.requiresUser()) {
+               authenticationSelectionList.add(new AuthenticationSelectionOption(session, exec));
             }
         }
 
