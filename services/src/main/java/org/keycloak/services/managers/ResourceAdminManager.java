@@ -197,14 +197,15 @@ public class ResourceAdminManager {
         return StringPropertyReplacer.replaceProperties(absoluteURI);
     }
 
-    protected Response sendBackChannelLogoutRequestToClientUri(ClientModel resource,
+    protected Response sendBackChannelLogoutRequestToClientUri(ClientModel client,
                                                               AuthenticatedClientSessionModel clientSessionModel, String managementUrl) {
         UserModel user = clientSessionModel.getUserSession().getUser();
 
-        LogoutToken logoutToken = session.tokens().initLogoutToken(resource, user, clientSessionModel);
+        LogoutToken logoutToken = session.tokens().initLogoutToken(client, user, clientSessionModel);
+
         String token = session.tokens().encode(logoutToken);
         if (logger.isDebugEnabled())
-            logger.debugv("logout resource {0} url: {1} sessionIds: ", resource.getClientId(), managementUrl);
+            logger.debugv("logout client {0} url: {1} sessionIds: ", client.getClientId(), managementUrl);
         HttpPost post = null;
         try {
             post = new HttpPost(managementUrl);
@@ -228,7 +229,7 @@ public class ResourceAdminManager {
                 }
             }
         } catch (IOException e) {
-            ServicesLogger.LOGGER.logoutFailed(e, resource.getClientId());
+            ServicesLogger.LOGGER.logoutFailed(e, client.getClientId());
             return Response.serverError().build();
         } finally {
             if (post != null) {
