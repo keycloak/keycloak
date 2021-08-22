@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
@@ -123,6 +124,11 @@ public class TokenRevocationEndpoint {
 
         session.getProvider(SecurityHeadersProvider.class).options().allowEmptyContentType();
         return cors.builder(Response.ok()).build();
+    }
+
+    @OPTIONS
+    public Response preflight() {
+        return Cors.add(request, Response.ok()).auth().preflight().allowedMethods("POST", "OPTIONS").build();
     }
 
     private void checkSsl() {
