@@ -47,6 +47,7 @@ import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
+import org.keycloak.userprofile.EventAuditingAttributeChangeListener;
 import org.openqa.selenium.By;
 
 /**
@@ -418,6 +419,12 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends RequiredActi
         //submit OK
         updateProfilePage.updateWithDepartment("FirstCC", "LastCC", "DepartmentCC", USERNAME1, USERNAME1);
 
+        // we also test additional attribute configured to be audited in the event 
+        events.expectRequiredAction(EventType.UPDATE_PROFILE)
+        .detail(Details.PREVIOUS_FIRST_NAME, "Tom").detail(Details.UPDATED_FIRST_NAME, "FirstCC")
+        .detail(Details.PREVIOUS_LAST_NAME, "Brady").detail(Details.UPDATED_LAST_NAME, "LastCC")
+        .detail(Details.PREF_UPDATED + "department", "DepartmentCC")
+        .assertEvent();
         
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
@@ -450,6 +457,12 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends RequiredActi
         
         //submit OK
         updateProfilePage.updateWithDepartment("FirstCC", "LastCC", "DepartmentCC", USERNAME1, USERNAME1);
+        
+        events.expectRequiredAction(EventType.UPDATE_PROFILE).client(client_scope_optional.getClientId())
+        .detail(Details.PREVIOUS_FIRST_NAME, "Tom").detail(Details.UPDATED_FIRST_NAME, "FirstCC")
+        .detail(Details.PREVIOUS_LAST_NAME, "Brady").detail(Details.UPDATED_LAST_NAME, "LastCC")
+        .assertEvent();
+
         
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
