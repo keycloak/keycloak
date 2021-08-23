@@ -48,7 +48,6 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -58,7 +57,8 @@ import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.userprofile.UserProfileSpi;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.EventAuditingAttributeChangeListener;
 import org.openqa.selenium.By;
 
 /**
@@ -321,9 +321,12 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         
         verifyProfilePage.update("First", "Last", "Department");
         //event after profile is updated
+        // we also test additional attribute configured to be audited in the event
         events.expectRequiredAction(EventType.UPDATE_PROFILE).user(user5Id)
+        .detail(Details.CONTEXT, UserProfileContext.UPDATE_PROFILE.name())
         .detail(Details.PREVIOUS_FIRST_NAME, "ExistingFirst").detail(Details.UPDATED_FIRST_NAME, "First")
         .detail(Details.PREVIOUS_LAST_NAME, "ExistingLast").detail(Details.UPDATED_LAST_NAME, "Last")
+        .detail(Details.PREF_UPDATED+"department", "Department")
         .assertEvent();
     }
     
