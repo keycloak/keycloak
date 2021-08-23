@@ -339,12 +339,12 @@ archive that lists the available themes in the archive as well as what types eac
 For example for the `mytheme` theme create `mytheme.jar` with the contents:
 
 * META-INF/keycloak-themes.json
-* theme/mytheme/login/theme.properties
-* theme/mytheme/login/login.ftl
-* theme/mytheme/login/resources/css/styles.css
-* theme/mytheme/login/resources/img/image.png
-* theme/mytheme/login/messages/messages_en.properties
-* theme/mytheme/email/messages/messages_en.properties
+* themes/mytheme/login/theme.properties
+* themes/mytheme/login/login.ftl
+* themes/mytheme/login/resources/css/styles.css
+* themes/mytheme/login/resources/img/image.png
+* themes/mytheme/login/messages/messages_en.properties
+* themes/mytheme/email/messages/messages_en.properties
 
 The contents of `META-INF/keycloak-themes.json` in this case would be:
 
