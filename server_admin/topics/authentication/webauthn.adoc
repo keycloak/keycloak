@@ -182,6 +182,7 @@ they are required to register their WebAuthn authenticator automatically :
 - When the users log in, they are required to register their WebAuthn authenticator.
 - After successful registration, the user's browser asks the user to enter the text as their just registered WebAuthn authenticator's label.
 
+[[_webauthn_passwordless]]
 ==== Passwordless WebAuthn together with Two-Factor
 
 WebAuthn is often used for two-factor authentication, however it can be desired to use it also as first factor authentication. In this case,

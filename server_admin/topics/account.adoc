@@ -26,7 +26,9 @@ image:images/account-console-intro.png[Account Console]
 
 === Configure ways to sign in
 
-You can sign in to this console using basic authentication (a login name and password) or two-factor authentication. For two-factor authentication, use this procedure.
+You can sign in to this console using basic authentication (a login name and password) or two-factor authentication. For two-factor authentication, use one of the following procedures.
+
+==== Two-factor authentication with OTP
 
 .Prerequisites
 
@@ -51,6 +53,56 @@ image:images/account-console-signing-in.png[Signing In]
 . Log out and log in again.
 
 . Respond to the prompt by entering an OTP that is provided on your mobile device.
+
+==== Two-factor authentication with WebAuthn
+
+.Prerequisites
+
+* WebAuthn is a valid two-factor authentication mechanism for your realm. Please follow the <<_webauthn,WebAuthn section>> for more details.
+
+.Procedure
+
+. Click *Account Security* in the menu.
+
+. Click *Signing In*.
+
+. Click *Set up Security Key*.
++
+.Signing In
+image:images/account-console-signing-in-webauthn-2factor.png[Signing In With Security Key]
+
+. Prepare your WebAuthn Security Key. This depends on the type of WebAuthn security key how exactly to do it. For example for USB based Yubikey, you may need to put your key into the USB port on your laptop.
+
+. Click *Register* to register your security key. Follow the directions that appear on the screen for setup your Security Key.
+
+. Log out and log in again.
+
+. Assuming authentication flow was correctly set, You should be asked to authenticate with your Security Key as second factor.
+
+==== Passwordless authentication with WebAuthn
+
+.Prerequisites
+
+* WebAuthn is a valid passwordless authentication mechanism for your realm. Please follow the <<_webauthn_passwordless,Passwordless WebAuthn section>> for more details.
+
+.Procedure
+
+. Click *Account Security* in the menu.
+
+. Click *Signing In*.
+
+. Click *Set up Security Key* in the *Passwordless* section.
++
+.Signing In
+image:images/account-console-signing-in-webauthn-passwordless.png[Signing In With Security Key]
+
+. Prepare your WebAuthn Security Key. This depends on the type of WebAuthn security key how exactly to do it. For example for USB based Yubikey, you may need to put your key into the USB port on your laptop.
+
+. Click *Register* to register your security key. Follow the directions that appear on the screen for setup your Security Key.
+
+. Log out and log in again.
+
+. Assuming authentication flow was correctly set, You should be asked to authenticate with your Security Key as passwordless factor. Hence you may not even provide your password for the login.
 
 === Viewing device activity
 
