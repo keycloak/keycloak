@@ -24,7 +24,7 @@ export const NewRealmForm = () => {
   const { t } = useTranslation("realm");
   const history = useHistory();
   const { refresh } = useWhoAmI();
-  const { refresh: realmRefresh } = useRealm();
+  const { refresh: realmRefresh, setRealm } = useRealm();
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
@@ -43,10 +43,9 @@ export const NewRealmForm = () => {
       await adminClient.realms.create(realm);
       addAlert(t("saveRealmSuccess"), AlertVariant.success);
 
-      //force token update
       refresh();
-      await adminClient.keycloak?.updateToken(Number.MAX_VALUE);
       await realmRefresh();
+      setRealm(realm.realm!);
       history.push(`/${realm.realm}`);
     } catch (error) {
       addError("realm:saveRealmError", error);

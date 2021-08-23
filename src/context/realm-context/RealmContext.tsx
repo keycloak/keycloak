@@ -45,14 +45,10 @@ export const RealmContextProvider: FunctionComponent = ({ children }) => {
   useEffect(() => adminClient.setConfig({ realmName: realm }), [realm]);
 
   const set = (realm: string) => {
-    if (
-      realms.length === 0 ||
-      realms.findIndex((r) => r.realm == realm) !== -1
-    ) {
-      recentUsed.setRecentUsed(realm);
-      setRealm(realm);
-    }
+    recentUsed.setRecentUsed(realm);
+    setRealm(realm);
   };
+
   return (
     <RealmContext.Provider
       value={{
@@ -60,6 +56,9 @@ export const RealmContextProvider: FunctionComponent = ({ children }) => {
         setRealm: set,
         realms,
         refresh: async () => {
+          //this is needed otherwise the realm find function will not return
+          //new or renamed realms because of the cached realms in the token (perhaps?)
+          await adminClient.keycloak?.updateToken(Number.MAX_VALUE);
           const list = await adminClient.realms.find();
           updateRealmsList(list);
         },

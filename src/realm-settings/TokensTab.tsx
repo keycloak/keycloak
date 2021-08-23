@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, useForm, useFormContext, useWatch } from "react-hook-form";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 import {
   ActionGroup,
   AlertVariant,
@@ -20,7 +20,7 @@ import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentatio
 import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { FormPanel } from "../components/scroll-form/FormPanel";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
+import { useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 import { useRealm } from "../context/realm-context/RealmContext";
 
@@ -29,7 +29,6 @@ import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation"
 import { TimeSelector } from "../components/time-selector/TimeSelector";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import {
-  convertToFormValues,
   forHumans,
   flatten,
   convertFormValuesToObject,
@@ -37,7 +36,7 @@ import {
 } from "../util";
 
 type RealmSettingsSessionsTabProps = {
-  realm?: RealmRepresentation;
+  realm: RealmRepresentation;
   user?: UserRepresentation;
   reset?: () => void;
 };
@@ -70,35 +69,14 @@ export const RealmSettingsTokensTab = ({
     javaKeystoreAlgOptions!
   );
 
-  const form = useForm<RealmRepresentation>();
-  const { control } = useFormContext();
+  const form = useFormContext<RealmRepresentation>();
+  const { control } = form;
 
   const offlineSessionMaxEnabled = useWatch({
     control,
     name: "offlineSessionMaxLifespanEnabled",
     defaultValue: realm?.offlineSessionMaxLifespanEnabled,
   });
-
-  const setupForm = (realm: RealmRepresentation) => {
-    const { ...formValues } = realm;
-    form.reset(formValues);
-    Object.entries(realm).map((entry) => {
-      if (entry[0] === "attributes") {
-        convertToFormValues(entry[1], "attributes", form.setValue);
-      } else {
-        form.setValue(entry[0], entry[1]);
-      }
-    });
-  };
-
-  useFetch(
-    () => adminClient.realms.findOne({ realm: realmName }),
-    (realm) => {
-      setRealm(realm);
-      setupForm(realm);
-    },
-    [realmName]
-  );
 
   const save = async () => {
     const firstInstanceOnly = true;
@@ -107,18 +85,15 @@ export const RealmSettingsTokensTab = ({
       firstInstanceOnly
     );
 
-    const attributes = { ...flattenedAttributes, ...realm?.attributes };
-
     try {
       const newRealm: RealmRepresentation = {
         ...realm,
         ...form.getValues(),
-        attributes,
+        attributes: flattenedAttributes,
       };
 
       await adminClient.realms.update({ realm: realmName }, newRealm);
 
-      setupForm(newRealm);
       setRealm(newRealm);
       addAlert(t("saveSuccess"), AlertVariant.success);
     } catch (error) {

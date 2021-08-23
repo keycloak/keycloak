@@ -23,7 +23,7 @@ export default {
     saveProviderListSuccess:
       "The priority of the provider has been updated successfully.",
     saveProviderError: "Error saving provider: ",
-    saveError: "Realm could not be updated: {error}",
+    saveError: "Realm could not be updated: {{error}}",
     general: "General",
     login: "Login",
     themes: "Themes",

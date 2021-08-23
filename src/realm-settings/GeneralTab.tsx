@@ -58,7 +58,14 @@ export const RealmSettingsGeneralTab = ({
           onSubmit={handleSubmit(save)}
         >
           <FormGroup label={t("realmId")} fieldId="kc-realm-id" isRequired>
-            <ClipboardCopy isReadOnly>{realmName}</ClipboardCopy>
+            <Controller
+              name="realm"
+              control={control}
+              defaultValue=""
+              render={({ onChange, value }) => (
+                <ClipboardCopy onChange={onChange}>{value}</ClipboardCopy>
+              )}
+            />
           </FormGroup>
           <FormGroup label={t("displayName")} fieldId="kc-display-name">
             <TextInput
