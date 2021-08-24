@@ -101,7 +101,7 @@ public class TimeBasedOTP extends HmacOTP {
     /**
      * maps 0, 1, 2, 3, 4, 5, 6, 7, ... to 0, -1, 1, -2, 2, -3, 3, ...
      */
-    public static long clockSkewIndexToDelta(int idx) {
+    private long clockSkewIndexToDelta(int idx) {
         return (idx + 1) / 2 * (1 - (idx % 2) * 2);
     }
 
