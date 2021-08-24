@@ -413,9 +413,9 @@ export function KeycloakDataTable<T>({
           )}
           {!loading &&
             (!data || data.length === 0) &&
-            (search !== "" || !isSearching) &&
-            searchPlaceholderKey &&
-            !emptyState && (
+            search !== "" &&
+            !isSearching &&
+            searchPlaceholderKey && (
               <ListEmptyState
                 hasIcon={true}
                 icon={icon}

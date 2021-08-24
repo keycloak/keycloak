@@ -110,7 +110,6 @@ export const ClientsSection = () => {
             <DeleteConfirm />
             <KeycloakDataTable
               key={key}
-              emptyState={<> </>}
               loader={loader}
               isPaginated
               ariaLabelKey="clients:clientList"
