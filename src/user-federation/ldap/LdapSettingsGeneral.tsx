@@ -13,6 +13,7 @@ import { FormAccess } from "../../components/form-access/FormAccess";
 import { useRealm } from "../../context/realm-context/RealmContext";
 
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 
 export type LdapSettingsGeneralProps = {
   form: UseFormMethods;
@@ -27,8 +28,15 @@ export const LdapSettingsGeneral = ({
 }: LdapSettingsGeneralProps) => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
+
+  const adminClient = useAdminClient();
   const { realm } = useRealm();
 
+  useFetch(
+    () => adminClient.realms.findOne({ realm }),
+    (result) => form.setValue("parentId", result.id),
+    []
+  );
   const [isVendorDropdownOpen, setIsVendorDropdownOpen] = useState(false);
 
   const setVendorDefaultValues = () => {

@@ -16,6 +16,7 @@ import { useRealm } from "../../context/realm-context/RealmContext";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import _ from "lodash";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 
 export type KerberosSettingsRequiredProps = {
   form: UseFormMethods;
@@ -30,6 +31,8 @@ export const KerberosSettingsRequired = ({
 }: KerberosSettingsRequiredProps) => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
+
+  const adminClient = useAdminClient();
   const { realm } = useRealm();
 
   const [isEditModeDropdownOpen, setIsEditModeDropdownOpen] = useState(false);
@@ -38,6 +41,12 @@ export const KerberosSettingsRequired = ({
     control: form.control,
     name: "config.allowPasswordAuthentication",
   });
+
+  useFetch(
+    () => adminClient.realms.findOne({ realm }),
+    (result) => form.setValue("parentId", result.id),
+    []
+  );
 
   return (
     <>

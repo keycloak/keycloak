@@ -40,9 +40,10 @@ export const UserFederationSection = () => {
   const history = useHistory();
 
   useFetch(
-    () => {
+    async () => {
+      const realmModel = await adminClient.realms.findOne({ realm });
       const testParams: { [name: string]: string | number } = {
-        parentId: realm,
+        parentId: realmModel.id!,
         type: "org.keycloak.storage.UserStorageProvider",
       };
       return adminClient.components.find(testParams);
