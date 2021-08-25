@@ -46,12 +46,12 @@ export const DuplicateFlowModal = ({
     try {
       await adminClient.authenticationManagement.copyFlow({
         flow: name,
-        newName: form.name,
+        newName: form.alias,
       });
       if (form.description !== description) {
         const newFlow = (
           await adminClient.authenticationManagement.getFlows()
-        ).find((flow) => flow.alias === form.name)!;
+        ).find((flow) => flow.alias === form.alias)!;
 
         newFlow.description = form.description;
         await adminClient.authenticationManagement.updateFlow(
