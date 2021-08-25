@@ -24,10 +24,10 @@
     "prepare": "husky install"
   },
   "dependencies": {
-    "@patternfly/patternfly": "^4.125.3",
-    "@patternfly/react-core": "4.147.0",
-    "@patternfly/react-icons": "4.11.8",
-    "@patternfly/react-table": "4.29.37",
+    "@patternfly/patternfly": "^4.132.2",
+    "@patternfly/react-core": "4.152.4",
+    "@patternfly/react-icons": "4.11.14",
+    "@patternfly/react-table": "4.29.58",
     "dagre": "^0.8.5",
     "file-saver": "^2.0.5",
     "i18next": "^20.4.0",
