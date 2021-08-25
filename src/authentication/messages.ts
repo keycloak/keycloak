@@ -49,5 +49,9 @@ export default {
       DISABLED: "Disabled",
       CONDITIONAL: "Conditional",
     },
+    executionConfig: "{{name}} config",
+    alias: "Alias",
+    configSaveSuccess: "Successfully saved the execution config",
+    configSaveError: "Could not save the execution config: {{error}}",
   },
 };

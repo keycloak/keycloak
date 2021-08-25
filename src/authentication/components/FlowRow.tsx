@@ -13,11 +13,12 @@ import {
 } from "@patternfly/react-core";
 
 import type AuthenticationExecutionInfoRepresentation from "keycloak-admin/lib/defs/authenticationExecutionInfoRepresentation";
-import type { ExpandableExecution } from "../FlowDetails";
+import type { ExpandableExecution } from "../execution-model";
 import { FlowTitle } from "./FlowTitle";
 import { FlowRequirementDropdown } from "./FlowRequirementDropdown";
 
 import "./flow-row.css";
+import { ExecutionConfigModal } from "./ExecutionConfigModal";
 
 type FlowRowProps = {
   execution: ExpandableExecution;
@@ -80,6 +81,11 @@ export const FlowRow = ({
                   flow={execution}
                   onChange={onRowChange}
                 />
+              </DataListCell>,
+              <DataListCell key={`${execution.id}-config`}>
+                {execution.configurable && (
+                  <ExecutionConfigModal execution={execution} />
+                )}
               </DataListCell>,
             ]}
           />

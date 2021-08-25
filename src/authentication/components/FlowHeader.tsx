@@ -20,11 +20,10 @@ export const FlowHeader = () => {
           className="keycloak__authentication__header"
           dataListCells={[
             <DataListCell key="step" id="headerName">
-              <>{t("steps")}</>
+              {t("steps")}
             </DataListCell>,
-            <DataListCell key="requirement">
-              <>{t("requirement")}</>
-            </DataListCell>,
+            <DataListCell key="requirement">{t("requirement")}</DataListCell>,
+            <DataListCell key="config"></DataListCell>,
           ]}
         />
       </DataListItemRow>

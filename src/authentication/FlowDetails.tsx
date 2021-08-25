@@ -26,11 +26,6 @@ import { ExecutionList, IndexChange, LevelChange } from "./execution-model";
 import { FlowDiagram } from "./components/FlowDiagram";
 import { useAlerts } from "../components/alert/Alerts";
 
-export type ExpandableExecution = AuthenticationExecutionInfoRepresentation & {
-  executionList: ExpandableExecution[];
-  isCollapsed: boolean;
-};
-
 export const FlowDetails = () => {
   const { t } = useTranslation("authentication");
   const adminClient = useAdminClient();
