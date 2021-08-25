@@ -42,10 +42,10 @@ public class DockerVariableOverrideInstallationProvider implements ClientInstall
     // TODO "auth" is not guaranteed to be the endpoint, fix it
     @Override
     public Response generateInstallation(final KeycloakSession session, final RealmModel realm, final ClientModel client, final URI serverBaseUri) {
-        final StringBuilder builder = new StringBuilder()
-                .append("-e REGISTRY_AUTH_TOKEN_REALM=").append(serverBaseUri).append("/realms/").append(realm.getName()).append("/protocol/").append(DockerAuthV2Protocol.LOGIN_PROTOCOL).append("/auth \\\n")
+        final StringBuilder builder = new StringBuilder()session.getContext().getUri().getBaseUri().toURL()
+                .append("-e REGISTRY_AUTH_TOKEN_REALM=").append(serverBaseUri).append("realms/").append(realm.getName()).append("/protocol/").append(DockerAuthV2Protocol.LOGIN_PROTOCOL).append("/auth \\\n")
                 .append("-e REGISTRY_AUTH_TOKEN_SERVICE=").append(client.getClientId()).append(" \\\n")
-                .append("-e REGISTRY_AUTH_TOKEN_ISSUER=").append(serverBaseUri).append("/realms/").append(realm.getName()).append(" \\\n");
+                .append("-e REGISTRY_AUTH_TOKEN_ISSUER=").append(serverBaseUri).append("realms/").append(realm.getName()).append(" \\\n");
         return Response.ok(builder.toString(), MediaType.TEXT_PLAIN_TYPE).build();
     }
 
