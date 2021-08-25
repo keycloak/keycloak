@@ -13,9 +13,9 @@ import { emptyFormatter, upperCaseFormatter } from "../util";
 import { useRealm } from "../context/realm-context/RealmContext";
 import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
 import { HelpItem } from "../components/help-enabler/HelpItem";
+import { toRealmRole } from "./routes/RealmRole";
 
 import "./RealmRolesSection.css";
-import { toRealmRole } from "./routes/RealmRole";
 
 type myRealmRepresentation = RealmRepresentation & {
   defaultRole?: {
