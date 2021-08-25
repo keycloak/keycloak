@@ -28,6 +28,7 @@ jobs:
         with:
           node-version: 16
           check-latest: true
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
