@@ -1,7 +1,6 @@
 export default class EventsPage {
   searchEventDrpDwn = ".pf-c-dropdown__toggle";
-  searchEventDrpDwnBtn =
-    ".keycloak__user_events_search_selector_dropdown__toggle";
+  searchEventDrpDwnBtn = "userEventsSearchSelectorToggle";
   searchForm = ".pf-c-dropdown__menu";
   userIdInputFld = "userId-searchField";
   eventTypeDrpDwnFld = "event-type-searchField";
@@ -20,7 +19,7 @@ export default class EventsPage {
   }
 
   shouldHaveFormFields() {
-    cy.get(this.searchEventDrpDwnBtn).click();
+    cy.getId(this.searchEventDrpDwnBtn).click();
     cy.get(this.searchForm).contains("User ID");
     cy.get(this.searchForm).contains("Event type");
     cy.get(this.searchForm).contains("Client");
@@ -30,23 +29,23 @@ export default class EventsPage {
   }
 
   shouldHaveEventTypeOptions() {
-    cy.get(this.searchEventDrpDwnBtn).click();
+    cy.getId(this.searchEventDrpDwnBtn).click();
     cy.get(this.eventTypeList).should("exist");
   }
 
   shouldHaveSearchBtnDisabled() {
-    cy.get(this.searchEventDrpDwnBtn).click();
+    cy.getId(this.searchEventDrpDwnBtn).click();
     cy.getId(this.searchEventsBtn).should("have.attr", "disabled");
   }
 
   shouldHaveSearchBtnEnabled() {
-    cy.get(this.searchEventDrpDwnBtn).click();
+    cy.getId(this.searchEventDrpDwnBtn).click();
     cy.getId(this.userIdInputFld).type("11111");
     cy.getId(this.searchEventsBtn).should("not.have.attr", "disabled");
   }
 
   shouldDoSearchAndRemoveChips() {
-    cy.get(this.searchEventDrpDwnBtn).click();
+    cy.getId(this.searchEventDrpDwnBtn).click();
     cy.get(this.eventTypeInputFld).type("LOGIN");
     cy.get(this.eventTypeOption).contains("LOGIN").click();
 
@@ -62,7 +61,7 @@ export default class EventsPage {
 
     cy.get("[id^=remove_pf]").click();
 
-    cy.get(this.searchEventDrpDwnBtn).click();
+    cy.getId(this.searchEventDrpDwnBtn).click();
     cy.getId(this.userIdInputFld).type("11111");
     cy.getId(this.searchEventsBtn).click();
     cy.get(this.eventsPageTitle).contains("No events logged");
@@ -71,7 +70,7 @@ export default class EventsPage {
   }
 
   shouldDoNoResultsSearch() {
-    cy.get(this.searchEventDrpDwnBtn).click();
+    cy.getId(this.searchEventDrpDwnBtn).click();
     cy.getId(this.userIdInputFld).type("test");
     cy.getId(this.searchEventsBtn).click();
     cy.get(this.eventsPageTitle).contains("No events logged");
