@@ -197,13 +197,15 @@ export const DetailSettings = () => {
                   </>
                 )}
                 {isSAML && <DescriptorSettings readOnly={false} />}
-                <FormAccess
-                  role="manage-identity-providers"
-                  isHorizontal
-                  onSubmit={handleSubmit(save)}
-                >
-                  <ReqAuthnConstraints />
-                </FormAccess>
+                {isSAML && (
+                  <FormAccess
+                    role="manage-identity-providers"
+                    isHorizontal
+                    onSubmit={handleSubmit(save)}
+                  >
+                    <ReqAuthnConstraints />
+                  </FormAccess>
+                )}
                 <FormAccess
                   role="manage-identity-providers"
                   isHorizontal
