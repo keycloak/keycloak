@@ -1,8 +1,17 @@
 import {
+  ActionGroup,
   Button,
+  Dropdown,
+  DropdownToggle,
+  Flex,
+  FlexItem,
+  Form,
+  FormGroup,
   Modal,
   ModalVariant,
-  ToolbarItem,
+  Select,
+  SelectVariant,
+  TextInput,
   Tooltip,
 } from "@patternfly/react-core";
 import {
@@ -15,16 +24,42 @@ import {
 import type AdminEventRepresentation from "keycloak-admin/lib/defs/adminEventRepresentation";
 import moment from "moment";
 import React, { FunctionComponent, useState } from "react";
+import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
+import "./events.css";
 
 type DisplayDialogProps = {
   titleKey: string;
   onClose: () => void;
+};
+
+type AdminEventSearchForm = {
+  operationType: string[];
+  resourceType: string[];
+  resourcePath: string;
+  dateFrom: string;
+  dateTo: string;
+  client: string;
+  user: string;
+  realm: string[];
+  ipAddress: string;
+};
+
+const defaultValues: AdminEventSearchForm = {
+  operationType: [],
+  resourceType: [],
+  resourcePath: "",
+  dateFrom: "",
+  dateTo: "",
+  client: "",
+  user: "",
+  realm: [],
+  ipAddress: "",
 };
 
 const DisplayDialog: FunctionComponent<DisplayDialogProps> = ({
@@ -72,11 +107,22 @@ export const AdminEvents = () => {
   const { realm } = useRealm();
 
   const [key, setKey] = useState(0);
+  const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
+  const [selectOpen, setSelectOpen] = useState(false);
   const refresh = () => setKey(new Date().getTime());
 
   const [authEvent, setAuthEvent] = useState<AdminEventRepresentation>();
   const [representationEvent, setRepresentationEvent] =
     useState<AdminEventRepresentation>();
+
+  const {
+    register,
+    formState: { isDirty },
+  } = useForm<AdminEventSearchForm>({
+    shouldUnregister: false,
+    mode: "onChange",
+    defaultValues,
+  });
 
   const loader = async (first?: number, max?: number, search?: string) => {
     const params = {
@@ -111,6 +157,145 @@ export const AdminEvents = () => {
     </>
   );
 
+  const adminEventSearchFormDisplay = () => {
+    return (
+      <>
+        <Flex direction={{ default: "column" }}>
+          <FlexItem>
+            <Dropdown
+              id="admin-events-search-select"
+              data-testid="AdminEventsSearchSelector"
+              className="pf-u-mt-md pf-u-ml-md pf-u-mb-md"
+              toggle={
+                <DropdownToggle
+                  data-testid="adminEventsSearchSelectorToggle"
+                  onToggle={(isOpen) => setSearchDropdownOpen(isOpen)}
+                  className="keycloak__events_search_selector_dropdown__toggle"
+                >
+                  {t("searchForAdminEvent")}
+                </DropdownToggle>
+              }
+              isOpen={searchDropdownOpen}
+            >
+              <Form
+                isHorizontal
+                className="keycloak__events_search__form"
+                data-testid="searchForm"
+              >
+                <FormGroup
+                  label={t("resourceType")}
+                  fieldId="kc-resourceType"
+                  className="keycloak__events_search__form_label"
+                >
+                  <Select
+                    variant={SelectVariant.single}
+                    onToggle={(isOpen) => setSelectOpen(isOpen)}
+                    isOpen={selectOpen}
+                  ></Select>
+                </FormGroup>
+                <FormGroup
+                  label={t("operationType")}
+                  fieldId="kc-operationType"
+                  className="keycloak__events_search__form_label"
+                >
+                  <Select
+                    variant={SelectVariant.single}
+                    onToggle={(isOpen) => setSelectOpen(isOpen)}
+                    isOpen={selectOpen}
+                  ></Select>
+                </FormGroup>
+                <FormGroup
+                  label={t("user")}
+                  fieldId="kc-user"
+                  className="keycloak__events_search__form_label"
+                >
+                  <TextInput
+                    ref={register()}
+                    type="text"
+                    id="kc-user"
+                    name="user"
+                    data-testid="user-searchField"
+                  />
+                </FormGroup>
+                <FormGroup
+                  label={t("realm")}
+                  fieldId="kc-realm"
+                  className="keycloak__events_search__form_label"
+                >
+                  <Select
+                    variant={SelectVariant.single}
+                    onToggle={(isOpen) => setSelectOpen(isOpen)}
+                    isOpen={selectOpen}
+                  ></Select>
+                </FormGroup>
+                <FormGroup
+                  label={t("ipAddress")}
+                  fieldId="kc-ipAddress"
+                  className="keycloak__events_search__form_label"
+                >
+                  <TextInput
+                    ref={register()}
+                    type="text"
+                    id="kc-ipAddress"
+                    name="ipAddress"
+                    data-testid="ipAddress-searchField"
+                  />
+                </FormGroup>
+                <FormGroup
+                  label={t("dateFrom")}
+                  fieldId="kc-dateFrom"
+                  className="keycloak__events_search__form_label"
+                >
+                  <TextInput
+                    ref={register()}
+                    type="text"
+                    id="kc-dateFrom"
+                    name="dateFrom"
+                    className="pf-c-form-control pf-m-icon pf-m-calendar"
+                    placeholder="yyyy-MM-dd"
+                    data-testid="dateFrom-searchField"
+                  />
+                </FormGroup>
+                <FormGroup
+                  label={t("dateTo")}
+                  fieldId="kc-dateTo"
+                  className="keycloak__events_search__form_label"
+                >
+                  <TextInput
+                    ref={register()}
+                    type="text"
+                    id="kc-dateTo"
+                    name="dateTo"
+                    className="pf-c-form-control pf-m-icon pf-m-calendar"
+                    placeholder="yyyy-MM-dd"
+                    data-testid="dateTo-searchField"
+                  />
+                </FormGroup>
+                <ActionGroup>
+                  <Button
+                    className="keycloak__admin_events_search__form_btn"
+                    variant={"primary"}
+                    data-testid="search-events-btn"
+                    isDisabled={!isDirty}
+                  >
+                    {t("searchAdminEventsBtn")}
+                  </Button>
+                </ActionGroup>
+              </Form>
+            </Dropdown>
+            <Button
+              className="pf-u-ml-md"
+              onClick={refresh}
+              data-testid="refresh-btn"
+            >
+              {t("refresh")}
+            </Button>
+          </FlexItem>
+        </Flex>
+      </>
+    );
+  };
+
   return (
     <>
       {authEvent && (
@@ -139,14 +324,7 @@ export const AdminEvents = () => {
         loader={loader}
         isPaginated
         ariaLabelKey="events:adminEvents"
-        searchPlaceholderKey="events:searchForEvent"
-        toolbarItem={
-          <>
-            <ToolbarItem>
-              <Button onClick={refresh}>{t("refresh")}</Button>
-            </ToolbarItem>
-          </>
-        }
+        toolbarItem={adminEventSearchFormDisplay()}
         actions={[
           {
             title: t("auth"),

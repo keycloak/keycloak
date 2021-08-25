@@ -7,7 +7,6 @@ import {
   DescriptionListDescription,
   DescriptionListGroup,
   DescriptionListTerm,
-  Divider,
   Dropdown,
   DropdownToggle,
   Flex,
@@ -43,7 +42,7 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { toRealmSettings } from "../realm-settings/routes/RealmSettings";
 import { toUser } from "../user/routes/User";
 import { AdminEvents } from "./AdminEvents";
-import "./events-section.css";
+import "./events.css";
 
 type UserEventSearchForm = {
   client: string;
@@ -170,6 +169,10 @@ export const EventsSection = () => {
     setKey(key + 1);
   }
 
+  function refresh() {
+    commitFilters();
+  }
+
   const UserDetailLink = (event: EventRepresentation) => (
     <Link
       key={`link-${event.time}-${event.type}`}
@@ -179,190 +182,174 @@ export const EventsSection = () => {
     </Link>
   );
 
-  return (
-    <>
-      <ViewHeader
-        titleKey="events:title"
-        subKey={
-          <Trans i18nKey="events:eventExplain">
-            If you want to configure user events, Admin events or Event
-            listeners, please enter
-            <Link to={toRealmSettings({ realm, tab: "events" })}>
-              {t("eventConfig")}
-            </Link>
-            page realm settings to configure.
-          </Trans>
-        }
-        divider={false}
-      />
-      <PageSection variant="light" className="pf-u-p-0">
-        <KeycloakTabs isBox>
-          <Tab
-            eventKey="userEvents"
-            title={<TabTitleText>{t("userEvents")}</TabTitleText>}
-          >
-            <Flex>
-              <FlexItem>
-                <Dropdown
-                  id="user-events-search-select"
-                  data-testid="UserEventsSearchSelector"
-                  className="pf-u-mt-md pf-u-ml-md pf-u-mb-md"
-                  toggle={
-                    <DropdownToggle
-                      data-testid="userEventsSearchSelectorToggle"
-                      onToggle={(isOpen) => setSearchDropdownOpen(isOpen)}
-                      className="keycloak__user_events_search_selector_dropdown__toggle"
-                    >
-                      {t("searchForEvent")}
-                    </DropdownToggle>
-                  }
-                  isOpen={searchDropdownOpen}
+  const userEventSearchFormDisplay = () => {
+    return (
+      <>
+        <Flex direction={{ default: "column" }}>
+          <FlexItem>
+            <Dropdown
+              id="user-events-search-select"
+              data-testid="UserEventsSearchSelector"
+              className="pf-u-mt-md pf-u-ml-md"
+              toggle={
+                <DropdownToggle
+                  data-testid="userEventsSearchSelectorToggle"
+                  onToggle={(isOpen) => setSearchDropdownOpen(isOpen)}
+                  className="keycloak__events_search_selector_dropdown__toggle"
                 >
-                  <Form
-                    isHorizontal
-                    className="keycloak__user_events_search__form"
-                    data-testid="searchForm"
-                  >
-                    <FormGroup
-                      label={t("userId")}
-                      fieldId="kc-userId"
-                      className="keycloak__user_events_search__form_label"
-                    >
-                      <TextInput
-                        ref={register()}
-                        type="text"
-                        id="kc-userId"
-                        name="user"
-                        data-testid="userId-searchField"
-                      />
-                    </FormGroup>
-                    <FormGroup
-                      label={t("eventType")}
-                      fieldId="kc-eventType"
-                      className="keycloak__user_events_search__form_label"
-                    >
-                      <Controller
-                        name="type"
-                        control={control}
-                        render={({
-                          onChange,
-                          value,
-                        }: {
-                          onChange: (newValue: EventType[]) => void;
-                          value: EventType[];
-                        }) => (
-                          <Select
-                            className="keycloak__user_events_search__event_type_select"
-                            name="eventType"
-                            data-testid="event-type-searchField"
-                            chipGroupProps={{
-                              numChips: 1,
-                              expandedText: "Hide",
-                              collapsedText: "Show ${remaining}",
-                            }}
-                            variant={SelectVariant.typeaheadMulti}
-                            typeAheadAriaLabel="Select"
-                            onToggle={(isOpen) => setSelectOpen(isOpen)}
-                            selections={value}
-                            onSelect={(_, selectedValue) => {
-                              const option =
-                                selectedValue.toString() as EventType;
-                              const changedValue = value.includes(option)
-                                ? value.filter((item) => item !== option)
-                                : [...value, option];
+                  {t("searchForUserEvent")}
+                </DropdownToggle>
+              }
+              isOpen={searchDropdownOpen}
+            >
+              <Form
+                isHorizontal
+                className="keycloak__events_search__form"
+                data-testid="searchForm"
+              >
+                <FormGroup
+                  label={t("userId")}
+                  fieldId="kc-userId"
+                  className="keycloak__events_search__form_label"
+                >
+                  <TextInput
+                    ref={register()}
+                    type="text"
+                    id="kc-userId"
+                    name="user"
+                    data-testid="userId-searchField"
+                  />
+                </FormGroup>
+                <FormGroup
+                  label={t("eventType")}
+                  fieldId="kc-eventType"
+                  className="keycloak__events_search__form_label"
+                >
+                  <Controller
+                    name="type"
+                    control={control}
+                    render={({
+                      onChange,
+                      value,
+                    }: {
+                      onChange: (newValue: EventType[]) => void;
+                      value: EventType[];
+                    }) => (
+                      <Select
+                        className="keycloak__events_search__event_type_select"
+                        name="eventType"
+                        data-testid="event-type-searchField"
+                        chipGroupProps={{
+                          numChips: 1,
+                          expandedText: "Hide",
+                          collapsedText: "Show ${remaining}",
+                        }}
+                        variant={SelectVariant.typeaheadMulti}
+                        typeAheadAriaLabel="Select"
+                        onToggle={(isOpen) => setSelectOpen(isOpen)}
+                        selections={value}
+                        onSelect={(_, selectedValue) => {
+                          const option = selectedValue.toString() as EventType;
+                          const changedValue = value.includes(option)
+                            ? value.filter((item) => item !== option)
+                            : [...value, option];
 
-                              onChange(changedValue);
-                            }}
-                            onClear={(event) => {
-                              event.stopPropagation();
-                              onChange([]);
-                            }}
-                            isOpen={selectOpen}
-                            aria-labelledby={"eventType"}
-                            chipGroupComponent={
-                              <ChipGroup>
-                                {value.map((chip) => (
-                                  <Chip
-                                    key={chip}
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-
-                                      onChange(
-                                        value.filter((val) => val !== chip)
-                                      );
-                                    }}
-                                  >
-                                    {chip}
-                                  </Chip>
-                                ))}
-                              </ChipGroup>
-                            }
-                          >
-                            {events?.enabledEventTypes?.map((option) => (
-                              <SelectOption key={option} value={option} />
+                          onChange(changedValue);
+                        }}
+                        onClear={(event) => {
+                          event.stopPropagation();
+                          onChange([]);
+                        }}
+                        isOpen={selectOpen}
+                        aria-labelledby={"eventType"}
+                        chipGroupComponent={
+                          <ChipGroup>
+                            {value.map((chip) => (
+                              <Chip
+                                key={chip}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  onChange(value.filter((val) => val !== chip));
+                                }}
+                              >
+                                {chip}
+                              </Chip>
                             ))}
-                          </Select>
-                        )}
-                      />
-                    </FormGroup>
-                    <FormGroup
-                      label={t("client")}
-                      fieldId="kc-client"
-                      className="keycloak__user_events_search__form_label"
-                    >
-                      <TextInput
-                        ref={register()}
-                        type="text"
-                        id="kc-client"
-                        name="client"
-                        data-testid="client-searchField"
-                      />
-                    </FormGroup>
-                    <FormGroup
-                      label={t("dateFrom")}
-                      fieldId="kc-dateFrom"
-                      className="keycloak__user_events_search__form_label"
-                    >
-                      <TextInput
-                        ref={register()}
-                        type="text"
-                        id="kc-dateFrom"
-                        name="dateFrom"
-                        className="pf-c-form-control pf-m-icon pf-m-calendar"
-                        placeholder="yyyy-MM-dd"
-                        data-testid="dateFrom-searchField"
-                      />
-                    </FormGroup>
-                    <FormGroup
-                      label={t("dateTo")}
-                      fieldId="kc-dateTo"
-                      className="keycloak__user_events_search__form_label"
-                    >
-                      <TextInput
-                        ref={register()}
-                        type="text"
-                        id="kc-dateTo"
-                        name="dateTo"
-                        className="pf-c-form-control pf-m-icon pf-m-calendar"
-                        placeholder="yyyy-MM-dd"
-                        data-testid="dateTo-searchField"
-                      />
-                    </FormGroup>
-                    <ActionGroup>
-                      <Button
-                        className="keycloak__user_events_search__form_btn"
-                        variant={"primary"}
-                        onClick={submitSearch}
-                        data-testid="search-events-btn"
-                        isDisabled={!isDirty}
+                          </ChipGroup>
+                        }
                       >
-                        {t("searchBtn")}
-                      </Button>
-                    </ActionGroup>
-                  </Form>
-                </Dropdown>
-              </FlexItem>
-            </Flex>
+                        {events?.enabledEventTypes?.map((option) => (
+                          <SelectOption key={option} value={option} />
+                        ))}
+                      </Select>
+                    )}
+                  />
+                </FormGroup>
+                <FormGroup
+                  label={t("client")}
+                  fieldId="kc-client"
+                  className="keycloak__events_search__form_label"
+                >
+                  <TextInput
+                    ref={register()}
+                    type="text"
+                    id="kc-client"
+                    name="client"
+                    data-testid="client-searchField"
+                  />
+                </FormGroup>
+                <FormGroup
+                  label={t("dateFrom")}
+                  fieldId="kc-dateFrom"
+                  className="keycloak__events_search__form_label"
+                >
+                  <TextInput
+                    ref={register()}
+                    type="text"
+                    id="kc-dateFrom"
+                    name="dateFrom"
+                    className="pf-c-form-control pf-m-icon pf-m-calendar"
+                    placeholder="yyyy-MM-dd"
+                    data-testid="dateFrom-searchField"
+                  />
+                </FormGroup>
+                <FormGroup
+                  label={t("dateTo")}
+                  fieldId="kc-dateTo"
+                  className="keycloak__events_search__form_label"
+                >
+                  <TextInput
+                    ref={register()}
+                    type="text"
+                    id="kc-dateTo"
+                    name="dateTo"
+                    className="pf-c-form-control pf-m-icon pf-m-calendar"
+                    placeholder="yyyy-MM-dd"
+                    data-testid="dateTo-searchField"
+                  />
+                </FormGroup>
+                <ActionGroup>
+                  <Button
+                    className="keycloak__user_events_search__form_btn"
+                    variant={"primary"}
+                    onClick={submitSearch}
+                    data-testid="search-events-btn"
+                    isDisabled={!isDirty}
+                  >
+                    {t("searchUserEventsBtn")}
+                  </Button>
+                </ActionGroup>
+              </Form>
+            </Dropdown>
+            <Button
+              className="pf-u-ml-md"
+              onClick={refresh}
+              data-testid="refresh-btn"
+            >
+              {t("refresh")}
+            </Button>
+          </FlexItem>
+          <FlexItem>
             {Object.entries(activeFilters).length > 0 && (
               <div className="keycloak__searchChips pf-u-ml-md">
                 {Object.entries(activeFilters).map((filter) => {
@@ -396,6 +383,34 @@ export const EventsSection = () => {
                 })}
               </div>
             )}
+          </FlexItem>
+        </Flex>
+      </>
+    );
+  };
+
+  return (
+    <>
+      <ViewHeader
+        titleKey="events:title"
+        subKey={
+          <Trans i18nKey="events:eventExplain">
+            If you want to configure user events, Admin events or Event
+            listeners, please enter
+            <Link to={toRealmSettings({ realm, tab: "events" })}>
+              {t("eventConfig")}
+            </Link>
+            page realm settings to configure.
+          </Trans>
+        }
+        divider={false}
+      />
+      <PageSection variant="light" className="pf-u-p-0">
+        <KeycloakTabs isBox>
+          <Tab
+            eventKey="userEvents"
+            title={<TabTitleText>{t("userEvents")}</TabTitleText>}
+          >
             <div className="keycloak__events_table">
               <KeycloakDataTable
                 key={key}
@@ -409,6 +424,7 @@ export const EventsSection = () => {
                 ]}
                 isPaginated
                 ariaLabelKey="events:title"
+                toolbarItem={userEventSearchFormDisplay()}
                 columns={[
                   {
                     name: "time",
@@ -438,7 +454,6 @@ export const EventsSection = () => {
                 ]}
                 emptyState={
                   <div className="pf-u-mt-md">
-                    <Divider className="keycloak__events_empty_state_divider" />
                     <ListEmptyState
                       message={t("emptyEvents")}
                       instructions={t("emptyEventsInstructions")}
