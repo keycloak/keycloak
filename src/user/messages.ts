@@ -3,6 +3,8 @@ export default {
     title: "Users",
     searchForUser: "Search user",
     startBySearchingAUser: "Start by searching for users",
+    searchForUserDescription:
+      "This realm has a federated provider. Viewing all users may cause the system to slow down. Please search for a user above.",
     createUser: "Create user",
     createNewUser: "Create new user",
     noUsersFound: "No users found",

@@ -4,6 +4,8 @@ import {
   ButtonVariant,
   Label,
   PageSection,
+  Text,
+  TextContent,
   ToolbarItem,
   Tooltip,
 } from "@patternfly/react-core";
@@ -25,7 +27,6 @@ import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { emptyFormatter } from "../util";
 import { toUser } from "./routes/User";
-import { SearchUser } from "./SearchUser";
 import "./user-section.css";
 
 type BruteUser = UserRepresentation & {
@@ -40,9 +41,7 @@ export const UsersSection = () => {
   const history = useHistory();
   const { url } = useRouteMatch();
   const [listUsers, setListUsers] = useState(false);
-  const [initialSearch, setInitialSearch] = useState("");
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
-  const [search, setSearch] = useState("");
 
   const [key, setKey] = useState("");
   const refresh = () => setKey(`${new Date().getTime()}`);
@@ -53,16 +52,12 @@ export const UsersSection = () => {
         type: "org.keycloak.storage.UserStorageProvider",
       };
 
-      return Promise.all([
-        adminClient.components.find(testParams),
-        adminClient.users.count(),
-      ]);
+      return adminClient.components.find(testParams);
     },
     (response) => {
-      //should *only* list users when no user federation is configured and uses count > 100
-      setListUsers(
-        !((response[0] && response[0].length > 0) || response[1] > 100)
-      );
+      //should *only* list users when no user federation is configured
+      setListUsers(!(response.length > 0));
+      refresh();
     },
     []
   );
@@ -83,15 +78,16 @@ export const UsersSection = () => {
       first: first!,
       max: max!,
     };
-    const searchParam = search || initialSearch || "";
+
+    const searchParam = search || "";
     if (searchParam) {
       params.search = searchParam;
-      setSearch(searchParam);
     }
 
     if (!listUsers && !searchParam) {
       return [];
     }
+
     try {
       const users = await adminClient.users.find({ ...params });
       const realm = await adminClient.realms.findOne({ realm: realmName });
@@ -179,89 +175,82 @@ export const UsersSection = () => {
         variant="light"
         className="pf-u-p-0"
       >
-        {!listUsers && !initialSearch && (
-          <SearchUser
-            onSearch={(search) => {
-              setInitialSearch(search);
-            }}
-          />
-        )}
-        {(listUsers || initialSearch) && (
-          <KeycloakDataTable
-            key={key}
-            loader={loader}
-            isPaginated
-            ariaLabelKey="users:title"
-            searchPlaceholderKey="users:searchForUser"
-            canSelectAll
-            onSelect={(rows) => setSelectedRows([...rows])}
-            emptyState={
-              !search ? (
-                <ListEmptyState
-                  message={t("noUsersFound")}
-                  instructions={t("emptyInstructions")}
-                  primaryActionText={t("createNewUser")}
-                  onPrimaryAction={goToCreate}
-                />
-              ) : (
-                ""
-              )
-            }
-            toolbarItem={
-              <>
-                <ToolbarItem>
-                  <Button data-testid="add-user" onClick={goToCreate}>
-                    {t("addUser")}
-                  </Button>
-                </ToolbarItem>
-                <ToolbarItem>
-                  <Button
-                    variant={ButtonVariant.plain}
-                    onClick={toggleDeleteDialog}
-                  >
-                    {t("deleteUser")}
-                  </Button>
-                </ToolbarItem>
-              </>
-            }
-            actions={[
-              {
-                title: t("common:delete"),
-                onRowClick: (user) => {
-                  setSelectedRows([user]);
-                  toggleDeleteDialog();
-                },
+        <KeycloakDataTable
+          key={key}
+          loader={loader}
+          isPaginated
+          ariaLabelKey="users:title"
+          searchPlaceholderKey="users:searchForUser"
+          canSelectAll
+          onSelect={(rows) => setSelectedRows([...rows])}
+          emptyState={
+            !listUsers ? (
+              <TextContent className="kc-search-users-text">
+                <Text>{t("searchForUserDescription")}</Text>
+              </TextContent>
+            ) : (
+              <ListEmptyState
+                message={t("noUsersFound")}
+                instructions={t("emptyInstructions")}
+                primaryActionText={t("createNewUser")}
+                onPrimaryAction={goToCreate}
+              />
+            )
+          }
+          toolbarItem={
+            <>
+              <ToolbarItem>
+                <Button data-testid="add-user" onClick={goToCreate}>
+                  {t("addUser")}
+                </Button>
+              </ToolbarItem>
+              <ToolbarItem>
+                <Button
+                  variant={ButtonVariant.plain}
+                  onClick={toggleDeleteDialog}
+                >
+                  {t("deleteUser")}
+                </Button>
+              </ToolbarItem>
+            </>
+          }
+          actions={[
+            {
+              title: t("common:delete"),
+              onRowClick: (user) => {
+                setSelectedRows([user]);
+                toggleDeleteDialog();
               },
-            ]}
-            columns={[
-              {
-                name: "username",
-                displayKey: "users:username",
-                cellRenderer: UserDetailLink,
-              },
-              {
-                name: "email",
-                displayKey: "users:email",
-                cellRenderer: ValidatedEmail,
-              },
-              {
-                name: "lastName",
-                displayKey: "users:lastName",
-                cellFormatters: [emptyFormatter()],
-              },
-              {
-                name: "firstName",
-                displayKey: "users:firstName",
-                cellFormatters: [emptyFormatter()],
-              },
-              {
-                name: "status",
-                displayKey: "users:status",
-                cellRenderer: StatusRow,
-              },
-            ]}
-          />
-        )}
+            },
+          ]}
+          columns={[
+            {
+              name: "username",
+              displayKey: "users:username",
+              cellRenderer: UserDetailLink,
+            },
+            {
+              name: "email",
+              displayKey: "users:email",
+              cellRenderer: ValidatedEmail,
+            },
+            {
+              name: "lastName",
+              displayKey: "users:lastName",
+              cellFormatters: [emptyFormatter()],
+            },
+            {
+              name: "firstName",
+              displayKey: "users:firstName",
+              cellFormatters: [emptyFormatter()],
+            },
+            {
+              name: "status",
+              displayKey: "users:status",
+              cellRenderer: StatusRow,
+            },
+          ]}
+        />
       </PageSection>
     </>
   );

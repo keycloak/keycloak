@@ -83,3 +83,8 @@ div.pf-c-chip-group.kc-consents-chip-group
   content: "";
   margin-left: var(--pf-global--spacer--sm);
 }
+
+.kc-search-users-text {
+  margin-left: var(--pf-global--spacer--md);
+  color: var(--pf-global--Color--400);
+}
