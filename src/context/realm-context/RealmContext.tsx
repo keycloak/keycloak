@@ -1,4 +1,4 @@
-import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import _ from "lodash";
 import React, { FunctionComponent, useEffect, useState } from "react";
 import { useRouteMatch } from "react-router-dom";

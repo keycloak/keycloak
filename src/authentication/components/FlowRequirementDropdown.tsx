@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Select, SelectOption, SelectVariant } from "@patternfly/react-core";
 
-import type AuthenticationExecutionInfoRepresentation from "keycloak-admin/lib/defs/authenticationExecutionInfoRepresentation";
+import type AuthenticationExecutionInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationExecutionInfoRepresentation";
 
 type FlowRequirementDropdownProps = {
   flow: AuthenticationExecutionInfoRepresentation;

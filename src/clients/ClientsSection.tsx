@@ -9,7 +9,7 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 import { cellWidth, TableText } from "@patternfly/react-table";
-import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";

@@ -24,7 +24,7 @@ import {
   RoleMapping,
   Row,
 } from "../../components/role-mapping/RoleMapping";
-import type { RoleMappingPayload } from "keycloak-admin/lib/defs/roleRepresentation";
+import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import {
   AllClientScopes,
   changeScope,

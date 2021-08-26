@@ -7,8 +7,8 @@ import {
 } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { cellWidth } from "@patternfly/react-table";
-import type GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
-import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
+import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import _ from "lodash";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";

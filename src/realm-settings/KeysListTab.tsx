@@ -11,8 +11,8 @@ import {
 } from "@patternfly/react-core";
 import { cellWidth } from "@patternfly/react-table";
 
-import type { KeyMetadataRepresentation } from "keycloak-admin/lib/defs/keyMetadataRepresentation";
-import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import type { KeyMetadataRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/keyMetadataRepresentation";
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";

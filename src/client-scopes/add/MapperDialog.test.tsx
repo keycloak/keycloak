@@ -1,6 +1,6 @@
 import { Button } from "@patternfly/react-core";
 import { fireEvent, render, screen } from "@testing-library/react";
-import type { ServerInfoRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
+import type { ServerInfoRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import React, { useState } from "react";
 import { ServerInfoContext } from "../../context/server-info/ServerInfoProvider";
 import serverInfo from "../../context/server-info/__tests__/mock.json";

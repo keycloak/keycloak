@@ -14,7 +14,7 @@ import {
   InfoCircleIcon,
   WarningTriangleIcon,
 } from "@patternfly/react-icons";
-import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useHistory, useRouteMatch } from "react-router-dom";

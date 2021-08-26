@@ -13,7 +13,7 @@ import { LdapSettingsKerberosIntegration } from "./ldap/LdapSettingsKerberosInte
 import { SettingsCache } from "./shared/SettingsCache";
 import { LdapSettingsAdvanced } from "./ldap/LdapSettingsAdvanced";
 import { useTranslation } from "react-i18next";
-import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 
 import { useForm } from "react-hook-form";
 

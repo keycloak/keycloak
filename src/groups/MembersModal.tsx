@@ -8,7 +8,7 @@ import {
   ModalVariant,
 } from "@patternfly/react-core";
 
-import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useAlerts } from "../components/alert/Alerts";

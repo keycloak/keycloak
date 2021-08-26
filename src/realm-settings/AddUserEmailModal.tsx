@@ -13,7 +13,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useForm, UseFormMethods } from "react-hook-form";
 
-import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { emailRegexPattern } from "../util";
 
 type AddUserEmailModalProps = {

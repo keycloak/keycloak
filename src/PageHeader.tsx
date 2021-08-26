@@ -34,7 +34,7 @@ export const Header = () => {
           <DropdownItem
             key="manage account"
             id="manage-account"
-            onClick={() => adminClient.keycloak.accountManagement()}
+            onClick={() => adminClient.keycloak?.accountManagement()}
           >
             {t("manageAccount")}
           </DropdownItem>
@@ -50,7 +50,7 @@ export const Header = () => {
           <DropdownItem
             id="sign-out"
             key="sign out"
-            onClick={() => adminClient.keycloak.logout({ redirectUri: "" })}
+            onClick={() => adminClient.keycloak?.logout({ redirectUri: "" })}
           >
             {t("signOut")}
           </DropdownItem>

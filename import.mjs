@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { readFile } from "node:fs/promises";
-import KcAdminClient from "keycloak-admin";
+import KcAdminClient from "@keycloak/keycloak-admin-client";
 
 const consoleClientConfig = JSON.parse(
   await readFile(new URL("./security-admin-console-v2.json", import.meta.url))

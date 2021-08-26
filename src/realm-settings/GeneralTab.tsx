@@ -16,7 +16,7 @@ import {
   TextInput,
 } from "@patternfly/react-core";
 
-import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { getBaseUrl } from "../util";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";

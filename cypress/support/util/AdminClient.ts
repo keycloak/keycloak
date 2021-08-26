@@ -1,6 +1,6 @@
-import KeycloakAdminClient from "keycloak-admin";
-import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
-import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
+import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 
 export default class AdminClient {
   private client: KeycloakAdminClient;

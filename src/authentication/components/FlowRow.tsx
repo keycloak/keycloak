@@ -12,7 +12,7 @@ import {
   TextVariants,
 } from "@patternfly/react-core";
 
-import type AuthenticationExecutionInfoRepresentation from "keycloak-admin/lib/defs/authenticationExecutionInfoRepresentation";
+import type AuthenticationExecutionInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationExecutionInfoRepresentation";
 import type { ExpandableExecution } from "../execution-model";
 import { FlowTitle } from "./FlowTitle";
 import { FlowRequirementDropdown } from "./FlowRequirementDropdown";

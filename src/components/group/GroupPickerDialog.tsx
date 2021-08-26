@@ -16,7 +16,7 @@ import {
 } from "@patternfly/react-core";
 import { AngleRightIcon } from "@patternfly/react-icons";
 
-import type GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
+import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { PaginatingTableToolbar } from "../table-toolbar/PaginatingTableToolbar";

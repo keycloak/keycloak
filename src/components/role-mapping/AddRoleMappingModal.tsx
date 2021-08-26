@@ -18,10 +18,10 @@ import {
 
 import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
 import { useFetch, useAdminClient } from "../../context/auth/AdminClient";
-import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { FilterIcon } from "@patternfly/react-icons";
 import { Row, ServiceRole } from "./RoleMapping";
-import type RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
+import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 
 export type MappingType = "service-account" | "client-scope" | "user-fed";
 

@@ -8,7 +8,7 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 
-import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import { KeycloakDataTable } from "../../../components/table-toolbar/KeycloakDataTable";
 import { ListEmptyState } from "../../../components/list-empty-state/ListEmptyState";
 import { useAlerts } from "../../../components/alert/Alerts";

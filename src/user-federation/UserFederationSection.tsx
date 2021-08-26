@@ -14,7 +14,7 @@ import {
   TextVariants,
 } from "@patternfly/react-core";
 import { DatabaseIcon } from "@patternfly/react-icons";
-import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useHistory, useRouteMatch } from "react-router-dom";

@@ -20,7 +20,7 @@ import ReactFlow, {
   isNode,
 } from "react-flow-renderer";
 
-import type AuthenticationExecutionInfoRepresentation from "keycloak-admin/lib/defs/authenticationExecutionInfoRepresentation";
+import type AuthenticationExecutionInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationExecutionInfoRepresentation";
 import type { ExecutionList, ExpandableExecution } from "../execution-model";
 import { EndSubFlowNode, StartSubFlowNode } from "./diagram/SubFlowNode";
 import { ConditionalNode } from "./diagram/ConditionalNode";

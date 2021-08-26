@@ -22,11 +22,11 @@ import {
   Title,
 } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
-import type ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
-import type ProtocolMapperRepresentation from "keycloak-admin/lib/defs/protocolMapperRepresentation";
-import type RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
-import type { ProtocolMapperTypeRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
-import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
+import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
+import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
+import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useHelp } from "../../components/help-enabler/HelpHeader";

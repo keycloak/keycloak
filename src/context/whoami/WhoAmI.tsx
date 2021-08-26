@@ -1,5 +1,5 @@
-import type WhoAmIRepresentation from "keycloak-admin/lib/defs/whoAmIRepresentation";
-import type { AccessType } from "keycloak-admin/lib/defs/whoAmIRepresentation";
+import type WhoAmIRepresentation from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
+import type { AccessType } from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
 import React, { FunctionComponent, useState } from "react";
 import environment from "../../environment";
 import i18n, { DEFAULT_LOCALE } from "../../i18n";

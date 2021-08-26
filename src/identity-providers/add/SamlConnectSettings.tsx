@@ -11,7 +11,7 @@ import {
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../context/auth/AdminClient";
-import type IdentityProviderRepresentation from "keycloak-admin/lib/defs/identityProviderRepresentation";
+import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
 import { useRealm } from "../../context/realm-context/RealmContext";

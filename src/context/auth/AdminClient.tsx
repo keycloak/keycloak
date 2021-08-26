@@ -1,5 +1,5 @@
 import axios from "axios";
-import type KeycloakAdminClient from "keycloak-admin";
+import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import { createContext, DependencyList, useEffect } from "react";
 import { useErrorHandler } from "react-error-boundary";
 import useRequiredContext from "../../utils/useRequiredContext";

@@ -28,7 +28,7 @@ export const LogoutAllSessionsModal = ({
   const logoutAllSessions = async () => {
     try {
       await adminClient.realms.logoutAll({ realm: realmName });
-      adminClient.keycloak.logout({ redirectUri: "" });
+      adminClient.keycloak?.logout({ redirectUri: "" });
     } catch (error) {
       addAlert(t("logoutAllSessionsError", { error }), AlertVariant.danger);
     }

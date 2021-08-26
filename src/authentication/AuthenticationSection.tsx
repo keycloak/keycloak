@@ -14,7 +14,7 @@ import {
 } from "@patternfly/react-core";
 import { CheckCircleIcon } from "@patternfly/react-icons";
 
-import type AuthenticationFlowRepresentation from "keycloak-admin/lib/defs/authenticationFlowRepresentation";
+import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";

@@ -8,7 +8,7 @@ import {
   SelectVariant,
 } from "@patternfly/react-core";
 
-import type AuthenticationFlowRepresentation from "keycloak-admin/lib/defs/authenticationFlowRepresentation";
+import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 import { useFetch, useAdminClient } from "../../context/auth/AdminClient";
 import { SwitchField } from "../component/SwitchField";
 import { TextField } from "../component/TextField";

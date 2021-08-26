@@ -12,7 +12,7 @@ import { HelpItem } from "../../../components/help-enabler/HelpItem";
 import { Controller, UseFormMethods } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
-import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 
 export type LdapMapperRoleGroupProps = {
   form: UseFormMethods;

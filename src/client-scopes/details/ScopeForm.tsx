@@ -17,7 +17,7 @@ import {
   NumberInput,
 } from "@patternfly/react-core";
 
-import type ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
+import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 import {
   clientScopeTypesSelectOptions,
   allClientScopeTypes,

@@ -27,9 +27,9 @@ import {
 } from "@patternfly/react-core";
 import { SearchIcon } from "@patternfly/react-icons";
 
-import type { KeyMetadataRepresentation } from "keycloak-admin/lib/defs/keyMetadataRepresentation";
-import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
-import type ComponentTypeRepresentation from "keycloak-admin/lib/defs/componentTypeRepresentation";
+import type { KeyMetadataRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/keyMetadataRepresentation";
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
+import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
 
 import "./RealmSettingsSection.css";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";

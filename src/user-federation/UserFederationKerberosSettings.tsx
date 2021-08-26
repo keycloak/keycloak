@@ -13,7 +13,7 @@ import { KerberosSettingsRequired } from "./kerberos/KerberosSettingsRequired";
 import { SettingsCache } from "./shared/SettingsCache";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { convertToFormValues } from "../util";
-import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 
 import { Controller, useForm } from "react-hook-form";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";

@@ -17,7 +17,7 @@ import {
   Split,
   SplitItem,
 } from "@patternfly/react-core";
-import type CredentialRepresentation from "keycloak-admin/lib/defs/credentialRepresentation";
+import type CredentialRepresentation from "@keycloak/keycloak-admin-client/lib/defs/credentialRepresentation";
 
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";

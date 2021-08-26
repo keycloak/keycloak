@@ -13,9 +13,9 @@ import {
   TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
-import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
-import type ProtocolMapperRepresentation from "keycloak-admin/lib/defs/protocolMapperRepresentation";
-import type RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
+import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
+import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";

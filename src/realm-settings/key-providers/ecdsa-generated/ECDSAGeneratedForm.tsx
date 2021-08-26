@@ -15,7 +15,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { Controller, useForm } from "react-hook-form";
 
-import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import { HelpItem } from "../../../components/help-enabler/HelpItem";
 import { useServerInfo } from "../../../context/server-info/ServerInfoProvider";
 import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";

@@ -1,4 +1,4 @@
-import { RequiredActionAlias } from "keycloak-admin/lib/defs/requiredActionProviderRepresentation";
+import { RequiredActionAlias } from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderRepresentation";
 
 export default class UserDetailsPage {
     saveBtn: string;

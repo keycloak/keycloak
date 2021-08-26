@@ -9,8 +9,8 @@ import { HelpItem } from "../../../components/help-enabler/HelpItem";
 import type { UseFormMethods } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
-import type RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
+import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import { AddRoleMappingModal } from "../../../components/role-mapping/AddRoleMappingModal";
 import "../../user-federation.css";
 

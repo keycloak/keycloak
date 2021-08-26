@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next";
 import React, { useState } from "react";
 import _ from "lodash";
 
-import type TestLdapConnectionRepresentation from "keycloak-admin/lib/defs/testLdapConnection";
+import type TestLdapConnectionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/testLdapConnection";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { Controller, UseFormMethods, useWatch } from "react-hook-form";
 import { FormAccess } from "../../components/form-access/FormAccess";

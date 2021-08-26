@@ -11,7 +11,7 @@ import {
 } from "@patternfly/react-core";
 import { FilterIcon } from "@patternfly/react-icons";
 
-import type UserSessionRepresentation from "keycloak-admin/lib/defs/userSessionRepresentation";
+import type UserSessionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userSessionRepresentation";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
@@ -20,7 +20,7 @@ import { useAdminClient } from "../context/auth/AdminClient";
 import { CubesIcon } from "@patternfly/react-icons";
 import "./SessionsSection.css";
 import { RevocationModal } from "./RevocationModal";
-import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { LogoutAllSessionsModal } from "./LogoutAllSessionsModal";
 
 const Clients = (row: UserSessionRepresentation) => {

@@ -19,7 +19,7 @@ import { RealmContextProvider } from "./context/realm-context/RealmContext";
 import { ErrorRenderer } from "./components/error/ErrorRenderer";
 import { AdminClient } from "./context/auth/AdminClient";
 import { WhoAmIContextProvider } from "./context/whoami/WhoAmI";
-import type KeycloakAdminClient from "keycloak-admin";
+import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 
 export const mainPageContentId = "kc-main-content-page-container";
 

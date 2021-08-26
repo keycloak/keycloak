@@ -19,7 +19,7 @@ import {
   StackItem,
   TextArea,
 } from "@patternfly/react-core";
-import type { AccessType } from "keycloak-admin/lib/defs/whoAmIRepresentation";
+import type { AccessType } from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
 
 import { useAccess } from "../../context/access/Access";
 

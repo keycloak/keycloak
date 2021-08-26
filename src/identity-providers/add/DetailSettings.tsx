@@ -15,7 +15,7 @@ import {
   TabTitleText,
 } from "@patternfly/react-core";
 
-import type IdentityProviderRepresentation from "keycloak-admin/lib/defs/identityProviderRepresentation";
+import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { ScrollForm } from "../../components/scroll-form/ScrollForm";
 import { ViewHeader } from "../../components/view-header/ViewHeader";

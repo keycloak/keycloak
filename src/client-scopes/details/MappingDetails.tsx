@@ -19,8 +19,8 @@ import {
   TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
-import type { ConfigPropertyRepresentation } from "keycloak-admin/lib/defs/configPropertyRepresentation";
-import type ProtocolMapperRepresentation from "keycloak-admin/lib/defs/protocolMapperRepresentation";
+import type { ConfigPropertyRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/configPropertyRepresentation";
+import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
 
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";

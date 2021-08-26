@@ -4,14 +4,14 @@ import { useTranslation } from "react-i18next";
 import { AlertVariant, Button, ButtonVariant } from "@patternfly/react-core";
 
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
-import type RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
+import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { emptyFormatter, upperCaseFormatter } from "../util";
 import { useRealm } from "../context/realm-context/RealmContext";
-import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { toRealmRole } from "./routes/RealmRole";
 

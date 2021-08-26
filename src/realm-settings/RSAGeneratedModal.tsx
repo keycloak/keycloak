@@ -18,7 +18,7 @@ import { Controller, useForm } from "react-hook-form";
 
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
-import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { KEY_PROVIDER_TYPE } from "../util";

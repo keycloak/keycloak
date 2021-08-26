@@ -1,4 +1,4 @@
-import type { ServerInfoRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
+import type { ServerInfoRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import React, { createContext, FunctionComponent } from "react";
 import { DataLoader } from "../../components/data-loader/DataLoader";
 import { sortProviders } from "../../util";

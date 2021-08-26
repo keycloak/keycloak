@@ -10,7 +10,7 @@ import {
   PageSection,
   ToolbarItem,
 } from "@patternfly/react-core";
-import type RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
+import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAlerts } from "../components/alert/Alerts";
@@ -19,7 +19,7 @@ import { emptyFormatter } from "../util";
 import { AssociatedRolesModal } from "./AssociatedRolesModal";
 import { useAdminClient } from "../context/auth/AdminClient";
 import type { RoleFormType } from "./RealmRoleTabs";
-import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import _ from "lodash";
 
 type AssociatedRolesTabProps = {

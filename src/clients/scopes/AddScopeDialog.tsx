@@ -10,7 +10,7 @@ import {
   DropdownDirection,
 } from "@patternfly/react-core";
 import { CaretUpIcon } from "@patternfly/react-icons";
-import type ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
+import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 
 import {
   ClientScopeType,

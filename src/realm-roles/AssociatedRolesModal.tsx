@@ -11,7 +11,7 @@ import {
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { useFetch, useAdminClient } from "../context/auth/AdminClient";
-import type RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
+import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { CaretDownIcon, FilterIcon } from "@patternfly/react-icons";

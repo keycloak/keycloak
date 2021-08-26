@@ -9,7 +9,7 @@ import {
   PageSection,
 } from "@patternfly/react-core";
 
-import type IdentityProviderRepresentation from "keycloak-admin/lib/defs/identityProviderRepresentation";
+import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useAdminClient } from "../../context/auth/AdminClient";

@@ -16,7 +16,7 @@ import {
 } from "@patternfly/react-core";
 import { SearchIcon } from "@patternfly/react-icons";
 
-import type GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
+import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";

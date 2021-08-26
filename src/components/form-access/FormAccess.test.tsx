@@ -1,6 +1,6 @@
 import { FormGroup, Switch, TextInput } from "@patternfly/react-core";
 import { render, screen } from "@testing-library/react";
-import type WhoAmIRepresentation from "keycloak-admin/lib/defs/whoAmIRepresentation";
+import type WhoAmIRepresentation from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
 import React from "react";
 import { Controller, useForm } from "react-hook-form";
 import { AccessContextProvider } from "../../context/access/Access";

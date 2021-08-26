@@ -13,8 +13,8 @@ import { useFieldArray, useForm } from "react-hook-form";
 
 import { useAlerts } from "../components/alert/Alerts";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
-import type RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
-import type Composites from "keycloak-admin/lib/defs/roleRepresentation";
+import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import type Composites from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import {
   KeyValueType,
   AttributesForm,
@@ -29,7 +29,7 @@ import { AssociatedRolesModal } from "./AssociatedRolesModal";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 import { AssociatedRolesTab } from "./AssociatedRolesTab";
 import { UsersInRoleTab } from "./UsersInRoleTab";
-import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 
 export type RoleFormType = Omit<RoleRepresentation, "attributes"> & {
   attributes: KeyValueType[];

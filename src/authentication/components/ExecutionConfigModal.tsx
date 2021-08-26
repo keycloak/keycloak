@@ -15,9 +15,9 @@ import {
 } from "@patternfly/react-core";
 import { CogIcon, TrashIcon } from "@patternfly/react-icons";
 
-import type AuthenticatorConfigRepresentation from "keycloak-admin/lib/defs/authenticatorConfigRepresentation";
-import type AuthenticatorConfigInfoRepresentation from "keycloak-admin/lib/defs/authenticatorConfigInfoRepresentation";
-import type { ConfigPropertyRepresentation } from "keycloak-admin/lib/defs/authenticatorConfigInfoRepresentation";
+import type AuthenticatorConfigRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
+import type AuthenticatorConfigInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigInfoRepresentation";
+import type { ConfigPropertyRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigInfoRepresentation";
 import type { ExpandableExecution } from "../execution-model";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";

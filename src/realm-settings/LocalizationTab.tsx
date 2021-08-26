@@ -17,7 +17,7 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 
-import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { FormAccess } from "../components/form-access/FormAccess";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { FormPanel } from "../components/scroll-form/FormPanel";

@@ -8,8 +8,8 @@ import {
   Switch,
   TextInput,
 } from "@patternfly/react-core";
-import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
-import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import React, { useEffect, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";

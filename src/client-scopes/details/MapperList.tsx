@@ -9,9 +9,9 @@ import {
 } from "@patternfly/react-core";
 import { CaretDownIcon } from "@patternfly/react-icons";
 
-import type ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
-import type ProtocolMapperRepresentation from "keycloak-admin/lib/defs/protocolMapperRepresentation";
-import type { ProtocolMapperTypeRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
+import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
+import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
+import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";

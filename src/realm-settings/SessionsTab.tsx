@@ -10,7 +10,7 @@ import {
   Switch,
 } from "@patternfly/react-core";
 
-import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { FormPanel } from "../components/scroll-form/FormPanel";
@@ -19,7 +19,7 @@ import { useAlerts } from "../components/alert/Alerts";
 import { useRealm } from "../context/realm-context/RealmContext";
 
 import "./RealmSettingsSection.css";
-import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { TimeSelector } from "../components/time-selector/TimeSelector";
 
 type RealmSettingsSessionsTabProps = {

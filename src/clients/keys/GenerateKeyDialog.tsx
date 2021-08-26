@@ -15,7 +15,7 @@ import {
   TextContent,
 } from "@patternfly/react-core";
 
-import type KeyStoreConfig from "keycloak-admin/lib/defs/keystoreConfig";
+import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { StoreSettings } from "./StoreSettings";
 

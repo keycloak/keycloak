@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableVariant,
 } from "@patternfly/react-table";
-import type AdminEventRepresentation from "keycloak-admin/lib/defs/adminEventRepresentation";
+import type AdminEventRepresentation from "@keycloak/keycloak-admin-client/lib/defs/adminEventRepresentation";
 import moment from "moment";
 import React, { FunctionComponent, useState } from "react";
 import { useForm } from "react-hook-form";

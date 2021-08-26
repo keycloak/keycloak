@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import React from "react";
 import { KerberosSettingsRequired } from "./kerberos/KerberosSettingsRequired";
 import { SettingsCache } from "./shared/SettingsCache";
-import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import { useForm } from "react-hook-form";
 
 export const UserFederationKerberosWizard = () => {

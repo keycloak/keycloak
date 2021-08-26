@@ -12,8 +12,8 @@ import {
   TextInput,
   ToolbarItem,
 } from "@patternfly/react-core";
-import type ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
-import type GlobalRequestResult from "keycloak-admin/lib/defs/globalRequestResult";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
+import type GlobalRequestResult from "@keycloak/keycloak-admin-client/lib/defs/globalRequestResult";
 import moment from "moment";
 import React, { useEffect, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";

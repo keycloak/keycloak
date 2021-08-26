@@ -1,4 +1,4 @@
-import KcAdminClient from "keycloak-admin";
+import KcAdminClient from "@keycloak/keycloak-admin-client";
 import environment from "../../environment";
 
 export default async function (): Promise<KcAdminClient> {

@@ -19,8 +19,8 @@ import {
   TableVariant,
 } from "@patternfly/react-table";
 import { useTranslation } from "react-i18next";
-import type ProtocolMapperRepresentation from "keycloak-admin/lib/defs/protocolMapperRepresentation";
-import type { ProtocolMapperTypeRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
+import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
+import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";

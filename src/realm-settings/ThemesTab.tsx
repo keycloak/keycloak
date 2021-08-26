@@ -12,7 +12,7 @@ import {
   Switch,
 } from "@patternfly/react-core";
 
-import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";

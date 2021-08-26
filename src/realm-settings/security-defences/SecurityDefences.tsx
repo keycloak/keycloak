@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PageSection, Tab, Tabs, TabTitleText } from "@patternfly/react-core";
 
-import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { HeadersForm } from "./HeadersForm";
 import { BruteForceDetection } from "./BruteForceDetection";
 

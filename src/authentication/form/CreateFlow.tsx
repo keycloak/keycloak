@@ -9,7 +9,7 @@ import {
   PageSection,
 } from "@patternfly/react-core";
 
-import type AuthenticationFlowRepresentation from "keycloak-admin/lib/defs/authenticationFlowRepresentation";
+import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { useRealm } from "../../context/realm-context/RealmContext";

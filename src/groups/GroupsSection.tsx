@@ -10,7 +10,7 @@ import {
   TabTitleText,
   Tabs,
 } from "@patternfly/react-core";
-import type GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
+import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useFetch, useAdminClient } from "../context/auth/AdminClient";

@@ -11,9 +11,9 @@ import {
   Tabs,
   TabTitleText,
 } from "@patternfly/react-core";
-import type ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
-import type RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
-import type UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import React, { useEffect, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";

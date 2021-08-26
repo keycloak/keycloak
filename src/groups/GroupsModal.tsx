@@ -13,7 +13,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 
-import type GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
+import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 

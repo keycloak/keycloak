@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import type KeycloakAdminClient from "keycloak-admin";
+import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import { Label } from "@patternfly/react-core";
 
 export type AliasRendererComponentProps = {
