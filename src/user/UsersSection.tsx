@@ -63,14 +63,12 @@ export const UsersSection = () => {
   );
 
   const UserDetailLink = (user: UserRepresentation) => (
-    <>
-      <Link
-        key={user.username}
-        to={toUser({ realm: realmName, id: user.id!, tab: "settings" })}
-      >
-        {user.username}
-      </Link>
-    </>
+    <Link
+      key={user.username}
+      to={toUser({ realm: realmName, id: user.id!, tab: "settings" })}
+    >
+      {user.username}
+    </Link>
   );
 
   const loader = async (first?: number, max?: number, search?: string) => {

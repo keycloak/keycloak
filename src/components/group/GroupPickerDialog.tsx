@@ -192,7 +192,7 @@ export const GroupPickerDialog = ({
                   {group.name}
                 </Button>
               )}
-              {navigation.length - 1 === i && <>{group.name}</>}
+              {navigation.length - 1 === i && group.name}
             </BreadcrumbItem>
           ))}
         </Breadcrumb>
@@ -255,7 +255,7 @@ export const GroupPickerDialog = ({
                   dataListCells={[
                     <DataListCell key={`name-${group.id}`}>
                       {filter === "" ? (
-                        <>{group.name}</>
+                        group.name
                       ) : (
                         <GroupPath group={findSubGroup(group, filter)} />
                       )}

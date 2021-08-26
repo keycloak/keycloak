@@ -1,6 +1,5 @@
 import React, {
   FormEvent,
-  Fragment,
   FunctionComponent,
   ReactNode,
   useState,
@@ -74,35 +73,33 @@ export const TableToolbar: FunctionComponent<TableToolbarProps> = ({
     <>
       <Toolbar>
         <ToolbarContent>
-          <Fragment>
-            {inputGroupName && (
-              <ToolbarItem>
-                <InputGroup>
-                  {searchTypeComponent}
-                  {inputGroupPlaceholder && (
-                    <>
-                      <TextInput
-                        name={inputGroupName}
-                        id={inputGroupName}
-                        type="search"
-                        aria-label={t("search")}
-                        placeholder={inputGroupPlaceholder}
-                        onChange={handleInputChange}
-                        onKeyDown={handleKeyDown}
-                      />
-                      <Button
-                        variant={ButtonVariant.control}
-                        aria-label={t("search")}
-                        onClick={onSearch}
-                      >
-                        <SearchIcon />
-                      </Button>
-                    </>
-                  )}
-                </InputGroup>
-              </ToolbarItem>
-            )}
-          </Fragment>
+          {inputGroupName && (
+            <ToolbarItem>
+              <InputGroup>
+                {searchTypeComponent}
+                {inputGroupPlaceholder && (
+                  <>
+                    <TextInput
+                      name={inputGroupName}
+                      id={inputGroupName}
+                      type="search"
+                      aria-label={t("search")}
+                      placeholder={inputGroupPlaceholder}
+                      onChange={handleInputChange}
+                      onKeyDown={handleKeyDown}
+                    />
+                    <Button
+                      variant={ButtonVariant.control}
+                      aria-label={t("search")}
+                      onClick={onSearch}
+                    >
+                      <SearchIcon />
+                    </Button>
+                  </>
+                )}
+              </InputGroup>
+            </ToolbarItem>
+          )}
           {toolbarItem}
         </ToolbarContent>
       </Toolbar>

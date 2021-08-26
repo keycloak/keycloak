@@ -53,19 +53,17 @@ export const EditProviderCrumb = () => {
   const { realm } = useRealm();
 
   return (
-    <>
-      <Breadcrumb>
-        <BreadcrumbItem
-          render={(props) => (
-            <Link {...props} to={toRealmSettings({ realm, tab: "keys" })}>
-              {t("keys")}
-            </Link>
-          )}
-        />
-        <BreadcrumbItem>{t("providers")}</BreadcrumbItem>
-        <BreadcrumbItem isActive>{t("editProvider")}</BreadcrumbItem>
-      </Breadcrumb>
-    </>
+    <Breadcrumb>
+      <BreadcrumbItem
+        render={(props) => (
+          <Link {...props} to={toRealmSettings({ realm, tab: "keys" })}>
+            {t("keys")}
+          </Link>
+        )}
+      />
+      <BreadcrumbItem>{t("providers")}</BreadcrumbItem>
+      <BreadcrumbItem isActive>{t("editProvider")}</BreadcrumbItem>
+    </Breadcrumb>
   );
 };
 

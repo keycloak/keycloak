@@ -70,23 +70,21 @@ export const IdentityProvidersSection = () => {
   const loader = () => Promise.resolve(_.sortBy(providers, "alias"));
 
   const DetailLink = (identityProvider: IdentityProviderRepresentation) => (
-    <>
-      <Link
-        key={identityProvider.providerId}
-        to={`/${realm}/identity-providers/${identityProvider.providerId}/settings`}
-      >
-        {identityProvider.alias}
-        {!identityProvider.enabled && (
-          <Badge
-            key={`${identityProvider.providerId}-disabled`}
-            isRead
-            className="pf-u-ml-sm"
-          >
-            {t("common:disabled")}
-          </Badge>
-        )}
-      </Link>
-    </>
+    <Link
+      key={identityProvider.providerId}
+      to={`/${realm}/identity-providers/${identityProvider.providerId}/settings`}
+    >
+      {identityProvider.alias}
+      {!identityProvider.enabled && (
+        <Badge
+          key={`${identityProvider.providerId}-disabled`}
+          isRead
+          className="pf-u-ml-sm"
+        >
+          {t("common:disabled")}
+        </Badge>
+      )}
+    </Link>
   );
 
   const navigateToCreate = (providerId: string) =>

@@ -97,18 +97,14 @@ export const ServiceAccount = ({ client }: ServiceAccountProps) => {
       addError("clients:roleMappingUpdatedError", error);
     }
   };
-  return (
-    <>
-      {serviceAccount && (
-        <RoleMapping
-          name={client.clientId!}
-          id={serviceAccount.id!}
-          type="service-account"
-          loader={loader}
-          save={assignRoles}
-          onHideRolesToggle={() => setHide(!hide)}
-        />
-      )}
-    </>
-  );
+  return serviceAccount ? (
+    <RoleMapping
+      name={client.clientId!}
+      id={serviceAccount.id!}
+      type="service-account"
+      loader={loader}
+      save={assignRoles}
+      onHideRolesToggle={() => setHide(!hide)}
+    />
+  ) : null;
 };

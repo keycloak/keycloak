@@ -164,40 +164,36 @@ export const MappingDetails = () => {
           onSubmit={handleSubmit(save)}
           role="manage-clients"
         >
-          <>
-            {!mapperId.match(isGuid) && (
-              <FormGroup
-                label={t("common:name")}
-                labelIcon={
-                  <HelpItem
-                    helpText="client-scopes-help:mapperName"
-                    forLabel={t("common:name")}
-                    forID="name"
-                  />
-                }
-                fieldId="name"
-                isRequired
+          {!mapperId.match(isGuid) && (
+            <FormGroup
+              label={t("common:name")}
+              labelIcon={
+                <HelpItem
+                  helpText="client-scopes-help:mapperName"
+                  forLabel={t("common:name")}
+                  forID="name"
+                />
+              }
+              fieldId="name"
+              isRequired
+              validated={
+                errors.name ? ValidatedOptions.error : ValidatedOptions.default
+              }
+              helperTextInvalid={t("common:required")}
+            >
+              <TextInput
+                ref={register({ required: true })}
+                type="text"
+                id="name"
+                name="name"
                 validated={
                   errors.name
                     ? ValidatedOptions.error
                     : ValidatedOptions.default
                 }
-                helperTextInvalid={t("common:required")}
-              >
-                <TextInput
-                  ref={register({ required: true })}
-                  type="text"
-                  id="name"
-                  name="name"
-                  validated={
-                    errors.name
-                      ? ValidatedOptions.error
-                      : ValidatedOptions.default
-                  }
-                />
-              </FormGroup>
-            )}
-          </>
+              />
+            </FormGroup>
+          )}
           <FormGroup
             label={t("realmRolePrefix")}
             labelIcon={

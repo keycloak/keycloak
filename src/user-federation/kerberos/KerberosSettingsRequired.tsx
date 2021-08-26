@@ -316,9 +316,7 @@ export const KerberosSettingsRequired = ({
               )}
             ></Controller>
           </FormGroup>
-        ) : (
-          <></>
-        )}
+        ) : null}
 
         <FormGroup
           label={t("updateFirstLogin")}

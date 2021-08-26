@@ -40,42 +40,40 @@ export const ListEmptyState = ({
   icon,
 }: ListEmptyStateProps) => {
   return (
-    <>
-      <EmptyState data-testid="empty-state" variant="large">
-        {hasIcon && isSearchVariant ? (
-          <EmptyStateIcon icon={SearchIcon} />
-        ) : (
-          hasIcon && <EmptyStateIcon icon={icon ? icon : PlusCircleIcon} />
-        )}
-        <Title headingLevel="h1" size="lg">
-          {message}
-        </Title>
-        <EmptyStateBody>{instructions}</EmptyStateBody>
-        {primaryActionText && (
-          <Button
-            data-testid={`${message
-              .replace(/\W+/g, "-")
-              .toLowerCase()}-empty-action`}
-            variant="primary"
-            onClick={onPrimaryAction}
-          >
-            {primaryActionText}
-          </Button>
-        )}
-        {secondaryActions && (
-          <EmptyStateSecondaryActions>
-            {secondaryActions.map((action) => (
-              <Button
-                key={action.text}
-                variant={action.type || ButtonVariant.secondary}
-                onClick={action.onClick}
-              >
-                {action.text}
-              </Button>
-            ))}
-          </EmptyStateSecondaryActions>
-        )}
-      </EmptyState>
-    </>
+    <EmptyState data-testid="empty-state" variant="large">
+      {hasIcon && isSearchVariant ? (
+        <EmptyStateIcon icon={SearchIcon} />
+      ) : (
+        hasIcon && <EmptyStateIcon icon={icon ? icon : PlusCircleIcon} />
+      )}
+      <Title headingLevel="h1" size="lg">
+        {message}
+      </Title>
+      <EmptyStateBody>{instructions}</EmptyStateBody>
+      {primaryActionText && (
+        <Button
+          data-testid={`${message
+            .replace(/\W+/g, "-")
+            .toLowerCase()}-empty-action`}
+          variant="primary"
+          onClick={onPrimaryAction}
+        >
+          {primaryActionText}
+        </Button>
+      )}
+      {secondaryActions && (
+        <EmptyStateSecondaryActions>
+          {secondaryActions.map((action) => (
+            <Button
+              key={action.text}
+              variant={action.type || ButtonVariant.secondary}
+              onClick={action.onClick}
+            >
+              {action.text}
+            </Button>
+          ))}
+        </EmptyStateSecondaryActions>
+      )}
+    </EmptyState>
   );
 };

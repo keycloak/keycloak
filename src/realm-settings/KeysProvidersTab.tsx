@@ -256,60 +256,58 @@ export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
       <DeleteConfirm />
       <PageSection variant="light" padding={{ default: "noPadding" }}>
         <Toolbar>
-          <>
-            <ToolbarGroup className="providers-toolbar">
-              <ToolbarItem>
-                <InputGroup>
-                  <TextInput
-                    name={"inputGroupName"}
-                    id={"inputGroupName"}
-                    type="search"
-                    aria-label={t("common:search")}
-                    placeholder={t("common:search")}
-                    onChange={handleInputChange}
-                    onKeyDown={handleKeyDown}
-                  />
-                  <Button
-                    variant={ButtonVariant.control}
-                    aria-label={t("common:search")}
-                  >
-                    <SearchIcon />
-                  </Button>
-                </InputGroup>
-              </ToolbarItem>
-              <ToolbarItem>
-                <Dropdown
-                  data-testid="addProviderDropdown"
-                  className="add-provider-dropdown"
-                  isOpen={providerDropdownOpen}
-                  toggle={
-                    <DropdownToggle
-                      onToggle={(val) => setProviderDropdownOpen(val)}
-                      isPrimary
-                    >
-                      {t("realm-settings:addProvider")}
-                    </DropdownToggle>
-                  }
-                  dropdownItems={[
-                    providerTypes.map((item) => (
-                      <DropdownItem
-                        onClick={() => {
-                          handleModalToggle();
-
-                          setProviderDropdownOpen(false);
-                          setDefaultConsoleDisplayName(item);
-                        }}
-                        data-testid={`option-${item}`}
-                        key={item}
-                      >
-                        {item}
-                      </DropdownItem>
-                    )),
-                  ]}
+          <ToolbarGroup className="providers-toolbar">
+            <ToolbarItem>
+              <InputGroup>
+                <TextInput
+                  name={"inputGroupName"}
+                  id={"inputGroupName"}
+                  type="search"
+                  aria-label={t("common:search")}
+                  placeholder={t("common:search")}
+                  onChange={handleInputChange}
+                  onKeyDown={handleKeyDown}
                 />
-              </ToolbarItem>
-            </ToolbarGroup>
-          </>
+                <Button
+                  variant={ButtonVariant.control}
+                  aria-label={t("common:search")}
+                >
+                  <SearchIcon />
+                </Button>
+              </InputGroup>
+            </ToolbarItem>
+            <ToolbarItem>
+              <Dropdown
+                data-testid="addProviderDropdown"
+                className="add-provider-dropdown"
+                isOpen={providerDropdownOpen}
+                toggle={
+                  <DropdownToggle
+                    onToggle={(val) => setProviderDropdownOpen(val)}
+                    isPrimary
+                  >
+                    {t("realm-settings:addProvider")}
+                  </DropdownToggle>
+                }
+                dropdownItems={[
+                  providerTypes.map((item) => (
+                    <DropdownItem
+                      onClick={() => {
+                        handleModalToggle();
+
+                        setProviderDropdownOpen(false);
+                        setDefaultConsoleDisplayName(item);
+                      }}
+                      data-testid={`option-${item}`}
+                      key={item}
+                    >
+                      {item}
+                    </DropdownItem>
+                  )),
+                ]}
+              />
+            </ToolbarItem>
+          </ToolbarGroup>
         </Toolbar>
         <DataList
           aria-label={t("groups")}
@@ -375,21 +373,19 @@ export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
                       data-testid="provider-name"
                       key={`name-${idx}`}
                     >
-                      <>
-                        <Link
-                          key={component.name}
-                          data-testid="provider-name-link"
-                          to={`${url}/${component.id}/${component.providerId}/settings`}
-                        >
-                          {component.name}
-                        </Link>
-                      </>
+                      <Link
+                        key={component.name}
+                        data-testid="provider-name-link"
+                        to={`${url}/${component.id}/${component.providerId}/settings`}
+                      >
+                        {component.name}
+                      </Link>
                     </DataListCell>,
                     <DataListCell key={`providerId-${idx}`}>
-                      <>{component.providerId}</>
+                      {component.providerId}
                     </DataListCell>,
                     <DataListCell key={`providerDescription-${idx}`}>
-                      <>{component.providerDescription}</>
+                      {component.providerDescription}
                     </DataListCell>,
                     <DataListAction
                       aria-labelledby="data-list-action"

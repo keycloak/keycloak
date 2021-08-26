@@ -76,9 +76,7 @@ export const LdapMapperList = () => {
   };
 
   const MapperLink = (mapper: ComponentRepresentation) => (
-    <>
-      <Link to={`${getUrl(url)}/${mapper.id}`}>{mapper.name}</Link>
-    </>
+    <Link to={`${getUrl(url)}/${mapper.id}`}>{mapper.name}</Link>
   );
 
   return (

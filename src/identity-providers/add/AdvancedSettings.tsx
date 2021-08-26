@@ -64,6 +64,8 @@ const LoginFlow = ({
             aria-label={t(label)}
             isOpen={open}
           >
+            {/* The type for the children of Select are incorrect, so we need a fragment here. */}
+            {/* eslint-disable-next-line react/jsx-no-useless-fragment */}
             <>
               {defaultValue === "" && (
                 <SelectOption key="empty" value={defaultValue}>
@@ -71,6 +73,8 @@ const LoginFlow = ({
                 </SelectOption>
               )}
             </>
+            {/* The type for the children of Select are incorrect, so we need a fragment here. */}
+            {/* eslint-disable-next-line react/jsx-no-useless-fragment */}
             <>
               {flows?.map((option) => (
                 <SelectOption

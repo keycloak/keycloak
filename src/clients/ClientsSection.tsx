@@ -70,27 +70,23 @@ export const ClientsSection = () => {
   });
 
   const ClientDetailLink = (client: ClientRepresentation) => (
-    <>
-      <Link
-        key={client.id}
-        to={toClient({ realm, clientId: client.id!, tab: "settings" })}
-      >
-        {client.clientId}
-        {!client.enabled && (
-          <Badge key={`${client.id}-disabled`} isRead className="pf-u-ml-sm">
-            {t("common:disabled")}
-          </Badge>
-        )}
-      </Link>
-    </>
+    <Link
+      key={client.id}
+      to={toClient({ realm, clientId: client.id!, tab: "settings" })}
+    >
+      {client.clientId}
+      {!client.enabled && (
+        <Badge key={`${client.id}-disabled`} isRead className="pf-u-ml-sm">
+          {t("common:disabled")}
+        </Badge>
+      )}
+    </Link>
   );
 
   const ClientDescription = (client: ClientRepresentation) => (
-    <>
-      <TableText wrapModifier="truncate">
-        {emptyFormatter()(client.description)}
-      </TableText>
-    </>
+    <TableText wrapModifier="truncate">
+      {emptyFormatter()(client.description)}
+    </TableText>
   );
 
   return (

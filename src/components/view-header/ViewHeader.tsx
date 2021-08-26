@@ -101,7 +101,7 @@ export const ViewHeader = ({
                           </Badge>{" "}
                         </Fragment>
                       )}
-                      {isValidElement(badge.text) && <>{badge.text}</>}{" "}
+                      {isValidElement(badge.text) && badge.text}{" "}
                     </Fragment>
                   ))}
                 </LevelItem>

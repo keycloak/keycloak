@@ -189,9 +189,7 @@ export const UserGroups = () => {
     refresh();
   }, [isDirectMembership]);
 
-  const AliasRenderer = (group: GroupRepresentation) => {
-    return <>{group.name}</>;
-  };
+  const AliasRenderer = (group: GroupRepresentation) => group.name;
 
   const toggleModal = () => {
     setOpen(!open);
@@ -232,17 +230,15 @@ export const UserGroups = () => {
       directMembershipList.length === 0 ||
       isDirectMembership;
     return (
-      <>
-        {canLeaveGroup && (
-          <Button
-            data-testid={`leave-${group.name}`}
-            onClick={() => leave(group)}
-            variant="link"
-          >
-            {t("leave")}
-          </Button>
-        )}
-      </>
+      canLeaveGroup && (
+        <Button
+          data-testid={`leave-${group.name}`}
+          onClick={() => leave(group)}
+          variant="link"
+        >
+          {t("leave")}
+        </Button>
+      )
     );
   };
 

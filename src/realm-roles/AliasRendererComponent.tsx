@@ -28,7 +28,7 @@ export const AliasRendererComponent = ({
   }, [containerId]);
 
   if (filterType === "roles" || !containerName) {
-    return <>{name}</>;
+    return name;
   }
 
   if (filterType === "clients" || containerName) {

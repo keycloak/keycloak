@@ -27,37 +27,27 @@ export const Header = () => {
   const adminClient = useAdminClient();
   const { t } = useTranslation();
 
-  const ManageAccountDropdownItem = () => {
-    return (
-      <>
-        {adminClient.keycloak && (
-          <DropdownItem
-            key="manage account"
-            id="manage-account"
-            onClick={() => adminClient.keycloak?.accountManagement()}
-          >
-            {t("manageAccount")}
-          </DropdownItem>
-        )}
-      </>
-    );
-  };
+  const ManageAccountDropdownItem = () =>
+    adminClient.keycloak ? (
+      <DropdownItem
+        key="manage account"
+        id="manage-account"
+        onClick={() => adminClient.keycloak?.accountManagement()}
+      >
+        {t("manageAccount")}
+      </DropdownItem>
+    ) : null;
 
-  const SignOutDropdownItem = () => {
-    return (
-      <>
-        {adminClient.keycloak && (
-          <DropdownItem
-            id="sign-out"
-            key="sign out"
-            onClick={() => adminClient.keycloak?.logout({ redirectUri: "" })}
-          >
-            {t("signOut")}
-          </DropdownItem>
-        )}
-      </>
-    );
-  };
+  const SignOutDropdownItem = () =>
+    adminClient.keycloak ? (
+      <DropdownItem
+        id="sign-out"
+        key="sign out"
+        onClick={() => adminClient.keycloak?.logout({ redirectUri: "" })}
+      >
+        {t("signOut")}
+      </DropdownItem>
+    ) : null;
 
   const ServerInfoDropdownItem = () => {
     const { realm } = useRealm();

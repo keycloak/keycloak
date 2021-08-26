@@ -62,17 +62,15 @@ export const SearchGroups = () => {
   };
 
   const GroupNameCell = (group: SearchGroup) => (
-    <>
-      <Link
-        key={group.id}
-        to={`/${realm}/groups/search/${group.link}`}
-        onClick={() =>
-          setSubGroups([{ name: t("searchGroups"), id: "search" }, group])
-        }
-      >
-        {group.name}
-      </Link>
-    </>
+    <Link
+      key={group.id}
+      to={`/${realm}/groups/search/${group.link}`}
+      onClick={() =>
+        setSubGroups([{ name: t("searchGroups"), id: "search" }, group])
+      }
+    >
+      {group.name}
+    </Link>
   );
 
   const flatten = (

@@ -99,11 +99,9 @@ export const Members = () => {
   };
 
   const UserDetailLink = (user: MembersOf) => (
-    <>
-      <Link key={user.id} to={toUser({ realm, id: user.id!, tab: "settings" })}>
-        {user.username}
-      </Link>
-    </>
+    <Link key={user.id} to={toUser({ realm, id: user.id!, tab: "settings" })}>
+      {user.username}
+    </Link>
   );
   return (
     <>

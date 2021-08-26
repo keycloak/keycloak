@@ -41,6 +41,6 @@ export const FontAwesomeIcon = ({ icon }: FontAwesomeIconProps) => {
         />
       );
     default:
-      return <></>;
+      return null;
   }
 };

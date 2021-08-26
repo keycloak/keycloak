@@ -126,11 +126,7 @@ export const RolesList = ({
         ariaLabelKey="roles:roleList"
         searchPlaceholderKey="roles:searchFor"
         isPaginated={paginated}
-        toolbarItem={
-          <>
-            <Button onClick={goToCreate}>{t("createRole")}</Button>
-          </>
-        }
+        toolbarItem={<Button onClick={goToCreate}>{t("createRole")}</Button>}
         actions={[
           {
             title: t("common:delete"),

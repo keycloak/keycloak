@@ -190,9 +190,7 @@ export const SettingsCache = ({
               )}
             ></Controller>
           </FormGroup>
-        ) : (
-          <></>
-        )}
+        ) : null}
         {_.isEqual(cachePolicyType, ["EVICT_DAILY"]) ||
         _.isEqual(cachePolicyType, ["EVICT_WEEKLY"]) ? (
           <>
@@ -269,9 +267,7 @@ export const SettingsCache = ({
               ></Controller>
             </FormGroup>
           </>
-        ) : (
-          <></>
-        )}
+        ) : null}
         {_.isEqual(cachePolicyType, ["MAX_LIFESPAN"]) ? (
           <FormGroup
             label={t("maxLifespan")}
@@ -292,9 +288,7 @@ export const SettingsCache = ({
               data-testid="kerberos-cache-lifespan"
             />
           </FormGroup>
-        ) : (
-          <></>
-        )}
+        ) : null}
       </FormAccess>
     </>
   );

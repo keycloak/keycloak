@@ -77,17 +77,15 @@ export const GroupTable = () => {
   };
 
   const GroupNameCell = (group: GroupRepresentation) => (
-    <>
-      <Link
-        key={group.id}
-        to={`${location.pathname}/${group.id}`}
-        onClick={() => {
-          setSubGroups([...subGroups, group]);
-        }}
-      >
-        {group.name}
-      </Link>
-    </>
+    <Link
+      key={group.id}
+      to={`${location.pathname}/${group.id}`}
+      onClick={() => {
+        setSubGroups([...subGroups, group]);
+      }}
+    >
+      {group.name}
+    </Link>
   );
 
   const handleModalToggle = () => {

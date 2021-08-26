@@ -134,9 +134,8 @@ export const AssociatedRolesTab = ({
     refresh();
   }, [additionalRoles, isInheritedHidden]);
 
-  const InheritedRoleName = (role: RoleRepresentation) => {
-    return <>{inheritanceMap.current[role.id!]}</>;
-  };
+  const InheritedRoleName = (role: RoleRepresentation) =>
+    inheritanceMap.current[role.id!];
 
   const AliasRenderer = ({ id, name, clientId }: Role) => {
     return (
@@ -201,98 +200,96 @@ export const AssociatedRolesTab = ({
 
   const goToCreate = () => history.push(`${url}/add-role`);
   return (
-    <>
-      <PageSection variant="light" padding={{ default: "noPadding" }}>
-        <DeleteConfirm />
-        <DeleteAssociatedRolesConfirm />
-        <AssociatedRolesModal
-          onConfirm={addComposites}
-          existingCompositeRoles={additionalRoles}
-          open={open}
-          toggleDialog={() => setOpen(!open)}
-        />
-        <KeycloakDataTable
-          key={key}
-          loader={loader}
-          ariaLabelKey="roles:roleList"
-          searchPlaceholderKey="roles:searchFor"
-          canSelectAll
-          onSelect={(rows) => {
-            setSelectedRows([...rows]);
-          }}
-          toolbarItem={
-            <>
-              <ToolbarItem>
-                <Checkbox
-                  label="Hide inherited roles"
-                  key="associated-roles-check"
-                  id="kc-hide-inherited-roles-checkbox"
-                  onChange={() => setIsInheritedHidden(!isInheritedHidden)}
-                  isChecked={isInheritedHidden}
-                />
-              </ToolbarItem>
-              <ToolbarItem>
-                <Button
-                  key="add-role-button"
-                  onClick={() => toggleModal()}
-                  data-testid="add-role-button"
-                >
-                  {t("addRole")}
-                </Button>
-              </ToolbarItem>
-              <ToolbarItem>
-                <Button
-                  variant="link"
-                  isDisabled={selectedRows.length === 0}
-                  key="remove-role-button"
-                  onClick={() => {
-                    toggleDeleteAssociatedRolesDialog();
-                  }}
-                >
-                  {t("removeRoles")}
-                </Button>
-              </ToolbarItem>
-            </>
-          }
-          actions={[
-            {
-              title: t("common:remove"),
-              onRowClick: (role) => {
-                setSelectedRows([role]);
-                toggleDeleteDialog();
-              },
+    <PageSection variant="light" padding={{ default: "noPadding" }}>
+      <DeleteConfirm />
+      <DeleteAssociatedRolesConfirm />
+      <AssociatedRolesModal
+        onConfirm={addComposites}
+        existingCompositeRoles={additionalRoles}
+        open={open}
+        toggleDialog={() => setOpen(!open)}
+      />
+      <KeycloakDataTable
+        key={key}
+        loader={loader}
+        ariaLabelKey="roles:roleList"
+        searchPlaceholderKey="roles:searchFor"
+        canSelectAll
+        onSelect={(rows) => {
+          setSelectedRows([...rows]);
+        }}
+        toolbarItem={
+          <>
+            <ToolbarItem>
+              <Checkbox
+                label="Hide inherited roles"
+                key="associated-roles-check"
+                id="kc-hide-inherited-roles-checkbox"
+                onChange={() => setIsInheritedHidden(!isInheritedHidden)}
+                isChecked={isInheritedHidden}
+              />
+            </ToolbarItem>
+            <ToolbarItem>
+              <Button
+                key="add-role-button"
+                onClick={() => toggleModal()}
+                data-testid="add-role-button"
+              >
+                {t("addRole")}
+              </Button>
+            </ToolbarItem>
+            <ToolbarItem>
+              <Button
+                variant="link"
+                isDisabled={selectedRows.length === 0}
+                key="remove-role-button"
+                onClick={() => {
+                  toggleDeleteAssociatedRolesDialog();
+                }}
+              >
+                {t("removeRoles")}
+              </Button>
+            </ToolbarItem>
+          </>
+        }
+        actions={[
+          {
+            title: t("common:remove"),
+            onRowClick: (role) => {
+              setSelectedRows([role]);
+              toggleDeleteDialog();
             },
-          ]}
-          columns={[
-            {
-              name: "name",
-              displayKey: "roles:roleName",
-              cellRenderer: AliasRenderer,
-              cellFormatters: [emptyFormatter()],
-            },
-            {
-              name: "containerId",
-              displayKey: "roles:inheritedFrom",
-              cellRenderer: InheritedRoleName,
-              cellFormatters: [emptyFormatter()],
-            },
-            {
-              name: "description",
-              displayKey: "common:description",
-              cellFormatters: [emptyFormatter()],
-            },
-          ]}
-          emptyState={
-            <ListEmptyState
-              hasIcon={true}
-              message={t("noRoles")}
-              instructions={t("noRolesInstructions")}
-              primaryActionText={t("createRole")}
-              onPrimaryAction={goToCreate}
-            />
-          }
-        />
-      </PageSection>
-    </>
+          },
+        ]}
+        columns={[
+          {
+            name: "name",
+            displayKey: "roles:roleName",
+            cellRenderer: AliasRenderer,
+            cellFormatters: [emptyFormatter()],
+          },
+          {
+            name: "containerId",
+            displayKey: "roles:inheritedFrom",
+            cellRenderer: InheritedRoleName,
+            cellFormatters: [emptyFormatter()],
+          },
+          {
+            name: "description",
+            displayKey: "common:description",
+            cellFormatters: [emptyFormatter()],
+          },
+        ]}
+        emptyState={
+          <ListEmptyState
+            hasIcon={true}
+            message={t("noRoles")}
+            instructions={t("noRolesInstructions")}
+            primaryActionText={t("createRole")}
+            onPrimaryAction={goToCreate}
+          />
+        }
+      />
+    </PageSection>
   );
 };

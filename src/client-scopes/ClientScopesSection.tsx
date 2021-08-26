@@ -107,22 +107,20 @@ export const ClientScopesSection = () => {
   });
 
   const TypeSelector = (scope: ClientScopeDefaultOptionalType) => (
-    <>
-      <CellDropdown
-        clientScope={scope}
-        type={scope.type}
-        all
-        onSelect={async (value) => {
-          try {
-            await changeScope(adminClient, scope, value);
-            addAlert(t("clientScopeSuccess"), AlertVariant.success);
-            refresh();
-          } catch (error) {
-            addError("client-scopes:clientScopeError", error);
-          }
-        }}
-      />
-    </>
+    <CellDropdown
+      clientScope={scope}
+      type={scope.type}
+      all
+      onSelect={async (value) => {
+        try {
+          await changeScope(adminClient, scope, value);
+          addAlert(t("clientScopeSuccess"), AlertVariant.success);
+          refresh();
+        } catch (error) {
+          addError("client-scopes:clientScopeError", error);
+        }
+      }}
+    />
   );
 
   const ClientScopeDetailLink = ({
@@ -130,14 +128,12 @@ export const ClientScopesSection = () => {
     type,
     name,
   }: ClientScopeDefaultOptionalType) => (
-    <>
-      <Link
-        key={id}
-        to={toClientScope({ realm, id: id!, type, tab: "settings" })}
-      >
-        {name}
-      </Link>
-    </>
+    <Link
+      key={id}
+      to={toClientScope({ realm, id: id!, type, tab: "settings" })}
+    >
+      {name}
+    </Link>
   );
   return (
     <>

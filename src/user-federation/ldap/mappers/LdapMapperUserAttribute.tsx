@@ -173,39 +173,35 @@ export const LdapMapperUserAttribute = ({
         ></Controller>
       </FormGroup>
       {mapperType === "certificate-ldap-mapper" ? (
-        <>
-          <FormGroup
-            label={t("derFormatted")}
-            labelIcon={
-              <HelpItem
-                helpText={helpText("derFormattedHelp")}
-                forLabel={t("derFormatted")}
-                forID="kc-der-formatted"
+        <FormGroup
+          label={t("derFormatted")}
+          labelIcon={
+            <HelpItem
+              helpText={helpText("derFormattedHelp")}
+              forLabel={t("derFormatted")}
+              forID="kc-der-formatted"
+            />
+          }
+          fieldId="kc-der-formatted"
+          hasNoPaddingTop
+        >
+          <Controller
+            name="config.is-der-formatted"
+            defaultValue={["false"]}
+            control={form.control}
+            render={({ onChange, value }) => (
+              <Switch
+                id={"kc-der-formatted"}
+                isDisabled={false}
+                onChange={(value) => onChange([`${value}`])}
+                isChecked={value[0] === "true"}
+                label={t("common:on")}
+                labelOff={t("common:off")}
               />
-            }
-            fieldId="kc-der-formatted"
-            hasNoPaddingTop
-          >
-            <Controller
-              name="config.is-der-formatted"
-              defaultValue={["false"]}
-              control={form.control}
-              render={({ onChange, value }) => (
-                <Switch
-                  id={"kc-der-formatted"}
-                  isDisabled={false}
-                  onChange={(value) => onChange([`${value}`])}
-                  isChecked={value[0] === "true"}
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
-                />
-              )}
-            ></Controller>
-          </FormGroup>
-        </>
-      ) : (
-        <></>
-      )}
+            )}
+          ></Controller>
+        </FormGroup>
+      ) : null}
     </>
   );
 };

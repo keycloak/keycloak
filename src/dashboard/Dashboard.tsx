@@ -125,14 +125,10 @@ const Dashboard = () => {
                             {feature}{" "}
                             {isExperimentalFeature(feature) ? (
                               <Label color="orange">{t("experimental")}</Label>
-                            ) : (
-                              <></>
-                            )}
+                            ) : null}
                             {isPreviewFeature(feature) ? (
                               <Label color="blue">{t("preview")}</Label>
-                            ) : (
-                              <></>
-                            )}
+                            ) : null}
                           </ListItem>
                         ))}
                       </List>

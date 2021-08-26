@@ -24,11 +24,9 @@ export const ErrorRenderer = ({ error, resetErrorBoundary }: FallbackProps) => {
           />
         }
         actionLinks={
-          <React.Fragment>
-            <AlertActionLink onClick={resetErrorBoundary}>
-              {t("retry")}
-            </AlertActionLink>
-          </React.Fragment>
+          <AlertActionLink onClick={resetErrorBoundary}>
+            {t("retry")}
+          </AlertActionLink>
         }
       ></Alert>
     </PageSection>

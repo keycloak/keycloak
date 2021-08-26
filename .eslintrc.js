@@ -30,6 +30,8 @@ module.exports = {
     // react/prop-types cannot handle generic props, so we need to disable it.
     // https://github.com/yannickcr/eslint-plugin-react/issues/2777#issuecomment-814968432
     "react/prop-types": "off",
+    // Prevent fragments from being added that have only a single child.
+    "react/jsx-no-useless-fragment": "error"
   },
   overrides: [
     {

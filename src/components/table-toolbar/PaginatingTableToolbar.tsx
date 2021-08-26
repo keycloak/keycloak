@@ -73,7 +73,7 @@ export const PaginatingTableToolbar: FunctionComponent<TableToolbarProps> = ({
       }
       subToolbar={subToolbar}
       toolbarItemFooter={
-        count !== 0 ? <ToolbarItem>{pagination("bottom")}</ToolbarItem> : <></>
+        count !== 0 ? <ToolbarItem>{pagination("bottom")}</ToolbarItem> : null
       }
       inputGroupName={inputGroupName}
       inputGroupPlaceholder={inputGroupPlaceholder}

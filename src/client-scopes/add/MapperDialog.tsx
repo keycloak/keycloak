@@ -128,10 +128,10 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
                 <DataListItemCells
                   dataListCells={[
                     <DataListCell key={`name-${mapper.id}`}>
-                      <>{mapper.name}</>
+                      {mapper.name}
                     </DataListCell>,
                     <DataListCell key={`helpText-${mapper.id}`}>
-                      <>{mapper.helpText}</>
+                      {mapper.helpText}
                     </DataListCell>,
                   ]}
                 />

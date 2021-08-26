@@ -99,11 +99,9 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
     );
 
   const MapperLink = ({ id, name }: Row) => (
-    <>
-      <Link to={toMapper({ realm, id: clientScope.id!, mapperId: id! })}>
-        {name}
-      </Link>
-    </>
+    <Link to={toMapper({ realm, id: clientScope.id!, mapperId: id! })}>
+      {name}
+    </Link>
   );
 
   return (

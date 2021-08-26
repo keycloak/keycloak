@@ -42,60 +42,22 @@ export const UsersInRoleTab = () => {
   const { enabled } = useHelp();
 
   return (
-    <>
-      <PageSection data-testid="users-page" variant="light">
-        <KeycloakDataTable
-          isPaginated
-          loader={loader}
-          ariaLabelKey="roles:roleList"
-          searchPlaceholderKey=""
-          toolbarItem={
-            enabled && (
-              <Popover
-                aria-label="Basic popover"
-                position="bottom"
-                bodyContent={
-                  <div>
-                    {t("roles:whoWillAppearPopoverText")}
-                    <Button
-                      className="kc-groups-link"
-                      variant="link"
-                      onClick={() => history.push(`/${realm}/groups`)}
-                    >
-                      {t("groups")}
-                    </Button>
-                    {t("or")}
-                    <Button
-                      className="kc-users-link"
-                      variant="link"
-                      onClick={() => history.push(`/${realm}/users`)}
-                    >
-                      {t("users")}.
-                    </Button>
-                  </div>
-                }
-                footerContent={t("roles:whoWillAppearPopoverFooterText")}
-              >
-                <Button
-                  variant="link"
-                  className="kc-who-will-appear-button"
-                  key="who-will-appear-button"
-                  icon={<QuestionCircleIcon />}
-                >
-                  {t("roles:whoWillAppearLinkText")}
-                </Button>
-              </Popover>
-            )
-          }
-          emptyState={
-            <ListEmptyState
-              hasIcon={true}
-              message={t("noDirectUsers")}
-              instructions={
+    <PageSection data-testid="users-page" variant="light">
+      <KeycloakDataTable
+        isPaginated
+        loader={loader}
+        ariaLabelKey="roles:roleList"
+        searchPlaceholderKey=""
+        toolbarItem={
+          enabled && (
+            <Popover
+              aria-label="Basic popover"
+              position="bottom"
+              bodyContent={
                 <div>
-                  {t("noUsersEmptyStateDescription")}
+                  {t("roles:whoWillAppearPopoverText")}
                   <Button
-                    className="kc-groups-link-empty-state"
+                    className="kc-groups-link"
                     variant="link"
                     onClick={() => history.push(`/${realm}/groups`)}
                   >
@@ -103,41 +65,77 @@ export const UsersInRoleTab = () => {
                   </Button>
                   {t("or")}
                   <Button
-                    className="kc-users-link-empty-state"
+                    className="kc-users-link"
                     variant="link"
                     onClick={() => history.push(`/${realm}/users`)}
                   >
-                    {t("users")}
+                    {t("users")}.
                   </Button>
-                  {t("noUsersEmptyStateDescriptionContinued")}
                 </div>
               }
-            />
-          }
-          columns={[
-            {
-              name: "username",
-              displayKey: "roles:userName",
-              cellFormatters: [emptyFormatter()],
-            },
-            {
-              name: "email",
-              displayKey: "roles:email",
-              cellFormatters: [emptyFormatter()],
-            },
-            {
-              name: "lastName",
-              displayKey: "roles:lastName",
-              cellFormatters: [emptyFormatter()],
-            },
-            {
-              name: "firstName",
-              displayKey: "roles:firstName",
-              cellFormatters: [upperCaseFormatter(), emptyFormatter()],
-            },
-          ]}
-        />
-      </PageSection>
-    </>
+              footerContent={t("roles:whoWillAppearPopoverFooterText")}
+            >
+              <Button
+                variant="link"
+                className="kc-who-will-appear-button"
+                key="who-will-appear-button"
+                icon={<QuestionCircleIcon />}
+              >
+                {t("roles:whoWillAppearLinkText")}
+              </Button>
+            </Popover>
+          )
+        }
+        emptyState={
+          <ListEmptyState
+            hasIcon={true}
+            message={t("noDirectUsers")}
+            instructions={
+              <div>
+                {t("noUsersEmptyStateDescription")}
+                <Button
+                  className="kc-groups-link-empty-state"
+                  variant="link"
+                  onClick={() => history.push(`/${realm}/groups`)}
+                >
+                  {t("groups")}
+                </Button>
+                {t("or")}
+                <Button
+                  className="kc-users-link-empty-state"
+                  variant="link"
+                  onClick={() => history.push(`/${realm}/users`)}
+                >
+                  {t("users")}
+                </Button>
+                {t("noUsersEmptyStateDescriptionContinued")}
+              </div>
+            }
+          />
+        }
+        columns={[
+          {
+            name: "username",
+            displayKey: "roles:userName",
+            cellFormatters: [emptyFormatter()],
+          },
+          {
+            name: "email",
+            displayKey: "roles:email",
+            cellFormatters: [emptyFormatter()],
+          },
+          {
+            name: "lastName",
+            displayKey: "roles:lastName",
+            cellFormatters: [emptyFormatter()],
+          },
+          {
+            name: "firstName",
+            displayKey: "roles:firstName",
+            cellFormatters: [upperCaseFormatter(), emptyFormatter()],
+          },
+        ]}
+      />
+    </PageSection>
   );
 };

@@ -32,95 +32,90 @@ export const ExtendedNonDiscoverySettings = () => {
   const [promptOpen, setPromptOpen] = useState(false);
 
   return (
-    <>
-      <ExpandableSection
-        toggleText={t("advanced")}
-        onToggle={() => setIsExpanded(!isExpanded)}
-        isExpanded={isExpanded}
-      >
-        <Form isHorizontal>
-          <SwitchField label="passLoginHint" field="config.loginHint" />
-          <SwitchField label="passCurrentLocale" field="config.uiLocales" />
-          <SwitchField
-            field="config.backchannelSupported"
-            label="backchannelLogout"
+    <ExpandableSection
+      toggleText={t("advanced")}
+      onToggle={() => setIsExpanded(!isExpanded)}
+      isExpanded={isExpanded}
+    >
+      <Form isHorizontal>
+        <SwitchField label="passLoginHint" field="config.loginHint" />
+        <SwitchField label="passCurrentLocale" field="config.uiLocales" />
+        <SwitchField
+          field="config.backchannelSupported"
+          label="backchannelLogout"
+        />
+        <SwitchField field="config.disableUserInfo" label="disableUserInfo" />
+        <TextField field="config.defaultScope" label="scopes" />
+        <FormGroupField label="prompt">
+          <Controller
+            name="config.prompt"
+            defaultValue={promptOptions[0]}
+            control={control}
+            render={({ onChange, value }) => (
+              <Select
+                toggleId="prompt"
+                required
+                onToggle={() => setPromptOpen(!promptOpen)}
+                onSelect={(_, value) => {
+                  onChange(value as string);
+                  setPromptOpen(false);
+                }}
+                selections={value}
+                variant={SelectVariant.single}
+                aria-label={t("prompt")}
+                isOpen={promptOpen}
+              >
+                {promptOptions.map((option) => (
+                  <SelectOption
+                    selected={option === value}
+                    key={option}
+                    value={option}
+                  >
+                    {t(`prompts.${option}`)}
+                  </SelectOption>
+                ))}
+              </Select>
+            )}
           />
-          <SwitchField field="config.disableUserInfo" label="disableUserInfo" />
-          <TextField field="config.defaultScope" label="scopes" />
-          <FormGroupField label="prompt">
-            <Controller
-              name="config.prompt"
-              defaultValue={promptOptions[0]}
-              control={control}
-              render={({ onChange, value }) => (
-                <Select
-                  toggleId="prompt"
-                  required
-                  onToggle={() => setPromptOpen(!promptOpen)}
-                  onSelect={(_, value) => {
-                    onChange(value as string);
-                    setPromptOpen(false);
-                  }}
-                  selections={value}
-                  variant={SelectVariant.single}
-                  aria-label={t("prompt")}
-                  isOpen={promptOpen}
-                >
-                  {promptOptions.map((option) => (
-                    <SelectOption
-                      selected={option === value}
-                      key={option}
-                      value={option}
-                    >
-                      {t(`prompts.${option}`)}
-                    </SelectOption>
-                  ))}
-                </Select>
-              )}
+        </FormGroupField>
+        <SwitchField
+          field="config.acceptsPromptNoneForwardFromClient"
+          label="acceptsPromptNone"
+        />
+        <FormGroup
+          label={t("allowedClockSkew")}
+          labelIcon={
+            <HelpItem
+              helpText={"identity-providers-help:allowedClockSkew"}
+              forLabel={t("allowedClockSkew")}
+              forID="allowedClockSkew"
             />
-          </FormGroupField>
-          <SwitchField
-            field="config.acceptsPromptNoneForwardFromClient"
-            label="acceptsPromptNone"
-          />
-          <FormGroup
-            label={t("allowedClockSkew")}
-            labelIcon={
-              <HelpItem
-                helpText={"identity-providers-help:allowedClockSkew"}
-                forLabel={t("allowedClockSkew")}
-                forID="allowedClockSkew"
+          }
+          fieldId="allowedClockSkew"
+        >
+          <Controller
+            name="config.allowedClockSkew"
+            control={control}
+            defaultValue={0}
+            render={({ onChange, value }) => (
+              <NumberInput
+                value={value}
+                data-testid="allowedClockSkew"
+                onMinus={() => onChange(value - 1)}
+                onChange={onChange}
+                onPlus={() => onChange(value + 1)}
+                inputName="input"
+                inputAriaLabel={t("allowedClockSkew")}
+                minusBtnAriaLabel={t("common:minus")}
+                plusBtnAriaLabel={t("common:plus")}
+                min={0}
+                unit={t("common:times.seconds")}
               />
-            }
-            fieldId="allowedClockSkew"
-          >
-            <Controller
-              name="config.allowedClockSkew"
-              control={control}
-              defaultValue={0}
-              render={({ onChange, value }) => (
-                <NumberInput
-                  value={value}
-                  data-testid="allowedClockSkew"
-                  onMinus={() => onChange(value - 1)}
-                  onChange={onChange}
-                  onPlus={() => onChange(value + 1)}
-                  inputName="input"
-                  inputAriaLabel={t("allowedClockSkew")}
-                  minusBtnAriaLabel={t("common:minus")}
-                  plusBtnAriaLabel={t("common:plus")}
-                  min={0}
-                  unit={t("common:times.seconds")}
-                />
-              )}
-            />
-          </FormGroup>
-          <TextField
-            field="config.forwardParameters"
-            label="forwardParameters"
+            )}
           />
-        </Form>
-      </ExpandableSection>
-    </>
+        </FormGroup>
+        <TextField field="config.forwardParameters" label="forwardParameters" />
+      </Form>
+    </ExpandableSection>
   );
 };

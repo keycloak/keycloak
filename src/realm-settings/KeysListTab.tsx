@@ -130,52 +130,46 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
 
   const goToCreate = () => history.push(`${url}/add-role`);
 
-  const ProviderRenderer = ({ provider }: KeyData) => {
-    return <>{provider}</>;
-  };
+  const ProviderRenderer = ({ provider }: KeyData) => provider;
 
   const ButtonRenderer = ({ type, publicKey, certificate }: KeyData) => {
     if (type === "EC") {
       return (
-        <>
+        <Button
+          onClick={() => {
+            togglePublicKeyDialog();
+            setPublicKey(publicKey!);
+          }}
+          variant="secondary"
+          id="kc-public-key"
+        >
+          {t("realm-settings:publicKeys").slice(0, -1)}
+        </Button>
+      );
+    } else if (type === "RSA") {
+      return (
+        <div className="button-wrapper">
           <Button
             onClick={() => {
               togglePublicKeyDialog();
               setPublicKey(publicKey!);
             }}
             variant="secondary"
-            id="kc-public-key"
+            id="kc-rsa-public-key"
           >
             {t("realm-settings:publicKeys").slice(0, -1)}
           </Button>
-        </>
-      );
-    } else if (type === "RSA") {
-      return (
-        <>
-          <div className="button-wrapper">
-            <Button
-              onClick={() => {
-                togglePublicKeyDialog();
-                setPublicKey(publicKey!);
-              }}
-              variant="secondary"
-              id="kc-rsa-public-key"
-            >
-              {t("realm-settings:publicKeys").slice(0, -1)}
-            </Button>
-            <Button
-              onClick={() => {
-                toggleCertificateDialog();
-                setCertificate(certificate!);
-              }}
-              variant="secondary"
-              id="kc-certificate"
-            >
-              {t("realm-settings:certificate")}
-            </Button>
-          </div>
-        </>
+          <Button
+            onClick={() => {
+              toggleCertificateDialog();
+              setCertificate(certificate!);
+            }}
+            variant="secondary"
+            id="kc-certificate"
+          >
+            {t("realm-settings:certificate")}
+          </Button>
+        </div>
       );
     }
   };
@@ -200,93 +194,91 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
   ];
 
   return (
-    <>
-      <PageSection variant="light" padding={{ default: "noPadding" }}>
-        <PublicKeyDialog />
-        <CertificateDialog />
-        <KeycloakDataTable
-          isNotCompact={true}
-          key={key}
-          loader={
-            filterType === "Active keys"
-              ? activeKeysLoader
-              : filterType === "Passive keys"
-              ? passiveKeysLoader
-              : filterType === "Disabled keys"
-              ? disabledKeysLoader
-              : loader
-          }
-          ariaLabelKey="realm-settings:keysList"
-          searchPlaceholderKey="realm-settings:searchKey"
-          searchTypeComponent={
-            <Select
-              width={300}
-              data-testid="filter-type-select"
-              isOpen={filterDropdownOpen}
-              className="kc-filter-type-select"
-              variant={SelectVariant.single}
-              onToggle={() => setFilterDropdownOpen(!filterDropdownOpen)}
-              toggleIcon={<FilterIcon />}
-              onSelect={(_, value) => {
-                setFilterType(value as string);
-                refresh();
-                setFilterDropdownOpen(false);
-              }}
-              selections={filterType}
-            >
-              {options}
-            </Select>
-          }
-          canSelectAll
-          columns={[
-            {
-              name: "algorithm",
-              displayKey: "realm-settings:algorithm",
-              cellFormatters: [emptyFormatter()],
-              transforms: [cellWidth(15)],
-            },
-            {
-              name: "type",
-              displayKey: "realm-settings:type",
-              cellFormatters: [emptyFormatter()],
-              transforms: [cellWidth(10)],
-            },
-            {
-              name: "kid",
-              displayKey: "realm-settings:kid",
-              cellFormatters: [emptyFormatter()],
-              transforms: [cellWidth(10)],
-            },
-            {
-              name: "provider",
-              displayKey: "realm-settings:provider",
-              cellRenderer: ProviderRenderer,
-              cellFormatters: [emptyFormatter()],
-              transforms: [cellWidth(10)],
-            },
-            {
-              name: "publicKeys",
-              displayKey: "realm-settings:publicKeys",
-              cellRenderer: ButtonRenderer,
-              cellFormatters: [],
-              transforms: [cellWidth(20)],
-            },
-          ]}
-          isSearching={!!filterType}
-          emptyState={
-            <ListEmptyState
-              hasIcon={true}
-              message={t("realm-settings:noKeys")}
-              instructions={
-                t(`realm-settings:noKeysDescription`) +
-                `${filterType.toLocaleLowerCase()}.`
-              }
-              primaryActionText={t("createRole")}
-              onPrimaryAction={goToCreate}
-            />
-          }
-        />
-      </PageSection>
-    </>
+    <PageSection variant="light" padding={{ default: "noPadding" }}>
+      <PublicKeyDialog />
+      <CertificateDialog />
+      <KeycloakDataTable
+        isNotCompact={true}
+        key={key}
+        loader={
+          filterType === "Active keys"
+            ? activeKeysLoader
+            : filterType === "Passive keys"
+            ? passiveKeysLoader
+            : filterType === "Disabled keys"
+            ? disabledKeysLoader
+            : loader
+        }
+        ariaLabelKey="realm-settings:keysList"
+        searchPlaceholderKey="realm-settings:searchKey"
+        searchTypeComponent={
+          <Select
+            width={300}
+            data-testid="filter-type-select"
+            isOpen={filterDropdownOpen}
+            className="kc-filter-type-select"
+            variant={SelectVariant.single}
+            onToggle={() => setFilterDropdownOpen(!filterDropdownOpen)}
+            toggleIcon={<FilterIcon />}
+            onSelect={(_, value) => {
+              setFilterType(value as string);
+              refresh();
+              setFilterDropdownOpen(false);
+            }}
+            selections={filterType}
+          >
+            {options}
+          </Select>
+        }
+        canSelectAll
+        columns={[
+          {
+            name: "algorithm",
+            displayKey: "realm-settings:algorithm",
+            cellFormatters: [emptyFormatter()],
+            transforms: [cellWidth(15)],
+          },
+          {
+            name: "type",
+            displayKey: "realm-settings:type",
+            cellFormatters: [emptyFormatter()],
+            transforms: [cellWidth(10)],
+          },
+          {
+            name: "kid",
+            displayKey: "realm-settings:kid",
+            cellFormatters: [emptyFormatter()],
+            transforms: [cellWidth(10)],
+          },
+          {
+            name: "provider",
+            displayKey: "realm-settings:provider",
+            cellRenderer: ProviderRenderer,
+            cellFormatters: [emptyFormatter()],
+            transforms: [cellWidth(10)],
+          },
+          {
+            name: "publicKeys",
+            displayKey: "realm-settings:publicKeys",
+            cellRenderer: ButtonRenderer,
+            cellFormatters: [],
+            transforms: [cellWidth(20)],
+          },
+        ]}
+        isSearching={!!filterType}
+        emptyState={
+          <ListEmptyState
+            hasIcon={true}
+            message={t("realm-settings:noKeys")}
+            instructions={
+              t(`realm-settings:noKeysDescription`) +
+              `${filterType.toLocaleLowerCase()}.`
+            }
+            primaryActionText={t("createRole")}
+            onPrimaryAction={goToCreate}
+          />
+        }
+      />
+    </PageSection>
   );
 };

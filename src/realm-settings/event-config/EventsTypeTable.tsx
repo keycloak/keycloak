@@ -39,15 +39,13 @@ export function EventsTypeTable({
       onSelect={onSelect ? onSelect : undefined}
       canSelectAll={!!onSelect}
       toolbarItem={
-        <>
-          {addTypes && (
-            <ToolbarItem>
-              <Button id="addTypes" onClick={addTypes} data-testid="addTypes">
-                {t("addSavedTypes")}
-              </Button>
-            </ToolbarItem>
-          )}
-        </>
+        addTypes && (
+          <ToolbarItem>
+            <Button id="addTypes" onClick={addTypes} data-testid="addTypes">
+              {t("addSavedTypes")}
+            </Button>
+          </ToolbarItem>
+        )
       }
       actions={
         !onDelete

@@ -140,27 +140,25 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
   };
 
   const TypeSelector = (scope: Row) => (
-    <>
-      <CellDropdown
-        clientScope={scope}
-        type={scope.type}
-        onSelect={async (value) => {
-          try {
-            await changeScope(
-              adminClient,
-              clientId,
-              scope,
-              scope.type,
-              value as ClientScope
-            );
-            addAlert(t("clientScopeSuccess"), AlertVariant.success);
-            refresh();
-          } catch (error) {
-            addError("clients:clientScopeError", error);
-          }
-        }}
-      />
-    </>
+    <CellDropdown
+      clientScope={scope}
+      type={scope.type}
+      onSelect={async (value) => {
+        try {
+          await changeScope(
+            adminClient,
+            clientId,
+            scope,
+            scope.type,
+            value as ClientScope
+          );
+          addAlert(t("clientScopeSuccess"), AlertVariant.success);
+          refresh();
+        } catch (error) {
+          addError("clients:clientScopeError", error);
+        }
+      }}
+    />
   );
 
   return (

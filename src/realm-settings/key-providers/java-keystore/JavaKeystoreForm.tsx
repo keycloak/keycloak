@@ -209,20 +209,18 @@ export const JavaKeystoreForm = ({
           />
         )}
         {editMode && (
-          <>
-            <TextInput
-              ref={form.register()}
-              type="text"
-              id="name"
-              name="name"
-              defaultValue={providerId}
-              validated={
-                form.errors.name
-                  ? ValidatedOptions.error
-                  : ValidatedOptions.default
-              }
-            />
-          </>
+          <TextInput
+            ref={form.register()}
+            type="text"
+            id="name"
+            name="name"
+            defaultValue={providerId}
+            validated={
+              form.errors.name
+                ? ValidatedOptions.error
+                : ValidatedOptions.default
+            }
+          />
         )}
       </FormGroup>
       <FormGroup

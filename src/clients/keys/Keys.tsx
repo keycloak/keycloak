@@ -153,32 +153,29 @@ export const Keys = ({ clientId, save }: KeysProps) => {
                 )}
               />
             </FormGroup>
-            {useJwksUrl !== "true" && (
-              <>
-                {keyInfo ? (
-                  <FormGroup
-                    label={t("certificate")}
-                    fieldId="certificate"
-                    labelIcon={
-                      <HelpItem
-                        helpText="clients-help:certificate"
-                        forLabel={t("certificate")}
-                        forID="certificate"
-                      />
-                    }
-                  >
-                    <TextArea
-                      readOnly
-                      rows={5}
-                      id="certificate"
-                      value={keyInfo.certificate}
+            {useJwksUrl !== "true" &&
+              (keyInfo ? (
+                <FormGroup
+                  label={t("certificate")}
+                  fieldId="certificate"
+                  labelIcon={
+                    <HelpItem
+                      helpText="clients-help:certificate"
+                      forLabel={t("certificate")}
+                      forID="certificate"
                     />
-                  </FormGroup>
-                ) : (
-                  "No client certificate configured"
-                )}
-              </>
-            )}
+                  }
+                >
+                  <TextArea
+                    readOnly
+                    rows={5}
+                    id="certificate"
+                    value={keyInfo.certificate}
+                  />
+                </FormGroup>
+              ) : (
+                "No client certificate configured"
+              ))}
             {useJwksUrl === "true" && (
               <FormGroup
                 label={t("jwksUrl")}

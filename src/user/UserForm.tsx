@@ -353,28 +353,26 @@ export const UserForm = ({
             typeAheadAriaLabel="Select an action"
             control={control}
             render={() => (
-              <>
-                <InputGroup>
-                  <ChipGroup categoryName={" "}>
-                    {selectedGroups.map((currentChip) => (
-                      <Chip
-                        key={currentChip.id}
-                        onClick={() => deleteItem(currentChip.name!)}
-                      >
-                        {currentChip.path}
-                      </Chip>
-                    ))}
-                  </ChipGroup>
-                  <Button
-                    id="kc-join-groups-button"
-                    onClick={toggleModal}
-                    variant="secondary"
-                    data-testid="join-groups-button"
-                  >
-                    {t("users:joinGroups")}
-                  </Button>
-                </InputGroup>
-              </>
+              <InputGroup>
+                <ChipGroup categoryName={" "}>
+                  {selectedGroups.map((currentChip) => (
+                    <Chip
+                      key={currentChip.id}
+                      onClick={() => deleteItem(currentChip.name!)}
+                    >
+                      {currentChip.path}
+                    </Chip>
+                  ))}
+                </ChipGroup>
+                <Button
+                  id="kc-join-groups-button"
+                  onClick={toggleModal}
+                  variant="secondary"
+                  data-testid="join-groups-button"
+                >
+                  {t("users:joinGroups")}
+                </Button>
+              </InputGroup>
             )}
           />
         </FormGroup>
