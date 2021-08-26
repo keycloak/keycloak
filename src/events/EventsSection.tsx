@@ -24,9 +24,9 @@ import {
 } from "@patternfly/react-core";
 import { CheckCircleIcon, WarningTriangleIcon } from "@patternfly/react-icons";
 import { cellWidth, expandable } from "@patternfly/react-table";
-import type EventRepresentation from "keycloak-admin/lib/defs/eventRepresentation";
-import type EventType from "keycloak-admin/lib/defs/eventTypes";
-import type { RealmEventsConfigRepresentation } from "keycloak-admin/lib/defs/realmEventsConfigRepresentation";
+import type EventRepresentation from "@keycloak/keycloak-admin-client/lib/defs/eventRepresentation";
+import type EventType from "@keycloak/keycloak-admin-client/lib/defs/eventTypes";
+import type { RealmEventsConfigRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/realmEventsConfigRepresentation";
 import { pickBy } from "lodash";
 import moment from "moment";
 import React, { useState } from "react";
