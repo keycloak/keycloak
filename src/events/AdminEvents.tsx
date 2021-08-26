@@ -3,6 +3,8 @@ import {
   Button,
   Dropdown,
   DropdownToggle,
+  Flex,
+  FlexItem,
   Form,
   FormGroup,
   Modal,
@@ -11,7 +13,6 @@ import {
   SelectVariant,
   TextInput,
   Tooltip,
-  ToolbarItem,
 } from "@patternfly/react-core";
 import {
   cellWidth,
@@ -159,136 +160,141 @@ export const AdminEvents = () => {
   const adminEventSearchFormDisplay = () => {
     return (
       <>
-        <ToolbarItem>
-          <Dropdown
-            id="admin-events-search-select"
-            data-testid="AdminEventsSearchSelector"
-            className="pf-u-ml-md"
-            toggle={
-              <DropdownToggle
-                data-testid="adminEventsSearchSelectorToggle"
-                onToggle={(isOpen) => setSearchDropdownOpen(isOpen)}
-                className="keycloak__events_search_selector_dropdown__toggle"
-              >
-                {t("searchForAdminEvent")}
-              </DropdownToggle>
-            }
-            isOpen={searchDropdownOpen}
-          >
-            <Form
-              isHorizontal
-              className="keycloak__admin_events_search__form"
-              data-testid="searchForm"
-            >
-              <FormGroup
-                label={t("resourceType")}
-                fieldId="kc-resourceType"
-                className="keycloak__events_search__form_multiline_label"
-              >
-                <Select
-                  variant={SelectVariant.single}
-                  onToggle={(isOpen) => setSelectOpen(isOpen)}
-                  isOpen={selectOpen}
-                ></Select>
-              </FormGroup>
-              <FormGroup
-                label={t("operationType")}
-                fieldId="kc-operationType"
-                className="keycloak__events_search__form_multiline_label"
-              >
-                <Select
-                  variant={SelectVariant.single}
-                  onToggle={(isOpen) => setSelectOpen(isOpen)}
-                  isOpen={selectOpen}
-                ></Select>
-              </FormGroup>
-              <FormGroup
-                label={t("user")}
-                fieldId="kc-user"
-                className="keycloak__events_search__form_label"
-              >
-                <TextInput
-                  ref={register()}
-                  type="text"
-                  id="kc-user"
-                  name="user"
-                  data-testid="user-searchField"
-                />
-              </FormGroup>
-              <FormGroup
-                label={t("realm")}
-                fieldId="kc-realm"
-                className="keycloak__events_search__form_label"
-              >
-                <Select
-                  variant={SelectVariant.single}
-                  onToggle={(isOpen) => setSelectOpen(isOpen)}
-                  isOpen={selectOpen}
-                ></Select>
-              </FormGroup>
-              <FormGroup
-                label={t("ipAddress")}
-                fieldId="kc-ipAddress"
-                className="keycloak__events_search__form_label"
-              >
-                <TextInput
-                  ref={register()}
-                  type="text"
-                  id="kc-ipAddress"
-                  name="ipAddress"
-                  data-testid="ipAddress-searchField"
-                />
-              </FormGroup>
-              <FormGroup
-                label={t("dateFrom")}
-                fieldId="kc-dateFrom"
-                className="keycloak__events_search__form_label"
-              >
-                <TextInput
-                  ref={register()}
-                  type="text"
-                  id="kc-dateFrom"
-                  name="dateFrom"
-                  className="pf-c-form-control pf-m-icon pf-m-calendar"
-                  placeholder="yyyy-MM-dd"
-                  data-testid="dateFrom-searchField"
-                />
-              </FormGroup>
-              <FormGroup
-                label={t("dateTo")}
-                fieldId="kc-dateTo"
-                className="keycloak__events_search__form_label"
-              >
-                <TextInput
-                  ref={register()}
-                  type="text"
-                  id="kc-dateTo"
-                  name="dateTo"
-                  className="pf-c-form-control pf-m-icon pf-m-calendar"
-                  placeholder="yyyy-MM-dd"
-                  data-testid="dateTo-searchField"
-                />
-              </FormGroup>
-              <ActionGroup>
-                <Button
-                  className="keycloak__admin_events_search__form_btn"
-                  variant={"primary"}
-                  data-testid="search-events-btn"
-                  isDisabled={!isDirty}
+        <Flex
+          direction={{ default: "column" }}
+          spaceItems={{ default: "spaceItemsNone" }}
+        >
+          <FlexItem>
+            <Dropdown
+              id="admin-events-search-select"
+              data-testid="AdminEventsSearchSelector"
+              className="pf-u-ml-md"
+              toggle={
+                <DropdownToggle
+                  data-testid="adminEventsSearchSelectorToggle"
+                  onToggle={(isOpen) => setSearchDropdownOpen(isOpen)}
+                  className="keycloak__events_search_selector_dropdown__toggle"
                 >
-                  {t("searchAdminEventsBtn")}
-                </Button>
-              </ActionGroup>
-            </Form>
-          </Dropdown>
-          <Button
-            className="pf-u-ml-md"
-            onClick={refresh}
-            data-testid="refresh-btn"
-          >
-            {t("refresh")}
-          </Button>
-        </ToolbarItem>
+                  {t("searchForAdminEvent")}
+                </DropdownToggle>
+              }
+              isOpen={searchDropdownOpen}
+            >
+              <Form
+                isHorizontal
+                className="keycloak__admin_events_search__form"
+                data-testid="searchForm"
+              >
+                <FormGroup
+                  label={t("resourceType")}
+                  fieldId="kc-resourceType"
+                  className="keycloak__events_search__form_multiline_label"
+                >
+                  <Select
+                    variant={SelectVariant.single}
+                    onToggle={(isOpen) => setSelectOpen(isOpen)}
+                    isOpen={selectOpen}
+                  ></Select>
+                </FormGroup>
+                <FormGroup
+                  label={t("operationType")}
+                  fieldId="kc-operationType"
+                  className="keycloak__events_search__form_multiline_label"
+                >
+                  <Select
+                    variant={SelectVariant.single}
+                    onToggle={(isOpen) => setSelectOpen(isOpen)}
+                    isOpen={selectOpen}
+                  ></Select>
+                </FormGroup>
+                <FormGroup
+                  label={t("user")}
+                  fieldId="kc-user"
+                  className="keycloak__events_search__form_label"
+                >
+                  <TextInput
+                    ref={register()}
+                    type="text"
+                    id="kc-user"
+                    name="user"
+                    data-testid="user-searchField"
+                  />
+                </FormGroup>
+                <FormGroup
+                  label={t("realm")}
+                  fieldId="kc-realm"
+                  className="keycloak__events_search__form_label"
+                >
+                  <Select
+                    variant={SelectVariant.single}
+                    onToggle={(isOpen) => setSelectOpen(isOpen)}
+                    isOpen={selectOpen}
+                  ></Select>
+                </FormGroup>
+                <FormGroup
+                  label={t("ipAddress")}
+                  fieldId="kc-ipAddress"
+                  className="keycloak__events_search__form_label"
+                >
+                  <TextInput
+                    ref={register()}
+                    type="text"
+                    id="kc-ipAddress"
+                    name="ipAddress"
+                    data-testid="ipAddress-searchField"
+                  />
+                </FormGroup>
+                <FormGroup
+                  label={t("dateFrom")}
+                  fieldId="kc-dateFrom"
+                  className="keycloak__events_search__form_label"
+                >
+                  <TextInput
+                    ref={register()}
+                    type="text"
+                    id="kc-dateFrom"
+                    name="dateFrom"
+                    className="pf-c-form-control pf-m-icon pf-m-calendar"
+                    placeholder="yyyy-MM-dd"
+                    data-testid="dateFrom-searchField"
+                  />
+                </FormGroup>
+                <FormGroup
+                  label={t("dateTo")}
+                  fieldId="kc-dateTo"
+                  className="keycloak__events_search__form_label"
+                >
+                  <TextInput
+                    ref={register()}
+                    type="text"
+                    id="kc-dateTo"
+                    name="dateTo"
+                    className="pf-c-form-control pf-m-icon pf-m-calendar"
+                    placeholder="yyyy-MM-dd"
+                    data-testid="dateTo-searchField"
+                  />
+                </FormGroup>
+                <ActionGroup>
+                  <Button
+                    className="keycloak__admin_events_search__form_btn"
+                    variant={"primary"}
+                    data-testid="search-events-btn"
+                    isDisabled={!isDirty}
+                  >
+                    {t("searchAdminEventsBtn")}
+                  </Button>
+                </ActionGroup>
+              </Form>
+            </Dropdown>
+            <Button
+              className="pf-u-ml-md"
+              onClick={refresh}
+              data-testid="refresh-btn"
+            >
+              {t("refresh")}
+            </Button>
+          </FlexItem>
+        </Flex>
       </>
     );
   };
