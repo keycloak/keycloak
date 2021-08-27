@@ -161,12 +161,14 @@ export const EventConfigForm = ({
       </ActionGroup>
       <Divider />
       <FormGroup
-        label={t("clearEvents")}
+        label={type === "user" ? t("clearUserEvents") : t("clearAdminEvents")}
         fieldId={`clear-${type}-events`}
         labelIcon={
           <HelpItem
             helpText={`realm-settings-help:${type}-clearEvents`}
-            forLabel={t("clearEvents")}
+            forLabel={
+              type === "user" ? t("clearUserEvents") : t("clearAdminEvents")
+            }
             forID={`clear-${type}-events`}
           />
         }
@@ -177,7 +179,7 @@ export const EventConfigForm = ({
           data-testid={`clear-${type}-events`}
           onClick={() => clear()}
         >
-          {t("clearEvents")}
+          {type === "user" ? t("clearUserEvents") : t("clearAdminEvents")}
         </Button>
       </FormGroup>
     </>
