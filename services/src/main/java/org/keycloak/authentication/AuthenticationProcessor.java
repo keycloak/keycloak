@@ -964,7 +964,10 @@ public class AuthenticationProcessor {
         if (checkAction) {
             String action = AuthenticationSessionModel.Action.AUTHENTICATE.name();
             if (!code.isValidAction(action)) {
-                throw new AuthenticationFlowException(AuthenticationFlowError.INVALID_CLIENT_SESSION);
+                throw new AuthenticationFlowException("Action " + action +
+                        " not valid for code " + code.getClientSession().getAction() +
+                        " for authenticationSessionId " + authenticationSession.getParentSession().getId(),
+                        AuthenticationFlowError.INVALID_CLIENT_SESSION);
             }
         }
         if (!code.isActionActive(ClientSessionCode.ActionType.LOGIN)) {
