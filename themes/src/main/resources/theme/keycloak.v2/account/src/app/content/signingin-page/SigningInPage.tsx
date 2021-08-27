@@ -135,6 +135,13 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         });
     }
 
+    private handleSetDefault = (credentialId: string, userLabel: string) => {
+      this.context!.doPost("/credentials/" + credentialId + "/moveToFirst", {})
+        .then(() => {
+            this.getCredentialContainers();
+            ContentAlert.success('successSetDefaultMessage', [userLabel]);
+        });
+    }
     public static credElementId(credType: CredType, credId: string, item: string): string {
         return `${credType}-${item}-${credId.substring(0,8)}`;
     }
@@ -231,7 +238,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
 
         return (
             <React.Fragment key='userCredentials'> {
-                userCredentials.map(credential => (
+                userCredentials.map((credential, index) => (
                     <DataListItem id={`${SigningInPage.credElementId(type, credential.id, 'row')}`} key={'credential-list-item-' + credential.id} aria-labelledby={'credential-list-item-' + credential.userLabel}>
                         <DataListItemRow key={'userCredentialRow-' + credential.id}>
                             <DataListItemCells dataListCells={this.credentialRowCells(credential, type)}/>
@@ -239,7 +246,9 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
                             <CredentialAction credential={credential}
                                               removeable={removeable}
                                               updateAction={updateAIA}
-                                              credRemover={this.handleRemove}/>
+                                              credRemover={this.handleRemove}
+                                              isDefault={index === 0}
+                                              defaultSetter={this.handleSetDefault} />
                         </DataListItemRow>
                     </DataListItem>
                 ))
@@ -330,10 +339,13 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
 };
 
 type CredRemover = (credentialId: string, userLabel: string) => void;
+type DefaultSetter = (credentialId: string, userLabel: string) => void;
 interface CredentialActionProps {credential: UserCredential;
                                 removeable: boolean;
                                 updateAction: AIACommand;
-                                credRemover: CredRemover;};
+                                credRemover: CredRemover;
+                                isDefault: boolean;
+                                defaultSetter: DefaultSetter};
 class CredentialAction extends React.Component<CredentialActionProps> {
 
     render(): React.ReactNode {
@@ -348,14 +360,25 @@ class CredentialAction extends React.Component<CredentialActionProps> {
         if (this.props.removeable) {
             const userLabel: string = this.props.credential.userLabel;
             return (
-                <DataListAction aria-labelledby='foo' aria-label='foo action' id={'removeAction-' + this.props.credential.id }>
-                    <ContinueCancelModal buttonTitle='remove'
-                                        buttonId={`${SigningInPage.credElementId(this.props.credential.type, this.props.credential.id, 'remove')}`}
-                                        modalTitle={Msg.localize('removeCred', [userLabel])}
-                                        modalMessage={Msg.localize('stopUsingCred', [userLabel])}
-                                        onContinue={() => this.props.credRemover(this.props.credential.id, userLabel)}
-                                            />
-                </DataListAction>
+		<>
+			<DataListAction aria-labelledby='foo' aria-label='foo action' id={'setDefaultAction-' + this.props.credential.id } >
+			    <ContinueCancelModal buttonTitle='setDefault'
+						buttonId={`${SigningInPage.credElementId(this.props.credential.type, this.props.credential.id, 'setDefault')}`}
+						modalTitle={Msg.localize('setDefaultCredTitle', [userLabel])}
+						modalMessage={Msg.localize('setDefaultCred', [userLabel])}
+						isDisabled={this.props.isDefault}
+						onContinue={() => this.props.defaultSetter(this.props.credential.id, userLabel)}
+						    />
+			</DataListAction>
+			<DataListAction aria-labelledby='foo' aria-label='foo action' id={'removeAction-' + this.props.credential.id }>
+			    <ContinueCancelModal buttonTitle='remove'
+						buttonId={`${SigningInPage.credElementId(this.props.credential.type, this.props.credential.id, 'remove')}`}
+						modalTitle={Msg.localize('removeCred', [userLabel])}
+						modalMessage={Msg.localize('stopUsingCred', [userLabel])}
+						onContinue={() => this.props.credRemover(this.props.credential.id, userLabel)}
+						    />
+			</DataListAction>
+		</>
             )
         }
 

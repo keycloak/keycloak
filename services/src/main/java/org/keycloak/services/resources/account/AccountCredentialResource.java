@@ -29,6 +29,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -294,27 +295,26 @@ public class AccountCredentialResource {
         }
     }
 
-    // TODO: This is kept here for now and commented.
-//    /**
-//     * Move a credential to a position behind another credential
-//     * @param credentialId The credential to move
-//     */
-//    @Path("{credentialId}/moveToFirst")
-//    @POST
-//    public void moveToFirst(final @PathParam("credentialId") String credentialId){
-//        moveCredentialAfter(credentialId, null);
-//    }
-//
-//    /**
-//     * Move a credential to a position behind another credential
-//     * @param credentialId The credential to move
-//     * @param newPreviousCredentialId The credential that will be the previous element in the list. If set to null, the moved credential will be the first element in the list.
-//     */
-//    @Path("{credentialId}/moveAfter/{newPreviousCredentialId}")
-//    @POST
-//    public void moveCredentialAfter(final @PathParam("credentialId") String credentialId, final @PathParam("newPreviousCredentialId") String newPreviousCredentialId){
-//        auth.require(AccountRoles.MANAGE_ACCOUNT);
-//        session.userCredentialManager().moveCredentialTo(realm, user, credentialId, newPreviousCredentialId);
-//    }
+    /**
+     * Move a credential to a position behind another credential
+     * @param credentialId The credential to move
+     */
+    @Path("{credentialId}/moveToFirst")
+    @POST
+    public void moveToFirst(final @PathParam("credentialId") String credentialId){
+        moveCredentialAfter(credentialId, null);
+    }
+
+    /**
+     * Move a credential to a position behind another credential
+     * @param credentialId The credential to move
+     * @param newPreviousCredentialId The credential that will be the previous element in the list. If set to null, the moved credential will be the first element in the list.
+     */
+    @Path("{credentialId}/moveAfter/{newPreviousCredentialId}")
+    @POST
+    public void moveCredentialAfter(final @PathParam("credentialId") String credentialId, final @PathParam("newPreviousCredentialId") String newPreviousCredentialId){
+        auth.require(AccountRoles.MANAGE_ACCOUNT);
+        session.userCredentialManager().moveCredentialTo(realm, user, credentialId, newPreviousCredentialId);
+    }
 
 }
