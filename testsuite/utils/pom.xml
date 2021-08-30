@@ -249,6 +249,11 @@
             <artifactId>mariadb-java-client</artifactId>
             <version>${mariadb.driver.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.microsoft.sqlserver</groupId>
+            <artifactId>mssql-jdbc</artifactId>
+            <version>${mssql.driver.version}</version>
+        </dependency>
     </dependencies>
 
 

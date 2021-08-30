@@ -35,6 +35,7 @@ import liquibase.servicelocator.ServiceLocator;
 import liquibase.sqlgenerator.SqlGeneratorFactory;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.connections.jpa.updater.liquibase.CustomForeignKeySnapshotGenerator;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider;
 import org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase;
 import org.keycloak.connections.jpa.updater.liquibase.MySQL8VarcharType;
@@ -50,6 +51,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import java.sql.Connection;
 import java.util.concurrent.atomic.AtomicBoolean;
 import liquibase.changelog.ChangeLogHistoryServiceFactory;
+import liquibase.snapshot.SnapshotGeneratorFactory;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -126,6 +128,9 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
 
         // Adding CustomCreateIndexChange for handling conditional indices creation
         ChangeFactory.getInstance().register(CustomCreateIndexChange.class);
+
+        // Contains fix for https://liquibase.jira.com/browse/CORE-3141
+        SnapshotGeneratorFactory.getInstance().register(new CustomForeignKeySnapshotGenerator());
     }
 
     @Override
