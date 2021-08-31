@@ -19,6 +19,7 @@ import { UserGroups } from "./UserGroups";
 import { UserConsents } from "./UserConsents";
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { UserIdentityProviderLinks } from "./UserIdentityProviderLinks";
 
 export const UsersTabs = () => {
   const { t } = useTranslation("roles");
@@ -102,6 +103,15 @@ export const UsersTabs = () => {
               title={<TabTitleText>{t("users:consents")}</TabTitleText>}
             >
               <UserConsents />
+            </Tab>
+            <Tab
+              eventKey="identity-provider-links"
+              data-testid="identity-provider-links-tab"
+              title={
+                <TabTitleText>{t("users:identityProviderLinks")}</TabTitleText>
+              }
+            >
+              <UserIdentityProviderLinks />
             </Tab>
           </KeycloakTabs>
         )}

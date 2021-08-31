@@ -88,3 +88,28 @@ div.pf-c-chip-group.kc-consents-chip-group
   margin-left: var(--pf-global--spacer--md);
   color: var(--pf-global--Color--400);
 }
+
+article.pf-c-card.pf-m-flat.kc-linked-idps,
+article.pf-c-card.pf-m-flat.kc-available-idps {
+  border: 0px;
+}
+
+article.pf-c-card.pf-m-flat.kc-linked-idps > div > div > h1 {
+  margin-bottom: 0px;
+}
+
+article.pf-c-card.pf-m-flat.kc-available-idps > div > div > h1 {
+  margin-bottom: 0px;
+}
+
+.kc-available-idps-text {
+  color: var(--pf-global--Color--200);
+}
+
+.kc-linked-idps-text {
+  color: var(--pf-global--Color--200);
+}
+
+.kc-no-providers-text {
+  text-align: center;
+}

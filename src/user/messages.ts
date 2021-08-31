@@ -49,12 +49,23 @@ export default {
       "Are you sure you want to permanently delete {{count}} selected user",
     deleteConfirmDialog_plural:
       "Are you sure you want to permanently delete {{count}} selected users",
+    userID: "User ID",
     userCreated: "The user has been created",
     userSaved: "The user has been saved",
     userDetails: "User details",
     userCreateError: "Could not create user: {{error}}",
     userDeletedSuccess: "The user has been deleted",
     userDeletedError: "The user could not be deleted {{error}}",
+    linkAccount: "Link account",
+    unlink: "Unlink",
+    unlinkAccount: "Unlink account",
+    unlinkAccountTitle: "Unlink account from {{provider}}?",
+    unlinkAccountConfirm:
+      "Are you sure you want to permanently unlink this account from {{provider}}?",
+    link: "Link",
+    linkAccountTitle: "Link account to {{provider}}?",
+    idpLinkSuccess: "Identity provider has been linked",
+    couldNotLinkIdP: "Could not link identity provider {{error}}",
     configureOTP: "Configure OTP",
     updatePassword: "Update Password",
     updateProfile: "Update Profile",
@@ -64,6 +75,17 @@ export default {
     noConsents: "No consents",
     noConsentsText:
       "The consents will only be recorded when users try to access a client that is configured to require consent. In that case, users will get a consent page which asks them to grant access to the client.",
+    identityProvider: "Identity provider",
+    identityProviderLinks: "Identity provider links",
+    noProvidersLinked:
+      "No identity providers linked. Choose one from the list below.",
+    noAvailableIdentityProviders: "No available identity providers.",
+    linkedIdPs: "Linked identity providers",
+    linkedIdPsText:
+      "The identity providers which are already linked to this user account",
+    availableIdPs: "Available identity providers",
+    availableIdPsText:
+      "All the configured identity providers in this realm are listed here. You can link the user account to any of the IdP accounts.",
     whoWillAppearLinkText: "Who will appear in this group list?",
     whoWillAppearPopoverText:
       "Groups are hierarchical. When you select Direct Membership, you see only the child group that the user joined. Ancestor groups are not included.",
