@@ -2,7 +2,7 @@
 module.exports = {
   root: true,
   parserOptions: {
-    project: './tsconfig.json',
+    project: "./tsconfig.json",
   },
   env: {
     node: true,
@@ -31,7 +31,13 @@ module.exports = {
     // https://github.com/yannickcr/eslint-plugin-react/issues/2777#issuecomment-814968432
     "react/prop-types": "off",
     // Prevent fragments from being added that have only a single child.
-    "react/jsx-no-useless-fragment": "error"
+    "react/jsx-no-useless-fragment": "error",
+    "prettier/prettier": [
+      "error",
+      {
+        endOfLine: "auto",
+      },
+    ],
   },
   overrides: [
     {
