@@ -578,7 +578,7 @@ export default {
     maxFailureWait: "Max wait",
     maxDeltaTime: "Failure reset time",
     quickLoginCheckMilliSeconds: "Quick login check milliseconds",
-    minimumQuickLoginWaitSeconds: "Minimum quick login wait",
+    minimumQuickLoginWait: "Minimum quick login wait",
   },
   "partial-import": {
     partialImportHeaderText:
