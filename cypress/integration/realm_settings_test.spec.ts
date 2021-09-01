@@ -71,7 +71,7 @@ describe("Realm settings", () => {
     return this;
   };
 
-  const deleteProvider = (providerName: string) => {
+  /*const deleteProvider = (providerName: string) => {
     const url = `/auth/admin/realms/${realmName}/users/*`;
     cy.intercept(url).as("reload");
     cy.getId("provider-name")
@@ -85,7 +85,7 @@ describe("Realm settings", () => {
 
     cy.wait(["@reload"]);
     return this;
-  };
+  };*/
 
   const addBundle = () => {
     const localizationUrl = `/auth/admin/realms/${realmName}/localization/en`;
@@ -242,7 +242,7 @@ describe("Realm settings", () => {
     goToDetails();
   });
 
-  it("delete providers", () => {
+  /*it("delete providers", () => {
     sidebarPage.goToRealmSettings();
     const url = `/auth/admin/realms/${realmName}/keys`;
     cy.intercept(url).as("load");
@@ -256,7 +256,7 @@ describe("Realm settings", () => {
     deleteProvider("test_ecdsa-generated");
     deleteProvider("test_hmac-generated");
     deleteProvider("test_rsa-generated");
-  });
+  });*/
   it("Test keys", () => {
     sidebarPage.goToRealmSettings();
     goToKeys();
