@@ -2,6 +2,9 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
+  Dropdown,
+  DropdownItem,
+  KebabToggle,
   Label,
   PageSection,
   Text,
@@ -28,6 +31,7 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { emptyFormatter } from "../util";
 import { toUser } from "./routes/User";
 import "./user-section.css";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 
 type BruteUser = UserRepresentation & {
   brute?: Record<string, object>;
@@ -41,6 +45,8 @@ export const UsersSection = () => {
   const history = useHistory();
   const { url } = useRouteMatch();
   const [listUsers, setListUsers] = useState(false);
+  const [realm, setRealm] = useState<RealmRepresentation>();
+  const [kebabOpen, setKebabOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
 
   const [key, setKey] = useState("");
@@ -52,11 +58,15 @@ export const UsersSection = () => {
         type: "org.keycloak.storage.UserStorageProvider",
       };
 
-      return adminClient.components.find(testParams);
+      return Promise.all([
+        adminClient.components.find(testParams),
+        adminClient.realms.findOne({ realm: realmName }),
+      ]);
     },
-    (response) => {
+    ([storageProviders, realm]) => {
       //should *only* list users when no user federation is configured
-      setListUsers(!(response.length > 0));
+      setListUsers(!(storageProviders.length > 0));
+      setRealm(realm);
       refresh();
     },
     []
@@ -88,7 +98,6 @@ export const UsersSection = () => {
 
     try {
       const users = await adminClient.users.find({ ...params });
-      const realm = await adminClient.realms.findOne({ realm: realmName });
       if (realm?.bruteForceProtected) {
         const brutes = await Promise.all(
           users.map((user: BruteUser) =>
@@ -108,6 +117,21 @@ export const UsersSection = () => {
       return [];
     }
   };
+
+  const [toggleUnlockUsersDialog, UnlockUsersConfirm] = useConfirmDialog({
+    titleKey: "users:unlockAllUsers",
+    messageKey: "users:unlockUsersConfirm",
+    continueButtonLabel: "users:unlock",
+    onConfirm: async () => {
+      try {
+        await adminClient.attackDetection.delAll();
+        refresh();
+        addAlert(t("unlockUsersSuccess"), AlertVariant.success);
+      } catch (error) {
+        addError("users:unlockUsersError", error);
+      }
+    },
+  });
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "users:deleteConfirm",
@@ -167,6 +191,7 @@ export const UsersSection = () => {
   return (
     <>
       <DeleteConfirm />
+      <UnlockUsersConfirm />
       <ViewHeader titleKey="users:title" />
       <PageSection
         data-testid="users-page"
@@ -202,14 +227,52 @@ export const UsersSection = () => {
                   {t("addUser")}
                 </Button>
               </ToolbarItem>
-              <ToolbarItem>
-                <Button
-                  variant={ButtonVariant.plain}
-                  onClick={toggleDeleteDialog}
-                >
-                  {t("deleteUser")}
-                </Button>
-              </ToolbarItem>
+              {!realm?.bruteForceProtected && (
+                <ToolbarItem>
+                  <Button
+                    variant={ButtonVariant.plain}
+                    onClick={toggleDeleteDialog}
+                    isDisabled={selectedRows.length === 0}
+                  >
+                    {t("deleteUser")}
+                  </Button>
+                </ToolbarItem>
+              )}
+              {realm?.bruteForceProtected && (
+                <ToolbarItem>
+                  <Dropdown
+                    toggle={
+                      <KebabToggle onToggle={() => setKebabOpen(!kebabOpen)} />
+                    }
+                    isOpen={kebabOpen}
+                    isPlain
+                    dropdownItems={[
+                      <DropdownItem
+                        key="deleteUser"
+                        component="button"
+                        isDisabled={selectedRows.length === 0}
+                        onClick={() => {
+                          toggleDeleteDialog();
+                          setKebabOpen(false);
+                        }}
+                      >
+                        {t("deleteUser")}
+                      </DropdownItem>,
+
+                      <DropdownItem
+                        key="unlock"
+                        component="button"
+                        onClick={() => {
+                          toggleUnlockUsersDialog();
+                          setKebabOpen(false);
+                        }}
+                      >
+                        {t("unlockAllUsers")}
+                      </DropdownItem>,
+                    ]}
+                  />
+                </ToolbarItem>
+              )}
             </>
           }
           actions={[
