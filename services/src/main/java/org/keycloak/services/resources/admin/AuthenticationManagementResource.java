@@ -1006,7 +1006,7 @@ public class AuthenticationManagementResource {
         RequiredActionProviderModel update = new RequiredActionProviderModel();
         update.setId(model.getId());
         update.setName(rep.getName());
-        update.setAlias(rep.getAlias());
+        update.setAlias(model.getAlias());
         update.setProviderId(model.getProviderId());
         update.setDefaultAction(rep.isDefaultAction());
         update.setPriority(rep.getPriority());
