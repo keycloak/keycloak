@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.HttpHeaders;
@@ -567,10 +568,10 @@ public class KeycloakInstalled {
     }
 
     protected ResteasyClient createResteasyClient() {
-        return new ResteasyClientBuilder()
+        return ((ResteasyClientBuilder)ClientBuilder.newBuilder())
                 .connectionCheckoutTimeout(1, TimeUnit.HOURS)
                 .connectionTTL(1, TimeUnit.HOURS)
-                .socketTimeout(1, TimeUnit.HOURS)
+                .connectTimeout(1, TimeUnit.HOURS)
                 .disableTrustManager().build();
     }
 

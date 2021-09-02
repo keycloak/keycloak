@@ -378,10 +378,6 @@ public class KeycloakServer {
     public void start() throws Throwable {
         long start = System.currentTimeMillis();
 
-        ResteasyDeployment deployment = new ResteasyDeployment();
-
-        deployment.setApplicationClass(KeycloakApplication.class.getName());
-
         Builder builder = Undertow.builder()
                 .addHttpListener(config.getPort(), config.getHost())
                 .setWorkerThreads(config.getWorkerThreads())
@@ -395,6 +391,8 @@ public class KeycloakServer {
 
         server = new UndertowJaxrsServer();
         try {
+            ResteasyDeployment deployment = server.getDeployment();
+            deployment.setApplicationClass(KeycloakApplication.class.getName());
             server.start(builder);
 
             DeploymentInfo di = server.undertowDeployment(deployment, "");

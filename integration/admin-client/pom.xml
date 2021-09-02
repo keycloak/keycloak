@@ -8,7 +8,7 @@
   ~ You may obtain a copy of the License at
   ~
   ~ http://www.apache.org/licenses/LICENSE-2.0
-  ~
+  ~https://www.google.com/url?q=https://docs.google.com/document/d/1YLQszCiDqVDhttps://www.google.com/url?q=https://docs.google.com/document/d/1_doYeX9nG2vJj9Wo31PICBTOdYTPI5KpBalv82WHEMk/edit%23heading%3Dh.8v5l312u25e3&sa=D&source=calendar&ust=1637416333442369&usg=AOvVaw16r-V8QdHMMQJBexfoplfDNhttps://www.google.com/url?q=https://docs.google.com/document/d/1YLQszCiDqVDN6VKK8kPLjKPikMaZsANzKPplLRvmfCc/edit%23heading%3Dh.aajwta3wsu3t&sa=D&source=calendar&ust=1637384024765915&usg=AOvVaw3J-F5RcXljgN47BzK6Bz4p6VKK8kPLjKPikMaZsANzKPplLRvmfCc/edit%23heading%3Dh.aajwta3wsu3t&sa=D&source=calendar&ust=1637384024765915&usg=AOvVaw3J-F5RcXljgN47BzK6Bz4p
   ~ Unless required by applicable law or agreed to in writing, software
   ~ distributed under the License is distributed on an "AS IS" BASIS,
   ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -57,6 +57,11 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-jaxrs</artifactId>
+            <version>${resteasy.versions}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-client</artifactId>
             <version>${resteasy.versions}</version>
         </dependency>
@@ -64,6 +69,12 @@
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-multipart-provider</artifactId>
             <version>${resteasy.versions}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.james</groupId>
+                    <artifactId>apache-mime4j</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>

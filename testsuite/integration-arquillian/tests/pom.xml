@@ -2038,6 +2038,12 @@
                 <dependency>
                     <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-admin-client</artifactId>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>org.jboss.resteasy</groupId>
+                            <artifactId>resteasy-jaxrs</artifactId>
+                        </exclusion>
+                    </exclusions>
                 </dependency>
                 <dependency>
                     <groupId>org.keycloak</groupId>
@@ -2065,8 +2071,17 @@
                 </dependency>
 
                 <dependency>
+                    <groupId>org.jboss.spec.javax.ws.rs</groupId>
+                    <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
+                    <scope>compile</scope>
+                </dependency>
+                <dependency>
                     <groupId>org.jboss.resteasy</groupId>
                     <artifactId>resteasy-client</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>org.jboss.resteasy</groupId>
+                    <artifactId>resteasy-client-api</artifactId>
                 </dependency>
                 <dependency>
                     <groupId>org.jboss.resteasy</groupId>

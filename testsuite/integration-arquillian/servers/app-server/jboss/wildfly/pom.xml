@@ -34,8 +34,8 @@
         
         <app.server.jboss.groupId>org.wildfly</app.server.jboss.groupId>
         <app.server.jboss.artifactId>wildfly-dist</app.server.jboss.artifactId>
-        <app.server.jboss.version>${wildfly.version}</app.server.jboss.version>
-        <app.server.jboss.unpacked.folder.name>wildfly-${wildfly.version}</app.server.jboss.unpacked.folder.name>
+        <app.server.jboss.version>${wildfly.adapter.supported.version}</app.server.jboss.version>
+        <app.server.jboss.unpacked.folder.name>wildfly-${wildfly.adapter.supported.version}</app.server.jboss.unpacked.folder.name>
         
         <app.server.oidc.adapter.artifactId>keycloak-wildfly-adapter-dist</app.server.oidc.adapter.artifactId>
         <app.server.saml.adapter.artifactId>keycloak-saml-wildfly-adapter-dist</app.server.saml.adapter.artifactId>

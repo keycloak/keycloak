@@ -79,14 +79,11 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
     Map<String, String> deployedArchivesToContextPath = new ConcurrentHashMap<>();
 
     private DeploymentInfo createAuthServerDeploymentInfo() {
-        ResteasyDeployment deployment = new ResteasyDeployment();
+        ResteasyDeployment deployment = undertow.getDeployment();
         deployment.setApplicationClass(KeycloakApplication.class.getName());
 
         // RESTEASY-2034
         deployment.setProperty(ResteasyContextParameters.RESTEASY_DISABLE_HTML_SANITIZER, true);
-
-        // Prevent double gzip encoding of resources
-        deployment.getDisabledProviderClasses().add("org.jboss.resteasy.plugins.interceptors.encoding.GZIPEncodingInterceptor");
 
         DeploymentInfo di = undertow.undertowDeployment(deployment);
         di.setClassLoader(getClass().getClassLoader());

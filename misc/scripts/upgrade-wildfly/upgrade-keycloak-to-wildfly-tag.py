@@ -124,7 +124,8 @@ def upgradeKeycloakToWildflyTag(tag, forceUpdates = False, ssoAdapters = False):
         wu.performJbossParentVersionUpdateTask(wildflyTag, wildflyPomFile, wildflyCorePomFile, forceUpdates)
         # Subtask - Synchronize the XML namespace of the 'subsystem' element of the Keycloak
         #           Infinispan subsystem template with its current value as used by Wildfly
-        wu.synchronizeInfinispanSubsystemXmlNamespaceWithWildfly(wildflyTag)
+        # TODO: needs rework - for now manually
+        #  wu.synchronizeInfinispanSubsystemXmlNamespaceWithWildfly(wildflyTag)
 
         for filename in [wildflyPomFile, wildflyCorePomFile]:
             os.remove(filename)

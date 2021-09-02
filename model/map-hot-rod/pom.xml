@@ -84,9 +84,9 @@
                             <version>${project.version}</version>
                         </path>
                         <path>
-                            <groupId>javax.annotation</groupId>
-                            <artifactId>javax.annotation-api</artifactId>
-                            <version>${javax.annotation-api.version}</version>
+                            <groupId>org.jboss.spec.javax.annotation</groupId>
+                            <artifactId>jboss-annotations-api_1.3_spec</artifactId>
+                            <version>${jboss.spec.javax.annotation.jboss-annotations-api_1.3_spec.version}</version>
                         </path>
                     </annotationProcessorPaths>
                     <annotationProcessors>

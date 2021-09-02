@@ -139,7 +139,7 @@ public class UndertowAppServer implements DeployableContainer<UndertowAppServerC
             } else if (applicationClassNode.isPresent()) {
                 String applicationPath = applicationClassNode.get().getPath().get();
 
-                ResteasyDeployment deployment = new ResteasyDeployment();
+                ResteasyDeployment deployment = undertow.getDeployment();
                 deployment.setApplicationClass(extractClassName(applicationPath));
                 di = new UndertowDeployerHelper().getDeploymentInfo(configuration, (WebArchive) archive, undertow.undertowDeployment(deployment));
             } else {
@@ -253,7 +253,7 @@ public class UndertowAppServer implements DeployableContainer<UndertowAppServerC
                 .filter(clazz -> clazz.isAnnotationPresent(Path.class))
                 .collect(Collectors.toSet());
 
-        ResteasyDeployment deployment = new ResteasyDeployment();
+        ResteasyDeployment deployment = undertow.getDeployment();
         deployment.setApplication(new RestSamlApplicationConfig(classes));
         return deployment;
     }

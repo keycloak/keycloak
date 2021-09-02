@@ -62,6 +62,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.*;
 import org.openqa.selenium.Cookie;
 
+import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
@@ -116,7 +117,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmBuilder realm = RealmBuilder.create().name("test").testEventListener();
 
-        realm.client(ClientBuilder.create().clientId("myclient").publicClient().directAccessGrants());
+        realm.client(org.keycloak.testsuite.util.ClientBuilder.create().clientId("myclient").publicClient().directAccessGrants());
 
         impersonatedUserId = KeycloakModelUtils.generateId();
 
@@ -203,7 +204,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
     public void testImpersonationWorksWhenAuthenticationSessionExists() throws Exception {
         // Create test client
         RealmResource realm = adminClient.realms().realm("test");
-        Response resp = realm.clients().create(ClientBuilder.create().clientId("test-app").addRedirectUri(OAuthClient.APP_ROOT + "/*").build());
+        Response resp = realm.clients().create(org.keycloak.testsuite.util.ClientBuilder.create().clientId("test-app").addRedirectUri(OAuthClient.APP_ROOT + "/*").build());
         resp.close();
 
         // Open the URL for the client (will redirect to Keycloak server AuthorizationEndpoint and create authenticationSession)
@@ -231,7 +232,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
     public void testImpersonationBySameRealmServiceAccount() throws Exception {
         // Create test client service account
         RealmResource realm = adminClient.realms().realm("test");
-        ClientRepresentation clientApp = ClientBuilder.create()
+        ClientRepresentation clientApp = org.keycloak.testsuite.util.ClientBuilder.create()
                 .id(KeycloakModelUtils.generateId())
                 .clientId("service-account-cl")
                 .secret("password")
@@ -256,7 +257,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
     public void testImpersonationByMasterRealmServiceAccount() throws Exception {
         // Create test client service account
         RealmResource realm = adminClient.realms().realm("master");
-        ClientRepresentation clientApp = ClientBuilder.create()
+        ClientRepresentation clientApp = org.keycloak.testsuite.util.ClientBuilder.create()
                 .id(KeycloakModelUtils.generateId())
                 .clientId("service-account-cl")
                 .secret("password")
@@ -280,7 +281,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
 
     // Return the SSO cookie from the impersonated session
     protected Set<Cookie> testSuccessfulImpersonation(String admin, String adminRealm) {
-        ResteasyClientBuilder resteasyClientBuilder = new ResteasyClientBuilder();
+        ResteasyClientBuilder resteasyClientBuilder = (ResteasyClientBuilder)ClientBuilder.newBuilder();
         resteasyClientBuilder.connectionPoolSize(10);
         resteasyClientBuilder.httpEngine(AdminClientUtil.getCustomClientHttpEngine(resteasyClientBuilder, 10, null));
         ResteasyClient resteasyClient = resteasyClientBuilder.build();
@@ -392,7 +393,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
 
     // Return the SSO cookie from the impersonated session
     protected Set<Cookie> testSuccessfulServiceAccountImpersonation(UserRepresentation serviceAccount, String serviceAccountRealm) {
-        ResteasyClientBuilder resteasyClientBuilder = new ResteasyClientBuilder();
+        ResteasyClientBuilder resteasyClientBuilder = (ResteasyClientBuilder)ClientBuilder.newBuilder();
         resteasyClientBuilder.connectionPoolSize(10);
         resteasyClientBuilder.httpEngine(AdminClientUtil.getCustomClientHttpEngine(resteasyClientBuilder, 10, null));
         ResteasyClient resteasyClient = resteasyClientBuilder.build();

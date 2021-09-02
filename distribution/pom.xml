@@ -43,7 +43,6 @@
         <module>licenses-common</module>
         <module>maven-plugins</module>
         <module>server-dist</module>
-        <module>server-overlay</module>
     </modules>
 
     <repositories>
@@ -66,17 +65,6 @@
     </repositories>
 
     <profiles>
-        <profile>
-            <id>legacy-dist</id>
-            <activation>
-                <property>
-                    <name>legacy-dist</name>
-                </property>
-            </activation>
-            <modules>
-                <module>server-legacy-dist</module>
-            </modules>
-        </profile>
         <profile>
             <id>quarkus</id>
             <activation>

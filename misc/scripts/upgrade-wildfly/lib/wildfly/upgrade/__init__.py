@@ -514,7 +514,7 @@ def loadGavDictionaryFromXmlFile(xmlFile, xPathPrefix = '/pom:project/pom:depend
             childDictKey = gavDictValue
             while not re.match(r'\d.*', gavDictValue):
                 gavDictValue = re.sub(r'^\${', '', gavDictValue)
-                gavDictValue = re.sub(r'}$', '', gavDictValue)
+                gavDictValue = re.sub(r'}.*$', '', gavDictValue)
                 propertyElem = getPomProperty(xmlRoot, gavDictValue)
                 # Handle corner case when artifact version isn't value of some POM <property> element,
                 # but rather value of some xPath within the XML file. Like for example the case of
@@ -634,11 +634,15 @@ _keycloakSpecificProperties = [
     "jetty9.version",
     "liquibase.version",
     "mysql.version",
+    "mysql.driver.version",
     "osgi.version",
     "pax.web.version",
     "postgresql.version",
+    "postgresql.driver.version",
     "mariadb.version",
+    "mariadb.driver.version",
     "mssql.version",
+    "mssql.driver.version",
     "twitter4j.version",
     "jna.version",
     "greenmail.version",
@@ -669,6 +673,12 @@ _keycloakSpecificProperties = [
     "spring-boot23.version",
     "webauthn4j.version",
     "org.apache.kerby.kerby-asn1.version",
+    "galleon.fork.embedded",
+    "galleon.log.time",
+    "galleon.offline",
+    "server.output.dir.prefix",
+    "server.output.dir.version",
+    "picketlink.version",
 ]
 
 # Mapping of artifact name as used in the main Keycloak pom.xml file to the name
@@ -704,6 +714,7 @@ _keycloakToWildflyProperties = {
     "jboss.logging.version"                                       : "version.org.jboss.logging.jboss-logging",
     "jboss.logging.tools.version"                                 : "version.org.jboss.logging.jboss-logging-tools",
     "jboss-jaxrs-api_2.1_spec"                                    : "version.org.jboss.spec.javax.ws.jboss-jaxrs-api_2.1_spec",
+    "jboss.spec.javax.annotation.jboss-annotations-api_1.3_spec.version": "version.org.jboss.spec.javax.annotation.jboss-annotations-api_1.3_spec",
     "jboss-transaction-api_1.3_spec"                              : "version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.3_spec",
     "jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version"   : "version.org.jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec",
     "jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version" : "version.org.jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec",
@@ -755,7 +766,7 @@ _keycloakToWildflyProperties = {
     "hamcrest.version"                                            : "version.org.hamcrest",
     # Skip "jmeter.version" since Keycloak specific
     "junit.version"                                               : "version.junit",
-    "picketlink.version"                                          : "version.org.picketlink",
+    # skip "picketlink.version"
     # Skip "selenium.version" since Keycloak specific
     # Skip "xml-apis.version" since intentionally excluded in Wildfly
     # Skip "subethasmtp.version" since Keycloak specific
@@ -774,6 +785,9 @@ _keycloakToWildflyProperties = {
     # Skip "spring-boot15.version", "spring-boot21.version", "spring-boot22.version", and "spring-boot23.version" since Keycloak specific
     # Skip "webauthn4j.version" since Keycloak specific
     # Skip "org.apache.kerby.kerby-asn1.version" since Keycloak specific
+    "verifier.plugin.version"                                     : "version.verifier.plugin",
+    "org.wildfly.galleon-plugins.version"                         : "version.org.wildfly.galleon-plugins",
+    "org.jboss.galleon.version"                                   : "version.org.jboss.galleon"
 }
 
 def _scanMainKeycloakPomFileForUnknownArtifacts():

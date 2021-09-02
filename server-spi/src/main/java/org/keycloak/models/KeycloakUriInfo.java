@@ -16,7 +16,8 @@
  */
 package org.keycloak.models;
 
-import org.jboss.resteasy.specimpl.ResteasyUriBuilder;
+import org.jboss.resteasy.spi.ResteasyUriBuilder;
+//import        org.jboss.resteasy.specimpl.ResteasyUriBuilder;
 import org.keycloak.urls.HostnameProvider;
 import org.keycloak.urls.UrlType;
 

@@ -29,11 +29,26 @@
     <name>Keycloak Adapter Overlay Distribution</name>
     <description/>
 
+    <properties>
+        <apache.mime4j.version>0.6</apache.mime4j.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-adapter-feature-pack</artifactId>
             <type>zip</type>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.james</groupId>
+            <artifactId>apache-mime4j</artifactId>
+            <version>${apache.mime4j.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 

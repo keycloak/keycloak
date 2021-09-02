@@ -24,7 +24,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.hamcrest.Matchers;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
-import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
+import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient43Engine;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -39,6 +39,7 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LanguageComboboxAwarePage;
 import org.keycloak.testsuite.pages.LoginPage;
 
+import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.ProfileAssume;
@@ -126,8 +127,9 @@ public class LoginPageTest extends AbstractI18NTest {
         ProfileAssume.assumeCommunity();
         
         try(CloseableHttpClient httpClient = (CloseableHttpClient) new HttpClientBuilder().build()) {
-            ApacheHttpClient4Engine engine = new ApacheHttpClient4Engine(httpClient);
-            ResteasyClient client = new ResteasyClientBuilder().httpEngine(engine).build();
+            ApacheHttpClient43Engine engine = new ApacheHttpClient43Engine(httpClient);
+            ResteasyClientBuilder clientBuilder = (ResteasyClientBuilder)ClientBuilder.newBuilder();
+            ResteasyClient client = clientBuilder.httpEngine(engine).build();
 
             loginPage.open();
 
@@ -260,12 +262,12 @@ public class LoginPageTest extends AbstractI18NTest {
         final String realmLocalizationMessageValue = "Localization Test";
 
         try(CloseableHttpClient httpClient = (CloseableHttpClient) new HttpClientBuilder().build()) {
-            ApacheHttpClient4Engine engine = new ApacheHttpClient4Engine(httpClient);
+            ApacheHttpClient43Engine engine = new ApacheHttpClient43Engine(httpClient);
 
             testRealm().localization().saveRealmLocalizationText(locale, realmLocalizationMessageKey,
                     realmLocalizationMessageValue);
 
-            ResteasyClient client = new ResteasyClientBuilder().httpEngine(engine).build();
+            ResteasyClient client = ((ResteasyClientBuilder)ClientBuilder.newBuilder()).httpEngine(engine).build();
 
             loginPage.open();
 
