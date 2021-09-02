@@ -1,5 +1,7 @@
 export default {
   "users-help": {
+    temporaryLocked:
+      "The user may be locked due to multiple failed attempts to log in.",
     disabled: "A disabled user cannot log in.",
     emailVerified: "Has the user's email been verified?",
     requiredUserActions:

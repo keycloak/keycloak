@@ -13,31 +13,39 @@ import {
   TextInput,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { Controller, UseFormMethods } from "react-hook-form";
-import { useHistory, useParams } from "react-router-dom";
+import { Controller, useFormContext } from "react-hook-form";
+import { useHistory } from "react-router-dom";
+
 import { FormAccess } from "../components/form-access/FormAccess";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { useFetch, useAdminClient } from "../context/auth/AdminClient";
-import moment from "moment";
+import { useAdminClient } from "../context/auth/AdminClient";
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import { useAlerts } from "../components/alert/Alerts";
 import { emailRegexPattern } from "../util";
 import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
+import moment from "moment";
+
+export type BruteForced = {
+  isBruteForceProtected?: boolean;
+  isLocked?: boolean;
+};
 
 export type UserFormProps = {
-  form: UseFormMethods<UserRepresentation>;
+  user?: UserRepresentation;
+  bruteForce?: BruteForced;
   save: (user: UserRepresentation) => void;
-  editMode: boolean;
-  timestamp?: number;
   onGroupsUpdate: (groups: GroupRepresentation[]) => void;
 };
 
 export const UserForm = ({
-  form: { handleSubmit, register, errors, watch, control, setValue, reset },
+  user,
+  bruteForce: { isBruteForceProtected, isLocked } = {
+    isBruteForceProtected: false,
+    isLocked: false,
+  },
   save,
-  editMode,
   onGroupsUpdate,
 }: UserFormProps) => {
   const { t } = useTranslation("users");
@@ -49,36 +57,24 @@ export const UserForm = ({
   ] = useState(false);
   const history = useHistory();
   const adminClient = useAdminClient();
-  const { id } = useParams<{ id: string }>();
+  const { addAlert, addError } = useAlerts();
 
+  const { handleSubmit, register, errors, watch, control, reset } =
+    useFormContext();
   const watchUsernameInput = watch("username");
-  const [user, setUser] = useState<UserRepresentation>();
   const [selectedGroups, setSelectedGroups] = useState<GroupRepresentation[]>(
     []
   );
-
-  const { addAlert, addError } = useAlerts();
-
   const [open, setOpen] = useState(false);
+  const [locked, setLocked] = useState(isLocked);
 
-  useFetch(
-    async () => {
-      if (editMode) return await adminClient.users.findOne({ id: id });
-    },
-    (user) => {
-      if (user) {
-        setupForm(user);
-        setUser(user);
-      }
-    },
-    [selectedGroups]
-  );
-
-  const setupForm = (user: UserRepresentation) => {
-    reset();
-    Object.entries(user).map((entry) => {
-      setValue(entry[0], entry[1]);
-    });
+  const unLockUser = async () => {
+    try {
+      await adminClient.attackDetection.del({ id: user!.id! });
+      addAlert(t("unlockSuccess"), AlertVariant.success);
+    } catch (error) {
+      addError("users:unlockError", error);
+    }
   };
 
   const requiredUserActionsOptions = [
@@ -116,7 +112,7 @@ export const UserForm = ({
     newGroups.forEach(async (group) => {
       try {
         await adminClient.users.addToGroup({
-          id,
+          id: user!.id!,
           groupId: group.id!,
         });
         addAlert(t("users:addedGroupMembership"), AlertVariant.success);
@@ -145,17 +141,17 @@ export const UserForm = ({
             ok: "users:join",
           }}
           onConfirm={(groups) => {
-            editMode ? addGroups(groups) : addChips(groups);
+            user?.id ? addGroups(groups) : addChips(groups);
             setOpen(false);
           }}
           onClose={() => setOpen(false)}
           filterGroups={selectedGroups}
         />
       )}
-      {editMode && user ? (
+      {user?.id ? (
         <>
           <FormGroup label={t("common:id")} fieldId="kc-id" isRequired>
-            <TextInput id={user.id} value={user.id} type="text" isReadOnly />
+            <TextInput id={user?.id} value={user?.id} type="text" isReadOnly />
           </FormGroup>
           <FormGroup label={t("createdAt")} fieldId="kc-created-at" isRequired>
             <TextInput
@@ -182,7 +178,7 @@ export const UserForm = ({
             type="text"
             id="kc-username"
             name="username"
-            isReadOnly={editMode}
+            isReadOnly={!!user?.id}
           />
         </FormGroup>
       )}
@@ -260,6 +256,32 @@ export const UserForm = ({
           aria-label={t("lastName")}
         />
       </FormGroup>
+      {isBruteForceProtected && (
+        <FormGroup
+          label={t("temporaryLocked")}
+          fieldId="temporaryLocked"
+          labelIcon={
+            <HelpItem
+              helpText="users-help:temporaryLocked"
+              forLabel={t("temporaryLocked")}
+              forID={t(`common:helpLabel`, { label: t("temporaryLocked") })}
+            />
+          }
+        >
+          <Switch
+            data-testid="user-locked-switch"
+            id={"temporaryLocked"}
+            onChange={(value) => {
+              unLockUser();
+              setLocked(value);
+            }}
+            isChecked={locked}
+            isDisabled={!locked}
+            label={t("common:on")}
+            labelOff={t("common:off")}
+          />
+        </FormGroup>
+      )}
       <FormGroup
         label={t("common:enabled")}
         fieldId="kc-enabled"
@@ -333,7 +355,7 @@ export const UserForm = ({
           )}
         />
       </FormGroup>
-      {!editMode && (
+      {!user?.id && (
         <FormGroup
           label={t("common:groups")}
           fieldId="kc-groups"
@@ -380,21 +402,21 @@ export const UserForm = ({
 
       <ActionGroup>
         <Button
-          data-testid={!editMode ? "create-user" : "save-user"}
-          isDisabled={!editMode && !watchUsernameInput}
+          data-testid={!user?.id ? "create-user" : "save-user"}
+          isDisabled={!user?.id && !watchUsernameInput}
           variant="primary"
           type="submit"
         >
-          {editMode ? t("common:save") : t("common:create")}
+          {user?.id ? t("common:save") : t("common:create")}
         </Button>
         <Button
           data-testid="cancel-create-user"
           onClick={() =>
-            editMode ? setupForm(user!) : history.push(`/${realm}/users`)
+            user?.id ? reset(user) : history.push(`/${realm}/users`)
           }
           variant="link"
         >
-          {editMode ? t("common:revert") : t("common:cancel")}
+          {user?.id ? t("common:revert") : t("common:cancel")}
         </Button>
       </ActionGroup>
     </FormAccess>

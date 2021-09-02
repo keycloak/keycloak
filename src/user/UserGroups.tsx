@@ -12,7 +12,6 @@ import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/us
 import _ from "lodash";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useParams } from "react-router-dom";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { GroupPath } from "../components/group/GroupPath";
@@ -20,31 +19,21 @@ import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
 import { useHelp } from "../components/help-enabler/HelpHeader";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
+import { useAdminClient } from "../context/auth/AdminClient";
 import { emptyFormatter } from "../util";
 
-export type UserFormProps = {
-  username?: string;
-  loader?: (
-    first?: number,
-    max?: number,
-    search?: string
-  ) => Promise<UserRepresentation[]>;
-  addGroup?: (newGroup: GroupRepresentation) => void;
+type UserGroupsProps = {
+  user: UserRepresentation;
 };
 
-export const UserGroups = () => {
+export const UserGroups = ({ user }: UserGroupsProps) => {
   const { t } = useTranslation("users");
   const { addAlert, addError } = useAlerts();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
 
   const [selectedGroup, setSelectedGroup] = useState<GroupRepresentation>();
-  const [list, setList] = useState(false);
-  const [listGroups, setListGroups] = useState(true);
-
   const [search, setSearch] = useState("");
-  const [username, setUsername] = useState("");
 
   const [isDirectMembership, setDirectMembership] = useState(true);
   const [directMembershipList, setDirectMembershipList] = useState<
@@ -55,7 +44,6 @@ export const UserGroups = () => {
   const { enabled } = useHelp();
 
   const adminClient = useAdminClient();
-  const { id } = useParams<{ id: string }>();
   const alphabetize = (groupsList: GroupRepresentation[]) => {
     return _.sortBy(groupsList, (group) => group.path?.toUpperCase());
   };
@@ -66,22 +54,15 @@ export const UserGroups = () => {
       max: max!,
     };
 
-    const user = await adminClient.users.findOne({ id });
-    setUsername(user.username!);
-
     const searchParam = search || "";
     if (searchParam) {
       params.search = searchParam;
       setSearch(searchParam);
     }
 
-    if (!searchParam && !listGroups && !list) {
-      return [];
-    }
-
     const joinedUserGroups = await adminClient.users.listGroups({
       ...params,
-      id,
+      id: user.id!,
     });
 
     const allCreatedGroups = await adminClient.groups.find();
@@ -177,14 +158,6 @@ export const UserGroups = () => {
     return alphabetize(directMembership);
   };
 
-  useFetch(
-    () => adminClient.users.listGroups({ id }),
-    (response) => {
-      setListGroups(!!(response && response.length > 0));
-    },
-    []
-  );
-
   useEffect(() => {
     refresh();
   }, [isDirectMembership]);
@@ -201,14 +174,14 @@ export const UserGroups = () => {
     }),
     messageKey: t("leaveGroupConfirmDialog", {
       groupname: selectedGroup?.name,
-      username: username,
+      username: user.username,
     }),
     continueButtonLabel: "leave",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
         await adminClient.users.delFromGroup({
-          id,
+          id: user.id!,
           groupId: selectedGroup!.id!,
         });
         refresh();
@@ -248,10 +221,9 @@ export const UserGroups = () => {
     newGroups.forEach(async (group) => {
       try {
         await adminClient.users.addToGroup({
-          id: id,
+          id: user.id!,
           groupId: group.id!,
         });
-        setList(true);
         refresh();
         addAlert(t("addedGroupMembership"), AlertVariant.success);
       } catch (error) {
@@ -267,10 +239,10 @@ export const UserGroups = () => {
       <DeleteConfirm />
       {open && (
         <GroupPickerDialog
-          id={id}
+          id={user.id}
           type="selectMany"
           text={{
-            title: t("joinGroupsFor", { username }),
+            title: t("joinGroupsFor", { username: user.username }),
             ok: "users:join",
           }}
           onClose={() => setOpen(false)}
