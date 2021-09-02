@@ -445,7 +445,7 @@ public class SAMLEndpoint {
                 }
 
                 // Validate InResponseTo attribute: must match the generated request ID
-                String expectedRequestId = authSession.getClientNote(SamlProtocol.SAML_REQUEST_ID);
+                String expectedRequestId = authSession.getClientNote(SamlProtocol.SAML_REQUEST_ID_BROKER);
                 final boolean inResponseToValidationSuccess = validateInResponseToAttribute(responseType, expectedRequestId);
                 if (!inResponseToValidationSuccess)
                 {

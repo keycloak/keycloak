@@ -189,7 +189,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             }
 
             // Save the current RequestID in the Auth Session as we need to verify it against the ID returned from the IdP
-            request.getAuthenticationSession().setClientNote(SamlProtocol.SAML_REQUEST_ID, authnRequest.getID());
+            request.getAuthenticationSession().setClientNote(SamlProtocol.SAML_REQUEST_ID_BROKER, authnRequest.getID());
 
             if (postBinding) {
                 return binding.postBinding(authnRequestBuilder.toDocument()).request(destinationUrl);
