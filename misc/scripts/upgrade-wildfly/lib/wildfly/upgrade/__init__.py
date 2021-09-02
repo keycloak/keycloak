@@ -634,11 +634,15 @@ _keycloakSpecificProperties = [
     "jetty9.version",
     "liquibase.version",
     "mysql.version",
+    "mysql.driver.version",
     "osgi.version",
     "pax.web.version",
     "postgresql.version",
+    "postgresql.driver.version",
     "mariadb.version",
+    "mariadb.driver.version",
     "mssql.version",
+    "mssql.driver.version",
     "twitter4j.version",
     "jna.version",
     "greenmail.version",
@@ -669,6 +673,11 @@ _keycloakSpecificProperties = [
     "spring-boot23.version",
     "webauthn4j.version",
     "org.apache.kerby.kerby-asn1.version",
+    "galleon.fork.embedded",
+    "galleon.log.time",
+    "galleon.offline",
+    "server.output.dir.prefix",
+    "server.output.dir.version",
 ]
 
 # Mapping of artifact name as used in the main Keycloak pom.xml file to the name
@@ -774,6 +783,9 @@ _keycloakToWildflyProperties = {
     # Skip "spring-boot15.version", "spring-boot21.version", "spring-boot22.version", and "spring-boot23.version" since Keycloak specific
     # Skip "webauthn4j.version" since Keycloak specific
     # Skip "org.apache.kerby.kerby-asn1.version" since Keycloak specific
+    "verifier.plugin.version"                                     : "version.verifier.plugin",
+    "org.wildfly.galleon-plugins.version"                         : "version.org.wildfly.galleon-plugins",
+    "org.jboss.galleon.version"                                   : "version.org.jboss.galleon"
 }
 
 def _scanMainKeycloakPomFileForUnknownArtifacts():

@@ -41,9 +41,9 @@
         <cache.server.java.home>${java.home}</cache.server.java.home>
 
         <!-- Wildfly deprecated versions -->
-        <wildfly.deprecated.version>21.0.2.Final</wildfly.deprecated.version>
-        <wildfly.deprecated.wildfly.core.version>13.0.3.Final</wildfly.deprecated.wildfly.core.version>
-        <wildfly.deprecated.arquillian.wildfly.container>2.2.0.Final</wildfly.deprecated.arquillian.wildfly.container>
+        <wildfly.deprecated.version>23.0.2.Final</wildfly.deprecated.version>
+        <wildfly.deprecated.wildfly.core.version>15.0.1.Final</wildfly.deprecated.wildfly.core.version>
+        <wildfly.deprecated.arquillian.wildfly.container>3.0.1.Final</wildfly.deprecated.arquillian.wildfly.container>
 
         <!--component versions-->
         <arquillian-core.version>1.6.0.Final</arquillian-core.version>
