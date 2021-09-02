@@ -42,7 +42,9 @@ export const AddSamlConnect = () => {
         providerId: id,
       });
       addAlert(t("createSuccess"), AlertVariant.success);
-      history.push(`/${realm}/identity-providers/${id}/settings`);
+      history.push(
+        `/${realm}/identity-providers/${id}/${provider.alias}/settings`
+      );
     } catch (error) {
       addAlert(
         t("createError", {

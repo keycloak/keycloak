@@ -20,7 +20,6 @@ import { FormAccess } from "../../components/form-access/FormAccess";
 import { ScrollForm } from "../../components/scroll-form/ScrollForm";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useFetch, useAdminClient } from "../../context/auth/AdminClient";
-import { toUpperCase } from "../../util";
 import { GeneralSettings } from "./GeneralSettings";
 import { AdvancedSettings } from "./AdvancedSettings";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
@@ -44,11 +43,12 @@ type HeaderProps = {
 
 const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
   const { t } = useTranslation("identity-providers");
-  const { id } = useParams<{ id: string }>();
+  const { providerId, alias } =
+    useParams<{ providerId: string; alias: string }>();
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
     titleKey: "identity-providers:disableProvider",
-    messageKey: t("disableConfirm", { provider: id }),
+    messageKey: t("disableConfirm", { provider: providerId }),
     continueButtonLabel: "common:disable",
     onConfirm: () => {
       onChange(!value);
@@ -60,7 +60,7 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
     <>
       <DisableConfirm />
       <ViewHeader
-        titleKey={toUpperCase(id)}
+        titleKey={alias}
         divider={false}
         dropdownItems={[
           <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
@@ -83,7 +83,8 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
 
 export const DetailSettings = () => {
   const { t } = useTranslation("identity-providers");
-  const { id } = useParams<{ id: string }>();
+  const { providerId, alias } =
+    useParams<{ providerId: string; alias: string }>();
 
   const [provider, setProvider] = useState<IdentityProviderRepresentation>();
   const form = useForm<IdentityProviderRepresentation>();
@@ -95,7 +96,7 @@ export const DetailSettings = () => {
   const { realm } = useRealm();
 
   useFetch(
-    () => adminClient.identityProviders.findOne({ alias: id }),
+    () => adminClient.identityProviders.findOne({ alias: alias }),
     (provider) => {
       if (provider) {
         setProvider(provider);
@@ -109,8 +110,8 @@ export const DetailSettings = () => {
     const p = provider || getValues();
     try {
       await adminClient.identityProviders.update(
-        { alias: id },
-        { ...p, alias: id, providerId: id }
+        { alias },
+        { ...p, alias, providerId }
       );
       setProvider(p);
       addAlert(t("updateSuccess"), AlertVariant.success);
@@ -121,12 +122,12 @@ export const DetailSettings = () => {
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "identity-providers:deleteProvider",
-    messageKey: t("identity-providers:deleteConfirm", { provider: id }),
+    messageKey: t("identity-providers:deleteConfirm", { provider: providerId }),
     continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
-        await adminClient.identityProviders.del({ alias: id });
+        await adminClient.identityProviders.del({ alias: alias });
         addAlert(t("deletedSuccess"), AlertVariant.success);
         history.push(`/${realm}/identity-providers`);
       } catch (error) {
@@ -137,8 +138,8 @@ export const DetailSettings = () => {
 
   const sections = [t("generalSettings"), t("advancedSettings")];
 
-  const isOIDC = id.includes("oidc");
-  const isSAML = id.includes("saml");
+  const isOIDC = providerId.includes("oidc");
+  const isSAML = providerId.includes("saml");
 
   if (isOIDC) {
     sections.splice(1, 0, t("oidcSettings"));
@@ -181,10 +182,10 @@ export const DetailSettings = () => {
                   onSubmit={handleSubmit(save)}
                 >
                   {!isOIDC && !isSAML && (
-                    <GeneralSettings create={false} id={id} />
+                    <GeneralSettings create={false} id={alias} />
                   )}
-                  {isOIDC && <OIDCGeneralSettings id={id} />}
-                  {isSAML && <SamlGeneralSettings id={id} />}
+                  {isOIDC && <OIDCGeneralSettings id={alias} />}
+                  {isSAML && <SamlGeneralSettings id={alias} />}
                 </FormAccess>
                 {isOIDC && (
                   <>

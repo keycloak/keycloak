@@ -94,7 +94,7 @@ export const UserIdentityProviderLinks = () => {
       <Link
         to={toIdentityProviderTab({
           realm,
-          id: idp.identityProvider!,
+          alias: idp.identityProvider!,
           tab: "settings",
         })}
       >

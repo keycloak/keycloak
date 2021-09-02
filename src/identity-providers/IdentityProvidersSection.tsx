@@ -34,6 +34,7 @@ import { upperCaseFormatter } from "../util";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ProviderIconMapper } from "./ProviderIconMapper";
 import { ManageOderDialog } from "./ManageOrderDialog";
+import { toIdentityProviderTab } from "./routes/IdentityProviderTab";
 
 export const IdentityProvidersSection = () => {
   const { t } = useTranslation("identity-providers");
@@ -72,9 +73,15 @@ export const IdentityProvidersSection = () => {
   const DetailLink = (identityProvider: IdentityProviderRepresentation) => (
     <Link
       key={identityProvider.providerId}
-      to={`/${realm}/identity-providers/${identityProvider.providerId}/settings`}
+      to={toIdentityProviderTab({
+        realm,
+        providerId: identityProvider.providerId!,
+        alias: identityProvider.alias!,
+      })}
     >
-      {identityProvider.alias}
+      {identityProvider.displayName
+        ? identityProvider.displayName
+        : identityProvider.alias}
       {!identityProvider.enabled && (
         <Badge
           key={`${identityProvider.providerId}-disabled`}

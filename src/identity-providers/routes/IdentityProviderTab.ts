@@ -7,12 +7,13 @@ export type IdentityProviderTab = "settings";
 
 export type IdentityProviderTabParams = {
   realm: string;
-  id: string;
+  providerId?: string;
+  alias: string;
   tab?: IdentityProviderTab;
 };
 
 export const IdentityProviderTabRoute: RouteDef = {
-  path: "/:realm/identity-providers/:id/:tab?",
+  path: "/:realm/identity-providers/:providerId/:alias/:tab?",
   component: DetailSettings,
   access: "manage-identity-providers",
 };
