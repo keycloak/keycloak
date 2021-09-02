@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import {
   ActionGroup,
-  AlertVariant,
   Button,
   FormGroup,
   NumberInput,
@@ -20,38 +19,26 @@ import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/r
 import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { FormPanel } from "../components/scroll-form/FormPanel";
-import { useAdminClient } from "../context/auth/AdminClient";
-import { useAlerts } from "../components/alert/Alerts";
-import { useRealm } from "../context/realm-context/RealmContext";
-
-import "./RealmSettingsSection.css";
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { TimeSelector } from "../components/time-selector/TimeSelector";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import {
-  forHumans,
-  flatten,
-  convertFormValuesToObject,
-  interpolateTimespan,
-} from "../util";
+import { forHumans, interpolateTimespan } from "../util";
+
+import "./RealmSettingsSection.css";
 
 type RealmSettingsSessionsTabProps = {
   realm: RealmRepresentation;
-  user?: UserRepresentation;
+  save: (realm: RealmRepresentation) => void;
   reset?: () => void;
 };
 
 export const RealmSettingsTokensTab = ({
-  realm: initialRealm,
+  realm,
   reset,
+  save,
 }: RealmSettingsSessionsTabProps) => {
   const { t } = useTranslation("realm-settings");
-  const adminClient = useAdminClient();
-  const { realm: realmName } = useRealm();
-  const { addAlert, addError } = useAlerts();
   const serverInfo = useServerInfo();
 
-  const [realm, setRealm] = useState(initialRealm);
   const [defaultSigAlgDrpdwnIsOpen, setDefaultSigAlgDrpdwnOpen] =
     useState(false);
 
@@ -78,28 +65,6 @@ export const RealmSettingsTokensTab = ({
     defaultValue: realm?.offlineSessionMaxLifespanEnabled,
   });
 
-  const save = async () => {
-    const firstInstanceOnly = true;
-    const flattenedAttributes = convertFormValuesToObject(
-      flatten(form.getValues()["attributes"]),
-      firstInstanceOnly
-    );
-
-    try {
-      const newRealm: RealmRepresentation = {
-        ...realm,
-        ...form.getValues(),
-        attributes: flattenedAttributes,
-      };
-
-      await adminClient.realms.update({ realm: realmName }, newRealm);
-
-      setRealm(newRealm);
-      addAlert(t("saveSuccess"), AlertVariant.success);
-    } catch (error) {
-      addError("realm-settings:saveError", error);
-    }
-  };
   return (
     <PageSection variant="light">
       <FormPanel

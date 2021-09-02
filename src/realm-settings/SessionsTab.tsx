@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 import {
   ActionGroup,
-  AlertVariant,
   Button,
   FormGroup,
   PageSection,
@@ -14,54 +13,32 @@ import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/r
 import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { FormPanel } from "../components/scroll-form/FormPanel";
-import { useAdminClient } from "../context/auth/AdminClient";
-import { useAlerts } from "../components/alert/Alerts";
-import { useRealm } from "../context/realm-context/RealmContext";
-
-import "./RealmSettingsSection.css";
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { TimeSelector } from "../components/time-selector/TimeSelector";
 
+import "./RealmSettingsSection.css";
+
 type RealmSettingsSessionsTabProps = {
-  realm?: RealmRepresentation;
-  user?: UserRepresentation;
+  realm: RealmRepresentation;
+  save: (realm: RealmRepresentation) => void;
 };
 
 export const RealmSettingsSessionsTab = ({
-  realm: initialRealm,
+  realm,
+  save,
 }: RealmSettingsSessionsTabProps) => {
   const { t } = useTranslation("realm-settings");
-  const adminClient = useAdminClient();
-  const { realm: realmName } = useRealm();
-  const { addAlert, addError } = useAlerts();
-
-  const [realm, setRealm] = useState(initialRealm);
 
   const {
     control,
     handleSubmit,
     reset: resetForm,
     formState,
-  } = useForm<RealmRepresentation>();
+  } = useFormContext<RealmRepresentation>();
 
   const offlineSessionMaxEnabled = useWatch({
     control,
     name: "offlineSessionMaxLifespanEnabled",
-    defaultValue: realm?.offlineSessionMaxLifespanEnabled,
   });
-
-  useEffect(() => resetForm(realm), [realm]);
-
-  const save = async (form: RealmRepresentation) => {
-    try {
-      const savedRealm = { ...realm, ...form };
-      await adminClient.realms.update({ realm: realmName }, savedRealm);
-      setRealm(savedRealm);
-      addAlert(t("saveSuccess"), AlertVariant.success);
-    } catch (error) {
-      addError("realm-settings:saveError", error);
-    }
-  };
 
   const reset = () => {
     if (realm) {
@@ -94,7 +71,7 @@ export const RealmSettingsSessionsTab = ({
           >
             <Controller
               name="ssoSessionIdleTimeout"
-              defaultValue={realm?.ssoSessionIdleTimeout}
+              defaultValue={realm.ssoSessionIdleTimeout}
               control={control}
               render={({ onChange, value }) => (
                 <TimeSelector
@@ -351,7 +328,6 @@ export const RealmSettingsSessionsTab = ({
             >
               <Controller
                 name="offlineSessionMaxLifespan"
-                defaultValue=""
                 control={control}
                 render={({ onChange, value }) => (
                   <TimeSelector

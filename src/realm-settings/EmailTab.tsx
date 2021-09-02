@@ -10,7 +10,7 @@ import {
 } from "@patternfly/react-core";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAlerts } from "../components/alert/Alerts";
@@ -41,7 +41,7 @@ export const RealmSettingsEmailTab = ({
 
   const [realm, setRealm] = useState(initialRealm);
   const [userEmailModalOpen, setUserEmailModalOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState<UserRepresentation>();
+  const [currentUser, setCurrentUser] = useState<UserRepresentation>(user);
   const {
     register,
     control,
@@ -51,7 +51,7 @@ export const RealmSettingsEmailTab = ({
     setValue,
     reset: resetForm,
     getValues,
-  } = useForm<RealmRepresentation>();
+  } = useForm<RealmRepresentation>({ defaultValues: realm });
 
   const userForm = useForm<UserRepresentation>({ mode: "onChange" });
   const watchFromValue = watch("smtpServer.from", "");
@@ -62,14 +62,6 @@ export const RealmSettingsEmailTab = ({
     name: "smtpServer.authentication",
     defaultValue: {},
   });
-
-  useEffect(() => {
-    reset();
-  }, [realm]);
-
-  useEffect(() => {
-    setCurrentUser(user);
-  }, []);
 
   const handleModalToggle = () => {
     setUserEmailModalOpen(!userEmailModalOpen);
@@ -89,10 +81,7 @@ export const RealmSettingsEmailTab = ({
   const saveAndTestEmail = async (email?: UserRepresentation) => {
     if (email) {
       await adminClient.users.update({ id: whoAmI.getUserId() }, email);
-      const updated = await adminClient.users.findOne({
-        id: whoAmI.getUserId(),
-      });
-      setCurrentUser(updated);
+      setCurrentUser(email);
 
       await save(getValues());
       testConnection();
@@ -322,7 +311,7 @@ export const RealmSettingsEmailTab = ({
               <Controller
                 name="smtpServer.authentication"
                 control={control}
-                defaultValue={authenticationEnabled}
+                defaultValue={{}}
                 render={({ onChange, value }) => (
                   <Switch
                     id="kc-authentication-switch"

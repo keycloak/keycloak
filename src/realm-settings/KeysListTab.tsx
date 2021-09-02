@@ -73,7 +73,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
     const activeKeysCopy = keys!.filter((i) => i.status === "ACTIVE");
 
     return activeKeysCopy?.map((key) => {
-      const provider = realmComponents!.find(
+      const provider = realmComponents.find(
         (component: ComponentRepresentation) => component.id === key.providerId
       );
       return { ...key, provider: provider?.name } as KeyData;
@@ -89,7 +89,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
     const passiveKeys = keys!.filter((i) => i.status === "PASSIVE");
 
     return passiveKeys?.map((key) => {
-      const provider = realmComponents!.find(
+      const provider = realmComponents.find(
         (component: ComponentRepresentation) => component.id === key.providerId
       );
       return { ...key, provider: provider?.name } as KeyData;

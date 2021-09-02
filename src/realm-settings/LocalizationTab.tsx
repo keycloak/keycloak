@@ -66,16 +66,15 @@ export const LocalizationTab = ({
   const { addAlert, addError } = useAlerts();
   const { realm: currentRealm } = useRealm();
 
-  const watchSupportedLocales = useWatch({
+  const watchSupportedLocales = useWatch<string[]>({
     control,
     name: "supportedLocales",
-    defaultValue: themeTypes?.account![0].locales,
   });
 
   const internationalizationEnabled = useWatch({
     control,
     name: "internationalizationEnabled",
-    defaultValue: realm?.internationalizationEnabled,
+    defaultValue: false,
   });
 
   const loader = async () => {
@@ -112,7 +111,7 @@ export const LocalizationTab = ({
   const options = [
     <SelectGroup label={t("defaultLocale")} key="group1">
       {watchSupportedLocales
-        .filter((item) => item === realm?.defaultLocale)
+        ?.filter((item) => item === realm?.defaultLocale)
         .map((locale) => (
           <SelectOption key={locale} value={locale}>
             {t(`allSupportedLocales.${locale}`)}
@@ -122,7 +121,7 @@ export const LocalizationTab = ({
     <Divider key="divider" />,
     <SelectGroup label={t("supportedLocales")} key="group2">
       {watchSupportedLocales
-        .filter((item) => item !== realm?.defaultLocale)
+        ?.filter((item) => item !== realm?.defaultLocale)
         .map((locale) => (
           <SelectOption key={locale} value={locale}>
             {t(`allSupportedLocales.${locale}`)}
@@ -218,7 +217,6 @@ export const LocalizationTab = ({
                   <Controller
                     name="supportedLocales"
                     control={control}
-                    defaultValue={themeTypes?.account![0].locales}
                     render={({ onChange }) => (
                       <Select
                         toggleId="kc-l-supported-locales"
@@ -270,7 +268,6 @@ export const LocalizationTab = ({
                   <Controller
                     name="defaultLocale"
                     control={control}
-                    defaultValue={realm?.defaultLocale}
                     render={({ onChange, value }) => (
                       <Select
                         toggleId="kc-default-locale"
@@ -299,7 +296,7 @@ export const LocalizationTab = ({
                         placeholderText={t("placeholderText")}
                         data-testid="select-default-locale"
                       >
-                        {watchSupportedLocales.map(
+                        {watchSupportedLocales?.map(
                           (locale: string, idx: number) => (
                             <SelectOption
                               key={`default-locale-${idx}`}
