@@ -18,8 +18,8 @@
 package org.keycloak.adapters;
 
 import org.apache.http.client.HttpClient;
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
-import org.apache.http.params.CoreConnectionPNames;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.Configurable;
 import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.keycloak.adapters.authentication.ClientIdAndSecretCredentialsProvider;
@@ -69,7 +69,6 @@ public class KeycloakDeploymentBuilderTest {
         assertFalse(deployment.isOAuthQueryParameterEnabled());
         assertEquals("234234-234234-234234", deployment.getResourceCredentials().get("secret"));
         assertEquals(ClientIdAndSecretCredentialsProvider.PROVIDER_ID, deployment.getClientAuthenticator().getId());
-        assertEquals(20, ((ThreadSafeClientConnManager) deployment.getClient().getConnectionManager()).getMaxTotal());
         assertEquals(RelativeUrlsUsed.NEVER, deployment.getRelativeUrls());
         assertTrue(deployment.isAlwaysRefreshToken());
         assertTrue(deployment.isRegisterNodeAtStartup());
@@ -113,10 +112,13 @@ public class KeycloakDeploymentBuilderTest {
         HttpClient client = deployment.getClient();
         assertThat(client, CoreMatchers.notNullValue());
 
-        long socketTimeout = client.getParams().getIntParameter(CoreConnectionPNames.SO_TIMEOUT, -2);
-        long connectionTimeout = client.getParams().getIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, -2);
+        Configurable configurable = (Configurable) client;
+        assertThat(configurable, CoreMatchers.notNullValue());
 
-        assertThat(socketTimeout, CoreMatchers.is(2000L));
-        assertThat(connectionTimeout, CoreMatchers.is(6000L));
+        RequestConfig requestConfig = configurable.getConfig();
+        assertThat(requestConfig, CoreMatchers.notNullValue());
+
+        assertThat(requestConfig.getSocketTimeout(), CoreMatchers.is(2000));
+        assertThat(requestConfig.getConnectTimeout(), CoreMatchers.is(6000));
     }
 }

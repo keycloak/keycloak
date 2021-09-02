@@ -50,7 +50,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.adapters.HttpClientBuilder;
+import org.keycloak.adapters.EmptyCookieStore;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.browser.SpnegoAuthenticatorFactory;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -254,11 +254,9 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
         if (client != null) {
             cleanupApacheHttpClient();
         }
-        
-        DefaultHttpClient httpClient = (DefaultHttpClient) new HttpClientBuilder()
-                .disableCookieCache(false)
-                .build();
 
+        DefaultHttpClient httpClient = new DefaultHttpClient();
+        httpClient.setCookieStore(new EmptyCookieStore());
         httpClient.getAuthSchemes().register(AuthSchemes.SPNEGO, spnegoSchemeFactory);
 
         if (useSpnego) {

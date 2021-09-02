@@ -18,47 +18,39 @@
 package org.keycloak.adapters;
 
 import org.apache.http.HttpHost;
-import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
-import org.apache.http.conn.ClientConnectionManager;
-import org.apache.http.conn.params.ConnRoutePNames;
-import org.apache.http.conn.scheme.PlainSocketFactory;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
-import org.apache.http.conn.ssl.BrowserCompatHostnameVerifier;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.conn.ssl.StrictHostnameVerifier;
-import org.apache.http.conn.ssl.X509HostnameVerifier;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.SingleClientConnManager;
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.HttpClientConnectionManager;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.DefaultHostnameVerifier;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.ssl.SSLContexts;
 import org.keycloak.common.util.EnvUtil;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.representations.adapters.config.AdapterHttpClientConfig;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import java.io.IOException;
 import java.net.URI;
+import java.security.KeyManagementException;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
-import org.apache.http.client.params.ClientPNames;
-import org.apache.http.client.params.CookiePolicy;
 
 /**
  * Abstraction for creating HttpClients. Allows SSL configuration.
@@ -67,21 +59,16 @@ import org.apache.http.client.params.CookiePolicy;
  * @version $Revision: 1 $
  */
 public class HttpClientBuilder {
-    public static enum HostnameVerificationPolicy {
+    public enum HostnameVerificationPolicy {
         /**
          * Hostname verification is not done on the server's certificate
          */
         ANY,
         /**
-         * Allows wildcards in subdomain names i.e. *.foo.com
+         * Hostname verification for the server's certificate
          */
-        WILDCARD,
-        /**
-         * CN must match hostname connecting to
-         */
-        STRICT
+        DEFAULT
     }
-
 
     /**
      * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -106,10 +93,10 @@ public class HttpClientBuilder {
     protected String clientPrivateKeyPassword;
     protected boolean disableTrustManager;
     protected boolean disableCookieCache = true;
-    protected HostnameVerificationPolicy policy = HostnameVerificationPolicy.WILDCARD;
+    protected HostnameVerificationPolicy policy = HostnameVerificationPolicy.DEFAULT;
     protected SSLContext sslContext;
-    protected int connectionPoolSize = 100;
-    protected int maxPooledPerRoute = 0;
+    protected int connectionPoolSize = 128;
+    protected int maxPooledPerRoute = 64;
     protected long connectionTTL = -1;
     protected TimeUnit connectionTTLUnit = TimeUnit.MILLISECONDS;
     protected HostnameVerifier verifier = null;
@@ -211,126 +198,72 @@ public class HttpClientBuilder {
         return this;
     }
 
-
-    static class VerifierWrapper implements X509HostnameVerifier {
-        protected HostnameVerifier verifier;
-
-        VerifierWrapper(HostnameVerifier verifier) {
-            this.verifier = verifier;
-        }
-
-        @Override
-        public void verify(String host, SSLSocket ssl) throws IOException {
-            if (!verifier.verify(host, ssl.getSession())) throw new SSLException("Hostname verification failure");
-        }
-
-        @Override
-        public void verify(String host, X509Certificate cert) throws SSLException {
-            throw new SSLException("This verification path not implemented");
-        }
-
-        @Override
-        public void verify(String host, String[] cns, String[] subjectAlts) throws SSLException {
-            throw new SSLException("This verification path not implemented");
-        }
-
-        @Override
-        public boolean verify(String s, SSLSession sslSession) {
-            return verifier.verify(s, sslSession);
-        }
-    }
-
     public HttpClient build() {
-        X509HostnameVerifier verifier = null;
-        if (this.verifier != null) verifier = new VerifierWrapper(this.verifier);
-        else {
-            switch (policy) {
-                case ANY:
-                    verifier = new AllowAllHostnameVerifier();
-                    break;
-                case WILDCARD:
-                    verifier = new BrowserCompatHostnameVerifier();
-                    break;
-                case STRICT:
-                    verifier = new StrictHostnameVerifier();
-                    break;
-            }
-        }
+        HostnameVerifier verifier = getHostnameVerifier();
+
         try {
-            SSLSocketFactory sslsf = null;
+            SSLConnectionSocketFactory sslCSF;
             SSLContext theContext = sslContext;
             if (disableTrustManager) {
-                theContext = SSLContext.getInstance("SSL");
+                theContext = SSLContext.getInstance(SSLConnectionSocketFactory.TLS);
                 theContext.init(null, new TrustManager[]{new PassthroughTrustManager()},
                         new SecureRandom());
-                verifier = new AllowAllHostnameVerifier();
-                sslsf = new SniSSLSocketFactory(theContext, verifier);
+                verifier = new DefaultHostnameVerifier();
+                sslCSF = new SSLConnectionSocketFactory(theContext, verifier);
             } else if (theContext != null) {
-                sslsf = new SniSSLSocketFactory(theContext, verifier);
+                sslCSF = new SSLConnectionSocketFactory(theContext, verifier);
             } else if (clientKeyStore != null || truststore != null) {
-                sslsf = new SniSSLSocketFactory(SSLSocketFactory.TLS, clientKeyStore, clientPrivateKeyPassword, truststore, null, verifier);
+                theContext = createSslContext(SSLConnectionSocketFactory.TLS, clientKeyStore, clientPrivateKeyPassword, truststore, null);
+                sslCSF = new SSLConnectionSocketFactory(theContext, verifier);
             } else {
-                final SSLContext tlsContext = SSLContext.getInstance(SSLSocketFactory.TLS);
+                final SSLContext tlsContext = SSLContext.getInstance(SSLConnectionSocketFactory.TLS);
                 tlsContext.init(null, null, null);
-                sslsf = new SniSSLSocketFactory(tlsContext, verifier);
+                sslCSF = new SSLConnectionSocketFactory(tlsContext, verifier);
             }
-            SchemeRegistry registry = new SchemeRegistry();
-            registry.register(
-                    new Scheme("http", 80, PlainSocketFactory.getSocketFactory()));
-            Scheme httpsScheme = new Scheme("https", 443, sslsf);
-            registry.register(httpsScheme);
-            ClientConnectionManager cm = null;
-            if (connectionPoolSize > 0) {
-                ThreadSafeClientConnManager tcm = new ThreadSafeClientConnManager(registry, connectionTTL, connectionTTLUnit);
-                tcm.setMaxTotal(connectionPoolSize);
-                if (maxPooledPerRoute == 0) maxPooledPerRoute = connectionPoolSize;
-                tcm.setDefaultMaxPerRoute(maxPooledPerRoute);
-                cm = tcm;
 
+            Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
+                    .register("http", PlainConnectionSocketFactory.getSocketFactory())
+                    .register("https", sslCSF)
+                    .build();
+
+            HttpClientConnectionManager cm;
+            if (connectionPoolSize > 0) {
+                PoolingHttpClientConnectionManager pcm = new PoolingHttpClientConnectionManager(registry, null, null, null, connectionTTL, connectionTTLUnit);
+                pcm.setMaxTotal(connectionPoolSize);
+                if (maxPooledPerRoute == 0) maxPooledPerRoute = connectionPoolSize;
+                pcm.setDefaultMaxPerRoute(maxPooledPerRoute);
+                cm = pcm;
             } else {
-                cm = new SingleClientConnManager(registry);
+                cm = new BasicHttpClientConnectionManager(registry);
             }
-            BasicHttpParams params = new BasicHttpParams();
-            params.setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY);
+
+            RequestConfig.Builder requestConfigBuilder = RequestConfig.custom().setCookieSpec(CookieSpecs.DEFAULT);
 
             if (proxyHost != null) {
-                params.setParameter(ConnRoutePNames.DEFAULT_PROXY, proxyHost);
+                requestConfigBuilder.setProxy(proxyHost);
             }
 
             if (socketTimeout > -1) {
-                HttpConnectionParams.setSoTimeout(params, (int) socketTimeoutUnits.toMillis(socketTimeout));
+                requestConfigBuilder.setSocketTimeout((int) socketTimeoutUnits.toMillis(socketTimeout));
+            }
 
-            }
             if (establishConnectionTimeout > -1) {
-                HttpConnectionParams.setConnectionTimeout(params, (int) establishConnectionTimeoutUnits.toMillis(establishConnectionTimeout));
+                requestConfigBuilder.setConnectTimeout((int) establishConnectionTimeoutUnits.toMillis(establishConnectionTimeout));
             }
-            DefaultHttpClient client = new DefaultHttpClient(cm, params);
+
+            org.apache.http.impl.client.HttpClientBuilder builder = HttpClients.custom()
+                    .setDefaultRequestConfig(requestConfigBuilder.build())
+                    .setSSLSocketFactory(sslCSF)
+                    .setConnectionManager(cm)
+                    .setMaxConnTotal(connectionPoolSize)
+                    .setMaxConnPerRoute(maxPooledPerRoute)
+                    .setConnectionTimeToLive(connectionTTL, connectionTTLUnit);
 
             if (disableCookieCache) {
-                client.setCookieStore(new CookieStore() {
-                    @Override
-                    public void addCookie(Cookie cookie) {
-                        //To change body of implemented methods use File | Settings | File Templates.
-                    }
-
-                    @Override
-                    public List<Cookie> getCookies() {
-                        return Collections.emptyList();
-                    }
-
-                    @Override
-                    public boolean clearExpired(Date date) {
-                        return false;  //To change body of implemented methods use File | Settings | File Templates.
-                    }
-
-                    @Override
-                    public void clear() {
-                        //To change body of implemented methods use File | Settings | File Templates.
-                    }
-                });
-
+                builder.setDefaultCookieStore(new EmptyCookieStore());
             }
-            return client;
+
+            return builder.build();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -349,6 +282,7 @@ public class HttpClientBuilder {
                 throw new RuntimeException("Failed to load truststore", e);
             }
         }
+
         String clientKeystore = adapterConfig.getClientKeystore();
         if (clientKeystore != null) {
             clientKeystore = EnvUtil.replace(clientKeystore);
@@ -361,13 +295,19 @@ public class HttpClientBuilder {
             }
         }
         int size = 10;
-        if (adapterConfig.getConnectionPoolSize() > 0)
+        if (adapterConfig.getConnectionPoolSize() > 0) {
             size = adapterConfig.getConnectionPoolSize();
-        HttpClientBuilder.HostnameVerificationPolicy policy = HttpClientBuilder.HostnameVerificationPolicy.WILDCARD;
-        if (adapterConfig.isAllowAnyHostname())
+        }
+
+        HttpClientBuilder.HostnameVerificationPolicy policy = HostnameVerificationPolicy.DEFAULT;
+
+        if (adapterConfig.isAllowAnyHostname()) {
             policy = HttpClientBuilder.HostnameVerificationPolicy.ANY;
+        }
+
         connectionPoolSize(size);
         hostnameVerification(policy);
+
         if (adapterConfig.isDisableTrustManager()) {
             disableTrustManager();
         } else {
@@ -408,5 +348,39 @@ public class HttpClientBuilder {
 
         URI uri = URI.create(adapterConfig.getProxyUrl());
         this.proxyHost = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
+    }
+
+    private SSLContext createSslContext(
+            final String algorithm,
+            final KeyStore keystore,
+            final String keyPassword,
+            final KeyStore truststore,
+            final SecureRandom random)
+            throws NoSuchAlgorithmException, KeyManagementException, KeyStoreException, UnrecoverableKeyException {
+        return SSLContexts.custom()
+                .setProtocol(algorithm)
+                .setSecureRandom(random)
+                .loadKeyMaterial(keystore, keyPassword != null ? keyPassword.toCharArray() : null)
+                .loadTrustMaterial(truststore, null)
+                .build();
+    }
+
+    /**
+     * Get hostname verifier for SSLConnectionSocketFactory
+     *
+     * @return HostnameVerifier verifier
+     */
+    private HostnameVerifier getHostnameVerifier() {
+        if (this.verifier != null) {
+            return this.verifier;
+        } else {
+            switch (policy) {
+                case ANY:
+                    return new NoopHostnameVerifier();
+                case DEFAULT:
+                    return new DefaultHostnameVerifier();
+            }
+        }
+        return null;
     }
 }
