@@ -16,6 +16,8 @@
  */
 package org.keycloak.testsuite.actions;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -31,6 +33,7 @@ import static org.keycloak.testsuite.forms.VerifyProfileTest.CONFIGURATION_FOR_U
 import java.util.ArrayList;
 import java.util.Collections;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,21 +51,20 @@ import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
-import org.keycloak.userprofile.EventAuditingAttributeChangeListener;
 import org.openqa.selenium.By;
 
 /**
- * 
+ *
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
 @EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
 @AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public class RequiredActionUpdateProfileWithUserProfileTest extends RequiredActionUpdateProfileTest {
-    
+
     protected static final String PASSWORD = "password";
     protected static final String USERNAME1 = "test-user@localhost";
-    
+
     private static ClientRepresentation client_scope_default;
     private static ClientRepresentation client_scope_optional;
 
@@ -70,44 +72,44 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends RequiredActi
     protected boolean isDynamicForm() {
         return true;
     }
-    
+
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         super.configureTestRealm(testRealm);
-        
+
         VerifyProfileTest.enableDynamicUserProfile(testRealm);
-              
+
         testRealm.setClientScopes(new ArrayList<>());
         testRealm.getClientScopes().add(ClientScopeBuilder.create().name(SCOPE_DEPARTMENT).protocol("openid-connect").build());
         testRealm.getClientScopes().add(ClientScopeBuilder.create().name("profile").protocol("openid-connect").build());
-        
+
         client_scope_default = KeycloakModelUtils.createClient(testRealm, "client-a");
         client_scope_default.setDefaultClientScopes(Collections.singletonList(SCOPE_DEPARTMENT));
         client_scope_default.setRedirectUris(Collections.singletonList("*"));
         client_scope_optional = KeycloakModelUtils.createClient(testRealm, "client-b");
         client_scope_optional.setOptionalClientScopes(Collections.singletonList(SCOPE_DEPARTMENT));
         client_scope_optional.setRedirectUris(Collections.singletonList("*"));
-        
+
     }
-    
+
     @Before
     public void beforeTest() {
         VerifyProfileTest.setUserProfileConfiguration(testRealm(),null);
         super.beforeTest();
     }
-    
+
     @Test
     public void testDisplayName() {
 
-        setUserProfileConfiguration("{\"attributes\": [" 
-                + "{\"name\": \"firstName\",\"displayName\":\"${firstName}\"," + PERMISSIONS_ALL + ", \"required\": {}}," 
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\",\"displayName\":\"${firstName}\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
-                + "{\"name\": \"department\", \"displayName\" : \"Department\", " + PERMISSIONS_ALL + ", \"required\":{}}" 
+                + "{\"name\": \"department\", \"displayName\" : \"Department\", " + PERMISSIONS_ALL + ", \"required\":{}}"
                 + "]}");
 
         loginPage.open();
         loginPage.login(USERNAME1, PASSWORD);
-        
+
         updateProfilePage.assertCurrent();
 
         //assert field names
@@ -117,7 +119,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends RequiredActi
         Assert.assertEquals("lastName",updateProfilePage.getLabelForField("lastName"));
         // direct value in display name
         Assert.assertEquals("Department",updateProfilePage.getLabelForField("department"));
-        
+
     }
 
     @Test
@@ -199,35 +201,35 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends RequiredActi
         loginPage.login(USERNAME1, PASSWORD);
 
         updateProfilePage.assertCurrent();
-        
+
         //assert fields location in form
         Assert.assertTrue(
-            driver.findElement(
-                By.cssSelector("form#kc-update-profile-form > div:nth-child(1) > div:nth-child(2) > input#lastName")
-            ).isDisplayed()
+                driver.findElement(
+                        By.cssSelector("form#kc-update-profile-form > div:nth-child(1) > div:nth-child(2) > input#lastName")
+                ).isDisplayed()
         );
         Assert.assertTrue(
-            driver.findElement(
-                By.cssSelector("form#kc-update-profile-form > div:nth-child(2) > div:nth-child(2) > input#department")
-            ).isDisplayed()
+                driver.findElement(
+                        By.cssSelector("form#kc-update-profile-form > div:nth-child(2) > div:nth-child(2) > input#department")
+                ).isDisplayed()
         );
         Assert.assertTrue(
-            driver.findElement(
-                By.cssSelector("form#kc-update-profile-form > div:nth-child(3) > div:nth-child(2) > input#username")
-            ).isDisplayed()
+                driver.findElement(
+                        By.cssSelector("form#kc-update-profile-form > div:nth-child(3) > div:nth-child(2) > input#username")
+                ).isDisplayed()
         );
         Assert.assertTrue(
-            driver.findElement(
-                By.cssSelector("form#kc-update-profile-form > div:nth-child(4) > div:nth-child(2) > input#firstName")
-            ).isDisplayed()
+                driver.findElement(
+                        By.cssSelector("form#kc-update-profile-form > div:nth-child(4) > div:nth-child(2) > input#firstName")
+                ).isDisplayed()
         );
         Assert.assertTrue(
-            driver.findElement(
-                By.cssSelector("form#kc-update-profile-form > div:nth-child(5) > div:nth-child(2) > input#email")
-            ).isDisplayed()
+                driver.findElement(
+                        By.cssSelector("form#kc-update-profile-form > div:nth-child(5) > div:nth-child(2) > input#email")
+                ).isDisplayed()
         );
     }
-    
+
     @Test
     public void testAttributeInputTypes() {
 
@@ -239,10 +241,10 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends RequiredActi
         loginPage.login(USERNAME1, PASSWORD);
 
         updateProfilePage.assertCurrent();
-        
+
         RegisterWithUserProfileTest.assertFieldTypes(driver);
     }
-    
+
     @Test
     public void testUsernameOnlyIfEditAllowed() {
         RealmRepresentation realm = testRealm().toRepresentation();
@@ -267,14 +269,14 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends RequiredActi
             testRealm().update(realm);
         }
     }
-    
+
     @Test
     public void testOptionalAttribute() {
         setUserProfileConfiguration("{\"attributes\": ["
-                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}}," 
-                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "}" 
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "}"
                 + "]}");
-        
+
         loginPage.open();
 
         loginPage.login(USERNAME1, PASSWORD);
@@ -295,20 +297,20 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends RequiredActi
         // assert user is really updated in persistent store
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, USERNAME1);
         Assert.assertEquals("New first", user.getFirstName());
-        Assert.assertEquals("", user.getLastName());
+        assertThat(StringUtils.isEmpty(user.getLastName()), is(true));
         Assert.assertEquals("new@email.com", user.getEmail());
         Assert.assertEquals(USERNAME1, user.getUsername());
     }
-    
+
     @Test
     public void testCustomValidationLastName() {
-        
+
         setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
         updateUserByUsername(USERNAME1, "ExistingFirst", "La", "Department");
-        
-        setUserProfileConfiguration("{\"attributes\": [" 
-                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}}," 
-                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL +","+VALIDATIONS_LENGTH + "}," 
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL +","+VALIDATIONS_LENGTH + "},"
                 + "{\"name\": \"department\"," + PERMISSIONS_ADMIN_ONLY + "}"
                 + "]}");
 
@@ -332,14 +334,14 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends RequiredActi
         //check that not configured attribute is unchanged
         assertEquals("Department", user.firstAttribute(ATTRIBUTE_DEPARTMENT));
     }
-    
+
     @Test
     public void testRequiredReadOnlyAttribute() {
 
-        setUserProfileConfiguration("{\"attributes\": [" 
-                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}}," 
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
-                + "{\"name\": \"department\"," + PERMISSIONS_ADMIN_EDITABLE + ", \"required\":{}}" 
+                + "{\"name\": \"department\"," + PERMISSIONS_ADMIN_EDITABLE + ", \"required\":{}}"
                 + "]}");
 
         loginPage.open();
@@ -348,7 +350,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends RequiredActi
         updateProfilePage.assertCurrent();
         Assert.assertEquals("Brady", updateProfilePage.getLastName());
         Assert.assertFalse(updateProfilePage.isDepartmentEnabled());
-        
+
         //update of the other attributes must be successful in this case
         updateProfilePage.update("First", "Last", USERNAME1, USERNAME1);
 
@@ -386,14 +388,14 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends RequiredActi
         assertEquals("First", user.getFirstName());
         assertEquals("Last", user.getLastName());
     }
-    
+
     @Test
     public void testAttributeNotVisible() {
 
-        setUserProfileConfiguration("{\"attributes\": [" 
-                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}}," 
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
-                + "{\"name\": \"department\"," + PERMISSIONS_ADMIN_ONLY + ", \"required\":{}}" 
+                + "{\"name\": \"department\"," + PERMISSIONS_ADMIN_ONLY + ", \"required\":{}}"
                 + "]}");
 
         loginPage.open();
@@ -402,7 +404,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends RequiredActi
         updateProfilePage.assertCurrent();
         Assert.assertEquals("Brady", updateProfilePage.getLastName());
         Assert.assertFalse("'department' field is visible" , updateProfilePage.isDepartmentPresent());
-        
+
         //update of the other attributes must be successful in this case
         updateProfilePage.update("First", "Last", USERNAME1, USERNAME1);
 
@@ -413,14 +415,14 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends RequiredActi
         assertEquals("First", user.getFirstName());
         assertEquals("Last", user.getLastName());
     }
-    
+
     @Test
     public void testRequiredAttribute() {
 
-        setUserProfileConfiguration("{\"attributes\": [" 
-                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}}," 
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
-                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}}" 
+                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}}"
                 + "]}");
 
         loginPage.open();
@@ -431,17 +433,17 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends RequiredActi
         //submit with error
         updateProfilePage.updateWithDepartment("FirstCC", "LastCC", "", USERNAME1, USERNAME1);
         updateProfilePage.assertCurrent();
-        
+
         //submit OK
         updateProfilePage.updateWithDepartment("FirstCC", "LastCC", "DepartmentCC", USERNAME1, USERNAME1);
 
-        // we also test additional attribute configured to be audited in the event 
+        // we also test additional attribute configured to be audited in the event
         events.expectRequiredAction(EventType.UPDATE_PROFILE)
-        .detail(Details.PREVIOUS_FIRST_NAME, "Tom").detail(Details.UPDATED_FIRST_NAME, "FirstCC")
-        .detail(Details.PREVIOUS_LAST_NAME, "Brady").detail(Details.UPDATED_LAST_NAME, "LastCC")
-        .detail(Details.PREF_UPDATED + "department", "DepartmentCC")
-        .assertEvent();
-        
+                .detail(Details.PREVIOUS_FIRST_NAME, "Tom").detail(Details.UPDATED_FIRST_NAME, "FirstCC")
+                .detail(Details.PREVIOUS_LAST_NAME, "Brady").detail(Details.UPDATED_LAST_NAME, "LastCC")
+                .detail(Details.PREF_UPDATED + "department", "DepartmentCC")
+                .assertEvent();
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
@@ -453,33 +455,33 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends RequiredActi
 
     @Test
     public void testAttributeRequiredForScope() {
-        
-        setUserProfileConfiguration("{\"attributes\": [" 
-                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}}," 
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
-                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}" 
+                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}"
                 + "]}");
 
         oauth.scope(SCOPE_DEPARTMENT).clientId(client_scope_optional.getClientId()).openLoginForm();
-        
+
         loginPage.assertCurrent();
         loginPage.login(USERNAME1, PASSWORD);
-        
+
         updateProfilePage.assertCurrent();
-        
+
         //submit with error
         updateProfilePage.updateWithDepartment("FirstCC", "LastCC", "", USERNAME1, USERNAME1);
         updateProfilePage.assertCurrent();
-        
+
         //submit OK
         updateProfilePage.updateWithDepartment("FirstCC", "LastCC", "DepartmentCC", USERNAME1, USERNAME1);
-        
-        events.expectRequiredAction(EventType.UPDATE_PROFILE).client(client_scope_optional.getClientId())
-        .detail(Details.PREVIOUS_FIRST_NAME, "Tom").detail(Details.UPDATED_FIRST_NAME, "FirstCC")
-        .detail(Details.PREVIOUS_LAST_NAME, "Brady").detail(Details.UPDATED_LAST_NAME, "LastCC")
-        .assertEvent();
 
-        
+        events.expectRequiredAction(EventType.UPDATE_PROFILE).client(client_scope_optional.getClientId())
+                .detail(Details.PREVIOUS_FIRST_NAME, "Tom").detail(Details.UPDATED_FIRST_NAME, "FirstCC")
+                .detail(Details.PREVIOUS_LAST_NAME, "Brady").detail(Details.UPDATED_LAST_NAME, "LastCC")
+                .assertEvent();
+
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
@@ -488,18 +490,18 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends RequiredActi
         assertEquals("LastCC", user.getLastName());
         assertEquals("DepartmentCC", user.firstAttribute(ATTRIBUTE_DEPARTMENT));
     }
-    
+
     @Test
     public void testAttributeRequiredForDefaultScope() {
-        
-        setUserProfileConfiguration("{\"attributes\": [" 
-                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}}," 
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
-                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}" 
+                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}"
                 + "]}");
 
         oauth.clientId(client_scope_default.getClientId()).openLoginForm();
-        
+
         loginPage.assertCurrent();
         loginPage.login(USERNAME1, PASSWORD);
 
@@ -508,10 +510,10 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends RequiredActi
         //submit with error
         updateProfilePage.updateWithDepartment("FirstCC", "LastCC", "", USERNAME1, USERNAME1);
         updateProfilePage.assertCurrent();
-        
+
         //submit OK
         updateProfilePage.updateWithDepartment("FirstCC", "LastCC", "DepartmentCC", USERNAME1, USERNAME1);
-        
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
@@ -520,18 +522,18 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends RequiredActi
         assertEquals("LastCC", user.getLastName());
         assertEquals("DepartmentCC", user.firstAttribute(ATTRIBUTE_DEPARTMENT));
     }
-    
+
     @Test
     public void testAttributeRequiredAndSelectedByScope() {
 
-        setUserProfileConfiguration("{\"attributes\": [" 
-                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}}," 
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
-                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}" 
+                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}"
                 + "]}");
 
         oauth.scope(SCOPE_DEPARTMENT).clientId(client_scope_optional.getClientId()).openLoginForm();
-        
+
         loginPage.assertCurrent();
         loginPage.login(USERNAME1, PASSWORD);
 
@@ -540,10 +542,10 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends RequiredActi
         //submit with error
         updateProfilePage.updateWithDepartment("FirstCC", "LastCC", "", USERNAME1, USERNAME1);
         updateProfilePage.assertCurrent();
-        
+
         //submit OK
         updateProfilePage.updateWithDepartment("FirstCC", "LastCC", "DepartmentCC", USERNAME1, USERNAME1);
-        
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
@@ -556,22 +558,22 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends RequiredActi
     @Test
     public void testAttributeNotRequiredAndSelectedByScopeCanBeUpdated() {
 
-        setUserProfileConfiguration("{\"attributes\": [" 
-                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}}," 
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
-                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"selector\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}" 
+                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"selector\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}"
                 + "]}");
 
         oauth.scope(SCOPE_DEPARTMENT).clientId(client_scope_optional.getClientId()).openLoginForm();
-        
+
         loginPage.assertCurrent();
         loginPage.login(USERNAME1, PASSWORD);
 
         updateProfilePage.assertCurrent();
-        
+
         Assert.assertTrue(updateProfilePage.isDepartmentPresent());
         updateProfilePage.updateWithDepartment("FirstCC", "LastCC", "DepartmentCC", USERNAME1, USERNAME1);
-        
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
@@ -580,26 +582,26 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends RequiredActi
         assertEquals("LastCC", user.getLastName());
         assertEquals("DepartmentCC", user.firstAttribute(ATTRIBUTE_DEPARTMENT));
     }
-    
+
     @Test
     public void testAttributeRequiredButNotSelectedByScopeIsNotRendered() {
 
-        setUserProfileConfiguration("{\"attributes\": [" 
-                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}}," 
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
-                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}" 
+                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}"
                 + "]}");
 
         oauth.clientId(client_scope_optional.getClientId()).openLoginForm();
-        
+
         loginPage.assertCurrent();
         loginPage.login(USERNAME1, PASSWORD);
 
         updateProfilePage.assertCurrent();
-        
+
         Assert.assertFalse(updateProfilePage.isDepartmentPresent());
         updateProfilePage.update("FirstCC", "LastCC", USERNAME1, USERNAME1);
-        
+
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
@@ -621,11 +623,11 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends RequiredActi
     protected void setUserProfileConfiguration(String configuration) {
         VerifyProfileTest.setUserProfileConfiguration(testRealm(), configuration);
     }
-    
+
     protected UserRepresentation getUserByUsername(String username) {
         return VerifyProfileTest.getUserByUsername(testRealm(), username);
     }
-    
+
     protected void updateUserByUsername(String username, String firstName, String lastName, String department) {
         UserRepresentation ur = getUserByUsername(username);
         ur.setFirstName(firstName);
