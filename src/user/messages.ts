@@ -106,6 +106,7 @@ export default {
       "Are you sure you want to revoke all granted client scopes for {{clientId}}?",
     deleteGrantsSuccess: "Grants successfully revoked.",
     deleteGrantsError: "Error deleting grants.",
+    roleMapping: "Role mapping",
     unlockAllUsers: "Unlock all users",
     unlockUsersConfirm:
       "All the users that are temporarily locked will be unlocked.",

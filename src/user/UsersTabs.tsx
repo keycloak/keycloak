@@ -25,6 +25,7 @@ import { UserIdentityProviderLinks } from "./UserIdentityProviderLinks";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { toUser } from "./routes/User";
 import { toUsers } from "./routes/Users";
+import { UserRoleMapping } from "./UserRoleMapping";
 
 export const UsersTabs = () => {
   const { t } = useTranslation("users");
@@ -89,7 +90,7 @@ export const UsersTabs = () => {
         history.push(toUser({ id: createdUser.id, realm, tab: "settings" }));
       }
     } catch (error) {
-      addError("users:userCreateError", error);
+      addError("userCreateError", error);
     }
   };
 
@@ -135,7 +136,7 @@ export const UsersTabs = () => {
       <ImpersonateConfirm />
       <DeleteConfirm />
       <ViewHeader
-        titleKey={user?.username || t("users:createUser")}
+        titleKey={user?.username || t("createUser")}
         divider={!id}
         dropdownItems={[
           <DropdownItem
@@ -182,6 +183,13 @@ export const UsersTabs = () => {
                 title={<TabTitleText>{t("consents")}</TabTitleText>}
               >
                 <UserConsents />
+              </Tab>
+              <Tab
+                eventKey="role-mapping"
+                data-testid="role-mapping-tab"
+                title={<TabTitleText>{t("roleMapping")}</TabTitleText>}
+              >
+                <UserRoleMapping id={id} name={user.username!} />
               </Tab>
               <Tab
                 eventKey="identity-provider-links"

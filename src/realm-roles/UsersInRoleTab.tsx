@@ -61,7 +61,7 @@ export const UsersInRoleTab = () => {
                     variant="link"
                     onClick={() => history.push(`/${realm}/groups`)}
                   >
-                    {t("groups")}
+                    {t("common:groups")}
                   </Button>
                   {t("or")}
                   <Button
@@ -98,7 +98,7 @@ export const UsersInRoleTab = () => {
                   variant="link"
                   onClick={() => history.push(`/${realm}/groups`)}
                 >
-                  {t("groups")}
+                  {t("common:groups")}
                 </Button>
                 {t("or")}
                 <Button

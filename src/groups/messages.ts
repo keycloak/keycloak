@@ -1,6 +1,5 @@
 export default {
   groups: {
-    groups: "Groups",
     groupDetails: "Group details",
     childGroups: "Child groups",
     createGroup: "Create group",

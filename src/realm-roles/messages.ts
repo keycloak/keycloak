@@ -72,7 +72,6 @@ export default {
       "Only the users with this role directly assigned will appear under this tab. If you need to find users assigned to this role, go to",
     noUsersEmptyStateDescriptionContinued:
       "to find them. Users that already have this role as an effective role cannot be added here.",
-    groups: "Groups",
     or: "or",
     users: "Users",
     userName: "Username",

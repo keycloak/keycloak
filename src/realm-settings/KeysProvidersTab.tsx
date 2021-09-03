@@ -310,7 +310,7 @@ export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
           </ToolbarGroup>
         </Toolbar>
         <DataList
-          aria-label={t("groups")}
+          aria-label={t("common:groups")}
           onDragFinish={onDragFinish}
           onDragStart={onDragStart}
           onDragMove={onDragMove}
