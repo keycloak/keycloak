@@ -152,6 +152,11 @@ public class ModelToRepresentation {
                 .map(group -> toRepresentation(group, full));
     }
 
+    public static Stream<GroupRepresentation> searchForSubGroupByName(GroupModel group, boolean full, String search, Integer first, Integer max) {
+        return group.getSubGroupsStream(search, first, max)
+                .map(g -> toRepresentation(g, full));
+    }
+
     public static Stream<GroupRepresentation> toGroupHierarchy(RealmModel realm, boolean full, Integer first, Integer max) {
         return realm.getTopLevelGroupsStream(first, max)
                 .map(g -> toGroupHierarchy(g, full));
@@ -178,6 +183,16 @@ public class ModelToRepresentation {
                 .map(subGroup -> toGroupHierarchy(subGroup, full)).collect(Collectors.toList());
         rep.setSubGroups(subGroups);
         return rep;
+    }
+
+    public static Stream<GroupRepresentation> toSubGroupHierarchy(GroupModel group, boolean full, Integer first, Integer max) {
+        return group.getSubGroupsStream(null, first, max)
+                .map(g -> toRepresentation(g, full));
+    }
+
+    public static Stream<GroupRepresentation> toSubGroupHierarchy(GroupModel group, boolean full) {
+        return group.getSubGroupsStream()
+                .map(g -> toRepresentation(g, full));
     }
 
     public static UserRepresentation toRepresentation(KeycloakSession session, RealmModel realm, UserModel user) {

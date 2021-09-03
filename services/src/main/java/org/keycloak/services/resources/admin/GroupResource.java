@@ -36,6 +36,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionManageme
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -46,6 +47,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -136,6 +138,48 @@ public class GroupResource {
         adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
     }
 
+    /**
+     * Get group children.  Only name and ids are returned.
+     *
+     * @return
+     */
+    @GET
+    @Path("children")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public Stream<GroupRepresentation> getChildren(@QueryParam("search") String search,
+                                                   @QueryParam("first") Integer firstResult,
+                                                   @QueryParam("max") Integer maxResults,
+                                                   @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
+        auth.groups().requireView(group);
+
+        if (Objects.nonNull(search)) {
+            return ModelToRepresentation.searchForSubGroupByName(group, !briefRepresentation, search.trim(), firstResult, maxResults);
+        } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
+            return ModelToRepresentation.toSubGroupHierarchy(group, !briefRepresentation, firstResult, maxResults);
+        } else {
+            return ModelToRepresentation.toSubGroupHierarchy(group, !briefRepresentation);
+        }
+    }
+
+    @GET
+    @NoCache
+    @Path("children/count")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, Long> getChildrenCount(@QueryParam("search") String search) {
+        auth.groups().requireView(group);
+
+        Long results;
+
+        if (Objects.nonNull(search)) {
+            results = group.getSubGroupsCountByNameContaining(search);
+        } else {
+            results = group.getSubGroupsCount();
+        }
+        Map<String, Long> map = new HashMap<>();
+        map.put("count", results);
+        return map;
+    }
 
     /**
      * Set or create child.  This will just set the parent if it exists.  Create it and set the parent
@@ -237,6 +281,20 @@ public class GroupResource {
                 .map(user -> briefRepresentationB
                         ? ModelToRepresentation.toBriefRepresentation(user)
                         : ModelToRepresentation.toRepresentation(session, realm, user));
+    }
+
+    @GET
+    @NoCache
+    @Path("members/count")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, Long> getMemberCount() {
+        this.auth.groups().requireViewMembers(group);
+
+        Long results = session.users().getGroupMembersStream(realm, group).count();
+
+        Map<String, Long> map = new HashMap<>();
+        map.put("count", results);
+        return map;
     }
 
     /**

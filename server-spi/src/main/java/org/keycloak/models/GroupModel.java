@@ -117,6 +117,44 @@ public interface GroupModel extends RoleMapperModel {
     }
 
     /**
+     * Returns a paginated stream of groups within this realm with search in the name
+     *
+     * @param search Case insensitive string which will be searched for. Ignored if null.
+     * @param first Index of first group to return. Ignored if negative or {@code null}.
+     * @param max Maximum number of records to return. Ignored if negative or {@code null}.
+     * @return Stream of desired groups. Never returns {@code null}.
+     */
+    default Stream<GroupModel> getSubGroupsStream(String search, Integer first, Integer max) {
+        if (search != null) search = search.toLowerCase();
+        final String finalSearch = search;
+        Stream<GroupModel> groupModelStream = getSubGroupsStream()
+                .filter(group -> finalSearch == null || group.getName().toLowerCase().contains(finalSearch));
+
+        if (first != null && first > 0) {
+            groupModelStream = groupModelStream.skip(first);
+        }
+
+        if (max != null && max >= 0) {
+            groupModelStream = groupModelStream.limit(max);
+        }
+
+        return groupModelStream;
+    }
+
+    default long getSubGroupsCount() {
+        return getSubGroupsCountByNameContaining(null);
+    }
+
+    default long getSubGroupsCountByNameContaining(String search) {
+        if (search == null) {
+            return getSubGroupsStream().count();
+        }
+
+        String s = search.toLowerCase();
+        return getSubGroupsStream().filter(group -> group.getName().toLowerCase().contains(s)).count();
+    }
+
+    /**
      * You must also call addChild on the parent group, addChild on RealmModel if there is no parent group
      *
      * @param group
