@@ -26,6 +26,9 @@ import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
@@ -90,6 +93,7 @@ import javax.ws.rs.core.UriInfo;
 import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.security.Key;
+import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Iterator;
@@ -415,7 +419,9 @@ public class SAMLEndpoint {
                 }
                 session.getContext().setAuthenticationSession(authSession);
 
-                KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
+                KeyWrapper encryptionKey = getActiveKey(KeyUse.ENC);
+                KeyWrapper signingKey = getActiveKey(KeyUse.SIG);
+
                 if (! isSuccessfulSamlResponse(responseType)) {
                     String statusMessage = responseType.getStatus() == null ? Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR : responseType.getStatus().getStatusMessage();
                     return callback.error(statusMessage);
@@ -433,11 +439,25 @@ public class SAMLEndpoint {
                     return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
                 }
 
-                Element assertionElement;
+                Element assertionElement = null;
 
                 if (assertionIsEncrypted) {
-                    // This methods writes the parsed and decrypted assertion back on the responseType parameter:
-                    assertionElement = AssertionUtil.decryptAssertion(holder, responseType, keys.getPrivateKey());
+                    // Write parsed and decrypted assertion back to responseType parameter.
+                    // If realm has key with use "encryption", assertion is first attempted to decrypt with it
+                    // but if decrypting with encryption key fails, we fall back to decrypting with signing key
+                    // to maintain backwards compatibility
+                    if (encryptionKey != null) {
+                        try {
+                            assertionElement = AssertionUtil.decryptAssertion(holder, responseType, (PrivateKey) encryptionKey.getPrivateKey());
+                        } catch (Exception e) {
+                            logger.infov("Failed to decrypt assertion for realm={0} with key={1}.",
+                              realm.getName(), encryptionKey.getKid());
+                        }
+                    }
+
+                    if (assertionElement == null && signingKey != null) {
+                        assertionElement = AssertionUtil.decryptAssertion(holder, responseType, (PrivateKey) signingKey.getPrivateKey());
+                    }
                 } else {
                     /* We verify the assertion using original document to handle cases where the IdP
                     includes whitespace and/or newlines inside tags. */
@@ -467,10 +487,25 @@ public class SAMLEndpoint {
                 }
 
                 if(AssertionUtil.isIdEncrypted(responseType)) {
-                    // This methods writes the parsed and decrypted id back on the responseType parameter:
-                    AssertionUtil.decryptId(responseType, keys.getPrivateKey());
+                    // Write parsed and decrypted id back to responseType parameter.
+                    // If realm has key with use "encryption", id is first attempted to decrypt with it
+                    // but if decrypting with encryption key fails, we fall back to decrypting with signing key
+                    // to maintain backwards compatibility
+                    if (encryptionKey != null) {
+                        try {
+                            AssertionUtil.decryptId(responseType, (PrivateKey) encryptionKey.getPrivateKey());
+                        } catch (Exception e) {
+                            logger.infov("Failed to decrypt assertion for realm={0} with key={1}.",
+                              realm.getName(), encryptionKey.getKid());
+                        }
+                    }
+
+                    if (AssertionUtil.isIdEncrypted(responseType) && signingKey != null) {
+                        AssertionUtil.decryptId(responseType, (PrivateKey) signingKey.getPrivateKey());
+                    }
                 }
                 AssertionType assertion = responseType.getAssertions().get(0).getAssertion();
+
                 NameIDType subjectNameID = getSubjectNameID(assertion);
                 String principal = getPrincipal(assertion);
 
@@ -548,6 +583,22 @@ public class SAMLEndpoint {
             }
         }
 
+        /**
+         * Returns active key for given use
+         *
+         * @param use use
+         * @return active key or null if not found
+         */
+        private KeyWrapper getActiveKey(KeyUse use) {
+            try {
+                return session.keys().getActiveKey(realm, use, Algorithm.RS256);
+            } catch (Exception e) {
+                logger.infov("Failed to find RSA encryption key for realm={0} and use={1}.",
+                  realm.getName(), use.name());
+            }
+
+            return null;
+        }
 
         /**
          * If there is a client whose SAML IDP-initiated SSO URL name is set to the
