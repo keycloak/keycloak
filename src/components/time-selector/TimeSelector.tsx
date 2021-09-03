@@ -83,7 +83,6 @@ export const TimeSelector = ({
         <TextInput
           {...rest}
           type="number"
-          id={`kc-time-${new Date().getTime()}`}
           aria-label="kc-time"
           min={min || 0}
           value={timeValue}
