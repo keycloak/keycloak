@@ -37,6 +37,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.admin.info.ServerInfoAdminResource;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.urls.UrlType;
 
@@ -62,6 +63,9 @@ import java.util.Properties;
 @Path("/admin")
 public class AdminRoot {
     protected static final Logger logger = Logger.getLogger(AdminRoot.class);
+
+    private FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
+
 
     @Context
     protected ClientConnection clientConnection;
@@ -144,7 +148,7 @@ public class AdminRoot {
     public AdminConsole getAdminConsole(final @PathParam("realm") String name) {
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = locateRealm(name, realmManager);
-        AdminConsole service = new AdminConsole(realm);
+        AdminConsole service = new AdminConsole(realm, freeMarkerUtil);
         ResteasyProviderFactory.getInstance().injectProperties(service);
         return service;
     }

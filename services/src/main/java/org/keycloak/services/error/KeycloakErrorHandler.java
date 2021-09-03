@@ -43,6 +43,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
     private static final Logger logger = Logger.getLogger(KeycloakErrorHandler.class);
 
     private static final Pattern realmNamePattern = Pattern.compile(".*/realms/([^/]+).*");
+    private static final FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
 
     public static final String UNCAUGHT_SERVER_ERROR_TEXT = "Uncaught server error";
     public static final String ERROR_RESPONSE_TEXT = "Error response {0}";
@@ -86,12 +87,11 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
             Locale locale = session.getContext().resolveLocale(null);
 
-            FreeMarkerUtil freeMarker = new FreeMarkerUtil();
             Map<String, Object> attributes = initAttributes(session, realm, theme, locale, statusCode);
 
             String templateName = "error.ftl";
 
-            String content = freeMarker.processTemplate(attributes, templateName, theme);
+            String content = freeMarkerUtil.processTemplate(attributes, templateName, theme);
             return Response.status(statusCode).type(MediaType.TEXT_HTML_UTF_8_TYPE).entity(content).build();
         } catch (Throwable t) {
             logger.error("Failed to create error page", t);

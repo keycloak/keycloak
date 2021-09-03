@@ -91,8 +91,11 @@ public class AdminConsole {
 
     protected RealmModel realm;
 
-    public AdminConsole(RealmModel realm) {
+    private FreeMarkerUtil freeMarkerUtil;
+
+    public AdminConsole(RealmModel realm, FreeMarkerUtil freeMarkerUtil) {
         this.realm = realm;
+        this.freeMarkerUtil = freeMarkerUtil;
     }
 
     public static class WhoAmI {
@@ -343,7 +346,6 @@ public class AdminConsole {
             map.put("resourceVersion", Version.RESOURCES_VERSION);
             map.put("properties", theme.getProperties());
 
-            FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
             String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
             Response.ResponseBuilder builder = Response.status(Response.Status.OK).type(MediaType.TEXT_HTML_UTF_8).language(Locale.ENGLISH).entity(result);
 

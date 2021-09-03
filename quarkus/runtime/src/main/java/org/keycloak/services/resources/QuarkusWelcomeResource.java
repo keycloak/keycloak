@@ -69,6 +69,7 @@ public class QuarkusWelcomeResource {
     private static final String KEYCLOAK_STATE_CHECKER = "WELCOME_STATE_CHECKER";
 
     private AtomicBoolean shouldBootstrap;
+    private FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
 
     @Context
     HttpHeaders headers;
@@ -199,7 +200,6 @@ public class QuarkusWelcomeResource {
             if (errorMessage != null) {
                 map.put("errorMessage", errorMessage);
             }
-            FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
             String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
 
             ResponseBuilder rb = Response.status(errorMessage == null ? Status.OK : Status.BAD_REQUEST)

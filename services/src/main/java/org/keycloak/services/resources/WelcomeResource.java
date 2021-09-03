@@ -66,6 +66,8 @@ public class WelcomeResource {
 
     private static final String KEYCLOAK_STATE_CHECKER = "WELCOME_STATE_CHECKER";
 
+    private FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
+
     @Context
     protected HttpHeaders headers;
 
@@ -202,7 +204,6 @@ public class WelcomeResource {
             if (errorMessage != null) {
                 map.put("errorMessage", errorMessage);
             }
-            FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
             String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
 
             ResponseBuilder rb = Response.status(errorMessage == null ? Status.OK : Status.BAD_REQUEST)

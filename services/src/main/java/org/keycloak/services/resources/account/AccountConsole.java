@@ -64,13 +64,15 @@ public class AccountConsole {
     private final RealmModel realm;
     private final ClientModel client;
     private final Theme theme;
+    private final FreeMarkerUtil freeMarkerUtil;
 
     private Auth auth;
 
-    public AccountConsole(RealmModel realm, ClientModel client, Theme theme) {
+    public AccountConsole(RealmModel realm, ClientModel client, Theme theme, FreeMarkerUtil freeMarkerUtil) {
         this.realm = realm;
         this.client = client;
         this.theme = theme;
+        this.freeMarkerUtil = freeMarkerUtil;
         this.authManager = new AppAuthManager();
     }
 
@@ -144,7 +146,6 @@ public class AccountConsole {
 
             map.put("deleteAccountAllowed", deleteAccountAllowed);
 
-            FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
             String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
             Response.ResponseBuilder builder = Response.status(Response.Status.OK).type(MediaType.TEXT_HTML_UTF_8).language(Locale.ENGLISH).entity(result);
             return builder.build();

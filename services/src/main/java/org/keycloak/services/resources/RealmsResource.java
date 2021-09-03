@@ -39,6 +39,7 @@ import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resources.account.AccountLoader;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.ResolveRelative;
+import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.wellknown.WellKnownProvider;
 import org.keycloak.wellknown.WellKnownProviderFactory;
@@ -66,6 +67,7 @@ import java.util.Optional;
 @Path("/realms")
 public class RealmsResource {
     protected static final Logger logger = Logger.getLogger(RealmsResource.class);
+    private FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
 
     @Context
     protected KeycloakSession session;
@@ -212,7 +214,7 @@ public class RealmsResource {
     public Object getAccountService(final @PathParam("realm") String name) {
         RealmModel realm = init(name);
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
-        AccountLoader accountLoader = new AccountLoader(session, event);
+        AccountLoader accountLoader = new AccountLoader(session, event, freeMarkerUtil);
         ResteasyProviderFactory.getInstance().injectProperties(accountLoader);
         return accountLoader;
     }

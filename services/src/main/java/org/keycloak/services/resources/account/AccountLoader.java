@@ -30,6 +30,7 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
 
 import javax.ws.rs.HttpMethod;
@@ -53,6 +54,7 @@ public class AccountLoader {
 
     private KeycloakSession session;
     private EventBuilder event;
+    private FreeMarkerUtil freeMarkerUtil;
 
     @Context
     private HttpRequest request;
@@ -61,9 +63,10 @@ public class AccountLoader {
 
     private static final Logger logger = Logger.getLogger(AccountLoader.class);
 
-    public AccountLoader(KeycloakSession session, EventBuilder event) {
+    public AccountLoader(KeycloakSession session, EventBuilder event, FreeMarkerUtil freeMarkerUtil) {
         this.session = session;
         this.event = event;
+        this.freeMarkerUtil = freeMarkerUtil;
     }
 
     @Path("/")
@@ -91,7 +94,7 @@ public class AccountLoader {
                 accountFormService.init();
                 return accountFormService;
             } else {
-                AccountConsole console = new AccountConsole(realm, client, theme);
+                AccountConsole console = new AccountConsole(realm, client, theme, freeMarkerUtil);
                 ResteasyProviderFactory.getInstance().injectProperties(console);
                 console.init();
                 return console;
