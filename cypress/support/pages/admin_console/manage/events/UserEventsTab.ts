@@ -1,4 +1,4 @@
-export default class EventsPage {
+export default class UserEventsTab {
   searchEventDrpDwn = ".pf-c-dropdown__toggle";
   searchEventDrpDwnBtn = "userEventsSearchSelectorToggle";
   searchForm = ".pf-c-dropdown__menu";
@@ -12,7 +12,7 @@ export default class EventsPage {
   eventTypeOption = ".pf-c-select__menu-item";
   eventTypeInputFld = ".pf-c-form-control.pf-c-select__toggle-typeahead";
   eventTypeBtn = ".pf-c-button.pf-c-select__toggle-button.pf-m-plain";
-  eventsPageTitle = ".pf-c-title";
+  userEventsTabTitle = ".pf-c-title";
 
   shouldDisplay() {
     cy.get(this.searchEventDrpDwn).should("exist");
@@ -38,12 +38,6 @@ export default class EventsPage {
     cy.getId(this.searchEventsBtn).should("have.attr", "disabled");
   }
 
-  shouldHaveSearchBtnEnabled() {
-    cy.getId(this.searchEventDrpDwnBtn).click();
-    cy.getId(this.userIdInputFld).type("11111");
-    cy.getId(this.searchEventsBtn).should("not.have.attr", "disabled");
-  }
-
   shouldDoSearchAndRemoveChips() {
     cy.getId(this.searchEventDrpDwnBtn).click();
     cy.get(this.eventTypeInputFld).type("LOGIN");
@@ -59,20 +53,21 @@ export default class EventsPage {
     cy.get("table").should("not.have.text", "LOGIN_ERROR");
     cy.get("table").should("not.have.text", "LOGOUT");
 
-    cy.get("[id^=remove_pf]").click();
+    cy.get("[id^=remove_group]").click();
+    cy.wait("@eventsFetch");
+    cy.get("table").should("be.visible").contains("td", "LOGIN");
+  }
 
+  shouldHaveSearchBtnEnabled() {
     cy.getId(this.searchEventDrpDwnBtn).click();
     cy.getId(this.userIdInputFld).type("11111");
-    cy.getId(this.searchEventsBtn).click();
-    cy.get(this.eventsPageTitle).contains("No events logged");
-    cy.get("[id^=remove_group]").click();
-    cy.get("table").contains("LOGIN");
+    cy.getId(this.searchEventsBtn).should("not.have.attr", "disabled");
   }
 
   shouldDoNoResultsSearch() {
     cy.getId(this.searchEventDrpDwnBtn).click();
     cy.getId(this.userIdInputFld).type("test");
     cy.getId(this.searchEventsBtn).click();
-    cy.get(this.eventsPageTitle).contains("No events logged");
+    cy.get(this.userEventsTabTitle).contains("No events logged");
   }
 }

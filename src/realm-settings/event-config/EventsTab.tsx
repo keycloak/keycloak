@@ -172,7 +172,7 @@ export const EventsTab = () => {
         <Tab
           eventKey="admin"
           title={<TabTitleText>{t("adminEventsSettings")}</TabTitleText>}
-          data-testid="rs-events-tab"
+          data-testid="rs-admin-events-tab"
         >
           <PageSection>
             <Title headingLevel="h4" size="xl">

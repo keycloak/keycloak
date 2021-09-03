@@ -206,7 +206,7 @@ export const EventsSection = () => {
           >
             <Form
               isHorizontal
-              className="keycloak__user_events_search__form"
+              className="keycloak__events_search__form"
               data-testid="searchForm"
             >
               <FormGroup
@@ -238,7 +238,7 @@ export const EventsSection = () => {
                     value: EventType[];
                   }) => (
                     <Select
-                      className="keycloak__events_search__event_type_select"
+                      className="keycloak__events_search__type_select"
                       name="eventType"
                       data-testid="event-type-searchField"
                       chipGroupProps={{
@@ -454,12 +454,10 @@ export const EventsSection = () => {
                   },
                 ]}
                 emptyState={
-                  <div className="pf-u-mt-md">
-                    <ListEmptyState
-                      message={t("emptyEvents")}
-                      instructions={t("emptyEventsInstructions")}
-                    />
-                  </div>
+                  <ListEmptyState
+                    message={t("emptyEvents")}
+                    instructions={t("emptyEventsInstructions")}
+                  />
                 }
               />
             </div>
@@ -467,6 +465,7 @@ export const EventsSection = () => {
           <Tab
             eventKey="adminEvents"
             title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
+            data-testid="admin-events-tab"
           >
             <AdminEvents />
           </Tab>
