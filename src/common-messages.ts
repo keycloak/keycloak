@@ -84,6 +84,7 @@ export default {
     userFederation: "User federation",
 
     settings: "Settings",
+    details: "Details",
 
     required: "Required field",
     maxLength: "Max length {{length}}",

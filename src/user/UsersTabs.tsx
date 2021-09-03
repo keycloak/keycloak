@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import {
   AlertVariant,
+  ButtonVariant,
+  DropdownItem,
   PageSection,
   Tab,
   TabTitleText,
@@ -20,10 +22,12 @@ import { UserGroups } from "./UserGroups";
 import { UserConsents } from "./UserConsents";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { UserIdentityProviderLinks } from "./UserIdentityProviderLinks";
+import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { toUser } from "./routes/User";
+import { toUsers } from "./routes/Users";
 
 export const UsersTabs = () => {
-  const { t } = useTranslation("roles");
+  const { t } = useTranslation("users");
   const { addAlert, addError } = useAlerts();
   const history = useHistory();
   const { realm } = useRealm();
@@ -70,7 +74,7 @@ export const UsersTabs = () => {
     try {
       if (id) {
         await adminClient.users.update({ id }, user);
-        addAlert(t("users:userSaved"), AlertVariant.success);
+        addAlert(t("userSaved"), AlertVariant.success);
       } else {
         const createdUser = await adminClient.users.create(user);
 
@@ -81,7 +85,7 @@ export const UsersTabs = () => {
           });
         });
 
-        addAlert(t("users:userCreated"), AlertVariant.success);
+        addAlert(t("userCreated"), AlertVariant.success);
         history.push(toUser({ id: createdUser.id, realm, tab: "settings" }));
       }
     } catch (error) {
@@ -89,11 +93,61 @@ export const UsersTabs = () => {
     }
   };
 
+  const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
+    titleKey: "users:deleteConfirm",
+    messageKey: "users:deleteConfirmCurrentUser",
+    continueButtonLabel: "common:delete",
+    continueButtonVariant: ButtonVariant.danger,
+    onConfirm: async () => {
+      try {
+        await adminClient.users.del({ id });
+        addAlert(t("userDeletedSuccess"), AlertVariant.success);
+        history.push(toUsers({ realm }));
+      } catch (error) {
+        addError("users:userDeletedError", error);
+      }
+    },
+  });
+
+  const [toggleImpersonateDialog, ImpersonateConfirm] = useConfirmDialog({
+    titleKey: "users:impersonateConfirm",
+    messageKey: "users:impersonateConfirmDialog",
+    continueButtonLabel: "users:impersonate",
+    onConfirm: async () => {
+      try {
+        const data = await adminClient.users.impersonation(
+          { id },
+          { user: id, realm }
+        );
+        if (data.sameRealm) {
+          window.location = data.redirect;
+        } else {
+          window.open(data.redirect, "_blank");
+        }
+      } catch (error) {
+        addError("users:impersonateError", error);
+      }
+    },
+  });
+
   return (
     <>
+      <ImpersonateConfirm />
+      <DeleteConfirm />
       <ViewHeader
         titleKey={user?.username || t("users:createUser")}
         divider={!id}
+        dropdownItems={[
+          <DropdownItem
+            key="impersonate"
+            onClick={() => toggleImpersonateDialog()}
+          >
+            {t("impersonate")}
+          </DropdownItem>,
+          <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
+            {t("common:delete")}
+          </DropdownItem>,
+        ]}
       />
       <PageSection variant="light" className="pf-u-p-0">
         <FormProvider {...userForm}>
@@ -102,7 +156,7 @@ export const UsersTabs = () => {
               <Tab
                 eventKey="settings"
                 data-testid="user-details-tab"
-                title={<TabTitleText>{t("details")}</TabTitleText>}
+                title={<TabTitleText>{t("common:details")}</TabTitleText>}
               >
                 <PageSection variant="light">
                   {bruteForced && (
@@ -118,14 +172,14 @@ export const UsersTabs = () => {
               <Tab
                 eventKey="groups"
                 data-testid="user-groups-tab"
-                title={<TabTitleText>{t("groups")}</TabTitleText>}
+                title={<TabTitleText>{t("common:groups")}</TabTitleText>}
               >
                 <UserGroups user={user} />
               </Tab>
               <Tab
                 eventKey="consents"
                 data-testid="user-consents-tab"
-                title={<TabTitleText>{t("users:consents")}</TabTitleText>}
+                title={<TabTitleText>{t("consents")}</TabTitleText>}
               >
                 <UserConsents />
               </Tab>
@@ -133,9 +187,7 @@ export const UsersTabs = () => {
                 eventKey="identity-provider-links"
                 data-testid="identity-provider-links-tab"
                 title={
-                  <TabTitleText>
-                    {t("users:identityProviderLinks")}
-                  </TabTitleText>
+                  <TabTitleText>{t("identityProviderLinks")}</TabTitleText>
                 }
               >
                 <UserIdentityProviderLinks />

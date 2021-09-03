@@ -59,7 +59,6 @@ export default {
     searchForRole: "Search role",
     origin: "Origin",
     user: "User",
-    details: "Details",
     noGeneratedAccessToken: "No generated access token",
     generatedAccessTokenIsDisabled:
       "Generated access token is disabled when no user is selected",

@@ -144,11 +144,11 @@ export const DownloadDialog = ({
             <StackItem isFilled>
               <FormGroup
                 fieldId="details"
-                label={t("clients:details")}
+                label={t("details")}
                 labelIcon={
                   <HelpItem
                     helpText={t("clients-help:details")}
-                    forLabel={t("clients:details")}
+                    forLabel={t("details")}
                     forID="details"
                   />
                 }

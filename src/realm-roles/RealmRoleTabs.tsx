@@ -331,7 +331,7 @@ export const RealmRoleTabs = () => {
           <KeycloakTabs isBox>
             <Tab
               eventKey="details"
-              title={<TabTitleText>{t("details")}</TabTitleText>}
+              title={<TabTitleText>{t("common:details")}</TabTitleText>}
             >
               <PageSection variant="light">
                 <RealmRoleForm

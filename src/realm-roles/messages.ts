@@ -22,7 +22,6 @@ export default {
     roleDetails: "Role details",
     composite: "Composite",
     deleteRole: "Delete this role",
-    details: "Details",
     inheritedFrom: "Inherited from",
     roleList: "Role list",
     searchFor: "Search role by name",
