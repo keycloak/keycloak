@@ -26,11 +26,14 @@ import java.util.Properties;
 import org.keycloak.provider.Provider;
 
 /**
- * A theme resource provider can be used to load additional templates and resources. An example use of this would be
- * a custom authenticator that requires an additional template and a JavaScript file.
+ * A theme resource provider can be used to load additional templates and
+ * resources. An example use of this would be a custom authenticator that
+ * requires an additional template and a JavaScript file.
  *
- * The theme is searched for templates and resources first. Theme resource providers are only searched if the template
- * or resource is not found. This allows overriding templates and resources from theme resource providers in the theme.
+ * The theme is searched for templates and resources first. Theme resource
+ * providers are only searched if the template or resource is not found. This
+ * allows overriding templates and resources from theme resource providers in
+ * the theme.
  *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -49,7 +52,8 @@ public interface ThemeResourceProvider extends Provider {
      * Load the resource for the specific path
      *
      * @param path the resource path
-     * @return an InputStream to read the resource, or null if the resource is unknown
+     * @return an InputStream to read the resource, or null if the resource is
+     *         unknown
      * @throws IOException
      */
     InputStream getResourceAsStream(String path) throws IOException;
@@ -58,13 +62,21 @@ public interface ThemeResourceProvider extends Provider {
      * Load the message bundle for the specific name and locale
      * 
      * @param baseBundlename The base name of the bundle, such as "messages" in
-     * messages_en.properties.
-     * @param locale The locale of the desired message bundle.
+     *                       messages_en.properties.
+     * @param locale         The locale of the desired message bundle.
      * @return The localized messages from the bundle.
      * @throws IOException If bundle can not be read.
      */
-    default Properties getMessages(String baseBundlename, Locale locale) throws IOException{
+    default Properties getMessages(String baseBundlename, Locale locale) throws IOException {
         return new Properties();
+    }
+
+    default Properties getProperties() throws IOException {
+        return new Properties();
+    }
+
+    default boolean isThemeSupported(Theme theme) {
+        return true;
     }
 
 }

@@ -72,7 +72,7 @@ public class DefaultThemeManager implements ThemeManager {
 
         return isProduct ? "rh-sso" : "keycloak";
     }
-    
+
     @Override
     public Theme getTheme(String name, Theme.Type type) {
         if (name == null) {
@@ -92,7 +92,7 @@ public class DefaultThemeManager implements ThemeManager {
                 theme = factory.addCachedTheme(name, type, theme);
             }
         }
-        
+
         if (!isAccount2Enabled() && theme.getName().equals("keycloak.v2")) {
             theme = loadTheme("keycloak", type);
         }
@@ -100,10 +100,10 @@ public class DefaultThemeManager implements ThemeManager {
         if (!isAccount2Enabled() && theme.getName().equals("rh-sso.v2")) {
             theme = loadTheme("rh-sso", type);
         }
-        
+
         return theme;
     }
-    
+
     @Override
     public Set<String> nameSet(Theme.Type type) {
         Set<String> themes = new HashSet<String>();
@@ -149,7 +149,15 @@ public class DefaultThemeManager implements ThemeManager {
             }
         }
 
-        return new ExtendingTheme(themes, session.getAllProviders(ThemeResourceProvider.class));
+        Set<ThemeResourceProvider> themeResourceProviders = new HashSet<ThemeResourceProvider>();
+
+        for (ThemeResourceProvider p : session.getAllProviders(ThemeResourceProvider.class)) {
+            if (p.isThemeSupported(theme)) {
+                themeResourceProviders.add(p);
+            }
+        }
+
+        return new ExtendingTheme(themes, themeResourceProviders);
     }
 
     private Theme findTheme(String name, Theme.Type type) {
@@ -253,7 +261,7 @@ public class DefaultThemeManager implements ThemeManager {
                     messages.putAll(getMessages(baseBundlename, parent));
                 }
 
-                for (ThemeResourceProvider t : themeResourceProviders ){
+                for (ThemeResourceProvider t : themeResourceProviders) {
                     messages.putAll(t.getMessages(baseBundlename, locale));
                 }
 
@@ -264,7 +272,7 @@ public class DefaultThemeManager implements ThemeManager {
                         messages.putAll(m);
                     }
                 }
-                
+
                 this.messages.putIfAbsent(baseBundlename, new ConcurrentHashMap<Locale, Properties>());
                 this.messages.get(baseBundlename).putIfAbsent(locale, messages);
 
@@ -285,6 +293,15 @@ public class DefaultThemeManager implements ThemeManager {
                         properties.putAll(p);
                     }
                 }
+
+                for (ThemeResourceProvider t : themeResourceProviders) {
+                    Properties p = t.getProperties();
+                    if (p != null) {
+                        mergeMultiValuedProperty("styles", p, properties);
+                        mergeMultiValuedProperty("scripts", p, properties);
+                    }
+                }
+
                 substituteProperties(properties);
                 this.properties = properties;
                 return properties;
@@ -294,12 +311,29 @@ public class DefaultThemeManager implements ThemeManager {
         }
 
         /**
-         * Iterate over all string properties defined in "theme.properties" then substitute the value with system property or environment variables.
-         * See {@link StringPropertyReplacer#replaceProperties} for details about the different formats.
+         * Iterate over all string properties defined in "theme.properties" then
+         * substitute the value with system property or environment variables. See
+         * {@link StringPropertyReplacer#replaceProperties} for details about the
+         * different formats.
          */
         private void substituteProperties(final Properties properties) {
             for (final String propertyName : properties.stringPropertyNames()) {
-                properties.setProperty(propertyName, StringPropertyReplacer.replaceProperties(properties.getProperty(propertyName), new SystemEnvProperties()));
+                properties.setProperty(propertyName, StringPropertyReplacer
+                        .replaceProperties(properties.getProperty(propertyName), new SystemEnvProperties()));
+            }
+        }
+
+        private void mergeMultiValuedProperty(String propertyName, final Properties sourceProperties, final Properties targetProperties) {
+            String sourceProperty = sourceProperties.getProperty(propertyName);
+            if (sourceProperty != null) {
+                String targetProperty = targetProperties.getProperty(propertyName);
+                if (targetProperty == null) {
+                    targetProperty = sourceProperty;
+                } else {
+                    targetProperty += " " + sourceProperty;
+                }
+
+                targetProperties.setProperty(propertyName, targetProperty);
             }
         }
     }
