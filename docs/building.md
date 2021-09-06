@@ -8,8 +8,8 @@ Ensure you have JDK 8 (or newer), Maven 3.5.4 (or newer) and Git installed
 
 **NOTE**
 
-For users of _Maven 3.8.1_ or newer: 
-Please add the following mirror to your local _~/.m2/settings.xml_ to avoid build errors:
+If you use Maven 3.8.1 or newer, please add the following mirror to your local 
+`~/.m2/settings.xml` to avoid build errors:
 ```
 <mirrors>
   <mirror>
@@ -20,7 +20,7 @@ Please add the following mirror to your local _~/.m2/settings.xml_ to avoid buil
   </mirror>
 </mirrors>
 ```
-See this [Jira-Ticket](https://issues.redhat.com/browse/KEYCLOAK-17812) for more details.
+See [KEYCLOAK-17812](https://issues.redhat.com/browse/KEYCLOAK-17812) for more details.
 
 ---
 
