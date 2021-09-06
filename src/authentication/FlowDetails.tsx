@@ -14,6 +14,7 @@ import {
 import { CheckCircleIcon, TableIcon } from "@patternfly/react-icons";
 
 import type AuthenticationExecutionInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationExecutionInfoRepresentation";
+import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
 import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 import type { FlowParams } from "./routes/Flow";
 import { ViewHeader } from "../components/view-header/ViewHeader";
@@ -22,14 +23,23 @@ import { EmptyExecutionState } from "./EmptyExecutionState";
 import { toUpperCase } from "../util";
 import { FlowHeader } from "./components/FlowHeader";
 import { FlowRow } from "./components/FlowRow";
-import { ExecutionList, IndexChange, LevelChange } from "./execution-model";
+import {
+  ExecutionList,
+  ExpandableExecution,
+  IndexChange,
+  LevelChange,
+} from "./execution-model";
 import { FlowDiagram } from "./components/FlowDiagram";
 import { useAlerts } from "../components/alert/Alerts";
+
+export const providerConditionFilter = (
+  value: AuthenticationProviderRepresentation
+) => value.displayName?.startsWith("Condition ");
 
 export const FlowDetails = () => {
   const { t } = useTranslation("authentication");
   const adminClient = useAdminClient();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const { id, usedBy, builtIn } = useParams<FlowParams>();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
@@ -94,12 +104,7 @@ export const FlowDetails = () => {
       refresh();
       addAlert(t("updateFlowSuccess"), AlertVariant.success);
     } catch (error: any) {
-      addAlert(
-        t("updateFlowError", {
-          error: error.response?.data?.errorMessage || error,
-        }),
-        AlertVariant.danger
-      );
+      addError("authentication:updateFlowError", error);
     }
   };
 
@@ -114,12 +119,23 @@ export const FlowDetails = () => {
       refresh();
       addAlert(t("updateFlowSuccess"), AlertVariant.success);
     } catch (error: any) {
-      addAlert(
-        t("updateFlowError", {
-          error: error.response?.data?.errorMessage || error,
-        }),
-        AlertVariant.danger
-      );
+      addError("authentication:updateFlowError", error);
+    }
+  };
+
+  const addExecution = async (
+    execution: ExpandableExecution,
+    type: AuthenticationProviderRepresentation
+  ) => {
+    try {
+      await adminClient.authenticationManagement.addExecutionToFlow({
+        flow: execution.displayName!,
+        provider: type.id!,
+      });
+      refresh();
+      addAlert(t("updateFlowSuccess"), AlertVariant.success);
+    } catch (error) {
+      addError("authentication:updateFlowError", error);
     }
   };
 
@@ -215,6 +231,7 @@ export const FlowDetails = () => {
                       setExecutionList(executionList.clone());
                     }}
                     onRowChange={update}
+                    onAddExecution={addExecution}
                   />
                 ))}
               </>

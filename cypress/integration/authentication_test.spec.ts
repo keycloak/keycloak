@@ -56,4 +56,26 @@ describe("Authentication test", () => {
 
     cy.get(".react-flow").should("exist");
   });
+
+  it("should add a execution", () => {
+    listingPage.goToItemDetails("Copy of browser");
+    detailPage.addExecution(
+      "Copy of browser forms",
+      "console-username-password"
+    );
+
+    masthead.checkNotificationMessage("Flow successfully updated");
+    detailPage.executionExists("Username Password Challenge");
+  });
+
+  it("should add a condition", () => {
+    listingPage.goToItemDetails("Copy of browser");
+    detailPage.addCondition(
+      "Copy of browser Browser - Conditional OTP",
+      "conditional-user-role"
+    );
+
+    masthead.checkNotificationMessage("Flow successfully updated");
+    detailPage.executionExists("Username Password Challenge");
+  });
 });

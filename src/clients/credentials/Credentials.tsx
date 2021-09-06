@@ -18,6 +18,7 @@ import {
   SplitItem,
 } from "@patternfly/react-core";
 import type CredentialRepresentation from "@keycloak/keycloak-admin-client/lib/defs/credentialRepresentation";
+import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
 
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
@@ -28,11 +29,6 @@ import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { ClientSecret } from "./ClientSecret";
 import { SignedJWT } from "./SignedJWT";
 import { X509 } from "./X509";
-
-type ClientAuthenticatorProviders = {
-  id: string;
-  displayName: string;
-};
 
 type AccessToken = {
   registrationAccessToken: string;
@@ -48,9 +44,9 @@ export const Credentials = ({ clientId, save }: CredentialsProps) => {
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
-  const [providers, setProviders] = useState<ClientAuthenticatorProviders[]>(
-    []
-  );
+  const [providers, setProviders] = useState<
+    AuthenticationProviderRepresentation[]
+  >([]);
 
   const {
     control,
@@ -69,9 +65,7 @@ export const Credentials = ({ clientId, save }: CredentialsProps) => {
   useFetch(
     async () => {
       const providers =
-        await adminClient.authenticationManagement.getClientAuthenticatorProviders(
-          { id: clientId }
-        );
+        await adminClient.authenticationManagement.getClientAuthenticatorProviders();
 
       const secret = await adminClient.clients.getClientSecret({
         id: clientId,

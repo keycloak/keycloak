@@ -13,26 +13,34 @@ import {
 } from "@patternfly/react-core";
 
 import type AuthenticationExecutionInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationExecutionInfoRepresentation";
+import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
 import type { ExpandableExecution } from "../execution-model";
 import { FlowTitle } from "./FlowTitle";
 import { FlowRequirementDropdown } from "./FlowRequirementDropdown";
+import { ExecutionConfigModal } from "./ExecutionConfigModal";
+import { EditFlowDropdown } from "./EditFlowDropdown";
 
 import "./flow-row.css";
-import { ExecutionConfigModal } from "./ExecutionConfigModal";
 
 type FlowRowProps = {
   execution: ExpandableExecution;
   onRowClick: (execution: ExpandableExecution) => void;
   onRowChange: (execution: AuthenticationExecutionInfoRepresentation) => void;
+  onAddExecution: (
+    execution: ExpandableExecution,
+    type: AuthenticationProviderRepresentation
+  ) => void;
 };
 
 export const FlowRow = ({
   execution,
   onRowClick,
   onRowChange,
+  onAddExecution,
 }: FlowRowProps) => {
   const { t } = useTranslation("authentication");
   const hasSubList = !!execution.executionList?.length;
+
   return (
     <>
       <DataListItem
@@ -86,6 +94,12 @@ export const FlowRow = ({
                 {execution.configurable && (
                   <ExecutionConfigModal execution={execution} />
                 )}
+                {execution.authenticationFlow && (
+                  <EditFlowDropdown
+                    execution={execution}
+                    onAddExecution={onAddExecution}
+                  />
+                )}
               </DataListCell>,
             ]}
           />
@@ -99,6 +113,7 @@ export const FlowRow = ({
               execution={execution}
               onRowClick={onRowClick}
               onRowChange={onRowChange}
+              onAddExecution={onAddExecution}
             />
           ))}
         </>

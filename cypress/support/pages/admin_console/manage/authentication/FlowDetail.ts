@@ -36,4 +36,28 @@ export default class FlowDetails {
     cy.get("#diagramView").click();
     return this;
   }
+
+  private clickEditDropdownForFlow(subFlowName: string, option: string) {
+    cy.getId(`${subFlowName}-edit-dropdown`).click().contains(option).click();
+  }
+
+  addExecution(subFlowName: string, executionTestId: string) {
+    this.clickEditDropdownForFlow(subFlowName, "Add step");
+
+    cy.get(".pf-c-pagination").should("exist");
+    cy.getId(executionTestId).click();
+    cy.getId("modal-add").click();
+
+    return this;
+  }
+
+  addCondition(subFlowName: string, executionTestId: string) {
+    this.clickEditDropdownForFlow(subFlowName, "Add condition");
+
+    cy.get(".pf-c-pagination").should("not.exist");
+    cy.getId(executionTestId).click();
+    cy.getId("modal-add").click();
+
+    return this;
+  }
 }

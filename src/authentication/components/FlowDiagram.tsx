@@ -26,6 +26,7 @@ import { EndSubFlowNode, StartSubFlowNode } from "./diagram/SubFlowNode";
 import { ConditionalNode } from "./diagram/ConditionalNode";
 import { ButtonEdge } from "./diagram/ButtonEdge";
 import { getLayoutedElements } from "./diagram/auto-layout";
+import { providerConditionFilter } from "../FlowDetails";
 
 import "./flow-diagram.css";
 
@@ -54,7 +55,7 @@ const createNode = (ex: ExpandableExecution) => {
   if (ex.executionList) {
     nodeType = "startSubFlow";
   }
-  if (ex.displayName?.startsWith("Condition")) {
+  if (providerConditionFilter(ex)) {
     nodeType = "conditional";
   }
   return {
