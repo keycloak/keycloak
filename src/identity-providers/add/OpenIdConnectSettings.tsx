@@ -75,7 +75,7 @@ export const OpenIdConnectSettings = () => {
         );
         const result = await response.json();
         setupForm(result);
-      } catch (error) {
+      } catch (error: any) {
         setDiscoveryResult({ error });
       }
     }

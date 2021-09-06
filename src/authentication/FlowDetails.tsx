@@ -93,7 +93,7 @@ export const FlowDetails = () => {
       await Promise.all(requests);
       refresh();
       addAlert(t("updateFlowSuccess"), AlertVariant.success);
-    } catch (error) {
+    } catch (error: any) {
       addAlert(
         t("updateFlowError", {
           error: error.response?.data?.errorMessage || error,
@@ -113,7 +113,7 @@ export const FlowDetails = () => {
       );
       refresh();
       addAlert(t("updateFlowSuccess"), AlertVariant.success);
-    } catch (error) {
+    } catch (error: any) {
       addAlert(
         t("updateFlowError", {
           error: error.response?.data?.errorMessage || error,

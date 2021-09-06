@@ -211,7 +211,7 @@ export const GroupTable = () => {
                 } else {
                   await adminClient.groups.create(move);
                 }
-              } catch (error) {
+              } catch (error: any) {
                 if (error.response) {
                   throw error;
                 }

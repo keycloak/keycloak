@@ -45,7 +45,7 @@ export const AddSamlConnect = () => {
       history.push(
         `/${realm}/identity-providers/${id}/${provider.alias}/settings`
       );
-    } catch (error) {
+    } catch (error: any) {
       addAlert(
         t("createError", {
           error: error.response?.data?.errorMessage || error,

@@ -34,7 +34,7 @@ export const CreateFlow = () => {
     try {
       await adminClient.authenticationManagement.createFlow(flow);
       addAlert(t("flowCreatedSuccess"), AlertVariant.success);
-    } catch (error) {
+    } catch (error: any) {
       addAlert(
         t("flowCreateError", {
           error: error.response?.data?.errorMessage || error,

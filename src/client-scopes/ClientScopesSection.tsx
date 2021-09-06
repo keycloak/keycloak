@@ -90,7 +90,7 @@ export const ClientScopesSection = () => {
         for (const scope of selectedScopes) {
           try {
             await removeScope(adminClient, scope);
-          } catch (error) {
+          } catch (error: any) {
             console.warn(
               "could not remove scope",
               error.response?.data?.errorMessage || error

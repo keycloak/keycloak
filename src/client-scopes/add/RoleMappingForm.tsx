@@ -92,7 +92,7 @@ export const RoleMappingForm = () => {
     try {
       await adminClient.clientScopes.addProtocolMapper({ id }, mapping);
       addAlert(t("mapperCreateSuccess"));
-    } catch (error) {
+    } catch (error: any) {
       addAlert(t("mapperCreateError", error));
     }
   };
