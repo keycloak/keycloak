@@ -24,6 +24,7 @@ import org.keycloak.models.RealmModel;
 
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
@@ -61,19 +62,19 @@ public abstract class AbstractRsaKeyProvider implements KeyProvider {
         return Stream.of(key);
     }
 
-    protected KeyWrapper createKeyWrapper(KeyPair keyPair, X509Certificate certificate, KeyUse keyUse) {
-        return createKeyWrapper(keyPair, certificate, Collections.emptyList(), keyUse);
+    protected KeyWrapper createKeyWrapper(KeyPair keyPair, X509Certificate certificate, List<KeyUse> keyUses) {
+        return createKeyWrapper(keyPair, certificate, Collections.emptyList(), keyUses);
     }
 
     protected KeyWrapper createKeyWrapper(KeyPair keyPair, X509Certificate certificate, List<X509Certificate> certificateChain,
-        KeyUse keyUse) {
+        List<KeyUse> keyUses) {
         KeyWrapper key = new KeyWrapper();
 
         key.setProviderId(model.getId());
         key.setProviderPriority(model.get("priority", 0l));
 
         key.setKid(KeyUtils.createKeyId(keyPair.getPublic()));
-        key.setUse(keyUse == null ? KeyUse.SIG : keyUse);
+        key.setUses(keyUses == null || keyUses.isEmpty() ? Arrays.asList(KeyUse.SIG) : keyUses);
         key.setType(KeyType.RSA);
         key.setAlgorithm(algorithm);
         key.setStatus(status);

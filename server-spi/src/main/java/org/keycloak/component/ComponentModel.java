@@ -20,7 +20,11 @@ package org.keycloak.component;
 import org.keycloak.common.util.MultivaluedHashMap;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Stored configuration of a User Storage provider instance.
@@ -102,6 +106,32 @@ public class ComponentModel implements Serializable {
     public boolean get(String key, boolean defaultValue) {
         String s = config.getFirst(key);
         return s != null ? Boolean.parseBoolean(s) : defaultValue;
+    }
+
+
+    public List<String> getAll(String key) {
+        List<String> s = config.get(key);
+        return s != null ? s : new ArrayList<>();
+    }
+
+    public List<String> getAll(String key, String defaultValue) {
+        List<String> s = config.get(key);
+        return s != null ? s : Arrays.asList(defaultValue);
+    }
+
+    public List<Integer> getAll(String key, int defaultValue) {
+        List<String> s = config.get(key);
+        return s != null ? s.stream().map(Integer::parseInt).collect(Collectors.toList()) : Arrays.asList(defaultValue);
+    }
+
+    public List<Long> getAll(String key, long defaultValue) {
+        List<String> s = config.get(key);
+        return s != null ? s.stream().map(Long::parseLong).collect(Collectors.toList()) : Arrays.asList(defaultValue);
+    }
+
+    public List<Boolean> getAll(String key, boolean defaultValue) {
+        List<String> s = config.get(key);
+        return s != null ? s.stream().map(Boolean::parseBoolean).collect(Collectors.toList()) : Arrays.asList(defaultValue);
     }
 
     public void put(String key, String value) {

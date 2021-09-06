@@ -28,6 +28,8 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -49,9 +51,10 @@ public class ImportedRsaKeyProvider extends AbstractRsaKeyProvider {
         KeyPair keyPair = new KeyPair(publicKey, privateKey);
         X509Certificate certificate = PemUtils.decodeCertificate(certificatePem);
 
-        KeyUse keyUse = KeyUse.valueOf(model.get(Attributes.KEY_USE, KeyUse.SIG.name()).toUpperCase());
+        List<KeyUse> keyUses = model.getAll(Attributes.KEY_USE, KeyUse.SIG.getSpecName()).stream()
+                .map(String::toUpperCase).map(KeyUse::valueOf).collect(Collectors.toList());
 
-        return createKeyWrapper(keyPair, certificate, keyUse);
+        return createKeyWrapper(keyPair, certificate, keyUses);
     }
 
 }

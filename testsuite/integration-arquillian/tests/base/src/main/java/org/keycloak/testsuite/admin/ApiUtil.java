@@ -157,7 +157,6 @@ public class ApiUtil {
      * Creates a user
      * @param realm
      * @param user
-     * @param password
      * @return ID of the new user
      */
     public static String createUserWithAdminClient(RealmResource realm, UserRepresentation user) {
@@ -273,7 +272,7 @@ public class ApiUtil {
     public static KeysMetadataRepresentation.KeyMetadataRepresentation findActiveSigningKey(RealmResource realm) {
         KeysMetadataRepresentation keyMetadata = realm.keys().getKeyMetadata();
         for (KeysMetadataRepresentation.KeyMetadataRepresentation rep : keyMetadata.getKeys()) {
-            if (rep.getPublicKey() != null && KeyStatus.valueOf(rep.getStatus()).isActive() && KeyUse.SIG.equals(rep.getUse())) {
+            if (rep.getPublicKey() != null && KeyStatus.valueOf(rep.getStatus()).isActive() && rep.getUses().contains(KeyUse.SIG)) {
                 return rep;
             }
         }

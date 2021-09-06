@@ -26,6 +26,7 @@ import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 
 import javax.crypto.SecretKey;
+import java.util.Arrays;
 import java.util.stream.Stream;
 
 /**
@@ -65,7 +66,7 @@ public abstract class AbstractGeneratedSecretKeyProvider implements KeyProvider 
         key.setProviderPriority(model.get("priority", 0l));
 
         key.setKid(kid);
-        key.setUse(use);
+        key.setUses(Arrays.asList(use));
         key.setType(type);
         key.setAlgorithm(algorithm);
         key.setStatus(status);

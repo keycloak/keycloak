@@ -131,12 +131,12 @@ public class DefaultTokenManager implements TokenManager {
                 Stream<KeyWrapper> keys = session.keys().getKeysStream(session.getContext().getRealm());
 
                 if (kid == null) {
-                    activeKey = keys.filter(k -> KeyUse.ENC.equals(k.getUse()) && k.getPublicKey() != null)
+                    activeKey = keys.filter(k -> k.getUses().contains(KeyUse.ENC) && k.getPublicKey() != null)
                             .sorted(Comparator.comparingLong(KeyWrapper::getProviderPriority).reversed())
                             .findFirst();
                 } else {
                     activeKey = keys
-                            .filter(k -> KeyUse.ENC.equals(k.getUse()) && k.getKid().equals(kid)).findAny();
+                            .filter(k -> k.getUses().contains(KeyUse.ENC) && k.getKid().equals(kid)).findAny();
                 }
 
                 JWE jwe = JWE.class.cast(joseToken);

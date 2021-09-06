@@ -102,6 +102,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -1969,7 +1970,7 @@ public class OAuthClient {
                 key.setKid(k.getKeyId());
                 key.setAlgorithm(k.getAlgorithm());
                 key.setPublicKey(publicKey);
-                key.setUse(KeyUse.SIG);
+                key.setUses(Arrays.asList(KeyUse.SIG));
 
                 return key;
             }

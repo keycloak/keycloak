@@ -24,6 +24,7 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 
 import java.security.PublicKey;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -64,7 +65,7 @@ public class JWKSUtils {
                     keyWrapper.setAlgorithm(jwk.getAlgorithm());
                 }
                 keyWrapper.setType(jwk.getKeyType());
-                keyWrapper.setUse(getKeyUse(jwk.getPublicKeyUse()));
+                keyWrapper.setUses(Arrays.asList(getKeyUse(jwk.getPublicKeyUse())));
                 keyWrapper.setPublicKey(parser.toPublicKey());
                 result.put(keyWrapper.getKid(), keyWrapper);
             }

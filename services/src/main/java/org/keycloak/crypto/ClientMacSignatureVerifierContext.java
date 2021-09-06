@@ -17,6 +17,7 @@
 package org.keycloak.crypto;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -37,7 +38,7 @@ public class ClientMacSignatureVerifierContext extends MacSignatureVerifierConte
         SecretKey clientSecret = new SecretKeySpec(clientSecretString.getBytes(StandardCharsets.UTF_8), JavaAlgorithm.getJavaAlgorithm(algorithm));
         KeyWrapper key = new KeyWrapper();
         key.setSecretKey(clientSecret);
-        key.setUse(KeyUse.SIG);
+        key.setUses(Arrays.asList(KeyUse.SIG));
         key.setType(KeyType.OCT);
         key.setAlgorithm(algorithm);
         return key;

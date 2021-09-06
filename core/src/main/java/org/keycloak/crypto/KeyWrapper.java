@@ -16,6 +16,7 @@
  */
 package org.keycloak.crypto;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import javax.crypto.SecretKey;
@@ -40,7 +41,7 @@ public class KeyWrapper {
     private String kid;
     private String algorithm;
     private String type;
-    private KeyUse use;
+    private List<KeyUse> uses = Arrays.asList();
     private KeyStatus status;
     private SecretKey secretKey;
     private Key publicKey;
@@ -110,12 +111,12 @@ public class KeyWrapper {
         this.type = type;
     }
 
-    public KeyUse getUse() {
-        return use;
+    public List<KeyUse> getUses() {
+        return uses;
     }
 
-    public void setUse(KeyUse use) {
-        this.use = use;
+    public void setUses(List<KeyUse> uses) {
+        this.uses = uses;
     }
 
     public KeyStatus getStatus() {

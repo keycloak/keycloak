@@ -76,9 +76,11 @@ public class JavaKeystoreKeyProvider extends AbstractRsaKeyProvider {
                 certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, realm.getName());
             }
 
-            KeyUse keyUse = KeyUse.valueOf(model.get(Attributes.KEY_USE, KeyUse.SIG.getSpecName()).toUpperCase());
+            List<KeyUse> keyUses = model.getAll(Attributes.KEY_USE, KeyUse.SIG.getSpecName()).stream()
+                    .map(String::toUpperCase).map(KeyUse::valueOf).collect(Collectors.toList());
 
-            return createKeyWrapper(keyPair, certificate, loadCertificateChain(keyStore, keyAlias), keyUse);
+
+            return createKeyWrapper(keyPair, certificate, loadCertificateChain(keyStore, keyAlias), keyUses);
         } catch (KeyStoreException kse) {
             throw new RuntimeException("KeyStore error on server. " + kse.getMessage(), kse);
         } catch (FileNotFoundException fnfe) {
