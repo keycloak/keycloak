@@ -33,6 +33,7 @@ import org.keycloak.protocol.oidc.utils.JWKSHttpUtils;
 import org.keycloak.util.JWKSUtils;
 
 import java.security.PublicKey;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 
@@ -83,7 +84,7 @@ public class OIDCIdentityProviderPublicKeyLoader implements PublicKeyLoader {
             keyWrapper.setKid(kid);
             keyWrapper.setType(KeyType.RSA);
             keyWrapper.setAlgorithm(Algorithm.RS256);
-            keyWrapper.setUse(KeyUse.SIG);
+            keyWrapper.setUses(Arrays.asList(KeyUse.SIG));
             keyWrapper.setPublicKey(publicKey);
         } else {
             logger.warnf("No public key saved on identityProvider %s", config.getAlias());

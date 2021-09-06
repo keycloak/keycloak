@@ -25,6 +25,7 @@ import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.RealmModel;
 
 import java.security.KeyPair;
+import java.util.Arrays;
 import java.util.stream.Stream;
 
 public abstract class AbstractEcdsaKeyProvider implements KeyProvider {
@@ -61,7 +62,7 @@ public abstract class AbstractEcdsaKeyProvider implements KeyProvider {
         key.setProviderPriority(model.get("priority", 0l));
 
         key.setKid(KeyUtils.createKeyId(keyPair.getPublic()));
-        key.setUse(KeyUse.SIG);
+        key.setUses(Arrays.asList(KeyUse.SIG));
         key.setType(KeyType.EC);
         key.setAlgorithm(AbstractEcdsaKeyProviderFactory.convertECDomainParmNistRepToAlgorithm(ecInNistRep));
         key.setStatus(status);

@@ -1961,7 +1961,7 @@ module.controller('RealmKeysProvidersCtrl', function($scope, Realm, realm, $http
     };
 });
 
-module.controller('GenericKeystoreCtrl', function($scope, $location, Notifications, $route, Dialog, realm, serverInfo, instance, providerId, Components) {
+module.controller('GenericKeystoreCtrl', function($scope, $location, Notifications, $route, Dialog, realm, serverInfo, instance, providerId, Components, ComponentUtils) {
     $scope.create = !instance.providerId;
     $scope.realm = realm;
 
@@ -2007,6 +2007,7 @@ module.controller('GenericKeystoreCtrl', function($scope, $location, Notificatio
                 }
             }
         }
+        ComponentUtils.addMvOptionsToMultivaluedLists(providerFactory.properties);
     }
 
     $scope.$watch('instance', function() {

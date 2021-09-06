@@ -53,6 +53,7 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.CacheControlUtil;
 
 import java.util.Objects;
+import java.util.Arrays;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
@@ -228,15 +229,16 @@ public class OIDCLoginProtocolService {
 
         JWK[] jwks = session.keys().getKeysStream(realm)
                 .filter(k -> k.getStatus().isEnabled() && k.getPublicKey() != null)
-                .map(k -> {
+                .flatMap(k -> {
                     JWKBuilder b = JWKBuilder.create().kid(k.getKid()).algorithm(k.getAlgorithmOrDefault());
                     List<X509Certificate> certificates = Optional.ofNullable(k.getCertificateChain())
                         .filter(certs -> !certs.isEmpty())
                         .orElseGet(() -> Collections.singletonList(k.getCertificate()));
                     if (k.getType().equals(KeyType.RSA)) {
-                        return b.rsa(k.getPublicKey(), certificates, k.getUse());
+                        if(!k.getUses().isEmpty())
+                            return k.getUses().stream().map(use -> b.rsa(k.getPublicKey(), certificates, use));
                     } else if (k.getType().equals(KeyType.EC)) {
-                        return b.ec(k.getPublicKey());
+                        return Arrays.asList(b.ec(k.getPublicKey())).stream();
                     }
                     return null;
                 })

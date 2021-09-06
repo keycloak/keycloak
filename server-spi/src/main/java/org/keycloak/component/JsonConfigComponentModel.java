@@ -21,6 +21,9 @@ package org.keycloak.component;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.keycloak.provider.Provider;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Component model backed by JSON configuration. Useful for providers, which rely on JSON configuration rather than on ComponentModel, which is directly
  * persisted as entity in the DB (store).
@@ -109,5 +112,36 @@ public class JsonConfigComponentModel extends ComponentModel {
     public String get(String key) {
         return get(key, null);
     }
+
+
+    @Override
+    public List<Boolean> getAll(String key, boolean defaultValue) {
+        JsonNode sub = configNode.get(key);
+        return sub == null ? Arrays.asList(defaultValue) : Arrays.asList(sub.asBoolean());
+    }
+
+    @Override
+    public List<Long> getAll(String key, long defaultValue) {
+        JsonNode sub = configNode.get(key);
+        return sub == null ? Arrays.asList(defaultValue) : Arrays.asList(sub.asLong());
+    }
+
+    @Override
+    public List<Integer> getAll(String key, int defaultValue) {
+        JsonNode sub = configNode.get(key);
+        return sub == null ? Arrays.asList(defaultValue) : Arrays.asList(sub.asInt());
+    }
+
+    @Override
+    public List<String> getAll(String key, String defaultValue) {
+        JsonNode sub = configNode.get(key);
+        return sub == null ? Arrays.asList(defaultValue) : Arrays.asList(sub.asText());
+    }
+
+    @Override
+    public List<String> getAll(String key) {
+        return getAll(key, null);
+    }
+
 
 }

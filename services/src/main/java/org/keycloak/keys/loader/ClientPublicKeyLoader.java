@@ -41,6 +41,7 @@ import org.keycloak.util.JsonSerialization;
 
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 
@@ -108,7 +109,7 @@ public class ClientPublicKeyLoader implements PublicKeyLoader {
 
         keyWrapper.setAlgorithm(Algorithm.RS256);
         keyWrapper.setType(KeyType.RSA);
-        keyWrapper.setUse(KeyUse.SIG);
+        keyWrapper.setUses(Arrays.asList(KeyUse.SIG));
         String kid = null;
         if (encodedCertificate != null) {
             X509Certificate clientCert = KeycloakModelUtils.getCertificate(encodedCertificate);

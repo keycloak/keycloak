@@ -60,7 +60,7 @@ public class KeysMetadataRepresentation {
 
         private String publicKey;
         private String certificate;
-        private KeyUse use;
+        private List<KeyUse> uses;
 
         public String getProviderId() {
             return providerId;
@@ -126,12 +126,12 @@ public class KeysMetadataRepresentation {
             this.certificate = certificate;
         }
 
-        public KeyUse getUse() {
-            return use;
+        public List<KeyUse> getUses() {
+            return uses;
         }
 
-        public void setUse(KeyUse use) {
-            this.use = use;
+        public void setUses(List<KeyUse> uses) {
+            this.uses = uses;
         }
     }
 }

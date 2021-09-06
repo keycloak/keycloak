@@ -88,6 +88,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -332,7 +333,7 @@ public class TestingOIDCEndpointsApplicationResource {
                     String kid = KeyUtils.createKeyId(secretKey);
                     keyWrapper.setKid(kid);
                     keyWrapper.setAlgorithm(jwaAlgorithm);
-                    keyWrapper.setUse(KeyUse.SIG);
+                    keyWrapper.setUses(Arrays.asList(KeyUse.SIG));
                     keyWrapper.setType(KeyType.OCT);
                     signer = new MacSignatureSignerContext(keyWrapper);
                     clientData.setOidcRequest(new JWSBuilder().kid(kid).jsonContent(oidcRequest).sign(signer));

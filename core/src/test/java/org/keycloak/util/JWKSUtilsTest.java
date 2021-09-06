@@ -95,28 +95,28 @@ public class JWKSUtilsTest {
         KeyWrapper key = keyWrappersForUse.get(kidRsa1);
         assertNotNull(key);
         assertEquals("RS256", key.getAlgorithmOrDefault());
-        assertEquals(KeyUse.SIG, key.getUse());
+        assertTrue(key.getUses().contains(KeyUse.SIG));
         assertEquals(kidRsa1, key.getKid());
         assertEquals("RSA", key.getType());
 
          key = keyWrappersForUse.get(kidRsa2);
         assertNotNull(key);
         assertEquals("RS256", key.getAlgorithmOrDefault());
-        assertEquals(KeyUse.SIG, key.getUse());
+        assertTrue(key.getUses().contains(KeyUse.SIG));
         assertEquals(kidRsa2, key.getKid());
         assertEquals("RSA", key.getType());
 
         key = keyWrappersForUse.get(kidEC1);
         assertNotNull(key);
         assertEquals("ES384", key.getAlgorithmOrDefault());
-        assertEquals(KeyUse.SIG, key.getUse());
+        assertTrue(key.getUses().contains(KeyUse.SIG));
         assertEquals(kidEC1, key.getKid());
         assertEquals("EC", key.getType());
 
         key = keyWrappersForUse.get(kidEC2);
         assertNotNull(key);
         assertNull(key.getAlgorithmOrDefault());
-        assertEquals(KeyUse.SIG, key.getUse());
+        assertTrue(key.getUses().contains(KeyUse.SIG));
         assertEquals(kidEC2, key.getKid());
         assertEquals("EC", key.getType());
     }
