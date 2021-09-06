@@ -99,7 +99,7 @@ For more details on how to invoke on this endpoint, see https://datatracker.ietf
 /realms/{realm-name}/protocol/openid-connect/auth/device
 ....
 
-The device authorization endpoint is used to obtain a device code and a user code. It can only be invoked by confidential clients.
+The device authorization endpoint is used to obtain a device code and a user code. It can be invoked by confidential or public clients.
 
 For more details on how to invoke on this endpoint, see https://datatracker.ietf.org/doc/html/rfc8628[OAuth 2.0 Device Authorization Grant specification].
 
