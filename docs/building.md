@@ -5,7 +5,24 @@ Ensure you have JDK 8 (or newer), Maven 3.5.4 (or newer) and Git installed
     java -version
     mvn -version
     git --version
-    
+
+**NOTE**
+
+If you use Maven 3.8.1 or newer, please add the following mirror to your local
+`~/.m2/settings.xml` to avoid build errors:
+```
+<mirrors>
+  <mirror>
+    <id>jboss-public-repository-group-https</id>
+    <mirrorOf>jboss-public-repository-group</mirrorOf>
+    <name>Jboss public https</name>
+    <url>https://repository.jboss.org/nexus/content/groups/public/</url>
+  </mirror>
+</mirrors>
+```
+See [KEYCLOAK-17812](https://issues.redhat.com/browse/KEYCLOAK-17812) for more details.
+
+---    
 First clone the Keycloak repository:
     
     git clone https://github.com/keycloak/keycloak.git
