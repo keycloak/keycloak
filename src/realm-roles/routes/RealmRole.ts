@@ -1,5 +1,5 @@
 import type { LocationDescriptorObject } from "history";
-import { useRouteMatch } from "react-router-dom";
+import { generatePath } from "react-router";
 import type { RouteDef } from "../../route-config";
 import { RealmRoleTabs } from "../RealmRoleTabs";
 
@@ -24,9 +24,6 @@ export const RealmRoleRoute: RouteDef = {
 
 export const toRealmRole = (
   params: RealmRoleParams
-): LocationDescriptorObject => {
-  const { url } = useRouteMatch();
-  return {
-    pathname: `${url}/${params.id}/details`,
-  };
-};
+): LocationDescriptorObject => ({
+  pathname: generatePath(RealmRoleRoute.path, params),
+});

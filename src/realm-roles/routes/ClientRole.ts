@@ -3,11 +3,13 @@ import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
 import { RealmRoleTabs } from "../RealmRoleTabs";
 
+export type ClientRoleTab = "details" | "attributes" | "users-in-role";
+
 export type ClientRoleParams = {
   realm: string;
   clientId: string;
   id: string;
-  tab?: string;
+  tab?: ClientRoleTab;
 };
 
 export const ClientRoleRoute: RouteDef = {

@@ -13,6 +13,8 @@ import { emptyFormatter, upperCaseFormatter } from "../util";
 import { useRealm } from "../context/realm-context/RealmContext";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { HelpItem } from "../components/help-enabler/HelpItem";
+import { ClientParams, ClientRoute } from "../clients/routes/Client";
+import { toClientRole } from "./routes/ClientRole";
 import { toRealmRole } from "./routes/RealmRole";
 
 import "./RealmRolesSection.css";
@@ -41,9 +43,13 @@ type RoleLinkProps = {
 
 const RoleLink: FunctionComponent<RoleLinkProps> = ({ children, role }) => {
   const { realm } = useRealm();
+  const clientRouteMatch = useRouteMatch<ClientParams>(ClientRoute.path);
+  const to = clientRouteMatch
+    ? toClientRole({ ...clientRouteMatch.params, id: role.id!, tab: "details" })
+    : toRealmRole({ realm, id: role.id! });
 
   return (
-    <Link key={role.id} to={toRealmRole({ realm, id: role.id! })}>
+    <Link key={role.id} to={to}>
       {children}
     </Link>
   );
