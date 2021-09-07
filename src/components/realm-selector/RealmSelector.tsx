@@ -17,6 +17,7 @@ import { useHistory } from "react-router-dom";
 
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
+import { toDashboard } from "../../dashboard/routes/Dashboard";
 import { toAddRealm } from "../../realm/routes/AddRealm";
 import { toUpperCase } from "../../util";
 import { RecentUsed } from "./recent-used";
@@ -24,7 +25,7 @@ import { RecentUsed } from "./recent-used";
 import "./realm-selector.css";
 
 export const RealmSelector = () => {
-  const { realm, setRealm, realms } = useRealm();
+  const { realm, realms } = useRealm();
   const { whoAmI } = useWhoAmI();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -76,9 +77,8 @@ export const RealmSelector = () => {
   );
 
   const selectRealm = (realm: string) => {
-    setRealm(realm);
     setOpen(!open);
-    history.push(`/${realm}/`);
+    history.push(toDashboard({ realm }));
   };
 
   const dropdownItems = realms.map((r) => (

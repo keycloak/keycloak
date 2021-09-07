@@ -19,12 +19,13 @@ import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
+import { toDashboard } from "../../dashboard/routes/Dashboard";
 
 export const NewRealmForm = () => {
   const { t } = useTranslation("realm");
   const history = useHistory();
   const { refresh } = useWhoAmI();
-  const { refresh: realmRefresh, setRealm } = useRealm();
+  const { refresh: realmRefresh } = useRealm();
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
@@ -45,8 +46,7 @@ export const NewRealmForm = () => {
 
       refresh();
       await realmRefresh();
-      setRealm(realm.realm!);
-      history.push(`/${realm.realm}`);
+      history.push(toDashboard({ realm: realm.realm }));
     } catch (error) {
       addError("realm:saveRealmError", error);
     }

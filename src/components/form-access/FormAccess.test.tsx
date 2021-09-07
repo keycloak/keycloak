@@ -22,7 +22,6 @@ describe("FormAccess", () => {
         <RealmContext.Provider
           value={{
             realm,
-            setRealm: () => {},
             realms: [],
             refresh: () => Promise.resolve(),
           }}

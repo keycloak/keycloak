@@ -147,11 +147,7 @@ export const RealmSettingsTabs = ({
   const { t } = useTranslation("realm-settings");
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
-  const {
-    realm: realmName,
-    refresh: refreshRealm,
-    setRealm: setCurrentRealm,
-  } = useRealm();
+  const { realm: realmName, refresh: refreshRealm } = useRealm();
   const history = useHistory();
 
   const kpComponentTypes =
@@ -197,7 +193,6 @@ export const RealmSettingsTabs = ({
       const isRealmRenamed = realmName !== realm.realm;
       if (isRealmRenamed) {
         await refreshRealm();
-        setCurrentRealm(realm.realm!);
         history.push(toRealmSettings({ realm: realm.realm! }));
       }
       addAlert(t("saveSuccess"), AlertVariant.success);

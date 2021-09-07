@@ -47,7 +47,6 @@ export const MockAdminClient: FunctionComponent<{ mock?: object }> = (
             <RealmContext.Provider
               value={{
                 realm: "master",
-                setRealm: () => {},
                 realms: [],
                 refresh: () => Promise.resolve(),
               }}
