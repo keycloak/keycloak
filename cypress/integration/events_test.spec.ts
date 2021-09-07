@@ -13,7 +13,7 @@ const adminEventsTab = new AdminEventsTab();
 const realmSettingsPage = new RealmSettingsPage();
 const masthead = new Masthead();
 
-describe("Search events tests", function () {
+describe("Events tests", function () {
   describe("Search user events", function () {
     beforeEach(function () {
       keycloakBefore();
@@ -97,6 +97,23 @@ describe("Search events tests", function () {
 
     it("Check `search admin events` button enabled", () => {
       adminEventsTab.shouldHaveSearchBtnEnabled();
+    });
+  });
+
+  describe("Check more button opens auth and representation dialogs", function () {
+    beforeEach(function () {
+      keycloakBefore();
+      loginPage.logIn();
+      sidebarPage.goToEvents();
+      cy.getId("admin-events-tab").click();
+    });
+
+    it("Check auth dialog opens and is not empty", () => {
+      adminEventsTab.shouldCheckAuthDialogOpensAndIsNotEmpty();
+    });
+
+    it("Check representation dialog opens and is not empty", () => {
+      adminEventsTab.shouldCheckRepDialogOpensAndIsNotEmpty();
     });
   });
 });

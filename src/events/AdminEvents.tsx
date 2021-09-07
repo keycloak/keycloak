@@ -194,7 +194,6 @@ export const AdminEvents = () => {
       (value) => value !== "" || (Array.isArray(value) && value.length > 0)
     );
 
-    console.log(newFilters);
     setActiveFilters(newFilters);
     setKey(key + 1);
   }
@@ -534,15 +533,23 @@ export const AdminEvents = () => {
     );
   };
 
+  const rows = [
+    [t("realm"), authEvent?.authDetails?.realmId],
+    [t("client"), authEvent?.authDetails?.clientId],
+    [t("user"), authEvent?.authDetails?.userId],
+    [t("ipAddress"), authEvent?.authDetails?.ipAddress],
+  ];
+
   return (
     <>
       {authEvent && (
         <DisplayDialog titleKey="auth" onClose={() => setAuthEvent(undefined)}>
           <Table
             aria-label="authData"
+            data-testid="auth-dialog"
             variant={TableVariant.compact}
             cells={[t("attribute"), t("value")]}
-            rows={Object.entries(authEvent.authDetails!)}
+            rows={rows}
           >
             <TableHeader />
             <TableBody />
@@ -552,6 +559,7 @@ export const AdminEvents = () => {
       {representationEvent && (
         <DisplayDialog
           titleKey="representation"
+          data-testid="representation-dialog"
           onClose={() => setRepresentationEvent(undefined)}
         >
           some json from the changed values
