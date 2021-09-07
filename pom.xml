@@ -1745,7 +1745,7 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <configuration>
                         <forkMode>once</forkMode>
-                        <argLine>-Djava.awt.headless=true ${surefire.memory.settings}</argLine>
+                        <argLine>-Djava.awt.headless=true ${surefire.memory.settings} -Duser.language=en -Duser.region=US</argLine>
                         <runOrder>alphabetical</runOrder>
                     </configuration>
                 </plugin>
