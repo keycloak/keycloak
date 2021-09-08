@@ -28,7 +28,7 @@
     <form class="${properties.kcFormClass!}">
         <div class="${properties.kcFormGroupClass!}">
             <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                <input type="button" onclick="webAuthnAuthenticate()" value="${kcSanitize(msg("webauthn-doAuthenticate"))}"
+                <input id="authenticateWebAuthnButton" type="button" onclick="webAuthnAuthenticate()" value="${kcSanitize(msg("webauthn-doAuthenticate"))}"
                    class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}">
             </div>
         </div>

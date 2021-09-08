@@ -15,10 +15,11 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.pages.webauthn;
+package org.keycloak.testsuite.webauthn.pages;
 
-import org.junit.Assert;
+import org.hamcrest.CoreMatchers;
 import org.keycloak.testsuite.pages.AbstractPage;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.Alert;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
@@ -26,38 +27,42 @@ import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.time.Duration;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+
 /**
  * WebAuthnRegisterPage, which is displayed when WebAuthnRegister required action is triggered. It is useful with Chrome testing API.
- *
+ * <p>
  * Page will be displayed after successful JS call of "navigator.credentials.create", which will register WebAuthn credential
  * with the browser
  */
 public class WebAuthnRegisterPage extends AbstractPage {
 
-    // Available only with AIA
-    @FindBy(id = "registerWebAuthnAIA")
-    private WebElement registerAIAButton;
+    @FindBy(id = "registerWebAuthn")
+    private WebElement registerButton;
 
     // Available only with AIA
     @FindBy(id = "cancelWebAuthnAIA")
     private WebElement cancelAIAButton;
 
-    public void confirmAIA() {
-        Assert.assertTrue("It only works with AIA", isAIA());
-        registerAIAButton.click();
+    public void clickRegister() {
+        WaitUtils.waitUntilElement(registerButton).is().clickable();
+        registerButton.click();
     }
 
     public void cancelAIA() {
-        Assert.assertTrue("It only works with AIA", isAIA());
+        assertThat("It only works with AIA", isAIA(), CoreMatchers.is(true));
+        WaitUtils.waitUntilElement(cancelAIAButton).is().clickable();
         cancelAIAButton.click();
     }
 
     public void registerWebAuthnCredential(String authenticatorLabel) {
         // label edit after registering authenicator by .create()
-        WebDriverWait wait = new WebDriverWait(driver, 60);
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(60));
         Alert promptDialog = wait.until(ExpectedConditions.alertIsPresent());
 
-        Assert.assertEquals("Please input your registered authenticator's label", promptDialog.getText());
+        assertThat(promptDialog.getText(), CoreMatchers.is("Please input your registered authenticator's label"));
 
         promptDialog.sendKeys(authenticatorLabel);
         promptDialog.accept();
@@ -65,7 +70,7 @@ public class WebAuthnRegisterPage extends AbstractPage {
 
     private boolean isAIA() {
         try {
-            registerAIAButton.getText();
+            registerButton.getText();
             cancelAIAButton.getText();
             return true;
         } catch (NoSuchElementException e) {
@@ -74,13 +79,13 @@ public class WebAuthnRegisterPage extends AbstractPage {
     }
 
     public boolean isCurrent() {
-        if (isAIA()) {
-            return true;
+        try {
+            registerButton.getText();
+            return driver.getPageSource().contains("navigator.credentials.create");
+        } catch (NoSuchElementException e) {
+            return false;
         }
-        // Cant verify the page in case that prompt is shown. Prompt is shown immediately when WebAuthnRegisterPage is displayed
-        throw new UnsupportedOperationException();
     }
-
 
     @Override
     public void open() {

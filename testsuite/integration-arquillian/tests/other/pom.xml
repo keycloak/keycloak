@@ -161,6 +161,12 @@
                 <module>springboot-tests</module>
             </modules>
         </profile>
+        <profile>
+            <id>webauthn</id>
+            <modules>
+                <module>webauthn</module>
+            </modules>
+        </profile>
     </profiles>
 
 </project>

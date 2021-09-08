@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,22 +15,22 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.pages.webauthn;
-
-import org.keycloak.testsuite.pages.LanguageComboboxAwarePage;
+package org.keycloak.testsuite.webauthn;
 
 /**
- * Page shown during WebAuthn login. Page is useful with Chrome testing API
+ * Interface for test classes which use Virtual Authenticators
+ *
+ * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
-public class WebAuthnLoginPage extends LanguageComboboxAwarePage {
+public interface UseVirtualAuthenticators {
 
-    public boolean isCurrent() {
-        return driver.getPageSource().contains("navigator.credentials.get");
-    }
+    /**
+     * Set up Virtual Authenticator in @Before method for each test method
+     */
+    void setUpVirtualAuthenticator();
 
-    @Override
-    public void open() {
-        throw new UnsupportedOperationException();
-    }
-
+    /**
+     * Remove Virtual Authenticator in @After method for each test method
+     */
+    void removeVirtualAuthenticator();
 }
