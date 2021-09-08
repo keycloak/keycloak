@@ -1,0 +1,22 @@
+name: Publish package
+on:
+  push:
+    branches: [master]
+defaults:
+  run:
+    working-directory: keycloak-theme
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions: 
+      contents: read
+      packages: write 
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v2
+        with:
+          java-version: 11
+          distribution: adopt
+      - run: mvn --batch-mode deploy
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

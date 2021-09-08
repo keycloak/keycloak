@@ -20,7 +20,7 @@
 
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-admin-ui</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>16.0.0-SNAPSHOT</version>
     <name>Keycloak Administration UI</name>
 
     <licenses>
@@ -31,15 +31,13 @@
         </license>
     </licenses>
 
-    <repositories>
+    <distributionManagement>
         <repository>
-            <id>jboss</id>
-            <url>https://repository.jboss.org/nexus/content/groups/public/</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/keycloak/keycloak-admin-ui</url>
         </repository>
-    </repositories>
+    </distributionManagement>
 
     <build>
         <plugins>
