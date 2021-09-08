@@ -25,8 +25,9 @@ module.exports = {
     // Prefer using an optional chain expression, as it's more concise and easier to read.
     "@typescript-eslint/prefer-optional-chain": "error",
     "no-unused-vars": "off",
-    "@typescript-eslint/no-unused-vars": "error",
     "@typescript-eslint/no-empty-function": "error",
+    "@typescript-eslint/no-unnecessary-condition": "warn",
+    "@typescript-eslint/no-unused-vars": "error",
     // react/prop-types cannot handle generic props, so we need to disable it.
     // https://github.com/yannickcr/eslint-plugin-react/issues/2777#issuecomment-814968432
     "react/prop-types": "off",
