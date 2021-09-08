@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { useHistory, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Controller, FormProvider, useForm } from "react-hook-form";
@@ -33,12 +33,22 @@ import { OIDCGeneralSettings } from "./OIDCGeneralSettings";
 import { SamlGeneralSettings } from "./SamlGeneralSettings";
 import { OIDCAuthentication } from "./OIDCAuthentication";
 import { ReqAuthnConstraints } from "./ReqAuthnConstraintsSettings";
+import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
+import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
+import type IdentityProviderMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperRepresentation";
 
 type HeaderProps = {
   onChange: (value: boolean) => void;
   value: boolean;
   save: () => void;
   toggleDeleteDialog: () => void;
+};
+
+type IdPWithMapperAttributes = IdentityProviderMapperRepresentation & {
+  name: string;
+  category?: string;
+  helpText?: string;
+  type: string;
 };
 
 const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
@@ -86,9 +96,8 @@ export const DetailSettings = () => {
   const { providerId, alias } =
     useParams<{ providerId: string; alias: string }>();
 
-  const [provider, setProvider] = useState<IdentityProviderRepresentation>();
   const form = useForm<IdentityProviderRepresentation>();
-  const { handleSubmit, setValue, getValues, reset } = form;
+  const { handleSubmit, getValues, reset } = form;
 
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
@@ -97,11 +106,8 @@ export const DetailSettings = () => {
 
   useFetch(
     () => adminClient.identityProviders.findOne({ alias: alias }),
-    (provider) => {
-      if (provider) {
-        setProvider(provider);
-        Object.entries(provider).map((entry) => setValue(entry[0], entry[1]));
-      }
+    (fetchedProvider) => {
+      reset(fetchedProvider);
     },
     []
   );
@@ -113,7 +119,6 @@ export const DetailSettings = () => {
         { alias },
         { ...p, alias, providerId }
       );
-      setProvider(p);
       addAlert(t("updateSuccess"), AlertVariant.success);
     } catch (error) {
       addError("identity-providers:updateError", error);
@@ -140,6 +145,30 @@ export const DetailSettings = () => {
 
   const isOIDC = providerId.includes("oidc");
   const isSAML = providerId.includes("saml");
+
+  const loader = async () => {
+    const [loaderMappers, loaderMapperTypes] = await Promise.all([
+      adminClient.identityProviders.findMappers({ alias }),
+      adminClient.identityProviders.findMapperTypes({ alias }),
+    ]);
+
+    const components = loaderMappers.map((loaderMapper) => {
+      const mapperType = Object.values(loaderMapperTypes).find(
+        (loaderMapperType) =>
+          loaderMapper.identityProviderMapper! === loaderMapperType.id!
+      );
+
+      const result: IdPWithMapperAttributes = {
+        ...mapperType,
+        name: loaderMapper.name!,
+        type: mapperType?.name!,
+      };
+
+      return result;
+    });
+
+    return components;
+  };
 
   if (isOIDC) {
     sections.splice(1, 0, t("oidcSettings"));
@@ -222,7 +251,7 @@ export const DetailSettings = () => {
                       data-testid={"revert"}
                       variant="link"
                       onClick={() => {
-                        reset(provider);
+                        reset();
                       }}
                     >
                       {t("common:revert")}
@@ -230,6 +259,39 @@ export const DetailSettings = () => {
                   </ActionGroup>
                 </FormAccess>
               </ScrollForm>
+            </Tab>
+            <Tab
+              id="mappers"
+              eventKey="mappers"
+              title={<TabTitleText>{t("common:mappers")}</TabTitleText>}
+            >
+              <KeycloakDataTable
+                emptyState={
+                  <ListEmptyState
+                    message={t("identity-providers:noMappers")}
+                    instructions={t("identity-providers:noMappersInstructions")}
+                    primaryActionText={t("identity-providers:addMapper")}
+                  />
+                }
+                loader={loader}
+                isPaginated
+                ariaLabelKey="identity-providers:mappersList"
+                searchPlaceholderKey="identity-providers:searchForMapper"
+                columns={[
+                  {
+                    name: "name",
+                    displayKey: "common:name",
+                  },
+                  {
+                    name: "category",
+                    displayKey: "common:category",
+                  },
+                  {
+                    name: "type",
+                    displayKey: "common:type",
+                  },
+                ]}
+              />
             </Tab>
           </KeycloakTabs>
         </FormProvider>

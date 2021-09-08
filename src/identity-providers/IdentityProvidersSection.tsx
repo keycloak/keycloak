@@ -75,7 +75,7 @@ export const IdentityProvidersSection = () => {
       key={identityProvider.providerId}
       to={toIdentityProviderTab({
         realm,
-        providerId: identityProvider.providerId!,
+        providerId: identityProvider.providerId,
         alias: identityProvider.alias!,
       })}
     >

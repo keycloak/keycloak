@@ -5,6 +5,12 @@ export default {
     searchForProvider: "Search for provider",
     provider: "Provider details",
     addProvider: "Add provider",
+    addMapper: "Add mapper",
+    mappersList: "Mappers list",
+    noMappers: "No Mappers",
+    noMappersInstructions:
+      "There are currently no mappers for this identity provider.",
+    searchForMapper: "Search for mapper",
     addKeycloakOpenIdProvider: "Add Keycloak OpenID Connect provider",
     addOpenIdProvider: "Add OpenID Connect provider",
     addSamlProvider: "Add SAML provider",
