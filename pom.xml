@@ -775,7 +775,7 @@
             <dependency>
                 <groupId>${ee.maven.groupId}</groupId>
                 <artifactId>wildfly-ee-galleon-pack</artifactId>
-                <version>${wildfly.version}</version>
+                <version>${ee.maven.version}</version>
                 <type>zip</type>
             </dependency>
             <dependency>
