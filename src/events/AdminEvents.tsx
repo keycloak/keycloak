@@ -24,9 +24,10 @@ import {
   TableHeader,
   TableVariant,
 } from "@patternfly/react-table";
+import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import type AdminEventRepresentation from "@keycloak/keycloak-admin-client/lib/defs/adminEventRepresentation";
 import moment from "moment";
-import React, { FunctionComponent, useState } from "react";
+import React, { FunctionComponent, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -540,6 +541,24 @@ export const AdminEvents = () => {
     [t("ipAddress"), authEvent?.authDetails?.ipAddress],
   ];
 
+  function prettyPrintJSON(json: string) {
+    try {
+      return JSON.stringify(JSON.parse(json), null, 2);
+    } catch (error) {
+      return json;
+    }
+  }
+
+  const code = useMemo(
+    () =>
+      prettyPrintJSON(
+        representationEvent?.representation
+          ? prettyPrintJSON(representationEvent.representation)
+          : ""
+      ),
+    [representationEvent?.representation]
+  );
+
   return (
     <>
       {authEvent && (
@@ -562,7 +581,13 @@ export const AdminEvents = () => {
           data-testid="representation-dialog"
           onClose={() => setRepresentationEvent(undefined)}
         >
-          some json from the changed values
+          <CodeEditor
+            isLineNumbersVisible
+            isReadOnly
+            code={code}
+            language={Language.json}
+            height="125px"
+          />
         </DisplayDialog>
       )}
       <KeycloakDataTable

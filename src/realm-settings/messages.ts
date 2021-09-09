@@ -190,6 +190,18 @@ export default {
     emailVerification: "Email Verification",
     idpAccountEmailVerification: "IdP account email verification",
     executeActions: "Execute actions",
+    clientPolicies: "Client policies",
+    profiles: "Profiles",
+    policies: "Policies",
+    clientPoliciesProfilesHelpText:
+      "Client Profile allows to setup set of executors, which are enforced for various actions done with the client. Actions can be admin actions like creating or updating client, or user actions like authentication to the client.",
+    clientPoliciesProfiles: "Client Policies Profiles",
+    clientPoliciesPoliciesHelpText:
+      "Client Policy allows to bind client profiles with various conditions to specify when exactly is enforced behavior specified by executors of the particular client profile.",
+    clientPoliciesPolicies: "Client Policies Policies",
+    clientPoliciesTab: "Client policies tab",
+    clientProfilesSubTab: "Client profiles subtab",
+    clientPoliciesSubTab: "Client policies subtab",
     tokens: "Tokens",
     key: "Key",
     value: "Value",

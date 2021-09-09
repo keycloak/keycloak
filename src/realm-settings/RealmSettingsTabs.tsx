@@ -41,9 +41,12 @@ import { SecurityDefences } from "./security-defences/SecurityDefences";
 import { RealmSettingsSessionsTab } from "./SessionsTab";
 import { RealmSettingsThemesTab } from "./ThemesTab";
 import { RealmSettingsTokensTab } from "./TokensTab";
+import { ProfilesTab } from "./ProfilesTab";
+import { PoliciesTab } from "./PoliciesTab";
 import { PartialImportDialog } from "./PartialImport";
 import { toRealmSettings } from "./routes/RealmSettings";
 import { LocalizationTab } from "./LocalizationTab";
+import { HelpItem } from "../components/help-enabler/HelpItem";
 
 type RealmSettingsHeaderProps = {
   onChange: (value: boolean) => void;
@@ -344,6 +347,66 @@ export const RealmSettingsTabs = ({
                 realm={realm}
                 reset={() => resetForm(realm)}
               />
+            </Tab>
+            <Tab
+              eventKey="clientPolicies"
+              title={
+                <TabTitleText>
+                  {t("realm-settings:clientPolicies")}
+                </TabTitleText>
+              }
+              data-testid="rs-clientPolicies-tab"
+              aria-label={t("clientPoliciesTab")}
+            >
+              <Tabs
+                activeKey={activeTab}
+                onSelect={(_, key) => setActiveTab(Number(key))}
+              >
+                <Tab
+                  id="profiles"
+                  eventKey={0}
+                  data-testid="rs-profiles-clientPolicies-tab"
+                  aria-label={t("clientProfilesSubTab")}
+                  title={
+                    <TabTitleText>
+                      {t("profiles")}
+                      <span className="kc-help-text">
+                        <HelpItem
+                          helpText={t("clientPoliciesProfilesHelpText")}
+                          forLabel={t("clientPoliciesProfiles")}
+                          forID={t(`common:helpLabel`, {
+                            label: t("clientPoliciesProfiles"),
+                          })}
+                        />
+                      </span>
+                    </TabTitleText>
+                  }
+                >
+                  <ProfilesTab />
+                </Tab>
+                <Tab
+                  id="policies"
+                  data-testid="rs-policies-clientPolicies-tab"
+                  aria-label={t("clientPoliciesSubTab")}
+                  eventKey={1}
+                  title={
+                    <TabTitleText>
+                      {t("policies")}
+                      <span className="kc-help-text">
+                        <HelpItem
+                          helpText={t("clientPoliciesPoliciesHelpText")}
+                          forLabel={t("clientPoliciesPolicies")}
+                          forID={t(`common:helpLabel`, {
+                            label: t("clientPoliciesPolicies"),
+                          })}
+                        />
+                      </span>
+                    </TabTitleText>
+                  }
+                >
+                  <PoliciesTab />
+                </Tab>
+              </Tabs>
             </Tab>
           </KeycloakTabs>
         </FormProvider>
