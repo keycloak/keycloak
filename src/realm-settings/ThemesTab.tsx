@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, useFormContext, useWatch } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form";
 import {
   ActionGroup,
   Button,
@@ -9,7 +9,6 @@ import {
   Select,
   SelectOption,
   SelectVariant,
-  Switch,
 } from "@patternfly/react-core";
 
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
@@ -20,13 +19,11 @@ import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 type RealmSettingsThemesTabProps = {
   save: (realm: RealmRepresentation) => void;
   reset: () => void;
-  realm: RealmRepresentation;
 };
 
 export const RealmSettingsThemesTab = ({
   save,
   reset,
-  realm,
 }: RealmSettingsThemesTabProps) => {
   const { t } = useTranslation("realm-settings");
 
@@ -35,24 +32,8 @@ export const RealmSettingsThemesTab = ({
   const [adminConsoleThemeOpen, setAdminConsoleThemeOpen] = useState(false);
   const [emailThemeOpen, setEmailThemeOpen] = useState(false);
 
-  const [supportedLocalesOpen, setSupportedLocalesOpen] = useState(false);
-  const [defaultLocaleOpen, setDefaultLocaleOpen] = useState(false);
-
   const { control, handleSubmit } = useFormContext();
-
   const themeTypes = useServerInfo().themes!;
-
-  const watchSupportedLocales = useWatch({
-    control,
-    name: "supportedLocales",
-    defaultValue: themeTypes?.account![0].locales,
-  });
-
-  const internationalizationEnabled = useWatch({
-    control,
-    name: "internationalizationEnabled",
-    defaultValue: realm?.internationalizationEnabled,
-  });
 
   return (
     <PageSection variant="light">
@@ -236,118 +217,6 @@ export const RealmSettingsThemesTab = ({
             )}
           />
         </FormGroup>
-        <FormGroup
-          label={t("internationalization")}
-          fieldId="kc-internationalization"
-        >
-          <Controller
-            name="internationalizationEnabled"
-            control={control}
-            defaultValue={false}
-            render={({ onChange, value }) => (
-              <Switch
-                id="kc-t-internationalization"
-                label={t("common:enabled")}
-                labelOff={t("common:disabled")}
-                isChecked={value}
-                data-testid={
-                  value
-                    ? "internationalization-enabled"
-                    : "internationalization-disabled"
-                }
-                onChange={onChange}
-              />
-            )}
-          />
-        </FormGroup>
-        {internationalizationEnabled && (
-          <>
-            <FormGroup
-              label={t("supportedLocales")}
-              fieldId="kc-t-supported-locales"
-            >
-              <Controller
-                name="supportedLocales"
-                control={control}
-                defaultValue={themeTypes?.account![0].locales}
-                render={({ value, onChange }) => (
-                  <Select
-                    toggleId="kc-t-supported-locales"
-                    onToggle={() => {
-                      setSupportedLocalesOpen(!supportedLocalesOpen);
-                    }}
-                    onSelect={(_, v) => {
-                      const option = v as string;
-                      if (!value) {
-                        onChange([option]);
-                      } else if (value!.includes(option)) {
-                        onChange(
-                          value.filter((item: string) => item !== option)
-                        );
-                      } else {
-                        onChange([...value, option]);
-                      }
-                    }}
-                    onClear={() => {
-                      onChange([]);
-                    }}
-                    selections={value}
-                    variant={SelectVariant.typeaheadMulti}
-                    aria-label={t("supportedLocales")}
-                    isOpen={supportedLocalesOpen}
-                    placeholderText={"Select locales"}
-                  >
-                    {themeTypes?.login![0].locales.map(
-                      (locale: string, idx: number) => (
-                        <SelectOption
-                          selected={true}
-                          key={`locale-${idx}`}
-                          value={locale}
-                        >
-                          {t(`allSupportedLocales.${locale}`)}
-                        </SelectOption>
-                      )
-                    )}
-                  </Select>
-                )}
-              />
-            </FormGroup>
-            <FormGroup label={t("defaultLocale")} fieldId="kc-default-locale">
-              <Controller
-                name="defaultLocale"
-                control={control}
-                defaultValue=""
-                render={({ onChange, value }) => (
-                  <Select
-                    toggleId="kc-t-default-locale"
-                    onToggle={() => setDefaultLocaleOpen(!defaultLocaleOpen)}
-                    onSelect={(_, value) => {
-                      onChange(value as string);
-                      setDefaultLocaleOpen(false);
-                    }}
-                    selections={value && t(`allSupportedLocales.${value}`)}
-                    variant={SelectVariant.single}
-                    aria-label={t("defaultLocale")}
-                    isOpen={defaultLocaleOpen}
-                    placeholderText="Select one"
-                    data-testid="select-default-locale"
-                  >
-                    {watchSupportedLocales.map(
-                      (locale: string, idx: number) => (
-                        <SelectOption
-                          key={`default-locale-${idx}`}
-                          value={locale}
-                        >
-                          {t(`allSupportedLocales.${locale}`)}
-                        </SelectOption>
-                      )
-                    )}
-                  </Select>
-                )}
-              />
-            </FormGroup>
-          </>
-        )}
         <ActionGroup>
           <Button variant="primary" type="submit" data-testid="themes-tab-save">
             {t("common:save")}
