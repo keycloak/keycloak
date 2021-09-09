@@ -76,7 +76,7 @@
     "mutationobserver-shim": "^0.3.7",
     "postcss": "^8.3.6",
     "postcss-import": "^14.0.2",
-    "prettier": "^2.3.2",
+    "prettier": "^2.4.0",
     "snowpack": "^3.8.2",
     "ts-jest": "^26.5.6",
     "ts-node": "^10.2.1",
