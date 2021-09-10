@@ -60,9 +60,11 @@ export default {
     scopeParameter:
       "You can copy/paste this value of scope parameter and use it in initial OpenID Connect Authentication Request sent from this client adapter. Default client scopes and selected optional client scopes will be used when generating token issued for this client",
     user: "Optionally select user, for whom the example access token will be generated. If you do not select a user, example access token will not be generated during evaluation",
-    notBefore: "Revoke any tokens issued before this date for this client.",
+    notBefore:
+      "Revoke any tokens issued before this time for this client. To push the policy, you should set an effective admin URL in the Settings tab first.",
     notBeforeIntro:
       "In order to successfully push a revocation policy to the client, you need to set an Admin URL under the <1>Settings</1> tab for this client first",
+    notBeforeTooltip: "The admin URL should be set in the Settings tab first.",
     nodeReRegistrationTimeout:
       "Interval to specify max time for registered clients cluster nodes to re-register. If cluster node will not send re-registration request to Keycloak within this time, it will be unregistered from Keycloak",
     fineGrainOpenIdConnectConfiguration:

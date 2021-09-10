@@ -120,18 +120,6 @@ describe("Clients test", function () {
       new AdminClient().deleteClient(client);
     });
 
-    it("Revocation", () => {
-      advancedTab.checkNone();
-
-      advancedTab.clickSetToNow().checkSetToNow();
-      advancedTab.clickClear().checkNone();
-
-      advancedTab.clickPush();
-      masthead.checkNotificationMessage(
-        "No push sent. No admin URI configured or no registered cluster nodes available"
-      );
-    });
-
     it("Clustering", () => {
       advancedTab.expandClusterNode();
 

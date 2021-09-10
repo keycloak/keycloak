@@ -5,17 +5,19 @@ import {
   ButtonVariant,
   ExpandableSection,
   FormGroup,
+  InputGroup,
   PageSection,
   Split,
   SplitItem,
   Text,
   TextInput,
   ToolbarItem,
+  Tooltip,
 } from "@patternfly/react-core";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type GlobalRequestResult from "@keycloak/keycloak-admin-client/lib/defs/globalRequestResult";
 import moment from "moment";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -52,6 +54,7 @@ export const AdvancedTab = ({
     attributes,
     protocol,
     authenticationFlowBindingOverrides,
+    adminUrl,
   },
 }: AdvancedProps) => {
   const { t } = useTranslation("clients");
@@ -68,6 +71,7 @@ export const AdvancedTab = ({
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
   const [nodes, setNodes] = useState(registeredNodes || {});
+  const pushRevocationButtonRef = useRef<HTMLElement>();
 
   const setNotBefore = (time: number, messageKey: string) => {
     setValue(revocationFieldName, time);
@@ -199,34 +203,48 @@ export const AdvancedTab = ({
                 />
               }
             >
-              <TextInput
-                type="text"
-                id="kc-not-before"
-                name="notBefore"
-                isReadOnly
-                value={formatDate()}
-              />
+              <InputGroup>
+                <TextInput
+                  type="text"
+                  id="kc-not-before"
+                  name="notBefore"
+                  isReadOnly
+                  value={formatDate()}
+                />
+                <Button
+                  id="setToNow"
+                  variant="control"
+                  onClick={() => {
+                    setNotBefore(moment.now() / 1000, "notBeforeSetToNow");
+                  }}
+                >
+                  {t("setToNow")}
+                </Button>
+                <Button
+                  id="clear"
+                  variant="control"
+                  onClick={() => {
+                    setNotBefore(0, "notBeforeNowClear");
+                  }}
+                >
+                  {t("clear")}
+                </Button>
+              </InputGroup>
             </FormGroup>
             <ActionGroup>
+              {!adminUrl && (
+                <Tooltip
+                  reference={pushRevocationButtonRef}
+                  content={t("clients-help:notBeforeTooltip")}
+                />
+              )}
               <Button
-                id="setToNow"
-                variant="tertiary"
-                onClick={() => {
-                  setNotBefore(moment.now() / 1000, "notBeforeSetToNow");
-                }}
+                id="push"
+                variant="secondary"
+                onClick={push}
+                isAriaDisabled={!adminUrl}
+                ref={pushRevocationButtonRef}
               >
-                {t("setToNow")}
-              </Button>
-              <Button
-                id="clear"
-                variant="tertiary"
-                onClick={() => {
-                  setNotBefore(0, "notBeforeNowClear");
-                }}
-              >
-                {t("clear")}
-              </Button>
-              <Button id="push" variant="secondary" onClick={push}>
                 {t("push")}
               </Button>
             </ActionGroup>
