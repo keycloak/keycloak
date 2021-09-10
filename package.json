@@ -24,7 +24,7 @@
     "prepare": "husky install"
   },
   "dependencies": {
-    "@keycloak/keycloak-admin-client": "^16.0.0-dev.10",
+    "@keycloak/keycloak-admin-client": "^16.0.0-dev.11",
     "@patternfly/patternfly": "^4.132.2",
     "@patternfly/react-code-editor": "^4.3.42",
     "@patternfly/react-core": "4.152.4",
