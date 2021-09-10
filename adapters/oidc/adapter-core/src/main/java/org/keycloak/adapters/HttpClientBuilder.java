@@ -18,17 +18,23 @@
 package org.keycloak.adapters;
 
 import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthSchemeProvider;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.config.Lookup;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
+import org.apache.http.conn.ssl.BrowserCompatHostnameVerifier;
 import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.impl.client.DefaultClientConnectionReuseStrategy;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
@@ -105,6 +111,9 @@ public class HttpClientBuilder {
     protected long establishConnectionTimeout = -1;
     protected TimeUnit establishConnectionTimeoutUnits = TimeUnit.MILLISECONDS;
     protected HttpHost proxyHost;
+
+    protected Lookup<AuthSchemeProvider> authSchemeProvider = null;
+    protected CredentialsProvider credentialsProvider = null;
 
 
     /**
@@ -198,28 +207,21 @@ public class HttpClientBuilder {
         return this;
     }
 
+    public HttpClientBuilder authSchemeProvider(Lookup<AuthSchemeProvider> provider) {
+        this.authSchemeProvider = provider;
+        return this;
+    }
+
+    public HttpClientBuilder credentialsProvider(CredentialsProvider credentialsProvider) {
+        this.credentialsProvider = credentialsProvider;
+        return this;
+    }
+
     public HttpClient build() {
-        HostnameVerifier verifier = getHostnameVerifier();
+        this.verifier = getHostnameVerifier();
 
         try {
-            SSLConnectionSocketFactory sslCSF;
-            SSLContext theContext = sslContext;
-            if (disableTrustManager) {
-                theContext = SSLContext.getInstance(SSLConnectionSocketFactory.TLS);
-                theContext.init(null, new TrustManager[]{new PassthroughTrustManager()},
-                        new SecureRandom());
-                verifier = new DefaultHostnameVerifier();
-                sslCSF = new SSLConnectionSocketFactory(theContext, verifier);
-            } else if (theContext != null) {
-                sslCSF = new SSLConnectionSocketFactory(theContext, verifier);
-            } else if (clientKeyStore != null || truststore != null) {
-                theContext = createSslContext(SSLConnectionSocketFactory.TLS, clientKeyStore, clientPrivateKeyPassword, truststore, null);
-                sslCSF = new SSLConnectionSocketFactory(theContext, verifier);
-            } else {
-                final SSLContext tlsContext = SSLContext.getInstance(SSLConnectionSocketFactory.TLS);
-                tlsContext.init(null, null, null);
-                sslCSF = new SSLConnectionSocketFactory(tlsContext, verifier);
-            }
+            SSLConnectionSocketFactory sslCSF = getSslConnectionSocketFactory();
 
             Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
                     .register("http", PlainConnectionSocketFactory.getSocketFactory())
@@ -237,7 +239,9 @@ public class HttpClientBuilder {
                 cm = new BasicHttpClientConnectionManager(registry);
             }
 
-            RequestConfig.Builder requestConfigBuilder = RequestConfig.custom().setCookieSpec(CookieSpecs.DEFAULT);
+            RequestConfig.Builder requestConfigBuilder = RequestConfig.custom()
+                    .setCookieSpec(CookieSpecs.DEFAULT)
+                    .setRedirectsEnabled(true);
 
             if (proxyHost != null) {
                 requestConfigBuilder.setProxy(proxyHost);
@@ -254,6 +258,7 @@ public class HttpClientBuilder {
             org.apache.http.impl.client.HttpClientBuilder builder = HttpClients.custom()
                     .setDefaultRequestConfig(requestConfigBuilder.build())
                     .setSSLSocketFactory(sslCSF)
+                    .setConnectionReuseStrategy(DefaultClientConnectionReuseStrategy.INSTANCE)
                     .setConnectionManager(cm)
                     .setMaxConnTotal(connectionPoolSize)
                     .setMaxConnPerRoute(maxPooledPerRoute)
@@ -261,6 +266,14 @@ public class HttpClientBuilder {
 
             if (disableCookieCache) {
                 builder.setDefaultCookieStore(new EmptyCookieStore());
+            }
+
+            if (authSchemeProvider != null) {
+                builder.setDefaultAuthSchemeRegistry(authSchemeProvider);
+            }
+
+            if (credentialsProvider != null) {
+                builder.setDefaultCredentialsProvider(credentialsProvider);
             }
 
             return builder.build();
@@ -374,13 +387,40 @@ public class HttpClientBuilder {
         if (this.verifier != null) {
             return this.verifier;
         } else {
+            final boolean isEAP6 = System.getProperty("app.server", "").startsWith("eap6");
+
             switch (policy) {
                 case ANY:
-                    return new NoopHostnameVerifier();
+                    return isEAP6 ? new AllowAllHostnameVerifier() : new NoopHostnameVerifier();
                 case DEFAULT:
-                    return new DefaultHostnameVerifier();
+                    return isEAP6 ? new BrowserCompatHostnameVerifier() : new DefaultHostnameVerifier();
             }
         }
         return null;
+    }
+
+    /**
+     * Get SSL Connection Socket factory
+     *
+     * @return SSLConnectionSocketFactory factory
+     */
+    private SSLConnectionSocketFactory getSslConnectionSocketFactory() throws NoSuchAlgorithmException, KeyManagementException, UnrecoverableKeyException, KeyStoreException {
+        SSLContext theContext = sslContext;
+        if (disableTrustManager) {
+            theContext = SSLContext.getInstance(SSLConnectionSocketFactory.TLS);
+            theContext.init(null, new TrustManager[]{new PassthroughTrustManager()},
+                    new SecureRandom());
+            verifier = new DefaultHostnameVerifier();
+            return new SSLConnectionSocketFactory(theContext, verifier);
+        } else if (theContext != null) {
+            return new SSLConnectionSocketFactory(theContext, verifier);
+        } else if (clientKeyStore != null || truststore != null) {
+            theContext = createSslContext(SSLConnectionSocketFactory.TLS, clientKeyStore, clientPrivateKeyPassword, truststore, null);
+            return new SSLConnectionSocketFactory(theContext, verifier);
+        } else {
+            final SSLContext tlsContext = SSLContext.getInstance(SSLConnectionSocketFactory.TLS);
+            tlsContext.init(null, null, null);
+            return new SSLConnectionSocketFactory(tlsContext, verifier);
+        }
     }
 }
