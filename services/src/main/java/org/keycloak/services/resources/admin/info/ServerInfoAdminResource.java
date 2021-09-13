@@ -203,7 +203,6 @@ public class ServerInfoAdminResource {
         if (filterAccountV2 || filterAdminV2) {
             filteredNames.remove("keycloak.v2");
             filteredNames.remove("rh-sso.v2");
-            return filteredNames;
         }
         
         return filteredNames;
