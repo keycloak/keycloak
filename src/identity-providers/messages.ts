@@ -6,6 +6,7 @@ export default {
     provider: "Provider details",
     addProvider: "Add provider",
     addMapper: "Add mapper",
+    addIdPMapper: "Add Identity Provider Mapper",
     mappersList: "Mappers list",
     noMappers: "No Mappers",
     noMappersInstructions:
@@ -16,8 +17,11 @@ export default {
     addSamlProvider: "Add SAML provider",
     manageDisplayOrder: "Manage display order",
     deleteProvider: "Delete provider?",
+    deleteProviderMapper: "Delete mapper?",
     deleteConfirm:
       "Are you sure you want to permanently delete the provider '{{provider}}'",
+    deleteMapperConfirm:
+      "Are you sure you want to permanently delete the mapper '{{mapper}}'",
     deletedSuccess: "Provider successfully deleted",
     deleteError: "Could not delete the provider {{error}}",
     disableProvider: "Disable provider?",
@@ -135,9 +139,27 @@ export default {
     postBrokerLoginFlowAlias: "Post login flow",
     syncMode: "Sync mode",
     syncModes: {
+      inherit: "Inherit",
       import: "Import",
       legacy: "Legacy",
       force: "Force",
     },
+    mapperTypes: {
+      advancedAttributeToRole: "Advanced Attribute To Role",
+      usernameTemplateImporter: "Username Template Importer",
+      hardcodedUserSessionAttribute: "Hardcoded User Session Attribute",
+      attributeImporter: "Attribute Importer",
+      hardcodedRole: "Hardcoded Role",
+      hardcodedAttribute: "Hardcoded Attribute",
+      samlAttributeToRole: "SAML Attribute To Role",
+    },
+    syncModeOverride: "Sync mode override",
+    mapperType: "Mapper type",
+    regexAttributeValues: "Regex Attribute Values",
+    selectRole: "Select role",
+    mapperCreateSuccess: "Mapper created successfully.",
+    mapperCreateError: "Error creating mapper.",
+    userSessionAttribute: "User Session Attribute",
+    userSessionAttributeValue: "User Session Attribute Value",
   },
 };

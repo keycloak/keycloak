@@ -31,6 +31,7 @@ import { HelpItem } from "../help-enabler/HelpItem";
 
 export type ViewHeaderProps = {
   titleKey: string;
+  className?: string;
   badges?: ViewHeaderBadge[];
   isDropdownDisabled?: boolean;
   subKey?: string | ReactNode;
@@ -53,6 +54,7 @@ export type ViewHeaderBadge = {
 
 export const ViewHeader = ({
   actionsDropdownId,
+  className,
   titleKey,
   badges,
   isDropdownDisabled,
@@ -87,7 +89,9 @@ export const ViewHeader = ({
             <Level>
               <LevelItem>
                 <TextContent className="pf-u-mr-sm">
-                  <Text component="h1">{t(titleKey)}</Text>
+                  <Text className={className} component="h1">
+                    {t(titleKey)}
+                  </Text>
                 </TextContent>
               </LevelItem>
               {badges && (

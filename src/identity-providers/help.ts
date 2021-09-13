@@ -102,5 +102,17 @@ export default {
       'Specifies the comparison method used to evaluate the requested context classes or statements. The default is "Exact".',
     authnContextClassRefs: "Ordered list of requested AuthnContext ClassRefs.",
     authnContextDeclRefs: "Ordered list of requested AuthnContext DeclRefs.",
+    addIdpMapperName: "Name of the mapper.",
+    syncModeOverride:
+      "Overrides the default sync mode of the IDP for this mapper. Values are: 'legacy' to keep the behaviour before this option was introduced, 'import' to only import the user once during first login of the user with this identity provider, 'force' to always update the user during every login with this identity provider and 'inherit' to use the sync mode defined in the identity provider for this mapper.",
+    mapperType:
+      "If the set of attributes exists and can be matched, grant the user the specified realm or client role.",
+    attributes:
+      "Name and (regex) value of the attributes to search for in token. The configured name of an attribute is searched in SAML attribute name and attribute friendly name fields. Every given attribute description must be met to set the role. If the attribute is an array, then the value must be contained in the array. If an attribute can be found several times, then one match is sufficient.",
+    regexAttributeValues:
+      "If enabled attribute values are interpreted as regular expressions.",
+    role: "Role to grant to user if all attributes are present. Click 'Select Role' button to browse roles, or just type it in the textbox. To reference a client role the syntax is clientname.clientrole, i.e. myclient.myrole",
+    userSessionAttribute: "Name of user session attribute you want to hardcode",
+    userSessionAttributeValue: "Value you want to hardcode",
   },
 };

@@ -24,8 +24,8 @@ export type AttributeForm = {
 
 export type AttributesFormProps = {
   form: UseFormMethods<AttributeForm>;
-  save: (model: AttributeForm) => void;
-  reset: () => void;
+  save?: (model: AttributeForm) => void;
+  reset?: () => void;
   array: {
     fields: Partial<ArrayField<Record<string, any>, "id">>[];
     append: (
@@ -34,6 +34,7 @@ export type AttributesFormProps = {
     ) => void;
     remove: (index?: number | number[] | undefined) => void;
   };
+  inConfig?: boolean;
 };
 
 export const arrayToAttributes = (attributeArray: KeyValueType[]) => {
@@ -61,12 +62,15 @@ export const AttributesForm = ({
   array: { fields, append, remove },
   reset,
   save,
+  inConfig,
 }: AttributesFormProps) => {
   const { t } = useTranslation("roles");
 
   const columns = ["Key", "Value"];
 
-  const watchLast = watch(`attributes[${fields.length - 1}].key`, "");
+  const watchLast = inConfig
+    ? watch(`config.attributes[${fields.length - 1}].key`, "")
+    : watch(`attributes[${fields.length - 1}].key`, "");
 
   useEffect(() => {
     if (fields.length === 0) {
@@ -74,8 +78,13 @@ export const AttributesForm = ({
     }
   }, [fields]);
 
+  const noSaveCancelButtons = !save && !reset;
+
   return (
-    <FormAccess role="manage-realm" onSubmit={handleSubmit(save)}>
+    <FormAccess
+      role="manage-realm"
+      onSubmit={save ? handleSubmit(save) : undefined}
+    >
       <TableComposable
         className="kc-attributes__table"
         aria-label="Role attribute keys and values"
@@ -101,7 +110,11 @@ export const AttributesForm = ({
                 dataLabel={columns[0]}
               >
                 <TextInput
-                  name={`attributes[${rowIndex}].key`}
+                  name={
+                    inConfig
+                      ? `config.attributes[${rowIndex}].key`
+                      : `attributes[${rowIndex}].key`
+                  }
                   ref={register()}
                   aria-label="key-input"
                   defaultValue={attribute.key}
@@ -116,7 +129,11 @@ export const AttributesForm = ({
                 dataLabel={columns[1]}
               >
                 <TextInput
-                  name={`attributes[${rowIndex}].value`}
+                  name={
+                    inConfig
+                      ? `config.attributes[${rowIndex}].value`
+                      : `attributes[${rowIndex}].value`
+                  }
                   ref={register()}
                   aria-label="value-input"
                   defaultValue={attribute.value}
@@ -173,14 +190,20 @@ export const AttributesForm = ({
           </Tr>
         </Tbody>
       </TableComposable>
-      <ActionGroup className="kc-attributes__action-group">
-        <Button variant="primary" type="submit" isDisabled={!watchLast}>
-          {t("common:save")}
-        </Button>
-        <Button onClick={reset} variant="link" isDisabled={!formState.isDirty}>
-          {t("common:revert")}
-        </Button>
-      </ActionGroup>
+      {!noSaveCancelButtons && (
+        <ActionGroup className="kc-attributes__action-group">
+          <Button variant="primary" type="submit" isDisabled={!watchLast}>
+            {t("common:save")}
+          </Button>
+          <Button
+            onClick={reset}
+            variant="link"
+            isDisabled={!formState.isDirty}
+          >
+            {t("common:revert")}
+          </Button>
+        </ActionGroup>
+      )}
     </FormAccess>
   );
 };

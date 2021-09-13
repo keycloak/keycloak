@@ -74,29 +74,27 @@ export const SamlConnectSettings = () => {
   }, [discovering]);
 
   const fileUpload = async (obj: object) => {
-    if (obj) {
-      const formData = new FormData();
-      formData.append("providerId", id);
-      formData.append("file", new Blob([JSON.stringify(obj)]));
+    const formData = new FormData();
+    formData.append("providerId", id);
+    formData.append("file", new Blob([JSON.stringify(obj)]));
 
-      try {
-        const response = await fetch(
-          `${getBaseUrl(
-            adminClient
-          )}admin/realms/${realm}/identity-provider/import-config`,
-          {
-            method: "POST",
-            body: formData,
-            headers: {
-              Authorization: `bearer ${await adminClient.getAccessToken()}`,
-            },
-          }
-        );
-        const result = await response.json();
-        setupForm(result);
-      } catch (error: any) {
-        setDiscoveryResult({ error });
-      }
+    try {
+      const response = await fetch(
+        `${getBaseUrl(
+          adminClient
+        )}admin/realms/${realm}/identity-provider/import-config`,
+        {
+          method: "POST",
+          body: formData,
+          headers: {
+            Authorization: `bearer ${await adminClient.getAccessToken()}`,
+          },
+        }
+      );
+      const result = await response.json();
+      setupForm(result);
+    } catch (error: any) {
+      setDiscoveryResult({ error });
     }
   };
 
@@ -116,7 +114,6 @@ export const SamlConnectSettings = () => {
             forID="kc-service-provider-entity-id"
           />
         }
-        isRequired
       >
         <TextInput
           type="text"
@@ -125,7 +122,7 @@ export const SamlConnectSettings = () => {
           id="kc-service-provider-entity-id"
           value={entityUrl || defaultEntityUrl}
           onChange={setEntityUrl}
-          ref={register({ required: true })}
+          ref={register()}
         />
       </FormGroup>
 
@@ -161,7 +158,6 @@ export const SamlConnectSettings = () => {
               forID="kc-saml-entity-descriptor"
             />
           }
-          isRequired
         >
           <TextInput
             type="text"
@@ -170,7 +166,7 @@ export const SamlConnectSettings = () => {
             id="kc-saml-entity-descriptor"
             value={descriptorUrl}
             onChange={setDescriptorUrl}
-            ref={register({ required: true })}
+            ref={register()}
             validated={
               errors.samlEntityDescriptor
                 ? ValidatedOptions.error
@@ -191,7 +187,7 @@ export const SamlConnectSettings = () => {
             />
           }
           validated={discoveryResult?.error ? "error" : "default"}
-          helperTextInvalid={discoveryResult?.error?.toString()}
+          helperTextInvalid={discoveryResult?.error.toString()}
         >
           <JsonFileUpload
             id="kc-import-config"

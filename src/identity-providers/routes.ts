@@ -5,6 +5,7 @@ import { IdentityProviderOidcRoute } from "./routes/IdentityProviderOidc";
 import { IdentityProviderSamlRoute } from "./routes/IdentityProviderSaml";
 import { IdentityProvidersRoute } from "./routes/IdentityProviders";
 import { IdentityProviderTabRoute } from "./routes/IdentityProviderTab";
+import { IdentityProviderAddMapperRoute } from "./routes/AddMapper";
 
 const routes: RouteDef[] = [
   IdentityProvidersRoute,
@@ -13,6 +14,7 @@ const routes: RouteDef[] = [
   IdentityProviderKeycloakOidcRoute,
   IdentityProviderRoute,
   IdentityProviderTabRoute,
+  IdentityProviderAddMapperRoute,
 ];
 
 export default routes;

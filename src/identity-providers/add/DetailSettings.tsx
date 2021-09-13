@@ -1,5 +1,5 @@
 import React from "react";
-import { useHistory, useParams } from "react-router-dom";
+import { Link, useHistory, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import {
@@ -13,6 +13,7 @@ import {
   PageSection,
   Tab,
   TabTitleText,
+  ToolbarItem,
 } from "@patternfly/react-core";
 
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
@@ -36,6 +37,8 @@ import { ReqAuthnConstraints } from "./ReqAuthnConstraintsSettings";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import type IdentityProviderMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperRepresentation";
+import { toIdentityProviderAddMapper } from "../routes/AddMapper";
+import { toUpperCase } from "../../util";
 
 type HeaderProps = {
   onChange: (value: boolean) => void;
@@ -53,12 +56,11 @@ type IdPWithMapperAttributes = IdentityProviderMapperRepresentation & {
 
 const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
   const { t } = useTranslation("identity-providers");
-  const { providerId, alias } =
-    useParams<{ providerId: string; alias: string }>();
+  const { alias } = useParams<{ alias: string }>();
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
     titleKey: "identity-providers:disableProvider",
-    messageKey: t("disableConfirm", { provider: providerId }),
+    messageKey: t("disableConfirm", { provider: alias }),
     continueButtonLabel: "common:disable",
     onConfirm: () => {
       onChange(!value);
@@ -70,7 +72,7 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
     <>
       <DisableConfirm />
       <ViewHeader
-        titleKey={alias}
+        titleKey={toUpperCase(alias)}
         divider={false}
         dropdownItems={[
           <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
@@ -127,7 +129,7 @@ export const DetailSettings = () => {
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "identity-providers:deleteProvider",
-    messageKey: t("identity-providers:deleteConfirm", { provider: providerId }),
+    messageKey: t("identity-providers:deleteConfirm", { provider: alias }),
     continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
@@ -262,6 +264,7 @@ export const DetailSettings = () => {
             </Tab>
             <Tab
               id="mappers"
+              data-testid="mappers-tab"
               eventKey="mappers"
               title={<TabTitleText>{t("common:mappers")}</TabTitleText>}
             >
@@ -271,12 +274,36 @@ export const DetailSettings = () => {
                     message={t("identity-providers:noMappers")}
                     instructions={t("identity-providers:noMappersInstructions")}
                     primaryActionText={t("identity-providers:addMapper")}
+                    onPrimaryAction={() =>
+                      history.push(
+                        toIdentityProviderAddMapper({
+                          realm,
+                          alias: alias!,
+                          providerId: providerId,
+                        })
+                      )
+                    }
                   />
                 }
                 loader={loader}
                 isPaginated
                 ariaLabelKey="identity-providers:mappersList"
                 searchPlaceholderKey="identity-providers:searchForMapper"
+                toolbarItem={
+                  <ToolbarItem>
+                    <Link
+                      // @ts-ignore
+                      to={toIdentityProviderAddMapper({
+                        realm,
+                        alias: alias!,
+                        providerId: providerId,
+                      })}
+                      datatest-id="add-mapper-button"
+                    >
+                      {t("addMapper")}
+                    </Link>
+                  </ToolbarItem>
+                }
                 columns={[
                   {
                     name: "name",

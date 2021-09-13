@@ -25,7 +25,10 @@ export type AssociatedRolesModalProps = {
   open: boolean;
   toggleDialog: () => void;
   onConfirm: (newReps: RoleRepresentation[]) => void;
-  existingCompositeRoles: RoleRepresentation[];
+  existingCompositeRoles?: RoleRepresentation[];
+  allRoles?: RoleRepresentation[];
+  omitComposites?: boolean;
+  isRadio?: boolean;
 };
 
 export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
@@ -47,33 +50,39 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
 
   const loader = async () => {
     const roles = await adminClient.roles.find();
-    const existingAdditionalRoles = await adminClient.roles.getCompositeRoles({
-      id,
-    });
-    const allRoles = [...roles, ...existingAdditionalRoles];
 
-    const filterDupes: Role[] = allRoles.filter(
-      (thing, index, self) =>
-        index === self.findIndex((t) => t.name === thing.name)
-    );
+    if (!props.omitComposites) {
+      const existingAdditionalRoles = await adminClient.roles.getCompositeRoles(
+        {
+          id,
+        }
+      );
+      const allRoles = [...roles, ...existingAdditionalRoles];
 
-    const clients = await adminClient.clients.find();
-    filterDupes
-      .filter((role) => role.clientRole)
-      .map(
-        (role) =>
-          (role.clientId = clients.find(
-            (client) => client.id === role.containerId
-          )!.clientId!)
+      const filterDupes: Role[] = allRoles.filter(
+        (thing, index, self) =>
+          index === self.findIndex((t) => t.name === thing.name)
       );
 
-    return alphabetize(filterDupes).filter((role: RoleRepresentation) => {
-      return (
-        props.existingCompositeRoles.find(
-          (existing: RoleRepresentation) => existing.name === role.name
-        ) === undefined && role.name !== name
-      );
-    });
+      const clients = await adminClient.clients.find();
+      filterDupes
+        .filter((role) => role.clientRole)
+        .map(
+          (role) =>
+            (role.clientId = clients.find(
+              (client) => client.id === role.containerId
+            )!.clientId!)
+        );
+
+      return alphabetize(filterDupes).filter((role: RoleRepresentation) => {
+        return (
+          props.existingCompositeRoles?.find(
+            (existing: RoleRepresentation) => existing.name === role.name
+          ) === undefined && role.name !== name
+        );
+      });
+    }
+    return alphabetize(roles);
   };
 
   const AliasRenderer = ({ id, name, clientId }: Role) => {
@@ -101,9 +110,6 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
       });
       rolesList = [...rolesList, ...clientRolesList];
     }
-    const existingAdditionalRoles = await adminClient.roles.getCompositeRoles({
-      id,
-    });
 
     rolesList
       .filter((role) => role.clientRole)
@@ -114,13 +120,23 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
           )!.clientId!)
       );
 
-    return alphabetize(rolesList).filter((role: RoleRepresentation) => {
-      return (
-        existingAdditionalRoles.find(
-          (existing: RoleRepresentation) => existing.name === role.name
-        ) === undefined && role.name !== name
+    if (!props.omitComposites) {
+      const existingAdditionalRoles = await adminClient.roles.getCompositeRoles(
+        {
+          id,
+        }
       );
-    });
+
+      return alphabetize(rolesList).filter((role: RoleRepresentation) => {
+        return (
+          existingAdditionalRoles.find(
+            (existing: RoleRepresentation) => existing.name === role.name
+          ) === undefined && role.name !== name
+        );
+      });
+    }
+
+    return alphabetize(rolesList);
   };
 
   useEffect(() => {
@@ -191,6 +207,7 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
         loader={filterType === "roles" ? loader : clientRolesLoader}
         ariaLabelKey="roles:roleList"
         searchPlaceholderKey="roles:searchFor"
+        isRadio={props.isRadio}
         searchTypeComponent={
           <Dropdown
             onSelect={() => onFilterDropdownSelect(filterType)}
