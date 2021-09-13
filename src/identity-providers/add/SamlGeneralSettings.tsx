@@ -7,10 +7,13 @@ import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { RedirectUrl } from "../component/RedirectUrl";
 import { TextField } from "../component/TextField";
 import { DisplayOrder } from "../component/DisplayOrder";
+import { useParams } from "react-router";
+import type { IdentityProviderTabParams } from "../routes/IdentityProviderTab";
 
 export const SamlGeneralSettings = ({ id }: { id: string }) => {
   const { t } = useTranslation("identity-providers");
   const { t: th } = useTranslation("identity-providers-help");
+  const { tab } = useParams<IdentityProviderTabParams>();
 
   const { register, errors } = useFormContext();
 
@@ -40,6 +43,7 @@ export const SamlGeneralSettings = ({ id }: { id: string }) => {
           id="alias"
           data-testid="alias"
           name="alias"
+          isReadOnly={tab === "settings"}
           validated={
             errors.alias ? ValidatedOptions.error : ValidatedOptions.default
           }

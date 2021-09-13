@@ -77,6 +77,7 @@ export const IdentityProvidersSection = () => {
         realm,
         providerId: identityProvider.providerId,
         alias: identityProvider.alias!,
+        tab: "settings",
       })}
     >
       {identityProvider.displayName
@@ -140,7 +141,7 @@ export const IdentityProvidersSection = () => {
       {manageDisplayDialog && (
         <ManageOderDialog
           onClose={() => setManageDisplayDialog(false)}
-          providers={providers?.filter((p) => p.enabled)}
+          providers={providers.filter((p) => p.enabled)}
         />
       )}
       <ViewHeader
