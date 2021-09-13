@@ -271,4 +271,13 @@ public class X509AuthenticatorConfigModel extends AuthenticatorConfigModel {
         getConfig().put(SERIALNUMBER_HEX, Boolean.toString(value));
         return this;
     }
+
+    public boolean getRevalidateCertificateEnabled() {
+        return Boolean.parseBoolean(getConfig().get(REVALIDATE_CERTIFICATE));
+    }
+
+    public X509AuthenticatorConfigModel setRevalidateCertificateEnabled(boolean value) {
+        getConfig().put(REVALIDATE_CERTIFICATE, Boolean.toString(value));
+        return this;
+    }
 }
