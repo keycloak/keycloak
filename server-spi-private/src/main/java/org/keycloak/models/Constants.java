@@ -99,6 +99,9 @@ public final class Constants {
     // Roles already granted by a mapper when updating brokered users.
     public static final String MAPPER_GRANTED_ROLES = "MAPPER_GRANTED_ROLES";
 
+    // Groups already assigned by a mapper when updating brokered users.
+    public static final String MAPPER_GRANTED_GROUPS = "MAPPER_GRANTED_GROUPS";
+
     // Indication to admin-rest-endpoint that realm keys should be re-generated
     public static final String GENERATE = "GENERATE";
 
