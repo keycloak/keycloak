@@ -6,6 +6,7 @@
         <exec osfamily="unix" dir="${auth.server.home}/bin" executable="./kc.sh" failonerror="true">
             <arg value="config"/>
             <arg value="-Dquarkus.http.root-path=/auth"/>
+            <arg value="--http-enabled=true"/>
         </exec>
     </target>
 

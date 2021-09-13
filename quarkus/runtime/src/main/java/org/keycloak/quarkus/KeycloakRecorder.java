@@ -19,6 +19,7 @@ package org.keycloak.quarkus;
 
 import static org.keycloak.configuration.Configuration.getBuiltTimeProperty;
 import static org.keycloak.configuration.Configuration.getConfig;
+import static org.keycloak.configuration.Configuration.getConfigValue;
 
 import java.util.List;
 import java.util.Map;
@@ -135,17 +136,21 @@ public class KeycloakRecorder {
                         if (!StreamSupport.stream(getConfig().getPropertyNames().spliterator(), false)
                                 .filter(new Predicate<String>() {
                                     @Override
-                                    public boolean test(String s) {
-                                        ConfigValue configValue = getConfig().getConfigValue(s);
+                                    public boolean test(String propertyName) {
+                                        ConfigValue configValue = getConfigValue(propertyName);
 
-                                        return configValue.getConfigSourceName().equals(PersistedConfigSource.NAME);
+                                        if (configValue == null) {
+                                            return false;
+                                        }
+
+                                        return PersistedConfigSource.NAME.equals(configValue.getSourceName());
                                     }
                                 })
                                 .anyMatch(new Predicate<String>() {
                                     @Override
-                                    public boolean test(String s) {
+                                    public boolean test(String propertyName) {
                                         return PropertyMappers.canonicalFormat(finalPropertyName)
-                                                .equalsIgnoreCase(PropertyMappers.canonicalFormat(s));
+                                                .equalsIgnoreCase(PropertyMappers.canonicalFormat(propertyName));
                                     }
                                 })) {
                             String prop = "--" + cliNameFormat.substring(3) + "=" + value.getValue();

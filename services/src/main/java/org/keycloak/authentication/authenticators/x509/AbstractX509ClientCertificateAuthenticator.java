@@ -85,6 +85,7 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
     public static final String CERTIFICATE_EXTENDED_KEY_USAGE = "x509-cert-auth.extendedkeyusage";
     static final String DEFAULT_MATCH_ALL_EXPRESSION = "(.*?)(?:$)";
     public static final String CONFIRMATION_PAGE_DISALLOWED = "x509-cert-auth.confirmation-page-disallowed";
+    public static final String REVALIDATE_CERTIFICATE = "x509-cert-auth.revalidate-certificate-enabled";
 
 
     protected Response createInfoResponse(AuthenticationFlowContext context, String infoMessage, Object ... parameters) {
@@ -110,6 +111,8 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
                         .oCSPEnabled(config.getOCSPEnabled())
                         .oCSPResponseCertificate(config.getOCSPResponderCertificate())
                         .oCSPResponderURI(config.getOCSPResponder())
+                    .trustValidation()
+                        .enabled(config.getRevalidateCertificateEnabled())
                     .timestampValidation()
                         .enabled(config.isCertValidationEnabled());
         }

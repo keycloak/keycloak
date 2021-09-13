@@ -12,6 +12,7 @@
 
     <name>Keycloak Quarkus Server Extension</name>
     <artifactId>keycloak-quarkus-server</artifactId>
+    <description>Keycloak Server</description>
 
     <dependencies>
         <!-- Quarkus -->
@@ -76,7 +77,6 @@
         <dependency>
             <groupId>info.picocli</groupId>
             <artifactId>picocli</artifactId>
-            <version>${picocli.version}</version>
         </dependency>
 
         <!-- Keycloak -->
@@ -462,9 +462,26 @@
             <artifactId>infinispan-jboss-marshalling</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.jboss.spec.javax.xml.bind</groupId>
+            <artifactId>jboss-jaxb-api_2.3_spec</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.messaging.saaj</groupId>
+            <artifactId>saaj-impl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jvnet.staxex</groupId>
+            <artifactId>stax-ex</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.twitter4j</groupId>
+            <artifactId>twitter4j-core</artifactId>
         </dependency>
     </dependencies>
 

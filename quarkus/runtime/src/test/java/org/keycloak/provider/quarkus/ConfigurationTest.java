@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import io.quarkus.hibernate.orm.runtime.dialect.QuarkusH2Dialect;
+import io.quarkus.runtime.LaunchMode;
 import io.smallrye.config.SmallRyeConfig;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
@@ -272,6 +273,6 @@ public class ConfigurationTest {
 
     private SmallRyeConfig createConfig() {
         KeycloakConfigSourceProvider.reload();
-        return ConfigUtils.configBuilder(true, true).build();
+        return ConfigUtils.configBuilder(true, LaunchMode.NORMAL).build();
     }
 }

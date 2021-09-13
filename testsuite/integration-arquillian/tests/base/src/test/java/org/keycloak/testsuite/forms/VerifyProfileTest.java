@@ -943,9 +943,10 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
 
 
     public static void setUserProfileConfiguration(RealmResource testRealm, String configuration) {
-        Response r = testRealm.users().userProfile().update(configuration);
-        if (r.getStatus() != 200) {
-            Assert.fail("UserProfile Configuration not set due to error: " + r.readEntity(String.class));
+        try (Response r = testRealm.users().userProfile().update(configuration)) {
+            if (r.getStatus() != 200) {
+                Assert.fail("UserProfile Configuration not set due to error: " + r.readEntity(String.class));
+            }
         }
     }
     

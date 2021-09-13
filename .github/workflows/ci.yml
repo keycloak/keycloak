@@ -2,6 +2,9 @@ name: Keycloak CI
 
 on: [push, pull_request]
 
+env:
+  DEFAULT_JDK_VERSION: 11
+
 jobs:
   build:
     name: Build
@@ -10,7 +13,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-java@v1
         with:
-          java-version: 1.8
+          java-version: ${{ env.DEFAULT_JDK_VERSION }}
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
       - name: Cache Maven packages
@@ -24,7 +27,7 @@ jobs:
 
       - name: Build Keycloak
         run: |
-           mvn clean install -nsu -B -e -DskipTests -Pquarkus,distribution
+           mvn clean install -nsu -B -e -DskipTests -Pdistribution
            mvn clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-quarkus
            mvn clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-wildfly
            mvn clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-undertow
@@ -53,7 +56,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-java@v1
         with:
-          java-version: 1.8
+          java-version: ${{ env.DEFAULT_JDK_VERSION }}
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
       - name: Cache Maven packages
@@ -94,7 +97,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-java@v1
         with:
-          java-version: 1.8
+          java-version: ${{ env.DEFAULT_JDK_VERSION }}
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
       - name: Cache Maven packages
@@ -160,7 +163,7 @@ jobs:
 
       - uses: actions/setup-java@v1
         with:
-          java-version: 1.8
+          java-version: ${{ env.DEFAULT_JDK_VERSION }}
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
 
@@ -224,7 +227,7 @@ jobs:
       - uses: actions/setup-java@v1
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
         with:
-          java-version: 1.8
+          java-version: ${{ env.DEFAULT_JDK_VERSION }}
       - name: Update maven settings
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
@@ -263,7 +266,7 @@ jobs:
       - uses: actions/setup-java@v1
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
         with:
-          java-version: 1.8
+          java-version: ${{ env.DEFAULT_JDK_VERSION }}
       - name: Update maven settings
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
@@ -336,7 +339,7 @@ jobs:
           name: keycloak-artifacts.zip
       - uses: actions/setup-java@v1
         with:
-          java-version: 1.8
+          java-version: ${{ env.DEFAULT_JDK_VERSION }}
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
       - name: Run Quarkus cluster tests
@@ -374,7 +377,7 @@ jobs:
 
       - uses: actions/setup-java@v1
         with:
-          java-version: 1.8
+          java-version: 8
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
       - name: Cache Maven packages
