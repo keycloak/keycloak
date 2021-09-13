@@ -88,6 +88,7 @@ import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.LINKEDIN;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.MICROSOFT;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT4;
+import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT4_KUBE_ADMIN;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.PAYPAL;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.STACKOVERFLOW;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.TWITTER;
@@ -129,6 +130,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         STACKOVERFLOW("stackoverflow", StackOverflowLoginPage.class),
         OPENSHIFT("openshift-v3", OpenShiftLoginPage.class),
         OPENSHIFT4("openshift-v4", OpenShiftLoginPage.class),
+        OPENSHIFT4_KUBE_ADMIN("openshift-v4", "openshift-v4-admin", OpenShiftLoginPage.class),
         GITLAB("gitlab", GitLabLoginPage.class),
         BITBUCKET("bitbucket", BitbucketLoginPage.class),
         INSTAGRAM("instagram", InstagramLoginPage.class);
@@ -195,6 +197,10 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         log.infof("added '%s' identity provider", provider.id());
         currentTestProvider = provider;
         currentSocialLoginPage = Graphene.createPageFragment(currentTestProvider.pageObjectClazz(), driver.findElement(By.tagName("html")));
+
+        if(provider == OPENSHIFT4 || provider == OPENSHIFT4_KUBE_ADMIN) {
+            ((OpenShiftLoginPage) currentSocialLoginPage).setUserLoginLinkTitle(getConfig(currentTestProvider, "loginBtnTitle"));
+        }
     }
 
     @Override
@@ -253,6 +259,14 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         assertUpdateProfile(false, false, true);
         assertAccount();
         testTokenExchange();
+    }
+
+    @Test
+    public void openshift4KubeAdminLogin() {
+        setTestProvider(OPENSHIFT4_KUBE_ADMIN);
+        performLogin();
+        assertUpdateProfile(true, true, true);
+        assertAccount();
     }
 
     @Test
@@ -416,7 +430,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         if (provider == STACKOVERFLOW) {
             idp.getConfig().put("key", getConfig(provider, "clientKey"));
         }
-        if (provider == OPENSHIFT || provider == OPENSHIFT4) {
+        if (provider == OPENSHIFT || provider == OPENSHIFT4 || provider == OPENSHIFT4_KUBE_ADMIN) {
             idp.getConfig().put("baseUrl", getConfig(provider, "baseUrl"));
         }
         if (provider == PAYPAL) {
