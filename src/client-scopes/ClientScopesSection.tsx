@@ -28,12 +28,22 @@ import {
   changeScope,
   removeScope,
 } from "../components/client-scope/ClientScopeTypes";
-import { ChangeTypeDialog } from "./ChangeTypeDialog";
+import { ChangeTypeDropdown } from "./ChangeTypeDropdown";
 import { toNewClientScope } from "./routes/NewClientScope";
 
 import "./client-scope.css";
 import { toClientScope } from "./routes/ClientScope";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
+import {
+  nameFilter,
+  protocolFilter,
+  ProtocolType,
+  SearchDropdown,
+  SearchToolbar,
+  SearchType,
+  typeFilter,
+} from "./details/SearchFilter";
+import type { Row } from "../clients/scopes/ClientScopes";
 
 export const ClientScopesSection = () => {
   const { realm } = useRealm();
@@ -47,21 +57,33 @@ export const ClientScopesSection = () => {
   const refresh = () => setKey(new Date().getTime());
 
   const [kebabOpen, setKebabOpen] = useState(false);
-  const [changeTypeOpen, setChangeTypeOpen] = useState(false);
   const [selectedScopes, setSelectedScopes] = useState<
     ClientScopeDefaultOptionalType[]
   >([]);
 
-  const loader = async () => {
+  const [searchType, setSearchType] = useState<SearchType>("name");
+  const [searchTypeType, setSearchTypeType] = useState<AllClientScopes>(
+    AllClientScopes.none
+  );
+  const [searchProtocol, setSearchProtocol] = useState<ProtocolType>("all");
+
+  const loader = async (first?: number, max?: number, search?: string) => {
     const defaultScopes =
       await adminClient.clientScopes.listDefaultClientScopes();
     const optionalScopes =
       await adminClient.clientScopes.listDefaultOptionalClientScopes();
     const clientScopes = await adminClient.clientScopes.find();
 
+    const filter =
+      searchType === "name"
+        ? nameFilter(search)
+        : searchType === "type"
+        ? typeFilter(searchTypeType)
+        : protocolFilter(searchProtocol);
+
     return clientScopes
       .map((scope) => {
-        return {
+        const row: Row = {
           ...scope,
           type: defaultScopes.find(
             (defaultScope) => defaultScope.name === scope.name
@@ -73,8 +95,11 @@ export const ClientScopesSection = () => {
             ? ClientScope.optional
             : AllClientScopes.none,
         };
+        return row;
       })
-      .sort((a, b) => a.name!.localeCompare(b.name!, whoAmI.getLocale()));
+      .filter(filter)
+      .sort((a, b) => a.name!.localeCompare(b.name!, whoAmI.getLocale()))
+      .slice(first, max);
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
@@ -138,24 +163,6 @@ export const ClientScopesSection = () => {
   return (
     <>
       <DeleteConfirm />
-      {changeTypeOpen && (
-        <ChangeTypeDialog
-          selectedClientScopes={selectedScopes.length}
-          onConfirm={(type) => {
-            selectedScopes.map(async (scope) => {
-              try {
-                await changeScope(adminClient, scope, type);
-                addAlert(t("clientScopeSuccess"), AlertVariant.success);
-                refresh();
-              } catch (error) {
-                addError("client-scopes:clientScopeError", error);
-              }
-            });
-            setChangeTypeOpen(false);
-          }}
-          onClose={() => setChangeTypeOpen(false)}
-        />
-      )}
       <ViewHeader
         titleKey="clientScopes"
         subKey="client-scopes:clientScopeExplain"
@@ -165,16 +172,48 @@ export const ClientScopesSection = () => {
           key={key}
           loader={loader}
           ariaLabelKey="client-scopes:clientScopeList"
-          searchPlaceholderKey="client-scopes:searchFor"
+          searchPlaceholderKey={
+            searchType === "name" ? "client-scopes:searchFor" : undefined
+          }
+          isSearching={searchType !== "name"}
+          searchTypeComponent={
+            <SearchDropdown
+              searchType={searchType}
+              onSelect={(searchType) => setSearchType(searchType)}
+              withProtocol
+            />
+          }
+          isPaginated
           onSelect={(clientScopes) => setSelectedScopes([...clientScopes])}
           canSelectAll
           toolbarItem={
             <>
+              <SearchToolbar
+                searchType={searchType}
+                type={searchTypeType}
+                onSelect={(searchType) => setSearchType(searchType)}
+                onType={(value) => {
+                  setSearchTypeType(value);
+                  refresh();
+                }}
+                protocol={searchProtocol}
+                onProtocol={(protocol) => {
+                  setSearchProtocol(protocol);
+                  refresh();
+                }}
+              />
+
               <ToolbarItem>
                 {/* @ts-ignore */}
                 <Button component={Link} to={toNewClientScope({ realm })}>
                   {t("createClientScope")}
                 </Button>
+              </ToolbarItem>
+              <ToolbarItem>
+                <ChangeTypeDropdown
+                  selectedRows={selectedScopes}
+                  refresh={refresh}
+                />
               </ToolbarItem>
               <ToolbarItem>
                 <Dropdown
@@ -184,18 +223,6 @@ export const ClientScopesSection = () => {
                   isOpen={kebabOpen}
                   isPlain
                   dropdownItems={[
-                    <DropdownItem
-                      key="changeType"
-                      component="button"
-                      isDisabled={selectedScopes.length === 0}
-                      onClick={() => {
-                        setChangeTypeOpen(true);
-                        setKebabOpen(false);
-                      }}
-                    >
-                      {t("changeType")}
-                    </DropdownItem>,
-
                     <DropdownItem
                       key="action"
                       component="button"

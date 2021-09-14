@@ -51,8 +51,8 @@ export const exportClient = (client: ClientRepresentation): void => {
   );
 };
 
-export const toUpperCase = (name: string) =>
-  name.charAt(0).toUpperCase() + name.slice(1);
+export const toUpperCase = <T extends string>(name: T) =>
+  (name.charAt(0).toUpperCase() + name.slice(1)) as Capitalize<T>;
 
 export const convertToFormValues = (
   obj: any,

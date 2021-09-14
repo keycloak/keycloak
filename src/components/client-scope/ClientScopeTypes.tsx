@@ -6,6 +6,7 @@ import { DropdownItem, Select, SelectOption } from "@patternfly/react-core";
 
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
+import { toUpperCase } from "../../util";
 
 export enum ClientScope {
   default = "default",
@@ -126,4 +127,45 @@ const addScope = async (
     ]({
       id: clientScope.id!,
     });
+};
+
+export const changeClientScope = async (
+  adminClient: KeycloakAdminClient,
+  clientId: string,
+  clientScope: ClientScopeRepresentation,
+  type: AllClientScopeType,
+  changeTo: ClientScopeType
+) => {
+  if (type !== "none") {
+    await removeClientScope(adminClient, clientId, clientScope, type);
+  }
+  await addClientScope(adminClient, clientId, clientScope, changeTo);
+};
+
+export const removeClientScope = async (
+  adminClient: KeycloakAdminClient,
+  clientId: string,
+  clientScope: ClientScopeRepresentation,
+  type: ClientScope
+) => {
+  const methodName = `del${toUpperCase(type)}ClientScope` as const;
+
+  await adminClient.clients[methodName]({
+    id: clientId,
+    clientScopeId: clientScope.id!,
+  });
+};
+
+export const addClientScope = async (
+  adminClient: KeycloakAdminClient,
+  clientId: string,
+  clientScope: ClientScopeRepresentation,
+  type: ClientScopeType
+) => {
+  const methodName = `add${toUpperCase(type)}ClientScope` as const;
+
+  await adminClient.clients[methodName]({
+    id: clientId,
+    clientScopeId: clientScope.id!,
+  });
 };

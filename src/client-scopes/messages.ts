@@ -14,7 +14,7 @@ export default {
     deleteClientScope: "Delete client scope {{name}}",
     deleteClientScope_plural: "Delete {{count}} client scopes",
     deleteConfirm: "Are you sure you want to delete this client scope",
-    changeType: "Change type",
+    changeTypeTo: "Change type to",
     changeTypeIntro: "{{count}} selected client scopes will be changed to",
     clientScopeSuccess: "Scope mapping updated",
     clientScopeError: "Could not update scope mapping {{error}}",
@@ -62,5 +62,10 @@ export default {
     scope: "Scope",
     roleMappingUpdatedSuccess: "Role mapping updated",
     roleMappingUpdatedError: "Could not update role mapping {{error}}",
+    protocolTypes: {
+      all: "All",
+      saml: "SAML",
+      "openid-connect": "openid-connect",
+    },
   },
 };

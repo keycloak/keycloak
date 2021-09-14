@@ -65,6 +65,7 @@ export default {
       optional: "Optional",
       none: "None",
     },
+    allTypes: "All types",
 
     home: "Home",
     manage: "Manage",
