@@ -990,7 +990,12 @@ public class AuthenticationProcessor {
         Response challenge = authenticationFlow.processFlow();
         if (challenge != null) return challenge;
         if (authenticationSession.getAuthenticatedUser() == null) {
-            throw new AuthenticationFlowException(AuthenticationFlowError.UNKNOWN_USER);
+            if (this.forwardedErrorMessageStore.getForwardedMessage() != null) {
+                LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authenticationSession);
+                forms.addError(this.forwardedErrorMessageStore.getForwardedMessage());
+                return forms.createErrorPage(Response.Status.BAD_REQUEST);
+            } else
+                throw new AuthenticationFlowException(AuthenticationFlowError.UNKNOWN_USER);
         }
         if (!authenticationFlow.isSuccessful()) {
             throw new AuthenticationFlowException(authenticationFlow.getFlowExceptions());
