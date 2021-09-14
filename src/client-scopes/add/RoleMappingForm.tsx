@@ -31,16 +31,21 @@ export const RoleMappingForm = () => {
   const { realm } = useRealm();
   const adminClient = useAdminClient();
   const history = useHistory();
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
 
   const { t } = useTranslation("client-scopes");
-  const { register, handleSubmit, control, errors } = useForm();
+  const { register, handleSubmit, control, errors } =
+    useForm<ProtocolMapperRepresentation>({
+      defaultValues: {
+        protocolMapper: "oidc-role-name-mapper",
+      },
+    });
   const { id } = useParams<{ id: string }>();
 
   const [roleOpen, setRoleOpen] = useState(false);
 
   const [clientsOpen, setClientsOpen] = useState(false);
-  const [clients, setClients] = useState<ClientRepresentation[]>([]);
+  const [clients, setClients] = useState<ClientRepresentation[]>();
   const [selectedClient, setSelectedClient] = useState<ClientRepresentation>();
   const [clientRoles, setClientRoles] = useState<RoleRepresentation[]>([]);
 
@@ -74,10 +79,9 @@ export const RoleMappingForm = () => {
 
   useFetch(
     async () => {
-      const client = selectedClient as ClientRepresentation;
-      if (client && client.name !== "realmRoles") {
+      if (selectedClient && selectedClient.name !== "realmRoles") {
         const clientRoles = await adminClient.clients.listRoles({
-          id: client.id!,
+          id: selectedClient.id!,
         });
         return clientRoles;
       } else {
@@ -90,10 +94,20 @@ export const RoleMappingForm = () => {
 
   const save = async (mapping: ProtocolMapperRepresentation) => {
     try {
-      await adminClient.clientScopes.addProtocolMapper({ id }, mapping);
+      await adminClient.clientScopes.addProtocolMapper(
+        { id },
+        {
+          ...mapping,
+          protocol: "openid-connect",
+          config: {
+            ...mapping.config,
+            role: `${selectedClient?.clientId}.${mapping.config?.role.name}`,
+          },
+        }
+      );
       addAlert(t("mapperCreateSuccess"));
     } catch (error: any) {
-      addAlert(t("mapperCreateError", error));
+      addError("client-scopes:mapperCreateError", error);
     }
   };
 
@@ -189,87 +203,90 @@ export const RoleMappingForm = () => {
               }
             />
           </FormGroup>
-          <FormGroup
-            label={t("common:role")}
-            labelIcon={
-              <HelpItem
-                helpText="client-scopes-help:role"
-                forLabel={t("common:role")}
-                forID="role"
-              />
-            }
-            validated={errors["config.role"] ? "error" : "default"}
-            helperTextInvalid={t("common:required")}
-            fieldId="role"
-          >
-            <Split hasGutter>
-              <SplitItem>
-                <Select
-                  toggleId="role"
-                  onToggle={() => setClientsOpen(!clientsOpen)}
-                  isOpen={clientsOpen}
-                  variant={SelectVariant.typeahead}
-                  typeAheadAriaLabel={t("selectASourceOfRoles")}
-                  placeholderText={t("selectASourceOfRoles")}
-                  isGrouped
-                  onFilter={(evt) => {
-                    const textInput = evt?.target.value || "";
-                    if (textInput === "") {
-                      return createSelectGroup(clients);
-                    } else {
-                      return createSelectGroup(
-                        clients.filter((client) =>
-                          client
-                            .name!.toLowerCase()
-                            .includes(textInput.toLowerCase())
-                        )
-                      );
-                    }
-                  }}
-                  selections={selectedClient}
-                  onClear={() => setSelectedClient(undefined)}
-                  onSelect={(_, value) => {
-                    if (value) {
-                      setSelectedClient(value as ClientRepresentation);
-                      setClientsOpen(false);
-                    }
-                  }}
-                >
-                  {createSelectGroup(clients)}
-                </Select>
-              </SplitItem>
-              <SplitItem>
-                <Controller
-                  name="config.role"
-                  defaultValue=""
-                  control={control}
-                  rules={{ required: true }}
-                  render={({ onChange, value }) => (
-                    <Select
-                      onToggle={() => setRoleOpen(!roleOpen)}
-                      isOpen={roleOpen}
-                      variant={SelectVariant.typeahead}
-                      placeholderText={
-                        selectedClient && selectedClient.name !== "realmRoles"
-                          ? t("clientRoles")
-                          : t("selectARole")
-                      }
-                      isDisabled={!selectedClient}
-                      typeAheadAriaLabel={t("selectARole")}
-                      selections={value.name}
-                      onSelect={(_, value) => {
-                        onChange(value);
-                        setRoleOpen(false);
-                      }}
-                      onClear={() => onChange("")}
-                    >
-                      {roleSelectOptions()}
-                    </Select>
-                  )}
+          {clients && (
+            <FormGroup
+              label={t("common:role")}
+              labelIcon={
+                <HelpItem
+                  helpText="client-scopes-help:role"
+                  forLabel={t("common:role")}
+                  forID="role"
                 />
-              </SplitItem>
-            </Split>
-          </FormGroup>
+              }
+              validated={errors.config?.role ? "error" : "default"}
+              helperTextInvalid={t("common:required")}
+              fieldId="role"
+            >
+              <Split hasGutter>
+                <SplitItem>
+                  <Select
+                    toggleId="role"
+                    onToggle={() => setClientsOpen(!clientsOpen)}
+                    isOpen={clientsOpen}
+                    variant={SelectVariant.typeahead}
+                    typeAheadAriaLabel={t("selectASourceOfRoles")}
+                    placeholderText={t("selectASourceOfRoles")}
+                    isGrouped
+                    onFilter={(evt) => {
+                      const textInput = evt?.target.value || "";
+                      if (textInput === "") {
+                        return createSelectGroup(clients);
+                      } else {
+                        return createSelectGroup(
+                          clients.filter((client) =>
+                            client
+                              .name!.toLowerCase()
+                              .includes(textInput.toLowerCase())
+                          )
+                        );
+                      }
+                    }}
+                    selections={selectedClient}
+                    onClear={() => setSelectedClient(undefined)}
+                    onSelect={(_, value) => {
+                      if (value) {
+                        setSelectedClient(value as ClientRepresentation);
+                        setClientsOpen(false);
+                      }
+                    }}
+                  >
+                    {createSelectGroup(clients)}
+                  </Select>
+                </SplitItem>
+                <SplitItem>
+                  <Controller
+                    name="config.role"
+                    defaultValue=""
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ onChange, value }) => (
+                      <Select
+                        onToggle={() => setRoleOpen(!roleOpen)}
+                        isOpen={roleOpen}
+                        variant={SelectVariant.typeahead}
+                        placeholderText={
+                          selectedClient && selectedClient.name !== "realmRoles"
+                            ? t("clientRoles")
+                            : t("selectARole")
+                        }
+                        isDisabled={!selectedClient}
+                        typeAheadAriaLabel={t("selectARole")}
+                        selections={value.name}
+                        onSelect={(_, value) => {
+                          onChange(value);
+                          setRoleOpen(false);
+                        }}
+                        maxHeight={200}
+                        onClear={() => onChange("")}
+                      >
+                        {roleSelectOptions()}
+                      </Select>
+                    )}
+                  />
+                </SplitItem>
+              </Split>
+            </FormGroup>
+          )}
           <FormGroup
             label={t("newRoleName")}
             labelIcon={
