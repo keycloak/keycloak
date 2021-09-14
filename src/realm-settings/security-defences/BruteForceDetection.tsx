@@ -115,7 +115,7 @@ export const BruteForceDetection = ({
             />
           </FormGroup>
 
-          {permanentLockout && (
+          {!permanentLockout && (
             <>
               <Time name="waitIncrement" />
               <Time name="maxFailureWait" />
