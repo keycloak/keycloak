@@ -21,7 +21,6 @@ import static org.keycloak.common.util.UriUtils.checkUrl;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.dom.saml.v2.protocol.AuthnContextComparisonType;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.saml.SamlPrincipalType;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
@@ -379,12 +378,45 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
         return getConfig().get(ATTRIBUTE_CONSUMING_SERVICE_NAME);
     }
 
+    public boolean isAutoUpdate() {
+        return Boolean.valueOf(getConfig().get(AUTO_UPDATE));
+    }
+
+    public void setAutoUpdate(boolean autoUpdate) {
+        getConfig().put(AUTO_UPDATE, String.valueOf(autoUpdate));
+    }
+
+    public String getMetadataUrl() {
+        return getConfig().get(METADATA_URL);
+    }
+
+    public void setMetadataUrl(String metadataUrl) {
+        getConfig().put(METADATA_URL, metadataUrl);
+    }
+
+    public Long getRefreshPeriod() {
+        return getConfig().get(REFRESH_PERIOD) != null ? Long.valueOf(getConfig().get(REFRESH_PERIOD)) : null;
+    }
+
+    public void setRefreshPeriod(long refreshPeriod) {
+        getConfig().put(REFRESH_PERIOD, String.valueOf(refreshPeriod));
+    }
+
+    public Long getLastRefreshTime() {
+        return getConfig().get(LAST_REFRESH_TIME) != null ? Long.valueOf(getConfig().get(LAST_REFRESH_TIME)) : null;
+    }
+
+    public void setLastRefreshTime(long lastRefreshTime) {
+        getConfig().put(LAST_REFRESH_TIME, String.valueOf(lastRefreshTime));
+    }
+
     @Override
     public void validate(RealmModel realm) {
         SslRequired sslRequired = realm.getSslRequired();
 
         checkUrl(sslRequired, getSingleLogoutServiceUrl(), SINGLE_LOGOUT_SERVICE_URL);
         checkUrl(sslRequired, getSingleSignOnServiceUrl(), SINGLE_SIGN_ON_SERVICE_URL);
+        checkUrl(sslRequired, getMetadataUrl(), METADATA_URL);
         //transient name id format is not accepted together with principaltype SubjectnameId
         if (JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get().equals(getNameIDPolicyFormat()) && SamlPrincipalType.SUBJECT == getPrincipalType())
             throw new IllegalArgumentException("Can not have Transient NameID Policy Format together with SUBJECT Principal Type");

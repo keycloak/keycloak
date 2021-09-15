@@ -17,6 +17,10 @@
 package org.keycloak.testsuite.admin.partialimport;
 
 import java.io.IOException;
+
+import io.undertow.Undertow;
+import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -25,7 +29,11 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
+import org.keycloak.common.util.StreamUtil;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.partialimport.PartialImportResult;
 import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.representations.idm.AdminEventRepresentation;
@@ -57,9 +65,12 @@ import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.startsWith;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.common.constants.ServiceAccountConstants;
@@ -323,6 +334,55 @@ public class PartialImportTest extends AbstractAuthTest {
         piRep.setIdentityProviders(providers);
     }
 
+    private void addAutoProviders() {
+        List<IdentityProviderRepresentation> providers = new ArrayList<>();
+
+        // saml idp
+        HashMap<String, Object> map = new HashMap<>();
+        map.put("providerId", "saml");
+        map.put("fromUrl", "http://localhost:8880/saml-idp-metadata");
+
+        Map<String, String> result = testRealmResource().identityProviders().importFrom(map);
+
+        // Create new SAML identity provider using configuration retrieved from import-config
+        //change some values( postBindingLogout,postBindingAuthnRequest from true to false, enabled false)  - add autoupdated values
+        result.put(IdentityProviderModel.AUTO_UPDATE, "true");
+        result.put(IdentityProviderModel.METADATA_URL, "http://localhost:8880/saml-idp-metadata");
+        result.put(IdentityProviderModel.REFRESH_PERIOD, String.valueOf(60));
+        result.put(SAMLIdentityProviderConfig.POST_BINDING_LOGOUT, "false");
+        result.put(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "false");
+        providers.add(createRep("saml", "saml", result));
+
+        //oidc
+        HashMap<String, Object> map2 = new HashMap<>();
+        map2.put("providerId", "oidc");
+        map2.put("fromUrl", "http://localhost:8880/oidc-idp");
+
+        Map<String, String> result2 = testRealmResource().identityProviders().importFrom(map2);
+
+        // Create new OIDC identity provider using configuration retrieved from import-config
+        //change some values( authorizationUrl,tokenUrl)  - add autoupdated values
+        result2.put(IdentityProviderModel.AUTO_UPDATE, "true");
+        result2.put(IdentityProviderModel.METADATA_URL, "http://localhost:8880/oidc-idp");
+        result2.put(IdentityProviderModel.REFRESH_PERIOD, String.valueOf(60));
+        result2.put("authorizationUrl", "https://aai.egi.eu/oidc/authorize/new");
+        result2.put("tokenUrl", "https://aai.egi.eu/oidc/token/new");
+        providers.add(createRep("oidc", "oidc", result2));
+
+        piRep.setIdentityProviders(providers);
+    }
+
+    private IdentityProviderRepresentation createRep(String id, String providerId, Map<String, String> config) {
+        IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
+        idp.setAlias(id);
+        idp.setDisplayName(id);
+        idp.setProviderId(providerId);
+        idp.setEnabled(true);
+        idp.setConfig(config);
+        return idp;
+    }
+
+
     private List<RoleRepresentation> makeRoles(String prefix) {
         List<RoleRepresentation> roles = new ArrayList<>();
 
@@ -514,6 +574,76 @@ public class PartialImportTest extends AbstractAuthTest {
             IdentityProviderRepresentation idp = idpRsc.toRepresentation();
             Map<String, String> config = idp.getConfig();
             assertTrue(Arrays.asList(IDP_ALIASES).contains(config.get("clientId")));
+        }
+    }
+
+    @Test
+    public void testAddAutoUpdatedProviders() {
+
+        Undertow httpService = Undertow.builder().addHttpListener(8880, "localhost", new HttpHandler() {
+            @Override
+            public void handleRequest(HttpServerExchange exchange) throws Exception {
+                if (exchange.getRequestURI().endsWith("/saml-idp-metadata")) {
+                    exchange.getResponseSender().send(StreamUtil.readString(getClass().getClassLoader().getResourceAsStream("admin-test/saml-idp-metadata.xml")));
+                }
+                if (exchange.getRequestURI().endsWith("/oidc-idp")) {
+                    exchange.getResponseSender().send(StreamUtil.readString(getClass().getClassLoader().getResourceAsStream("admin-test/oidc-idp.json")));
+                }
+            }
+        }).build();
+        httpService.start();
+
+        try {
+            setFail();
+            addAutoProviders();
+
+            PartialImportResults results = doImport();
+            assertEquals(2, results.getAdded());
+
+            for (PartialImportResult result : results.getResults()) {
+                IdentityProviderRepresentation idp  = testRealmResource().identityProviders().get(result.getId()).toRepresentation();
+                Map<String, String> config = idp.getConfig();
+                switch (idp.getAlias()) {
+                    case "saml":
+                        assertThat(config, hasEntry("postBindingAuthnRequest", "false"));
+                        assertThat(config, hasEntry("postBindingLogout", "false"));
+                        break;
+                    case "oidc":
+                        assertThat(config, hasEntry("authorizationUrl", "https://aai.egi.eu/oidc/authorize/new"));
+                        assertThat(config, hasEntry("tokenUrl", "https://aai.egi.eu/oidc/token/new"));
+                        break;
+                    default:
+                        Assert.fail("Identity Provider with alias = "+idp.getAlias()+" must not exist");
+                }
+            }
+
+            try {
+                log.infof("Sleeping for %d ms", 80000);
+                Thread.sleep(80000);
+            } catch (InterruptedException ie) {
+                throw new RuntimeException(ie);
+            }
+
+            //autoupdate was executed and change some values
+            for (PartialImportResult result : results.getResults()) {
+                IdentityProviderRepresentation idp = testRealmResource().identityProviders().get(result.getId()).toRepresentation();
+                Map<String, String> config = idp.getConfig();
+                switch (idp.getAlias()) {
+                    case "saml":
+                        assertThat(config, hasEntry("postBindingAuthnRequest", "true"));
+                        assertThat(config, hasEntry("postBindingLogout", "true"));
+                        break;
+                    case "oidc":
+                        assertThat(config, hasEntry("authorizationUrl", "https://aai.egi.eu/oidc/authorize"));
+                        assertThat(config, hasEntry("tokenUrl", "https://aai.egi.eu/oidc/token"));
+                        break;
+                    default:
+                        Assert.fail("Identity Provider with alias = " + idp.getAlias() + " must not exist");
+                }
+            }
+
+        } finally {
+            httpService.stop();
         }
     }
 

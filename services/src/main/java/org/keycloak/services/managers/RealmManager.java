@@ -25,6 +25,7 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OTPPolicy;
@@ -47,10 +48,13 @@ import org.keycloak.protocol.oidc.mappers.AudienceResolveProtocolMapper;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.services.scheduled.AutoUpdateIdentityProviders;
+import org.keycloak.services.scheduled.ClusterAwareScheduledTaskRunner;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.services.clientregistration.policy.DefaultClientRegistrationPolicies;
 
@@ -58,6 +62,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+
+import org.keycloak.timer.TimerProvider;
 import org.keycloak.utils.ReservedCharValidator;
 
 /**
@@ -555,6 +561,16 @@ public class RealmManager {
         }
 
         RepresentationToModel.importRealm(session, rep, realm, skipUserDependent);
+
+        if (rep.getIdentityProviders() != null) {
+            rep.getIdentityProviders().stream().filter(idp -> idp.getConfig().get(IdentityProviderModel.REFRESH_PERIOD) != null).forEach(idp->{
+                //case IdP is autoUpdated create its schedule task
+                TimerProvider timer = session.getProvider(TimerProvider.class);
+                AutoUpdateIdentityProviders autoUpdateProvider = new AutoUpdateIdentityProviders(idp.getAlias(), realm.getId());
+                ClusterAwareScheduledTaskRunner taskRunner = new ClusterAwareScheduledTaskRunner(session.getKeycloakSessionFactory(), autoUpdateProvider, Long.parseLong(idp.getConfig().get(IdentityProviderModel.REFRESH_PERIOD)) * 1000);
+                timer.schedule(taskRunner, Long.parseLong(idp.getConfig().get(IdentityProviderModel.REFRESH_PERIOD)) * 1000, realm.getId()+"_AutoUpdateIdP_" + idp.getAlias());
+            });
+        }
 
         setupClientServiceAccountsAndAuthorizationOnImport(rep, skipUserDependent);
 

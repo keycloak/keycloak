@@ -17,6 +17,7 @@
 package org.keycloak.broker.saml;
 
 import java.io.InputStream;
+import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -69,9 +70,10 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
     public SAMLIdentityProviderConfig createConfig() {
         return new SAMLIdentityProviderConfig();
     }
-
+    
     @Override
-    public Map<String, String> parseConfig(KeycloakSession session, InputStream inputStream) {
+    public IdentityProviderModel parseConfig(KeycloakSession session, InputStream inputStream, IdentityProviderModel model) {
+        SAMLIdentityProviderConfig samlIdentityProviderConfig = new SAMLIdentityProviderConfig(model);
         try {
             Object parsedObject = SAMLParser.getInstance().parse(inputStream);
             EntityDescriptorType entityType;
@@ -98,7 +100,6 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                 }
 
                 if (idpDescriptor != null) {
-                    SAMLIdentityProviderConfig samlIdentityProviderConfig = new SAMLIdentityProviderConfig();
                     String singleSignOnServiceUrl = null;
                     boolean postBindingResponse = false;
                     boolean postBindingLogout = false;
@@ -131,15 +132,21 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                     samlIdentityProviderConfig.setPostBindingResponse(postBindingResponse);
                     samlIdentityProviderConfig.setPostBindingAuthnRequest(postBindingResponse);
                     samlIdentityProviderConfig.setPostBindingLogout(postBindingLogout);
-                    samlIdentityProviderConfig.setLoginHint(false);
+                    if (samlIdentityProviderConfig.getInternalId() == null)
+                        samlIdentityProviderConfig.setLoginHint(false);
 
                     List<String> nameIdFormatList = idpDescriptor.getNameIDFormat();
-                    if (nameIdFormatList != null && !nameIdFormatList.isEmpty())
-                        samlIdentityProviderConfig.setNameIDPolicyFormat(nameIdFormatList.get(0));
+                    //change NameIDPolicyFormat only for new IdP and for not existing previous NameIDPolicyFormat in nameIdFormatList
+                   if (nameIdFormatList != null && !nameIdFormatList.isEmpty() && ( samlIdentityProviderConfig.getNameIDPolicyFormat() == null || !nameIdFormatList.contains(samlIdentityProviderConfig.getNameIDPolicyFormat())))
+                            samlIdentityProviderConfig.setNameIDPolicyFormat(nameIdFormatList.get(0));
+
 
                     List<KeyDescriptorType> keyDescriptor = idpDescriptor.getKeyDescriptor();
                     String defaultCertificate = null;
 
+                    //in case of autoupdate reconfigure keys
+                    samlIdentityProviderConfig.getConfig().remove(SAMLIdentityProviderConfig.ENCRYPTION_PUBLIC_KEY);
+                    samlIdentityProviderConfig.getConfig().remove(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY);
                     if (keyDescriptor != null) {
                         for (KeyDescriptorType keyDescriptorType : keyDescriptor) {
                             Element keyInfo = keyDescriptorType.getKeyInfo();
@@ -165,28 +172,34 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                         }
                     }
 
-                    samlIdentityProviderConfig.setEnabledFromMetadata(entityType.getValidUntil() == null
-                        || entityType.getValidUntil().toGregorianCalendar().getTime().after(new Date(System.currentTimeMillis())));
+                    if (samlIdentityProviderConfig.getInternalId() == null) {
+                        samlIdentityProviderConfig.setEnabledFromMetadata(entityType.getValidUntil() == null
+                                || entityType.getValidUntil().toGregorianCalendar().getTime().after(new Date(Instant.now().toEpochMilli())));
+                    } else {
+                        samlIdentityProviderConfig.setEnabled(entityType.getValidUntil() == null
+                                || entityType.getValidUntil().toGregorianCalendar().getTime().after(new Date(Instant.now().toEpochMilli())));
+                    }
 
                     // check for hide on login attribute
+                    boolean hideOnLogin = false;
                     if (entityType.getExtensions() != null && entityType.getExtensions().getEntityAttributes() != null) {
                         for (AttributeType attribute : entityType.getExtensions().getEntityAttributes().getAttribute()) {
                             if (MACEDIR_ENTITY_CATEGORY.equals(attribute.getName())
-                                && attribute.getAttributeValue().contains(REFEDS_HIDE_FROM_DISCOVERY)) {
-                                samlIdentityProviderConfig.setHideOnLogin(true);
+                                    && attribute.getAttributeValue().contains(REFEDS_HIDE_FROM_DISCOVERY)) {
+                                hideOnLogin = true;
+                                break;
                             }
                         }
 
                     }
-
-                    return samlIdentityProviderConfig.getConfig();
+                    samlIdentityProviderConfig.setHideOnLogin(hideOnLogin);
                 }
             }
         } catch (ParsingException pe) {
             throw new RuntimeException("Could not parse IdP SAML Metadata", pe);
         }
 
-        return new HashMap<>();
+        return samlIdentityProviderConfig;
     }
 
     @Override

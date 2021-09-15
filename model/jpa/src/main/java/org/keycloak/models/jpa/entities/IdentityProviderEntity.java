@@ -39,7 +39,8 @@ import java.util.Map;
 @Entity
 @Table(name="IDENTITY_PROVIDER")
 @NamedQueries({
-        @NamedQuery(name="findIdentityProviderByAlias", query="select identityProvider from IdentityProviderEntity identityProvider where identityProvider.alias = :alias")
+        @NamedQuery(name="findIdentityProviderByAlias", query="select identityProvider from IdentityProviderEntity identityProvider where identityProvider.alias = :alias"),
+        @NamedQuery(name="findAutoUpdatedIdentityProviders", query="select i from IdentityProviderEntity i inner join i.config c where i.realm.id = :realmId and KEY(c) = 'refreshPeriod' ")
 })
 public class IdentityProviderEntity {
 

@@ -1,0 +1,11 @@
+{
+  "issuer": "https://aai.egi.eu/oidc/",
+  "authorization_endpoint": "https://aai.egi.eu/oidc/authorize",
+  "token_endpoint": "https://aai.egi.eu/oidc/token",
+  "response_types_supported": [
+    "code",
+    "token"
+  ],
+  "userinfo_endpoint": "https://aai.egi.eu/oidc/userinfo",
+  "jwks_uri": "https://aai.egi.eu/oidc/jwk"
+}

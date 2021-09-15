@@ -35,6 +35,12 @@ public class IdentityProviderModel implements Serializable {
     
     public static final String HIDE_ON_LOGIN = "hideOnLoginPage";
 
+    //for SAML and OIDC providers
+    public static final String AUTO_UPDATE = "autoUpdate";
+    public static final String METADATA_URL = "metadataUrl";
+    public static final String REFRESH_PERIOD = "refreshPeriod";
+    public static final String LAST_REFRESH_TIME = "lastRefreshTime";
+
     private String internalId;
 
     /**

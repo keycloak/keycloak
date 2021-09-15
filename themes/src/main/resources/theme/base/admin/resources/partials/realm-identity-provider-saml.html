@@ -132,7 +132,49 @@
         </fieldset>
         <fieldset>
             <legend uncollapsed><span class="text">{{:: 'saml-config' | translate}}</span> <kc-tooltip>{{:: 'identity-provider.saml-config.tooltip' | translate}}</kc-tooltip></legend>
-
+            <div class="form-group">
+                <label class="col-sm-2 control-label" for="autoUpdate">{{:: 'autoUpdate' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="identityProvider.config.autoUpdate" id="autoUpdate" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" ng-click="autoUpdateChange()"/>
+                </div>
+                <kc-tooltip>{{:: 'autoUpdate.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="identityProvider.config.autoUpdate == 'true'">
+                <label class="col-md-2 control-label" for="metadataUrl"> <span
+                        class="required">*</span> {{:: 'metadataUrl' | translate}}
+                </label>
+                <div class="col-md-6">
+                    <input class="form-control" id="metadataUrl" type="text" ng-required="identityProvider.config.autoUpdate == 'true'"
+                           ng-model="identityProvider.config.metadataUrl">
+                </div>
+                <kc-tooltip>{{::'metadataUrl.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="newIdentityProvider && identityProvider.config.metadataUrl !== undefined">
+                <label class="col-md-2 control-label" for="importFrom"></label>
+                <div class="col-md-6">
+                    <button id="importFromAutoUpdate" type="button" data-ng-click="importFrom(identityProvider.config.metadataUrl)" class="btn btn-primary">{{:: 'import' | translate}}</button>
+                </div>
+            </div>
+            <div class="form-group clearfix" data-ng-show="identityProvider.config.autoUpdate == 'true'">
+                <label class="col-md-2 control-label" for="refreshPeriod"><span
+                        class="required">*</span> {{::'refreshPeriod' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" type="number" ng-required="identityProvider.config.autoUpdate == 'true'" data-ng-model="refreshPeriod" id="refreshPeriod" name="refreshPeriod" min="1"/>
+                    <select class="form-control" id="refreshPeriodUnit" ng-required="identityProvider.config.autoUpdate == 'true'" data-ng-model="refreshPeriodUnit">
+                        <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                        <option value="Hours">{{:: 'hours' | translate}}</option>
+                        <option value="Days">{{:: 'days' | translate}}</option>
+                    </select>
+                </div>
+                <kc-tooltip>{{::'refreshPeriod.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-show="identityProvider.config.autoUpdate == 'true' && lastRefreshTime">
+                <label class="col-md-2 control-label">{{::'last-refresh' | translate}}</label>
+                <div class="col-md-6">
+                    {{lastRefreshTime | date : 'yyyy-MM-dd HH:mm:ss'}}
+                </div>
+                <kc-tooltip>{{:: 'lastRefreshTime.tooltip' |translate}}</kc-tooltip>
+            </div>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="entityId"><span class="required">*</span> {{:: 'identity-provider.saml.entity-id' | translate}}</label>
                 <div class="col-md-6">
@@ -381,7 +423,7 @@
                 <kc-tooltip>{{:: 'identity-provider.saml.authncontext-decl-ref.tooltip' | translate}}</kc-tooltip>
             </div>
         </fieldset>
-        <fieldset data-ng-show="newIdentityProvider">
+        <fieldset data-ng-show="newIdentityProvider && (!identityProvider.config.autoUpdate || identityProvider.config.autoUpdate == 'false')">
             <legend uncollapsed><span class="text">{{:: 'import-external-idp-config' | translate}}</span> <kc-tooltip>{{:: 'import-external-idp-config.tooltip' | translate}}</kc-tooltip></legend>
             <div class="form-group" data-ng-show="newIdentityProvider">
                 <label class="col-md-2 control-label" for="fromUrl">{{:: 'import-from-url' | translate}}</label>
@@ -393,7 +435,7 @@
             <div class="form-group">
                 <label class="col-md-2 control-label" for="importFrom"></label>
                 <div class="col-md-6">
-                    <button id="importFrom" type="button" data-ng-click="importFrom()" data-ng-show="importUrl" class="btn btn-primary">{{:: 'import' | translate}}</button>
+                    <button id="importFrom" type="button" data-ng-click="importFrom(fromUrl.data)" data-ng-show="importUrl" class="btn btn-primary">{{:: 'import' | translate}}</button>
                 </div>
             </div>
             <div class="form-group" data-ng-show="newIdentityProvider">

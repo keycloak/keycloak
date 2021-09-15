@@ -1194,6 +1194,13 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         return realm.getIdentityProviders().stream().map(this::entityToModel);
     }
 
+    @Override
+    public Stream<IdentityProviderModel> getAutoUpdatedIdentityProvidersStream() {
+        TypedQuery<IdentityProviderEntity> query = em.createNamedQuery("findAutoUpdatedIdentityProviders", IdentityProviderEntity.class);
+        query.setParameter("realmId", getId());
+        return query.getResultStream().map(this::entityToModel);
+    }
+
     private IdentityProviderModel entityToModel(IdentityProviderEntity entity) {
         IdentityProviderModel identityProviderModel = new IdentityProviderModel();
         identityProviderModel.setProviderId(entity.getProviderId());

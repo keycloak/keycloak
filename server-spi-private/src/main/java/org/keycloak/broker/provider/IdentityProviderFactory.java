@@ -45,15 +45,15 @@ public interface IdentityProviderFactory<T extends IdentityProvider> extends Pro
      */
     T create(KeycloakSession session, IdentityProviderModel model);
 
-    /**
+   /**
      * <p>Creates an {@link IdentityProvider} based on the configuration from
-     * <code>inputStream</code>.</p>
-     *
+     * <code>inputStream</code>.</p> and existing model
      * @param session
      * @param inputStream The input stream from where configuration will be loaded from..
+     * @param model previous identity provider
      * @return
      */
-    Map<String, String> parseConfig(KeycloakSession session, InputStream inputStream);
+    IdentityProviderModel parseConfig(KeycloakSession session, InputStream inputStream, IdentityProviderModel model);
 
     /**
      * <p>Creates a provider specific {@link IdentityProviderModel} instance.
