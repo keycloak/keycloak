@@ -67,6 +67,7 @@ public class MigrationTest extends AbstractMigrationTest {
 
         // Always test offline-token login during migration test
         testOfflineTokenLogin();
+        testExtremelyLongClientAttribute(migrationRealm);
     }
 
     @Test
@@ -82,6 +83,7 @@ public class MigrationTest extends AbstractMigrationTest {
 
         // Always test offline-token login during migration test
         testOfflineTokenLogin();
+        testExtremelyLongClientAttribute(migrationRealm);
     }
 
     @Test

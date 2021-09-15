@@ -43,12 +43,17 @@ import javax.transaction.Transaction;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.quarkus.runtime.Quarkus;
+import liquibase.Liquibase;
+import liquibase.exception.LiquibaseException;
 import org.hibernate.internal.SessionFactoryImpl;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.ServerStartupError;
 import org.keycloak.common.Version;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
+import org.keycloak.exportimport.ExportImportConfig;
+import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
+import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.migration.ModelVersion;
@@ -110,6 +115,20 @@ public final class QuarkusJpaConnectionProviderFactory implements JpaConnectionP
         this.config = config;
     }
 
+    private void addSpecificNamedQueries(KeycloakSession session, Connection connection) {
+        LiquibaseConnectionProvider liquibaseProvider = session.getProvider(LiquibaseConnectionProvider.class);
+        EntityManager em = null;
+        try {
+            Liquibase liquibase = liquibaseProvider.getLiquibase(connection, this.getSchema());
+            em = createEntityManager(session);
+            JpaUtils.addSpecificNamedQueries(em, liquibase.getDatabase().getShortName());
+        } catch (LiquibaseException e) {
+            throw new IllegalStateException(e);
+        } finally {
+            JpaUtils.closeEntityManager(em);
+        }
+    }
+
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         this.factory = factory;
@@ -126,6 +145,7 @@ public final class QuarkusJpaConnectionProviderFactory implements JpaConnectionP
 
         try (Connection connection = getConnection()) {
             createOperationalInfo(connection);
+            addSpecificNamedQueries(session, connection);
             initSchema = createOrUpdateSchema(getSchema(), connection, session);
         } catch (SQLException cause) {
             throw new RuntimeException("Failed to update database.", cause);
@@ -133,14 +153,14 @@ public final class QuarkusJpaConnectionProviderFactory implements JpaConnectionP
             session.close();
         }
 
-        if (initSchema) {
+        if (initSchema || ExportImportConfig.ACTION_EXPORT.equals(ExportImportConfig.getAction())) {
             runJobInTransaction(factory, this::initSchemaOrExport);
         }
     }
 
     @Override
     public Connection getConnection() {
-        SessionFactoryImpl entityManagerFactory = SessionFactoryImpl.class.cast(emf);
+        SessionFactoryImpl entityManagerFactory = emf.unwrap(SessionFactoryImpl.class);
 
         try {
             return entityManagerFactory.getJdbcServices().getBootstrapJdbcConnectionAccess().obtainConnection();

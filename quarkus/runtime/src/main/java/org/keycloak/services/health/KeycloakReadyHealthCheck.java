@@ -59,7 +59,7 @@ public class KeycloakReadyHealthCheck extends DataSourceHealthCheck {
         long invalidCount = agroalDataSource.getMetrics().invalidCount();
         if (activeCount < 1 || invalidCount > 0) {
             HealthCheckResponse activeCheckResult = super.call();
-            if (activeCheckResult.getState() == HealthCheckResponse.State.DOWN) {
+            if (activeCheckResult.getStatus() == HealthCheckResponse.Status.DOWN) {
                 builder.down();
                 Instant failingTime = failingSince.updateAndGet(this::createInstanceIfNeeded);
                 builder.withData("Failing since", DATE_FORMATTER.format(failingTime));

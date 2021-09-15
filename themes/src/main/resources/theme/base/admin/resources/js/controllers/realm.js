@@ -1325,8 +1325,8 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
     $scope.realm.actionTokenGeneratedByAdminLifespan = TimeUnit2.asUnit(realm.actionTokenGeneratedByAdminLifespan);
     $scope.realm.actionTokenGeneratedByUserLifespan = TimeUnit2.asUnit(realm.actionTokenGeneratedByUserLifespan);
     $scope.realm.oauth2DeviceCodeLifespan = TimeUnit2.asUnit(realm.oauth2DeviceCodeLifespan);
-    $scope.requestUriLifespan = TimeUnit2.asUnit(realm.attributes.parRequestUriLifespan);
-    $scope.realm.attributes = realm.attributes
+    $scope.realm.attributes.parRequestUriLifespan = TimeUnit2.asUnit(realm.attributes.parRequestUriLifespan);
+    $scope.realm.attributes = realm.attributes;
 
     var oldCopy = angular.copy($scope.realm);
     $scope.changed = false;
@@ -1335,10 +1335,6 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
         if (!angular.equals($scope.realm, oldCopy)) {
             $scope.changed = true;
         }
-    }, true);
-    
-    $scope.$watch('requestUriLifespan', function () {
-        $scope.changed = true;
     }, true);
     
     $scope.$watch('actionLifespanId', function () {
@@ -1390,7 +1386,7 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
         $scope.realm.actionTokenGeneratedByAdminLifespan = $scope.realm.actionTokenGeneratedByAdminLifespan.toSeconds();
         $scope.realm.actionTokenGeneratedByUserLifespan = $scope.realm.actionTokenGeneratedByUserLifespan.toSeconds();
         $scope.realm.oauth2DeviceCodeLifespan = $scope.realm.oauth2DeviceCodeLifespan.toSeconds();
-        $scope.realm.attributes.parRequestUriLifespan = $scope.requestUriLifespan.toSeconds().toString();
+        $scope.realm.attributes.parRequestUriLifespan = $scope.realm.attributes.parRequestUriLifespan.toSeconds();
 
         Realm.update($scope.realm, function () {
             $route.reload();

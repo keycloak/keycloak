@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='UTF-8'?>
+<?xml version="1.0"?>
 <licenseSummary>
   <dependencies>
     <dependency>
@@ -30,7 +30,7 @@
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/FasterXML/jackson-annotations/jackson-annotations-2.12.1/src/main/resources/META-INF/LICENSE</url>
+          <url>https://raw.githubusercontent.com/FasterXML/jackson-annotations/jackson-annotations-2.12.1/LICENSE</url>
         </license>
       </licenses>
     </dependency>
@@ -41,7 +41,7 @@
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/FasterXML/jackson-core/jackson-core-2.12.1/src/main/resources/META-INF/LICENSE</url>
+          <url>https://raw.githubusercontent.com/FasterXML/jackson-core/jackson-core-2.12.1/LICENSE</url>
         </license>
       </licenses>
     </dependency>
@@ -52,7 +52,7 @@
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/FasterXML/jackson-databind/jackson-databind-2.12.1/src/main/resources/META-INF/LICENSE</url>
+          <url>https://raw.githubusercontent.com/FasterXML/jackson-databind/jackson-databind-2.12.1/LICENSE</url>
         </license>
       </licenses>
     </dependency>

@@ -57,6 +57,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import org.keycloak.services.ErrorResponseException;
 
 /**
  * @resource Roles
@@ -189,6 +190,9 @@ public class RoleContainerResource extends RoleResource {
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
             throw new NotFoundException("Could not find role");
+        } else if (realm.getDefaultRole().getId().equals(role.getId())) {
+            throw new ErrorResponseException(ErrorResponse.error(roleName + " is default role of the realm and cannot be removed.", 
+                    Response.Status.BAD_REQUEST));
         }
         deleteRole(role);
 

@@ -41,6 +41,8 @@ public abstract class AbstractNumberValidator extends AbstractSimpleValidator im
 
     public static final String MESSAGE_INVALID_NUMBER = "error-invalid-number";
     public static final String MESSAGE_NUMBER_OUT_OF_RANGE = "error-number-out-of-range";
+    public static final String MESSAGE_NUMBER_OUT_OF_RANGE_TOO_SMALL = "error-number-out-of-range-too-small";
+    public static final String MESSAGE_NUMBER_OUT_OF_RANGE_TOO_BIG = "error-number-out-of-range-too-big";
 
     public static final String KEY_MIN = "min";
     public static final String KEY_MAX = "max";
@@ -111,16 +113,29 @@ public abstract class AbstractNumberValidator extends AbstractSimpleValidator im
         Number max = getMinMaxConfig(config, KEY_MAX);
 
         if (min != null && isFirstGreaterThanToSecond(min, number)) {
-            context.addError(new ValidationError(getId(), inputHint, MESSAGE_NUMBER_OUT_OF_RANGE, min, max));
+            context.addError(new ValidationError(getId(), inputHint, selectRangeErrorMessage(config), min, max));
             return;
         }
 
         if (max != null && isFirstGreaterThanToSecond(number, max)) {
-            context.addError(new ValidationError(getId(), inputHint, MESSAGE_NUMBER_OUT_OF_RANGE, min, max));
+            context.addError(new ValidationError(getId(), inputHint, selectRangeErrorMessage(config), min, max));
             return;
         }
 
         return;
+    }
+    
+    /**
+     * Select error message depending on the allowed range interval bound configuration.
+     */
+    protected String selectRangeErrorMessage(ValidatorConfig config) {
+        if (!config.containsKey(KEY_MAX)) {
+            return MESSAGE_NUMBER_OUT_OF_RANGE_TOO_SMALL;
+        } else if (!config.containsKey(KEY_MIN)) {
+            return MESSAGE_NUMBER_OUT_OF_RANGE_TOO_BIG;
+        } else {
+            return MESSAGE_NUMBER_OUT_OF_RANGE;
+        }
     }
 
     @Override

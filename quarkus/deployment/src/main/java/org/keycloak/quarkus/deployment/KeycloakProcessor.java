@@ -50,8 +50,11 @@ import java.util.jar.JarFile;
 import io.quarkus.deployment.IsDevelopment;
 import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
+import io.quarkus.deployment.builditem.LaunchModeBuildItem;
+import io.quarkus.deployment.builditem.StaticInitConfigSourceProviderBuildItem;
 import io.quarkus.hibernate.orm.deployment.HibernateOrmConfig;
 import io.quarkus.resteasy.server.common.deployment.ResteasyDeploymentCustomizerBuildItem;
+import io.quarkus.runtime.LaunchMode;
 import io.quarkus.smallrye.health.runtime.SmallRyeHealthHandler;
 import io.quarkus.vertx.http.deployment.RouteBuildItem;
 import io.vertx.core.Handler;
@@ -85,6 +88,7 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.Spi;
 import org.keycloak.provider.quarkus.QuarkusRequestFilter;
+import org.keycloak.provider.quarkus.dev.QuarkusDevRequestFilter;
 import org.keycloak.quarkus.KeycloakRecorder;
 
 import io.quarkus.deployment.annotations.BuildProducer;
@@ -192,6 +196,16 @@ class KeycloakProcessor {
     }
 
     /**
+     * Register the custom {@link org.eclipse.microprofile.config.spi.ConfigSource} implementations.
+     *
+     * @param configSources
+     */
+    @BuildStep
+    void configureConfigSources(BuildProducer<StaticInitConfigSourceProviderBuildItem> configSources) {
+        configSources.produce(new StaticInitConfigSourceProviderBuildItem(KeycloakConfigSourceProvider.class.getName()));
+    }
+
+    /**
      * <p>Make the build time configuration available at runtime so that the server can run without having to specify some of
      * the properties again.
      *
@@ -253,8 +267,15 @@ class KeycloakProcessor {
     }
 
     @BuildStep
-    void initializeFilter(BuildProducer<FilterBuildItem> filters) {
-        filters.produce(new FilterBuildItem(new QuarkusRequestFilter(),FilterBuildItem.AUTHORIZATION - 10));
+    void initializeFilter(BuildProducer<FilterBuildItem> filters, LaunchModeBuildItem launchModeBuildItem) {
+        QuarkusRequestFilter filter = new QuarkusRequestFilter();
+        LaunchMode launchMode = launchModeBuildItem.getLaunchMode();
+
+        if (launchMode.isDevOrTest()) {
+            filter = new QuarkusDevRequestFilter();
+        }
+
+        filters.produce(new FilterBuildItem(filter,FilterBuildItem.AUTHORIZATION - 10));
     }
 
     /**
@@ -283,10 +304,10 @@ class KeycloakProcessor {
             metricsHandler = new NotFoundHandler();
         }
 
-        routes.produce(new RouteBuildItem(DEFAULT_HEALTH_ENDPOINT, healthHandler));
-        routes.produce(new RouteBuildItem(DEFAULT_HEALTH_ENDPOINT.concat("/live"), healthHandler));
-        routes.produce(new RouteBuildItem(DEFAULT_HEALTH_ENDPOINT.concat("/ready"), healthHandler));
-        routes.produce(new RouteBuildItem(KeycloakMetricsHandler.DEFAULT_METRICS_ENDPOINT, metricsHandler));
+        routes.produce(RouteBuildItem.builder().route(DEFAULT_HEALTH_ENDPOINT).handler(healthHandler).build());
+        routes.produce(RouteBuildItem.builder().route(DEFAULT_HEALTH_ENDPOINT.concat("/live")).handler(healthHandler).build());
+        routes.produce(RouteBuildItem.builder().route(DEFAULT_HEALTH_ENDPOINT.concat("/ready")).handler(healthHandler).build());
+        routes.produce(RouteBuildItem.builder().route(KeycloakMetricsHandler.DEFAULT_METRICS_ENDPOINT).handler(metricsHandler).build());
     }
 
     @BuildStep
@@ -310,7 +331,7 @@ class KeycloakProcessor {
 
     private Map<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> loadFactories(
             Map<String, ProviderFactory> preConfiguredProviders) {
-        loadConfig();
+        Config.init(new MicroProfileConfigProvider());
         BuildClassLoader providerClassLoader = new BuildClassLoader();
         ProviderManager pm = new ProviderManager(KeycloakDeploymentInfo.create().services(), providerClassLoader);
         Map<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> factories = new HashMap<>();
@@ -482,18 +503,6 @@ class KeycloakProcessor {
             defaultProviders.put(spi.getProviderClass(), defaultProvider);
         } else {
             logger.debugv("No default provider for {0}", spi.getName());
-        }
-    }
-
-    protected void loadConfig() {
-        ServiceLoader<ConfigProviderFactory> loader = ServiceLoader.load(ConfigProviderFactory.class, KeycloakApplication.class.getClassLoader());
-
-        try {
-            ConfigProviderFactory factory = loader.iterator().next();
-            logger.debugv("ConfigProvider: {0}", factory.getClass().getName());
-            Config.init(factory.create().orElseThrow(() -> new RuntimeException("Failed to load Keycloak configuration")));
-        } catch (NoSuchElementException e) {
-            throw new RuntimeException("No valid ConfigProvider found");
         }
     }
 

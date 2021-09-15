@@ -228,13 +228,19 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     public void removeExpired(RealmModel realm) {
         int expiredOffline = Time.currentTime() - realm.getOfflineSessionIdleTimeout() - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
 
+        // prefer client session timeout if set
+        int expiredClientOffline = expiredOffline;
+        if (realm.getClientOfflineSessionIdleTimeout() > 0) {
+            expiredClientOffline = Time.currentTime() - realm.getClientOfflineSessionIdleTimeout() - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
+        }
+
         String offlineStr = offlineToString(true);
 
         logger.tracef("Trigger removing expired user sessions for realm '%s'", realm.getName());
 
         int cs = em.createNamedQuery("deleteExpiredClientSessions")
                 .setParameter("realmId", realm.getId())
-                .setParameter("lastSessionRefresh", expiredOffline)
+                .setParameter("lastSessionRefresh", expiredClientOffline)
                 .setParameter("offline", offlineStr)
                 .executeUpdate();
 
@@ -294,7 +300,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
             Set<String> removedClientUUIDs = new HashSet<>();
 
-            clientSessionQuery.getResultStream().forEach(clientSession -> {
+            closing(clientSessionQuery.getResultStream()).forEach(clientSession -> {
                         boolean added = addClientSessionToAuthenticatedClientSessionsIfPresent(userSession, clientSession);
                         if (!added) {
                             // client was removed in the meantime
@@ -375,10 +381,13 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
             closing(queryClientSessions.getResultStream()).forEach(clientSession -> {
                 PersistentUserSessionAdapter userSession = sessionsById.get(clientSession.getUserSessionId());
-                boolean added = addClientSessionToAuthenticatedClientSessionsIfPresent(userSession, clientSession);
-                if (!added) {
-                    // client was removed in the meantime
-                    removedClientUUIDs.add(clientSession.getClientId());
+                // check if we have a user session for the client session
+                if (userSession != null) {
+                    boolean added = addClientSessionToAuthenticatedClientSessionsIfPresent(userSession, clientSession);
+                    if (!added) {
+                        // client was removed in the meantime
+                        removedClientUUIDs.add(clientSession.getClientId());
+                    }
                 }
             });
         }

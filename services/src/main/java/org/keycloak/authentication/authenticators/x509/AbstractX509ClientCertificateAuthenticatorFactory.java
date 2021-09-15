@@ -207,6 +207,12 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         identityConfirmationPageDisallowed.setLabel("Bypass identity confirmation");
         identityConfirmationPageDisallowed.setHelpText("By default, the users are prompted to confirm their identity extracted from X509 client certificate. The identity confirmation prompt is skipped if the option is switched on.");
 
+        ProviderConfigProperty revalidateCertificateEnabled = new ProviderConfigProperty();
+        revalidateCertificateEnabled.setType(BOOLEAN_TYPE);
+        revalidateCertificateEnabled.setName(REVALIDATE_CERTIFICATE);
+        revalidateCertificateEnabled.setLabel("Revalidate Client Certificate");
+        revalidateCertificateEnabled.setHelpText("Forces revalidation of the client certificate according to the certificates defined in the truststore. This is useful when behind a non-validating proxy or when the number of allowed certificate chains would be too large for mutual SSL negotiation.");
+
         configProperties = asList(mappingMethodList,
                 canonicalDn,
                 serialnumberHex,
@@ -222,7 +228,8 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
                 ocspResponderCert,
                 keyUsage,
                 extendedKeyUsage,
-                identityConfirmationPageDisallowed);
+                identityConfirmationPageDisallowed,
+                revalidateCertificateEnabled);
     }
 
     @Override

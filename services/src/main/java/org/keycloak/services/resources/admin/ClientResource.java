@@ -20,6 +20,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.admin.AuthorizationService;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
@@ -223,8 +224,13 @@ public class ClientResource {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
-        new ClientManager(new RealmManager(session)).removeClient(realm, client);
-        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
+        if (new ClientManager(new RealmManager(session)).removeClient(realm, client)) {
+            adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
+        }
+        else {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Could not delete client",
+                    Response.Status.BAD_REQUEST);
+        }
     }
 
 

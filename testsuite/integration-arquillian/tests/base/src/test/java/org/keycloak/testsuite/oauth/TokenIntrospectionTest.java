@@ -31,15 +31,17 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
@@ -62,6 +64,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -104,6 +107,25 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         realmRoles.add("user");
         user.setRealmRoles(realmRoles);
         testRealm.getUsers().add(user);
+    }
+
+    @Override
+    protected void afterAbstractKeycloakTestRealmImport() {
+        ClientScopesResource clientScopesResource = testRealm().clientScopes();
+        List<ClientScopeRepresentation> clientScopeRepresentations = clientScopesResource.findAll();
+        for (ClientScopeRepresentation scope : clientScopeRepresentations) {
+            List<ProtocolMapperRepresentation> mappers = scope.getProtocolMappers();
+            if (mappers != null) {
+                for (ProtocolMapperRepresentation mapper : mappers) {
+                    if ("username".equals(mapper.getName())) {
+                        Map<String, String> config = mapper.getConfig();
+                        config.put("user.attribute", "username");
+                        config.put("claim.name", "preferred_username12");
+                        clientScopesResource.get(scope.getId()).getProtocolMappers().update(mapper.getId(), mapper);
+                    }
+                }
+            }
+        }
     }
 
     @Test
@@ -292,6 +314,8 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         AbstractOIDCScopeTest.assertScopes("openid email profile", rep.getScope());
     }
 
+
+
     @Test
     public void testIntrospectAccessTokenES256() throws Exception {
         testIntrospectAccessToken(Algorithm.ES256);
@@ -376,6 +400,28 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertEquals("test-app", rep.getClientId());
     }
 
+    @Test
+    public void testIntrospectDoesntExtendTokenLifespan() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code, "password");
+        accessTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken(), "password");
+
+        setTimeOffset(1200);
+
+        String tokenResponse = oauth.introspectRefreshTokenWithClientCredential("confidential-cli", "secret1", accessTokenResponse.getRefreshToken());
+        TokenMetadataRepresentation rep = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+
+        assertTrue(rep.isActive());
+        assertEquals("test-user@localhost", rep.getUserName());
+        assertEquals("test-app", rep.getClientId());
+
+        setTimeOffset(1200 + 1200);
+
+        accessTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken(), "password");
+        assertEquals(400, accessTokenResponse.getStatusCode());
+        assertEquals("Token is not active", accessTokenResponse.getErrorDescription());
+    }
 
     @Test
     public void testIntrospectAccessTokenUserDisabled() throws Exception {

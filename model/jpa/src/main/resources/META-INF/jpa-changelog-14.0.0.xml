@@ -38,12 +38,7 @@
 
     <changeSet author="keycloak" id="14.0.0-KEYCLOAK-18286">
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
-            <not>
-                <or>
-                    <dbms type="mysql"/>
-                    <dbms type="mariadb"/>
-                </or>
-            </not>
+            <changeSetExecuted id="NONEXISTENT" author="NONEXISTENT" changeLogFile="NONEXISTENT" />  <!-- Effectively disable this changeset -->
         </preConditions>
         <createIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE">
             <column name="NAME" type="VARCHAR(255)"/>
@@ -51,16 +46,52 @@
         </createIndex>
     </changeSet>
 
-    <changeSet author="keycloak" id="14.0.0-KEYCLOAK-18286-mysql">
+    <changeSet author="keycloak" id="14.0.0-KEYCLOAK-18286-revert">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <indexExists tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE" />
+            <or>
+                <changeSetExecuted id="14.0.0-KEYCLOAK-18286" author="keycloak" changeLogFile="META-INF/jpa-changelog-14.0.0.xml" />
+                <changeSetExecuted id="14.0.0-KEYCLOAK-18286-mysql" author="keycloak" changeLogFile="META-INF/jpa-changelog-14.0.0.xml" />
+            </or>
+        </preConditions>
+        <dropIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="14.0.0-KEYCLOAK-18286-supported-dbs">
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
             <or>
                 <dbms type="mysql"/>
                 <dbms type="mariadb"/>
+                <dbms type="postgresql"/>
+                <dbms type="oracle"/>
             </or>
         </preConditions>
         <createIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE">
             <column name="NAME" type="VARCHAR(255)"/>
             <column name="VALUE(255)" valueComputed="VALUE(255)" />
+        </createIndex>
+        <modifySql dbms="postgresql">
+            <replace replace="VALUE(255)" with="(value::varchar(250))" />
+        </modifySql>
+        <modifySql dbms="oracle">
+            <replace replace="VALUE(255)" with="SUBSTR(VALUE, 1, 250)" />
+        </modifySql>
+    </changeSet>
+
+    <changeSet author="keycloak" id="14.0.0-KEYCLOAK-18286-unsupported-dbs">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <not>
+                <or>
+                    <dbms type="mysql"/>
+                    <dbms type="mariadb"/>
+                    <dbms type="postgresql"/>
+                    <dbms type="oracle"/>
+                </or>
+            </not>
+        </preConditions>
+        <createIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE">
+            <column name="NAME" type="VARCHAR(255)"/>
+            <!-- Do not include VALUE column -->
         </createIndex>
     </changeSet>
 

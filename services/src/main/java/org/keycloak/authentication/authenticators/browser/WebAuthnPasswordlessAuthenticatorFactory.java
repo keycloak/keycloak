@@ -53,4 +53,10 @@ public class WebAuthnPasswordlessAuthenticatorFactory extends WebAuthnAuthentica
     public String getId() {
         return PROVIDER_ID;
     }
+
+    @Override
+    public boolean isUserSetupAllowed() {
+        return false;
+    }
+
 }

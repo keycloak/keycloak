@@ -17,6 +17,21 @@
 
 package org.keycloak.testsuite.admin;
 
+import static java.util.Arrays.asList;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.keycloak.models.Constants.defaultClients;
+
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -41,6 +56,8 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
@@ -49,9 +66,6 @@ import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -63,14 +77,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static java.util.Arrays.asList;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.junit.Assert.*;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -220,15 +229,6 @@ public class ClientTest extends AbstractAdminTest {
         assertEquals("invalid_input", errorRep.getError());
     }
 
-    private void updateClientExpectingSuccessfulClientUpdate(ClientRepresentation rep, String expectedRootUrl, String expectedBaseUrl) {
-
-        realm.clients().get(rep.getId()).update(rep);
-
-        ClientRepresentation stored = realm.clients().get(rep.getId()).toRepresentation();
-        assertEquals(expectedRootUrl, stored.getRootUrl());
-        assertEquals(expectedBaseUrl, stored.getBaseUrl());
-    }
-
     @Test
     public void removeClient() {
         String id = createClient().getId();
@@ -237,6 +237,23 @@ public class ClientTest extends AbstractAdminTest {
         realm.clients().get(id).remove();
         assertNull(ApiUtil.findClientResourceByClientId(realm, "my-app"));
         assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.clientResourcePath(id), ResourceType.CLIENT);
+    }
+
+    @Test
+    public void removeInternalClientExpectingBadRequestException() {
+        final String testRealmClientId = ApiUtil.findClientByClientId(realmsResouce().realm("master"), "test-realm")
+                .toRepresentation().getId();
+
+        assertThrows(BadRequestException.class,
+                () -> realmsResouce().realm("master").clients().get(testRealmClientId).remove());
+
+        defaultClients.forEach(defaultClient -> {
+            final String defaultClientId = ApiUtil.findClientByClientId(realm, defaultClient)
+                    .toRepresentation().getId();
+
+            assertThrows(BadRequestException.class,
+                    () -> realm.clients().get(defaultClientId).remove());
+        });
     }
 
     @Test

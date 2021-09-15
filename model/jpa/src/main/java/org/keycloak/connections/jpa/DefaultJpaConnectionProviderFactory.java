@@ -25,6 +25,7 @@ import org.keycloak.ServerStartupError;
 import org.keycloak.common.util.StackUtil;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
+import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.models.KeycloakSession;
@@ -54,6 +55,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import liquibase.Liquibase;
+import liquibase.exception.LiquibaseException;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -82,6 +85,10 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
         logger.trace("Create JpaConnectionProvider");
         lazyInit(session);
 
+        return new DefaultJpaConnectionProvider(createEntityManager(session));
+    }
+
+    private EntityManager createEntityManager(KeycloakSession session) {
         EntityManager em;
         if (!jtaEnabled) {
             logger.trace("enlisting EntityManager in JpaKeycloakTransaction");
@@ -91,8 +98,24 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
             em = emf.createEntityManager(SynchronizationType.SYNCHRONIZED);
         }
         em = PersistenceExceptionConverter.create(session, em);
-        if (!jtaEnabled) session.getTransactionManager().enlist(new JpaKeycloakTransaction(em));
-        return new DefaultJpaConnectionProvider(em);
+        if (!jtaEnabled) {
+            session.getTransactionManager().enlist(new JpaKeycloakTransaction(em));
+        }
+        return em;
+    }
+
+    private void addSpecificNamedQueries(KeycloakSession session, Connection connection) {
+        LiquibaseConnectionProvider liquibaseProvider = session.getProvider(LiquibaseConnectionProvider.class);
+        EntityManager em = null;
+        try {
+            Liquibase liquibase = liquibaseProvider.getLiquibase(connection, this.getSchema());
+            em = createEntityManager(session);
+            JpaUtils.addSpecificNamedQueries(em, liquibase.getDatabase().getShortName());
+        } catch (LiquibaseException e) {
+            throw new IllegalStateException(e);
+        } finally {
+            JpaUtils.closeEntityManager(em);
+        }
     }
 
     @Override
@@ -210,6 +233,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                             classLoaders.add(getClass().getClassLoader());
                             properties.put(AvailableSettings.CLASSLOADERS, classLoaders);
                             emf = JpaUtils.createEntityManagerFactory(session, unitName, properties, jtaEnabled);
+                            addSpecificNamedQueries(session, connection);
                             logger.trace("EntityManagerFactory created");
 
                             if (globalStatsInterval != -1) {

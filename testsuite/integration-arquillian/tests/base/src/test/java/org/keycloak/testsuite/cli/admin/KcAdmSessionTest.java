@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.cli.admin;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Assert;
 import org.junit.Test;
@@ -26,7 +27,7 @@ import static org.keycloak.testsuite.cli.KcAdmExec.execute;
 @AuthServerContainerExclude({AuthServer.REMOTE, AuthServer.QUARKUS})
 public class KcAdmSessionTest extends AbstractAdmCliTest {
 
-    static Class<? extends List<ObjectNode>> LIST_OF_JSON = new ArrayList<ObjectNode>() {}.getClass();
+    static TypeReference<List<ObjectNode>> LIST_OF_JSON = new TypeReference<List<ObjectNode>>() {};
 
     @Test
     public void test() throws IOException {

@@ -34,18 +34,28 @@ public class BuiltinValidatorsTest {
         Assert.assertFalse(validator.validate(" ", "name", configFromMap(ImmutableMap.of(LengthValidator.KEY_MIN, 1))).isValid());
         Assert.assertTrue(validator.validate(" ", "name", configFromMap(ImmutableMap.of(LengthValidator.KEY_MAX, 10))).isValid());
         
-        // empty value ignoration configured
-        Assert.assertTrue(validator.validate(null, "name", valConfigIgnoreEmptyValues).isValid());
-        Assert.assertTrue(validator.validate("", "name", valConfigIgnoreEmptyValues).isValid());
-        Assert.assertTrue(validator.validate(" ", "name", valConfigIgnoreEmptyValues).isValid());
-
+        //KEYCLOAK-19006 reproducer
+        Assert.assertFalse(validator.validate("     ", "name", ValidatorConfig.builder().config(LengthValidator.KEY_MAX, 4).config(AbstractSimpleValidator.IGNORE_EMPTY_VALUE, true).config(LengthValidator.KEY_TRIM_DISABLED, true).build()).isValid());
+        
         // min validation only
-        Assert.assertTrue(validator.validate("tester", "name", configFromMap(ImmutableMap.of(LengthValidator.KEY_MIN, 1))).isValid());
-        Assert.assertFalse(validator.validate("tester", "name", configFromMap(ImmutableMap.of(LengthValidator.KEY_MIN, 7))).isValid());
+        Assert.assertTrue(validator.validate("t", "name", ValidatorConfig.builder().config(LengthValidator.KEY_MIN, 1).build()).isValid());
+        Assert.assertFalse(validator.validate("tester", "name", ValidatorConfig.builder().config(LengthValidator.KEY_MIN, 7).build()).isValid());
+        
+        //min value validation with "empty value ignoration" configured
+        Assert.assertTrue(validator.validate(null, "name", ValidatorConfig.builder().config(LengthValidator.KEY_MIN, 1).config(AbstractSimpleValidator.IGNORE_EMPTY_VALUE, true).build()).isValid());
+        Assert.assertTrue(validator.validate("", "name", ValidatorConfig.builder().config(LengthValidator.KEY_MIN, 1).config(AbstractSimpleValidator.IGNORE_EMPTY_VALUE, true).build()).isValid());
+        Assert.assertFalse(validator.validate(" ", "name", ValidatorConfig.builder().config(LengthValidator.KEY_MIN, 1).config(AbstractSimpleValidator.IGNORE_EMPTY_VALUE, true).build()).isValid());
+        Assert.assertTrue(validator.validate("t", "name", ValidatorConfig.builder().config(LengthValidator.KEY_MIN, 1).config(AbstractSimpleValidator.IGNORE_EMPTY_VALUE, true).build()).isValid());
+        Assert.assertFalse(validator.validate("tester", "name", ValidatorConfig.builder().config(LengthValidator.KEY_MIN, 7).config(AbstractSimpleValidator.IGNORE_EMPTY_VALUE, true).build()).isValid());
 
         // max validation only
-        Assert.assertTrue(validator.validate("tester", "name", configFromMap(ImmutableMap.of(LengthValidator.KEY_MAX, 8))).isValid());
-        Assert.assertFalse(validator.validate("tester", "name", configFromMap(ImmutableMap.of(LengthValidator.KEY_MAX, 4))).isValid());
+        Assert.assertTrue(validator.validate("tester", "name", ValidatorConfig.builder().config(LengthValidator.KEY_MAX, 8).build()).isValid());
+        Assert.assertFalse(validator.validate("tester", "name", ValidatorConfig.builder().config(LengthValidator.KEY_MAX, 4).build()).isValid());
+        
+        //max value validation with "empty value ignoration" configured
+        Assert.assertTrue(validator.validate(null, "name", ValidatorConfig.builder().config(LengthValidator.KEY_MAX, 8).config(AbstractSimpleValidator.IGNORE_EMPTY_VALUE, true).build()).isValid());
+        Assert.assertTrue(validator.validate("tester", "name", ValidatorConfig.builder().config(LengthValidator.KEY_MAX, 8).config(AbstractSimpleValidator.IGNORE_EMPTY_VALUE, true).build()).isValid());
+        Assert.assertFalse(validator.validate("tester", "name", ValidatorConfig.builder().config(LengthValidator.KEY_MAX, 4).config(AbstractSimpleValidator.IGNORE_EMPTY_VALUE, true).build()).isValid());
 
         // both validations together
         ValidatorConfig config1 = configFromMap(ImmutableMap.of(LengthValidator.KEY_MIN, 3, LengthValidator.KEY_MAX, 4));
@@ -57,9 +67,18 @@ public class BuiltinValidatorsTest {
         // test value trimming performed by default
         Assert.assertFalse("trim not performed", validator.validate("t ", "name", configFromMap(ImmutableMap.of(LengthValidator.KEY_MIN, 2))).isValid());
         Assert.assertFalse("trim not performed", validator.validate(" t", "name", configFromMap(ImmutableMap.of(LengthValidator.KEY_MIN, 2))).isValid());
-
+        Assert.assertTrue("trim not performed", validator.validate("tr ", "name", configFromMap(ImmutableMap.of(LengthValidator.KEY_MAX, 2))).isValid());
+        Assert.assertTrue("trim not performed", validator.validate(" tr", "name", configFromMap(ImmutableMap.of(LengthValidator.KEY_MAX, 2))).isValid());
+        
         // test value trimming disabled in config
-        Assert.assertTrue("trim disabled but performed", validator.validate("t ", "name", configFromMap(ImmutableMap.of(LengthValidator.KEY_MIN, 2, LengthValidator.KEY_TRIM_DISABLED, true))).isValid());
+        Assert.assertTrue("trim disabled but performed", validator.validate("tr ", "name", configFromMap(ImmutableMap.of(LengthValidator.KEY_MIN, 3, LengthValidator.KEY_TRIM_DISABLED, true))).isValid());
+        Assert.assertFalse("trim disabled but performed", validator.validate("trr ", "name", configFromMap(ImmutableMap.of(LengthValidator.KEY_MAX, 3, LengthValidator.KEY_TRIM_DISABLED, true))).isValid());
+        
+        //test correct error message selection
+        Assert.assertEquals(LengthValidator.MESSAGE_INVALID_LENGTH_TOO_SHORT,validator.validate("", "name", ValidatorConfig.builder().config(LengthValidator.KEY_MIN, 1).build()).getErrors().iterator().next().getMessage());
+        Assert.assertEquals(LengthValidator.MESSAGE_INVALID_LENGTH,validator.validate("", "name", ValidatorConfig.builder().config(LengthValidator.KEY_MIN, 1).config(LengthValidator.KEY_MAX, 10).build()).getErrors().iterator().next().getMessage());
+        Assert.assertEquals(LengthValidator.MESSAGE_INVALID_LENGTH_TOO_LONG,validator.validate("aaa", "name", ValidatorConfig.builder().config(LengthValidator.KEY_MAX, 1).build()).getErrors().iterator().next().getMessage());
+        Assert.assertEquals(LengthValidator.MESSAGE_INVALID_LENGTH,validator.validate("aaa", "name", ValidatorConfig.builder().config(LengthValidator.KEY_MIN, 1).config(LengthValidator.KEY_MAX, 2).build()).getErrors().iterator().next().getMessage());
     }
 
     @Test
@@ -106,12 +125,12 @@ public class BuiltinValidatorsTest {
 
         Assert.assertFalse(validator.validate(null, "email").isValid());
         Assert.assertFalse(validator.validate("", "email").isValid());
+        Assert.assertFalse(validator.validate(" ", "email").isValid());
         
         // empty value ignoration configured
         Assert.assertTrue(validator.validate(null, "emptyString", valConfigIgnoreEmptyValues).isValid());
         Assert.assertTrue(validator.validate("", "emptyString", valConfigIgnoreEmptyValues).isValid());
-        Assert.assertTrue(validator.validate(" ", "blankString", valConfigIgnoreEmptyValues).isValid());
-
+        Assert.assertFalse(validator.validate(" ", "blankString", valConfigIgnoreEmptyValues).isValid());
         
         Assert.assertTrue(validator.validate("admin@example.org", "email").isValid());
         Assert.assertTrue(validator.validate("admin+sds@example.org", "email").isValid());
@@ -242,7 +261,12 @@ public class BuiltinValidatorsTest {
         Assert.assertTrue(validator.validate("10.1", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 10.1).config(DoubleValidator.KEY_MAX, 100).build()).isValid());
         Assert.assertTrue(validator.validate("100.1", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 10.1).config(DoubleValidator.KEY_MAX, 100.1).build()).isValid());
         Assert.assertFalse(validator.validate("100.2", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 10.1).config(DoubleValidator.KEY_MAX, 100.1).build()).isValid());
-
+        
+        //test correct error message selection
+        Assert.assertEquals(DoubleValidator.MESSAGE_NUMBER_OUT_OF_RANGE_TOO_SMALL,validator.validate("10", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 100).build()).getErrors().iterator().next().getMessage());
+        Assert.assertEquals(DoubleValidator.MESSAGE_NUMBER_OUT_OF_RANGE,validator.validate("10", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 100).config(DoubleValidator.KEY_MAX, 1000).build()).getErrors().iterator().next().getMessage());
+        Assert.assertEquals(DoubleValidator.MESSAGE_NUMBER_OUT_OF_RANGE,validator.validate("10000", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 100).config(DoubleValidator.KEY_MAX, 1000).build()).getErrors().iterator().next().getMessage());
+        Assert.assertEquals(DoubleValidator.MESSAGE_NUMBER_OUT_OF_RANGE_TOO_BIG,validator.validate("10000", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MAX, 1000).build()).getErrors().iterator().next().getMessage());
 
     }
 
@@ -318,28 +342,34 @@ public class BuiltinValidatorsTest {
         Assert.assertFalse(validator.validate(Arrays.asList("10", new Object()), "notANumberPresent").isValid());
 
         // min only
-        Assert.assertTrue(validator.validate("10", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 1).build()).isValid());
-        Assert.assertFalse(validator.validate("10", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 100).build()).isValid());
+        Assert.assertTrue(validator.validate("10", "name", ValidatorConfig.builder().config(IntegerValidator.KEY_MIN, 1).build()).isValid());
+        Assert.assertFalse(validator.validate("10", "name", ValidatorConfig.builder().config(IntegerValidator.KEY_MIN, 100).build()).isValid());
         // min behavior around empty values
-        Assert.assertFalse(validator.validate(null, "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 1).build()).isValid());
-        Assert.assertFalse(validator.validate("", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 1).build()).isValid());
-        Assert.assertFalse(validator.validate(" ", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 1).build()).isValid());
-        Assert.assertTrue(validator.validate(null, "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 1).config(valConfigIgnoreEmptyValues).build()).isValid());
-        Assert.assertTrue(validator.validate("", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 1).config(valConfigIgnoreEmptyValues).build()).isValid());
-        Assert.assertTrue(validator.validate(" ", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 1).config(valConfigIgnoreEmptyValues).build()).isValid());
+        Assert.assertFalse(validator.validate(null, "name", ValidatorConfig.builder().config(IntegerValidator.KEY_MIN, 1).build()).isValid());
+        Assert.assertFalse(validator.validate("", "name", ValidatorConfig.builder().config(IntegerValidator.KEY_MIN, 1).build()).isValid());
+        Assert.assertFalse(validator.validate(" ", "name", ValidatorConfig.builder().config(IntegerValidator.KEY_MIN, 1).build()).isValid());
+        Assert.assertTrue(validator.validate(null, "name", ValidatorConfig.builder().config(IntegerValidator.KEY_MIN, 1).config(valConfigIgnoreEmptyValues).build()).isValid());
+        Assert.assertTrue(validator.validate("", "name", ValidatorConfig.builder().config(IntegerValidator.KEY_MIN, 1).config(valConfigIgnoreEmptyValues).build()).isValid());
+        Assert.assertTrue(validator.validate(" ", "name", ValidatorConfig.builder().config(IntegerValidator.KEY_MIN, 1).config(valConfigIgnoreEmptyValues).build()).isValid());
         
         // max only
-        Assert.assertFalse(validator.validate("10", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MAX, 1).build()).isValid());
-        Assert.assertTrue(validator.validate("10", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MAX, 100).build()).isValid());
+        Assert.assertFalse(validator.validate("10", "name", ValidatorConfig.builder().config(IntegerValidator.KEY_MAX, 1).build()).isValid());
+        Assert.assertTrue(validator.validate("10", "name", ValidatorConfig.builder().config(IntegerValidator.KEY_MAX, 100).build()).isValid());
 
         // min and max
-        Assert.assertFalse(validator.validate("9", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 10).config(DoubleValidator.KEY_MAX, 100).build()).isValid());
-        Assert.assertTrue(validator.validate("10", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 10).config(DoubleValidator.KEY_MAX, 100).build()).isValid());
-        Assert.assertTrue(validator.validate("100", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 10).config(DoubleValidator.KEY_MAX, 100).build()).isValid());
-        Assert.assertFalse(validator.validate("101", "name", ValidatorConfig.builder().config(DoubleValidator.KEY_MIN, 10).config(DoubleValidator.KEY_MAX, 100).build()).isValid());
+        Assert.assertFalse(validator.validate("9", "name", ValidatorConfig.builder().config(IntegerValidator.KEY_MIN, 10).config(IntegerValidator.KEY_MAX, 100).build()).isValid());
+        Assert.assertTrue(validator.validate("10", "name", ValidatorConfig.builder().config(IntegerValidator.KEY_MIN, 10).config(IntegerValidator.KEY_MAX, 100).build()).isValid());
+        Assert.assertTrue(validator.validate("100", "name", ValidatorConfig.builder().config(IntegerValidator.KEY_MIN, 10).config(IntegerValidator.KEY_MAX, 100).build()).isValid());
+        Assert.assertFalse(validator.validate("101", "name", ValidatorConfig.builder().config(IntegerValidator.KEY_MIN, 10).config(IntegerValidator.KEY_MAX, 100).build()).isValid());
 
         Assert.assertTrue(validator.validate(Long.MIN_VALUE, "name").isValid());
         Assert.assertTrue(validator.validate(Long.MAX_VALUE, "name").isValid());
+        
+        //test correct error message selection
+        Assert.assertEquals(IntegerValidator.MESSAGE_NUMBER_OUT_OF_RANGE_TOO_SMALL,validator.validate("10", "name", ValidatorConfig.builder().config(IntegerValidator.KEY_MIN, 100).build()).getErrors().iterator().next().getMessage());
+        Assert.assertEquals(IntegerValidator.MESSAGE_NUMBER_OUT_OF_RANGE,validator.validate("10", "name", ValidatorConfig.builder().config(IntegerValidator.KEY_MIN, 100).config(IntegerValidator.KEY_MAX, 1000).build()).getErrors().iterator().next().getMessage());
+        Assert.assertEquals(IntegerValidator.MESSAGE_NUMBER_OUT_OF_RANGE,validator.validate("10000", "name", ValidatorConfig.builder().config(IntegerValidator.KEY_MIN, 100).config(IntegerValidator.KEY_MAX, 1000).build()).getErrors().iterator().next().getMessage());
+        Assert.assertEquals(IntegerValidator.MESSAGE_NUMBER_OUT_OF_RANGE_TOO_BIG,validator.validate("10000", "name", ValidatorConfig.builder().config(IntegerValidator.KEY_MAX, 1000).build()).getErrors().iterator().next().getMessage());
     }
 
     @Test
@@ -384,14 +414,18 @@ public class BuiltinValidatorsTest {
         Validator validator = Validators.patternValidator();
 
         // Pattern object in the configuration
-        ValidatorConfig config = configFromMap(Collections.singletonMap(PatternValidator.KEY_PATTERN, Pattern.compile("^start-.*-end$")));
+        ValidatorConfig config = configFromMap(Collections.singletonMap(PatternValidator.CFG_PATTERN, Pattern.compile("^start-.*-end$")));
         Assert.assertTrue(validator.validate("start-1234-end", "value", config).isValid());
         Assert.assertFalse(validator.validate("start___end", "value", config).isValid());
 
         // String in the configuration
-        config = configFromMap(Collections.singletonMap(PatternValidator.KEY_PATTERN, "^start-.*-end$"));
+        config = configFromMap(Collections.singletonMap(PatternValidator.CFG_PATTERN, "^start-.*-end$"));
         Assert.assertTrue(validator.validate("start-1234-end", "value", config).isValid());
         Assert.assertFalse(validator.validate("start___end", "value", config).isValid());
+        
+        //custom error message
+        config = ValidatorConfig.builder().config(PatternValidator.CFG_PATTERN, "^start-.*-end$").config(PatternValidator.CFG_ERROR_MESSAGE, "customError").build();
+        Assert.assertEquals("customError", validator.validate("start___end", "value", config).getErrors().iterator().next().getMessage());
 
         // null and empty values handling
         Assert.assertFalse(validator.validate(null, "value", config).isValid());
@@ -401,7 +435,7 @@ public class BuiltinValidatorsTest {
         // empty value ignoration configured
         Assert.assertTrue(validator.validate(null, "value", valConfigIgnoreEmptyValues).isValid());
         Assert.assertTrue(validator.validate("", "value", valConfigIgnoreEmptyValues).isValid());
-        Assert.assertTrue(validator.validate(" ", "value", valConfigIgnoreEmptyValues).isValid());
+        Assert.assertFalse(validator.validate(" ", "value", ValidatorConfig.builder().config(PatternValidator.CFG_PATTERN, "^[^\\s]$").config(valConfigIgnoreEmptyValues).build()).isValid());
 
     }
 

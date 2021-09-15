@@ -18,6 +18,7 @@ package org.keycloak.testsuite.account;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
@@ -30,6 +31,8 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.enums.AccountRestApiVersion;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.credential.CredentialTypeMetadata;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
@@ -55,6 +58,7 @@ import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentati
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.AccountCredentialResource;
 import org.keycloak.services.util.ResolveRelative;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
@@ -63,6 +67,7 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.validate.validators.EmailValidator;
 
 import javax.ws.rs.core.Response;
@@ -87,6 +92,9 @@ import static org.junit.Assert.assertTrue;
 @AuthServerContainerExclude(AuthServer.REMOTE)
 @EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
 public class AccountRestServiceTest extends AbstractRestServiceTest {
+    
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
     
     @Test
     public void testGetUserProfileMetadata_EditUsernameAllowed() throws IOException {
@@ -250,6 +258,58 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     }
 
     @Test
+    public void testUpdateProfileEvent() throws IOException {
+        UserRepresentation user = getUser();
+        String originalUsername = user.getUsername();
+        String originalFirstName = user.getFirstName();
+        String originalLastName = user.getLastName();
+        String originalEmail = user.getEmail();
+        Map<String, List<String>> originalAttributes = new HashMap<>(user.getAttributes());
+
+        try {
+            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+
+            realmRep.setRegistrationEmailAsUsername(false);
+            adminClient.realm("test").update(realmRep);
+
+            user.setEmail("bobby@localhost");
+            user.setFirstName("Homer");
+            user.setLastName("Simpsons");
+            user.getAttributes().put("attr1", Collections.singletonList("val1"));
+            user.getAttributes().put("attr2", Collections.singletonList("val2"));
+
+            user = updateAndGet(user);
+
+            //skip login to the REST API event
+            events.poll();
+            events.expectAccount(EventType.UPDATE_PROFILE).user(user.getId())
+                .detail(Details.CONTEXT, UserProfileContext.ACCOUNT.name())
+                .detail(Details.PREVIOUS_EMAIL, originalEmail)
+                .detail(Details.UPDATED_EMAIL, "bobby@localhost")
+                .detail(Details.PREVIOUS_FIRST_NAME, originalFirstName)
+                .detail(Details.PREVIOUS_LAST_NAME, originalLastName)
+                .detail(Details.UPDATED_FIRST_NAME, "Homer")
+                .detail(Details.UPDATED_LAST_NAME, "Simpsons")
+                .assertEvent();
+            events.assertEmpty();
+            
+        } finally {
+            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            realmRep.setEditUsernameAllowed(true);
+            adminClient.realm("test").update(realmRep);
+
+            user.setUsername(originalUsername);
+            user.setFirstName(originalFirstName);
+            user.setLastName(originalLastName);
+            user.setEmail(originalEmail);
+            user.setAttributes(originalAttributes);
+            SimpleHttp.Response response = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
+            System.out.println(response.asString());
+            assertEquals(204, response.getStatus());
+        }
+    }
+        
+    @Test
     public void testUpdateProfile() throws IOException {
         UserRepresentation user = getUser();
         String originalUsername = user.getUsername();
@@ -278,7 +338,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             assertEquals("val1", user.getAttributes().get("attr1").get(0));
             assertEquals(1, user.getAttributes().get("attr2").size());
             assertEquals("val2", user.getAttributes().get("attr2").get(0));
-
+            
             // Update attributes
             user.getAttributes().remove("attr1");
             user.getAttributes().get("attr2").add("val3");
@@ -778,10 +838,11 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertFalse(applications.isEmpty());
 
         Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
-        Assert.assertThat(apps.keySet(), containsInAnyOrder("in-use-client", "always-display-client"));
+        Assert.assertThat(apps.keySet(), containsInAnyOrder("in-use-client", "always-display-client", "direct-grant"));
 
         assertClientRep(apps.get("in-use-client"), "In Use Client", null, false, true, false, null, inUseClientAppUri);
         assertClientRep(apps.get("always-display-client"), "Always Display Client", null, false, false, false, null, alwaysDisplayClientAppUri);
+        assertClientRep(apps.get("direct-grant"), null, null, false, true, false, null, null);
     }
 
     @Test
@@ -813,6 +874,10 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         OAuthClient.AccessTokenResponse offlineTokenResponse = oauth.doGrantAccessTokenRequest("secret1", "view-applications-access", "password");
         assertNull(offlineTokenResponse.getErrorDescription());
 
+        oauth.clientId("offline-client-without-base-url");
+        offlineTokenResponse = oauth.doGrantAccessTokenRequest("secret1", "view-applications-access", "password");
+        assertNull(offlineTokenResponse.getErrorDescription());
+
         TokenUtil token = new TokenUtil("view-applications-access", "password");
         List<ClientRepresentation> applications = SimpleHttp
                 .doGet(getAccountUrl("applications"), httpClient)
@@ -823,9 +888,10 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertFalse(applications.isEmpty());
 
         Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
-        Assert.assertThat(apps.keySet(), containsInAnyOrder("offline-client", "always-display-client"));
+        Assert.assertThat(apps.keySet(), containsInAnyOrder("offline-client", "offline-client-without-base-url", "always-display-client", "direct-grant"));
 
         assertClientRep(apps.get("offline-client"), "Offline Client", null, false, true, true, null, offlineClientAppUri);
+        assertClientRep(apps.get("offline-client-without-base-url"), "Offline Client Without Base URL", null, false, true, true, null, null);
     }
 
     @Test
@@ -861,7 +927,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 .asResponse();
 
         Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
-        Assert.assertThat(apps.keySet(), containsInAnyOrder(appId, "always-display-client"));
+        Assert.assertThat(apps.keySet(), containsInAnyOrder(appId, "always-display-client", "direct-grant"));
 
         ClientRepresentation app = apps.get(appId);
         assertClientRep(app, null, "A third party application", true, false, false, null, "http://localhost:8180/auth/realms/master/app/auth");
@@ -887,7 +953,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertFalse(applications.isEmpty());
 
         Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
-        Assert.assertThat(apps.keySet(), containsInAnyOrder("root-url-client", "always-display-client"));
+        Assert.assertThat(apps.keySet(), containsInAnyOrder("root-url-client", "always-display-client", "direct-grant"));
 
         assertClientRep(apps.get("root-url-client"), null, null, false, true, false, "http://localhost:8180/foo/bar", "/baz");
     }
@@ -1308,7 +1374,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertFalse(applications.isEmpty());
 
         Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
-        Assert.assertThat(apps.keySet(), containsInAnyOrder("offline-client", "always-display-client"));
+        Assert.assertThat(apps.keySet(), containsInAnyOrder("offline-client", "always-display-client", "direct-grant"));
 
         assertClientRep(apps.get("offline-client"), "Offline Client", null, false, true, false, null, offlineClientAppUri);
     }

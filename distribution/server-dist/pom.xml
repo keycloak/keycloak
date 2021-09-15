@@ -30,7 +30,7 @@
     <parent>
         <artifactId>keycloak-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>15.0.0-SNAPSHOT</version>
+        <version>16.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>keycloak-server-dist</artifactId>
@@ -81,7 +81,6 @@
     </dependencies>
 
     <build>
-        <finalName>${server.output.dir.prefix}-${server.output.dir.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.jboss.galleon</groupId>
@@ -94,7 +93,7 @@
                         </goals>
                         <phase>compile</phase>
                         <configuration>
-                            <install-dir>${basedir}/target/${project.build.finalName}</install-dir>
+                            <install-dir>${basedir}/target/${server.output.dir.prefix}-${server.output.dir.version}</install-dir>
                             <record-state>false</record-state>
                             <log-time>${galleon.log.time}</log-time>
                             <offline>${galleon.offline}</offline>
@@ -167,7 +166,7 @@
                                     <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-server-feature-pack</artifactId>
                                     <type>zip</type>
-                                    <outputDirectory>${basedir}/target/${project.build.finalName}/docs</outputDirectory>
+                                    <outputDirectory>${basedir}/target/${server.output.dir.prefix}-${server.output.dir.version}/docs</outputDirectory>
                                     <includes>content/docs/licenses-${product.slot}/**</includes>
                                     <fileMappers>
                                         <org.codehaus.plexus.components.io.filemappers.RegExpFileMapper>
@@ -196,21 +195,21 @@
                             <excludeDefaultDirectories>true</excludeDefaultDirectories>
                             <filesets>
                                 <fileset>
-                                    <directory>${basedir}/target/${project.build.finalName}</directory>
+                                    <directory>${basedir}/target/${server.output.dir.prefix}-${server.output.dir.version}</directory>
                                     <includes>
                                         <include>README.txt</include>
                                         <include>copyright.txt</include>
                                     </includes>
                                 </fileset>
                                 <fileset>
-                                    <directory>${basedir}/target/${project.build.finalName}/welcome-content</directory>
+                                    <directory>${basedir}/target/${server.output.dir.prefix}-${server.output.dir.version}/welcome-content</directory>
                                     <excludes>
                                         <exclude>robots.txt</exclude>
                                         <exclude>index.html</exclude>
                                     </excludes>
                                 </fileset>
                                 <fileset>
-                                    <directory>${basedir}/target/${project.build.finalName}/modules/system/layers/keycloak/org/jboss/as/product</directory>
+                                    <directory>${basedir}/target/${server.output.dir.prefix}-${server.output.dir.version}/modules/system/layers/keycloak/org/jboss/as/product</directory>
                                     <excludes>
                                         <exclude>${product.slot}/**/*</exclude>
                                     </excludes>
@@ -301,6 +300,9 @@
                     </exclusions>
                 </dependency>
             </dependencies>
+            <build>
+                <finalName>keycloak-${project.version}</finalName>
+            </build>
         </profile>
         <profile>
             <id>product</id>
