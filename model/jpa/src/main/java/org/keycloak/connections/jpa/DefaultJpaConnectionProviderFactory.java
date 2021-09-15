@@ -17,6 +17,10 @@
 
 package org.keycloak.connections.jpa;
 
+import static org.keycloak.connections.jpa.util.JpaUtils.configureNamedQuery;
+import static org.keycloak.connections.jpa.util.JpaUtils.getDatabaseType;
+import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
+
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.engine.transaction.jta.platform.internal.AbstractJtaPlatform;
 import org.jboss.logging.Logger;
@@ -25,7 +29,6 @@ import org.keycloak.ServerStartupError;
 import org.keycloak.common.util.StackUtil;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
-import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.models.KeycloakSession;
@@ -55,8 +58,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import liquibase.Liquibase;
-import liquibase.exception.LiquibaseException;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -105,13 +106,16 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
     }
 
     private void addSpecificNamedQueries(KeycloakSession session, Connection connection) {
-        LiquibaseConnectionProvider liquibaseProvider = session.getProvider(LiquibaseConnectionProvider.class);
         EntityManager em = null;
         try {
-            Liquibase liquibase = liquibaseProvider.getLiquibase(connection, this.getSchema());
             em = createEntityManager(session);
-            JpaUtils.addSpecificNamedQueries(em, liquibase.getDatabase().getShortName());
-        } catch (LiquibaseException e) {
+            String dbKind = getDatabaseType(connection.getMetaData().getDatabaseProductName());
+            for (Map.Entry<Object, Object> query : loadSpecificNamedQueries(dbKind.toLowerCase()).entrySet()) {
+                String queryName = query.getKey().toString();
+                String querySql = query.getValue().toString();
+                configureNamedQuery(queryName, querySql, em);
+            }
+        } catch (SQLException e) {
             throw new IllegalStateException(e);
         } finally {
             JpaUtils.closeEntityManager(em);

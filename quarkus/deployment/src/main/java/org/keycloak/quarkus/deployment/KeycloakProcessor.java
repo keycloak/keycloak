@@ -20,6 +20,8 @@ package org.keycloak.quarkus.deployment;
 import static java.util.Collections.emptyList;
 import static org.keycloak.configuration.Configuration.getPropertyNames;
 import static org.keycloak.configuration.Configuration.getRawValue;
+import static org.keycloak.connections.jpa.QuarkusJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX;
+import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.AUTHENTICATORS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.MAPPERS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.POLICIES;
@@ -38,15 +40,15 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import io.quarkus.agroal.spi.JdbcDataSourceBuildItem;
 import io.quarkus.deployment.IsDevelopment;
 import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
@@ -72,13 +74,14 @@ import org.keycloak.authorization.policy.provider.PolicySpi;
 import org.keycloak.authorization.policy.provider.js.DeployedScriptPolicyFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.StreamUtil;
-import org.keycloak.config.ConfigProviderFactory;
 import org.keycloak.configuration.Configuration;
 import org.keycloak.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.configuration.MicroProfileConfigProvider;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
+import org.keycloak.connections.jpa.QuarkusJpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProviderFactory;
 import org.keycloak.connections.jpa.updater.liquibase.conn.DefaultLiquibaseConnectionProvider;
+import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.protocol.ProtocolMapperSpi;
 import org.keycloak.protocol.oidc.mappers.DeployedScriptOIDCProtocolMapper;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
@@ -155,12 +158,20 @@ class KeycloakProcessor {
      */
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
-    void configureHibernate(KeycloakRecorder recorder, HibernateOrmConfig config, List<PersistenceUnitDescriptorBuildItem> descriptors) {
+    void configureHibernate(KeycloakRecorder recorder, HibernateOrmConfig config, List<PersistenceUnitDescriptorBuildItem> descriptors,
+            List<JdbcDataSourceBuildItem> jdbcDataSources) {
         PersistenceUnitDescriptor unit = descriptors.get(0).asOutputPersistenceUnitDefinition(emptyList()).getActualHibernateDescriptor();
+        Properties unitProperties = unit.getProperties();
 
-        unit.getProperties().setProperty(AvailableSettings.DIALECT, config.defaultPersistenceUnit.dialect.dialect.orElse(null));
-        unit.getProperties().setProperty(AvailableSettings.JPA_TRANSACTION_TYPE, PersistenceUnitTransactionType.JTA.name());
-        unit.getProperties().setProperty(AvailableSettings.QUERY_STARTUP_CHECKING, Boolean.FALSE.toString());
+        unitProperties.setProperty(AvailableSettings.DIALECT, config.defaultPersistenceUnit.dialect.dialect.orElse(null));
+        unitProperties.setProperty(AvailableSettings.JPA_TRANSACTION_TYPE, PersistenceUnitTransactionType.JTA.name());
+        unitProperties.setProperty(AvailableSettings.QUERY_STARTUP_CHECKING, Boolean.FALSE.toString());
+
+        String dbKind = jdbcDataSources.get(0).getDbKind();
+
+        for (Entry<Object, Object> query : loadSpecificNamedQueries(dbKind.toLowerCase()).entrySet()) {
+            unitProperties.setProperty(QUERY_PROPERTY_PREFIX + query.getKey(), query.getValue().toString());
+        }
     }
 
     /**
@@ -179,11 +190,11 @@ class KeycloakProcessor {
         Map<Class<? extends Provider>, String> defaultProviders = new HashMap<>();
         Map<String, ProviderFactory> preConfiguredProviders = new HashMap<>();
 
-        for (Map.Entry<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> entry : loadFactories(preConfiguredProviders)
+        for (Entry<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> entry : loadFactories(preConfiguredProviders)
                 .entrySet()) {
             checkProviders(entry.getKey(), entry.getValue(), defaultProviders);
 
-            for (Map.Entry<Class<? extends Provider>, Map<String, ProviderFactory>> value : entry.getValue().entrySet()) {
+            for (Entry<Class<? extends Provider>, Map<String, ProviderFactory>> value : entry.getValue().entrySet()) {
                 for (ProviderFactory factory : value.getValue().values()) {
                     factories.computeIfAbsent(entry.getKey(),
                             key -> new HashMap<>())
@@ -393,7 +404,7 @@ class KeycloakProcessor {
                             descriptor = JsonSerialization.readValue(is, ScriptProviderDescriptor.class);
                         }
 
-                        for (Map.Entry<String, List<ScriptProviderMetadata>> entry : descriptor.getProviders().entrySet()) {
+                        for (Entry<String, List<ScriptProviderMetadata>> entry : descriptor.getProviders().entrySet()) {
                             if (isScriptForSpi(spi, entry.getKey())) {
                                 for (ScriptProviderMetadata metadata : entry.getValue()) {
                                     ProviderFactory provider = createDeployableScriptProvider(jarFile, entry, metadata);
@@ -411,7 +422,7 @@ class KeycloakProcessor {
         return providers;
     }
 
-    private ProviderFactory createDeployableScriptProvider(JarFile jarFile, Map.Entry<String, List<ScriptProviderMetadata>> entry,
+    private ProviderFactory createDeployableScriptProvider(JarFile jarFile, Entry<String, List<ScriptProviderMetadata>> entry,
             ScriptProviderMetadata metadata) throws IOException {
         String fileName = metadata.getFileName();
 
