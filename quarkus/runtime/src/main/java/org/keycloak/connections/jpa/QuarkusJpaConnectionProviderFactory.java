@@ -17,6 +17,7 @@
 
 package org.keycloak.connections.jpa;
 
+import static org.keycloak.connections.jpa.util.JpaUtils.configureNamedQuery;
 import static org.keycloak.connections.liquibase.QuarkusJpaUpdaterProvider.VERIFY_AND_RUN_MASTER_CHANGELOG;
 import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
 
@@ -28,6 +29,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,8 +45,8 @@ import javax.transaction.Transaction;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.quarkus.runtime.Quarkus;
-import liquibase.Liquibase;
-import liquibase.exception.LiquibaseException;
+
+import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.internal.SessionFactoryImpl;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
@@ -52,7 +54,6 @@ import org.keycloak.ServerStartupError;
 import org.keycloak.common.Version;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
 import org.keycloak.exportimport.ExportImportConfig;
-import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.migration.MigrationModelManager;
@@ -80,6 +81,7 @@ import org.keycloak.util.JsonSerialization;
  */
 public final class QuarkusJpaConnectionProviderFactory implements JpaConnectionProviderFactory, ServerInfoAwareProviderFactory {
 
+    public static final String QUERY_PROPERTY_PREFIX = "kc.query.";
     private static final Logger logger = Logger.getLogger(QuarkusJpaConnectionProviderFactory.class);
     private static final String SQL_GET_LATEST_VERSION = "SELECT VERSION FROM %sMIGRATION_MODEL";
 
@@ -116,14 +118,15 @@ public final class QuarkusJpaConnectionProviderFactory implements JpaConnectionP
     }
 
     private void addSpecificNamedQueries(KeycloakSession session, Connection connection) {
-        LiquibaseConnectionProvider liquibaseProvider = session.getProvider(LiquibaseConnectionProvider.class);
-        EntityManager em = null;
+        SessionFactoryImplementor sfi = emf.unwrap(SessionFactoryImplementor.class);
+        EntityManager em = createEntityManager(session);
+
         try {
-            Liquibase liquibase = liquibaseProvider.getLiquibase(connection, this.getSchema());
-            em = createEntityManager(session);
-            JpaUtils.addSpecificNamedQueries(em, liquibase.getDatabase().getShortName());
-        } catch (LiquibaseException e) {
-            throw new IllegalStateException(e);
+            Map<String, Object> unitProperties = emf.getProperties();
+
+            unitProperties.entrySet().stream()
+                    .filter(entry -> entry.getKey().startsWith(QUERY_PROPERTY_PREFIX))
+                    .forEach(entry -> configureNamedQuery(entry.getKey().substring(QUERY_PROPERTY_PREFIX.length()), entry.getValue().toString(), em));
         } finally {
             JpaUtils.closeEntityManager(em);
         }

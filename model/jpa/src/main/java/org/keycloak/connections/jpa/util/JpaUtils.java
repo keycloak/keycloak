@@ -17,9 +17,9 @@
 
 package org.keycloak.connections.jpa.util;
 
-import org.jboss.logging.Logger;
 import org.hibernate.engine.query.spi.sql.NativeSQLQueryReturn;
 import org.hibernate.engine.query.spi.sql.NativeSQLQuerySpecification;
+import org.jboss.logging.Logger;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
 import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
@@ -110,7 +110,7 @@ public class JpaUtils {
      * @param url The url to load, it can be null
      * @return A properties file with the url loaded or null
      */
-    private static Properties loadSqlProperties(URL url) {
+    public static Properties loadSqlProperties(URL url) {
         if (url == null) {
             return null;
         }
@@ -174,41 +174,71 @@ public class JpaUtils {
      * that database type.
      * @param em The entity manager to use
      * @param databaseType The database type as managed in
-     *                     <a href="https://www.liquibase.org/get-started/databases">liquibase</a>.
+     * @return
      */
-    public static void addSpecificNamedQueries(EntityManager em, String databaseType) {
-        final SessionFactoryImplementor sfi = em.getEntityManagerFactory().unwrap(SessionFactoryImplementor.class);
+    public static Properties loadSpecificNamedQueries(String databaseType) {
         URL specificUrl = JpaUtils.class.getClassLoader().getResource("META-INF/queries-" + databaseType + ".properties");
         URL defaultUrl = JpaUtils.class.getClassLoader().getResource("META-INF/queries-default.properties");
+
         if (defaultUrl == null) {
             throw new IllegalStateException("META-INF/queries-default.properties was not found in the classpath");
         }
+
         Properties specificQueries = loadSqlProperties(specificUrl);
         Properties defaultQueries = loadSqlProperties(defaultUrl);
+        Properties queries = new Properties();
 
         for (String queryNameFull : defaultQueries.stringPropertyNames()) {
-            String querySql;
+            String querySql = defaultQueries.getProperty(queryNameFull);
             String queryName = getQueryShortName(queryNameFull);
             String specificQueryNameFull = getQueryFromProperties(queryName, specificQueries);
+
             if (specificQueryNameFull != null) {
                 // the query is redefined in the specific database file => use it
                 queryNameFull = specificQueryNameFull;
                 querySql = specificQueries.getProperty(queryNameFull);
-            } else {
-                // use the default query sql
-                querySql = defaultQueries.getProperty(queryNameFull);
             }
-            boolean isNative = queryNameFull.endsWith(QUERY_NATIVE_SUFFIX);
 
-            logger.tracef("adding query from properties files native=%b %s:%s", isNative, queryName, querySql);
-            if (isNative) {
-                NativeSQLQuerySpecification spec = new NativeSQLQuerySpecification(querySql, new NativeSQLQueryReturn[0], Collections.emptySet());
-                sfi.getQueryPlanCache().getNativeSQLQueryPlan(spec);
-                em.getEntityManagerFactory().addNamedQuery(queryName, em.createNativeQuery(querySql));
-            } else {
-                sfi.getQueryPlanCache().getHQLQueryPlan(querySql, false, Collections.emptyMap());
-                em.getEntityManagerFactory().addNamedQuery(queryName, em.createQuery(querySql));
-            }
+            queries.put(queryNameFull, querySql);
+        }
+
+        return queries;
+    }
+
+    /**
+     * Configures a named query to Hibernate.
+     *
+     * @param queryName the query name
+     * @param querySql the query SQL
+     * @param entityManager the entity manager
+     */
+    public static void configureNamedQuery(String queryName, String querySql, EntityManager entityManager) {
+        boolean isNative = queryName.endsWith(QUERY_NATIVE_SUFFIX);
+        queryName = getQueryShortName(queryName);
+
+        logger.tracef("adding query from properties files native=%b %s:%s", isNative, queryName, querySql);
+
+        SessionFactoryImplementor sessionFactory = entityManager.getEntityManagerFactory().unwrap(SessionFactoryImplementor.class);
+
+        if (isNative) {
+            NativeSQLQuerySpecification spec = new NativeSQLQuerySpecification(querySql, new NativeSQLQueryReturn[0], Collections.emptySet());
+            sessionFactory.getQueryPlanCache().getNativeSQLQueryPlan(spec);
+            sessionFactory.addNamedQuery(queryName, entityManager.createNativeQuery(querySql));
+        } else {
+            sessionFactory.getQueryPlanCache().getHQLQueryPlan(querySql, false, Collections.emptyMap());
+            sessionFactory.addNamedQuery(queryName, entityManager.createQuery(querySql));
+        }
+    }
+
+    public static String getDatabaseType(String productName) {
+        switch (productName) {
+            case "Microsoft SQL Server":
+            case "SQLOLEDB":
+                return "mssql";
+            case "EnterpriseDB":
+                return "postgresql";
+            default:
+                return productName.toLowerCase();
         }
     }
 
