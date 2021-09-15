@@ -20,6 +20,7 @@ package org.keycloak.models;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.models.credential.BackupCodeCredentialModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.PasswordUserCredentialModel;
@@ -124,6 +125,10 @@ public class UserCredentialModel implements CredentialInput {
 
     public static UserCredentialModel generateSecret() {
         return new UserCredentialModel("", SECRET, SecretGenerator.getInstance().randomString());
+    }
+
+    public static UserCredentialModel backupCode(String code) {
+        return new UserCredentialModel("", BackupCodeCredentialModel.TYPE, code);
     }
 
     @Override

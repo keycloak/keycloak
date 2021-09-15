@@ -36,6 +36,10 @@ public class Templates {
                 return "login-otp.ftl";
             case LOGIN_CONFIG_TOTP:
                 return "login-config-totp.ftl";
+            case LOGIN_BACKUP_CODE:
+                return "login-backup-code.ftl";
+            case LOGIN_CONFIG_BACKUP_CODES:
+                return "login-config-backup-codes.ftl";
             case LOGIN_WEBAUTHN:
                 return "webauthn-authenticate.ftl";
             case LOGIN_VERIFY_EMAIL:

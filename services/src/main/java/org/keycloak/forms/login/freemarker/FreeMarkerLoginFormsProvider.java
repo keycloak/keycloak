@@ -24,9 +24,14 @@ import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
 import org.keycloak.authentication.requiredactions.util.UserUpdateProfileContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.credential.BackupCodeCredentialProvider;
+import org.keycloak.credential.BackupCodeCredentialProviderFactory;
+import org.keycloak.credential.CredentialProvider;
 import org.keycloak.forms.login.LoginFormsPages;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.model.AuthenticationContextBean;
+import org.keycloak.forms.login.freemarker.model.BackupCodeLoginBean;
+import org.keycloak.forms.login.freemarker.model.BackupCodesBean;
 import org.keycloak.forms.login.freemarker.model.ClientBean;
 import org.keycloak.forms.login.freemarker.model.CodeBean;
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
@@ -51,6 +56,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.BackupCodeCredentialModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
@@ -148,6 +154,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 actionMessage = Messages.CONFIGURE_TOTP;
                 page = LoginFormsPages.LOGIN_CONFIG_TOTP;
                 break;
+            case CONFIGURE_BACKUP_CODES:
+                actionMessage = Messages.CONFIGURE_BACKUP_CODES;
+                page = LoginFormsPages.LOGIN_CONFIG_BACKUP_CODES;
+                break;
             case UPDATE_PROFILE:
                 UpdateProfileContext userBasedContext = new UserUpdateProfileContext(realm, user);
                 this.attributes.put(UPDATE_PROFILE_CONTEXT_ATTR, userBasedContext);
@@ -214,6 +224,12 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         switch (page) {
             case LOGIN_CONFIG_TOTP:
                 attributes.put("totp", new TotpBean(session, realm, user, uriInfo.getRequestUriBuilder()));
+                break;
+            case LOGIN_CONFIG_BACKUP_CODES:
+                attributes.put("backupCodes", new BackupCodesBean());
+                break;
+            case LOGIN_BACKUP_CODE:
+                attributes.put("backupCodes", new BackupCodeLoginBean(session, realm, user));
                 break;
             case LOGIN_UPDATE_PROFILE:
                 UpdateProfileContext userCtx = (UpdateProfileContext) attributes.get(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR);
@@ -540,6 +556,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     @Override
     public Response createLoginTotp() {
         return createResponse(LoginFormsPages.LOGIN_TOTP);
+    }
+
+    @Override
+    public Response createLoginBackupCode() {
+        return createResponse(LoginFormsPages.LOGIN_BACKUP_CODE);
     }
 
     @Override
