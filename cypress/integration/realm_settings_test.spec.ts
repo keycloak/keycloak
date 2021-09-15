@@ -191,7 +191,7 @@ describe("Realm settings", () => {
       realmSettingsPage.addUserEvents(events).clickAdd();
       masthead.checkNotificationMessage("Successfully saved configuration");
       cy.wait(["@fetchConfig"]);
-      cy.get(".pf-c-spinner__tail-ball").should("not.exist");
+      sidebarPage.waitForPageLoad();
 
       for (const event of events) {
         listingPage.searchItem(event, false).itemExist(event);

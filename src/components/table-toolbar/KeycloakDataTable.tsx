@@ -370,13 +370,12 @@ export function KeycloakDataTable<T>({
     setRows([...data!]);
   };
 
+  const noData = !data || data.length === 0;
+  const searching = search !== "" || isSearching;
+
   return (
     <>
-      {((data && data.length > 0) ||
-        search !== "" ||
-        isSearching ||
-        emptyState ||
-        loading) && (
+      {(loading || !noData || searching) && (
         <PaginatingTableToolbar
           count={data?.length || 0}
           first={first}
@@ -396,7 +395,7 @@ export function KeycloakDataTable<T>({
           toolbarItem={toolbarItem}
           subToolbar={subToolbar}
         >
-          {!loading && data && data.length > 0 && (
+          {!loading && !noData && (
             <DataTable
               {...props}
               canSelectAll={canSelectAll}
@@ -411,25 +410,19 @@ export function KeycloakDataTable<T>({
               ariaLabelKey={ariaLabelKey}
             />
           )}
-          {!loading &&
-            (!data || data.length === 0) &&
-            (search !== "" || isSearching) && (
-              <ListEmptyState
-                hasIcon={true}
-                icon={icon}
-                isSearchVariant={true}
-                message={t("noSearchResults")}
-                instructions={t("noSearchResultsInstructions")}
-              />
-            )}
+          {!loading && noData && searching && (
+            <ListEmptyState
+              hasIcon={true}
+              icon={icon}
+              isSearchVariant={true}
+              message={t("noSearchResults")}
+              instructions={t("noSearchResultsInstructions")}
+            />
+          )}
           {loading && <Loading />}
         </PaginatingTableToolbar>
       )}
-      {!loading &&
-        (!data || data?.length === 0) &&
-        search === "" &&
-        !isSearching &&
-        emptyState}
+      {!loading && noData && !searching && emptyState}
     </>
   );
 }

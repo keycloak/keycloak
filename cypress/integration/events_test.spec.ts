@@ -13,15 +13,27 @@ const adminEventsTab = new AdminEventsTab();
 const realmSettingsPage = new RealmSettingsPage();
 const masthead = new Masthead();
 
-describe("Events tests", function () {
-  describe("Search user events", function () {
-    beforeEach(function () {
+describe("Events tests", () => {
+  describe("Search user events", () => {
+    beforeEach(() => {
       keycloakBefore();
       loginPage.logIn();
       sidebarPage.goToEvents();
     });
 
     it("Check search dropdown display", () => {
+      sidebarPage.goToRealmSettings();
+      cy.getId("rs-realm-events-tab").click();
+
+      realmSettingsPage
+        .toggleSwitch(realmSettingsPage.enableEvents)
+        .save(realmSettingsPage.eventsUserSave);
+
+      masthead.signOut();
+      loginPage.logIn();
+
+      sidebarPage.goToEvents();
+
       userEventsTab.shouldDisplay();
     });
 
@@ -38,17 +50,6 @@ describe("Events tests", function () {
     });
 
     it("Check user events search and removal work", () => {
-      sidebarPage.goToRealmSettings();
-      cy.getId("rs-realm-events-tab").click();
-
-      realmSettingsPage
-        .toggleSwitch(realmSettingsPage.enableEvents)
-        .save(realmSettingsPage.eventsUserSave);
-
-      masthead.signOut();
-      loginPage.logIn();
-
-      sidebarPage.goToEvents();
       userEventsTab.shouldDoSearchAndRemoveChips();
     });
 
@@ -61,8 +62,8 @@ describe("Events tests", function () {
     });
   });
 
-  describe("Search admin events", function () {
-    beforeEach(function () {
+  describe("Search admin events", () => {
+    beforeEach(() => {
       keycloakBefore();
       loginPage.logIn();
       sidebarPage.goToEvents();
@@ -70,14 +71,6 @@ describe("Events tests", function () {
     });
 
     it("Check admin events search form fields display", () => {
-      adminEventsTab.shouldHaveFormFields();
-    });
-
-    it("Check `search admin events` button disabled by default", () => {
-      adminEventsTab.shouldHaveSearchBtnDisabled();
-    });
-
-    it("Check admin events search and removal work", () => {
       sidebarPage.goToRealmSettings();
       cy.getId("rs-realm-events-tab").click();
       cy.getId("rs-admin-events-tab").click();
@@ -86,6 +79,17 @@ describe("Events tests", function () {
         .toggleSwitch(realmSettingsPage.enableAdminEvents)
         .save(realmSettingsPage.eventsAdminSave);
 
+      sidebarPage.goToEvents();
+      cy.getId("admin-events-tab").click();
+      sidebarPage.waitForPageLoad();
+      adminEventsTab.shouldHaveFormFields();
+    });
+
+    it("Check `search admin events` button disabled by default", () => {
+      adminEventsTab.shouldHaveSearchBtnDisabled();
+    });
+
+    it("Check admin events search and removal work", () => {
       sidebarPage.goToEvents();
       cy.getId("admin-events-tab").click();
       adminEventsTab.shouldDoAdminEventsSearchAndRemoveChips();
@@ -100,8 +104,8 @@ describe("Events tests", function () {
     });
   });
 
-  describe("Check more button opens auth and representation dialogs", function () {
-    beforeEach(function () {
+  describe("Check more button opens auth and representation dialogs", () => {
+    beforeEach(() => {
       keycloakBefore();
       loginPage.logIn();
       sidebarPage.goToEvents();
@@ -113,6 +117,7 @@ describe("Events tests", function () {
     });
 
     it("Check representation dialog opens and is not empty", () => {
+      sidebarPage.waitForPageLoad();
       adminEventsTab.shouldCheckRepDialogOpensAndIsNotEmpty();
     });
   });

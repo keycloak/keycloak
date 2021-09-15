@@ -25,7 +25,7 @@ describe("Group test", () => {
   let groupName = "group";
 
   const clickGroup = (itemName: string) => {
-    cy.get(".pf-c-spinner__tail-ball").should("not.exist");
+    sidebarPage.waitForPageLoad();
     cy.get("table").contains(itemName).click();
 
     return this;
@@ -81,7 +81,7 @@ describe("Group test", () => {
       groupModal.open("no-groups-in-this-realm-empty-action");
       groupModal.fillGroupForm(groupName).clickCreate();
 
-      cy.get(".pf-c-spinner__tail-ball").should("not.exist");
+      sidebarPage.waitForPageLoad();
       groupModal.open().fillGroupForm(targetGroupName).clickCreate();
 
       listingPage.clickRowDetails(groupName).clickDetailMenu("Move to");
@@ -91,10 +91,10 @@ describe("Group test", () => {
       moveGroupModal.clickMove();
 
       masthead.checkNotificationMessage("Group moved");
-      cy.get(".pf-c-spinner__tail-ball").should("not.exist");
+      sidebarPage.waitForPageLoad();
       listingPage.itemExist(groupName, false);
       clickGroup(targetGroupName);
-      cy.get(".pf-c-spinner__tail-ball").should("not.exist");
+      sidebarPage.waitForPageLoad();
       listingPage.itemExist(groupName);
       sidebarPage.goToGroups();
       listingPage.deleteItem(targetGroupName);

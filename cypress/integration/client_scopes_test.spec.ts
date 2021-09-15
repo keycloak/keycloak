@@ -50,7 +50,7 @@ describe("Client Scopes test", function () {
       masthead.checkNotificationMessage("Client scope created");
 
       sidebarPage.goToClientScopes();
-      cy.get(".pf-c-spinner__tail-ball").should("not.exist");
+      sidebarPage.waitForPageLoad();
 
       // Delete
       listingPage

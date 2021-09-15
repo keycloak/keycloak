@@ -28,7 +28,7 @@ describe("Group creation", () => {
   function createNewGroup() {
     groupName += "_" + (Math.random() + 1).toString(36).substring(7);
 
-    cy.get(".pf-c-spinner__tail-ball").should("not.exist");
+    sidebarPage.waitForPageLoad();
     groupModal.open().fillGroupForm(groupName).clickCreate();
 
     groupsList = [...groupsList, groupName];

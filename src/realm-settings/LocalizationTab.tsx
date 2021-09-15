@@ -111,7 +111,7 @@ export const LocalizationTab = ({
   const options = [
     <SelectGroup label={t("defaultLocale")} key="group1">
       {watchSupportedLocales
-        ?.filter((item) => item === realm?.defaultLocale)
+        ?.filter((item) => item === realm.defaultLocale)
         .map((locale) => (
           <SelectOption key={locale} value={locale}>
             {t(`allSupportedLocales.${locale}`)}
@@ -121,7 +121,7 @@ export const LocalizationTab = ({
     <Divider key="divider" />,
     <SelectGroup label={t("supportedLocales")} key="group2">
       {watchSupportedLocales
-        ?.filter((item) => item !== realm?.defaultLocale)
+        ?.filter((item) => item !== realm.defaultLocale)
         .map((locale) => (
           <SelectOption key={locale} value={locale}>
             {t(`allSupportedLocales.${locale}`)}
@@ -246,7 +246,7 @@ export const LocalizationTab = ({
                         isOpen={supportedLocalesOpen}
                         placeholderText={"Select locales"}
                       >
-                        {themeTypes?.login![0].locales.map(
+                        {themeTypes.login![0].locales.map(
                           (locale: string, idx: number) => (
                             <SelectOption
                               selected={true}
@@ -335,7 +335,6 @@ export const LocalizationTab = ({
           <div className="tableBorder">
             <KeycloakDataTable
               key={tableKey}
-              isSearching
               loader={selectMenuValueSelected ? tableLoader : loader}
               ariaLabelKey="realm-settings:localization"
               searchTypeComponent={

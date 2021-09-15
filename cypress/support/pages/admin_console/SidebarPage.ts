@@ -101,4 +101,9 @@ export default class SidebarPage {
 
     return this;
   }
+
+  waitForPageLoad() {
+    cy.get(".pf-c-spinner__tail-ball").should("not.exist");
+    return this;
+  }
 }
