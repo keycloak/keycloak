@@ -5,6 +5,7 @@
         <feature spec="subsystem.infinispan.cache-container">
             <param name="cache-container" value="web"/>
             <param name="modules" value="[org.wildfly.clustering.web.infinispan]"/>
+            <param name="marshaller" value="PROTOSTREAM"/>
             <param name="default-cache" value="passivation"/>
             <feature spec="subsystem.infinispan.cache-container.local-cache">
                 <param name="local-cache" value="passivation"/>
