@@ -7,6 +7,7 @@ defaults:
     working-directory: keycloak-theme
 jobs:
   publish:
+    if: github.repository_owner == 'keycloak'
     runs-on: ubuntu-latest
     permissions: 
       contents: read
