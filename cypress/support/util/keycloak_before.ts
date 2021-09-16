@@ -5,7 +5,7 @@ export const keycloakBefore = () => {
          GET /admin/serverinfo/
          GET /admin/master/console/whoami
     */
-  cy.on("uncaught:exception", (err, runnable) => {
+  cy.on("uncaught:exception", (err) => {
     console.log("-------------------");
     console.log(err);
     console.log("--------------------");

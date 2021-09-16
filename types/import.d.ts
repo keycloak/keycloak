@@ -1,5 +1,5 @@
 declare namespace Cypress {
-  interface Chainable<Subject> {
+  interface Chainable {
     /**
      * Get one or more DOM elements by `data-testid`.
      *

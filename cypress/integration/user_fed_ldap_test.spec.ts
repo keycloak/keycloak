@@ -160,10 +160,7 @@ describe("User Fed LDAP tests", () => {
   it("Create new LDAP provider using the New Provider dropdown", () => {
     providersPage.clickMenuCommand(addProviderMenu, allCapProvider);
     providersPage.fillLdapRequiredGeneralData(secondLdapName, secondLdapVendor);
-    providersPage.fillLdapRequiredConnectionData(
-      connectionUrl,
-      secondBindType,
-    );
+    providersPage.fillLdapRequiredConnectionData(connectionUrl, secondBindType);
     providersPage.fillLdapRequiredSearchingData(
       secondUsersDn,
       secondUserLdapAtt,

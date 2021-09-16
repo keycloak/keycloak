@@ -1,16 +1,16 @@
-import '@testing-library/jest-dom';
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
+import "@testing-library/jest-dom";
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
 
-import 'mutationobserver-shim';
+import "mutationobserver-shim";
 
 i18n.use(initReactI18next).init({
-  lng: 'en',
-  fallbackLng: 'en',
+  lng: "en",
+  fallbackLng: "en",
 
   // have a common namespace used around the full app
-  ns: ['translations'],
-  defaultNS: 'translations',
+  ns: ["translations"],
+  defaultNS: "translations",
 
   resources: { en: { translations: {} } },
 });

@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["**/*", ".eslintrc.js"],
+  "exclude": [
+    "node_modules",
+    "build",
+    "keycloak-theme",
+    "server"
+  ]
+}

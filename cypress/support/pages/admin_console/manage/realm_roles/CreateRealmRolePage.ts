@@ -10,7 +10,7 @@ export default class CreateRealmRolePage {
     this.realmRoleNameError = "#kc-name-helper";
     this.realmRoleDescriptionInput = "#kc-role-description";
 
-    this.saveBtn = 'realm-roles-save-button';
+    this.saveBtn = "realm-roles-save-button";
     this.cancelBtn = '[type="button"]';
   }
 

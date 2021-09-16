@@ -1,8 +1,10 @@
 /** @type {import("eslint").Linter.Config } */
 module.exports = {
   root: true,
+  ignorePatterns: ["node_modules", "build", "keycloak-theme", "server"],
   parserOptions: {
-    project: "./tsconfig.json",
+    project: "./tsconfig.eslint.json",
+    extraFileExtensions: [".mjs"],
   },
   env: {
     node: true,
@@ -46,6 +48,14 @@ module.exports = {
       rules: {
         // For tests it can make sense to pass empty functions as mocks.
         "@typescript-eslint/no-empty-function": "off",
+      },
+    },
+    {
+      files: ["cypress/**/*"],
+      extends: ["plugin:cypress/recommended"],
+      // TODO: Set these rules to "error" when issues have been resolved.
+      rules: {
+        "cypress/no-unnecessary-waiting": "warn",
       },
     },
   ],

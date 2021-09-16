@@ -15,7 +15,7 @@
   "scripts": {
     "build": "snowpack build",
     "build:rh-sso": "THEME_NAME=rh-sso snowpack build",
-    "lint": "eslint \"./src/**/*.{js,jsx,mjs,ts,tsx}\"",
+    "lint": "eslint . --ext js,jsx,mjs,ts,tsx",
     "start": "snowpack dev",
     "start:rh-sso": "THEME_NAME=rh-sso snowpack dev",
     "test": "jest",
@@ -67,6 +67,7 @@
     "decompress-targz": "^4.1.1",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-cypress": "^2.12.1",
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "^7.25.1",
     "http2-proxy": "^5.0.53",
