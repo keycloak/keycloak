@@ -32,7 +32,7 @@ import java.util.Map;
 import javax.ws.rs.NotFoundException;
 
 
-public class RealmRealmLocalizationResourceTest extends AbstractAdminTest {
+public class RealmLocalizationResourceTest extends AbstractAdminTest {
 
     private RealmLocalizationResource resource;
 

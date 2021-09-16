@@ -947,9 +947,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     public boolean updateLocalizationText(RealmModel realm, String locale, String key, String text) {
         RealmLocalizationTextsEntity entity = getRealmLocalizationTextsEntity(locale, realm.getId());
         if (entity != null && entity.getTexts() != null && entity.getTexts().containsKey(key)) {
-            Map<String, String> keys = new HashMap<>(entity.getTexts());
-            keys.put(key, text);
-            entity.setTexts(keys);
+            entity.getTexts().put(key, text);
+
             em.persist(entity);
             return true;
         } else {
@@ -966,9 +965,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
             entity.setLocale(locale);
             entity.setTexts(new HashMap<>());
         }
-        Map<String, String> keys = new HashMap<>(entity.getTexts());
-        keys.put(key, text);
-        entity.setTexts(keys);
+        entity.getTexts().put(key, text);
         em.persist(entity);
     }
 
@@ -1008,9 +1005,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     public boolean deleteLocalizationText(RealmModel realm, String locale, String key) {
         RealmLocalizationTextsEntity entity = getRealmLocalizationTextsEntity(locale, realm.getId());
         if (entity != null && entity.getTexts() != null && entity.getTexts().containsKey(key)) {
-            Map<String, String> keys = new HashMap<>(entity.getTexts());
-            keys.remove(key);
-            entity.setTexts(keys);
+            entity.getTexts().remove(key);
+
             em.persist(entity);
             return true;
         } else {
