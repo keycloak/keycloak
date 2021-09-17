@@ -11,12 +11,12 @@ import {
 import { TextField } from "../component/TextField";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 
-const comparisonValues = ["Exact", "Minimum", "Maximum", "Better"];
+const comparisonValues = ["exact", "minimum", "maximum", "better"];
 
 export const ReqAuthnConstraints = () => {
   const { t } = useTranslation("identity-providers");
   const { control } = useFormContext();
-  const [syncModeOpen, setSyncModeOpen] = useState(false);
+  const [comparisonOpen, setComparisonOpen] = useState(false);
   return (
     <>
       <FormGroup
@@ -31,7 +31,7 @@ export const ReqAuthnConstraints = () => {
         fieldId="comparison"
       >
         <Controller
-          name="config.comparison"
+          name="config.authnContextComparisonType"
           defaultValue={comparisonValues[0]}
           control={control}
           render={({ onChange, value }) => (
@@ -39,15 +39,15 @@ export const ReqAuthnConstraints = () => {
               toggleId="comparison"
               required
               direction="up"
-              onToggle={() => setSyncModeOpen(!syncModeOpen)}
+              onToggle={(isExpanded) => setComparisonOpen(isExpanded)}
               onSelect={(_, value) => {
                 onChange(value.toString());
-                setSyncModeOpen(false);
+                setComparisonOpen(false);
               }}
               selections={value}
               variant={SelectVariant.single}
-              aria-label={t("syncMode")}
-              isOpen={syncModeOpen}
+              aria-label={t("comparison")}
+              isOpen={comparisonOpen}
             >
               {comparisonValues.map((option) => (
                 <SelectOption

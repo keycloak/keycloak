@@ -66,6 +66,7 @@ export default {
     windowsDomainQN: "Windows Domain Qualified Name",
     unspecified: "Unspecified",
     principalType: "Principal type",
+    principalAttribute: "Principal attribute",
     subjectNameId: "Subject NameID",
     attributeName: "Attribute [Name]",
     attributeFriendlyName: "Attribute [Friendly Name]",

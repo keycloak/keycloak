@@ -30,7 +30,7 @@ const LoginFlow = ({
   useFetch(
     () => adminClient.authenticationManagement.getFlows(),
     (flows) =>
-      setFlows(flows?.filter((flow) => flow.providerId === "basic-flow")),
+      setFlows(flows.filter((flow) => flow.providerId === "basic-flow")),
     []
   );
 
@@ -108,8 +108,9 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
       <SwitchField field="storeToken" label="storeTokens" fieldType="boolean" />
       {isSAML && (
         <SwitchField
-          field="config.addReadTokenRoleOnCreate"
+          field="addReadTokenRoleOnCreate"
           label="storedTokensReadable"
+          fieldType="boolean"
         />
       )}
       {!isOIDC && !isSAML && (
