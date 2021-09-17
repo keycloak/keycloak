@@ -124,5 +124,10 @@ export default {
     keyAlias: "Archive alias for your private key and certificate.",
     keyPassword: "Password to access the private key in the archive",
     storePassword: "Password to access the archive itself",
+    consentRequired: "If enabled, users have to consent to client access.",
+    displayOnClient:
+      "Applicable only if 'Consent Required' is on for this client. If this switch is off, the consent screen will contain just the consents corresponding to configured client scopes. If on, there will be also one item on the consent screen about this client itself.",
+    consentScreenText:
+      "Applicable only if 'Display Client On Consent Screen' is on for this client. Contains the text which will be on the consent screen about permissions specific just for this client.",
   },
 };

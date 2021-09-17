@@ -176,7 +176,7 @@ export const ClientSettings = ({ save, reset }: ClientSettingsProps) => {
                 {/* The type for the children of Select are incorrect, so we need a fragment here. */}
                 {/* eslint-disable-next-line react/jsx-no-useless-fragment */}
                 <>
-                  {loginThemes?.map((theme) => (
+                  {loginThemes.map((theme) => (
                     <SelectOption
                       selected={theme.name === value}
                       key={theme.name}
@@ -190,6 +190,13 @@ export const ClientSettings = ({ save, reset }: ClientSettingsProps) => {
         </FormGroup>
         <FormGroup
           label={t("consentRequired")}
+          labelIcon={
+            <HelpItem
+              helpText="clients-help:consentRequired"
+              forLabel={t("consentRequired")}
+              forID="kc-consent-switch"
+            />
+          }
           fieldId="kc-consent"
           hasNoPaddingTop
         >
@@ -210,6 +217,13 @@ export const ClientSettings = ({ save, reset }: ClientSettingsProps) => {
         </FormGroup>
         <FormGroup
           label={t("displayOnClient")}
+          labelIcon={
+            <HelpItem
+              helpText="clients-help:displayOnClient"
+              forLabel={t("displayOnClient")}
+              forID="kc-display-on-client-switch"
+            />
+          }
           fieldId="kc-display-on-client"
           hasNoPaddingTop
         >
@@ -231,6 +245,13 @@ export const ClientSettings = ({ save, reset }: ClientSettingsProps) => {
         </FormGroup>
         <FormGroup
           label={t("consentScreenText")}
+          labelIcon={
+            <HelpItem
+              helpText="clients-help:consentScreenText"
+              forLabel={t("consentScreenText")}
+              forID="kc-consent-screen-text"
+            />
+          }
           fieldId="kc-consent-screen-text"
         >
           <TextArea
