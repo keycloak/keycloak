@@ -6,11 +6,5 @@ updates:
   schedule:
     interval: weekly
   ignore:
-    - dependency-name: jest
-      update-types: ["version-update:semver-major"]
-    - dependency-name: "@types/jest"
-      update-types: ["version-update:semver-major"]
-    - dependency-name: ts-jest
-      update-types: ["version-update:semver-major"]
     - dependency-name: react-hook-form
       update-types: ["version-update:semver-major"]

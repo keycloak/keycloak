@@ -1,3 +1,6 @@
+/**
+ * @jest-environment jsdom
+ */
 import { FormGroup, Switch, TextInput } from "@patternfly/react-core";
 import { render, screen } from "@testing-library/react";
 import type WhoAmIRepresentation from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";

@@ -1,3 +1,6 @@
+/**
+ * @jest-environment jsdom
+ */
 import { render, waitFor } from "@testing-library/react";
 import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import type { ServerInfoRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";

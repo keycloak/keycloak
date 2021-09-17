@@ -1,3 +1,6 @@
+/**
+ * @jest-environment jsdom
+ */
 import whoamiMock from "./mock-whoami.json";
 import { WhoAmI } from "../WhoAmI";
 import type WhoAmIRepresentation from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";

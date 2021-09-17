@@ -1,15 +1,16 @@
-// See: https://github.com/snowpackjs/snowpack/issues/3242
-// @ts-ignore
-import snowpackConfig from "@snowpack/app-scripts-react/jest.config.js";
-import type { Config } from "@jest/types";
+import type { InitialOptionsTsJest } from "ts-jest/dist/types";
 
-const config: Config.InitialOptions = {
-  ...snowpackConfig(),
+const config: InitialOptionsTsJest = {
+  preset: "ts-jest",
+  globals: {
+    "ts-jest": {
+      tsconfig: "tsconfig.jest.json",
+    },
+  },
+  testMatch: ["<rootDir>/src/**/*.test.ts?(x)"],
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   moduleNameMapper: {
-    "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$":
-      "<rootDir>/mocks/fileMock.js",
-    "\\.(css|less)$": "<rootDir>/mocks/styleMock.js",
+    "\\.css$": "<rootDir>/mocks/fileMock.ts",
   },
 };
 
