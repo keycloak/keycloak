@@ -8,3 +8,4 @@ Maintainers
 * [Pavel Drozd](https://github.com/pdrozd)
 * [Pedro Igor](https://github.com/pedroigor)
 * [Stan Silvert](https://github.com/ssilvert)
+* [Thomas Darimont](https://github.com/thomasdarimont)
