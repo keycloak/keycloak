@@ -39,7 +39,7 @@ public class SpiProvidersSwitchingUtils {
             System.clearProperty("keycloak." + annotation.spi() + ".provider");
         } else if (authServerInfo.isQuarkus()) {
             KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer) authServerInfo.getArquillianContainer().getDeployableContainer();
-            container.resetConfiguration();
+            container.resetConfiguration(true);
         } else {
             OnlineManagementClient client = AuthServerTestEnricher.getManagementClient();
             if (annotation.onlyUpdateDefault()) {

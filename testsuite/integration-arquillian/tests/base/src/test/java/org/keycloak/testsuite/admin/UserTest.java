@@ -47,7 +47,6 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -102,6 +101,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -110,11 +111,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.Assert.assertNames;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
@@ -1104,7 +1103,7 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude({REMOTE, QUARKUS}) // TODO: Enable for quarkus and remote
+    @AuthServerContainerExclude({REMOTE}) // TODO: Enable for remote
     public void updateUserWithReadOnlyAttributes() {
         // Admin is able to update "usercertificate" attribute
         UserRepresentation user1 = new UserRepresentation();
