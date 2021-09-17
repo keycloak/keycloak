@@ -1051,7 +1051,7 @@ Make sure you build the project using the `quarkus` profile as follows:
     
 Run tests using the `auth-server-quarkus` profile:
 
-    mvn -f testsuite/integration-arquillian/tests/base/pom.xml clean install -Pauth-server-quarkus
+    mvn -f testsuite/integration-arquillian/pom.xml clean install -Pauth-server-quarkus
     
 ### Debug the Server
     
@@ -1091,3 +1091,20 @@ because this is not UI testing). For debugging purposes you can override the hea
                        -Pfirefox-strict-cookies \
                        -Dtest=**.adapter.** \
                        -Dauth.server.host=[some_host] -Dauth.server.host2=[some_other_host]
+
+## Hostname Tests 
+For changing the hostname in the hostname tests (e.g. [DefaultHostnameTest](https://github.com/keycloak/keycloak/blob/master/testsuite/integration-arquillian/tests/base/src/test/java/org/keycloak/testsuite/url/DefaultHostnameTest.java)),
+we rely on [nip.io](https://nip.io) for DNS switching, so tests will work everywhere without fiddling with `etc/hosts` locally. 
+
+### Tips & Tricks:
+Although it _should_ work in general, you may experience an exception like this:
+```
+java.lang.RuntimeException: java.net.UnknownHostException: keycloak.127.0.0.1.nip.io: nodename nor servname provided, 
+or not known at org.keycloak.testsuite.util.OAuthClient.doWellKnownRequest(OAuthClient.java:1032)
+at org.keycloak.testsuite.url.DefaultHostnameTest.assertBackendForcedToFrontendWithMatchingHostname(
+DefaultHostnameTest.java:226)
+...
+```
+when running these tests on your local machine. This happens when something on your machine or network is blocking DNS queries to [nip.io](https://nip.io)
+One possible workaround is to add a commonly used public dns server (e.g. 8.8.8.8 for google dns server) to your local 
+networks dns configuration and run the tests. 

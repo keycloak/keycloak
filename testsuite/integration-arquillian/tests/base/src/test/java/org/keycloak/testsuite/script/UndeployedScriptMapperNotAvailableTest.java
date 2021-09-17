@@ -67,20 +67,21 @@ public class UndeployedScriptMapperNotAvailableTest extends AbstractTestRealmKey
     @BeforeClass
     public static void verifyEnvironment() {
         ContainerAssume.assumeNotAuthServerUndertow();
-        ContainerAssume.assumeNotAuthServerQuarkus();
     }
 
     @ArquillianResource
     private Deployer deployer;
 
     @Before
-    public void configureFlows() {
+    public void configureFlows() throws Exception {
         deployer.deploy(SCRIPT_DEPLOYMENT_NAME);
+        reconnectAdminClient();
     }
 
     @After
-    public void onAfter() {
+    public void onAfter() throws Exception {
         deployer.undeploy(SCRIPT_DEPLOYMENT_NAME);
+        reconnectAdminClient();
     }
 
     @Override
@@ -92,7 +93,6 @@ public class UndeployedScriptMapperNotAvailableTest extends AbstractTestRealmKey
     @EnableFeature(value = SCRIPTS, skipRestart = true, executeAsLast = false)
     public void testMapperNotRecognizedWhenDisabled() throws Exception {
         ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
-
         {
             ProtocolMapperRepresentation mapper = createScriptMapper("test-script-mapper1", "computed-via-script",
                     "computed-via-script", "String", true, true, "'hello_' + user.username", false);
@@ -101,9 +101,10 @@ public class UndeployedScriptMapperNotAvailableTest extends AbstractTestRealmKey
 
             app.getProtocolMappers().createMapper(mapper).close();
         }
-
         deployer.undeploy(SCRIPT_DEPLOYMENT_NAME);
-        assertTrue(app.getProtocolMappers().getMappers().isEmpty());
-        assertTrue(app.getProtocolMappers().getMappersPerProtocol(app.toRepresentation().getProtocol()).isEmpty());
+        reconnectAdminClient();
+        ClientResource cl = findClientResourceByClientId(adminClient.realm("test"), "test-app");
+        assertTrue(cl.getProtocolMappers().getMappers().isEmpty());
+        assertTrue(cl.getProtocolMappers().getMappersPerProtocol(cl.toRepresentation().getProtocol()).isEmpty());
     }
 }
