@@ -943,7 +943,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
             String response = SimpleHttp.doGet(url.toString(), client).asString();
             Matcher m = Pattern.compile("resources/([^/]*)/welcome").matcher(response);
             assertTrue(m.find());
-            assertTrue(m.group(1).matches("[a-zA-Z0-9_\\-.~]{5}"));
+            assertTrue(m.group(1).matches("[a-zA-Z0-9_\\-.~]{4,5}"));
         } catch (IOException e) {
             fail(e.getMessage());
         }
