@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oidc.grants.device.endpoints;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -55,6 +56,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resources.SessionCodeChecks;
+import org.keycloak.services.resources.Cors;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
@@ -63,10 +65,12 @@ import org.keycloak.util.TokenUtil;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.HttpMethod;
+import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -83,6 +87,11 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
 
     protected static final Logger logger = Logger.getLogger(DeviceEndpoint.class);
 
+    @Context
+    private HttpRequest request;
+
+    private Cors cors;
+
     public DeviceEndpoint(RealmModel realm, EventBuilder event) {
         super(realm, event);
     }
@@ -97,6 +106,8 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
     public Response handleDeviceRequest() {
+        cors = Cors.add(request).auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
+
         logger.trace("Processing @POST request");
         event.event(EventType.OAUTH2_DEVICE_AUTH);
 
@@ -149,10 +160,18 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
             response.setVerificationUri(deviceUrl);
             response.setVerificationUriComplete(deviceUrl + "?user_code=" + response.getUserCode());
 
-            return Response.ok(JsonSerialization.writeValueAsBytes(response)).type(MediaType.APPLICATION_JSON_TYPE).build();
+            return cors.builder(Response.ok(JsonSerialization.writeValueAsBytes(response)).type(MediaType.APPLICATION_JSON_TYPE)).build();
         } catch (Exception e) {
             throw new RuntimeException("Error creating OAuth 2.0 Device Authorization Response.", e);
         }
+    }
+
+    @OPTIONS
+    public Response preflight() {
+        if (logger.isDebugEnabled()) {
+            logger.debugv("CORS preflight from: {0}", headers.getRequestHeaders().getFirst("Origin"));
+        }
+        return Cors.add(request, Response.ok()).auth().preflight().allowedMethods("POST", "OPTIONS").build();
     }
 
     /**
@@ -292,7 +311,7 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         // https://tools.ietf.org/html/draft-ietf-oauth-device-flow-15#section-3.1
         // The spec says "The client authentication requirements of Section 3.2.1 of [RFC6749]
         // apply to requests on this endpoint".
-        AuthorizeClientUtil.ClientAuthResult clientAuth = AuthorizeClientUtil.authorizeClient(session, event, null);
+        AuthorizeClientUtil.ClientAuthResult clientAuth = AuthorizeClientUtil.authorizeClient(session, event, cors);
         ClientModel client = clientAuth.getClient();
 
         if (client == null) {
