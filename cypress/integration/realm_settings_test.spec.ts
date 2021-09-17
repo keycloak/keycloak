@@ -33,8 +33,8 @@ describe("Realm settings", () => {
   const goToKeys = () => {
     const keysUrl = `/auth/admin/realms/${realmName}/keys`;
     cy.intercept(keysUrl).as("keysFetch");
-    cy.getId("rs-keys-tab").click();
-    cy.getId("rs-keys-list-tab").click();
+    cy.findByTestId("rs-keys-tab").click();
+    cy.findByTestId("rs-keys-list-tab").click();
     cy.wait(["@keysFetch"]);
 
     return this;
@@ -44,27 +44,33 @@ describe("Realm settings", () => {
     const keysUrl = `/auth/admin/realms/${realmName}/keys`;
     cy.intercept(keysUrl).as("keysFetch");
 
-    cy.getId("rs-keys-tab").click();
-    cy.getId("rs-providers-tab").click();
-    cy.getId("provider-name-link").contains("test_aes-generated").click();
+    cy.findByTestId("rs-keys-tab").click();
+    cy.findByTestId("rs-providers-tab").click();
+    cy.findAllByTestId("provider-name-link")
+      .contains("test_aes-generated")
+      .click();
 
     sidebarPage.goToRealmSettings();
 
-    cy.getId("rs-keys-tab").click();
-    cy.getId("rs-providers-tab").click();
-    cy.getId("provider-name-link").contains("test_hmac-generated").click();
+    cy.findByTestId("rs-keys-tab").click();
+    cy.findByTestId("rs-providers-tab").click();
+    cy.findAllByTestId("provider-name-link")
+      .contains("test_hmac-generated")
+      .click();
 
     sidebarPage.goToRealmSettings();
 
-    cy.getId("rs-keys-tab").click();
-    cy.getId("rs-providers-tab").click();
-    cy.getId("provider-name-link").contains("test_rsa").click();
+    cy.findByTestId("rs-keys-tab").click();
+    cy.findByTestId("rs-providers-tab").click();
+    cy.findAllByTestId("provider-name-link").contains("test_rsa").click();
 
     sidebarPage.goToRealmSettings();
 
-    cy.getId("rs-keys-tab").click();
-    cy.getId("rs-providers-tab").click();
-    cy.getId("provider-name-link").contains("test_rsa-generated").click();
+    cy.findByTestId("rs-keys-tab").click();
+    cy.findByTestId("rs-providers-tab").click();
+    cy.findAllByTestId("provider-name-link")
+      .contains("test_rsa-generated")
+      .click();
 
     cy.wait(["@keysFetch"]);
 
@@ -74,14 +80,14 @@ describe("Realm settings", () => {
   /*const deleteProvider = (providerName: string) => {
     const url = `/auth/admin/realms/${realmName}/users/*`;
     cy.intercept(url).as("reload");
-    cy.getId("provider-name")
+    cy.findByTestId("provider-name")
       .contains(providerName)
       .parentsUntil(".pf-c-data-list__item-row")
       .find(".pf-c-dropdown__toggle")
       .click()
-      .getId(realmSettingsPage.deleteAction)
+      .findByTestId(realmSettingsPage.deleteAction)
       .click();
-    cy.getId(realmSettingsPage.modalConfirm).click();
+    cy.findByTestId(realmSettingsPage.modalConfirm).click();
 
     cy.wait(["@reload"]);
     return this;
@@ -113,7 +119,7 @@ describe("Realm settings", () => {
 
   it("Go to login tab", () => {
     sidebarPage.goToRealmSettings();
-    cy.getId("rs-login-tab").click();
+    cy.findByTestId("rs-login-tab").click();
     realmSettingsPage.toggleSwitch(realmSettingsPage.userRegSwitch);
     realmSettingsPage.toggleSwitch(realmSettingsPage.forgotPwdSwitch);
     realmSettingsPage.toggleSwitch(realmSettingsPage.rememberMeSwitch);
@@ -121,7 +127,7 @@ describe("Realm settings", () => {
 
   it("Go to email tab", () => {
     sidebarPage.goToRealmSettings();
-    cy.getId("rs-email-tab").click();
+    cy.findByTestId("rs-email-tab").click();
 
     cy.wait(1000);
 
@@ -133,13 +139,13 @@ describe("Realm settings", () => {
     realmSettingsPage.save(realmSettingsPage.emailSaveBtn);
 
     realmSettingsPage.fillHostField("localhost");
-    cy.getId(realmSettingsPage.testConnectionButton).click();
+    cy.findByTestId(realmSettingsPage.testConnectionButton).click();
 
     realmSettingsPage.fillEmailField(
       "example" + (Math.random() + 1).toString(36).substring(7) + "@example.com"
     );
 
-    cy.getId(realmSettingsPage.modalTestConnectionButton).click();
+    cy.findByTestId(realmSettingsPage.modalTestConnectionButton).click();
 
     masthead.checkNotificationMessage("Error! Failed to send email.");
   });
@@ -148,7 +154,7 @@ describe("Realm settings", () => {
     sidebarPage.goToRealmSettings();
     cy.intercept(`/auth/admin/realms/${realmName}/keys`).as("load");
 
-    cy.getId("rs-themes-tab").click();
+    cy.findByTestId("rs-themes-tab").click();
     cy.wait(["@load"]);
 
     realmSettingsPage.selectLoginThemeType("keycloak");
@@ -165,7 +171,7 @@ describe("Realm settings", () => {
     it("Enable user events", () => {
       cy.intercept("GET", `/auth/admin/realms/${realmName}/keys`).as("load");
       sidebarPage.goToRealmSettings();
-      cy.getId("rs-realm-events-tab").click();
+      cy.findByTestId("rs-realm-events-tab").click();
       cy.wait(["@load"]);
 
       realmSettingsPage
@@ -202,37 +208,37 @@ describe("Realm settings", () => {
   it("Go to keys tab", () => {
     sidebarPage.goToRealmSettings();
 
-    cy.getId("rs-keys-tab").click();
+    cy.findByTestId("rs-keys-tab").click();
   });
 
   it("add Providers", () => {
     sidebarPage.goToRealmSettings();
 
-    cy.getId("rs-keys-tab").click();
+    cy.findByTestId("rs-keys-tab").click();
 
-    cy.getId("rs-providers-tab").click();
+    cy.findByTestId("rs-providers-tab").click();
 
     realmSettingsPage.toggleAddProviderDropdown();
 
-    cy.getId("option-aes-generated").click();
+    cy.findByTestId("option-aes-generated").click();
     realmSettingsPage.enterConsoleDisplayName("test_aes-generated");
     realmSettingsPage.addProvider();
 
     realmSettingsPage.toggleAddProviderDropdown();
 
-    cy.getId("option-ecdsa-generated").click();
+    cy.findByTestId("option-ecdsa-generated").click();
     realmSettingsPage.enterConsoleDisplayName("test_ecdsa-generated");
     realmSettingsPage.addProvider();
 
     realmSettingsPage.toggleAddProviderDropdown();
 
-    cy.getId("option-hmac-generated").click();
+    cy.findByTestId("option-hmac-generated").click();
     realmSettingsPage.enterConsoleDisplayName("test_hmac-generated");
     realmSettingsPage.addProvider();
 
     realmSettingsPage.toggleAddProviderDropdown();
 
-    cy.getId("option-rsa-generated").click();
+    cy.findByTestId("option-rsa-generated").click();
     realmSettingsPage.enterConsoleDisplayName("test_rsa-generated");
     realmSettingsPage.addProvider();
   });
@@ -247,8 +253,8 @@ describe("Realm settings", () => {
     const url = `/auth/admin/realms/${realmName}/keys`;
     cy.intercept(url).as("load");
 
-    cy.getId("rs-keys-tab").click();
-    cy.getId("rs-providers-tab").click();
+    cy.findByTestId("rs-keys-tab").click();
+    cy.findByTestId("rs-providers-tab").click();
 
     cy.wait("@load");
 
@@ -267,7 +273,7 @@ describe("Realm settings", () => {
   it("add locale", () => {
     sidebarPage.goToRealmSettings();
 
-    cy.getId("rs-localization-tab").click();
+    cy.findByTestId("rs-localization-tab").click();
 
     addBundle();
 
@@ -279,9 +285,9 @@ describe("Realm settings", () => {
   it("Realm header settings", () => {
     sidebarPage.goToRealmSettings();
     cy.get("#pf-tab-securityDefences-securityDefences").click();
-    cy.getId("headers-form-tab-save").should("be.disabled");
+    cy.findByTestId("headers-form-tab-save").should("be.disabled");
     cy.get("#xFrameOptions").clear().type("DENY");
-    cy.getId("headers-form-tab-save").should("be.enabled").click();
+    cy.findByTestId("headers-form-tab-save").should("be.enabled").click();
 
     masthead.checkNotificationMessage("Realm successfully updated");
   });
@@ -289,7 +295,7 @@ describe("Realm settings", () => {
   it("add session data", () => {
     sidebarPage.goToRealmSettings();
 
-    cy.getId("rs-sessions-tab").click();
+    cy.findByTestId("rs-sessions-tab").click();
 
     realmSettingsPage.populateSessionsPage();
     realmSettingsPage.save("sessions-tab-save");
@@ -301,30 +307,48 @@ describe("Realm settings", () => {
     sidebarPage.goToAuthentication();
     sidebarPage.goToRealmSettings();
 
-    cy.getId("rs-sessions-tab").click();
+    cy.findByTestId("rs-sessions-tab").click();
 
-    cy.getId(realmSettingsPage.ssoSessionIdleInput).should("have.value", 1);
-    cy.getId(realmSettingsPage.ssoSessionMaxInput).should("have.value", 2);
-    cy.getId(realmSettingsPage.ssoSessionIdleRememberMeInput).should(
+    cy.findByTestId(realmSettingsPage.ssoSessionIdleInput).should(
+      "have.value",
+      1
+    );
+    cy.findByTestId(realmSettingsPage.ssoSessionMaxInput).should(
+      "have.value",
+      2
+    );
+    cy.findByTestId(realmSettingsPage.ssoSessionIdleRememberMeInput).should(
       "have.value",
       3
     );
-    cy.getId(realmSettingsPage.ssoSessionMaxRememberMeInput).should(
+    cy.findByTestId(realmSettingsPage.ssoSessionMaxRememberMeInput).should(
       "have.value",
       4
     );
 
-    cy.getId(realmSettingsPage.clientSessionIdleInput).should("have.value", 5);
-    cy.getId(realmSettingsPage.clientSessionMaxInput).should("have.value", 6);
+    cy.findByTestId(realmSettingsPage.clientSessionIdleInput).should(
+      "have.value",
+      5
+    );
+    cy.findByTestId(realmSettingsPage.clientSessionMaxInput).should(
+      "have.value",
+      6
+    );
 
-    cy.getId(realmSettingsPage.offlineSessionIdleInput).should("have.value", 7);
-    cy.getId(realmSettingsPage.offlineSessionMaxSwitch).should(
+    cy.findByTestId(realmSettingsPage.offlineSessionIdleInput).should(
+      "have.value",
+      7
+    );
+    cy.findByTestId(realmSettingsPage.offlineSessionMaxSwitch).should(
       "have.value",
       "on"
     );
 
-    cy.getId(realmSettingsPage.loginTimeoutInput).should("have.value", 9);
-    cy.getId(realmSettingsPage.loginActionTimeoutInput).should(
+    cy.findByTestId(realmSettingsPage.loginTimeoutInput).should(
+      "have.value",
+      9
+    );
+    cy.findByTestId(realmSettingsPage.loginActionTimeoutInput).should(
       "have.value",
       10
     );
@@ -333,7 +357,7 @@ describe("Realm settings", () => {
   it("add token data", () => {
     sidebarPage.goToRealmSettings();
 
-    cy.getId("rs-tokens-tab").click();
+    cy.findByTestId("rs-tokens-tab").click();
 
     realmSettingsPage.populateTokensPage();
     realmSettingsPage.save("tokens-tab-save");
@@ -344,34 +368,46 @@ describe("Realm settings", () => {
   it("check that token data was saved", () => {
     sidebarPage.goToRealmSettings();
 
-    cy.getId("rs-tokens-tab").click();
+    cy.findByTestId("rs-tokens-tab").click();
 
-    cy.getId(realmSettingsPage.accessTokenLifespanInput).should(
+    cy.findByTestId(realmSettingsPage.accessTokenLifespanInput).should(
       "have.value",
       1
     );
-    cy.getId(realmSettingsPage.accessTokenLifespanImplicitInput).should(
+    cy.findByTestId(realmSettingsPage.accessTokenLifespanImplicitInput).should(
       "have.value",
       2
     );
-    cy.getId(realmSettingsPage.clientLoginTimeoutInput).should("have.value", 3);
-    cy.getId(realmSettingsPage.userInitiatedActionLifespanInput).should(
+    cy.findByTestId(realmSettingsPage.clientLoginTimeoutInput).should(
+      "have.value",
+      3
+    );
+    cy.findByTestId(realmSettingsPage.userInitiatedActionLifespanInput).should(
       "have.value",
       4
     );
 
-    cy.getId(realmSettingsPage.defaultAdminInitatedInput).should(
+    cy.findByTestId(realmSettingsPage.defaultAdminInitatedInput).should(
       "have.value",
       5
     );
-    cy.getId(realmSettingsPage.emailVerificationInput).should("have.value", 6);
+    cy.findByTestId(realmSettingsPage.emailVerificationInput).should(
+      "have.value",
+      6
+    );
 
-    cy.getId(realmSettingsPage.idpEmailVerificationInput).should(
+    cy.findByTestId(realmSettingsPage.idpEmailVerificationInput).should(
       "have.value",
       7
     );
-    cy.getId(realmSettingsPage.forgotPasswordInput).should("have.value", 8);
+    cy.findByTestId(realmSettingsPage.forgotPasswordInput).should(
+      "have.value",
+      8
+    );
 
-    cy.getId(realmSettingsPage.executeActionsInput).should("have.value", 9);
+    cy.findByTestId(realmSettingsPage.executeActionsInput).should(
+      "have.value",
+      9
+    );
   });
 });

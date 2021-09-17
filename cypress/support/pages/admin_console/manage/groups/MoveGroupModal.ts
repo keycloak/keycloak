@@ -3,7 +3,7 @@ export default class MoveGroupModal {
   private title = ".pf-c-modal-box__title";
 
   clickRow(groupName: string) {
-    cy.getId(groupName).click();
+    cy.findByTestId(groupName).click();
     return this;
   }
 
@@ -18,7 +18,7 @@ export default class MoveGroupModal {
   }
 
   clickMove() {
-    cy.getId(this.moveButton).click();
+    cy.findByTestId(this.moveButton).click();
     return this;
   }
 }

@@ -37,7 +37,7 @@ export default class CreateRealmRolePage {
   //#endregion
 
   save() {
-    cy.getId(this.saveBtn).click();
+    cy.findByTestId(this.saveBtn).click();
 
     return this;
   }

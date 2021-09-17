@@ -10,21 +10,24 @@ export default class AssociatedRolesPage {
   private usersPage = "users-page";
 
   addAssociatedRealmRole() {
-    cy.getId(this.actionDropdown).last().click();
+    cy.findByTestId(this.actionDropdown).last().click();
 
     const load = "/auth/admin/realms/master/clients";
     cy.intercept(load).as("load");
 
-    cy.getId(this.addRolesDropdownItem).click();
+    cy.findByTestId(this.addRolesDropdownItem).click();
 
     cy.wait(["@load"]);
     cy.get(this.checkbox).eq(2).check();
 
-    cy.getId(this.addAssociatedRolesModalButton).contains("Add").click();
+    cy.findByTestId(this.addAssociatedRolesModalButton).contains("Add").click();
 
     cy.url().should("include", "/AssociatedRoles");
 
-    cy.getId(this.compositeRoleBadge).should("contain.text", "Composite");
+    cy.findByTestId(this.compositeRoleBadge).should(
+      "contain.text",
+      "Composite"
+    );
 
     cy.wait(["@load"]);
 
@@ -32,13 +35,13 @@ export default class AssociatedRolesPage {
   }
 
   addAssociatedClientRole() {
-    cy.getId(this.addRoleToolbarButton).click();
+    cy.findByTestId(this.addRoleToolbarButton).click();
 
-    cy.getId(this.filterTypeDropdown).click();
+    cy.findByTestId(this.filterTypeDropdown).click();
 
-    cy.getId(this.filterTypeDropdownItem).click();
+    cy.findByTestId(this.filterTypeDropdownItem).click();
 
-    cy.getId(".pf-c-spinner__tail-ball").should("not.exist");
+    cy.findByTestId(".pf-c-spinner__tail-ball").should("not.exist");
 
     cy.get('[data-testid="addAssociatedRole"] td[data-label="Role name"]')
       .contains("manage-account")
@@ -47,8 +50,9 @@ export default class AssociatedRolesPage {
         cy.get("input").click();
       });
 
-    cy.getId(this.addAssociatedRolesModalButton).contains("Add").click();
+    cy.findByTestId(this.addAssociatedRolesModalButton).contains("Add").click();
 
-    cy.contains("Users in role").click().getId(this.usersPage).should("exist");
+    cy.contains("Users in role").click();
+    cy.findByTestId(this.usersPage).should("exist");
   }
 }

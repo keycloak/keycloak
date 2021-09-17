@@ -5,7 +5,7 @@ export default class GroupModal {
 
   open(name?: string) {
     if (name) {
-      cy.getId(name).click();
+      cy.findByTestId(name).click();
     } else {
       cy.get("button").contains("Create").click();
     }
@@ -13,18 +13,18 @@ export default class GroupModal {
   }
 
   fillGroupForm(name = "") {
-    cy.getId(this.nameInput).clear().type(name);
+    cy.findByTestId(this.nameInput).clear().type(name);
     return this;
   }
 
   clickCreate() {
-    cy.getId(this.createButton).click();
+    cy.findByTestId(this.createButton).click();
 
     return this;
   }
 
   clickRename() {
-    cy.getId(this.renameButton).click();
+    cy.findByTestId(this.renameButton).click();
     return this;
   }
 }

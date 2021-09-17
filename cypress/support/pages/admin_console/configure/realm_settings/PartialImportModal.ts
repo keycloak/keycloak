@@ -2,7 +2,7 @@ export default class GroupModal {
   private openPartialImport = "openPartialImportModal";
 
   open() {
-    cy.getId(this.openPartialImport).click();
+    cy.findByTestId(this.openPartialImport).click();
     return this;
   }
 
@@ -20,43 +20,43 @@ export default class GroupModal {
   };
 
   importButton() {
-    return cy.getId("import-button");
+    return cy.findByTestId("import-button");
   }
 
   cancelButton() {
-    return cy.getId("cancel-button");
+    return cy.findByTestId("cancel-button");
   }
 
   groupsCheckbox() {
-    return cy.getId("groups-checkbox");
+    return cy.findByTestId("groups-checkbox");
   }
 
   usersCheckbox() {
-    return cy.getId("users-checkbox");
+    return cy.findByTestId("users-checkbox");
   }
 
   userCount() {
-    return cy.getId("users-count");
+    return cy.findByTestId("users-count");
   }
 
   clientCount() {
-    return cy.getId("clients-count");
+    return cy.findByTestId("clients-count");
   }
 
   groupCount() {
-    return cy.getId("groups-count");
+    return cy.findByTestId("groups-count");
   }
 
   idpCount() {
-    return cy.getId("identityProviders-count");
+    return cy.findByTestId("identityProviders-count");
   }
 
   realmRolesCount() {
-    return cy.getId("realmRoles-count");
+    return cy.findByTestId("realmRoles-count");
   }
 
   clientRolesCount() {
-    return cy.getId("clientRoles-count");
+    return cy.findByTestId("clientRoles-count");
   }
 
   realmSelector() {
@@ -65,6 +65,6 @@ export default class GroupModal {
 
   selectRealm(realm: string) {
     this.realmSelector().click();
-    cy.getId(realm + "-select-option").click();
+    cy.findByTestId(realm + "-select-option").click();
   }
 }

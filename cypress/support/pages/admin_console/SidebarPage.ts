@@ -17,20 +17,20 @@ export default class SidebarPage {
   private userFederationBtn = "#nav-item-user-federation";
 
   getCurrentRealm() {
-    return cy.getId(this.realmsDrpDwn).scrollIntoView().invoke("text");
+    return cy.findByTestId(this.realmsDrpDwn).scrollIntoView().invoke("text");
   }
 
   goToRealm(realmName: string) {
-    cy.getId(this.realmsDrpDwn).scrollIntoView().click();
-    cy.getId(this.realmsList).get("ul").contains(realmName).click();
+    cy.findByTestId(this.realmsDrpDwn).scrollIntoView().click();
+    cy.findByTestId(this.realmsList).get("ul").contains(realmName).click();
 
     return this;
   }
 
   goToCreateRealm() {
-    cy.getId(this.realmsDrpDwn).scrollIntoView();
-    cy.getId(this.realmsDrpDwn).click();
-    cy.getId(this.createRealmBtn).click();
+    cy.findByTestId(this.realmsDrpDwn).scrollIntoView();
+    cy.findByTestId(this.realmsDrpDwn).click();
+    cy.findByTestId(this.createRealmBtn).click();
 
     return this;
   }

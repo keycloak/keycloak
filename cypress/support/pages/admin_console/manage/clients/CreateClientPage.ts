@@ -66,7 +66,7 @@ export default class CreateClientPage {
 
   changeSwitches(switches: string[]) {
     for (const uiSwitch of switches) {
-      cy.getId(uiSwitch).check({ force: true });
+      cy.findByTestId(uiSwitch).check({ force: true });
     }
     return this;
   }

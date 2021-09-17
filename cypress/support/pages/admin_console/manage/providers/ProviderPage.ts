@@ -269,7 +269,7 @@ export default class ProviderPage {
           .within(() => {
             cy.get('input[name="radioGroup"]').click();
           });
-        cy.getId(this.assign).click();
+        cy.findByTestId(this.assign).click();
         break;
       default:
         console.log("Invalid mapper type.");

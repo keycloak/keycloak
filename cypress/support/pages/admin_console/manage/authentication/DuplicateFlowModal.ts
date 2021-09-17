@@ -5,11 +5,11 @@ export default class DuplicateFlowModal {
 
   fill(name?: string, description?: string) {
     if (name) {
-      cy.getId(this.aliasInput).type(name);
+      cy.findByTestId(this.aliasInput).type(name);
       if (description) cy.get(this.descriptionInput).type(description);
     }
 
-    cy.getId(this.confirmButton).click();
+    cy.findByTestId(this.confirmButton).click();
     return this;
   }
 }

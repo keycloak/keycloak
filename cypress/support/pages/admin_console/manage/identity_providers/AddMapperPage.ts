@@ -18,12 +18,12 @@ export default class AddMapperPage {
   private addAssociatedRolesModalButton = "add-associated-roles-button";
 
   goToMappersTab() {
-    cy.getId(this.mappersTab).click();
+    cy.findByTestId(this.mappersTab).click();
     return this;
   }
 
   clickAdd() {
-    cy.getId(this.noMappersAddMapperButton).click();
+    cy.findByTestId(this.noMappersAddMapperButton).click();
     return this;
   }
 
@@ -33,12 +33,12 @@ export default class AddMapperPage {
   }
 
   saveNewMapper() {
-    cy.getId(this.newMapperSaveButton).click();
+    cy.findByTestId(this.newMapperSaveButton).click();
     return this;
   }
 
   toggleSwitch(switchName: string) {
-    cy.getId(switchName).click({ force: true });
+    cy.findByTestId(switchName).click({ force: true });
 
     return this;
   }
@@ -50,17 +50,19 @@ export default class AddMapperPage {
 
     cy.get(this.syncmodeSelectToggle).click();
 
-    cy.getId("legacy").click();
+    cy.findByTestId("legacy").click();
 
     cy.get(this.idpMapperSelectToggle).click();
 
-    cy.getId(this.idpMapperSelect).contains("Attribute Importer").click();
+    cy.findByTestId(this.idpMapperSelect)
+      .contains("Attribute Importer")
+      .click();
 
-    cy.getId(this.userSessionAttribute).clear();
-    cy.getId(this.userSessionAttribute).type("user session attribute");
-    cy.getId(this.userSessionAttributeValue).clear();
+    cy.findByTestId(this.userSessionAttribute).clear();
+    cy.findByTestId(this.userSessionAttribute).type("user session attribute");
+    cy.findByTestId(this.userSessionAttributeValue).clear();
 
-    cy.getId(this.userSessionAttributeValue).type(
+    cy.findByTestId(this.userSessionAttributeValue).type(
       "user session attribute value"
     );
 
@@ -73,9 +75,9 @@ export default class AddMapperPage {
 
     cy.get(this.radio).eq(0).check();
 
-    cy.getId(this.addAssociatedRolesModalButton).contains("Add").click();
+    cy.findByTestId(this.addAssociatedRolesModalButton).contains("Add").click();
 
-    cy.getId(this.mapperRoleInput).should("have.value", "admin");
+    cy.findByTestId(this.mapperRoleInput).should("have.value", "admin");
 
     return this;
   }
@@ -87,11 +89,11 @@ export default class AddMapperPage {
 
     cy.get(this.syncmodeSelectToggle).click();
 
-    cy.getId("inherit").click();
+    cy.findByTestId("inherit").click();
 
     cy.get(this.idpMapperSelectToggle).click();
 
-    cy.getId(this.idpMapperSelect)
+    cy.findByTestId(this.idpMapperSelect)
       .contains("Hardcoded User Session Attribute")
       .click();
 
@@ -103,7 +105,7 @@ export default class AddMapperPage {
 
     this.toggleSwitch(this.regexAttributeValuesSwitch);
 
-    cy.getId(this.selectRoleButton).click();
+    cy.findByTestId(this.selectRoleButton).click();
 
     this.addRoleToMapperForm();
 

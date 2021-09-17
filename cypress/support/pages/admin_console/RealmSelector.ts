@@ -5,7 +5,7 @@ export default class RealmSelector {
   private realmContextSelector = ".keycloak__realm_selector__context_selector";
 
   shouldContainAll(realmsList: string[]) {
-    cy.getId(this.realmSelector)
+    cy.findByTestId(this.realmSelector)
       .scrollIntoView()
       .get("ul")
       .should((realms) => {
@@ -19,7 +19,7 @@ export default class RealmSelector {
   }
 
   openRealmContextSelector() {
-    cy.getId(this.realmSelector).scrollIntoView();
+    cy.findByTestId(this.realmSelector).scrollIntoView();
     cy.get(this.realmContextSelector).click();
 
     return this;

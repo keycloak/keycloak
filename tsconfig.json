@@ -1,7 +1,12 @@
 {
+  "include": ["src"],
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ],
   "extends": "@snowpack/app-scripts-react/tsconfig.base.json",
   "compilerOptions": {
-    "types": ["jest", "cypress", "snowpack-env"],
+    "types": ["snowpack-env"],
     "esModuleInterop": true
   }
 }

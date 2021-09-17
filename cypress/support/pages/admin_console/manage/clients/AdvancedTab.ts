@@ -65,7 +65,7 @@ export default class AdvancedTab {
   }
 
   clickRegisterNodeManually() {
-    cy.getId(this.registerNodeManually).click();
+    cy.findByTestId(this.registerNodeManually).click();
     return this;
   }
 

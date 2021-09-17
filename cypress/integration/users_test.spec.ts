@@ -91,7 +91,7 @@ describe("Users test", () => {
       console.log(groupsList);
 
       groupsListCopy.forEach((element) => {
-        cy.getId(`${element}-check`).click();
+        cy.findByTestId(`${element}-check`).click();
       });
 
       createUserPage.joinGroups();
@@ -127,7 +127,7 @@ describe("Users test", () => {
       const groupsListCopy = groupsList.slice(1, 2);
 
       groupsListCopy.forEach((element) => {
-        cy.getId(`${element}-check`).click();
+        cy.findByTestId(`${element}-check`).click();
       });
 
       userGroupsPage.joinGroups();
@@ -139,7 +139,7 @@ describe("Users test", () => {
       // Go to user groups
       userGroupsPage.goToGroupsTab();
       cy.contains("Leave").click();
-      cy.getId("modalConfirm").click();
+      cy.findByTestId("modalConfirm").click();
     });
 
     it("Go to user consents test", () => {
@@ -147,8 +147,8 @@ describe("Users test", () => {
 
       listingPage.goToItemDetails(itemId);
 
-      cy.getId("user-consents-tab").click();
-      cy.getId("empty-state").contains("No consents");
+      cy.findByTestId("user-consents-tab").click();
+      cy.findByTestId("empty-state").contains("No consents");
     });
 
     it("Delete user test", () => {

@@ -19,7 +19,7 @@ export default class UserEventsTab {
   }
 
   shouldHaveFormFields() {
-    cy.getId(this.searchEventDrpDwnBtn).click();
+    cy.findByTestId(this.searchEventDrpDwnBtn).click();
     cy.get(this.searchForm).contains("User ID");
     cy.get(this.searchForm).contains("Event type");
     cy.get(this.searchForm).contains("Client");
@@ -29,22 +29,22 @@ export default class UserEventsTab {
   }
 
   shouldHaveEventTypeOptions() {
-    cy.getId(this.searchEventDrpDwnBtn).click();
+    cy.findByTestId(this.searchEventDrpDwnBtn).click();
     cy.get(this.eventTypeList).should("exist");
   }
 
   shouldHaveSearchBtnDisabled() {
-    cy.getId(this.searchEventDrpDwnBtn).click();
-    cy.getId(this.searchEventsBtn).should("have.attr", "disabled");
+    cy.findByTestId(this.searchEventDrpDwnBtn).click();
+    cy.findByTestId(this.searchEventsBtn).should("have.attr", "disabled");
   }
 
   shouldDoSearchAndRemoveChips() {
-    cy.getId(this.searchEventDrpDwnBtn).click();
+    cy.findByTestId(this.searchEventDrpDwnBtn).click();
     cy.get(this.eventTypeInputFld).type("LOGIN");
     cy.get(this.eventTypeOption).contains("LOGIN").click();
 
     cy.intercept("/auth/admin/realms/master/events*").as("eventsFetch");
-    cy.getId(this.searchEventsBtn).click();
+    cy.findByTestId(this.searchEventsBtn).click();
     cy.wait("@eventsFetch");
 
     cy.get("table").contains("td", "LOGIN");
@@ -59,15 +59,15 @@ export default class UserEventsTab {
   }
 
   shouldHaveSearchBtnEnabled() {
-    cy.getId(this.searchEventDrpDwnBtn).click();
-    cy.getId(this.userIdInputFld).type("11111");
-    cy.getId(this.searchEventsBtn).should("not.have.attr", "disabled");
+    cy.findByTestId(this.searchEventDrpDwnBtn).click();
+    cy.findByTestId(this.userIdInputFld).type("11111");
+    cy.findByTestId(this.searchEventsBtn).should("not.have.attr", "disabled");
   }
 
   shouldDoNoResultsSearch() {
-    cy.getId(this.searchEventDrpDwnBtn).click();
-    cy.getId(this.userIdInputFld).type("test");
-    cy.getId(this.searchEventsBtn).click();
+    cy.findByTestId(this.searchEventDrpDwnBtn).click();
+    cy.findByTestId(this.userIdInputFld).type("test");
+    cy.findByTestId(this.searchEventsBtn).click();
     cy.get(this.userEventsTabTitle).contains("No events logged");
   }
 }

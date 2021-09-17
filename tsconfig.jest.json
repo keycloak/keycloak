@@ -1,6 +1,9 @@
 {
   "extends": "./tsconfig.json",
+  // overwrite exclude so test files are included.
+  "exclude": [],
   "compilerOptions": {
+    "types": ["jest"],
     "jsx": "react"
   }
 }

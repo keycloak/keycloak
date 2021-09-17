@@ -10,19 +10,19 @@ export default class UserGroupsPage {
   }
 
   goToGroupsTab() {
-    cy.getId(this.userGroupsTab).click();
+    cy.findByTestId(this.userGroupsTab).click();
 
     return this;
   }
 
   toggleAddGroupModal() {
-    cy.getId(this.addGroupButton).click();
+    cy.findByTestId(this.addGroupButton).click();
 
     return this;
   }
 
   joinGroups() {
-    cy.getId(this.joinGroupButton).click();
+    cy.findByTestId(this.joinGroupButton).click();
 
     return this;
   }

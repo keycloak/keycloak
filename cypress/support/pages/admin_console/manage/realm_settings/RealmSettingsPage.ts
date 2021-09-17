@@ -169,7 +169,7 @@ export default class RealmSettingsPage {
   }
 
   fillEmailField(email: string) {
-    cy.getId(this.emailAddressInput).type(email);
+    cy.findByTestId(this.emailAddressInput).type(email);
     return this;
   }
 
@@ -185,22 +185,22 @@ export default class RealmSettingsPage {
   }
 
   saveGeneral() {
-    cy.getId(this.generalSaveBtn).click();
+    cy.findByTestId(this.generalSaveBtn).click();
 
     return this;
   }
 
   saveThemes() {
-    cy.getId(this.themesSaveBtn).click();
+    cy.findByTestId(this.themesSaveBtn).click();
 
     return this;
   }
 
   addSenderEmail(senderEmail: string) {
-    cy.getId(this.fromInput).clear();
+    cy.findByTestId(this.fromInput).clear();
 
     if (senderEmail) {
-      cy.getId(this.fromInput).type(senderEmail);
+      cy.findByTestId(this.fromInput).type(senderEmail);
     }
 
     return this;
@@ -208,19 +208,19 @@ export default class RealmSettingsPage {
 
   testSelectFilter() {
     cy.get(this.filterSelectMenu).first().click();
-    cy.getId(this.passiveKeysOption).click();
+    cy.findByTestId(this.passiveKeysOption).click();
     cy.get(this.filterSelectMenu).first().click();
-    cy.getId(this.disabledKeysOption).click();
+    cy.findByTestId(this.disabledKeysOption).click();
   }
 
   toggleSwitch(switchName: string) {
-    cy.getId(switchName).click({ force: true });
+    cy.findByTestId(switchName).click({ force: true });
 
     return this;
   }
 
   toggleCheck(switchName: string) {
-    cy.getId(switchName).click();
+    cy.findByTestId(switchName).click();
 
     return this;
   }
@@ -228,57 +228,57 @@ export default class RealmSettingsPage {
   toggleAddProviderDropdown() {
     const keysUrl = "/auth/admin/realms/master/keys";
     cy.intercept(keysUrl).as("keysFetch");
-    cy.getId(this.addProviderDropdown).click();
+    cy.findByTestId(this.addProviderDropdown).click();
 
     return this;
   }
 
   addProvider() {
-    cy.getId(this.addProviderButton).click();
+    cy.findByTestId(this.addProviderButton).click();
 
     return this;
   }
 
   addKeyValuePair(key: string, value: string) {
-    cy.getId(this.addBundleButton).click();
+    cy.findByTestId(this.addBundleButton).click();
 
-    cy.getId(this.keyInput).type(key);
-    cy.getId(this.valueInput).type(value);
+    cy.findByTestId(this.keyInput).type(key);
+    cy.findByTestId(this.valueInput).type(value);
 
-    cy.getId(this.confirmAddBundle).click();
+    cy.findByTestId(this.confirmAddBundle).click();
 
     return this;
   }
 
   deleteProvider(providerName: string) {
-    cy.getId("provider-name-link")
+    cy.findAllByTestId("provider-name-link")
       .contains(providerName)
       .parent()
       .siblings(".pf-c-data-list__item-action")
       .click()
-      .getId(this.deleteAction)
+      .findByTestId(this.deleteAction)
       .click();
-    cy.wait(500).getId(this.modalConfirm).click();
+    cy.wait(500).findByTestId(this.modalConfirm).click();
   }
 
   enterConsoleDisplayName(name: string) {
-    cy.getId(this.displayName).clear().type(name);
+    cy.findByTestId(this.displayName).clear().type(name);
   }
 
   save(saveBtn: string) {
-    cy.getId(saveBtn).click();
+    cy.findByTestId(saveBtn).click();
 
     return this;
   }
 
   clearEvents(type: "admin" | "user") {
-    cy.getId(`clear-${type}-events`).click();
+    cy.findByTestId(`clear-${type}-events`).click();
 
     return this;
   }
 
   addUserEvents(events: string[]) {
-    cy.getId("addTypes").click();
+    cy.findByTestId("addTypes").click();
     for (const event of events) {
       cy.get(this.eventTypeColumn)
         .contains(event)
@@ -314,54 +314,54 @@ export default class RealmSettingsPage {
   }
 
   populateSessionsPage() {
-    cy.getId(this.ssoSessionIdleInput).clear().type("1");
+    cy.findByTestId(this.ssoSessionIdleInput).clear().type("1");
     this.changeTimeUnit(
       "Minutes",
       this.ssoSessionIdleSelectMenu,
       this.ssoSessionIdleSelectMenuList
     );
-    cy.getId(this.ssoSessionMaxInput).clear().type("2");
+    cy.findByTestId(this.ssoSessionMaxInput).clear().type("2");
     this.changeTimeUnit(
       "Hours",
       this.ssoSessionMaxSelectMenu,
       this.ssoSessionMaxSelectMenuList
     );
-    cy.getId(this.ssoSessionIdleRememberMeInput).clear().type("3");
+    cy.findByTestId(this.ssoSessionIdleRememberMeInput).clear().type("3");
     this.changeTimeUnit(
       "Days",
       this.ssoSessionIdleRememberMeSelectMenu,
       this.ssoSessionIdleRememberMeSelectMenuList
     );
-    cy.getId(this.ssoSessionMaxRememberMeInput).clear().type("4");
+    cy.findByTestId(this.ssoSessionMaxRememberMeInput).clear().type("4");
     this.changeTimeUnit(
       "Minutes",
       this.ssoSessionMaxRememberMeSelectMenu,
       this.ssoSessionMaxRememberMeSelectMenuList
     );
 
-    cy.getId(this.clientSessionIdleInput).clear().type("5");
+    cy.findByTestId(this.clientSessionIdleInput).clear().type("5");
     this.changeTimeUnit(
       "Hours",
       this.clientSessionIdleSelectMenu,
       this.clientSessionIdleSelectMenuList
     );
-    cy.getId(this.clientSessionMaxInput).clear().type("6");
+    cy.findByTestId(this.clientSessionMaxInput).clear().type("6");
     this.changeTimeUnit(
       "Days",
       this.clientSessionMaxSelectMenu,
       this.clientSessionMaxSelectMenuList
     );
 
-    cy.getId(this.offlineSessionIdleInput).clear().type("7");
+    cy.findByTestId(this.offlineSessionIdleInput).clear().type("7");
     this.toggleSwitch(this.offlineSessionMaxSwitch);
 
-    cy.getId(this.loginTimeoutInput).clear().type("9");
+    cy.findByTestId(this.loginTimeoutInput).clear().type("9");
     this.changeTimeUnit(
       "Minutes",
       this.loginTimeoutSelectMenu,
       this.loginTimeoutSelectMenuList
     );
-    cy.getId(this.loginActionTimeoutInput).clear().type("10");
+    cy.findByTestId(this.loginActionTimeoutInput).clear().type("10");
     this.changeTimeUnit(
       "Days",
       this.loginActionTimeoutSelectMenu,
@@ -372,66 +372,64 @@ export default class RealmSettingsPage {
   populateTokensPage() {
     this.toggleSwitch(this.revokeRefreshTokenSwitch);
 
-    cy.getId(this.accessTokenLifespanInput)
+    cy.findByTestId(this.accessTokenLifespanInput)
       .focus()
-      .clear({ force: true })
-      .getId(this.accessTokenLifespanInput)
-      .clear()
-      .type("1");
+      .clear({ force: true });
+    cy.findByTestId(this.accessTokenLifespanInput).clear().type("1");
     this.changeTimeUnit(
       "Days",
       this.accessTokenLifespanSelectMenu,
       this.accessTokenLifespanSelectMenuList
     );
-    cy.getId(this.accessTokenLifespanImplicitInput).clear().type("2");
+    cy.findByTestId(this.accessTokenLifespanImplicitInput).clear().type("2");
     this.changeTimeUnit(
       "Minutes",
       this.accessTokenLifespanImplicitSelectMenu,
       this.accessTokenLifespanImplicitSelectMenuList
     );
 
-    cy.getId(this.clientLoginTimeoutInput).clear().type("3");
+    cy.findByTestId(this.clientLoginTimeoutInput).clear().type("3");
     this.changeTimeUnit(
       "Hours",
       this.clientLoginTimeoutSelectMenu,
       this.clientLoginTimeoutSelectMenuList
     );
 
-    cy.getId(this.userInitiatedActionLifespanInput).clear().type("4");
+    cy.findByTestId(this.userInitiatedActionLifespanInput).clear().type("4");
     this.changeTimeUnit(
       "Minutes",
       this.userInitiatedActionLifespanSelectMenu,
       this.userInitiatedActionLifespanSelectMenuList
     );
 
-    cy.getId(this.defaultAdminInitatedInput).clear().type("5");
+    cy.findByTestId(this.defaultAdminInitatedInput).clear().type("5");
     this.changeTimeUnit(
       "Days",
       this.defaultAdminInitatedInputSelectMenu,
       this.defaultAdminInitatedInputSelectMenuList
     );
 
-    cy.getId(this.emailVerificationInput).clear().type("6");
+    cy.findByTestId(this.emailVerificationInput).clear().type("6");
     this.changeTimeUnit(
       "Days",
       this.emailVerificationSelectMenu,
       this.emailVerificationSelectMenuList
     );
 
-    cy.getId(this.idpEmailVerificationInput).clear().type("7");
+    cy.findByTestId(this.idpEmailVerificationInput).clear().type("7");
     this.changeTimeUnit(
       "Days",
       this.idpEmailVerificationSelectMenu,
       this.idpEmailVerificationSelectMenuList
     );
 
-    cy.getId(this.forgotPasswordInput).clear().type("8");
+    cy.findByTestId(this.forgotPasswordInput).clear().type("8");
     this.changeTimeUnit(
       "Days",
       this.forgotPasswordSelectMenu,
       this.forgotPasswordSelectMenuList
     );
-    cy.getId(this.executeActionsInput).clear().type("9");
+    cy.findByTestId(this.executeActionsInput).clear().type("9");
     this.changeTimeUnit(
       "Days",
       this.executeActionsSelectMenu,
@@ -449,7 +447,7 @@ export default class RealmSettingsPage {
   }
 
   clickAdd() {
-    cy.getId("addEventTypeConfirm").click();
+    cy.findByTestId("addEventTypeConfirm").click();
     return this;
   }
 }

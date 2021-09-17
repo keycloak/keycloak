@@ -37,11 +37,11 @@ export default class CreateUserPage {
     cy.wait(100);
     cy.get("body").then((body) => {
       if (body.find("[data-testid=empty-state]").length > 0) {
-        cy.getId(this.emptyStateCreateUserBtn).click();
+        cy.findByTestId(this.emptyStateCreateUserBtn).click();
       } else if (body.find("[data-testid=search-users-title]").length > 0) {
-        cy.getId(this.searchPgCreateUserBtn).click();
+        cy.findByTestId(this.searchPgCreateUserBtn).click();
       } else {
-        cy.getId(this.addUserBtn).click();
+        cy.findByTestId(this.addUserBtn).click();
       }
     });
 
@@ -49,25 +49,25 @@ export default class CreateUserPage {
   }
 
   toggleAddGroupModal() {
-    cy.getId(this.joinGroupsBtn).click();
+    cy.findByTestId(this.joinGroupsBtn).click();
 
     return this;
   }
 
   joinGroups() {
-    cy.getId(this.joinBtn).click();
+    cy.findByTestId(this.joinBtn).click();
 
     return this;
   }
 
   save() {
-    cy.getId(this.saveBtn).click();
+    cy.findByTestId(this.saveBtn).click();
 
     return this;
   }
 
   cancel() {
-    cy.getId(this.cancelBtn).click();
+    cy.findByTestId(this.cancelBtn).click();
 
     return this;
   }

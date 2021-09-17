@@ -32,22 +32,22 @@ export default class UserDetailsPage {
   }
 
   fillUserData() {
-    cy.getId(this.emailInput).type(this.emailValue);
-    cy.getId(this.firstNameInput).type(this.firstNameValue);
-    cy.getId(this.lastNameInput).type(this.lastNameValue);
-    cy.getId(this.enabledSwitch).check({ force: true });
+    cy.findByTestId(this.emailInput).type(this.emailValue);
+    cy.findByTestId(this.firstNameInput).type(this.firstNameValue);
+    cy.findByTestId(this.lastNameInput).type(this.lastNameValue);
+    cy.findByTestId(this.enabledSwitch).check({ force: true });
 
     return this;
   }
 
   save() {
-    cy.getId(this.saveBtn).click();
+    cy.findByTestId(this.saveBtn).click();
 
     return this;
   }
 
   cancel() {
-    cy.getId(this.cancelBtn).click();
+    cy.findByTestId(this.cancelBtn).click();
 
     return this;
   }

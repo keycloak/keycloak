@@ -16,22 +16,22 @@ export default class RoleMappingTab {
   }
 
   goToScopeTab() {
-    cy.getId(this.scopeTab).click();
+    cy.findByTestId(this.scopeTab).click();
     return this;
   }
 
   clickAssignRole(notEmpty = true) {
-    cy.getId(notEmpty ? this.assignEmptyRole : this.assignRole).click();
+    cy.findByTestId(notEmpty ? this.assignEmptyRole : this.assignRole).click();
     return this;
   }
 
   clickAssign() {
-    cy.getId(this.assign).click();
+    cy.findByTestId(this.assign).click();
     return this;
   }
 
   clickUnAssign() {
-    cy.getId(this.unAssign).click();
+    cy.findByTestId(this.unAssign).click();
     return this;
   }
 
@@ -52,7 +52,7 @@ export default class RoleMappingTab {
 
   checkRoles(roleNames: string[]) {
     if (roleNames.length) {
-      cy.getId(this.assignedRolesTable)
+      cy.findByTestId(this.assignedRolesTable)
         .get(this.namesColumn)
         .should((roles) => {
           for (let index = 0; index < roleNames.length; index++) {
@@ -61,7 +61,7 @@ export default class RoleMappingTab {
           }
         });
     } else {
-      cy.getId(this.assignedRolesTable).should("not.exist");
+      cy.findByTestId(this.assignedRolesTable).should("not.exist");
     }
     return this;
   }

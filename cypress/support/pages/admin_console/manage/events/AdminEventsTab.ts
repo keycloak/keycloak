@@ -24,7 +24,7 @@ export default class AdminEventsTab {
   authValDataRow = 'tbody > tr > [data-label="Value"]';
 
   shouldHaveFormFields() {
-    cy.getId(this.searchAdminEventDrpDwnBtn).click();
+    cy.findByTestId(this.searchAdminEventDrpDwnBtn).click();
     cy.get(this.searchForm).contains("Resource types");
     cy.get(this.searchForm).contains("Operation types");
     cy.get(this.searchForm).contains("Resource path");
@@ -37,16 +37,16 @@ export default class AdminEventsTab {
   }
 
   shouldHaveSearchBtnDisabled() {
-    cy.getId(this.searchAdminEventDrpDwnBtn).click();
-    cy.getId(this.searchEventsBtn).should("have.attr", "disabled");
+    cy.findByTestId(this.searchAdminEventDrpDwnBtn).click();
+    cy.findByTestId(this.searchEventsBtn).should("have.attr", "disabled");
   }
 
   shouldDoAdminEventsSearchAndRemoveChips() {
-    cy.getId(this.searchAdminEventDrpDwnBtn).click();
-    cy.getId(this.resourcePathInputFld).type("events/config");
+    cy.findByTestId(this.searchAdminEventDrpDwnBtn).click();
+    cy.findByTestId(this.resourcePathInputFld).type("events/config");
 
     cy.intercept("/auth/admin/realms/master/admin-events*").as("eventsFetch");
-    cy.getId(this.searchEventsBtn).click();
+    cy.findByTestId(this.searchEventsBtn).click();
     cy.wait("@eventsFetch");
 
     cy.get("table").contains("td", "events/config").should("be.visible");
@@ -57,15 +57,15 @@ export default class AdminEventsTab {
   }
 
   shouldHaveSearchBtnEnabled() {
-    cy.getId(this.searchAdminEventDrpDwnBtn).click();
-    cy.getId(this.ipAddressInputFld).type("11111");
-    cy.getId(this.searchEventsBtn).should("not.have.attr", "disabled");
+    cy.findByTestId(this.searchAdminEventDrpDwnBtn).click();
+    cy.findByTestId(this.ipAddressInputFld).type("11111");
+    cy.findByTestId(this.searchEventsBtn).should("not.have.attr", "disabled");
   }
 
   shouldDoNoResultsSearch() {
-    cy.getId(this.searchAdminEventDrpDwnBtn).click();
-    cy.getId(this.resourcePathInputFld).type("events/test");
-    cy.getId(this.searchEventsBtn).click();
+    cy.findByTestId(this.searchAdminEventDrpDwnBtn).click();
+    cy.findByTestId(this.resourcePathInputFld).type("events/test");
+    cy.findByTestId(this.searchEventsBtn).click();
     cy.get(this.adminEventsTabTitle).contains("No events logged");
   }
 

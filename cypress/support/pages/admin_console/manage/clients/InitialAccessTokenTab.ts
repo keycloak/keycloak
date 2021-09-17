@@ -8,17 +8,17 @@ export default class InitialAccessTokenTab {
   private saveBtn = "save";
 
   goToInitialAccessTokenTab() {
-    cy.getId(this.initialAccessTokenTab).click();
+    cy.findByTestId(this.initialAccessTokenTab).click();
     return this;
   }
 
   shouldBeEmpty() {
-    cy.getId(this.emptyAction).should("exist");
+    cy.findByTestId(this.emptyAction).should("exist");
     return this;
   }
 
   shouldNotBeEmpty() {
-    cy.getId(this.emptyAction).should("not.exist");
+    cy.findByTestId(this.emptyAction).should("not.exist");
     return this;
   }
 
@@ -32,14 +32,14 @@ export default class InitialAccessTokenTab {
   }
 
   createNewToken(expiration: number, count: number) {
-    cy.getId(this.emptyAction).click();
-    cy.getId(this.expirationInput).type(`${expiration}`);
-    cy.getId(this.countInput).type(`${count}`);
+    cy.findByTestId(this.emptyAction).click();
+    cy.findByTestId(this.expirationInput).type(`${expiration}`);
+    cy.findByTestId(this.countInput).type(`${count}`);
     return this;
   }
 
   save() {
-    cy.getId(this.saveBtn).click();
+    cy.findByTestId(this.saveBtn).click();
     return this;
   }
 }

@@ -26,7 +26,7 @@ export default class GroupDetailPage {
   }
 
   clickMembersTab() {
-    cy.getId(this.memberTab).click();
+    cy.findByTestId(this.memberTab).click();
     return this;
   }
 
@@ -61,22 +61,22 @@ export default class GroupDetailPage {
   }
 
   clickAdd() {
-    cy.getId(this.addMember).click();
+    cy.findByTestId(this.addMember).click();
     return this;
   }
 
   clickIncludeSubGroups() {
-    cy.getId(this.includeSubGroupsCheck).click();
+    cy.findByTestId(this.includeSubGroupsCheck).click();
     return this;
   }
 
   clickAttributesTab() {
-    cy.getId(this.attributesTab).click();
+    cy.findByTestId(this.attributesTab).click();
     return this;
   }
 
   clickAddMembers() {
-    cy.getId(this.addMembers).click();
+    cy.findByTestId(this.addMembers).click();
     return this;
   }
 

@@ -23,7 +23,7 @@ describe("Events tests", () => {
 
     it("Check search dropdown display", () => {
       sidebarPage.goToRealmSettings();
-      cy.getId("rs-realm-events-tab").click();
+      cy.findByTestId("rs-realm-events-tab").click();
 
       realmSettingsPage
         .toggleSwitch(realmSettingsPage.enableEvents)
@@ -67,20 +67,20 @@ describe("Events tests", () => {
       keycloakBefore();
       loginPage.logIn();
       sidebarPage.goToEvents();
-      cy.getId("admin-events-tab").click();
+      cy.findByTestId("admin-events-tab").click();
     });
 
     it("Check admin events search form fields display", () => {
       sidebarPage.goToRealmSettings();
-      cy.getId("rs-realm-events-tab").click();
-      cy.getId("rs-admin-events-tab").click();
+      cy.findByTestId("rs-realm-events-tab").click();
+      cy.findByTestId("rs-admin-events-tab").click();
 
       realmSettingsPage
         .toggleSwitch(realmSettingsPage.enableAdminEvents)
         .save(realmSettingsPage.eventsAdminSave);
 
       sidebarPage.goToEvents();
-      cy.getId("admin-events-tab").click();
+      cy.findByTestId("admin-events-tab").click();
       sidebarPage.waitForPageLoad();
       adminEventsTab.shouldHaveFormFields();
     });
@@ -91,7 +91,7 @@ describe("Events tests", () => {
 
     it("Check admin events search and removal work", () => {
       sidebarPage.goToEvents();
-      cy.getId("admin-events-tab").click();
+      cy.findByTestId("admin-events-tab").click();
       adminEventsTab.shouldDoAdminEventsSearchAndRemoveChips();
     });
 
@@ -109,7 +109,7 @@ describe("Events tests", () => {
       keycloakBefore();
       loginPage.logIn();
       sidebarPage.goToEvents();
-      cy.getId("admin-events-tab").click();
+      cy.findByTestId("admin-events-tab").click();
     });
 
     it("Check auth dialog opens and is not empty", () => {

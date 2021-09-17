@@ -7,13 +7,13 @@ export default class FlowDetails {
   }
 
   private getExecution(name: string) {
-    return cy.getId(name);
+    return cy.findByTestId(name);
   }
 
   moveRowTo(from: string, to: string) {
-    cy.getId(from).trigger("dragstart").trigger("dragleave");
+    cy.findByTestId(from).trigger("dragstart").trigger("dragleave");
 
-    cy.getId(to)
+    cy.findByTestId(to)
       .trigger("dragenter")
       .trigger("dragover")
       .trigger("drop")
@@ -38,15 +38,18 @@ export default class FlowDetails {
   }
 
   private clickEditDropdownForFlow(subFlowName: string, option: string) {
-    cy.getId(`${subFlowName}-edit-dropdown`).click().contains(option).click();
+    cy.findByTestId(`${subFlowName}-edit-dropdown`)
+      .click()
+      .contains(option)
+      .click();
   }
 
   addExecution(subFlowName: string, executionTestId: string) {
     this.clickEditDropdownForFlow(subFlowName, "Add step");
 
     cy.get(".pf-c-pagination").should("exist");
-    cy.getId(executionTestId).click();
-    cy.getId("modal-add").click();
+    cy.findByTestId(executionTestId).click();
+    cy.findByTestId("modal-add").click();
 
     return this;
   }
@@ -55,8 +58,8 @@ export default class FlowDetails {
     this.clickEditDropdownForFlow(subFlowName, "Add condition");
 
     cy.get(".pf-c-pagination").should("not.exist");
-    cy.getId(executionTestId).click();
-    cy.getId("modal-add").click();
+    cy.findByTestId(executionTestId).click();
+    cy.findByTestId("modal-add").click();
 
     return this;
   }

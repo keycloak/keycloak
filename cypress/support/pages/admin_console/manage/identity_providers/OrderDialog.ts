@@ -5,14 +5,14 @@ export default class OrderDialog {
   private list = "manageOrderDataList";
 
   openDialog() {
-    cy.getId(this.manageDisplayOrder).click({ force: true });
+    cy.findByTestId(this.manageDisplayOrder).click({ force: true });
     return this;
   }
 
   moveRowTo(from: string, to: string) {
-    cy.getId(from).trigger("dragstart").trigger("dragleave");
+    cy.findByTestId(from).trigger("dragstart").trigger("dragleave");
 
-    cy.getId(to)
+    cy.findByTestId(to)
       .trigger("dragenter")
       .trigger("dragover")
       .trigger("drop")

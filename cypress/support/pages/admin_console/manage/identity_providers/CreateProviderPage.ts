@@ -11,12 +11,12 @@ export default class CreateProviderPage {
   private ssoServiceUrl = "sso-service-url";
 
   checkVisible(name: string) {
-    cy.getId(`${name}-card`).should("exist");
+    cy.findByTestId(`${name}-card`).should("exist");
     return this;
   }
 
   clickCard(name: string) {
-    cy.getId(`${name}-card`).click();
+    cy.findByTestId(`${name}-card`).click();
     return this;
   }
 
@@ -37,12 +37,14 @@ export default class CreateProviderPage {
   }
 
   checkAddButtonDisabled(disabled = true) {
-    cy.getId(this.addButton).should(!disabled ? "not." : "" + "be.disabled");
+    cy.findByTestId(this.addButton).should(
+      !disabled ? "not." : "" + "be.disabled"
+    );
     return this;
   }
 
   clickAdd() {
-    cy.getId(this.addButton).click();
+    cy.findByTestId(this.addButton).click();
     return this;
   }
 
@@ -52,48 +54,51 @@ export default class CreateProviderPage {
   }
 
   clickItem(item: string) {
-    cy.getId(item).click();
+    cy.findByTestId(item).click();
     return this;
   }
 
   fill(id: string, secret = "") {
-    cy.getId(this.clientIdField).clear();
+    cy.findByTestId(this.clientIdField).clear();
 
     if (id) {
-      cy.getId(this.clientIdField).type(id);
+      cy.findByTestId(this.clientIdField).type(id);
     }
 
     if (secret) {
-      cy.getId(this.clientSecretField).type(secret);
+      cy.findByTestId(this.clientSecretField).type(secret);
     }
 
     return this;
   }
 
   fillDiscoveryUrl(value: string) {
-    cy.getId(this.discoveryEndpoint).type("x");
-    cy.getId(this.discoveryEndpoint).clear().type(value).blur();
+    cy.findByTestId(this.discoveryEndpoint).type("x");
+    cy.findByTestId(this.discoveryEndpoint).clear().type(value).blur();
     return this;
   }
 
   fillSsoServiceUrl(value: string) {
-    cy.getId(this.ssoServiceUrl).type("x");
-    cy.getId(this.ssoServiceUrl).clear().type(value).blur();
+    cy.findByTestId(this.ssoServiceUrl).type("x");
+    cy.findByTestId(this.ssoServiceUrl).clear().type(value).blur();
     return this;
   }
 
   shouldBeSuccessful() {
-    cy.getId(this.discoveryEndpoint).should("have.class", "pf-m-success");
+    cy.findByTestId(this.discoveryEndpoint).should(
+      "have.class",
+      "pf-m-success"
+    );
     return this;
   }
 
   shouldHaveAuthorizationUrl(value: string) {
-    cy.getId(this.authorizationUrl).should("have.value", value);
+    cy.findByTestId(this.authorizationUrl).should("have.value", value);
     return this;
   }
 
   toggleEntityDescriptor() {
-    cy.getId(this.useEntityDescriptorSwitch).click({ force: true });
+    cy.findByTestId(this.useEntityDescriptorSwitch).click({ force: true });
     return this;
   }
 }
