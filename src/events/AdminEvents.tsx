@@ -586,7 +586,7 @@ export const AdminEvents = () => {
             isReadOnly
             code={code}
             language={Language.json}
-            height="125px"
+            height="8rem"
           />
         </DisplayDialog>
       )}
