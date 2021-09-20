@@ -7,23 +7,28 @@ import org.keycloak.authentication.ConfigurableAuthenticatorFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.credential.BackupCodeCredentialModel;
+import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.List;
 
-public class BackupCodeFormAuthenticatorFactory implements AuthenticatorFactory {
+public class RecoveryAuthnCodesFormAuthenticatorFactory implements AuthenticatorFactory {
 
-    public static final String PROVIDER_ID = "auth-backup-code-form";
+    public static final String PROVIDER_ID = "auth-recovery-authn-code-form";
+
+    @Override
+    public String getId() {
+        return PROVIDER_ID;
+    }
 
     @Override
     public String getDisplayType() {
-        return "Backup Code Form";
+        return "Recovery Authentication Code Form";
     }
 
     @Override
     public String getReferenceCategory() {
-        return BackupCodeCredentialModel.TYPE;
+        return RecoveryAuthnCodesCredentialModel.TYPE;
     }
 
     @Override
@@ -43,7 +48,7 @@ public class BackupCodeFormAuthenticatorFactory implements AuthenticatorFactory 
 
     @Override
     public String getHelpText() {
-        return "Validates a Backup Code";
+        return "Validates a Recovery Authentication Code";
     }
 
     @Override
@@ -52,8 +57,8 @@ public class BackupCodeFormAuthenticatorFactory implements AuthenticatorFactory 
     }
 
     @Override
-    public Authenticator create(KeycloakSession session) {
-        return new BackupCodeFormAuthenticator();
+    public Authenticator create(KeycloakSession keycloakSession) {
+        return new RecoveryAuthnCodesFormAuthenticator(keycloakSession);
     }
 
     @Override
@@ -66,11 +71,6 @@ public class BackupCodeFormAuthenticatorFactory implements AuthenticatorFactory 
 
     @Override
     public void close() {
-    }
-
-    @Override
-    public String getId() {
-        return PROVIDER_ID;
     }
 
 }

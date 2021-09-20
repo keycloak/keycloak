@@ -5,16 +5,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
-public class BackupCodeSecretData {
+public class RecoveryAuthnCodesSecretData {
 
-    private final List<BackupCode> codes;
+    private final List<RecoveryAuthnCodeRepresentation> codes;
 
     @JsonCreator
-    public BackupCodeSecretData(@JsonProperty("codes") List<BackupCode> codes) {
+    public RecoveryAuthnCodesSecretData(@JsonProperty("codes") List<RecoveryAuthnCodeRepresentation> codes) {
         this.codes = codes;
     }
 
-    public List<BackupCode> getCodes() {
+    public List<RecoveryAuthnCodeRepresentation> getCodes() {
         return this.codes;
     }
 

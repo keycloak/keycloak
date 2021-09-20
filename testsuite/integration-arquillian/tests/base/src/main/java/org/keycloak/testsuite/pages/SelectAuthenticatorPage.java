@@ -23,6 +23,7 @@ public class SelectAuthenticatorPage extends LanguageComboboxAwarePage {
     // Corresponds to the OTPFormAuthenticator
     public static final String AUTHENTICATOR_APPLICATION = "Authenticator Application";
 
+    public static final String RECOVERY_AUTHN_CODES = "Recovery Authentication Code";
     /**
      * Return list of names like for example [ "Password", "Authenticator Application", "Security Key" ]
      */

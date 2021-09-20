@@ -34,7 +34,7 @@ public class TotpGenerator {
 
         Timer timer = new Timer();
         TotpTask task = null;
-
+        String secret = null;
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
         System.out.print("Insert secret: ");
