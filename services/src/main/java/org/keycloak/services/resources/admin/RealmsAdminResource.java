@@ -36,12 +36,14 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
@@ -93,16 +95,16 @@ public class RealmsAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Stream<RealmRepresentation> getRealms() {
+    public Stream<RealmRepresentation> getRealms(@DefaultValue("false") @QueryParam("briefRepresentation") boolean briefRepresentation) {
         Stream<RealmRepresentation> realms = session.realms().getRealmsStream()
-                .map(this::toRealmRep)
+                .map(realm -> toRealmRep(realm, briefRepresentation))
                 .filter(Objects::nonNull);
         return throwIfEmpty(realms, new ForbiddenException());
     }
 
-    protected RealmRepresentation toRealmRep(RealmModel realm) {
+    protected RealmRepresentation toRealmRep(RealmModel realm, boolean briefRep) {
         if (AdminPermissions.realms(session, auth).canView(realm)) {
-            return ModelToRepresentation.toRepresentation(session, realm, false);
+            return briefRep ? ModelToRepresentation.toBriefRepresentation(realm) : ModelToRepresentation.toRepresentation(session, realm, false);
         } else if (AdminPermissions.realms(session, auth).isAdmin(realm)) {
             RealmRepresentation rep = new RealmRepresentation();
             rep.setRealm(realm.getName());
