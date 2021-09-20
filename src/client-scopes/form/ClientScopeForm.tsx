@@ -227,7 +227,11 @@ export const ClientScopeForm = () => {
               eventKey="mappers"
               title={<TabTitleText>{t("common:mappers")}</TabTitleText>}
             >
-              <MapperList clientScope={clientScope} refresh={refresh} />
+              <MapperList
+                clientScope={clientScope}
+                type={type}
+                refresh={refresh}
+              />
             </Tab>
             <Tab
               data-testid="scopeTab"

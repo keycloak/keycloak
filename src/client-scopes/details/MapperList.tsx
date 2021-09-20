@@ -24,6 +24,7 @@ import { toMapper } from "../routes/Mapper";
 
 type MapperListProps = {
   clientScope: ClientScopeRepresentation;
+  type: string;
   refresh: () => void;
 };
 
@@ -33,17 +34,16 @@ type Row = ProtocolMapperRepresentation & {
   priority: number;
 };
 
-export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
+export const MapperList = ({ clientScope, type, refresh }: MapperListProps) => {
   const { t } = useTranslation("client-scopes");
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const history = useHistory();
   const { realm } = useRealm();
-  const url = `/${realm}/client-scopes/${clientScope.id}/mappers`;
 
   const [mapperAction, setMapperAction] = useState(false);
-  const mapperList = clientScope.protocolMappers!;
+  const mapperList = clientScope.protocolMappers;
   const mapperTypes =
     useServerInfo().protocolMapperTypes![clientScope.protocol!];
 
@@ -66,7 +66,14 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
   ): Promise<void> => {
     if (filter === undefined) {
       const mapper = mappers as ProtocolMapperTypeRepresentation;
-      history.push(`${url}/${mapper.id}`);
+      history.push(
+        toMapper({
+          realm,
+          id: clientScope.id!,
+          type,
+          mapperId: mapper.id!,
+        })
+      );
     } else {
       try {
         await adminClient.clientScopes.addMultipleProtocolMappers(
@@ -99,7 +106,7 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
     );
 
   const MapperLink = ({ id, name }: Row) => (
-    <Link to={toMapper({ realm, id: clientScope.id!, mapperId: id! })}>
+    <Link to={toMapper({ realm, id: clientScope.id!, type, mapperId: id! })}>
       {name}
     </Link>
   );

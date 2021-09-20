@@ -1,0 +1,5 @@
+@media (min-width: 768px) {
+  .keycloak__client-scope-mapping-details__form .pf-c-form__group {
+    --pf-c-form--m-horizontal__group-label--md--GridColumnWidth: 10rem;
+  }
+}
