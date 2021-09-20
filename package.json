@@ -45,6 +45,8 @@
     "use-react-router-breadcrumbs": "^2.0.2"
   },
   "devDependencies": {
+    "@cypress/webpack-batteries-included-preprocessor": "^2.2.3",
+    "@cypress/webpack-preprocessor": "^5.9.1",
     "@jest/types": "^27.1.1",
     "@snowpack/app-scripts-react": "^2.0.1",
     "@snowpack/plugin-postcss": "^1.4.3",
@@ -56,6 +58,7 @@
     "@types/dagre": "^0.7.45",
     "@types/file-saver": "^2.0.3",
     "@types/lodash": "^4.14.173",
+    "@types/node": "^16.9.2",
     "@types/react": "^17.0.21",
     "@types/react-dom": "^17.0.9",
     "@types/react-router-dom": "^5.1.9",
@@ -70,6 +73,7 @@
     "eslint-plugin-cypress": "^2.12.1",
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "^7.25.3",
+    "fork-ts-checker-webpack-plugin": "^6.3.3",
     "http2-proxy": "^5.0.53",
     "husky": "^7.0.2",
     "jest": "^27.2.0",

@@ -1,3 +1,9 @@
+// The Webpack preprocessor does not include any types so it will have to be ignored.
+// @ts-ignore
+import webpackPreprocessor from "@cypress/webpack-batteries-included-preprocessor";
+import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin";
+import path from "path";
+
 // ***********************************************************
 // This example plugins/index.js can be used to load plugins
 //
@@ -11,10 +17,25 @@
 // This function is called when a project is opened or re-opened (e.g. due to
 // the project's config changing)
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const configurePlugins: Cypress.PluginConfig = (on, config) => {
-  // `on` is used to hook into various events Cypress emits
-  // `config` is the resolved Cypress config
+const configurePlugins: Cypress.PluginConfig = (on) => {
+  const defaultOptions = webpackPreprocessor.defaultOptions.webpackOptions;
+  const webpackOptions = {
+    ...defaultOptions,
+    context: path.resolve(__dirname, ".."),
+    plugins: [
+      new ForkTsCheckerWebpackPlugin({
+        async: false,
+      }),
+    ],
+  };
+
+  on(
+    "file:preprocessor",
+    webpackPreprocessor({
+      typescript: require.resolve("typescript"),
+      webpackOptions,
+    })
+  );
 };
 
 export default configurePlugins;
