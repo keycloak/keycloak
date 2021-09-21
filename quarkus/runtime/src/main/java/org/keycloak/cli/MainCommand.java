@@ -38,17 +38,25 @@ import picocli.CommandLine.Spec;
 
 @Command(name = "keycloak",
         usageHelpWidth = 150, 
-        header = "Keycloak - Open Source Identity and Access Management\n\nFind more information at: https://www.keycloak.org/%n", 
-        description = "Use this command-line tool to manage your Keycloak cluster%n", footerHeading = "%nUse \"${COMMAND-NAME} <command> --help\" for more information about a command.%nUse \"${COMMAND-NAME} options\" for a list of all command-line options.", 
-        footer = "%nby Red Hat", 
-        optionListHeading = "Configuration Options%n%n", 
-        commandListHeading = "%nCommands%n%n", 
+        header = "Keycloak - Open Source Identity and Access Management%n%nFind more information at: https://www.keycloak.org/%n",
+        description = "Use this command-line tool to manage your Keycloak cluster%n", footerHeading = "%nUse \"${COMMAND-NAME} <command> --help\" for more information about a command.%nUse \"${COMMAND-NAME} options\" for a list of all command-line options.",
+        footer = "%nby Red Hat",
+        optionListHeading = "Configuration Options%n%n",
+        commandListHeading = "%nCommands%n%n",
         version = {
         "Keycloak ${sys:kc.version}",
         "JVM: ${java.version} (${java.vendor} ${java.vm.name} ${java.vm.version})",
         "OS: ${os.name} ${os.version} ${os.arch}"
 })
 public class MainCommand {
+
+    static final String START_DEV_COMMAND = "start-dev";
+    static final String START_COMMAND = "start";
+    static final String CONFIG_COMMAND = "config";
+
+    public static boolean isStartDevCommand(CommandSpec commandSpec) {
+        return START_DEV_COMMAND.equals(commandSpec.name());
+    }
 
     @Spec
     CommandSpec spec;
@@ -70,8 +78,8 @@ public class MainCommand {
         System.setProperty(KeycloakConfigSourceProvider.KEYCLOAK_CONFIG_FILE_PROP, path);
     }
 
-    @Command(name = "config", 
-            description = "%nCreates a new server image based on the options passed to this command. Once created, configuration will be read from the server image and the server can be started without passing the same options again. Some configuration options require this command to be executed in order to actually change a configuration. For instance, the database vendor.%n", 
+    @Command(name = CONFIG_COMMAND,
+            description = "%nCreates a new server image based on the options passed to this command. Once created, configuration will be read from the server image and the server can be started without passing the same options again. Some configuration options require this command to be executed in order to actually change a configuration. For instance, the database vendor.%n",
             mixinStandardHelpOptions = true, 
             usageHelpAutoWidth = true,
             optionListHeading = "%nOptions%n",
@@ -104,18 +112,22 @@ public class MainCommand {
         }
     }
 
-    @Command(name = "start-dev", 
-            description = "%nStart the server in development mode.%n", 
+    @Command(name = START_DEV_COMMAND,
+            description = "%nStart the server in development mode.%n",
             mixinStandardHelpOptions = true,
             optionListHeading = "%nOptions%n",
             parameterListHeading = "Available Commands%n")
     public void startDev(@Option(names = "--verbose", description = "Print out more details when running this command.", required = false) Boolean verbose) {
-        setProfile("dev");
-        KeycloakMain.start(spec.commandLine());
+        Environment.forceDevProfile();
+        CommandLine cmd = spec.commandLine();
+
+        cmd.getOut().printf("Running the server in dev mode. DO NOT run the '%s' command in production.\n", START_DEV_COMMAND);
+
+        KeycloakMain.start(cmd);
     }
 
     @Command(name = "export", 
-            description = "%nExport data from realms to a file or directory.%n", 
+            description = "%nExport data from realms to a file or directory.%n",
             mixinStandardHelpOptions = true, 
             showDefaultValues = true,
             optionListHeading = "%nOptions%n",
@@ -136,7 +148,7 @@ public class MainCommand {
     }
 
     @Command(name = "import", 
-            description = "%nImport data from a directory or a file.%n", 
+            description = "%nImport data from a directory or a file.%n",
             mixinStandardHelpOptions = true, 
             showDefaultValues = true,
             optionListHeading = "%nOptions%n",
@@ -151,8 +163,8 @@ public class MainCommand {
         runImportExport(ACTION_IMPORT, toDir, toFile, realm, verbose);
     }
     
-    @Command(name = "start", 
-            description = "%nStart the server.%n", 
+    @Command(name = START_COMMAND,
+            description = "%nStart the server.%n",
             mixinStandardHelpOptions = true, 
             usageHelpAutoWidth = true,
             optionListHeading = "%nOptions%n",
@@ -180,7 +192,7 @@ public class MainCommand {
             @CommandLine.Parameters(paramLabel = "filter", defaultValue = "none", description = "Show all configuration options. Use 'all' to show all options.") String filter,
             @Option(names = "--verbose", description = "Print out more details when running this command.", required = false) Boolean verbose) {
         System.setProperty("kc.show.config", filter);
-        KeycloakMain.start(spec.commandLine());
+        ShowConfigCommand.run();
     }
 
     private void runImportExport(String action, String toDir, String toFile, String realm, Boolean verbose) {
