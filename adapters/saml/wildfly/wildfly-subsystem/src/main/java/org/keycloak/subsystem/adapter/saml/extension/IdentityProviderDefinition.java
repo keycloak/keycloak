@@ -60,25 +60,25 @@ public class IdentityProviderDefinition extends SimpleResourceDefinition {
     private static final ObjectTypeAttributeDefinition SINGLE_SIGN_ON =
             ObjectTypeAttributeDefinition.Builder.of(Constants.Model.SINGLE_SIGN_ON,
                     SingleSignOnDefinition.ATTRIBUTES)
-                    .setAllowNull(false)
+                    .setRequired(true)
                     .build();
 
     private static final ObjectTypeAttributeDefinition SINGLE_LOGOUT =
             ObjectTypeAttributeDefinition.Builder.of(Constants.Model.SINGLE_LOGOUT,
                     SingleLogoutDefinition.ATTRIBUTES)
-                    .setAllowNull(false)
+                    .setRequired(true)
                     .build();
 
     private static final ObjectTypeAttributeDefinition ALLOWED_CLOCK_SKEW =
             ObjectTypeAttributeDefinition.Builder.of(Constants.Model.ALLOWED_CLOCK_SKEW,
                     AllowedClockSkew.ATTRIBUTES)
-                    .setAllowNull(true)
+                    .setRequired(false)
                     .build();
 
     private static final ObjectTypeAttributeDefinition HTTP_CLIENT =
             ObjectTypeAttributeDefinition.Builder.of(Constants.Model.HTTP_CLIENT,
                     HttpClientDefinition.ATTRIBUTES)
-                    .setAllowNull(true)
+                    .setRequired(false)
                     .build();
 
     static final SimpleAttributeDefinition[] ATTRIBUTES = {SIGNATURES_REQUIRED, SIGNATURE_ALGORITHM, SIGNATURE_CANONICALIZATION_METHOD, METADATA_URL};
