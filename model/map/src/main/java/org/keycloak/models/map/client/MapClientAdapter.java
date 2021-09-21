@@ -23,6 +23,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import java.security.MessageDigest;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -79,7 +80,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public boolean isEnabled() {
-        return entity.isEnabled();
+        final Boolean enabled = entity.isEnabled();
+        return enabled == null ? false : enabled;
     }
 
     @Override
@@ -89,7 +91,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public boolean isAlwaysDisplayInConsole() {
-        return entity.isAlwaysDisplayInConsole();
+        final Boolean alwaysDisplayInConsole = entity.isAlwaysDisplayInConsole();
+        return alwaysDisplayInConsole == null ? false : alwaysDisplayInConsole;
     }
 
     @Override
@@ -99,7 +102,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public boolean isSurrogateAuthRequired() {
-        return entity.isSurrogateAuthRequired();
+        final Boolean surrogateAuthRequired = entity.isSurrogateAuthRequired();
+        return surrogateAuthRequired == null ? false : surrogateAuthRequired;
     }
 
     @Override
@@ -109,7 +113,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public Set<String> getWebOrigins() {
-        return entity.getWebOrigins();
+        final Set<String> webOrigins = entity.getWebOrigins();
+        return webOrigins == null ? Collections.emptySet() : webOrigins;
     }
 
     @Override
@@ -129,7 +134,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public Set<String> getRedirectUris() {
-        return entity.getRedirectUris();
+        final Set<String> redirectUris = entity.getRedirectUris();
+        return redirectUris == null ? Collections.emptySet() : redirectUris;
     }
 
     @Override
@@ -179,7 +185,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public boolean isBearerOnly() {
-        return entity.isBearerOnly();
+        final Boolean bearerOnly = entity.isBearerOnly();
+        return bearerOnly == null ? false : bearerOnly;
     }
 
     @Override
@@ -214,7 +221,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public int getNodeReRegistrationTimeout() {
-        return entity.getNodeReRegistrationTimeout();
+        final Integer nodeReRegistrationTimeout = entity.getNodeReRegistrationTimeout();
+        return nodeReRegistrationTimeout == null ? 0 : nodeReRegistrationTimeout;
     }
 
     @Override
@@ -265,13 +273,15 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
     @Override
     public String getAttribute(String name) {
         List<String> attribute = entity.getAttribute(name);
-        if (attribute.isEmpty()) return null;
+        if (attribute == null || attribute.isEmpty()) return null;
         return attribute.get(0);
     }
 
     @Override
     public Map<String, String> getAttributes() {
-        return entity.getAttributes().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, 
+        final Map<String, List<String>> attributes = entity.getAttributes();
+        final Map<String, List<String>> a = attributes == null ? Collections.emptyMap() : attributes;
+        return a.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey,
             entry -> {
                 if (entry.getValue().isEmpty()) return null;
                 return entry.getValue().get(0);
@@ -286,7 +296,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public Map<String, String> getAuthenticationFlowBindingOverrides() {
-        return entity.getAuthenticationFlowBindingOverrides();
+        final Map<String, String> authenticationFlowBindingOverrides = entity.getAuthenticationFlowBindingOverrides();
+        return authenticationFlowBindingOverrides == null ? Collections.emptyMap() : authenticationFlowBindingOverrides;
     }
 
     @Override
@@ -301,7 +312,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public boolean isFrontchannelLogout() {
-        return entity.isFrontchannelLogout();
+        final Boolean frontchannelLogout = entity.isFrontchannelLogout();
+        return frontchannelLogout == null ? false : frontchannelLogout;
     }
 
     @Override
@@ -311,7 +323,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public boolean isFullScopeAllowed() {
-        return entity.isFullScopeAllowed();
+        final Boolean fullScopeAllowed = entity.isFullScopeAllowed();
+        return fullScopeAllowed == null ? false : fullScopeAllowed;
     }
 
     @Override
@@ -321,7 +334,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public boolean isPublicClient() {
-        return entity.isPublicClient();
+        final Boolean publicClient = entity.isPublicClient();
+        return publicClient == null ? false : publicClient;
     }
 
     @Override
@@ -331,7 +345,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public boolean isConsentRequired() {
-        return entity.isConsentRequired();
+        final Boolean consentRequired = entity.isConsentRequired();
+        return consentRequired == null ? false : consentRequired;
     }
 
     @Override
@@ -341,7 +356,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public boolean isStandardFlowEnabled() {
-        return entity.isStandardFlowEnabled();
+        final Boolean standardFlowEnabled = entity.isStandardFlowEnabled();
+        return standardFlowEnabled == null ? false : standardFlowEnabled;
     }
 
     @Override
@@ -351,7 +367,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public boolean isImplicitFlowEnabled() {
-        return entity.isImplicitFlowEnabled();
+        final Boolean implicitFlowEnabled = entity.isImplicitFlowEnabled();
+        return implicitFlowEnabled == null ? false : implicitFlowEnabled;
     }
 
     @Override
@@ -361,7 +378,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public boolean isDirectAccessGrantsEnabled() {
-        return entity.isDirectAccessGrantsEnabled();
+        final Boolean directAccessGrantsEnabled = entity.isDirectAccessGrantsEnabled();
+        return directAccessGrantsEnabled == null ? false : directAccessGrantsEnabled;
     }
 
     @Override
@@ -371,7 +389,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public boolean isServiceAccountsEnabled() {
-        return entity.isServiceAccountsEnabled();
+        final Boolean serviceAccountsEnabled = entity.isServiceAccountsEnabled();
+        return serviceAccountsEnabled == null ? false : serviceAccountsEnabled;
     }
 
     @Override
@@ -386,7 +405,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public int getNotBefore() {
-        return entity.getNotBefore();
+        final Integer notBefore = entity.getNotBefore();
+        return notBefore == null ? 0 : notBefore;
     }
 
     @Override
@@ -398,7 +418,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public Stream<RoleModel> getScopeMappingsStream() {
-        return this.entity.getScopeMappings().stream()
+        final Collection<String> scopeMappings = this.entity.getScopeMappings();
+        return scopeMappings == null ? Stream.empty() : scopeMappings.stream()
                 .map(realm::getRoleById)
                 .filter(Objects::nonNull);
     }
@@ -415,7 +436,7 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
     public void deleteScopeMapping(RoleModel role) {
         final String id = role == null ? null : role.getId();
         if (id != null) {
-            this.entity.deleteScopeMapping(id);
+            this.entity.removeScopeMapping(id);
         }
     }
 
@@ -434,7 +455,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
         if (isFullScopeAllowed()) return true;
 
         final String id = role == null ? null : role.getId();
-        if (id != null && this.entity.getScopeMappings().contains(id)) {
+        final Collection<String> scopeMappings = this.entity.getScopeMappings();
+        if (id != null && scopeMappings != null && scopeMappings.contains(id)) {
             return true;
         }
 
@@ -483,7 +505,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public Stream<ProtocolMapperModel> getProtocolMappersStream() {
-        return entity.getProtocolMappers().stream().distinct();
+        final Map<String, ProtocolMapperModel> protocolMappers = entity.getProtocolMappers();
+        return protocolMappers == null ? Stream.empty() : protocolMappers.values().stream().distinct();
     }
 
     @Override
@@ -504,7 +527,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
             pm.setConfig(new HashMap<>());
         }
 
-        return entity.addProtocolMapper(pm);
+        entity.setProtocolMapper(pm.getId(), pm);
+        return pm;
     }
 
     @Override
@@ -519,18 +543,19 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
     public void updateProtocolMapper(ProtocolMapperModel mapping) {
         final String id = mapping == null ? null : mapping.getId();
         if (id != null) {
-            entity.updateProtocolMapper(id, mapping);
+            entity.setProtocolMapper(id, mapping);
         }
     }
 
     @Override
     public ProtocolMapperModel getProtocolMapperById(String id) {
-        return entity.getProtocolMapperById(id);
+        return entity.getProtocolMapper(id);
     }
 
     @Override
     public ProtocolMapperModel getProtocolMapperByName(String protocol, String name) {
-        return entity.getProtocolMappers().stream()
+        final Map<String, ProtocolMapperModel> protocolMappers = entity.getProtocolMappers();
+        return protocolMappers == null ? null : protocolMappers.values().stream()
           .filter(pm -> Objects.equals(pm.getProtocol(), protocol) && Objects.equals(pm.getName(), name))
           .findAny()
           .orElse(null);

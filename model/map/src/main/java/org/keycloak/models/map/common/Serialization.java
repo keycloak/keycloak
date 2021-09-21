@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.datatype.jdk8.StreamSerializer;
@@ -51,6 +52,7 @@ public class Serialization {
       .setSerializationInclusion(JsonInclude.Include.NON_NULL)
       .setVisibility(PropertyAccessor.ALL, Visibility.NONE)
       .setVisibility(PropertyAccessor.FIELD, Visibility.ANY)
+      .activateDefaultTyping(new LaissezFaireSubTypeValidator() /* TODO - see javadoc */, ObjectMapper.DefaultTyping.JAVA_LANG_OBJECT, JsonTypeInfo.As.PROPERTY)
       .addMixIn(UpdatableEntity.class, IgnoreUpdatedMixIn.class)
       .addMixIn(AbstractEntity.class, AbstractEntityMixIn.class)
     ;

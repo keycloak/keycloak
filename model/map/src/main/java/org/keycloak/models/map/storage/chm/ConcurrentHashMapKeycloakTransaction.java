@@ -62,14 +62,15 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
 
     @Override
     public void commit() {
-        log.tracef("Commit - %s", map);
-
         if (rollback) {
             throw new RuntimeException("Rollback only!");
         }
 
-        for (MapTaskWithValue value : tasks.values()) {
-            value.execute();
+        if (! tasks.isEmpty()) {
+            log.tracef("Commit - %s", map);
+            for (MapTaskWithValue value : tasks.values()) {
+                value.execute();
+            }
         }
     }
 

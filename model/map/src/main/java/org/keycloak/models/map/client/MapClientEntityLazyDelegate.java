@@ -39,8 +39,8 @@ public class MapClientEntityLazyDelegate implements MapClientEntity {
         this.delegateSupplier = delegateSupplier;
     }
 
-    protected MapClientEntity getDelegate() {
-        if (! delegate.isMarked()) {
+    protected MapClientEntity getWriteDelegate() {
+        if (! isWriteDelegateInitialized()) {
             delegate.compareAndSet(null, delegateSupplier == null ? null : delegateSupplier.get(), false, true);
         }
         MapClientEntity ref = delegate.getReference();
@@ -50,419 +50,427 @@ public class MapClientEntityLazyDelegate implements MapClientEntity {
         return ref;
     }
 
-    @Override
-    public void addClientScope(String id, Boolean defaultScope) {
-        getDelegate().addClientScope(id, defaultScope);
+    protected boolean isWriteDelegateInitialized() {
+        return delegate.isMarked();
+    }
+
+    protected MapClientEntity getReadDelegate() {
+        return getWriteDelegate();
     }
 
     @Override
-    public ProtocolMapperModel addProtocolMapper(ProtocolMapperModel model) {
-        return getDelegate().addProtocolMapper(model);
+    public void setClientScope(String id, Boolean defaultScope) {
+        getWriteDelegate().setClientScope(id, defaultScope);
     }
 
     @Override
     public void addRedirectUri(String redirectUri) {
-        getDelegate().addRedirectUri(redirectUri);
+        getWriteDelegate().addRedirectUri(redirectUri);
     }
 
     @Override
     public void addScopeMapping(String id) {
-        getDelegate().addScopeMapping(id);
+        getWriteDelegate().addScopeMapping(id);
     }
 
     @Override
     public void addWebOrigin(String webOrigin) {
-        getDelegate().addWebOrigin(webOrigin);
+        getWriteDelegate().addWebOrigin(webOrigin);
     }
 
     @Override
-    public void deleteScopeMapping(String id) {
-        getDelegate().deleteScopeMapping(id);
+    public void removeScopeMapping(String id) {
+        getWriteDelegate().removeScopeMapping(id);
     }
 
     @Override
     public List<String> getAttribute(String name) {
-        return getDelegate().getAttribute(name);
+        return getReadDelegate().getAttribute(name);
     }
 
     @Override
     public Map<String, List<String>> getAttributes() {
-        return getDelegate().getAttributes();
+        return getReadDelegate().getAttributes();
     }
 
     @Override
     public Map<String, String> getAuthFlowBindings() {
-        return getDelegate().getAuthFlowBindings();
+        return getReadDelegate().getAuthFlowBindings();
     }
 
     @Override
     public String getAuthenticationFlowBindingOverride(String binding) {
-        return getDelegate().getAuthenticationFlowBindingOverride(binding);
+        return getReadDelegate().getAuthenticationFlowBindingOverride(binding);
     }
 
     @Override
     public Map<String, String> getAuthenticationFlowBindingOverrides() {
-        return getDelegate().getAuthenticationFlowBindingOverrides();
+        return getReadDelegate().getAuthenticationFlowBindingOverrides();
     }
 
     @Override
     public String getBaseUrl() {
-        return getDelegate().getBaseUrl();
+        return getReadDelegate().getBaseUrl();
     }
 
     @Override
     public String getClientAuthenticatorType() {
-        return getDelegate().getClientAuthenticatorType();
+        return getReadDelegate().getClientAuthenticatorType();
     }
 
     @Override
     public String getClientId() {
-        return getDelegate().getClientId();
+        return getReadDelegate().getClientId();
     }
 
     @Override
     public Stream<String> getClientScopes(boolean defaultScope) {
-        return getDelegate().getClientScopes(defaultScope);
+        return getReadDelegate().getClientScopes(defaultScope);
+    }
+
+    @Override
+    public Map<String, Boolean> getClientScopes() {
+        return getReadDelegate().getClientScopes();
     }
 
     @Override
     public String getDescription() {
-        return getDelegate().getDescription();
+        return getReadDelegate().getDescription();
     }
 
     @Override
     public String getManagementUrl() {
-        return getDelegate().getManagementUrl();
+        return getReadDelegate().getManagementUrl();
     }
 
     @Override
     public String getName() {
-        return getDelegate().getName();
+        return getReadDelegate().getName();
     }
 
     @Override
-    public int getNodeReRegistrationTimeout() {
-        return getDelegate().getNodeReRegistrationTimeout();
+    public Integer getNodeReRegistrationTimeout() {
+        return getReadDelegate().getNodeReRegistrationTimeout();
     }
 
     @Override
-    public int getNotBefore() {
-        return getDelegate().getNotBefore();
+    public Integer getNotBefore() {
+        return getReadDelegate().getNotBefore();
     }
 
     @Override
     public String getProtocol() {
-        return getDelegate().getProtocol();
+        return getReadDelegate().getProtocol();
     }
 
     @Override
-    public ProtocolMapperModel getProtocolMapperById(String id) {
-        return getDelegate().getProtocolMapperById(id);
+    public ProtocolMapperModel getProtocolMapper(String id) {
+        return getReadDelegate().getProtocolMapper(id);
     }
 
     @Override
-    public Collection<ProtocolMapperModel> getProtocolMappers() {
-        return getDelegate().getProtocolMappers();
+    public Map<String,ProtocolMapperModel> getProtocolMappers() {
+        return getReadDelegate().getProtocolMappers();
     }
 
     @Override
     public String getRealmId() {
-        return getDelegate().getRealmId();
+        return getReadDelegate().getRealmId();
+    }
+
+    @Override
+    public void setRealmId(String realmId) {
+        getWriteDelegate().setRealmId(realmId);
     }
 
     @Override
     public Set<String> getRedirectUris() {
-        return getDelegate().getRedirectUris();
+        return getReadDelegate().getRedirectUris();
     }
 
     @Override
     public String getRegistrationToken() {
-        return getDelegate().getRegistrationToken();
+        return getReadDelegate().getRegistrationToken();
     }
 
     @Override
     public String getRootUrl() {
-        return getDelegate().getRootUrl();
+        return getReadDelegate().getRootUrl();
     }
 
     @Override
     public Set<String> getScope() {
-        return getDelegate().getScope();
+        return getReadDelegate().getScope();
     }
 
     @Override
     public Collection<String> getScopeMappings() {
-        return getDelegate().getScopeMappings();
+        return getReadDelegate().getScopeMappings();
     }
 
     @Override
     public String getSecret() {
-        return getDelegate().getSecret();
+        return getReadDelegate().getSecret();
     }
 
     @Override
     public Set<String> getWebOrigins() {
-        return getDelegate().getWebOrigins();
+        return getReadDelegate().getWebOrigins();
     }
 
     @Override
     public Boolean isAlwaysDisplayInConsole() {
-        return getDelegate().isAlwaysDisplayInConsole();
+        return getWriteDelegate().isAlwaysDisplayInConsole();
     }
 
     @Override
     public Boolean isBearerOnly() {
-        return getDelegate().isBearerOnly();
+        return getWriteDelegate().isBearerOnly();
     }
 
     @Override
     public Boolean isConsentRequired() {
-        return getDelegate().isConsentRequired();
+        return getWriteDelegate().isConsentRequired();
     }
 
     @Override
     public Boolean isDirectAccessGrantsEnabled() {
-        return getDelegate().isDirectAccessGrantsEnabled();
+        return getWriteDelegate().isDirectAccessGrantsEnabled();
     }
 
     @Override
     public Boolean isEnabled() {
-        return getDelegate().isEnabled();
+        return getWriteDelegate().isEnabled();
     }
 
     @Override
     public Boolean isFrontchannelLogout() {
-        return getDelegate().isFrontchannelLogout();
+        return getWriteDelegate().isFrontchannelLogout();
     }
 
     @Override
     public Boolean isFullScopeAllowed() {
-        return getDelegate().isFullScopeAllowed();
+        return getWriteDelegate().isFullScopeAllowed();
     }
 
     @Override
     public Boolean isImplicitFlowEnabled() {
-        return getDelegate().isImplicitFlowEnabled();
+        return getWriteDelegate().isImplicitFlowEnabled();
     }
 
     @Override
     public Boolean isPublicClient() {
-        return getDelegate().isPublicClient();
+        return getWriteDelegate().isPublicClient();
     }
 
     @Override
     public Boolean isServiceAccountsEnabled() {
-        return getDelegate().isServiceAccountsEnabled();
+        return getWriteDelegate().isServiceAccountsEnabled();
     }
 
     @Override
     public Boolean isStandardFlowEnabled() {
-        return getDelegate().isStandardFlowEnabled();
+        return getWriteDelegate().isStandardFlowEnabled();
     }
 
     @Override
     public Boolean isSurrogateAuthRequired() {
-        return getDelegate().isSurrogateAuthRequired();
+        return getWriteDelegate().isSurrogateAuthRequired();
     }
 
     @Override
     public void removeAttribute(String name) {
-        getDelegate().removeAttribute(name);
+        getWriteDelegate().removeAttribute(name);
     }
 
     @Override
     public void removeAuthenticationFlowBindingOverride(String binding) {
-        getDelegate().removeAuthenticationFlowBindingOverride(binding);
+        getWriteDelegate().removeAuthenticationFlowBindingOverride(binding);
     }
 
     @Override
     public void removeClientScope(String id) {
-        getDelegate().removeClientScope(id);
+        getWriteDelegate().removeClientScope(id);
     }
 
     @Override
     public void removeProtocolMapper(String id) {
-        getDelegate().removeProtocolMapper(id);
+        getWriteDelegate().removeProtocolMapper(id);
     }
 
     @Override
     public void removeRedirectUri(String redirectUri) {
-        getDelegate().removeRedirectUri(redirectUri);
+        getWriteDelegate().removeRedirectUri(redirectUri);
     }
 
     @Override
     public void removeWebOrigin(String webOrigin) {
-        getDelegate().removeWebOrigin(webOrigin);
+        getWriteDelegate().removeWebOrigin(webOrigin);
     }
 
     @Override
     public void setAlwaysDisplayInConsole(Boolean alwaysDisplayInConsole) {
-        getDelegate().setAlwaysDisplayInConsole(alwaysDisplayInConsole);
+        getWriteDelegate().setAlwaysDisplayInConsole(alwaysDisplayInConsole);
     }
 
     @Override
     public void setAttribute(String name, List<String> values) {
-        getDelegate().setAttribute(name, values);
+        getWriteDelegate().setAttribute(name, values);
     }
 
     @Override
     public void setAuthFlowBindings(Map<String, String> authFlowBindings) {
-        getDelegate().setAuthFlowBindings(authFlowBindings);
+        getWriteDelegate().setAuthFlowBindings(authFlowBindings);
     }
 
     @Override
     public void setAuthenticationFlowBindingOverride(String binding, String flowId) {
-        getDelegate().setAuthenticationFlowBindingOverride(binding, flowId);
+        getWriteDelegate().setAuthenticationFlowBindingOverride(binding, flowId);
     }
 
     @Override
     public void setBaseUrl(String baseUrl) {
-        getDelegate().setBaseUrl(baseUrl);
+        getWriteDelegate().setBaseUrl(baseUrl);
     }
 
     @Override
     public void setBearerOnly(Boolean bearerOnly) {
-        getDelegate().setBearerOnly(bearerOnly);
+        getWriteDelegate().setBearerOnly(bearerOnly);
     }
 
     @Override
     public void setClientAuthenticatorType(String clientAuthenticatorType) {
-        getDelegate().setClientAuthenticatorType(clientAuthenticatorType);
+        getWriteDelegate().setClientAuthenticatorType(clientAuthenticatorType);
     }
 
     @Override
     public void setClientId(String clientId) {
-        getDelegate().setClientId(clientId);
+        getWriteDelegate().setClientId(clientId);
     }
 
     @Override
     public void setConsentRequired(Boolean consentRequired) {
-        getDelegate().setConsentRequired(consentRequired);
+        getWriteDelegate().setConsentRequired(consentRequired);
     }
 
     @Override
     public void setDescription(String description) {
-        getDelegate().setDescription(description);
+        getWriteDelegate().setDescription(description);
     }
 
     @Override
     public void setDirectAccessGrantsEnabled(Boolean directAccessGrantsEnabled) {
-        getDelegate().setDirectAccessGrantsEnabled(directAccessGrantsEnabled);
+        getWriteDelegate().setDirectAccessGrantsEnabled(directAccessGrantsEnabled);
     }
 
     @Override
     public void setEnabled(Boolean enabled) {
-        getDelegate().setEnabled(enabled);
+        getWriteDelegate().setEnabled(enabled);
     }
 
     @Override
     public void setFrontchannelLogout(Boolean frontchannelLogout) {
-        getDelegate().setFrontchannelLogout(frontchannelLogout);
+        getWriteDelegate().setFrontchannelLogout(frontchannelLogout);
     }
 
     @Override
     public void setFullScopeAllowed(Boolean fullScopeAllowed) {
-        getDelegate().setFullScopeAllowed(fullScopeAllowed);
+        getWriteDelegate().setFullScopeAllowed(fullScopeAllowed);
     }
 
     @Override
     public void setImplicitFlowEnabled(Boolean implicitFlowEnabled) {
-        getDelegate().setImplicitFlowEnabled(implicitFlowEnabled);
+        getWriteDelegate().setImplicitFlowEnabled(implicitFlowEnabled);
     }
 
     @Override
     public void setManagementUrl(String managementUrl) {
-        getDelegate().setManagementUrl(managementUrl);
+        getWriteDelegate().setManagementUrl(managementUrl);
     }
 
     @Override
     public void setName(String name) {
-        getDelegate().setName(name);
+        getWriteDelegate().setName(name);
     }
 
     @Override
-    public void setNodeReRegistrationTimeout(int nodeReRegistrationTimeout) {
-        getDelegate().setNodeReRegistrationTimeout(nodeReRegistrationTimeout);
+    public void setNodeReRegistrationTimeout(Integer nodeReRegistrationTimeout) {
+        getWriteDelegate().setNodeReRegistrationTimeout(nodeReRegistrationTimeout);
     }
 
     @Override
-    public void setNotBefore(int notBefore) {
-        getDelegate().setNotBefore(notBefore);
+    public void setNotBefore(Integer notBefore) {
+        getWriteDelegate().setNotBefore(notBefore);
     }
 
     @Override
     public void setProtocol(String protocol) {
-        getDelegate().setProtocol(protocol);
-    }
-
-    @Override
-    public void setProtocolMappers(Collection<ProtocolMapperModel> protocolMappers) {
-        getDelegate().setProtocolMappers(protocolMappers);
+        getWriteDelegate().setProtocol(protocol);
     }
 
     @Override
     public void setPublicClient(Boolean publicClient) {
-        getDelegate().setPublicClient(publicClient);
+        getWriteDelegate().setPublicClient(publicClient);
     }
 
     @Override
     public void setRedirectUris(Set<String> redirectUris) {
-        getDelegate().setRedirectUris(redirectUris);
+        getWriteDelegate().setRedirectUris(redirectUris);
     }
 
     @Override
     public void setRegistrationToken(String registrationToken) {
-        getDelegate().setRegistrationToken(registrationToken);
+        getWriteDelegate().setRegistrationToken(registrationToken);
     }
 
     @Override
     public void setRootUrl(String rootUrl) {
-        getDelegate().setRootUrl(rootUrl);
+        getWriteDelegate().setRootUrl(rootUrl);
     }
 
     @Override
     public void setScope(Set<String> scope) {
-        getDelegate().setScope(scope);
+        getWriteDelegate().setScope(scope);
     }
 
     @Override
     public void setSecret(String secret) {
-        getDelegate().setSecret(secret);
+        getWriteDelegate().setSecret(secret);
     }
 
     @Override
     public void setServiceAccountsEnabled(Boolean serviceAccountsEnabled) {
-        getDelegate().setServiceAccountsEnabled(serviceAccountsEnabled);
+        getWriteDelegate().setServiceAccountsEnabled(serviceAccountsEnabled);
     }
 
     @Override
     public void setStandardFlowEnabled(Boolean standardFlowEnabled) {
-        getDelegate().setStandardFlowEnabled(standardFlowEnabled);
+        getWriteDelegate().setStandardFlowEnabled(standardFlowEnabled);
     }
 
     @Override
     public void setSurrogateAuthRequired(Boolean surrogateAuthRequired) {
-        getDelegate().setSurrogateAuthRequired(surrogateAuthRequired);
+        getWriteDelegate().setSurrogateAuthRequired(surrogateAuthRequired);
     }
 
     @Override
     public void setWebOrigins(Set<String> webOrigins) {
-        getDelegate().setWebOrigins(webOrigins);
+        getWriteDelegate().setWebOrigins(webOrigins);
     }
 
     @Override
-    public void updateProtocolMapper(String id, ProtocolMapperModel mapping) {
-        getDelegate().updateProtocolMapper(id, mapping);
+    public void setProtocolMapper(String id, ProtocolMapperModel mapping) {
+        getWriteDelegate().setProtocolMapper(id, mapping);
     }
 
     @Override
     public String getId() {
-        return getDelegate().getId();
+        return getReadDelegate().getId();
     }
 
     @Override
     public boolean isUpdated() {
-        return getDelegate().isUpdated();
+        return isWriteDelegateInitialized() && getWriteDelegate().isUpdated();
     }
 
 }
