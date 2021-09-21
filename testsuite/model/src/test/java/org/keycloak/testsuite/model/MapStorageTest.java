@@ -117,9 +117,12 @@ public class MapStorageTest extends KeycloakModelTest {
             assertClientDoesNotExist(storage2, idMain, kcMain, kc2);
             assertClientDoesNotExist(storage2, id1, kc1, kc2);
 
-            MapClientEntity clientMain = new MapClientEntityImpl(idMain, realmId);
-            MapClientEntity client1 = new MapClientEntityImpl(id1, realmId);
-            MapClientEntity client2 = new MapClientEntityImpl(id2, realmId);
+            MapClientEntity clientMain = new MapClientEntityImpl(idMain);
+            clientMain.setRealmId(realmId);
+            MapClientEntity client1 = new MapClientEntityImpl(id1);
+            client1.setRealmId(realmId);
+            MapClientEntity client2 = new MapClientEntityImpl(id2);
+            client2.setRealmId(realmId);
 
             clientMain = storageMain.create(clientMain);
             client1 = storage1.create(client1);
