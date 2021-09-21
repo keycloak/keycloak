@@ -17,7 +17,12 @@
 
 package org.keycloak.cli;
 
+import static org.keycloak.cli.MainCommand.CONFIG_COMMAND;
+import static org.keycloak.cli.MainCommand.START_COMMAND;
+import static org.keycloak.cli.MainCommand.START_DEV_COMMAND;
+
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -42,16 +47,12 @@ final class Picocli {
         CommandLine.Model.CommandSpec spec = CommandLine.Model.CommandSpec.forAnnotatedObject(new MainCommand())
                 .name(Environment.getCommand());
 
-        addOption(spec, "start", PropertyMappers.getRuntimeMappers());
-        addOption(spec, "start-dev", PropertyMappers.getRuntimeMappers());
-        addOption(spec, "config", PropertyMappers.getRuntimeMappers());
-        addOption(spec, "config", PropertyMappers.getBuiltTimeMappers());
-        addOption(spec.subcommands().get("config").getCommandSpec(), "--features", "Enables a group of features. Possible values are: "
-                + String.join(",", Arrays.asList(Profile.Type.values()).stream().map(
-                type -> type.name().toLowerCase()).toArray((IntFunction<CharSequence[]>) String[]::new)));
+        addOption(spec, START_COMMAND, false);
+        addOption(spec, START_DEV_COMMAND, true);
+        addOption(spec, CONFIG_COMMAND, true);
 
         for (Profile.Feature feature : Profile.Feature.values()) {
-            addOption(spec.subcommands().get("config").getCommandSpec(), "--features-" + feature.name().toLowerCase(),
+            addOption(spec.subcommands().get(CONFIG_COMMAND).getCommandSpec(), "--features-" + feature.name().toLowerCase(),
                     "Enables the " + feature.name() + " feature. Set enabled to enable the feature or disabled otherwise.");
         }
         
@@ -78,6 +79,7 @@ final class Picocli {
             String key = iterator.next();
 
             // TODO: ignore properties for providers for now, need to fetch them from the providers, otherwise CLI will complain about invalid options
+            // change this once we are able to obtain properties from providers
             if (key.startsWith("--spi")) {
                 iterator.remove();
             }
@@ -93,8 +95,13 @@ final class Picocli {
         return options.toString();
     }
 
-    private static void addOption(CommandLine.Model.CommandSpec spec, String command, List<PropertyMapper> mappers) {
+    private static void addOption(CommandLine.Model.CommandSpec spec, String command, boolean includeBuildTime) {
         CommandLine.Model.CommandSpec commandSpec = spec.subcommands().get(command).getCommandSpec();
+        List<PropertyMapper> mappers = new ArrayList<>(PropertyMappers.getRuntimeMappers());
+
+        if (includeBuildTime) {
+            mappers.addAll(PropertyMappers.getBuiltTimeMappers());
+        }
 
         for (PropertyMapper mapper : mappers) {
             String name = "--" + PropertyMappers.toCLIFormat(mapper.getFrom()).substring(3);
@@ -106,6 +113,10 @@ final class Picocli {
 
             addOption(commandSpec, name, description);
         }
+
+        addOption(commandSpec, "--features", "Enables a group of features. Possible values are: "
+                + String.join(",", Arrays.stream(Profile.Type.values()).map(
+                type -> type.name().toLowerCase()).toArray((IntFunction<CharSequence[]>) String[]::new)));
     }
 
     private static void addOption(CommandLine.Model.CommandSpec commandSpec, String name, String description) {
@@ -129,7 +140,7 @@ final class Picocli {
         logError(errorWriter, "ERROR: " + message);
 
         if (throwable != null) {
-            boolean verbose = cliArgs.stream().anyMatch((arg) -> "--verbose".equals(arg));
+            boolean verbose = cliArgs.stream().anyMatch("--verbose"::equals);
 
             if (throwable instanceof InitializationException) {
                 InitializationException initializationException = (InitializationException) throwable;

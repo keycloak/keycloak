@@ -17,24 +17,35 @@
 
 package org.keycloak.cli;
 
+import static org.keycloak.cli.MainCommand.CONFIG_COMMAND;
+import static org.keycloak.cli.MainCommand.START_COMMAND;
+import static org.keycloak.cli.MainCommand.isStartDevCommand;
 import static org.keycloak.cli.Picocli.createCommandLine;
 import static org.keycloak.cli.Picocli.error;
 import static org.keycloak.cli.Picocli.getCliArgs;
 import static org.keycloak.cli.Picocli.parseConfigArgs;
+import static org.keycloak.configuration.Configuration.getConfig;
+import static org.keycloak.configuration.PropertyMappers.isBuildTimeProperty;
 import static org.keycloak.util.Environment.getProfileOrDefault;
 import static org.keycloak.util.Environment.isDevMode;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.Properties;
 
 import io.quarkus.runtime.Quarkus;
 import org.keycloak.common.Version;
 
 import io.quarkus.runtime.annotations.QuarkusMain;
+
+import org.keycloak.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.util.Environment;
+
 import picocli.CommandLine;
 
 /**
@@ -46,12 +57,14 @@ import picocli.CommandLine;
 @QuarkusMain(name = "keycloak")
 public class KeycloakMain {
 
-    public static void main(String cliArgs[]) {
+    public static void main(String[] args) {
         System.setProperty("kc.version", Version.VERSION_KEYCLOAK);
+        List<String> cliArgs = new ArrayList<>(Arrays.asList(args));
+        System.setProperty(Environment.CLI_ARGS, parseConfigArgs(cliArgs));
 
-        if (cliArgs.length == 0) {
+        if (cliArgs.isEmpty()) {
             // no arguments, just start the server
-            start(Collections.emptyList(), new PrintWriter(System.err));
+            start(cliArgs, new PrintWriter(System.err));
             if (!isDevMode()) {
                 System.exit(CommandLine.ExitCode.OK);
             }
@@ -84,19 +97,26 @@ public class KeycloakMain {
         Quarkus.waitForExit();
     }
     
-    private static void parseAndRun(String[] args) {
-        List<String> cliArgs = new LinkedList<>(Arrays.asList(args));
+    private static void parseAndRun(List<String> cliArgs) {
         CommandLine cmd = createCommandLine();
 
-        // set the arguments as a system property so that arguments can be mapped to their respective configuration options
-        System.setProperty("kc.config.args", parseConfigArgs(cliArgs));
-
         try {
-            CommandLine.ParseResult result = cmd.parseArgs(cliArgs.toArray(new String[cliArgs.size()]));
+            CommandLine.ParseResult result = cmd.parseArgs(cliArgs.toArray(new String[0]));
 
-            // if no command was set, the start command becomes the default
-            if (!result.hasSubcommand() && (!result.isUsageHelpRequested() && !result.isVersionHelpRequested())) {
-                cliArgs.add(0, "start");
+            if (result.hasSubcommand()) {
+                if (isStartDevCommand(result.subcommand().commandSpec())) {
+                    String profile = Environment.getProfile();
+
+                    if (profile == null) {
+                        // force the server image to be set with the dev profile
+                        Environment.forceDevProfile();
+                    }
+
+                    runReAugmentationIfNeeded(cliArgs, cmd);
+                }
+            } else if ((!result.isUsageHelpRequested() && !result.isVersionHelpRequested())) {
+                // if no command was set, the start command becomes the default
+                cliArgs.add(0, START_COMMAND);
             }
         } catch (CommandLine.UnmatchedArgumentException e) {
             // if no command was set but options were provided, the start command becomes the default
@@ -111,10 +131,114 @@ public class KeycloakMain {
             System.exit(cmd.getCommandSpec().exitCodeOnExecutionException());
         }
 
-        int exitCode = cmd.execute(cliArgs.toArray(new String[cliArgs.size()]));
+        int exitCode = cmd.execute(cliArgs.toArray(new String[0]));
 
         if (!isDevMode()) {
             System.exit(exitCode);
         }
     }
+
+    private static void runReAugmentationIfNeeded(List<String> cliArgs, CommandLine cmd) {
+        if (Boolean.getBoolean("kc.dev.rebuild")) {
+            if (requiresReAugmentation(cliArgs)) {
+                runReAugmentation(cliArgs, cmd);
+            }
+            System.exit(cmd.getCommandSpec().exitCodeOnSuccess());
+        }
+    }
+
+    private static boolean requiresReAugmentation(List<String> cliArgs) {
+        if (hasConfigChanges()) {
+            System.out.printf("Changes detected in configuration. Updating the server image.\n");
+
+            List<String> suggestedArgs = cliArgs.subList(1, cliArgs.size());
+
+            suggestedArgs.removeAll(Arrays.asList("--verbose", "--help"));
+
+            System.out.printf("For an optional runtime and bypass this step, please run the 'config' command prior to starting the server:\n\n\t%s config %s\n",
+                    Environment.getCommand(),
+                    String.join(" ", suggestedArgs) + "\n");
+
+            return true;
+        }
+
+        return hasProviderChanges();
+    }
+
+    private static void runReAugmentation(List<String> cliArgs, CommandLine cmd) {
+        List<String> configArgsList = new ArrayList<>(cliArgs);
+
+        if (!configArgsList.get(0).startsWith("--")) {
+            configArgsList.remove(0);
+        }
+
+        configArgsList.add(0, CONFIG_COMMAND);
+
+        cmd.execute(configArgsList.toArray(new String[0]));
+
+        System.out.printf("Next time you run the server, just run:\n\n\t%s\n\n", Environment.getCommand());
+    }
+
+    public static boolean hasProviderChanges() {
+        File propertiesFile = KeycloakConfigSourceProvider.getPersistedConfigFile().toFile();
+        File[] providerFiles = Environment.getProviderFiles();
+
+        if (!propertiesFile.exists()) {
+            return providerFiles.length > 0;
+        }
+
+        Properties properties = new Properties();
+
+        try (InputStream is = new FileInputStream(propertiesFile)) {
+            properties.load(is);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load persisted properties", e);
+        }
+
+        for (String key : properties.stringPropertyNames()) {
+            if (key.startsWith("kc.provider.file")) {
+                if (providerFiles.length == 0) {
+                    return true;
+                }
+
+                String fileName = key.substring("kc.provider.file".length() + 1, key.lastIndexOf('.'));
+                String lastModified = properties.getProperty(key);
+
+                for (File file : providerFiles) {
+                    if (file.getName().equals(fileName) && !lastModified.equals(String.valueOf(file.lastModified()))) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
+        return providerFiles.length > 0;
+    }
+
+    public static boolean hasConfigChanges() {
+        for (String propertyName : getConfig().getPropertyNames()) {
+            // only check keycloak build-time properties
+            if (!isBuildTimeProperty(propertyName)) {
+                continue;
+            }
+
+            // try to resolve any property set using profiles
+            if (propertyName.startsWith("%")) {
+                propertyName = propertyName.substring(propertyName.indexOf('.') + 1);
+            }
+
+            String currentValue = Environment.getBuiltTimeProperty(propertyName).orElse(null);
+            String newValue = getConfig().getConfigValue(propertyName).getValue();
+
+            if (newValue != null && !newValue.equalsIgnoreCase(currentValue)) {
+                // changes to a single property are enough to indicate changes to configuration
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 }
