@@ -176,7 +176,7 @@
                     permissions = [];
                 }
 
-                for (i = 0; i < permissions.length; i++) {
+                for (var i = 0; i < permissions.length; i++) {
                     var resource = permissions[i];
                     var permission = resource.id;
 
