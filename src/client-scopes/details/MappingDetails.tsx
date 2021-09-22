@@ -148,7 +148,7 @@ export const MappingDetails = () => {
       <DeleteConfirm />
       <ViewHeader
         titleKey={isUpdating ? mapping?.name! : t("common:addMapper")}
-        subKey={isUpdating ? mapperId : ""}
+        subKey={isUpdating ? mapperId : "client-scopes:addMapperExplain"}
         dropdownItems={
           isUpdating
             ? [
