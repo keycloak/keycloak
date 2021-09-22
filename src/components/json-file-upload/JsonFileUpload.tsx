@@ -8,9 +8,10 @@ import {
   FileUploadProps,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
+import { CodeEditor, Language } from "@patternfly/react-code-editor";
 
 type FileUpload = {
-  value: string | File;
+  value: string;
   filename: string;
   isLoading: boolean;
   modal: boolean;
@@ -60,7 +61,7 @@ export const JsonFileUpload = ({
     } else {
       setFileUpload({
         ...fileUpload,
-        value,
+        value: value as string,
         filename,
       });
 
@@ -147,7 +148,18 @@ export const JsonFileUpload = ({
             dropzoneProps={{
               accept: ".json",
             }}
-          />
+            hideDefaultPreview
+          >
+            <CodeEditor
+              isLineNumbersVisible
+              code={fileUpload.value}
+              language={Language.json}
+              height="128px"
+              onChange={(value, event) =>
+                handleChange(value ?? "", fileUpload.filename, event)
+              }
+            />
+          </FileUpload>
         </FormGroup>
       )}
     </>

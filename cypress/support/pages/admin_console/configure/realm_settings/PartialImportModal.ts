@@ -11,10 +11,13 @@ export default class GroupModal {
       (myJSON) => {
         const text = JSON.stringify(myJSON);
 
-        cy.get("#partial-import-file").type(text, {
-          parseSpecialCharSequences: false,
-          delay: 0,
-        });
+        cy.get(".pf-c-code-editor__code textarea")
+          .type(text, {
+            delay: 0,
+            parseSpecialCharSequences: false,
+          })
+          .type("{shift}{end}")
+          .type("{del}");
       }
     );
   };
