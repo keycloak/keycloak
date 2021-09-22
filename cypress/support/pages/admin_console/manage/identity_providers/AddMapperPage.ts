@@ -113,4 +113,42 @@ export default class AddMapperPage {
 
     return this;
   }
+
+  editSocialMapper() {
+    cy.get(this.syncmodeSelectToggle).click();
+
+    cy.findByTestId("inherit").click();
+
+    cy.findByTestId(this.userSessionAttribute).clear();
+    cy.findByTestId(this.userSessionAttribute).type(
+      "user session attribute_edited"
+    );
+    cy.findByTestId(this.userSessionAttributeValue).clear();
+
+    cy.findByTestId(this.userSessionAttributeValue).type(
+      "user session attribute value_edited"
+    );
+
+    this.saveNewMapper();
+
+    return this;
+  }
+
+  editSAMLorOIDCMapper() {
+    cy.get(this.syncmodeSelectToggle).click();
+
+    cy.findByTestId("legacy").click();
+
+    cy.get(this.attributesKeyInput).clear();
+    cy.get(this.attributesKeyInput).type("key_edited");
+
+    cy.get(this.attributesValueInput).clear();
+    cy.get(this.attributesValueInput).type("value_edited");
+
+    this.toggleSwitch(this.regexAttributeValuesSwitch);
+
+    this.saveNewMapper();
+
+    return this;
+  }
 }

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useHistory, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import {
@@ -32,6 +32,9 @@ import _ from "lodash";
 import { AssociatedRolesModal } from "../../realm-roles/AssociatedRolesModal";
 import type { RoleRepresentation } from "../../model/role-model";
 import { useAlerts } from "../../components/alert/Alerts";
+import type { IdentityProviderEditMapperParams } from "../routes/EditMapper";
+import { convertToFormValues } from "../../util";
+import { toIdentityProvider } from "../routes/IdentityProvider";
 
 type IdPMapperRepresentationWithAttributes =
   IdentityProviderMapperRepresentation & {
@@ -45,60 +48,118 @@ export const AddMapper = () => {
   const { handleSubmit, control, register, errors } = form;
   const { addAlert, addError } = useAlerts();
 
-  const history = useHistory();
   const { realm } = useRealm();
   const adminClient = useAdminClient();
 
   const { providerId, alias } = useParams<IdentityProviderAddMapperParams>();
+  const { id } = useParams<IdentityProviderEditMapperParams>();
 
   const isSAMLorOIDC = providerId === "saml" || providerId === "oidc";
 
   const [mapperTypes, setMapperTypes] =
     useState<Record<string, IdentityProviderMapperRepresentation>>();
+  const [currentMapper, setCurrentMapper] =
+    useState<IdentityProviderMapperRepresentation>();
   const [roles, setRoles] = useState<RoleRepresentation[]>([]);
 
   const [rolesModalOpen, setRolesModalOpen] = useState(false);
 
   const save = async (idpMapper: IdentityProviderMapperRepresentation) => {
-    try {
-      await adminClient.identityProviders.createMapper({
-        identityProviderMapper: {
-          ...idpMapper,
-          identityProviderAlias: alias,
-          config: {
-            ...idpMapper.config,
-            attributes: JSON.stringify(idpMapper.config.attributes),
-          },
+    if (id) {
+      const updatedMapper = {
+        ...idpMapper,
+        identityProviderAlias: alias!,
+        id: id,
+        name: currentMapper?.name!,
+        config: {
+          ...idpMapper.config,
+          attributes: JSON.stringify(idpMapper.config?.attributes!),
         },
-        alias: alias!,
-      });
-      addAlert(t("mapperCreateSuccess"), AlertVariant.success);
-    } catch (error) {
-      addError(t("mapperCreateError"), error);
+      };
+      try {
+        await adminClient.identityProviders.updateMapper(
+          {
+            id: id!,
+            alias: alias!,
+          },
+          updatedMapper
+        );
+        addAlert(t("mapperSaveSuccess"), AlertVariant.success);
+      } catch (error) {
+        addError(t("mapperSaveError"), error);
+      }
+    } else {
+      try {
+        await adminClient.identityProviders.createMapper({
+          identityProviderMapper: {
+            ...idpMapper,
+            identityProviderAlias: alias,
+            config: {
+              ...idpMapper.config,
+              attributes: JSON.stringify(idpMapper.config.attributes),
+            },
+          },
+          alias: alias!,
+        });
+        addAlert(t("mapperCreateSuccess"), AlertVariant.success);
+      } catch (error) {
+        addError(t("mapperCreateError"), error);
+      }
     }
   };
 
-  const { fields, append, remove } = useFieldArray({
+  const { append, remove, fields } = useFieldArray({
     control: form.control,
-    name: "attributes",
+    name: "config.attributes",
   });
 
   useFetch(
-    async () => {
-      const allMapperTypes =
-        await adminClient.identityProviders.findMapperTypes({
-          alias: alias!,
-        });
+    () =>
+      Promise.all([
+        id ? adminClient.identityProviders.findOneMapper({ alias, id }) : null,
+        adminClient.identityProviders.findMapperTypes({ alias }),
+        !id ? adminClient.roles.find() : null,
+      ]),
+    ([mapper, mapperTypes, roles]) => {
+      if (mapper) {
+        setCurrentMapper(mapper);
+        setupForm(mapper);
+      }
 
-      const allRoles = await adminClient.roles.find();
-      return { allMapperTypes, allRoles };
-    },
-    ({ allMapperTypes, allRoles }) => {
-      setMapperTypes(allMapperTypes);
-      setRoles(allRoles);
+      setMapperTypes(mapperTypes);
+
+      if (roles) {
+        setRoles(roles);
+      }
     },
     []
   );
+
+  const setupForm = (mapper: IdentityProviderMapperRepresentation) => {
+    form.reset();
+    Object.entries(mapper).map(([key, value]) => {
+      if (key === "config") {
+        if (mapper.config?.["are-attribute-values-regex"]) {
+          form.setValue(
+            "config.are-attribute-values-regex",
+            value["are-attribute-values-regex"][0]
+          );
+        }
+
+        if (mapper.config?.attributes) {
+          form.setValue("config.attributes", JSON.parse(value.attributes));
+        }
+
+        if (mapper.config?.role) {
+          form.setValue("config.role", value.role[0]);
+        }
+
+        convertToFormValues(value, "config", form.setValue);
+      }
+
+      form.setValue(key, value);
+    });
+  };
 
   const syncModes = ["inherit", "import", "legacy", "force"];
   const [syncModeOpen, setSyncModeOpen] = useState(false);
@@ -113,7 +174,7 @@ export const AddMapper = () => {
     <PageSection variant="light">
       <ViewHeader
         className="kc-add-mapper-title"
-        titleKey={t("addIdPMapper")}
+        titleKey={id ? t("editIdPMapper") : t("addIdPMapper")}
         divider
       />
       <AssociatedRolesModal
@@ -122,6 +183,7 @@ export const AddMapper = () => {
         open={rolesModalOpen}
         omitComposites
         isRadio
+        isMapperId
         toggleDialog={toggleModal}
       />
       <FormAccess
@@ -130,6 +192,29 @@ export const AddMapper = () => {
         onSubmit={handleSubmit(save)}
         className="pf-u-mt-lg"
       >
+        {id && (
+          <FormGroup
+            label={t("common:id")}
+            fieldId="kc-mapper-id"
+            validated={
+              errors.name ? ValidatedOptions.error : ValidatedOptions.default
+            }
+            helperTextInvalid={t("common:required")}
+          >
+            <TextInput
+              ref={register()}
+              type="text"
+              value={currentMapper?.id}
+              datatest-id="name-input"
+              id="kc-name"
+              name="name"
+              isDisabled={!!id}
+              validated={
+                errors.name ? ValidatedOptions.error : ValidatedOptions.default
+              }
+            />
+          </FormGroup>
+        )}
         <FormGroup
           label={t("common:name")}
           labelIcon={
@@ -153,6 +238,7 @@ export const AddMapper = () => {
             datatest-id="name-input"
             id="kc-name"
             name="name"
+            isDisabled={!!id}
             validated={
               errors.name ? ValidatedOptions.error : ValidatedOptions.default
             }
@@ -217,12 +303,17 @@ export const AddMapper = () => {
         >
           <Controller
             name="identityProviderMapper"
-            defaultValue={"saml-advanced-role-idp-mapper"}
+            defaultValue={
+              providerId === "saml"
+                ? "saml-advanced-role-idp-mapper"
+                : "oidc-advanced-role-idp-mapper"
+            }
             control={control}
             render={({ onChange, value }) => (
               <Select
                 toggleId="identityProviderMapper"
                 data-testid="idp-mapper-select"
+                isDisabled={!!id}
                 required
                 direction="down"
                 onToggle={() => setMapperTypeOpen(!mapperTypeOpen)}
@@ -342,7 +433,7 @@ export const AddMapper = () => {
               helperTextInvalid={t("common:required")}
             >
               <TextInput
-                ref={register({ required: true })}
+                ref={register()}
                 type="text"
                 id="kc-role"
                 data-testid="mapper-role-input"
@@ -440,7 +531,17 @@ export const AddMapper = () => {
           </Button>
           <Button
             variant="link"
-            onClick={() => history.push(`/${realm}/client-scopes`)}
+            component={(props) => (
+              <Link
+                {...props}
+                to={toIdentityProvider({
+                  realm,
+                  providerId,
+                  alias: alias!,
+                  tab: "settings",
+                })}
+              />
+            )}
           >
             {t("common:cancel")}
           </Button>

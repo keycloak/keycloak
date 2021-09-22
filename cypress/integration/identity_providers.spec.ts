@@ -19,6 +19,8 @@ describe("Identity provider test", () => {
 
   const createSuccessMsg = "Identity provider successfully created";
   const createMapperSuccessMsg = "Mapper created successfully.";
+  const saveMapperSuccessMsg = "Mapper saved successfully.";
+
   const changeSuccessMsg =
     "Successfully changed display order of identity providers";
   const deletePrompt = "Delete provider?";
@@ -53,17 +55,10 @@ describe("Identity provider test", () => {
       listingPage.itemExist(identityProviderName);
     });
 
-    it("should delete provider", () => {
-      const modalUtils = new ModalUtils();
-      listingPage.deleteItem(identityProviderName);
-      modalUtils.checkModalTitle(deletePrompt).confirmModal();
-
-      masthead.checkNotificationMessage(deleteSuccessMsg);
-    });
-
     it("should create facebook provider", () => {
       createProviderPage
-        .clickCard("facebook")
+        .clickCreateDropdown()
+        .clickItem("facebook")
         .fill("facebook", "123")
         .clickAdd();
       masthead.checkNotificationMessage(createSuccessMsg);
@@ -71,18 +66,11 @@ describe("Identity provider test", () => {
 
     it("should change order of providers", () => {
       const orderDialog = new OrderDialog();
-      const providers = ["facebook", identityProviderName, "bitbucket"];
+      const providers = [identityProviderName, "facebook", "bitbucket"];
 
       sidebarPage.goToIdentityProviders();
       listingPage.itemExist("facebook");
 
-      createProviderPage
-        .clickCreateDropdown()
-        .clickItem(identityProviderName)
-        .fill(identityProviderName, "123")
-        .clickAdd();
-
-      cy.wait(2000);
       sidebarPage.goToIdentityProviders();
       listingPage.itemExist(identityProviderName);
 
@@ -93,13 +81,14 @@ describe("Identity provider test", () => {
         .clickAdd();
 
       cy.wait(2000);
+
       sidebarPage.goToIdentityProviders();
       listingPage.itemExist(identityProviderName);
 
       orderDialog.openDialog().checkOrder(providers);
       orderDialog.moveRowTo("facebook", identityProviderName);
 
-      orderDialog.checkOrder(["facebook", "bitbucket", identityProviderName]);
+      orderDialog.checkOrder(["bitbucket", identityProviderName, "facebook"]);
 
       orderDialog.clickSave();
       masthead.checkNotificationMessage(changeSuccessMsg);
@@ -127,6 +116,14 @@ describe("Identity provider test", () => {
         .fillSsoServiceUrl(ssoServiceUrl)
         .clickAdd();
       masthead.checkNotificationMessage(createSuccessMsg);
+    });
+
+    it("should delete provider", () => {
+      const modalUtils = new ModalUtils();
+      listingPage.deleteItem(identityProviderName);
+      modalUtils.checkModalTitle(deletePrompt).confirmModal();
+
+      masthead.checkNotificationMessage(deleteSuccessMsg);
     });
 
     it("should add facebook social mapper", () => {
@@ -159,6 +156,32 @@ describe("Identity provider test", () => {
       masthead.checkNotificationMessage(createMapperSuccessMsg);
     });
 
+    it("should edit facebook mapper", () => {
+      sidebarPage.goToIdentityProviders();
+
+      listingPage.goToItemDetails("facebook");
+
+      addMapperPage.goToMappersTab();
+
+      listingPage.goToItemDetails("facebook mapper");
+
+      addMapperPage.editSocialMapper();
+    });
+
+    it("should edit SAML mapper", () => {
+      sidebarPage.goToIdentityProviders();
+
+      listingPage.goToItemDetails("saml");
+
+      addMapperPage.goToMappersTab();
+
+      listingPage.goToItemDetails("SAML mapper");
+
+      addMapperPage.editSAMLorOIDCMapper();
+
+      masthead.checkNotificationMessage(saveMapperSuccessMsg);
+    });
+
     it("clean up providers", () => {
       const modalUtils = new ModalUtils();
 
@@ -169,11 +192,6 @@ describe("Identity provider test", () => {
 
       sidebarPage.goToIdentityProviders();
       listingPage.itemExist("facebook").deleteItem("facebook");
-      modalUtils.checkModalTitle(deletePrompt).confirmModal();
-      masthead.checkNotificationMessage(deleteSuccessMsg);
-
-      sidebarPage.goToIdentityProviders();
-      listingPage.itemExist("github").deleteItem("github");
       modalUtils.checkModalTitle(deletePrompt).confirmModal();
       masthead.checkNotificationMessage(deleteSuccessMsg);
 

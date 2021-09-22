@@ -6,7 +6,7 @@ import { AddOpenIdConnect } from "../add/AddOpenIdConnect";
 export type IdentityProviderKeycloakOidcParams = { realm: string };
 
 export const IdentityProviderKeycloakOidcRoute: RouteDef = {
-  path: "/:realm/identity-providers/keycloak-oidc",
+  path: "/:realm/identity-providers/keycloak-oidc/add",
   component: AddOpenIdConnect,
   breadcrumb: (t) => t("identity-providers:addKeycloakOpenIdProvider"),
   access: "manage-identity-providers",

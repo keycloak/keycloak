@@ -6,7 +6,7 @@ import { AddSamlConnect } from "../add/AddSamlConnect";
 export type IdentityProviderSamlParams = { realm: string };
 
 export const IdentityProviderSamlRoute: RouteDef = {
-  path: "/:realm/identity-providers/saml",
+  path: "/:realm/identity-providers/saml/add",
   component: AddSamlConnect,
   breadcrumb: (t) => t("identity-providers:addSamlProvider"),
   access: "manage-identity-providers",

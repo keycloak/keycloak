@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useHistory, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Controller, FormProvider, useForm } from "react-hook-form";
@@ -11,6 +11,7 @@ import {
   DropdownItem,
   Form,
   PageSection,
+  Spinner,
   Tab,
   TabTitleText,
   ToolbarItem,
@@ -38,7 +39,10 @@ import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTa
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import type IdentityProviderMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperRepresentation";
 import { toIdentityProviderAddMapper } from "../routes/AddMapper";
+import { toIdentityProviderEditMapper } from "../routes/EditMapper";
+
 import { toUpperCase } from "../../util";
+import type { IdentityProviderParams } from "../routes/IdentityProvider";
 
 type HeaderProps = {
   onChange: (value: boolean) => void;
@@ -52,6 +56,7 @@ type IdPWithMapperAttributes = IdentityProviderMapperRepresentation & {
   category?: string;
   helpText?: string;
   type: string;
+  mapperId: string;
 };
 
 const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
@@ -95,21 +100,35 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
 
 export const DetailSettings = () => {
   const { t } = useTranslation("identity-providers");
-  const { providerId, alias } =
-    useParams<{ providerId: string; alias: string }>();
+  const { alias, providerId } = useParams<IdentityProviderParams>();
 
   const form = useForm<IdentityProviderRepresentation>();
   const { handleSubmit, getValues, reset } = form;
+  const [provider, setProvider] = useState<IdentityProviderRepresentation>();
 
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const history = useHistory();
   const { realm } = useRealm();
 
+  const MapperLink = ({ name, mapperId }: IdPWithMapperAttributes) => (
+    <Link
+      to={toIdentityProviderEditMapper({
+        realm,
+        alias,
+        providerId: provider?.providerId!,
+        id: mapperId,
+      })}
+    >
+      {name}
+    </Link>
+  );
+
   useFetch(
-    () => adminClient.identityProviders.findOne({ alias: alias }),
+    () => adminClient.identityProviders.findOne({ alias }),
     (fetchedProvider) => {
       reset(fetchedProvider);
+      setProvider(fetchedProvider);
     },
     []
   );
@@ -143,10 +162,14 @@ export const DetailSettings = () => {
     },
   });
 
+  if (!provider) {
+    return <Spinner />;
+  }
+
   const sections = [t("generalSettings"), t("advancedSettings")];
 
-  const isOIDC = providerId.includes("oidc");
-  const isSAML = providerId.includes("saml");
+  const isOIDC = provider.providerId!.includes("oidc");
+  const isSAML = provider.providerId!.includes("saml");
 
   const loader = async () => {
     const [loaderMappers, loaderMapperTypes] = await Promise.all([
@@ -164,6 +187,7 @@ export const DetailSettings = () => {
         ...mapperType,
         name: loaderMapper.name!,
         type: mapperType?.name!,
+        mapperId: loaderMapper.id!,
       };
 
       return result;
@@ -243,7 +267,7 @@ export const DetailSettings = () => {
                   isHorizontal
                   onSubmit={handleSubmit(save)}
                 >
-                  <AdvancedSettings isOIDC={isOIDC} isSAML={isSAML} />
+                  <AdvancedSettings isOIDC={isOIDC!} isSAML={isSAML!} />
 
                   <ActionGroup className="keycloak__form_actions">
                     <Button data-testid={"save"} type="submit">
@@ -279,7 +303,8 @@ export const DetailSettings = () => {
                         toIdentityProviderAddMapper({
                           realm,
                           alias: alias!,
-                          providerId: providerId,
+                          providerId: provider.providerId!,
+                          tab: "mappers",
                         })
                       )
                     }
@@ -296,7 +321,8 @@ export const DetailSettings = () => {
                       to={toIdentityProviderAddMapper({
                         realm,
                         alias: alias!,
-                        providerId: providerId,
+                        providerId: provider.providerId!,
+                        tab: "mappers",
                       })}
                       datatest-id="add-mapper-button"
                     >
@@ -308,6 +334,7 @@ export const DetailSettings = () => {
                   {
                     name: "name",
                     displayKey: "common:name",
+                    cellRenderer: MapperLink,
                   },
                   {
                     name: "category",

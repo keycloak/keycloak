@@ -16,6 +16,7 @@ import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { CaretDownIcon, FilterIcon } from "@patternfly/react-icons";
 import _ from "lodash";
+import type { RealmRoleParams } from "./routes/RealmRole";
 
 type Role = RoleRepresentation & {
   clientId?: string;
@@ -29,6 +30,7 @@ export type AssociatedRolesModalProps = {
   allRoles?: RoleRepresentation[];
   omitComposites?: boolean;
   isRadio?: boolean;
+  isMapperId?: boolean;
 };
 
 export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
@@ -42,7 +44,7 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
 
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams<RealmRoleParams>();
 
   const alphabetize = (rolesList: RoleRepresentation[]) => {
     return _.sortBy(rolesList, (role) => role.name?.toUpperCase());
@@ -144,16 +146,11 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
   }, [filterType]);
 
   useFetch(
-    async () => {
-      if (id) return await adminClient.roles.findOneById({ id });
-    },
-    (fetchedRole) => {
-      if (fetchedRole) {
-        setName(fetchedRole.name!);
-      } else {
-        setName(t("createRole"));
-      }
-    },
+    () =>
+      !props.isMapperId
+        ? adminClient.roles.findOneById({ id })
+        : Promise.resolve(null),
+    (role) => setName(role ? role.name! : t("createRole")),
     []
   );
 
@@ -183,7 +180,7 @@ export const AssociatedRolesModal = (props: AssociatedRolesModalProps) => {
           key="add"
           data-testid="add-associated-roles-button"
           variant="primary"
-          isDisabled={!selectedRows?.length}
+          isDisabled={!selectedRows.length}
           onClick={() => {
             props.toggleDialog();
             props.onConfirm(selectedRows);

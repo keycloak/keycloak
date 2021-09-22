@@ -23,7 +23,7 @@ import _ from "lodash";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useAlerts } from "../components/alert/Alerts";
 import { UserIdpModal } from "./UserIdPModal";
-import { toIdentityProviderTab } from "../identity-providers/routes/IdentityProviderTab";
+import { toIdentityProvider } from "../identity-providers/routes/IdentityProvider";
 
 export const UserIdentityProviderLinks = () => {
   const [key, setKey] = useState(0);
@@ -42,10 +42,25 @@ export const UserIdentityProviderLinks = () => {
     setIsLinkIdPModalOpen(!isLinkIdPModalOpen);
   };
 
+  type withProviderId = FederatedIdentityRepresentation & {
+    providerId: string;
+  };
+
   const identityProviders = useServerInfo().identityProviders;
 
   const getFederatedIdentities = async () => {
-    return await adminClient.users.listFederatedIdentities({ id });
+    const allProviders = await adminClient.identityProviders.find();
+
+    const allFedIds = (await adminClient.users.listFederatedIdentities({
+      id,
+    })) as unknown as withProviderId[];
+    for (const element of allFedIds) {
+      element.providerId = allProviders.find(
+        (item) => item.alias === element.identityProvider
+      )?.providerId!;
+    }
+
+    return allFedIds;
   };
 
   const getAvailableIdPs = async () => {
@@ -89,11 +104,12 @@ export const UserIdentityProviderLinks = () => {
     },
   });
 
-  const idpLinkRenderer = (idp: FederatedIdentityRepresentation) => {
+  const idpLinkRenderer = (idp: withProviderId) => {
     return (
       <Link
-        to={toIdentityProviderTab({
+        to={toIdentityProvider({
           realm,
+          providerId: idp.providerId,
           alias: idp.identityProvider!,
           tab: "settings",
         })}

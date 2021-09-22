@@ -6,7 +6,7 @@ import { AddOpenIdConnect } from "../add/AddOpenIdConnect";
 export type IdentityProviderOidcParams = { realm: string };
 
 export const IdentityProviderOidcRoute: RouteDef = {
-  path: "/:realm/identity-providers/oidc",
+  path: "/:realm/identity-providers/oidc/add",
   component: AddOpenIdConnect,
   breadcrumb: (t) => t("identity-providers:addOpenIdProvider"),
   access: "manage-identity-providers",

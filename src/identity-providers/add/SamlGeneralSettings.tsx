@@ -8,12 +8,12 @@ import { RedirectUrl } from "../component/RedirectUrl";
 import { TextField } from "../component/TextField";
 import { DisplayOrder } from "../component/DisplayOrder";
 import { useParams } from "react-router";
-import type { IdentityProviderTabParams } from "../routes/IdentityProviderTab";
+import type { IdentityProviderParams } from "../routes/IdentityProvider";
 
 export const SamlGeneralSettings = ({ id }: { id: string }) => {
   const { t } = useTranslation("identity-providers");
   const { t: th } = useTranslation("identity-providers-help");
-  const { tab } = useParams<IdentityProviderTabParams>();
+  const { tab } = useParams<IdentityProviderParams>();
 
   const { register, errors } = useFormContext();
 

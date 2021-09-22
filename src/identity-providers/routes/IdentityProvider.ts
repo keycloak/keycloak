@@ -1,20 +1,21 @@
 import type { LocationDescriptorObject } from "history";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import {
-  AddIdentityProvider,
-  IdentityProviderCrumb,
-} from "../add/AddIdentityProvider";
+import { DetailSettings } from "../add/DetailSettings";
+
+type IdentityProviderTabs = "settings" | "mappers";
 
 export type IdentityProviderParams = {
   realm: string;
-  id: string;
+  providerId: string;
+  alias: string;
+  tab: IdentityProviderTabs;
 };
 
 export const IdentityProviderRoute: RouteDef = {
-  path: "/:realm/identity-providers/:id",
-  component: AddIdentityProvider,
-  breadcrumb: () => IdentityProviderCrumb,
+  path: "/:realm/identity-providers/:providerId/:alias/:tab",
+  component: DetailSettings,
+  breadcrumb: (t) => t("identity-providers:providerDetails"),
   access: "manage-identity-providers",
 };
 

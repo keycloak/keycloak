@@ -9,7 +9,6 @@ import {
   PageSection,
 } from "@patternfly/react-core";
 
-import type { BreadcrumbData } from "use-react-router-breadcrumbs";
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { toUpperCase } from "../../util";
@@ -18,34 +17,12 @@ import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useAlerts } from "../../components/alert/Alerts";
 import { GeneralSettings } from "./GeneralSettings";
-import { toIdentityProviderTab } from "../routes/IdentityProviderTab";
-
-export const IdentityProviderCrumb = ({ match, location }: BreadcrumbData) => {
-  const { t } = useTranslation();
-  const {
-    params: { id },
-  } = match as unknown as {
-    params: { [id: string]: string };
-  };
-  return (
-    <>
-      {t(
-        `identity-providers:${
-          location.pathname.endsWith("settings")
-            ? "provider"
-            : "addIdentityProvider"
-        }`,
-        {
-          provider: toUpperCase(id),
-        }
-      )}
-    </>
-  );
-};
+import { toIdentityProvider } from "../routes/IdentityProvider";
+import type { IdentityProviderCreateParams } from "../routes/IdentityProviderCreate";
 
 export const AddIdentityProvider = () => {
   const { t } = useTranslation("identity-providers");
-  const { id } = useParams<{ id: string }>();
+  const { providerId } = useParams<IdentityProviderCreateParams>();
   const form = useForm<IdentityProviderRepresentation>();
   const {
     handleSubmit,
@@ -61,11 +38,18 @@ export const AddIdentityProvider = () => {
     try {
       await adminClient.identityProviders.create({
         ...provider,
-        providerId: id,
-        alias: id,
+        providerId,
+        alias: providerId,
       });
       addAlert(t("createSuccess"), AlertVariant.success);
-      history.push(toIdentityProviderTab({ realm, providerId: id, alias: id }));
+      history.push(
+        toIdentityProvider({
+          realm,
+          providerId: providerId!,
+          alias: providerId!,
+          tab: "settings",
+        })
+      );
     } catch (error) {
       addError("identity-providers:createError", error);
     }
@@ -74,7 +58,9 @@ export const AddIdentityProvider = () => {
   return (
     <>
       <ViewHeader
-        titleKey={t("addIdentityProvider", { provider: toUpperCase(id) })}
+        titleKey={t("addIdentityProvider", {
+          provider: toUpperCase(providerId!),
+        })}
       />
       <PageSection variant="light">
         <FormAccess
@@ -83,7 +69,7 @@ export const AddIdentityProvider = () => {
           onSubmit={handleSubmit(save)}
         >
           <FormProvider {...form}>
-            <GeneralSettings id={id} />
+            <GeneralSettings id={providerId!} />
           </FormProvider>
           <ActionGroup>
             <Button

@@ -3,10 +3,11 @@ export default {
     listExplain:
       "Through Identity Brokering it's easy to allow users to authenticate to Keycloak using external Identity Provider or Social Networks.",
     searchForProvider: "Search for provider",
-    provider: "Provider details",
+    providerDetails: "Provider details",
     addProvider: "Add provider",
     addMapper: "Add mapper",
     addIdPMapper: "Add Identity Provider Mapper",
+    editIdPMapper: "Edit Identity Provider Mapper",
     mappersList: "Mappers list",
     noMappers: "No Mappers",
     noMappersInstructions:
@@ -160,6 +161,8 @@ export default {
     selectRole: "Select role",
     mapperCreateSuccess: "Mapper created successfully.",
     mapperCreateError: "Error creating mapper.",
+    mapperSaveSuccess: "Mapper saved successfully.",
+    mapperSaveError: "Error saving mapper: {{error}}",
     userSessionAttribute: "User Session Attribute",
     userSessionAttributeValue: "User Session Attribute Value",
   },

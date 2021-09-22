@@ -1,5 +1,5 @@
 import React, { Fragment, useState } from "react";
-import { Link, useHistory, useRouteMatch } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import _ from "lodash";
 import {
@@ -34,7 +34,8 @@ import { upperCaseFormatter } from "../util";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ProviderIconMapper } from "./ProviderIconMapper";
 import { ManageOderDialog } from "./ManageOrderDialog";
-import { toIdentityProviderTab } from "./routes/IdentityProviderTab";
+import { toIdentityProvider } from "./routes/IdentityProvider";
+import { toIdentityProviderCreate } from "./routes/IdentityProviderCreate";
 
 export const IdentityProvidersSection = () => {
   const { t } = useTranslation("identity-providers");
@@ -43,7 +44,6 @@ export const IdentityProvidersSection = () => {
     "groupName"
   );
   const { realm } = useRealm();
-  const { url } = useRouteMatch();
   const history = useHistory();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
@@ -73,9 +73,9 @@ export const IdentityProvidersSection = () => {
   const DetailLink = (identityProvider: IdentityProviderRepresentation) => (
     <Link
       key={identityProvider.providerId}
-      to={toIdentityProviderTab({
+      to={toIdentityProvider({
         realm,
-        providerId: identityProvider.providerId,
+        providerId: identityProvider.providerId!,
         alias: identityProvider.alias!,
         tab: "settings",
       })}
@@ -96,7 +96,12 @@ export const IdentityProvidersSection = () => {
   );
 
   const navigateToCreate = (providerId: string) =>
-    history.push(`${url}/${providerId}`);
+    history.push(
+      toIdentityProviderCreate({
+        realm,
+        providerId,
+      })
+    );
 
   const identityProviderOptions = () =>
     Object.keys(identityProviders).map((group) => (
@@ -105,11 +110,18 @@ export const IdentityProvidersSection = () => {
           <DropdownItem
             key={provider.id}
             value={provider.id}
-            data-testid={provider.id}
-            onClick={() => navigateToCreate(provider.id)}
-          >
-            {provider.name}
-          </DropdownItem>
+            component={
+              <Link
+                to={toIdentityProviderCreate({
+                  realm,
+                  providerId: provider.id,
+                })}
+                data-testid={provider.id}
+              >
+                {provider.name}
+              </Link>
+            }
+          />
         ))}
       </DropdownGroup>
     ));
@@ -243,7 +255,7 @@ export const IdentityProvidersSection = () => {
               },
               {
                 name: "providerId",
-                displayKey: "identity-providers:provider",
+                displayKey: "identity-providers:providerDetails",
                 cellFormatters: [upperCaseFormatter()],
               },
             ]}

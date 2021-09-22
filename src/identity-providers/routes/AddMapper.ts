@@ -7,12 +7,14 @@ export type IdentityProviderAddMapperParams = {
   realm: string;
   providerId: string;
   alias: string;
+  tab: string;
 };
 
 export const IdentityProviderAddMapperRoute: RouteDef = {
-  path: "/:realm/identity-providers/:providerId/:alias/mappers/create",
+  path: "/:realm/identity-providers/:providerId/:alias/:tab/create",
   component: AddMapper,
   access: "manage-identity-providers",
+  breadcrumb: (t) => t("identity-providers:addIdPMapper"),
 };
 
 export const toIdentityProviderAddMapper = (

@@ -68,6 +68,8 @@ export const AttributesForm = ({
 
   const columns = ["Key", "Value"];
 
+  const noSaveCancelButtons = !save && !reset;
+
   const watchLast = inConfig
     ? watch(`config.attributes[${fields.length - 1}].key`, "")
     : watch(`attributes[${fields.length - 1}].key`, "");
@@ -77,8 +79,6 @@ export const AttributesForm = ({
       append({ key: "", value: "" });
     }
   }, [fields]);
-
-  const noSaveCancelButtons = !save && !reset;
 
   return (
     <FormAccess
