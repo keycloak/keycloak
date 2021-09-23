@@ -34,12 +34,21 @@ public class MutualTLSUtils {
     public static final String OTHER_KEYSTOREPATH = System.getProperty("hok.client.certificate.keystore");
     public static final String OTHER_KEYSTOREPASSWORD = System.getProperty("hok.client.certificate.keystore.passphrase");
 
+    // Client certificate with tricky Subject, which contains RDNs with  non-very known OID names
+    // like "jurisdictionCountryName", "businessCategory", "serialNumber" . These OIDs are used by OpenBanking Brasil
+    public static final String OBB_KEYSTOREPATH = System.getProperty("obb.client.certificate.keystore");
+    public static final String OBB_KEYSTOREPASSWORD = System.getProperty("obb.client.certificate.keystore.passphrase");
+
     public static CloseableHttpClient newCloseableHttpClientWithDefaultKeyStoreAndTrustStore() {
         return newCloseableHttpClient(DEFAULT_KEYSTOREPATH, DEFAULT_KEYSTOREPASSWORD, DEFAULT_TRUSTSTOREPATH, DEFAULT_TRUSTSTOREPASSWORD);
     }
 
     public static CloseableHttpClient newCloseableHttpClientWithOtherKeyStoreAndTrustStore() {
         return newCloseableHttpClient(OTHER_KEYSTOREPATH, OTHER_KEYSTOREPASSWORD, DEFAULT_TRUSTSTOREPATH, DEFAULT_TRUSTSTOREPASSWORD);
+    }
+
+    public static CloseableHttpClient newCloseableHttpClientWithOBBKeyStoreAndTrustStore() {
+        return newCloseableHttpClient(OBB_KEYSTOREPATH, OBB_KEYSTOREPASSWORD, DEFAULT_TRUSTSTOREPATH, DEFAULT_TRUSTSTOREPASSWORD);
     }
     
     public static CloseableHttpClient newCloseableHttpClientWithoutKeyStoreAndTrustStore() {

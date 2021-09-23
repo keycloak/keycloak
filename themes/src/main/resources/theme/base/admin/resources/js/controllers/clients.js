@@ -198,7 +198,29 @@ module.controller('ClientX509Ctrl', function($scope, $location, Client, Notifica
         }
     }, true);
 
+    function updateProperties() {
+       if ($scope.client.attributes["x509.allow.regex.pattern.comparison"]) {
+           if ($scope.client.attributes["x509.allow.regex.pattern.comparison"] == "true") {
+               $scope.allowRegexPatternComparison = true;
+           } else {
+               $scope.allowRegexPatternComparison = false;
+           }
+       }
+    }
+
+    updateProperties();
+
+    $scope.switchChange = function() {
+        $scope.changed = true;
+    }
+
     $scope.save = function() {
+        if ($scope.allowRegexPatternComparison == true) {
+            $scope.client.attributes["x509.allow.regex.pattern.comparison"] = "true";
+        } else {
+            $scope.client.attributes["x509.allow.regex.pattern.comparison"] = "false";
+        }
+
         if (!$scope.client.attributes["x509.subjectdn"]) {
             Notifications.error("The SubjectDN must not be empty.");
         } else {
@@ -224,6 +246,8 @@ module.controller('ClientX509Ctrl', function($scope, $location, Client, Notifica
 
     $scope.reset = function() {
         $scope.client.attributes["x509.subjectdn"] = $scope.clientCopy.attributes["x509.subjectdn"];
+        $scope.client.attributes["x509.allow.regex.pattern.comparison"] = $scope.clientCopy.attributes["x509.allow.regex.pattern.comparison"];
+        updateProperties();
         $location.url("/realms/" + $scope.realm.realm + "/clients/" + $scope.client.id + "/credentials");
     };
 });

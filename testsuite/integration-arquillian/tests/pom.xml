@@ -252,6 +252,10 @@
         <hok.client.certificate.keystore>${auth.server.config.dir}/other_client.jks</hok.client.certificate.keystore>
         <hok.client.certificate.keystore.passphrase>secret</hok.client.certificate.keystore.passphrase>
 
+        <!-- Client certificate with the format suitable for OpenBanking Brasil -->
+        <obb.client.certificate.keystore>${auth.server.config.dir}/test-user-obb.jks</obb.client.certificate.keystore>
+        <obb.client.certificate.keystore.passphrase>password</obb.client.certificate.keystore.passphrase>
+
         <auth.server.ocsp.responder.enabled>false</auth.server.ocsp.responder.enabled>
         <keycloak.x509cert.lookup.provider>default</keycloak.x509cert.lookup.provider>
         <auth.server.quarkus.cluster.config>local</auth.server.quarkus.cluster.config>
@@ -641,6 +645,10 @@
                             <!-- KEYCLOAK-6771 Certificate Bound Token -->
                             <hok.client.certificate.keystore>${hok.client.certificate.keystore}</hok.client.certificate.keystore>
                             <hok.client.certificate.keystore.passphrase>${hok.client.certificate.keystore.passphrase}</hok.client.certificate.keystore.passphrase>
+
+                            <!-- Client certificate with the format suitable for OpenBanking Brasil -->
+                            <obb.client.certificate.keystore>${obb.client.certificate.keystore}</obb.client.certificate.keystore>
+                            <obb.client.certificate.keystore.passphrase>${obb.client.certificate.keystore.passphrase}</obb.client.certificate.keystore.passphrase>
 
                             <auth.server.ocsp.responder.enabled>${auth.server.ocsp.responder.enabled}</auth.server.ocsp.responder.enabled>
 
