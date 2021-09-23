@@ -62,100 +62,107 @@ export const BruteForceDetection = ({
           )}
         />
       </FormGroup>
-      {enable && (
-        <>
-          <FormGroup
-            label={t("failureFactor")}
-            labelIcon={
-              <HelpItem
-                helpText="realm-settings-help:failureFactor"
-                forLabel={t("failureFactor")}
-                forID="failureFactor"
-              />
-            }
-            fieldId="failureFactor"
-          >
-            <Controller
-              name="failureFactor"
-              defaultValue={0}
-              control={control}
-              rules={{ required: true }}
-              render={({ onChange, value }) => (
-                <NumberInput
-                  type="text"
-                  id="failureFactor"
-                  value={value}
-                  onPlus={() => onChange(value + 1)}
-                  onMinus={() => onChange(value - 1)}
-                  onChange={(event) =>
-                    onChange(Number((event.target as HTMLInputElement).value))
-                  }
-                />
-              )}
+      <FormGroup
+        label={t("failureFactor")}
+        labelIcon={
+          <HelpItem
+            helpText="realm-settings-help:failureFactor"
+            forLabel={t("failureFactor")}
+            forID="failureFactor"
+          />
+        }
+        fieldId="failureFactor"
+        style={enable ? {} : { display: "none" }}
+      >
+        <Controller
+          name="failureFactor"
+          defaultValue={0}
+          control={control}
+          rules={{ required: true }}
+          render={({ onChange, value }) => (
+            <NumberInput
+              type="text"
+              id="failureFactor"
+              value={value}
+              onPlus={() => onChange(value + 1)}
+              onMinus={() => onChange(value - 1)}
+              onChange={(event) =>
+                onChange(Number((event.target as HTMLInputElement).value))
+              }
             />
-          </FormGroup>
-          <FormGroup
-            label={t("permanentLockout")}
-            fieldId="permanentLockout"
-            hasNoPaddingTop
-          >
-            <Controller
-              name="permanentLockout"
-              defaultValue={false}
-              control={control}
-              render={({ onChange, value }) => (
-                <Switch
-                  id="permanentLockout"
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
-                  isChecked={value}
-                  onChange={onChange}
-                />
-              )}
-            />
-          </FormGroup>
-
-          {!permanentLockout && (
-            <>
-              <Time name="waitIncrement" />
-              <Time name="maxFailureWait" />
-              <Time name="maxDeltaTime" />
-            </>
           )}
-
-          <FormGroup
-            label={t("quickLoginCheckMilliSeconds")}
-            labelIcon={
-              <HelpItem
-                helpText="realm-settings-help:quickLoginCheckMilliSeconds"
-                forLabel={t("quickLoginCheckMilliSeconds")}
-                forID="quickLoginCheckMilliSeconds"
-              />
-            }
-            fieldId="quickLoginCheckMilliSeconds"
-          >
-            <Controller
-              name="quickLoginCheckMilliSeconds"
-              defaultValue={0}
-              control={control}
-              render={({ onChange, value }) => (
-                <NumberInput
-                  type="text"
-                  id="quickLoginCheckMilliSeconds"
-                  value={value}
-                  onPlus={() => onChange(value + 1)}
-                  onMinus={() => onChange(value - 1)}
-                  onChange={(event) =>
-                    onChange(Number((event.target as HTMLInputElement).value))
-                  }
-                />
-              )}
+        />
+      </FormGroup>
+      <FormGroup
+        label={t("permanentLockout")}
+        fieldId="permanentLockout"
+        hasNoPaddingTop
+        style={enable ? {} : { display: "none" }}
+      >
+        <Controller
+          name="permanentLockout"
+          defaultValue={false}
+          control={control}
+          render={({ onChange, value }) => (
+            <Switch
+              id="permanentLockout"
+              label={t("common:on")}
+              labelOff={t("common:off")}
+              isChecked={value}
+              onChange={onChange}
             />
-          </FormGroup>
+          )}
+        />
+      </FormGroup>
 
-          <Time name="minimumQuickLoginWait" />
-        </>
-      )}
+      <Time
+        name="waitIncrementSeconds"
+        style={enable && !permanentLockout ? {} : { display: "none" }}
+      />
+      <Time
+        name="maxFailureWaitSeconds"
+        style={enable && !permanentLockout ? {} : { display: "none" }}
+      />
+      <Time
+        name="maxDeltaTimeSeconds"
+        style={enable && !permanentLockout ? {} : { display: "none" }}
+      />
+
+      <FormGroup
+        label={t("quickLoginCheckMilliSeconds")}
+        labelIcon={
+          <HelpItem
+            helpText="realm-settings-help:quickLoginCheckMilliSeconds"
+            forLabel={t("quickLoginCheckMilliSeconds")}
+            forID="quickLoginCheckMilliSeconds"
+          />
+        }
+        fieldId="quickLoginCheckMilliSeconds"
+        style={enable ? {} : { display: "none" }}
+      >
+        <Controller
+          name="quickLoginCheckMilliSeconds"
+          defaultValue={0}
+          control={control}
+          render={({ onChange, value }) => (
+            <NumberInput
+              type="text"
+              id="quickLoginCheckMilliSeconds"
+              value={value}
+              onPlus={() => onChange(value + 1)}
+              onMinus={() => onChange(value - 1)}
+              onChange={(event) =>
+                onChange(Number((event.target as HTMLInputElement).value))
+              }
+            />
+          )}
+        />
+      </FormGroup>
+
+      <Time
+        name="minimumQuickLoginWaitSeconds"
+        style={enable ? {} : { display: "none" }}
+      />
 
       <ActionGroup>
         <Button

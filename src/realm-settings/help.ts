@@ -60,13 +60,14 @@ export default {
     failureFactor: "How many failures before wait is triggered.",
     permanentLockout:
       "Lock the user permanently when the user exceeds the maximum login failures.",
-    waitIncrement:
+    waitIncrementSeconds:
       "When failure threshold has been met, how much time should the user be locked out?",
-    maxFailureWait: "Max time a user will be locked out.",
-    maxDeltaTime: "When will failure count be reset?",
+    maxFailureWaitSeconds: "Max time a user will be locked out.",
+    maxDeltaTimeSeconds: "When will failure count be reset?",
     quickLoginCheckMilliSeconds:
       "If a failure happens concurrently too quickly, lock out the user.",
-    minimumQuickLoginWait: "How long to wait after a quick login failure.",
+    minimumQuickLoginWaitSeconds:
+      "How long to wait after a quick login failure.",
     ssoSessionIdle:
       "Time a session is allowed to be idle before it expires. Tokens and browser sessions are invalidated when a session is expired.",
     ssoSessionMax:

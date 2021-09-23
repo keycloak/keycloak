@@ -292,6 +292,23 @@ describe("Realm settings", () => {
     masthead.checkNotificationMessage("Realm successfully updated");
   });
 
+  it("Brute force detection", () => {
+    sidebarPage.goToRealmSettings();
+    cy.get("#pf-tab-securityDefences-securityDefences").click();
+    cy.get("#pf-tab-20-bruteForce").click();
+
+    cy.findByTestId("brute-force-tab-save").should("be.disabled");
+
+    cy.get("#bruteForceProtected").click({ force: true });
+    cy.findByTestId("waitIncrementSeconds").type("1");
+    cy.findByTestId("maxFailureWaitSeconds").type("1");
+    cy.findByTestId("maxDeltaTimeSeconds").type("1");
+    cy.findByTestId("minimumQuickLoginWaitSeconds").type("1");
+
+    cy.findByTestId("brute-force-tab-save").should("be.enabled").click();
+    masthead.checkNotificationMessage("Realm successfully updated");
+  });
+
   it("add session data", () => {
     sidebarPage.goToRealmSettings();
 

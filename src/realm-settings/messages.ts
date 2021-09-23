@@ -611,11 +611,11 @@ export default {
     strictTransportSecurity: "HTTP Strict Transport Security (HSTS)",
     failureFactor: "Max login failures",
     permanentLockout: "Permanent lockout",
-    waitIncrement: "Wait increment",
-    maxFailureWait: "Max wait",
-    maxDeltaTime: "Failure reset time",
+    waitIncrementSeconds: "Wait increment",
+    maxFailureWaitSeconds: "Max wait",
+    maxDeltaTimeSeconds: "Failure reset time",
     quickLoginCheckMilliSeconds: "Quick login check milliseconds",
-    minimumQuickLoginWait: "Minimum quick login wait",
+    minimumQuickLoginWaitSeconds: "Minimum quick login wait",
   },
   "partial-import": {
     partialImportHeaderText:
