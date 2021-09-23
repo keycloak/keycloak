@@ -26,6 +26,8 @@ import org.keycloak.configuration.Configuration;
 
 public final class Environment {
 
+    public static final String IMPORT_EXPORT_MODE = "import_export";
+
     public static Boolean isRebuild() {
         return Boolean.valueOf(System.getProperty("quarkus.launch.rebuild"));
     }
@@ -88,6 +90,10 @@ public final class Environment {
 
         // if running in quarkus:dev mode
         return ProfileManager.getLaunchMode() == LaunchMode.DEVELOPMENT;
+    }
+
+    public static boolean isImportExportMode() {
+        return IMPORT_EXPORT_MODE.equalsIgnoreCase(getProfile());
     }
 
     public static boolean isWindows() {

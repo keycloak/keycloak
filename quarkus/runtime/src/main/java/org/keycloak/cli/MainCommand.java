@@ -19,11 +19,16 @@ package org.keycloak.cli;
 
 import static org.keycloak.cli.Picocli.error;
 import static org.keycloak.cli.Picocli.println;
+import static org.keycloak.exportimport.ExportImportConfig.ACTION_EXPORT;
+import static org.keycloak.exportimport.ExportImportConfig.ACTION_IMPORT;
+import static org.keycloak.exportimport.Strategy.IGNORE_EXISTING;
+import static org.keycloak.exportimport.Strategy.OVERWRITE_EXISTING;
 
 import io.quarkus.bootstrap.runner.RunnerClassLoader;
 import org.keycloak.configuration.KeycloakConfigSourceProvider;
 
 import io.quarkus.bootstrap.runner.QuarkusEntryPoint;
+
 import org.keycloak.util.Environment;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -31,11 +36,7 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
 
-import java.lang.reflect.Field;
-import java.nio.file.Path;
-import java.util.Map;
-
-@Command(name = "keycloak", 
+@Command(name = "keycloak",
         usageHelpWidth = 150, 
         header = "Keycloak - Open Source Identity and Access Management\n\nFind more information at: https://www.keycloak.org/%n", 
         description = "Use this command-line tool to manage your Keycloak cluster%n", footerHeading = "%nUse \"${COMMAND-NAME} <command> --help\" for more information about a command.%nUse \"${COMMAND-NAME} options\" for a list of all command-line options.", 
@@ -109,8 +110,7 @@ public class MainCommand {
             optionListHeading = "%nOptions%n",
             parameterListHeading = "Available Commands%n")
     public void startDev(@Option(names = "--verbose", description = "Print out more details when running this command.", required = false) Boolean verbose) {
-        System.setProperty("kc.profile", "dev");
-        System.setProperty("quarkus.profile", "dev");
+        setProfile("dev");
         KeycloakMain.start(spec.commandLine());
     }
 
@@ -126,28 +126,13 @@ public class MainCommand {
             @Option(names = "--users", arity = "1", description = "Set how users should be exported. Possible values are: skip, realm_file, same_file, different_files.", paramLabel = "<strategy>", defaultValue = "different_files") String users,
             @Option(names = "--users-per-file", arity = "1", description = "Set the number of users per file. It’s used only if --users=different_files.", paramLabel = "<number>", defaultValue = "50") Integer usersPerFile,
             @Option(names = "--verbose", description = "Print out more details when running this command.", required = false) Boolean verbose) {
-        System.setProperty("keycloak.migration.action", "export");
-
-        if (toDir != null) {
-            System.setProperty("keycloak.migration.provider", "dir");
-            System.setProperty("keycloak.migration.dir", toDir);
-        } else if (toFile != null) {
-            System.setProperty("keycloak.migration.provider", "singleFile");
-            System.setProperty("keycloak.migration.file", toFile);
-        } else {
-            error(spec.commandLine(), "Must specify either --dir or --file options.");
-        }
-
         System.setProperty("keycloak.migration.usersExportStrategy", users.toUpperCase());
         
         if (usersPerFile != null) {
             System.setProperty("keycloak.migration.usersPerFile", usersPerFile.toString());
         }
-        
-        if (realm != null) {
-            System.setProperty("keycloak.migration.realmName", realm);
-        }
-        KeycloakMain.start(spec.commandLine());
+
+        runImportExport(ACTION_EXPORT, toDir, toFile, realm, verbose);
     }
 
     @Command(name = "import", 
@@ -161,24 +146,9 @@ public class MainCommand {
             @Option(names = "--realm", arity = "1", description = "Set the name of the realm to import", paramLabel = "<realm>") String realm,
             @Option(names = "--override", arity = "1", description = "Set if existing data should be skipped or overridden.", paramLabel = "false", defaultValue = "true") boolean override,
             @Option(names = "--verbose", description = "Print out more details when running this command.", required = false) Boolean verbose) {
-        System.setProperty("keycloak.migration.action", "import");
-        if (toDir != null) {
-            System.setProperty("keycloak.migration.provider", "dir");
-            System.setProperty("keycloak.migration.dir", toDir);
-        } else if (toFile != null) {
-            System.setProperty("keycloak.migration.provider", "singleFile");
-            System.setProperty("keycloak.migration.file", toFile);
-        } else {
-            error(spec.commandLine(), "Must specify either --dir or --file options.");
-        }
+        System.setProperty("keycloak.migration.strategy", override ? OVERWRITE_EXISTING.name() : IGNORE_EXISTING.name());
 
-        if (realm != null) {
-            System.setProperty("keycloak.migration.realmName", realm);
-        }
-
-        System.setProperty("keycloak.migration.strategy", override ? "OVERWRITE_EXISTING" : "IGNORE_EXISTING");
-        
-        KeycloakMain.start(spec.commandLine());
+        runImportExport(ACTION_IMPORT, toDir, toFile, realm, verbose);
     }
     
     @Command(name = "start", 
@@ -211,5 +181,26 @@ public class MainCommand {
             @Option(names = "--verbose", description = "Print out more details when running this command.", required = false) Boolean verbose) {
         System.setProperty("kc.show.config", filter);
         KeycloakMain.start(spec.commandLine());
+    }
+
+    private void runImportExport(String action, String toDir, String toFile, String realm, Boolean verbose) {
+        System.setProperty("keycloak.migration.action", action);
+
+        if (toDir != null) {
+            System.setProperty("keycloak.migration.provider", "dir");
+            System.setProperty("keycloak.migration.dir", toDir);
+        } else if (toFile != null) {
+            System.setProperty("keycloak.migration.provider", "singleFile");
+            System.setProperty("keycloak.migration.file", toFile);
+        } else {
+            error(spec.commandLine(), "Must specify either --dir or --file options.");
+        }
+
+        if (realm != null) {
+            System.setProperty("keycloak.migration.realmName", realm);
+        }
+
+        setProfile(Environment.IMPORT_EXPORT_MODE);
+        start(null, verbose);
     }
 }

@@ -74,6 +74,7 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
+import org.keycloak.util.Environment;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -144,20 +145,20 @@ public final class QuarkusJpaConnectionProviderFactory implements JpaConnectionP
         emf = instance.get();
 
         KeycloakSession session = factory.create();
-        boolean initSchema;
+        boolean schemaChanged;
 
         try (Connection connection = getConnection()) {
             createOperationalInfo(connection);
             addSpecificNamedQueries(session, connection);
-            initSchema = createOrUpdateSchema(getSchema(), connection, session);
+            schemaChanged = createOrUpdateSchema(getSchema(), connection, session);
         } catch (SQLException cause) {
             throw new RuntimeException("Failed to update database.", cause);
         } finally {
             session.close();
         }
 
-        if (initSchema || ExportImportConfig.ACTION_EXPORT.equals(ExportImportConfig.getAction())) {
-            runJobInTransaction(factory, this::initSchemaOrExport);
+        if (schemaChanged || Environment.isImportExportMode()) {
+            runJobInTransaction(factory, this::initSchema);
         }
     }
 
@@ -201,7 +202,7 @@ public final class QuarkusJpaConnectionProviderFactory implements JpaConnectionP
         }
     }
 
-    private void initSchemaOrExport(KeycloakSession session) {
+    private void initSchema(KeycloakSession session) {
         ExportImportManager exportImportManager = new ExportImportManager(session);
         
         /*

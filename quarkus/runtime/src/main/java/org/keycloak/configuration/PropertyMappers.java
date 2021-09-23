@@ -54,7 +54,8 @@ public final class PropertyMappers {
             Boolean enabled = Boolean.valueOf(value);
             ConfigValue proxy = context.proceed(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + "proxy");
 
-            if (Environment.isDevMode() || (proxy != null && "edge".equalsIgnoreCase(proxy.getValue()))) {
+            if (Environment.isDevMode() || Environment.isImportExportMode()
+                    || (proxy != null && "edge".equalsIgnoreCase(proxy.getValue()))) {
                 enabled = true;
             }
             
