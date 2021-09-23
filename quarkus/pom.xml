@@ -32,7 +32,7 @@
 
     <properties>
         <!-- Quarkus version -->
-        <quarkus.version>2.2.2.Final</quarkus.version>
+        <quarkus.version>2.2.3.Final</quarkus.version>
 
         <!--
             Override versions based on Quarkus dependencies.
