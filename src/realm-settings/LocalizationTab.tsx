@@ -70,7 +70,6 @@ export const LocalizationTab = ({
     control,
     name: "supportedLocales",
   });
-
   const internationalizationEnabled = useWatch({
     control,
     name: "internationalizationEnabled",
@@ -208,110 +207,107 @@ export const LocalizationTab = ({
                 )}
               />
             </FormGroup>
-            {internationalizationEnabled && (
-              <>
-                <FormGroup
-                  label={t("supportedLocales")}
-                  fieldId="kc-l-supported-locales"
-                >
-                  <Controller
-                    name="supportedLocales"
-                    control={control}
-                    render={({ onChange }) => (
-                      <Select
-                        toggleId="kc-l-supported-locales"
-                        onToggle={() => {
-                          setSupportedLocalesOpen(!supportedLocalesOpen);
-                        }}
-                        onSelect={(_, v) => {
-                          const option = v as string;
-                          if (!watchSupportedLocales) {
-                            onChange([option]);
-                          } else if (watchSupportedLocales!.includes(option)) {
-                            onChange(
-                              watchSupportedLocales.filter(
-                                (item: string) => item !== option
-                              )
-                            );
-                          } else {
-                            onChange([...watchSupportedLocales, option]);
-                          }
-                        }}
-                        onClear={() => {
-                          onChange([]);
-                        }}
-                        selections={watchSupportedLocales}
-                        variant={SelectVariant.typeaheadMulti}
-                        aria-label={t("supportedLocales")}
-                        isOpen={supportedLocalesOpen}
-                        placeholderText={"Select locales"}
-                      >
-                        {themeTypes.login![0].locales.map(
-                          (locale: string, idx: number) => (
-                            <SelectOption
-                              selected={true}
-                              key={`locale-${idx}`}
-                              value={locale}
-                            >
-                              {t(`allSupportedLocales.${locale}`)}
-                            </SelectOption>
-                          )
-                        )}
-                      </Select>
-                    )}
-                  />
-                </FormGroup>
-                <FormGroup
-                  label={t("defaultLocale")}
-                  fieldId="kc-l-default-locale"
-                >
-                  <Controller
-                    name="defaultLocale"
-                    control={control}
-                    render={({ onChange, value }) => (
-                      <Select
-                        toggleId="kc-default-locale"
-                        onToggle={() =>
-                          setDefaultLocaleOpen(!defaultLocaleOpen)
+            <FormGroup
+              label={t("supportedLocales")}
+              fieldId="kc-l-supported-locales"
+            >
+              <Controller
+                name="supportedLocales"
+                control={control}
+                render={({ onChange, value }) => {
+                  return internationalizationEnabled ? (
+                    <Select
+                      toggleId="kc-l-supported-locales"
+                      onToggle={(open) => {
+                        setSupportedLocalesOpen(open);
+                      }}
+                      onSelect={(_, v) => {
+                        const option = v as string;
+                        if (!value) {
+                          onChange([option]);
+                        } else if (value.includes(option)) {
+                          onChange(
+                            value.filter((item: string) => item !== option)
+                          );
+                        } else {
+                          onChange([...value, option]);
                         }
-                        onSelect={(_, value) => {
-                          onChange(value as string);
-                          setValueSelected(true);
-                          setDefaultLocaleOpen(false);
-                        }}
-                        selections={
-                          valueSelected
-                            ? t(`allSupportedLocales.${value}`)
-                            : realm.defaultLocale !== ""
-                            ? t(
-                                `allSupportedLocales.${
-                                  realm.defaultLocale || DEFAULT_LOCALE
-                                }`
-                              )
-                            : t("placeholderText")
-                        }
-                        variant={SelectVariant.single}
-                        aria-label={t("defaultLocale")}
-                        isOpen={defaultLocaleOpen}
-                        placeholderText={t("placeholderText")}
-                        data-testid="select-default-locale"
-                      >
-                        {watchSupportedLocales?.map(
-                          (locale: string, idx: number) => (
-                            <SelectOption
-                              key={`default-locale-${idx}`}
-                              value={locale}
-                            >
-                              {t(`allSupportedLocales.${locale}`)}
-                            </SelectOption>
-                          )
-                        )}
-                      </Select>
-                    )}
-                  />
-                </FormGroup>
-              </>
-            )}
+                      }}
+                      onClear={() => {
+                        onChange([]);
+                      }}
+                      selections={value}
+                      variant={SelectVariant.typeaheadMulti}
+                      aria-label={t("supportedLocales")}
+                      isOpen={supportedLocalesOpen}
+                      placeholderText={"Select locales"}
+                    >
+                      {themeTypes.login![0].locales.map(
+                        (locale: string, idx: number) => (
+                          <SelectOption
+                            selected={true}
+                            key={`locale-${idx}`}
+                            value={locale}
+                          >
+                            {t(`allSupportedLocales.${locale}`)}
+                          </SelectOption>
+                        )
+                      )}
+                    </Select>
+                  ) : (
+                    <div />
+                  );
+                }}
+              />
+            </FormGroup>
+            <FormGroup label={t("defaultLocale")} fieldId="kc-l-default-locale">
+              <Controller
+                name="defaultLocale"
+                control={control}
+                render={({ onChange, value }) => {
+                  return internationalizationEnabled ? (
+                    <Select
+                      toggleId="kc-default-locale"
+                      onToggle={() => setDefaultLocaleOpen(!defaultLocaleOpen)}
+                      onSelect={(_, value) => {
+                        onChange(value as string);
+                        setValueSelected(true);
+                        setDefaultLocaleOpen(false);
+                      }}
+                      selections={
+                        valueSelected
+                          ? t(`allSupportedLocales.${value}`)
+                          : realm.defaultLocale !== ""
+                          ? t(
+                              `allSupportedLocales.${
+                                realm.defaultLocale || DEFAULT_LOCALE
+                              }`
+                            )
+                          : t("placeholderText")
+                      }
+                      variant={SelectVariant.single}
+                      aria-label={t("defaultLocale")}
+                      isOpen={defaultLocaleOpen}
+                      placeholderText={t("placeholderText")}
+                      data-testid="select-default-locale"
+                    >
+                      {watchSupportedLocales?.map(
+                        (locale: string, idx: number) => (
+                          <SelectOption
+                            key={`default-locale-${idx}`}
+                            value={locale}
+                          >
+                            {t(`allSupportedLocales.${locale}`)}
+                          </SelectOption>
+                        )
+                      )}
+                    </Select>
+                  ) : (
+                    <div />
+                  );
+                }}
+              />
+            </FormGroup>
             <ActionGroup>
               <Button
                 variant="primary"
