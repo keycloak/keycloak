@@ -14,7 +14,7 @@ describe("Authentication test", () => {
 
   const detailPage = new FlowDetails();
 
-  beforeEach(function () {
+  beforeEach(() => {
     keycloakBefore();
     loginPage.logIn();
     sidebarPage.goToAuthentication();
@@ -77,5 +77,33 @@ describe("Authentication test", () => {
 
     masthead.checkNotificationMessage("Flow successfully updated");
     detailPage.executionExists("Username Password Challenge");
+  });
+
+  it("should add a sub-flow", () => {
+    const flowName = "SubFlow";
+    listingPage.goToItemDetails("Copy of browser");
+    detailPage.addSubFlow(
+      "Copy of browser Browser - Conditional OTP",
+      flowName
+    );
+
+    masthead.checkNotificationMessage("Flow successfully updated");
+    detailPage.flowExists(flowName);
+  });
+
+  it("should create flow from scratch", () => {
+    const flowName = "Flow";
+    listingPage.goToCreateItem();
+    detailPage.fillCreateForm(
+      flowName,
+      "Some nice description about what this flow does so that we can use it later",
+      "Client flow"
+    );
+    masthead.checkNotificationMessage("Flow created");
+    detailPage.addSubFlowToEmpty(flowName, "EmptySubFlow");
+
+    masthead.checkNotificationMessage("Flow successfully updated");
+
+    detailPage.flowExists(flowName);
   });
 });

@@ -139,7 +139,7 @@ const renderSubFlow = (
   elements.push(createEdge(endSubFlowId, end.id!));
 
   return elements.concat(
-    renderFlow(execution, execution.executionList, {
+    renderFlow(execution, execution.executionList || [], {
       ...execution,
       id: endSubFlowId,
     })

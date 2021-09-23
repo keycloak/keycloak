@@ -1,7 +1,7 @@
 import type AuthenticationExecutionInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationExecutionInfoRepresentation";
 
 export type ExpandableExecution = AuthenticationExecutionInfoRepresentation & {
-  executionList: ExpandableExecution[];
+  executionList?: ExpandableExecution[];
   isCollapsed: boolean;
 };
 
@@ -34,10 +34,11 @@ export class ExecutionList {
 
   constructor(list: AuthenticationExecutionInfoRepresentation[]) {
     this.list = list as ExpandableExecution[];
-    this.expandableList = this.transformToExpandableList(0, 0, {
-      executionList: [],
-      isCollapsed: false,
-    }).executionList;
+    this.expandableList =
+      this.transformToExpandableList(0, 0, {
+        executionList: [],
+        isCollapsed: false,
+      }).executionList || [];
   }
 
   private transformToExpandableList(
@@ -50,7 +51,7 @@ export class ExecutionList {
       const nextRowLevel = this.list[index + 1]?.level || 0;
 
       if (ex.level === level && nextRowLevel <= level) {
-        execution.executionList.push(ex);
+        execution.executionList?.push(ex);
       } else if (ex.level === level && nextRowLevel > level) {
         const expandable = this.transformToExpandableList(
           nextRowLevel,
@@ -61,7 +62,7 @@ export class ExecutionList {
             isCollapsed: false,
           }
         );
-        execution.executionList.push(expandable);
+        execution.executionList?.push(expandable);
       }
     }
     return execution;

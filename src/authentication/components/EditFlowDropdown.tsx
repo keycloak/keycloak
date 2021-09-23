@@ -7,7 +7,7 @@ import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-ad
 import type { ExpandableExecution } from "../execution-model";
 import { AddStepModal, FlowType } from "./modals/AddStepModal";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
-import { AddSubFlowModal } from "./modals/AddSubFlowModal";
+import { AddSubFlowModal, Flow } from "./modals/AddSubFlowModal";
 
 type EditFlowDropdownProps = {
   execution: ExpandableExecution;
@@ -15,11 +15,13 @@ type EditFlowDropdownProps = {
     execution: ExpandableExecution,
     type: AuthenticationProviderRepresentation
   ) => void;
+  onAddFlow: (flow: Flow) => void;
 };
 
 export const EditFlowDropdown = ({
   execution,
   onAddExecution,
+  onAddFlow,
 }: EditFlowDropdownProps) => {
   const { t } = useTranslation("authentication");
   const adminClient = useAdminClient();
@@ -83,7 +85,10 @@ export const EditFlowDropdown = ({
         <AddSubFlowModal
           name={execution.displayName!}
           onCancel={() => setType(undefined)}
-          onConfirm={() => setType(undefined)}
+          onConfirm={(flow) => {
+            onAddFlow(flow);
+            setType(undefined);
+          }}
         />
       )}
     </>

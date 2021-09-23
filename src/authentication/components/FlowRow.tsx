@@ -10,11 +10,14 @@ import {
   DataListToggle,
   Text,
   TextVariants,
+  Button,
 } from "@patternfly/react-core";
+import { TrashIcon } from "@patternfly/react-icons";
 
 import type AuthenticationExecutionInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationExecutionInfoRepresentation";
 import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
 import type { ExpandableExecution } from "../execution-model";
+import type { Flow } from "./modals/AddSubFlowModal";
 import { FlowTitle } from "./FlowTitle";
 import { FlowRequirementDropdown } from "./FlowRequirementDropdown";
 import { ExecutionConfigModal } from "./ExecutionConfigModal";
@@ -30,6 +33,8 @@ type FlowRowProps = {
     execution: ExpandableExecution,
     type: AuthenticationProviderRepresentation
   ) => void;
+  onAddFlow: (flow: Flow) => void;
+  onDelete: () => void;
 };
 
 export const FlowRow = ({
@@ -37,6 +42,8 @@ export const FlowRow = ({
   onRowClick,
   onRowChange,
   onAddExecution,
+  onAddFlow,
+  onDelete,
 }: FlowRowProps) => {
   const { t } = useTranslation("authentication");
   const hasSubList = !!execution.executionList?.length;
@@ -69,13 +76,13 @@ export const FlowRow = ({
           <DataListItemCells
             dataListCells={[
               <DataListCell key={`${execution.id}-name`}>
-                {!hasSubList && (
+                {!execution.authenticationFlow && (
                   <FlowTitle
                     key={execution.id}
                     title={execution.displayName!}
                   />
                 )}
-                {hasSubList && (
+                {execution.authenticationFlow && (
                   <>
                     {execution.displayName} <br />{" "}
                     <Text component={TextVariants.small}>
@@ -98,26 +105,34 @@ export const FlowRow = ({
                   <EditFlowDropdown
                     execution={execution}
                     onAddExecution={onAddExecution}
+                    onAddFlow={onAddFlow}
                   />
                 )}
+                <Button
+                  variant="plain"
+                  aria-label={t("common:delete")}
+                  onClick={onDelete}
+                >
+                  <TrashIcon />
+                </Button>
               </DataListCell>,
             ]}
           />
         </DataListItemRow>
       </DataListItem>
-      {!execution.isCollapsed && hasSubList && (
-        <>
-          {execution.executionList.map((execution) => (
-            <FlowRow
-              key={execution.id}
-              execution={execution}
-              onRowClick={onRowClick}
-              onRowChange={onRowChange}
-              onAddExecution={onAddExecution}
-            />
-          ))}
-        </>
-      )}
+      {!execution.isCollapsed &&
+        hasSubList &&
+        execution.executionList?.map((execution) => (
+          <FlowRow
+            key={execution.id}
+            execution={execution}
+            onRowClick={onRowClick}
+            onRowChange={onRowChange}
+            onAddExecution={onAddExecution}
+            onAddFlow={onAddFlow}
+            onDelete={onDelete}
+          />
+        ))}
     </>
   );
 };

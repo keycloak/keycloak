@@ -10,7 +10,7 @@ import {
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 
-const types = ["basic-flow", "client-flow"];
+const TYPES = ["basic-flow", "client-flow"] as const;
 
 export const FlowType = () => {
   const { t } = useTranslation("authentication");
@@ -23,7 +23,7 @@ export const FlowType = () => {
       label={t("flowType")}
       labelIcon={
         <HelpItem
-          helpText="authentication-help:flowType"
+          helpText="authentication-help:topLevelFlowType"
           forLabel={t("flowType")}
           forID="flowType"
         />
@@ -32,7 +32,7 @@ export const FlowType = () => {
     >
       <Controller
         name="providerId"
-        defaultValue={types[0]}
+        defaultValue={TYPES[0]}
         control={control}
         render={({ onChange, value }) => (
           <Select
@@ -42,17 +42,15 @@ export const FlowType = () => {
               onChange(value as string);
               setOpen(false);
             }}
-            selections={t(`flow-type.${value}`)}
+            selections={t(`top-level-flow-type.${value}`)}
             variant={SelectVariant.single}
             aria-label={t("flowType")}
             isOpen={open}
           >
-            {types.map((type) => (
-              <SelectOption
-                selected={type === value}
-                key={type}
-                value={t(`flow-type.${type}`)}
-              />
+            {TYPES.map((type) => (
+              <SelectOption selected={type === value} key={type} value={type}>
+                {t(`top-level-flow-type.${type}`)}
+              </SelectOption>
             ))}
           </Select>
         )}

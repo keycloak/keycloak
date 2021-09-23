@@ -3,7 +3,8 @@ export default {
     name: "Help text for the name of the new flow",
     description: "Help text for the description of the new flow",
     createFlow: "You can create a top level flow within this from",
-    flowType:
+    flowType: "What kind of form is it",
+    topLevelFlowType:
       "What kind of top level flow is it? Type 'client' is used for authentication of clients (applications) when generic is for users and everything else",
     addExecution:
       "Execution can have a wide range of actions, from sending a reset email to validating an OTP",

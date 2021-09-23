@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import {
   DataList,
   Label,
@@ -10,8 +10,11 @@ import {
   ToggleGroup,
   ToggleGroupItem,
   AlertVariant,
+  ActionGroup,
+  Button,
+  ButtonVariant,
 } from "@patternfly/react-core";
-import { CheckCircleIcon, TableIcon } from "@patternfly/react-icons";
+import { CheckCircleIcon, PlusIcon, TableIcon } from "@patternfly/react-icons";
 
 import type AuthenticationExecutionInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationExecutionInfoRepresentation";
 import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
@@ -31,6 +34,9 @@ import {
 } from "./execution-model";
 import { FlowDiagram } from "./components/FlowDiagram";
 import { useAlerts } from "../components/alert/Alerts";
+import { AddStepModal } from "./components/modals/AddStepModal";
+import { AddSubFlowModal, Flow } from "./components/modals/AddSubFlowModal";
+import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 
 export const providerConditionFilter = (
   value: AuthenticationProviderRepresentation
@@ -50,6 +56,12 @@ export const FlowDetails = () => {
   const [dragged, setDragged] =
     useState<AuthenticationExecutionInfoRepresentation>();
   const [liveText, setLiveText] = useState("");
+
+  const [showAddExecutionDialog, setShowAddExecutionDialog] =
+    useState<boolean>();
+  const [showAddSubFlowDialog, setShowSubFlowDialog] = useState<boolean>();
+  const [selectedExecution, setSelectedExecution] =
+    useState<ExpandableExecution>();
 
   useFetch(
     async () => {
@@ -84,23 +96,17 @@ export const FlowDetails = () => {
         id = result.id!;
       }
       const times = change.newIndex - change.oldIndex;
-      const requests = [];
       for (let index = 0; index < Math.abs(times); index++) {
         if (times > 0) {
-          requests.push(
-            adminClient.authenticationManagement.lowerPriorityExecution({
-              id,
-            })
-          );
+          await adminClient.authenticationManagement.lowerPriorityExecution({
+            id,
+          });
         } else {
-          requests.push(
-            adminClient.authenticationManagement.raisePriorityExecution({
-              id,
-            })
-          );
+          await adminClient.authenticationManagement.raisePriorityExecution({
+            id,
+          });
         }
       }
-      await Promise.all(requests);
       refresh();
       addAlert(t("updateFlowSuccess"), AlertVariant.success);
     } catch (error: any) {
@@ -124,12 +130,12 @@ export const FlowDetails = () => {
   };
 
   const addExecution = async (
-    execution: ExpandableExecution,
+    name: string,
     type: AuthenticationProviderRepresentation
   ) => {
     try {
       await adminClient.authenticationManagement.addExecutionToFlow({
-        flow: execution.displayName!,
+        flow: name,
         provider: type.id!,
       });
       refresh();
@@ -138,6 +144,50 @@ export const FlowDetails = () => {
       addError("authentication:updateFlowError", error);
     }
   };
+
+  const addFlow = async (
+    flow: string,
+    { name, description = "", type, provider }: Flow
+  ) => {
+    try {
+      await adminClient.authenticationManagement.addFlowToFlow({
+        flow,
+        alias: name,
+        description,
+        provider,
+        type,
+      });
+      refresh();
+      addAlert(t("updateFlowSuccess"), AlertVariant.success);
+    } catch (error) {
+      addError("authentication:updateFlowError", error);
+    }
+  };
+
+  const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
+    titleKey: "authentication:deleteConfirmExecution",
+    children: (
+      <Trans i18nKey="authentication:deleteConfirmExecutionMessage">
+        {" "}
+        <strong>{{ name: selectedExecution?.displayName }}</strong>.
+      </Trans>
+    ),
+    continueButtonLabel: "common:delete",
+    continueButtonVariant: ButtonVariant.danger,
+    onConfirm: async () => {
+      try {
+        await adminClient.authenticationManagement.delExecution({
+          id: selectedExecution?.id!,
+        });
+        addAlert(t("deleteExecutionSuccess"), AlertVariant.success);
+        refresh();
+      } catch (error) {
+        addError("authentication:deleteExecutionError", error);
+      }
+    },
+  });
+
+  const hasExecutions = executionList?.expandableList.length !== 0;
 
   return (
     <>
@@ -161,7 +211,7 @@ export const FlowDetails = () => {
         ]}
       />
       <PageSection variant="light">
-        {executionList?.expandableList?.length && (
+        {hasExecutions && (
           <Toolbar id="toolbar">
             <ToolbarContent>
               <ToggleGroup>
@@ -183,8 +233,9 @@ export const FlowDetails = () => {
             </ToolbarContent>
           </Toolbar>
         )}
-        {tableView && executionList?.expandableList?.length && (
+        {tableView && executionList && hasExecutions && (
           <>
+            <DeleteConfirm />
             <DataList
               aria-label="flows"
               onDragFinish={(order) => {
@@ -204,7 +255,7 @@ export const FlowDetails = () => {
                   t("common:onDragStart", { item: item.displayName })
                 );
                 setDragged(item);
-                if (item.executionList && !item.isCollapsed) {
+                if (!item.isCollapsed) {
                   item.isCollapsed = true;
                   setExecutionList(executionList.clone());
                 }
@@ -231,11 +282,62 @@ export const FlowDetails = () => {
                       setExecutionList(executionList.clone());
                     }}
                     onRowChange={update}
-                    onAddExecution={addExecution}
+                    onAddExecution={(execution, type) =>
+                      addExecution(execution.displayName!, type)
+                    }
+                    onAddFlow={(flow) => addFlow(execution.displayName!, flow)}
+                    onDelete={() => {
+                      setSelectedExecution(execution);
+                      toggleDeleteDialog();
+                    }}
                   />
                 ))}
               </>
             </DataList>
+            {flow && (
+              <>
+                {showAddExecutionDialog && (
+                  <AddStepModal
+                    name={flow.alias!}
+                    type={
+                      flow.providerId === "client-flow" ? "client" : "basic"
+                    }
+                    onSelect={(type) => {
+                      if (type) {
+                        addExecution(flow.alias!, type);
+                      }
+                      setShowAddExecutionDialog(false);
+                    }}
+                  />
+                )}
+                {showAddSubFlowDialog && (
+                  <AddSubFlowModal
+                    name={flow.alias!}
+                    onCancel={() => setShowSubFlowDialog(false)}
+                    onConfirm={(newFlow) => {
+                      addFlow(flow.alias!, newFlow);
+                      setShowSubFlowDialog(false);
+                    }}
+                  />
+                )}
+                <ActionGroup>
+                  <Button
+                    data-testid="addStep"
+                    variant="link"
+                    onClick={() => setShowAddExecutionDialog(true)}
+                  >
+                    <PlusIcon /> {t("addStep")}
+                  </Button>
+                  <Button
+                    data-testid="addSubFlow"
+                    variant="link"
+                    onClick={() => setShowSubFlowDialog(true)}
+                  >
+                    <PlusIcon /> {t("addSubFlow")}
+                  </Button>
+                </ActionGroup>
+              </>
+            )}
             <div className="pf-screen-reader" aria-live="assertive">
               {liveText}
             </div>
@@ -245,8 +347,12 @@ export const FlowDetails = () => {
           <FlowDiagram executionList={executionList} />
         )}
         {!executionList?.expandableList ||
-          (executionList.expandableList.length === 0 && (
-            <EmptyExecutionState />
+          (flow && !hasExecutions && (
+            <EmptyExecutionState
+              flow={flow}
+              onAddExecution={(type) => addExecution(flow.alias!, type)}
+              onAddFlow={(newFlow) => addFlow(flow.alias!, newFlow)}
+            />
           ))}
       </PageSection>
     </>

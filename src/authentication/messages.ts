@@ -18,6 +18,11 @@ export default {
     deleteFlowSuccess: "Flow successfully deleted",
     deleteFlowError: "Could not delete flow: {{error}}",
     duplicateFlow: "Duplicate flow",
+    deleteConfirmExecution: "Delete execution?",
+    deleteConfirmExecutionMessage:
+      'Are you sure you want to permanently delete the execution "<1>{{name}}</1>".',
+    deleteExecutionSuccess: "Execution successfully deleted",
+    deleteExecutionError: "Could not delete execution: {{error}}",
     updateFlowSuccess: "Flow successfully updated",
     updateFlowError: "Could not update flow: {{error}}",
     copyOf: "Copy of {{name}}",
@@ -26,6 +31,10 @@ export default {
     createFlow: "Create flow",
     flowType: "Flow type",
     "flow-type": {
+      "basic-flow": "Generic",
+      "form-flow": "Form",
+    },
+    "top-level-flow-type": {
       "basic-flow": "Basic flow",
       "client-flow": "Client flow",
     },

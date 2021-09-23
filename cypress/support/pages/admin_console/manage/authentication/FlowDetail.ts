@@ -6,6 +6,11 @@ export default class FlowDetails {
     return this;
   }
 
+  flowExists(name: string) {
+    cy.findAllByText(name).should("exist");
+    return this;
+  }
+
   private getExecution(name: string) {
     return cy.findByTestId(name);
   }
@@ -60,6 +65,40 @@ export default class FlowDetails {
     cy.get(".pf-c-pagination").should("not.exist");
     cy.findByTestId(executionTestId).click();
     cy.findByTestId("modal-add").click();
+
+    return this;
+  }
+
+  addSubFlow(subFlowName: string, name: string) {
+    this.clickEditDropdownForFlow(subFlowName, "Add sub-flow");
+    this.fillSubFlowModal(subFlowName, name);
+
+    return this;
+  }
+
+  private fillSubFlowModal(subFlowName: string, name: string) {
+    cy.get(".pf-c-modal-box__title-text").contains(
+      "Add step to " + subFlowName
+    );
+    cy.findByTestId("name").type(name);
+    cy.findByTestId("modal-add").click();
+  }
+
+  fillCreateForm(
+    name: string,
+    description: string,
+    type: "Basic flow" | "Client flow"
+  ) {
+    cy.findByTestId("alias").type(name);
+    cy.findByTestId("description").type(description);
+    cy.get("#flowType").click().parent().contains(type).click();
+    cy.findByTestId("create").click();
+    return this;
+  }
+
+  addSubFlowToEmpty(subFlowName: string, name: string) {
+    cy.findByTestId("addSubFlow").click();
+    this.fillSubFlowModal(subFlowName, name);
 
     return this;
   }

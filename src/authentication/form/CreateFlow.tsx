@@ -17,6 +17,7 @@ import { useAdminClient } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
 import { NameDescription } from "./NameDescription";
 import { FlowType } from "./FlowType";
+import { toFlow } from "../routes/Flow";
 
 export const CreateFlow = () => {
   const { t } = useTranslation("authentication");
@@ -32,8 +33,17 @@ export const CreateFlow = () => {
 
   const save = async (flow: AuthenticationFlowRepresentation) => {
     try {
-      await adminClient.authenticationManagement.createFlow(flow);
+      const { id } = (await adminClient.authenticationManagement.createFlow(
+        flow
+      )) as unknown as AuthenticationFlowRepresentation;
       addAlert(t("flowCreatedSuccess"), AlertVariant.success);
+      history.push(
+        toFlow({
+          realm,
+          id: id!,
+          usedBy: "notInUse",
+        })
+      );
     } catch (error: any) {
       addAlert(
         t("flowCreateError", {
