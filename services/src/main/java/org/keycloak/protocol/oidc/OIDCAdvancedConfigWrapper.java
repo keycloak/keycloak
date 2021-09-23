@@ -198,6 +198,16 @@ public class OIDCAdvancedConfigWrapper {
         setAttribute(X509ClientAuthenticator.ATTR_SUBJECT_DN, tls_client_auth_subject_dn);
     }
 
+    public boolean getAllowRegexPatternComparison() {
+        String attrVal = getAttribute(X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON);
+        // Allow Regex Pattern Comparison by default due the backwards compatibility
+        return attrVal == null || Boolean.parseBoolean(attrVal);
+    }
+
+    public void setAllowRegexPatternComparison(boolean allowRegexPatternComparison) {
+        setAttribute(X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON, String.valueOf(allowRegexPatternComparison));
+    }
+
     public String getPkceCodeChallengeMethod() {
         return getAttribute(OIDCConfigAttributes.PKCE_CODE_CHALLENGE_METHOD);
     }

@@ -22,9 +22,11 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -41,6 +43,7 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
    private static final String CLIENT_ID = "confidential-x509";
    private static final String DISABLED_CLIENT_ID = "confidential-disabled-x509";
    private static final String EXACT_SUBJECT_DN_CLIENT_ID = "confidential-subjectdn-x509";
+   private static final String OBB_SUBJECT_DN_CLIENT_ID = "obb-subjectdn-x509";
    private static final String USER = "keycloak-user@localhost";
    private static final String PASSWORD = "password";
    private static final String REALM = "test";
@@ -65,6 +68,12 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
       exactSubjectDNConfiguration.setRedirectUris(Arrays.asList("https://localhost:8543/auth/realms/master/app/auth"));
       exactSubjectDNConfiguration.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
       exactSubjectDNConfiguration.setAttributes(Collections.singletonMap(X509ClientAuthenticator.ATTR_SUBJECT_DN, EXACT_CERTIFICATE_SUBJECT_DN));
+
+      ClientRepresentation obbSubjectDNConfiguration = KeycloakModelUtils.createClient(testRealm, OBB_SUBJECT_DN_CLIENT_ID);
+      obbSubjectDNConfiguration.setServiceAccountsEnabled(Boolean.TRUE);
+      obbSubjectDNConfiguration.setRedirectUris(Arrays.asList("https://localhost:8543/auth/realms/master/app/auth"));
+      obbSubjectDNConfiguration.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
+      // ATTR_SUBJECT_DN will be set in the individual tests based on the requested Subject DN Format
    }
 
    @BeforeClass
@@ -147,6 +156,53 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
 
       //then
       assertTokenNotObtained(token);
+   }
+
+   @Test
+   public void testClientInvocationWithOBBClient_rfc2553_resolvedAttributes() throws Exception {
+      // Attributes like "JURISDICTIONCOUNTRYNAME", "BUSINESSCATEGORY" and SERIALNUMBER" are resolved (expanded) in the expected Subject DN
+      testClientInvocationWithOBBClient("CN=Foo,JURISDICTIONCOUNTRYNAME=BR,BUSINESSCATEGORY=Business Entity,SERIALNUMBER=2009,OU=My Org Unit,O=Red Hat,L=Boston,ST=MA,C=US",
+              true);
+   }
+
+   @Test
+   public void testClientInvocationWithOBBClient_rfc2553_unresolvedAttributes() throws Exception {
+      // Format like this is used by OpenBanking Brasil testsuite. Attributes like "JURISDICTIONCOUNTRYNAME", "BUSINESSCATEGORY" and SERIALNUMBER" are NOT resolved (expanded) in the expected Subject DN
+      testClientInvocationWithOBBClient("CN=Foo,1.3.6.1.4.1.311.60.2.1.3=#13024252,2.5.4.15=#130f427573696e65737320456e74697479,2.5.4.5=#130432303039,OU=My Org Unit,O=Red Hat,L=Boston,ST=MA,C=US",
+              true);
+   }
+
+   @Test
+   public void testClientInvocationWithOBBClient_rfc2553_invalidSubjectDN() throws Exception {
+      // Test that authentication fails when certificate does not contain expected DN
+      testClientInvocationWithOBBClient("CN=Foo,1.3.6.1.4.1.311.60.2.1.3=#13024252,2.5.4.15=#130f427573696e65737320456e74697479,2.5.4.5=#130e3037323337333733303030313230,OU=My Org Unit,O=Red Hat,L=Boston,ST=MA,C=US",
+              false);
+   }
+
+   @Test
+   public void testClientInvocationWithOBBClient_rfc1779() throws Exception {
+      testClientInvocationWithOBBClient("CN=Foo, JURISDICTIONCOUNTRYNAME=BR, BUSINESSCATEGORY=Business Entity, SERIALNUMBER=2009, OU=My Org Unit, O=Red Hat, L=Boston, ST=MA, C=US",
+              true);
+   }
+
+   private void testClientInvocationWithOBBClient(String expectedSubjectDN, boolean expectSuccess) throws Exception {
+      //given
+      Supplier<CloseableHttpClient> clientWithProperCertificate = MutualTLSUtils::newCloseableHttpClientWithOBBKeyStoreAndTrustStore;
+
+      // Canonical
+      ClientResource client = ApiUtil.findClientByClientId(testRealm(), OBB_SUBJECT_DN_CLIENT_ID);
+      ClientRepresentation clientRep = client.toRepresentation();
+      OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
+      config.setAllowRegexPatternComparison(false);
+      config.setTlsClientAuthSubjectDn(expectedSubjectDN);
+      client.update(clientRep);
+
+      OAuthClient.AccessTokenResponse token = loginAndGetAccessTokenResponse(OBB_SUBJECT_DN_CLIENT_ID, clientWithProperCertificate);
+      if (expectSuccess) {
+         assertTokenObtained(token);
+      } else {
+         assertTokenNotObtained(token);
+      }
    }
 
    private OAuthClient.AccessTokenResponse loginAndGetAccessTokenResponse(String clientId, Supplier<CloseableHttpClient> client) throws IOException{

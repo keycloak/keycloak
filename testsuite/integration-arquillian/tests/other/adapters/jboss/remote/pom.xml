@@ -155,8 +155,8 @@
                                                 <include>client.crt</include>
                                                 <include>client.key</include>
                                                 <include>*.crl</include>
-                                                <!-- KEYCLOAK-6771 Certificate Bound Token -->
                                                 <include>other_client.jks</include>
+                                                <include>test-user-obb.jks</include>
                                             </includes>
                                         </resource>
                                         <resource>
