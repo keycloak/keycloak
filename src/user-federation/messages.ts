@@ -127,6 +127,7 @@ export default {
     validateBindCredentials: "You must enter the password of the LDAP admin",
     validateUuidLDAPAttribute: "You must enter a UUID LDAP attribute",
     validateUserObjectClasses: "You must enter one or more user object classes",
+    validateEditMode: "You must select an edit mode",
     validateUsersDn: "You must enter users DN",
     validateUsernameLDAPAttribute: "You must enter a username LDAP attribute",
     validateRdnLdapAttribute: "You must enter an RDN LDAP attribute",

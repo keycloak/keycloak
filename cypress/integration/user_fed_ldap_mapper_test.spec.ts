@@ -29,6 +29,7 @@ const firstBindType = "simple";
 const firstBindDn = "user-1";
 const firstBindCreds = "password1";
 
+const firstEditMode = "READ_ONLY";
 const firstUsersDn = "user-dn-1";
 const firstUserLdapAtt = "uid";
 const firstRdnLdapAtt = "uid";
@@ -102,6 +103,7 @@ describe("User Fed LDAP mapper tests", () => {
       firstBindCreds
     );
     providersPage.fillLdapRequiredSearchingData(
+      firstEditMode,
       firstUsersDn,
       firstUserLdapAtt,
       firstRdnLdapAtt,

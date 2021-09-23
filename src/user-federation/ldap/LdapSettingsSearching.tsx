@@ -52,11 +52,15 @@ export const LdapSettingsSearching = ({
             />
           }
           fieldId="kc-edit-mode"
+          isRequired
         >
           <Controller
             name="config.editMode[0]"
             defaultValue=""
             control={form.control}
+            rules={{
+              required: { value: true, message: t("validateEditMode") },
+            }}
             render={({ onChange, value }) => (
               <Select
                 toggleId="kc-edit-mode"
@@ -66,19 +70,24 @@ export const LdapSettingsSearching = ({
                 }
                 isOpen={isEditModeDropdownOpen}
                 onSelect={(_, value) => {
-                  onChange(value as string);
+                  onChange(value.toString());
                   setIsEditModeDropdownOpen(false);
                 }}
                 selections={value}
                 variant={SelectVariant.single}
               >
-                <SelectOption key={0} value="" isPlaceholder />
-                <SelectOption key={1} value="READ_ONLY" />
-                <SelectOption key={2} value="WRITABLE" />
-                <SelectOption key={3} value="UNSYNCED" />
+                <SelectOption value="" isPlaceholder />
+                <SelectOption value="READ_ONLY" />
+                <SelectOption value="WRITABLE" />
+                <SelectOption value="UNSYNCED" />
               </Select>
             )}
-          ></Controller>
+          />
+          {form.errors.config?.editMode?.[0] && (
+            <div className="error">
+              {form.errors.config.editMode[0].message}
+            </div>
+          )}
         </FormGroup>
         <FormGroup
           label={t("usersDN")}

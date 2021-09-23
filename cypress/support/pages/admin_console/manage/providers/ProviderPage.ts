@@ -18,6 +18,8 @@ export default class ProviderPage {
   private ldapBindCredsInput = "data-testid=ldap-bind-credentials";
 
   // LdapSettingsSearching required input values
+  private ldapEditModeInput = "#kc-edit-mode";
+  private ldapEditModeList = "#kc-edit-mode + ul";
   private ldapUsersDnInput = "data-testid=ldap-users-dn";
   private ldapUserLdapAttInput = "data-testid=ldap-username-attribute";
   private ldapRdnLdapAttInput = "data-testid=ldap-rdn-attribute";
@@ -167,12 +169,18 @@ export default class ProviderPage {
   }
 
   fillLdapRequiredSearchingData(
+    editMode: string,
     usersDn: string,
     userLdapAtt: string,
     rdnLdapAtt: string,
     uuidLdapAtt: string,
     userObjClasses: string
   ) {
+    if (editMode) {
+      cy.get(this.ldapEditModeInput).click();
+      cy.get(this.ldapEditModeList).contains(editMode).click();
+    }
+
     if (usersDn) {
       cy.get(`[${this.ldapUsersDnInput}]`).type(usersDn);
     }

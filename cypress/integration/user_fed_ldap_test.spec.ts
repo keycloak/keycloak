@@ -22,6 +22,7 @@ const firstBindType = "simple";
 const firstBindDn = "user-1";
 const firstBindCreds = "password1";
 
+const firstEditMode = "READ_ONLY";
 const firstUsersDn = "user-dn-1";
 const firstUserLdapAtt = "uid";
 const firstRdnLdapAtt = "uid";
@@ -33,6 +34,7 @@ const secondLdapVendor = "Other";
 
 const secondBindType = "none";
 
+const secondEditMode = "WRITABLE";
 const secondUsersDn = "user-dn-2";
 const secondUserLdapAtt = "cn";
 const secondRdnLdapAtt = "cn";
@@ -80,6 +82,7 @@ describe("User Fed LDAP tests", () => {
       firstBindCreds
     );
     providersPage.fillLdapRequiredSearchingData(
+      firstEditMode,
       firstUsersDn,
       firstUserLdapAtt,
       firstRdnLdapAtt,
@@ -162,6 +165,7 @@ describe("User Fed LDAP tests", () => {
     providersPage.fillLdapRequiredGeneralData(secondLdapName, secondLdapVendor);
     providersPage.fillLdapRequiredConnectionData(connectionUrl, secondBindType);
     providersPage.fillLdapRequiredSearchingData(
+      secondEditMode,
       secondUsersDn,
       secondUserLdapAtt,
       secondRdnLdapAtt,
