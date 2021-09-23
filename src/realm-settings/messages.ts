@@ -191,6 +191,21 @@ export default {
     idpAccountEmailVerification: "IdP account email verification",
     executeActions: "Execute actions",
     clientPolicies: "Client policies",
+    noClientPolicies: "No client policies",
+    noClientPoliciesInstructions:
+      "There are no client policies. Select 'Create client policy' to create a new client policy.",
+    createClientPolicy: "Create client policy",
+    clientPolicySearch: "Search client policy",
+    policiesConfigType: "Configure via:",
+    policiesConfigTypes: {
+      formView: "Form view",
+      jsonEditor: "JSON editor",
+    },
+    deleteClientPolicyConfirmTitle: "Delete policy?",
+    deleteClientPolicyConfirm:
+      "This action will permanently delete the policy {{policyName}}. This cannot be undone.",
+    deleteClientPolicySuccess: "Client policy deleted",
+    deleteClientPolicyError: "Could not delete policy: {{error}}",
     profiles: "Profiles",
     policies: "Policies",
     clientPoliciesProfilesHelpText:
@@ -230,6 +245,7 @@ export default {
     tokens: "Tokens",
     key: "Key",
     value: "Value",
+    status: "Status",
     convertedToYearsValue: "{{convertedToYears}}",
     convertedToDaysValue: "{{convertedToDays}}",
     convertedToHoursValue: "{{convertedToHours}}",

@@ -129,8 +129,6 @@ describe("Realm settings", () => {
     sidebarPage.goToRealmSettings();
     cy.findByTestId("rs-email-tab").click();
 
-    cy.wait(1000);
-
     realmSettingsPage.addSenderEmail("example@example.com");
 
     realmSettingsPage.toggleCheck(realmSettingsPage.enableSslCheck);
