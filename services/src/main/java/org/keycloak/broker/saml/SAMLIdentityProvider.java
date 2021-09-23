@@ -359,8 +359,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             boolean wantAssertionsEncrypted = getConfig().isWantAssertionsEncrypted();
             String entityId = getEntityId(uriInfo, realm);
             String nameIDPolicyFormat = getConfig().getNameIDPolicyFormat();
-            int attributeConsumingServiceIndex = getConfig().getAttributeConsumingServiceIndex() != null ? getConfig().getAttributeConsumingServiceIndex(): 1;
-            String attributeConsumingServiceName = getConfig().getAttributeConsumingServiceName();
+
 
             List<Element> signingKeys = new LinkedList<>();
             List<Element> encryptionKeys = new LinkedList<>();
@@ -394,41 +393,37 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 wantAuthnRequestsSigned, wantAssertionsSigned, wantAssertionsEncrypted,
                 entityId, nameIDPolicyFormat, signingKeys, encryptionKeys);
 
-            // Create the AttributeConsumingService
-            AttributeConsumingServiceType attributeConsumingService = new AttributeConsumingServiceType(attributeConsumingServiceIndex);
-            attributeConsumingService.setIsDefault(true);
+            // Create the AttributeConsumingService if at least one attribute importer mapper exists
+            List<IdentityProviderMapperModel> mappers = realm.getIdentityProviderMappersByAliasStream(getConfig().getAlias()).filter(mapper -> "saml-user-attribute-idp-mapper".equals(mapper.getIdentityProviderMapper())).collect(Collectors.toList());
 
-            if (attributeConsumingServiceName != null && attributeConsumingServiceName.length() > 0)
-            {
-                String currentLocale = realm.getDefaultLocale() == null ? "en": realm.getDefaultLocale();
+            if (!mappers.isEmpty()) {
+                int attributeConsumingServiceIndex = getConfig().getAttributeConsumingServiceIndex() != null ? getConfig().getAttributeConsumingServiceIndex() : 1;
+                String attributeConsumingServiceName = getConfig().getAttributeConsumingServiceName();
+                //default value for attributeConsumingServiceName
+                if (attributeConsumingServiceName == null)
+                    attributeConsumingServiceName = realm.getDisplayName() != null ? realm.getDisplayName() : realm.getName() ;
+                AttributeConsumingServiceType attributeConsumingService = new AttributeConsumingServiceType(attributeConsumingServiceIndex);
+                attributeConsumingService.setIsDefault(true);
+
+                String currentLocale = realm.getDefaultLocale() == null ? "en" : realm.getDefaultLocale();
                 LocalizedNameType attributeConsumingServiceNameElement = new LocalizedNameType(currentLocale);
                 attributeConsumingServiceNameElement.setValue(attributeConsumingServiceName);
                 attributeConsumingService.addServiceName(attributeConsumingServiceNameElement);
-            }
 
-            // Look for the SP descriptor and add the attribute consuming service
-            for (EntityDescriptorType.EDTChoiceType choiceType: entityDescriptor.getChoiceType()) {
-                List<EntityDescriptorType.EDTDescriptorChoiceType> descriptors = choiceType.getDescriptors();
-
-                if (descriptors != null) {
-                    for (EntityDescriptorType.EDTDescriptorChoiceType descriptor: descriptors) {
-                        if (descriptor.getSpDescriptor() != null) {
-                            descriptor.getSpDescriptor().addAttributeConsumerService(attributeConsumingService);
-                        }
+                // Look for the SP descriptor and add the attribute consuming service
+                for (EntityDescriptorType.EDTChoiceType choiceType : entityDescriptor.getChoiceType()) {
+                    List<EntityDescriptorType.EDTDescriptorChoiceType> descriptors = choiceType.getDescriptors();
+                    for (EntityDescriptorType.EDTDescriptorChoiceType descriptor : descriptors) {
+                        descriptor.getSpDescriptor().addAttributeConsumerService(attributeConsumingService);
                     }
                 }
-            }
-            
-            // Add the attribute mappers
-            realm.getIdentityProviderMappersByAliasStream(getConfig().getAlias())
-                .forEach(mapper -> {
-                    IdentityProviderMapper target = (IdentityProviderMapper) session.getKeycloakSessionFactory().getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
-                    if (target instanceof SamlMetadataDescriptorUpdater)
-                    {
-                        SamlMetadataDescriptorUpdater metadataAttrProvider = (SamlMetadataDescriptorUpdater)target;
-                        metadataAttrProvider.updateMetadata(mapper, entityDescriptor);
-                    }
+
+                // Add the attribute mappers
+                mappers.forEach(mapper -> {
+                    SamlMetadataDescriptorUpdater metadataAttrProvider = (SamlMetadataDescriptorUpdater)  session.getKeycloakSessionFactory().getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
+                    metadataAttrProvider.updateMetadata(mapper, entityDescriptor);
                 });
+            }
     
             // Write the metadata and export it to a string
             metadataWriter.writeEntityDescriptor(entityDescriptor);
