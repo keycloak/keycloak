@@ -6,8 +6,8 @@ export default {
     providerDetails: "Provider details",
     addProvider: "Add provider",
     addMapper: "Add mapper",
-    addIdPMapper: "Add Identity Provider Mapper",
-    editIdPMapper: "Edit Identity Provider Mapper",
+    addIdPMapper: "Add {{providerId}} Identity Provider Mapper",
+    editIdPMapper: "Edit {{providerId}} Identity Provider Mapper",
     mappersList: "Mappers list",
     noMappers: "No Mappers",
     noMappersInstructions:
@@ -148,6 +148,9 @@ export default {
     },
     mapperTypes: {
       advancedAttributeToRole: "Advanced Attribute To Role",
+      advancedClaimToRole: "Advanced Claim To Role",
+      externalRoleToRole: "External Role To Role",
+      claimToRole: "Claim To Role",
       usernameTemplateImporter: "Username Template Importer",
       hardcodedUserSessionAttribute: "Hardcoded User Session Attribute",
       attributeImporter: "Attribute Importer",
