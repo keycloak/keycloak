@@ -193,3 +193,7 @@ article.pf-c-card.pf-m-flat.kc-login-settings-template
 .kc-editor-radio-btn > input {
   transform: scale(1.6);
 }
+
+.kc-addExecutor {
+  float: right;
+}

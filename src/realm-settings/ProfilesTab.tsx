@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { omit } from "lodash";
 import {
   AlertVariant,
   Button,
@@ -18,13 +19,10 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { useAlerts } from "../components/alert/Alerts";
 import { Link } from "react-router-dom";
 import "./RealmSettingsSection.css";
-import type ClientPolicyExecutorRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyExecutorRepresentation";
 import { toNewClientProfile } from "./routes/NewClientProfile";
+import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
 
-type ClientProfile = {
-  description?: string;
-  executors?: ClientPolicyExecutorRepresentation[];
-  name?: string;
+type ClientProfile = ClientProfileRepresentation & {
   global: boolean;
 };
 
@@ -33,14 +31,20 @@ export const ProfilesTab = () => {
   const adminClient = useAdminClient();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
-  const [profiles, setProfiles] = useState<ClientProfile[]>();
+  const [tableProfiles, setTableProfiles] = useState<ClientProfile[]>();
+  const [globalProfiles, setGlobalProfiles] =
+    useState<ClientProfileRepresentation[]>();
+  const [selectedProfile, setSelectedProfile] = useState<ClientProfile>();
   const [show, setShow] = useState(false);
+  const [key, setKey] = useState(0);
 
   const loader = async () => {
     const allProfiles = await adminClient.clientPolicies.listProfiles({
       realm,
       includeGlobalProfiles: true,
     });
+
+    setGlobalProfiles(allProfiles.globalProfiles);
 
     const globalProfiles = allProfiles.globalProfiles?.map(
       (globalProfiles) => ({
@@ -55,12 +59,15 @@ export const ProfilesTab = () => {
     }));
 
     const allClientProfiles = globalProfiles?.concat(profiles ?? []);
-    setProfiles(allClientProfiles);
+    setTableProfiles(allClientProfiles);
 
     return allClientProfiles ?? [];
   };
 
-  const code = useMemo(() => JSON.stringify(profiles, null, 2), [profiles]);
+  const code = useMemo(
+    () => JSON.stringify(tableProfiles, null, 2),
+    [tableProfiles]
+  );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("deleteClientProfileConfirmTitle"),
@@ -68,9 +75,19 @@ export const ProfilesTab = () => {
     continueButtonLabel: t("delete"),
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
+      const updatedProfiles = tableProfiles
+        ?.filter(
+          (profile) => profile.name !== selectedProfile?.name && !profile.global
+        )
+        .map<ClientProfileRepresentation>((profile) => omit(profile, "global"));
+
       try {
-        // delete client profile here
+        await adminClient.clientPolicies.createProfiles({
+          profiles: updatedProfiles,
+          globalProfiles,
+        });
         addAlert(t("deleteClientSuccess"), AlertVariant.success);
+        setKey(key + 1);
       } catch (error) {
         addError(t("deleteClientError"), error);
       }
@@ -102,6 +119,7 @@ export const ProfilesTab = () => {
               label={t("profilesConfigTypes.formView")}
               id="formView-radioBtn"
               className="kc-form-radio-btn pf-u-mr-sm pf-u-ml-sm"
+              data-testid="formView-radioBtn"
             />
           </FlexItem>
           <FlexItem>
@@ -112,6 +130,7 @@ export const ProfilesTab = () => {
               label={t("profilesConfigTypes.jsonEditor")}
               id="jsonEditor-radioBtn"
               className="kc-editor-radio-btn"
+              data-testid="jsonEditor-radioBtn"
             />
           </FlexItem>
         </Flex>
@@ -119,6 +138,7 @@ export const ProfilesTab = () => {
       <Divider />
       {!show ? (
         <KeycloakDataTable
+          key={key}
           ariaLabelKey="userEventsRegistered"
           searchPlaceholderKey="realm-settings:clientProfileSearch"
           isPaginated
@@ -136,11 +156,12 @@ export const ProfilesTab = () => {
               </Button>
             </ToolbarItem>
           }
-          isRowDisabled={(value) => value.global === true}
+          isRowDisabled={(value) => value.global}
           actions={[
             {
               title: t("common:delete"),
-              onRowClick: () => {
+              onRowClick: (profile) => {
+                setSelectedProfile(profile);
                 toggleDeleteDialog();
               },
             },
@@ -181,7 +202,7 @@ export const ProfilesTab = () => {
             >
               {t("save")}
             </Button>
-            <Button variant={ButtonVariant.secondary}> {t("reload")}</Button>
+            <Button variant={ButtonVariant.link}> {t("reload")}</Button>
           </div>
         </>
       )}
