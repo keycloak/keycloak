@@ -7,21 +7,59 @@ on:
 jobs:
   cypress-run:
     runs-on: ubuntu-latest
+    env:
+      ADMIN_UI_PATH: admin-ui
+      KEYCLOAK_SERVER_PATH: keycloak-server
     steps:
-      - uses: actions/checkout@v2
+      - name: Check out Admin UI
+        uses: actions/checkout@v2
+        with:
+          path: ${{ env.ADMIN_UI_PATH }}
 
-      - name: Build Keycloak server
-        run: docker build --tag keycloak .
+      - name: Check out Keycloak Server
+        uses: actions/checkout@v2
+        with:
+          repository: keycloak/keycloak
+          path: ${{ env.KEYCLOAK_SERVER_PATH }}
 
-      - name: Start Keycloak server
+      - name: Set up Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: temurin
+          java-version: 11
+          check-latest: true
+          cache: maven
+
+      # See https://issues.redhat.com/browse/KEYCLOAK-17812
+      - name: Update Maven settings
+        working-directory: ${{ env.KEYCLOAK_SERVER_PATH }}
+        run: cp .github/settings.xml ~/.m2
+
+      - name: Build Admin UI
+        working-directory: ${{ env.ADMIN_UI_PATH }}
+        run: mvn clean install --batch-mode --file keycloak-theme/pom.xml
+
+      - name: Build Keycloak Server
+        working-directory: ${{ env.KEYCLOAK_SERVER_PATH }}
+        run: mvn clean install --no-snapshot-updates --batch-mode --errors -DskipTests -Pdistribution
+
+      - name: Configure distribution path
+        working-directory: ${{ env.KEYCLOAK_SERVER_PATH }}
         run: |
-          docker run --detach --publish 8080:8080 --env KEYCLOAK_USER=admin --env KEYCLOAK_PASSWORD=admin --name keycloak keycloak
-          sleep 10
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "KEYCLOAK_SERVER_BIN=keycloak-server/distribution/server-dist/target/keycloak-$VERSION/bin" >> $GITHUB_ENV
 
-      - name: Configure Keycloak server
+      - name: Start Keycloak Server
+        working-directory: ${{ env.KEYCLOAK_SERVER_BIN }}
         run: |
-          docker exec keycloak /opt/jboss/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user admin --password admin
-          docker exec keycloak /opt/jboss/keycloak/bin/kcadm.sh update realms/master -s "adminTheme=keycloak.v2"
+          ./add-user-keycloak.sh --user admin --password admin
+          ./standalone.sh -Dkeycloak.profile.feature.admin2=enabled &
+
+      - name: Configure Keycloak Server
+        working-directory: ${{ env.KEYCLOAK_SERVER_BIN }}
+        run: |
+          ./kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user admin --password admin
+          ./kcadm.sh update realms/master -s "adminTheme=keycloak.v2"
 
       - name: Setup Node
         uses: actions/setup-node@v2
@@ -29,11 +67,14 @@ jobs:
           node-version: 16
           check-latest: true
           cache: npm
+          cache-dependency-path: ${{ env.ADMIN_UI_PATH }}/package-lock.json
 
       - name: Install dependencies
+        working-directory: ${{ env.ADMIN_UI_PATH }}
         run: npm ci
 
       - name: Run Cypress
+        working-directory: ${{ env.ADMIN_UI_PATH }}
         run: CYPRESS_BASE_URL=http://localhost:8080/auth/admin/ CYPRESS_KEYCLOAK_SERVER=http://localhost:8080 npm run start:cypress-tests
 
       - name: Add Cypress videos artifacts
@@ -41,11 +82,11 @@ jobs:
         if: failure()
         with:
           name: cypress-videos
-          path: assets/videos
+          path: ${{ env.ADMIN_UI_PATH }}/assets/videos
 
       - name: Add Cypress screenshots artifacts
         uses: actions/upload-artifact@v2
         if: failure()
         with:
           name: cypress-screenshots
-          path: assets/screenshots
+          path: ${{ env.ADMIN_UI_PATH }}/assets/screenshots
