@@ -45,7 +45,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author hmlnarik
  */
 public class Infinispan extends KeycloakModelParameters {
-
+    //Checking CrossDC tests
     private static final AtomicInteger NODE_COUNTER = new AtomicInteger();
 
     static final Set<Class<? extends Spi>> ALLOWED_SPIS = ImmutableSet.<Class<? extends Spi>>builder()
