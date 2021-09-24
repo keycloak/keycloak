@@ -9,15 +9,22 @@ jobs:
   publish:
     if: github.repository_owner == 'keycloak'
     runs-on: ubuntu-latest
-    permissions: 
+    permissions:
       contents: read
-      packages: write 
+      packages: write
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-java@v2
+      - name: Check out Admin UI
+        uses: actions/checkout@v2
+
+      - name: Set up Java
+        uses: actions/setup-java@v2
         with:
+          distribution: temurin
           java-version: 11
-          distribution: adopt
+          check-latest: true
+          cache: maven
+
+      - name: Build and deploy Admin UI
       - run: mvn --batch-mode deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

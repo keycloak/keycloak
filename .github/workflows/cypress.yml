@@ -61,7 +61,7 @@ jobs:
           ./kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user admin --password admin
           ./kcadm.sh update realms/master -s "adminTheme=keycloak.v2"
 
-      - name: Setup Node
+      - name: Set up Node
         uses: actions/setup-node@v2
         with:
           node-version: 16
