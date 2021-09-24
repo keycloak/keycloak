@@ -30,12 +30,13 @@
             <exclude spec="subsystem.resource-adapters"/>
             <exclude spec="subsystem.singleton"/>
             <exclude spec="subsystem.weld"/>
+            <exclude spec="subsystem.infinispan"/>
         </feature-group>
         <feature-group name="keycloak-server-subsystem"/>
         <feature-group name="datasources">
             <feature-group name="keycloak-datasource"/>
         </feature-group>
-        <feature-group name="infinispan-dist-keycloak"/>
+        <feature-group name="infinispan-dist"/>
     </feature>
 
     <feature spec="domain.system-property">

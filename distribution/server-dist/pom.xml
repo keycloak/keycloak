@@ -333,6 +333,7 @@
                 </dependency>
             </dependencies>
             <build>
+                <finalName>${product.name}-${product.filename.version}</finalName>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
