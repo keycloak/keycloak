@@ -47,6 +47,14 @@ public interface ResourceScopesResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     List<ScopeRepresentation> scopes();
+    
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    List<ScopeRepresentation> find(@QueryParam("scopeId") String id,
+            @QueryParam("name") String name,
+            @QueryParam("first") Integer firstResult,
+            @QueryParam("max") Integer maxResult);
 
     @Path("/search")
     @GET
