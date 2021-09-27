@@ -25,6 +25,6 @@ jobs:
           cache: maven
 
       - name: Build and deploy Admin UI
-      - run: mvn --batch-mode deploy
+        run: mvn --batch-mode deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
