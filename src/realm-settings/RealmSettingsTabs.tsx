@@ -53,6 +53,7 @@ type RealmSettingsHeaderProps = {
   value: boolean;
   save: () => void;
   realmName: string;
+  refresh: () => void;
 };
 
 const RealmSettingsHeader = ({
@@ -60,12 +61,12 @@ const RealmSettingsHeader = ({
   onChange,
   value,
   realmName,
+  refresh,
 }: RealmSettingsHeaderProps) => {
   const { t } = useTranslation("realm-settings");
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const history = useHistory();
-  const { refresh } = useRealm();
   const [partialImportOpen, setPartialImportOpen] = useState(false);
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
@@ -138,6 +139,7 @@ const RealmSettingsHeader = ({
 
 type RealmSettingsTabsProps = {
   realm: RealmRepresentation;
+  refresh: () => void;
   realmComponents: ComponentRepresentation[];
   currentUser: UserRepresentation;
 };
@@ -146,6 +148,7 @@ export const RealmSettingsTabs = ({
   realm,
   realmComponents,
   currentUser,
+  refresh,
 }: RealmSettingsTabsProps) => {
   const { t } = useTranslation("realm-settings");
   const adminClient = useAdminClient();
@@ -162,7 +165,7 @@ export const RealmSettingsTabs = ({
   const [activeTab, setActiveTab] = useState(0);
   const [key, setKey] = useState(0);
 
-  const refresh = () => {
+  const refreshHeader = () => {
     setKey(new Date().getTime());
   };
 
@@ -188,9 +191,14 @@ export const RealmSettingsTabs = ({
           convertFormValuesToObject(realm.attributes, true)
         ).filter(([, v]) => v !== "")
       );
+
       await adminClient.realms.update(
         { realm: realmName },
-        { ...realm, id: realmName, attributes }
+        {
+          ...realm,
+          id: realmName,
+          attributes,
+        }
       );
       setupForm(realm);
       const isRealmRenamed = realmName !== realm.realm;
@@ -215,6 +223,7 @@ export const RealmSettingsTabs = ({
             value={value}
             onChange={onChange}
             realmName={realmName}
+            refresh={refreshHeader}
             save={() => save(getValues())}
           />
         )}
@@ -239,7 +248,11 @@ export const RealmSettingsTabs = ({
               data-testid="rs-login-tab"
               aria-label="login-tab"
             >
-              <RealmSettingsLoginTab save={save} realm={realm} />
+              <RealmSettingsLoginTab
+                refresh={refresh}
+                save={save}
+                realm={realm}
+              />
             </Tab>
             <Tab
               eventKey="email"

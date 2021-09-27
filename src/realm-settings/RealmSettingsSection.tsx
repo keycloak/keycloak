@@ -2,7 +2,7 @@ import { Breadcrumb, BreadcrumbItem, Spinner } from "@patternfly/react-core";
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
@@ -52,6 +52,20 @@ export const RealmSettingsSection = () => {
     useState<ComponentRepresentation[]>();
   const [currentUser, setCurrentUser] = useState<UserRepresentation>();
   const { whoAmI } = useWhoAmI();
+  const [key, setKey] = useState(0);
+
+  const refresh = () => {
+    setKey(key + 1);
+  };
+
+  // delays realm fetch by 100ms in order to fetch newly updated value from server
+  useEffect(() => {
+    const update = async () => {
+      const realm = await adminClient.realms.findOne({ realm: realmName });
+      setRealm(realm);
+    };
+    setTimeout(update, 100);
+  }, [key]);
 
   useFetch(
     async () => {
@@ -82,6 +96,7 @@ export const RealmSettingsSection = () => {
   return (
     <RealmSettingsTabs
       realm={realm}
+      refresh={refresh}
       realmComponents={realmComponents}
       currentUser={currentUser}
     />
