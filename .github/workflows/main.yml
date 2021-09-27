@@ -5,7 +5,7 @@ on:
   pull_request:
     branches: [master]
 jobs:
-  build:
+  setup:
     runs-on: ubuntu-latest
     steps:
       - name: Check out Admin UI
@@ -18,7 +18,38 @@ jobs:
           check-latest: true
           cache: npm
 
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run test
-      - run: npm run build
+      - name: Cache Node modules
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install dependencies
+        run: test -d node_modules || npm ci
+
+      - name: Cache setup
+        uses: actions/cache@v2
+        with:
+          path: ./*
+          key: ${{ github.sha }}
+
+  run:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        command: [lint, test, build]
+    steps:
+      - name: Restore setup
+        uses: actions/cache@v2
+        with:
+          path: ./*
+          key: ${{ github.sha }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16
+
+      - name: Run ${{ matrix.command }} task
+        run: npm run ${{ matrix.command }}
