@@ -510,6 +510,10 @@
             var url = kc.endpoints.logout()
                 + '?redirect_uri=' + encodeURIComponent(adapter.redirectUri(options, false));
 
+            if (options && options.initiatingIdp) {
+                url += '&initiating_idp=' + encodeURIComponent(options.initiatingIdp);
+            }
+
             return url;
         }
 
