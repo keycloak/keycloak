@@ -64,7 +64,7 @@ export const ClientsSection = () => {
         addAlert(t("clientDeletedSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addError("client:clientDeleteError", error);
+        addError("clients:clientDeleteError", error);
       }
     },
   });
