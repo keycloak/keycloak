@@ -153,6 +153,7 @@ export const AddRoleMappingModal = ({
 
     const realmRoles = availableRoles.map((role) => {
       return {
+        id: role.id,
         role,
         client: undefined,
       };
@@ -191,6 +192,7 @@ export const AddRoleMappingModal = ({
 
           return clientAvailableRoles.map((role) => {
             return {
+              id: role.id,
               role,
               client,
             };
@@ -231,7 +233,7 @@ export const AddRoleMappingModal = ({
         <Button
           data-testid="assign"
           key="confirm"
-          isDisabled={selectedRows?.length === 0}
+          isDisabled={selectedRows.length === 0}
           variant="primary"
           onClick={() => {
             onAssign(selectedRows);
