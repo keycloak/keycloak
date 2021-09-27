@@ -20,7 +20,11 @@ export const ScriptComponent = ({
     <FormGroup
       label={t(label!)}
       labelIcon={
-        <HelpItem helpText={t(helpText!)} forLabel={t(label!)} forID={name!} />
+        <HelpItem
+          helpText={<span style={{ whiteSpace: "pre-wrap" }}>{helpText}</span>}
+          forLabel={t(label!)}
+          forID={name!}
+        />
       }
       fieldId={name!}
     >

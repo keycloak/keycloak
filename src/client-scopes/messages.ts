@@ -199,5 +199,13 @@ export default {
         },
       },
     },
+    "name-id-format": "Name ID Format",
+    mapper: {
+      nameid: {
+        format: {
+          tooltip: "Name ID Format using Mapper",
+        },
+      },
+    },
   },
 };
