@@ -64,7 +64,7 @@
     "@types/react-router-dom": "^5.3.0",
     "@types/snowpack-env": "^2.3.4",
     "@typescript-eslint/eslint-plugin": "^4.28.4",
-    "@typescript-eslint/parser": "^4.31.1",
+    "@typescript-eslint/parser": "^4.31.2",
     "cypress": "8.4.1",
     "decompress": "^4.2.1",
     "decompress-targz": "^4.1.1",
