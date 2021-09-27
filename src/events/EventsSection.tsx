@@ -174,12 +174,21 @@ export const EventsSection = () => {
   }
 
   const UserDetailLink = (event: EventRepresentation) => (
-    <Link
-      key={`link-${event.time}-${event.type}`}
-      to={toUser({ realm, id: event.userId!, tab: "settings" })}
-    >
-      {event.userId}
-    </Link>
+    <>
+      {event.userId && (
+        <Link
+          key={`link-${event.time}-${event.type}`}
+          to={toUser({
+            realm,
+            id: event.userId,
+            tab: "settings",
+          })}
+        >
+          {event.userId}
+        </Link>
+      )}
+      {!event.userId && t("noUserDetails")}
+    </>
   );
 
   const userEventSearchFormDisplay = () => {

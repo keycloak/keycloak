@@ -36,7 +36,7 @@ type BaseRow<T> = {
 
 type Row<T> = BaseRow<T> & {
   selected: boolean;
-  isOpen: boolean;
+  isOpen?: boolean;
   disableSelection: boolean;
   disableActions: boolean;
 };
@@ -203,7 +203,18 @@ export function KeycloakDataTable<T>({
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
 
+  const renderCell = (columns: (Field<T> | DetailField<T>)[], value: T) => {
+    return columns.map((col) => {
+      if (col.cellRenderer) {
+        return { title: col.cellRenderer(value) };
+      }
+      return _.get(value, col.name);
+    });
+  };
+
   const convertToColumns = (data: T[]): (Row<T> | SubRow<T>)[] => {
+    const isDetailColumnsEnabled = (value: T) =>
+      detailColumns?.[0]?.enabled?.(value);
     return data
       .map((value, index) => {
         const disabledRow = isRowDisabled ? isRowDisabled(value) : false;
@@ -215,24 +226,14 @@ export function KeycloakDataTable<T>({
             selected: !!selected.find(
               (v) => _.get(v, "id") === _.get(value, "id")
             ),
-            isOpen: false,
-            cells: columns.map((col) => {
-              if (col.cellRenderer) {
-                return { title: col.cellRenderer(value) };
-              }
-              return _.get(value, col.name);
-            }),
+            isOpen: isDetailColumnsEnabled(value) ? false : undefined,
+            cells: renderCell(columns, value),
           },
         ];
-        if (detailColumns?.[0]?.enabled?.(value)) {
+        if (isDetailColumnsEnabled(value)) {
           row.push({
             parent: index * 2,
-            cells: detailColumns!.map((col) => {
-              if (col.cellRenderer) {
-                return { title: col.cellRenderer(value) };
-              }
-              return _.get(value, col.name);
-            }),
+            cells: renderCell(detailColumns!, value),
           } as SubRow<T>);
         }
         return row;
@@ -247,13 +248,11 @@ export function KeycloakDataTable<T>({
     if (node instanceof Array) {
       return node.map(getNodeText).join("");
     }
-    if (typeof node === "object" && node) {
+    if (typeof node === "object") {
       return getNodeText(
         isValidElement((node as TitleCell).title)
-          ? (node as TitleCell).title.props.children
+          ? (node as TitleCell).title.props?.children
           : (node as TitleCell).title
-          ? (node as TitleCell).title
-          : (node as JSX.Element).props?.children
       );
     }
     return "";
@@ -363,21 +362,23 @@ export function KeycloakDataTable<T>({
     onSelect!(selectedRows);
   };
 
-  const data = filteredData || rows;
-
   const onCollapse = (isOpen: boolean, rowIndex: number) => {
     (data![rowIndex] as Row<T>).isOpen = isOpen;
     setRows([...data!]);
   };
 
+  const data = filteredData || rows;
   const noData = !data || data.length === 0;
   const searching = search !== "" || isSearching;
+  // if we use detail columns there are twice the number of rows
+  const maxRows = detailColumns ? max * 2 : max;
+  const rowLength = detailColumns ? (data?.length || 0) / 2 : data?.length || 0;
 
   return (
     <>
       {(loading || !noData || searching) && (
         <PaginatingTableToolbar
-          count={data?.length || 0}
+          count={rowLength}
           first={first}
           max={max}
           onNextClick={setFirst}
@@ -403,7 +404,7 @@ export function KeycloakDataTable<T>({
               onCollapse={detailColumns ? onCollapse : undefined}
               actions={convertAction()}
               actionResolver={actionResolver}
-              rows={data.slice(0, max)}
+              rows={data.slice(0, maxRows)}
               columns={columns}
               isNotCompact={isNotCompact}
               isRadio={isRadio}

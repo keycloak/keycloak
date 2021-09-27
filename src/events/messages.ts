@@ -33,5 +33,6 @@ export default {
     attribute: "Attribute",
     value: "Value",
     representation: "Representation",
+    noUserDetails: "No user details",
   },
 };
