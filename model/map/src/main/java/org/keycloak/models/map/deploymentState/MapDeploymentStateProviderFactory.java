@@ -24,7 +24,7 @@ import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.RandomString;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.migration.MigrationModel;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
@@ -52,7 +52,7 @@ public class MapDeploymentStateProviderFactory implements DeploymentStateProvide
             Logger.getLogger(DeploymentStateProviderFactory.class)
                     .warnf("It is recommended to set '%s' property in the %s provider config of %s SPI", RESOURCES_VERSION_SEED, PROVIDER_ID, DeploymentStateSpi.NAME);
             //generate random string for this installation
-            seed = RandomString.randomCode(10);
+            seed = SecretGenerator.getInstance().randomString(10);
         }
         try {
             Version.RESOURCES_VERSION = Base64Url.encode(MessageDigest.getInstance("MD5")

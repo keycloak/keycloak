@@ -38,6 +38,7 @@ import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureVerifierContext;
@@ -712,7 +713,7 @@ public class AuthenticationManager {
 
         String stateChecker = (String) keycloakSession.getAttribute("state_checker");
         if (stateChecker == null) {
-            stateChecker = Base64Url.encode(KeycloakModelUtils.generateSecret());
+            stateChecker = Base64Url.encode(SecretGenerator.getInstance().randomBytes());
             keycloakSession.setAttribute("state_checker", stateChecker);
         }
         token.getOtherClaims().put("state_checker", stateChecker);
