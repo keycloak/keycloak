@@ -3,11 +3,9 @@ package org.keycloak.testsuite.url;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.SystemEnvProperties;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer;
-import org.wildfly.extras.creaper.core.online.ModelNodeResult;
 import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
 import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 
@@ -17,6 +15,8 @@ import java.util.List;
 public abstract class AbstractHostnameTest extends AbstractKeycloakTest {
 
     private static final Logger LOGGER = Logger.getLogger(AbstractHostnameTest.class);
+
+    private boolean isReaugmentationNeeded;
 
     @ArquillianResource
     protected ContainerController controller;
@@ -42,7 +42,7 @@ public abstract class AbstractHostnameTest extends AbstractKeycloakTest {
         } else if (suiteContext.getAuthServerInfo().isQuarkus()) {
             controller.stop(suiteContext.getAuthServerInfo().getQualifier());
             KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer)suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
-            container.resetConfiguration(false);
+            container.resetConfiguration(isReaugmentationNeeded);
             controller.start(suiteContext.getAuthServerInfo().getQualifier());
         } else {
             throw new RuntimeException("Don't know how to config");
@@ -81,6 +81,7 @@ public abstract class AbstractHostnameTest extends AbstractKeycloakTest {
             }
             container.setRuntimeProperties(runtimeProperties);
             controller.start(suiteContext.getAuthServerInfo().getQualifier());
+            isReaugmentationNeeded = false;
         } else {
             throw new RuntimeException("Don't know how to config");
         }
@@ -105,13 +106,13 @@ public abstract class AbstractHostnameTest extends AbstractKeycloakTest {
         } else if (suiteContext.getAuthServerInfo().isQuarkus()) {
             controller.stop(suiteContext.getAuthServerInfo().getQualifier());
             KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer)suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
-            List<String> runtimeProperties = new ArrayList<>();
-            runtimeProperties.add("--spi-hostname-fixed-hostname="+hostname);
-            runtimeProperties.add("--spi-hostname-fixed-http-port="+ httpPort);
-            runtimeProperties.add("--spi-hostname-fixed-https-port="+ httpsPort);
-            runtimeProperties.add("--spi-hostname-fixed-always-https="+ alwaysHttps);
-            container.setRuntimeProperties(runtimeProperties);
+            container.forceReAugmentation("--spi-hostname-provider=fixed" +
+                    " --spi-hostname-fixed-hostname="+ hostname +
+                    " --spi-hostname-fixed-http-port="+ httpPort +
+                    " --spi-hostname-fixed-https-port="+ httpsPort +
+                    " --spi-hostname-fixed-always-https="+ alwaysHttps);
             controller.start(suiteContext.getAuthServerInfo().getQualifier());
+            isReaugmentationNeeded = true;
         } else {
             throw new RuntimeException("Don't know how to config");
         }
