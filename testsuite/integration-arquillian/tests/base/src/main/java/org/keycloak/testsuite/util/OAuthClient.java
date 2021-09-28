@@ -1324,6 +1324,10 @@ public class OAuthClient {
         driver.navigate().to(getLoginFormUrl());
     }
 
+    public void openRegistrationForm() {
+        driver.navigate().to(getRegistrationFormUrl());
+    }
+
     public void openOAuth2DeviceVerificationForm(String verificationUri) {
         driver.navigate().to(verificationUri);
     }
@@ -1406,6 +1410,30 @@ public class OAuthClient {
         if (codeChallengeMethod != null) {
             b.queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod);
         }
+        if (customParameters != null) {
+            customParameters.keySet().stream().forEach(i -> b.queryParam(i, customParameters.get(i)));
+        }
+
+        return b.build(realm).toString();
+    }
+
+    private String getRegistrationFormUrl() {
+        UriBuilder b = OIDCLoginProtocolService.registrationsUrl(UriBuilder.fromUri(baseUrl));
+        if (responseType != null) {
+            b.queryParam(OAuth2Constants.RESPONSE_TYPE, responseType);
+        }
+        if (clientId != null) {
+            b.queryParam(OAuth2Constants.CLIENT_ID, clientId);
+        }
+        if (redirectUri != null) {
+            b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
+        }
+
+        String scopeParam = openid ? TokenUtil.attachOIDCScope(scope) : scope;
+        if (scopeParam != null && !scopeParam.isEmpty()) {
+            b.queryParam(OAuth2Constants.SCOPE, scopeParam);
+        }
+
         if (customParameters != null) {
             customParameters.keySet().stream().forEach(i -> b.queryParam(i, customParameters.get(i)));
         }
