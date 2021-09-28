@@ -71,6 +71,8 @@ export default {
     capabilityConfig: "Capability config",
     clientsExplain:
       "Clients are applications and services that can request authentication of a user",
+    explainBearerOnly:
+      "This is a special OIDC type. This client only allows bearer token requests and cannot participate in browser logins.",
     createSuccess: "Client created successfully",
     createError: "Could not create client: '{{error}}'",
     clientImportError: "Could not import client: {{error}}",

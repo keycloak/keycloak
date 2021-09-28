@@ -4,15 +4,18 @@ import {
   ButtonVariant,
   Divider,
   DropdownItem,
+  Label,
   PageSection,
   Spinner,
   Tab,
   Tabs,
   TabTitleText,
+  Tooltip,
 } from "@patternfly/react-core";
+import { InfoCircleIcon } from "@patternfly/react-icons";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import _ from "lodash";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useHistory, useParams } from "react-router-dom";
@@ -28,7 +31,10 @@ import {
   MultiLine,
   toValue,
 } from "../components/multi-line-input/MultiLineInput";
-import { ViewHeader } from "../components/view-header/ViewHeader";
+import {
+  ViewHeader,
+  ViewHeaderBadge,
+} from "../components/view-header/ViewHeader";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { RolesList } from "../realm-roles/RolesList";
@@ -74,13 +80,30 @@ const ClientDetailHeader = ({
       save();
     },
   });
+
+  const badges = useMemo<ViewHeaderBadge[]>(() => {
+    if (!client.protocol) {
+      return [];
+    }
+
+    const text = client.bearerOnly ? (
+      <Tooltip content={t("explainBearerOnly")}>
+        <Label icon={<InfoCircleIcon />}>{client.protocol}</Label>
+      </Tooltip>
+    ) : (
+      <Label>{client.protocol}</Label>
+    );
+
+    return [{ text }];
+  }, [client]);
+
   return (
     <>
       <DisableConfirm />
       <ViewHeader
         titleKey={client ? client.clientId! : ""}
         subKey="clients:clientsExplain"
-        badges={[{ text: client.protocol }]}
+        badges={badges}
         divider={false}
         helpTextKey="clients-help:enableDisable"
         dropdownItems={[
