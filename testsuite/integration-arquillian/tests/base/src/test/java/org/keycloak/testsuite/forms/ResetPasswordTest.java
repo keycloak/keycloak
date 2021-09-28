@@ -1209,6 +1209,18 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         assertEquals("Invalid email address.", errorPage.getError());
     }
 
+    @Test
+    public void resetPasswordWithLoginHint() throws IOException {
+        // Redirect directly to KC "forgot password" endpoint instead of "authenticate" endpoint
+        String loginUrl = oauth.getLoginFormUrl();
+        String forgotPasswordUrl = loginUrl.replace("/auth?", "/forgot-credentials?"); // Workaround, but works
+
+        driver.navigate().to(forgotPasswordUrl + "&login_hint=test");
+        resetPasswordPage.assertCurrent();
+
+        assertEquals("test", resetPasswordPage.getUsername());
+    }
+
     private void changePasswordOnUpdatePage(WebDriver driver) {
         assertThat(driver.getPageSource(), Matchers.containsString("You need to change your password."));
 
