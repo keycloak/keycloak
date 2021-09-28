@@ -226,4 +226,36 @@ describe("Clients test", function () {
       );
     });
   });
+
+  describe("Realm client", () => {
+    const clientName = "master-realm";
+
+    beforeEach(() => {
+      keycloakBefore();
+      loginPage.logIn();
+      sidebarPage.goToClients();
+      listingPage.searchItem(clientName).goToItemDetails(clientName);
+    });
+
+    it("displays the correct tabs", () => {
+      cy.findByTestId("client-tabs")
+        .find("#pf-tab-settings-settings")
+        .should("exist");
+
+      cy.findByTestId("client-tabs")
+        .find("#pf-tab-roles-roles")
+        .should("exist");
+
+      cy.findByTestId("client-tabs")
+        .find("#pf-tab-advanced-advanced")
+        .should("exist");
+
+      cy.findByTestId("client-tabs").find("li").should("have.length", 3);
+    });
+
+    it("hides the delete action", () => {
+      cy.findByTestId("action-dropdown").click();
+      cy.findByTestId("delete-client").should("not.exist");
+    });
+  });
 });
