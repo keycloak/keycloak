@@ -98,7 +98,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
 
         try {
             deployArchiveToServer(archive);
-            restartServer();
+            restartServer(true);
         } catch (Exception e) {
             throw new DeploymentException(e.getMessage(),e);
         }
@@ -111,7 +111,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         File wrkDir = configuration.getProvidersPath().resolve("providers").toFile();
         try {
             Files.deleteIfExists(wrkDir.toPath().resolve(archive.getName()));
-            restartServer();
+            restartServer(true);
         } catch (Exception e) {
             throw new DeploymentException(e.getMessage(),e);
         }
@@ -149,7 +149,6 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
             List<String> commands = new ArrayList<>(Arrays.asList("./kc.sh", "config", "-Dquarkus.http.root-path=/auth", "--http-enabled=true"));
 
             addAdditionalCommands(commands);
-
             ProcessBuilder reaugment = new ProcessBuilder(commands);
 
             reaugment.directory(wrkDir).inheritIO();
@@ -311,8 +310,10 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         Files.copy(zipStream, providersDir.toPath().resolve(archive.getName()), StandardCopyOption.REPLACE_EXISTING);
     }
 
-    private void restartServer() throws Exception {
-        forceReaugmentation = true;
+    private void restartServer(boolean isReaugmentation) throws Exception {
+        if(isReaugmentation) {
+            forceReaugmentation = true;
+        }
         stop();
         start();
     }
