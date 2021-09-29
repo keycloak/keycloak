@@ -6,6 +6,11 @@ Before you upgrade, be aware of the order in which you need to perform the upgra
 that can occur within the upgrade process. In general, you must upgrade {project_name} server first, and then upgrade
 the adapters.
 
+[WARNING]
+====
+In a minor upgrade of {project_name}, all user sessions are lost. After the upgrade, all users will have to log in again.
+====
+
 . Prior to applying the upgrade, handle any open transactions and delete the data/tx-object-store/ transaction directory.
 . Back up the old installation (configuration, themes, and so on).
 . Back up the database. For detailed information on how to back up the database, see the documentation for the relational
