@@ -611,6 +611,16 @@ public class UserProfileTest extends AbstractUserProfileTest {
     }
 
     @Test
+    public void testComponentModelId() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testComponentModelId);
+    }
+
+    private static void testComponentModelId(KeycloakSession session) {
+        DeclarativeUserProfileProvider provider = getDynamicUserProfileProvider(session);
+        assertEquals("declarative-user-profile", provider.getComponentModel().getProviderId());
+    }
+
+    @Test
     public void testInvalidConfiguration() {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testInvalidConfiguration);
     }
@@ -638,18 +648,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
         assertNotNull(component);
 
-        // generate big configuration to test slicing in the persistence/component config
-        UPConfig config = new UPConfig();
-        for (int i = 0; i < 80; i++) {
-            UPAttribute attribute = new UPAttribute();
-            attribute.setName(UserModel.USERNAME+i);
-            Map<String, Object> validatorConfig = new HashMap<>();
-            validatorConfig.put("min", 3);
-            attribute.addValidation("length", validatorConfig);
-            config.addAttribute(attribute);
-        }
-        String newConfig = JsonSerialization.writeValueAsString(config);
-
+        String newConfig = generateLargeProfileConfig();
         provider.setConfiguration(newConfig);
 
         component = provider.getComponentModel();

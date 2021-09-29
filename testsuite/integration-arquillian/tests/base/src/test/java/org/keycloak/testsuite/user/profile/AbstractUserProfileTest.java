@@ -21,6 +21,7 @@ package org.keycloak.testsuite.user.profile;
 
 import static org.keycloak.userprofile.DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -39,6 +40,9 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.userprofile.config.UPAttribute;
+import org.keycloak.userprofile.config.UPConfig;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -67,6 +71,26 @@ public abstract class AbstractUserProfileTest extends AbstractTestRealmKeycloakT
         provider.setConfiguration(null);
 
         return (DeclarativeUserProfileProvider) provider;
+    }
+
+    /**
+     * Generate big configuration to test slicing in the persistence/component config
+     * @return a configuration that is expected to be split into 2 slices
+     * @throws IOException
+     */
+    protected static String generateLargeProfileConfig() throws IOException {
+        
+        UPConfig config = new UPConfig();
+        for (int i = 0; i < 80; i++) {
+            UPAttribute attribute = new UPAttribute();
+            attribute.setName(UserModel.USERNAME+i);
+            Map<String, Object> validatorConfig = new HashMap<>();
+            validatorConfig.put("min", 3);
+            attribute.addValidation("length", validatorConfig);
+            config.addAttribute(attribute);
+        }
+        String newConfig = JsonSerialization.writeValueAsString(config);
+        return newConfig;
     }
 
     protected static AuthenticationSessionModel createAuthenticationSession(ClientModel client, Set<String> scopes) {

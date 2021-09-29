@@ -42,7 +42,6 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -420,14 +419,22 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     }
 
     /**
-     * Get componenet to store our "per realm" configuration into.
+     * Get component to store our "per realm" configuration into.
      *
      * @param session to be used, and take realm from
-     * @return componenet
+     * @return component
      */
     private ComponentModel getComponentModelOrCreate(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
-        return realm.getComponentsStream(realm.getId(), UserProfileProvider.class.getName()).findAny().orElseGet(() -> realm.addComponentModel(new DeclarativeUserProfileModel()));
+        return realm.getComponentsStream(realm.getId(), UserProfileProvider.class.getName()).findAny().orElseGet(() -> realm.addComponentModel(createComponentModel()));
+    }
+
+    /**
+     * Create the component model to store configuration
+     * @return component model
+     */
+    protected ComponentModel createComponentModel() {
+        return new DeclarativeUserProfileModel(getId());
     }
 
     /**

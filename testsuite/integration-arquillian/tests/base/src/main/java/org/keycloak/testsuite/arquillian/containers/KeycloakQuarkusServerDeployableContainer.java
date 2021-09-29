@@ -8,6 +8,7 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -19,9 +20,9 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -45,7 +46,10 @@ import org.keycloak.testsuite.arquillian.SuiteContext;
 public class KeycloakQuarkusServerDeployableContainer implements DeployableContainer<KeycloakQuarkusConfiguration> {
 
     private static final Logger log = Logger.getLogger(KeycloakQuarkusServerDeployableContainer.class);
-    
+    public static final String CONF_PERSISTED_PROPERTIES_FILENAME = "conf/persisted.properties";
+    public static final String SPI_PROVIDER_PROPERTY_PREFIX = "kc.spi-";
+    public static final String SPI_PROVIDER_PROPERTY_SUFFIX = "-provider";
+
     private KeycloakQuarkusConfiguration configuration;
     private Process container;
     private static AtomicBoolean restart = new AtomicBoolean();
@@ -125,6 +129,23 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
 
     }
 
+    /**
+     * Get the currently configured default provider for the passed spi.
+     * 
+     * @param spi the spi to get the current default provider for (dash-cased)
+     * @return the current configured provider or null if not configured
+     */
+    public String getCurrentlyConfiguredSpiProviderFor(String spi) {
+        try {
+            File persistedPropertiesFile = configuration.getProvidersPath().resolve(CONF_PERSISTED_PROPERTIES_FILENAME).toFile();
+            Properties props = new Properties();
+            props.load(new FileInputStream(persistedPropertiesFile));
+            return props.get(SPI_PROVIDER_PROPERTY_PREFIX + spi + SPI_PROVIDER_PROPERTY_SUFFIX).toString().trim();
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
     private Process startContainer() throws IOException {
         ProcessBuilder pb = new ProcessBuilder(getProcessCommands());
         File wrkDir = configuration.getProvidersPath().resolve("bin").toFile();
@@ -170,9 +191,18 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         }
 
         commands.add("--cluster=" + System.getProperty("auth.server.quarkus.cluster.config", "local"));
-
         commands.addAll(getAdditionalBuildArgs());
+
+        if (!containsUserProfileSpiConfiguration(commands)) {
+            // ensure that at least one user profile provider is configured
+            commands.add("--spi-user-profile-provider=declarative-user-profile");
+        }
+
         return commands.toArray(new String[0]);
+    }
+
+    private boolean containsUserProfileSpiConfiguration(List<String> commands) {
+        return commands.stream().anyMatch(s -> s.startsWith("--spi-user-profile-provider="));
     }
 
     private void waitForReadiness() throws MalformedURLException, LifecycleException {

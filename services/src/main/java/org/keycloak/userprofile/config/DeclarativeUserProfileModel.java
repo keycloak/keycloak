@@ -28,8 +28,8 @@ import org.keycloak.userprofile.UserProfileProvider;
  */
 public class DeclarativeUserProfileModel extends ComponentModel {
 
-    public DeclarativeUserProfileModel() {
-        setProviderId(DeclarativeUserProfileProvider.ID);
+    public DeclarativeUserProfileModel(String providerId) {
+        setProviderId(providerId);
         setProviderType(UserProfileProvider.class.getName());
     }
 }
