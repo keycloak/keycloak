@@ -17,8 +17,8 @@ echo ** Adding provider **
 echo ** Adding max-detail-length to eventsStore spi **
 /subsystem=keycloak-server/spi=eventsStore/provider=jpa/:write-attribute(name=properties.max-detail-length,value=${keycloak.eventsStore.maxDetailLength:1000})
 
-echo ** Adding spi=userProfile with legacy-user-profile configuration of read-only attributes **
-/subsystem=keycloak-server/spi=userProfile/:add
+echo ** Adding spi=userProfile with default provider and legacy-user-profile configuration of read-only attributes **
+/subsystem=keycloak-server/spi=userProfile/:add(default-provider="declarative-user-profile")
 /subsystem=keycloak-server/spi=userProfile/provider=declarative-user-profile/:add(properties={},enabled=true)
 /subsystem=keycloak-server/spi=userProfile/provider=declarative-user-profile/:map-put(name=properties,key=read-only-attributes,value=[deniedFoo,deniedBar*,deniedSome/thing,deniedsome*thing])
 /subsystem=keycloak-server/spi=userProfile/provider=declarative-user-profile/:map-put(name=properties,key=admin-read-only-attributes,value=[deniedSomeAdmin])

@@ -889,7 +889,7 @@ public class AuthServerTestEnricher {
             boolean wasUpdated = false;
 
             if (event.getTestClass().isAnnotationPresent(SetDefaultProvider.class)) {
-                SpiProvidersSwitchingUtils.removeProvider(suiteContext, event.getTestClass().getAnnotation(SetDefaultProvider.class));
+                SpiProvidersSwitchingUtils.resetProvider(suiteContext, event.getTestClass().getAnnotation(SetDefaultProvider.class));
                 wasUpdated = true;
             }
 
