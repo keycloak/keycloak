@@ -6,6 +6,7 @@ import {
   ButtonVariant,
   Label,
   PageSection,
+  Spinner,
   ToolbarItem,
 } from "@patternfly/react-core";
 import { Divider, Flex, FlexItem, Radio, Title } from "@patternfly/react-core";
@@ -13,14 +14,15 @@ import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { useTranslation } from "react-i18next";
-import { useAdminClient } from "../context/auth/AdminClient";
+import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useAlerts } from "../components/alert/Alerts";
 import { Link } from "react-router-dom";
-import "./RealmSettingsSection.css";
 import { toNewClientProfile } from "./routes/NewClientProfile";
 import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
+
+import "./RealmSettingsSection.css";
 
 type ClientProfile = ClientProfileRepresentation & {
   global: boolean;
@@ -38,31 +40,33 @@ export const ProfilesTab = () => {
   const [show, setShow] = useState(false);
   const [key, setKey] = useState(0);
 
-  const loader = async () => {
-    const allProfiles = await adminClient.clientPolicies.listProfiles({
-      realm,
-      includeGlobalProfiles: true,
-    });
+  useFetch(
+    () =>
+      adminClient.clientPolicies.listProfiles({
+        includeGlobalProfiles: true,
+      }),
+    (allProfiles) => {
+      setGlobalProfiles(allProfiles.globalProfiles);
 
-    setGlobalProfiles(allProfiles.globalProfiles);
+      const globalProfiles = allProfiles.globalProfiles?.map(
+        (globalProfiles) => ({
+          ...globalProfiles,
+          global: true,
+        })
+      );
 
-    const globalProfiles = allProfiles.globalProfiles?.map(
-      (globalProfiles) => ({
-        ...globalProfiles,
-        global: true,
-      })
-    );
+      const profiles = allProfiles.profiles?.map((profiles) => ({
+        ...profiles,
+        global: false,
+      }));
 
-    const profiles = allProfiles.profiles?.map((profiles) => ({
-      ...profiles,
-      global: false,
-    }));
+      const allClientProfiles = globalProfiles?.concat(profiles ?? []);
+      setTableProfiles(allClientProfiles || []);
+    },
+    [key]
+  );
 
-    const allClientProfiles = globalProfiles?.concat(profiles ?? []);
-    setTableProfiles(allClientProfiles);
-
-    return allClientProfiles ?? [];
-  };
+  const loader = async () => tableProfiles ?? [];
 
   const code = useMemo(
     () => JSON.stringify(tableProfiles, null, 2),
@@ -96,10 +100,17 @@ export const ProfilesTab = () => {
 
   const cellFormatter = (row: ClientProfile) => (
     <Link to={""} key={row.name}>
-      {row.name} {""}
-      {row.global && <Label color="blue">{t("global")}</Label>}
+      {row.name} {row.global && <Label color="blue">{t("global")}</Label>}
     </Link>
   );
+
+  if (!tableProfiles) {
+    return (
+      <div className="pf-u-text-align-center">
+        <Spinner />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -114,23 +125,23 @@ export const ProfilesTab = () => {
           <FlexItem>
             <Radio
               isChecked={!show}
-              name="formView"
+              name="profilesView"
               onChange={() => setShow(false)}
               label={t("profilesConfigTypes.formView")}
-              id="formView-radioBtn"
+              id="formView-profilesView"
               className="kc-form-radio-btn pf-u-mr-sm pf-u-ml-sm"
-              data-testid="formView-radioBtn"
+              data-testid="formView-profilesView"
             />
           </FlexItem>
           <FlexItem>
             <Radio
               isChecked={show}
-              name="jsonEditor"
+              name="profilesView"
               onChange={() => setShow(true)}
               label={t("profilesConfigTypes.jsonEditor")}
-              id="jsonEditor-radioBtn"
+              id="jsonEditor-profilesView"
               className="kc-editor-radio-btn"
-              data-testid="jsonEditor-radioBtn"
+              data-testid="jsonEditor-profilesView"
             />
           </FlexItem>
         </Flex>
@@ -138,10 +149,9 @@ export const ProfilesTab = () => {
       <Divider />
       {!show ? (
         <KeycloakDataTable
-          key={key}
-          ariaLabelKey="userEventsRegistered"
+          key={tableProfiles.length}
+          ariaLabelKey="realm-settings:profiles"
           searchPlaceholderKey="realm-settings:clientProfileSearch"
-          isPaginated
           loader={loader}
           toolbarItem={
             <ToolbarItem>

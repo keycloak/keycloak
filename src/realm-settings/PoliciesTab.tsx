@@ -8,15 +8,15 @@ import {
   FlexItem,
   PageSection,
   Radio,
+  Spinner,
   Title,
   ToolbarItem,
 } from "@patternfly/react-core";
 
-import "./RealmSettingsSection.css";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useTranslation } from "react-i18next";
-import { useAdminClient } from "../context/auth/AdminClient";
+import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { upperCaseFormatter } from "../util";
 import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import { Link } from "react-router-dom";
@@ -24,23 +24,25 @@ import type ClientPolicyRepresentation from "@keycloak/keycloak-admin-client/lib
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useAlerts } from "../components/alert/Alerts";
 
+import "./RealmSettingsSection.css";
+
 export const PoliciesTab = () => {
   const { t } = useTranslation("realm-settings");
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [show, setShow] = useState(false);
-  const [policies, setPolicies] = useState<ClientPolicyRepresentation[]>([]);
+  const [policies, setPolicies] = useState<ClientPolicyRepresentation[]>();
   const [selectedPolicy, setSelectedPolicy] =
     useState<ClientPolicyRepresentation>();
 
-  const loader = async () => {
-    const policies = await adminClient.clientPolicies.listPolicies();
+  useFetch(
+    () => adminClient.clientPolicies.listPolicies(),
+    (policies) => setPolicies(policies.policies),
+    []
+  );
 
-    setPolicies(policies.policies!);
-
-    return policies.policies!;
-  };
+  const loader = async () => policies ?? [];
 
   const code = useMemo(() => JSON.stringify(policies, null, 2), [policies]);
 
@@ -61,6 +63,13 @@ export const PoliciesTab = () => {
     },
   });
 
+  if (!policies) {
+    return (
+      <div className="pf-u-text-align-center">
+        <Spinner />
+      </div>
+    );
+  }
   return (
     <>
       <DeleteConfirm />
@@ -74,20 +83,20 @@ export const PoliciesTab = () => {
           <FlexItem>
             <Radio
               isChecked={!show}
-              name="formView"
+              name="policiesView"
               onChange={() => setShow(false)}
               label={t("policiesConfigTypes.formView")}
-              id="formView-radioBtn"
+              id="formView-policiesView"
               className="kc-form-radio-btn pf-u-mr-sm pf-u-ml-sm"
             />
           </FlexItem>
           <FlexItem>
             <Radio
               isChecked={show}
-              name="jsonEditor"
+              name="policiesView"
               onChange={() => setShow(true)}
               label={t("policiesConfigTypes.jsonEditor")}
-              id="jsonEditor-radioBtn"
+              id="jsonEditor-policiesView"
               className="kc-editor-radio-btn"
             />
           </FlexItem>
@@ -96,6 +105,7 @@ export const PoliciesTab = () => {
       <Divider />
       {!show ? (
         <KeycloakDataTable
+          key={policies.length}
           emptyState={
             <ListEmptyState
               message={t("realm-settings:noClientPolicies")}
@@ -103,9 +113,8 @@ export const PoliciesTab = () => {
               primaryActionText={t("realm-settings:createClientPolicy")}
             />
           }
-          ariaLabelKey="identity-providers:mappersList"
+          ariaLabelKey="realm-settings:clientPolicies"
           searchPlaceholderKey="realm-settings:clientPolicySearch"
-          isPaginated
           loader={loader}
           toolbarItem={
             <ToolbarItem>
@@ -130,16 +139,13 @@ export const PoliciesTab = () => {
           columns={[
             {
               name: "name",
-              displayKey: "common:name",
             },
             {
               name: "enabled",
-              displayKey: "common:enabled",
               cellFormatters: [upperCaseFormatter()],
             },
             {
               name: "description",
-              displayKey: "common:description",
             },
           ]}
         />

@@ -144,8 +144,8 @@ export default class RealmSettingsPage {
   executeActionsSelectMenuList = "#kc-execute-actions-select-menu > div > ul";
 
   private createProfileBtn = "createProfile";
-  private formViewSelect = "formView-radioBtn";
-  private jsonEditorSelect = "formView-radioBtn";
+  private formViewSelect = "formView-profilesView";
+  private jsonEditorSelect = "jsonEditor-profilesView";
   private newClientProfileNameInput = "client-profile-name";
   private newClientProfileDescriptionInput = "client-profile-description";
   private saveNewClientProfileBtn = "saveCreateProfile";
