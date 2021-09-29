@@ -439,8 +439,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         // return a stream that 'wraps' the infinispan cache stream so that the cache stream's elements are read one by one
         // and then filtered/mapped locally to avoid serialization issues when trying to manipulate the cache stream directly.
-        Stream<UserSessionEntity> stream = StreamSupport.stream(cache.entrySet().stream().spliterator(), true)
-                .filter(predicate)
+        Stream<UserSessionEntity> stream = StreamSupport.stream(cache.entrySet().stream().filter(predicate).spliterator(), true)
                 .map(Mappers.userSessionEntity())
                 .sorted(Comparators.userSessionLastSessionRefresh());
 
