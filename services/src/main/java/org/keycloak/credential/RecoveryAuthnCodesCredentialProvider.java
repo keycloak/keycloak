@@ -83,45 +83,28 @@ public class RecoveryAuthnCodesCredentialProvider implements CredentialProvider<
 
     @Override
     public boolean isValid(RealmModel realm, UserModel user, CredentialInput credentialInput) {
-        boolean isValidResult = false;
-        String rawInputRecoveryAuthnCode;
-        Optional<CredentialModel> credential;
-        RecoveryAuthnCodesCredentialModel backupCodeCredentialModel;
-        String hashedSavedBackupCode;
+        String rawInputRecoveryAuthnCode = credentialInput.getChallengeResponse();
 
-        // TODO: Copied from elsewhere, is this even possible?
-        if (!(credentialInput instanceof UserCredentialModel)) {
+        Optional<CredentialModel> credential = session.userCredentialManager()
+                .getStoredCredentialsByTypeStream(realm, user, getType())
+                .findFirst();
 
-            logger.debug("Expected instance of UserCredentialModel");
+        if (credential.isPresent()) {
+            RecoveryAuthnCodesCredentialModel credentialModel = RecoveryAuthnCodesCredentialModel
+                    .createFromCredentialModel(credential.get());
 
-        } else {
+            if (!credentialModel.allCodesUsed()) {
+                String nextRecoveryCode = credentialModel.getNextRecoveryAuthnCode().getEncodedHashedValue();
 
-            rawInputRecoveryAuthnCode = credentialInput.getChallengeResponse();
-
-            credential = session.userCredentialManager()
-                                .getStoredCredentialsByTypeStream(realm, user, getType())
-                                .findFirst();
-
-            if (credential.isPresent()) {
-
-                backupCodeCredentialModel = RecoveryAuthnCodesCredentialModel.createFromCredentialModel(credential.get());
-
-                if (!backupCodeCredentialModel.allCodesUsed()) {
-
-                    hashedSavedBackupCode = backupCodeCredentialModel.getNextRecoveryAuthnCode().getEncodedHashedValue();
-
-                    if (RecoveryAuthnCodesUtils.verifyRecoveryCodeInput(rawInputRecoveryAuthnCode, hashedSavedBackupCode)) {
-
-                        backupCodeCredentialModel.removeRecoveryAuthnCode();
-                        session.userCredentialManager().updateCredential(realm, user, backupCodeCredentialModel);
-                        isValidResult = true;
-
-                    }
+                if (RecoveryAuthnCodesUtils.verifyRecoveryCodeInput(rawInputRecoveryAuthnCode, nextRecoveryCode)) {
+                    credentialModel.removeRecoveryAuthnCode();
+                    session.userCredentialManager().updateCredential(realm, user, credentialModel);
+                    return true;
                 }
             }
         }
 
-        return isValidResult;
+        return false;
     }
 
 }
