@@ -133,7 +133,7 @@ describe("Identity provider test", () => {
 
       addMapperPage.goToMappersTab();
 
-      addMapperPage.clickAdd();
+      addMapperPage.emptyStateAddMapper();
 
       addMapperPage.fillSocialMapper("facebook mapper");
 
@@ -149,11 +149,41 @@ describe("Identity provider test", () => {
 
       addMapperPage.goToMappersTab();
 
-      addMapperPage.clickAdd();
+      addMapperPage.emptyStateAddMapper();
 
       addMapperPage.fillSAMLorOIDCMapper("SAML mapper");
 
       masthead.checkNotificationMessage(createMapperSuccessMsg);
+    });
+
+    it("should add SAML mapper of type Username Template Importer", () => {
+      sidebarPage.goToIdentityProviders();
+
+      listingPage.goToItemDetails("saml");
+
+      addMapperPage.goToMappersTab();
+
+      addMapperPage.addMapper();
+
+      addMapperPage.addUsernameTemplateImporterMapper(
+        "SAML Username Template Importer Mapper"
+      );
+
+      masthead.checkNotificationMessage(createMapperSuccessMsg);
+    });
+
+    it("should edit Username Template Importer mapper", () => {
+      sidebarPage.goToIdentityProviders();
+
+      listingPage.goToItemDetails("saml");
+
+      addMapperPage.goToMappersTab();
+
+      listingPage.goToItemDetails("SAML Username Template Importer Mapper");
+
+      addMapperPage.editUsernameTemplateImporterMapper();
+
+      masthead.checkNotificationMessage(saveMapperSuccessMsg);
     });
 
     it("should edit facebook mapper", () => {

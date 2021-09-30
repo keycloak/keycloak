@@ -328,7 +328,7 @@ export const DetailSettings = () => {
                         providerId: provider.providerId!,
                         tab: "mappers",
                       })}
-                      datatest-id="add-mapper-button"
+                      id="add-mapper-button"
                     >
                       {t("addMapper")}
                     </Link>
