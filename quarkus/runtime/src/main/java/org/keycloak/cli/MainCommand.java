@@ -52,7 +52,7 @@ public class MainCommand {
 
     static final String START_DEV_COMMAND = "start-dev";
     static final String START_COMMAND = "start";
-    static final String CONFIG_COMMAND = "config";
+    static final String BUILD_COMMAND = "build";
 
     public static boolean isStartDevCommand(CommandSpec commandSpec) {
         return START_DEV_COMMAND.equals(commandSpec.name());
@@ -78,8 +78,8 @@ public class MainCommand {
         System.setProperty(KeycloakConfigSourceProvider.KEYCLOAK_CONFIG_FILE_PROP, path);
     }
 
-    @Command(name = CONFIG_COMMAND,
-            description = "%nCreates a new server image based on the options passed to this command. Once created, configuration will be read from the server image and the server can be started without passing the same options again. Some configuration options require this command to be executed in order to actually change a configuration. For instance, the database vendor.%n",
+    @Command(name = BUILD_COMMAND,
+            description = "%nCreates a new and optimized server image based on the options passed to this command. Once created, configuration will be read from the server image and the server can be started without passing the same options again. Some configuration options require this command to be executed in order to actually change a configuration. For instance, the database vendor.%n",
             mixinStandardHelpOptions = true, 
             usageHelpAutoWidth = true,
             optionListHeading = "%nOptions%n",

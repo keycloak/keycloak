@@ -17,7 +17,7 @@
 
 package org.keycloak.cli;
 
-import static org.keycloak.cli.MainCommand.CONFIG_COMMAND;
+import static org.keycloak.cli.MainCommand.BUILD_COMMAND;
 import static org.keycloak.cli.MainCommand.START_COMMAND;
 import static org.keycloak.cli.MainCommand.isStartDevCommand;
 import static org.keycloak.cli.Picocli.createCommandLine;
@@ -155,7 +155,7 @@ public class KeycloakMain {
 
             suggestedArgs.removeAll(Arrays.asList("--verbose", "--help"));
 
-            System.out.printf("For an optional runtime and bypass this step, please run the 'config' command prior to starting the server:\n\n\t%s config %s\n",
+            System.out.printf("For an optional runtime and bypass this step, please run the '" + BUILD_COMMAND + "' command prior to starting the server:\n\n\t%s config %s\n",
                     Environment.getCommand(),
                     String.join(" ", suggestedArgs) + "\n");
 
@@ -172,7 +172,7 @@ public class KeycloakMain {
             configArgsList.remove(0);
         }
 
-        configArgsList.add(0, CONFIG_COMMAND);
+        configArgsList.add(0, BUILD_COMMAND);
 
         cmd.execute(configArgsList.toArray(new String[0]));
 
