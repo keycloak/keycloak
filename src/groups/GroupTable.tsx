@@ -45,11 +45,19 @@ export const GroupTable = () => {
   const id = getLastId(location.pathname);
 
   const loader = async () => {
-    const groupsData = id
-      ? (await adminClient.groups.findOne({ id })).subGroups
-      : await adminClient.groups.find({
-          briefRepresentation: false,
-        } as unknown as any);
+    let groupsData = undefined;
+    if (id) {
+      const group = await adminClient.groups.findOne({ id });
+      if (!group) {
+        throw new Error(t("common:notFound"));
+      }
+
+      groupsData = group.subGroups;
+    } else {
+      groupsData = await adminClient.groups.find({
+        briefRepresentation: false,
+      });
+    }
 
     if (!groupsData) {
       history.push(`/${realm}/groups`);

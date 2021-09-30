@@ -56,7 +56,7 @@ export default {
     category: "Category",
     priority: "Priority",
     unexpectedError: "An unexpected error occurred: '{{error}}'",
-    retry: "Retry",
+    retry: "Press here to refresh and continue",
     plus: "Plus",
     minus: "Minus",
 
@@ -145,5 +145,7 @@ export default {
     onDragMove: "Dragging item {{item}}",
     onDragCancel: "Dragging cancelled. List is unchanged.",
     onDragFinish: "Dragging finished {{list}}",
+
+    notFound: "Could not find the resource that you are looking for",
   },
 };

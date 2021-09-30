@@ -222,6 +222,9 @@ export const ClientDetails = () => {
   useFetch(
     () => adminClient.clients.findOne({ id: clientId }),
     (fetchedClient) => {
+      if (!fetchedClient) {
+        throw new Error(t("common:notFound"));
+      }
       setClient(fetchedClient);
       setupForm(fetchedClient);
     },

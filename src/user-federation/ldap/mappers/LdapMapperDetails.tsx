@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   ActionGroup,
   AlertVariant,
@@ -14,7 +14,7 @@ import {
 } from "@patternfly/react-core";
 import { convertFormValuesToObject, convertToFormValues } from "../../../util";
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-import { useAdminClient } from "../../../context/auth/AdminClient";
+import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
 import { ViewHeader } from "../../../components/view-header/ViewHeader";
 import { useHistory, useParams } from "react-router-dom";
 import { Controller, useForm, useWatch } from "react-hook-form";
@@ -49,21 +49,26 @@ export const LdapMapperDetails = () => {
 
   const [isMapperDropdownOpen, setIsMapperDropdownOpen] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      if (mapperId !== "new") {
-        if (mapperId) {
-          const fetchedMapper = await adminClient.components.findOne({
-            id: mapperId,
-          });
-          if (fetchedMapper) {
-            setMapping(fetchedMapper);
-            setupForm(fetchedMapper);
-          }
+  useFetch(
+    async () => {
+      if (mapperId && mapperId !== "new") {
+        const fetchedMapper = await adminClient.components.findOne({
+          id: mapperId,
+        });
+        if (!fetchedMapper) {
+          throw new Error(t("common:notFound"));
         }
+        return fetchedMapper;
       }
-    })();
-  }, []);
+    },
+    (fetchedMapper) => {
+      setMapping(fetchedMapper);
+      if (fetchedMapper) {
+        setupForm(fetchedMapper);
+      }
+    },
+    []
+  );
 
   const setupForm = (mapper: ComponentRepresentation) => {
     Object.entries(mapper).map((entry) => {
@@ -270,7 +275,7 @@ export const LdapMapperDetails = () => {
                 mapping.providerId! === "user-attribute-ldap-mapper") && (
                 <LdapMapperUserAttribute
                   form={form}
-                  mapperType={mapping?.providerId}
+                  mapperType={mapping.providerId}
                 />
               )
             : ""}

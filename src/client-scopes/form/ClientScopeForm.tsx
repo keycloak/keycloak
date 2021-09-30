@@ -51,10 +51,14 @@ export const ClientScopeForm = () => {
   useFetch(
     async () => {
       if (id) {
+        const clientScope = await adminClient.clientScopes.findOne({ id });
+        if (!clientScope) {
+          throw new Error(t("common:notFound"));
+        }
         return {
-          ...(await adminClient.clientScopes.findOne({ id })),
+          ...clientScope,
           type,
-        } as ClientScopeDefaultOptionalType;
+        };
       }
     },
     (clientScope) => {
@@ -113,6 +117,10 @@ export const ClientScopeForm = () => {
         const scope = await adminClient.clientScopes.findOneByName({
           name: clientScopes.name!,
         });
+        if (!scope) {
+          throw new Error(t("common:notFound"));
+        }
+
         changeScope(
           adminClient,
           { ...clientScopes, id: scope.id },

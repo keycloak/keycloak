@@ -96,6 +96,8 @@ export const UserFederationKerberosSettings = () => {
         const fetchedComponent = await adminClient.components.findOne({ id });
         if (fetchedComponent) {
           setupForm(fetchedComponent);
+        } else {
+          throw new Error(t("common:notFound"));
         }
       }
     })();

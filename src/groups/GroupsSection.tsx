@@ -62,7 +62,11 @@ export const GroupsSection = () => {
         const groups: GroupRepresentation[] = [];
         for (const i of ids!) {
           const group = await adminClient.groups.findOne({ id: i });
-          if (group) groups.push(group);
+          if (group) {
+            groups.push(group);
+          } else {
+            throw new Error(t("common:notFound"));
+          }
         }
         return groups;
       }
@@ -97,7 +101,7 @@ export const GroupsSection = () => {
         />
       )}
       <ViewHeader
-        titleKey={!id ? "groups:groups" : currentGroup()?.name!}
+        titleKey={!id ? "groups:groups" : currentGroup().name!}
         subKey={!id ? "groups:groupsDescription" : ""}
         divider={!id}
         dropdownItems={

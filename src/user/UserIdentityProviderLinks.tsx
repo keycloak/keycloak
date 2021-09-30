@@ -64,7 +64,7 @@ export const UserIdentityProviderLinks = () => {
   };
 
   const getAvailableIdPs = async () => {
-    return (await adminClient.realms.findOne({ realm })).identityProviders;
+    return (await adminClient.realms.findOne({ realm }))!.identityProviders;
   };
 
   const linkedIdPsLoader = async () => {

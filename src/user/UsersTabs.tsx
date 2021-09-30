@@ -44,13 +44,18 @@ export const UsersTabs = () => {
     async () => {
       if (id) {
         const user = await adminClient.users.findOne({ id });
-        const isBruteForceProtected = (
-          await adminClient.realms.findOne({ realm })
-        ).bruteForceProtected;
+        if (!user) {
+          throw new Error(t("common:notFound"));
+        }
+
+        const isBruteForceProtected = (await adminClient.realms.findOne({
+          realm,
+        }))!.bruteForceProtected;
+        const bruteForce = await adminClient.attackDetection.findOne({
+          id: user.id!,
+        });
         const isLocked: boolean =
-          isBruteForceProtected &&
-          (await adminClient.attackDetection.findOne({ id: user.id! }))
-            ?.disabled;
+          isBruteForceProtected && bruteForce && bruteForce.disabled;
         return { user, bruteForced: { isBruteForceProtected, isLocked } };
       }
       return { user: undefined };

@@ -87,7 +87,7 @@ export const RealmSettingsEmailTab = ({
       testConnection();
     } else {
       const user = await adminClient.users.findOne({ id: whoAmI.getUserId() });
-      if (!user.email) {
+      if (user && !user.email) {
         handleModalToggle();
       } else {
         await save(getValues());

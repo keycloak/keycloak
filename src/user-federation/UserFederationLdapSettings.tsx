@@ -192,6 +192,8 @@ export const UserFederationLdapSettings = () => {
     (fetchedComponent) => {
       if (fetchedComponent) {
         setupForm(fetchedComponent);
+      } else if (id) {
+        throw new Error(t("common:notFound"));
       }
     },
     []
@@ -228,17 +230,17 @@ export const UserFederationLdapSettings = () => {
   };
 
   const save = async (component: ldapComponentRepresentation) => {
-    if (component?.config?.periodicChangedUsersSync !== null) {
-      if (component?.config?.periodicChangedUsersSync === false) {
+    if (component.config?.periodicChangedUsersSync !== null) {
+      if (component.config?.periodicChangedUsersSync === false) {
         component.config.changedSyncPeriod = ["-1"];
       }
-      delete component?.config?.periodicChangedUsersSync;
+      delete component.config?.periodicChangedUsersSync;
     }
-    if (component?.config?.periodicFullSync !== null) {
-      if (component?.config?.periodicFullSync === false) {
+    if (component.config?.periodicFullSync !== null) {
+      if (component.config?.periodicFullSync === false) {
         component.config.fullSyncPeriod = ["-1"];
       }
-      delete component?.config?.periodicFullSync;
+      delete component.config?.periodicFullSync;
     }
     try {
       if (!id) {

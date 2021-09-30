@@ -71,6 +71,9 @@ export const GroupPickerDialog = ({
         });
       } else {
         group = await adminClient.groups.findOne({ id: groupId });
+        if (!group) {
+          throw new Error(t("common:notFound"));
+        }
         groups = group.subGroups!;
       }
 

@@ -56,6 +56,10 @@ export const MappingDetails = () => {
           id,
           mapperId,
         });
+        if (!data) {
+          throw new Error(t("common:notFound"));
+        }
+
         const mapperTypes = serverInfo.protocolMapperTypes![data!.protocol!];
         const mapping = mapperTypes.find(
           (type) => type.id === data!.protocolMapper
@@ -71,11 +75,17 @@ export const MappingDetails = () => {
         };
       } else {
         const scope = await adminClient.clientScopes.findOne({ id });
+        if (!scope) {
+          throw new Error(t("common:notFound"));
+        }
         const protocolMappers =
           serverInfo.protocolMapperTypes![scope.protocol!];
         const mapping = protocolMappers.find(
           (mapper) => mapper.id === mapperId
-        )!;
+        );
+        if (!mapping) {
+          throw new Error(t("common:notFound"));
+        }
         return {
           mapping,
           config: {

@@ -60,6 +60,10 @@ export const AuthenticationSection = () => {
     const clients = await adminClient.clients.find();
     const idps = await adminClient.identityProviders.find();
     const realmRep = await adminClient.realms.findOne({ realm });
+    if (!realmRep) {
+      throw new Error(t("common:notFound"));
+    }
+
     const defaultFlows = Object.entries(realmRep)
       .filter((entry) => realmFlows.includes(entry[0]))
       .map((entry) => entry[1]);

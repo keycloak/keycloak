@@ -67,9 +67,13 @@ export const FlowDetails = () => {
     async () => {
       const flows = await adminClient.authenticationManagement.getFlows();
       const flow = flows.find((f) => f.id === id);
+      if (!flow) {
+        throw new Error(t("common:notFound"));
+      }
+
       const executions =
         await adminClient.authenticationManagement.getExecutions({
-          flow: flow?.alias!,
+          flow: flow.alias!,
         });
       return { flow, executions };
     },

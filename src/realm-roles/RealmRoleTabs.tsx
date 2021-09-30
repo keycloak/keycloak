@@ -82,6 +82,10 @@ export const RealmRoleTabs = () => {
   useFetch(
     () => adminClient.realms.findOne({ realm: realmName }),
     (realm) => {
+      if (!realm) {
+        throw new Error(t("common:notFound"));
+      }
+
       setRealm(realm);
     },
 
@@ -92,6 +96,10 @@ export const RealmRoleTabs = () => {
     const update = async () => {
       if (id) {
         const fetchedRole = await adminClient.roles.findOneById({ id });
+        if (!fetchedRole) {
+          throw new Error(t("common:notFound"));
+        }
+
         const allAdditionalRoles = await adminClient.roles.getCompositeRoles({
           id,
         });
@@ -172,6 +180,10 @@ export const RealmRoleTabs = () => {
             roleName: role.name!,
           });
         }
+        if (!createdRole) {
+          throw new Error(t("common:notFound"));
+        }
+
         setRole(convert(createdRole));
         history.push(
           url.substr(0, url.lastIndexOf("/") + 1) + createdRole.id + "/details"

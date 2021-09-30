@@ -127,6 +127,10 @@ export const DetailSettings = () => {
   useFetch(
     () => adminClient.identityProviders.findOne({ alias }),
     (fetchedProvider) => {
+      if (!fetchedProvider) {
+        throw new Error(t("common:notFound"));
+      }
+
       reset(fetchedProvider);
       setProvider(fetchedProvider);
     },

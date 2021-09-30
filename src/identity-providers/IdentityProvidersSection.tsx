@@ -60,8 +60,13 @@ export const IdentityProvidersSection = () => {
   const { addAlert, addError } = useAlerts();
 
   useFetch(
-    async () =>
-      (await adminClient.realms.findOne({ realm })).identityProviders!,
+    async () => {
+      const provider = await adminClient.realms.findOne({ realm });
+      if (!provider) {
+        throw new Error(t("common:notFound"));
+      }
+      return provider.identityProviders!;
+    },
     (providers) => {
       setProviders(providers);
     },

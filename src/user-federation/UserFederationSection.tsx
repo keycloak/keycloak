@@ -43,7 +43,7 @@ export const UserFederationSection = () => {
     async () => {
       const realmModel = await adminClient.realms.findOne({ realm });
       const testParams: { [name: string]: string | number } = {
-        parentId: realmModel.id!,
+        parentId: realmModel!.id!,
         type: "org.keycloak.storage.UserStorageProvider",
       };
       return adminClient.components.find(testParams);

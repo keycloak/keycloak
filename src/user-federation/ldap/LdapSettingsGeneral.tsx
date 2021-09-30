@@ -34,7 +34,7 @@ export const LdapSettingsGeneral = ({
 
   useFetch(
     () => adminClient.realms.findOne({ realm }),
-    (result) => form.setValue("parentId", result.id),
+    (result) => form.setValue("parentId", result!.id),
     []
   );
   const [isVendorDropdownOpen, setIsVendorDropdownOpen] = useState(false);

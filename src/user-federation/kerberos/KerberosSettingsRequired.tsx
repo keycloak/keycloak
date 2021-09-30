@@ -44,7 +44,7 @@ export const KerberosSettingsRequired = ({
 
   useFetch(
     () => adminClient.realms.findOne({ realm }),
-    (result) => form.setValue("parentId", result.id),
+    (result) => form.setValue("parentId", result!.id),
     []
   );
 

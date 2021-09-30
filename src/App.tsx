@@ -77,7 +77,10 @@ export const App = ({ adminClient }: AdminClientProps) => {
       >
         <ErrorBoundary
           FallbackComponent={ErrorRenderer}
-          onReset={() => window.location.reload()}
+          onReset={() =>
+            (window.location.href =
+              window.location.origin + window.location.pathname)
+          }
         >
           <Switch>
             {routes.map((route, i) => (
