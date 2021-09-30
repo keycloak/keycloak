@@ -17,7 +17,7 @@
 
 package org.keycloak.cli;
 
-import static org.keycloak.cli.MainCommand.CONFIG_COMMAND;
+import static org.keycloak.cli.MainCommand.BUILD_COMMAND;
 import static org.keycloak.cli.MainCommand.START_COMMAND;
 import static org.keycloak.cli.MainCommand.START_DEV_COMMAND;
 
@@ -49,10 +49,10 @@ final class Picocli {
 
         addOption(spec, START_COMMAND, false);
         addOption(spec, START_DEV_COMMAND, true);
-        addOption(spec, CONFIG_COMMAND, true);
+        addOption(spec, BUILD_COMMAND, true);
 
         for (Profile.Feature feature : Profile.Feature.values()) {
-            addOption(spec.subcommands().get(CONFIG_COMMAND).getCommandSpec(), "--features-" + feature.name().toLowerCase(),
+            addOption(spec.subcommands().get(BUILD_COMMAND).getCommandSpec(), "--features-" + feature.name().toLowerCase(),
                     "Enables the " + feature.name() + " feature. Set enabled to enable the feature or disabled otherwise.");
         }
         

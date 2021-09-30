@@ -146,7 +146,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         }
 
         if (isReaugmentBeforeStart()) {
-            List<String> commands = new ArrayList<>(Arrays.asList("./kc.sh", "config", "-Dquarkus.http.root-path=/auth", "--http-enabled=true"));
+            List<String> commands = new ArrayList<>(Arrays.asList("./kc.sh", "build", "-Dquarkus.http.root-path=/auth", "--http-enabled=true"));
 
             addAdditionalCommands(commands);
             ProcessBuilder reaugment = new ProcessBuilder(commands);
