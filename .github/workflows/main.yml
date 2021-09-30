@@ -19,13 +19,15 @@ jobs:
           cache: npm
 
       - name: Cache Node modules
+        id: cache-node-modules
         uses: actions/cache@v2
         with:
           path: node_modules
           key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
 
       - name: Install dependencies
-        run: test -d node_modules || npm ci
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: npm ci
 
       - name: Cache setup
         uses: actions/cache@v2
