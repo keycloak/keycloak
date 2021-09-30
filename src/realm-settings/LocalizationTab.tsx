@@ -26,6 +26,7 @@ import { useAdminClient } from "../context/auth/AdminClient";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { AddMessageBundleModal } from "./AddMessageBundleModal";
 import { useAlerts } from "../components/alert/Alerts";
+import { HelpItem } from "../components/help-enabler/HelpItem";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { DEFAULT_LOCALE } from "../i18n";
 
@@ -186,6 +187,13 @@ export const LocalizationTab = ({
             <FormGroup
               label={t("internationalization")}
               fieldId="kc-internationalization"
+              labelIcon={
+                <HelpItem
+                  helpText="realm-settings-help:internationalization"
+                  forLabel={t("internationalization")}
+                  forID="kc-internationalization"
+                />
+              }
             >
               <Controller
                 name="internationalizationEnabled"
@@ -210,6 +218,13 @@ export const LocalizationTab = ({
             <FormGroup
               label={t("supportedLocales")}
               fieldId="kc-l-supported-locales"
+              labelIcon={
+                <HelpItem
+                  helpText="realm-settings-help:supportedLocales"
+                  forLabel={t("supportedLocales")}
+                  forID="kc-l-supported-locales"
+                />
+              }
             >
               <Controller
                 name="supportedLocales"
@@ -260,7 +275,17 @@ export const LocalizationTab = ({
                 }}
               />
             </FormGroup>
-            <FormGroup label={t("defaultLocale")} fieldId="kc-l-default-locale">
+            <FormGroup
+              label={t("defaultLocale")}
+              fieldId="kc-l-default-locale"
+              labelIcon={
+                <HelpItem
+                  helpText="realm-settings-help:defaultLocale"
+                  forLabel={t("defaultLocale")}
+                  forID="kc-l-default-locale"
+                />
+              }
+            >
               <Controller
                 name="defaultLocale"
                 control={control}

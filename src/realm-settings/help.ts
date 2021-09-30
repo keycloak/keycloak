@@ -106,5 +106,11 @@ export default {
       "Maximum time before an action permit sent to a user by administrator is expired. This value is recommended to be long to allow administrators to send e-mails for users that are currently offline. The default timeout can be overridden immediately before issuing the token.",
     overrideActionTokens:
       "Override default settings of maximum time before an action permit sent by a user (such as a forgot password e-mail) is expired for specific action. This value is recommended to be short because it's expected that the user would react to self-created action quickly.",
+    internationalization:
+      "If enabled, you can choose which locales you support for this realm and which locale is the default.",
+    supportedLocales:
+      "The locales to support for this realm. The user chooses one of these locales on the login screen.",
+    defaultLocale:
+      "The initial locale to use. It is used on the login screen and other screens in the Admin Console and Account Console.",
   },
 };
