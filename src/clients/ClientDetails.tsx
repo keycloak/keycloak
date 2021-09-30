@@ -89,8 +89,16 @@ const ClientDetailHeader = ({
     }
 
     const text = client.bearerOnly ? (
-      <Tooltip content={t("explainBearerOnly")}>
-        <Label icon={<InfoCircleIcon />}>{client.protocol}</Label>
+      <Tooltip
+        data-testid="bearer-only-explainer-tooltip"
+        content={t("explainBearerOnly")}
+      >
+        <Label
+          data-testid="bearer-only-explainer-label"
+          icon={<InfoCircleIcon />}
+        >
+          {client.protocol}
+        </Label>
       </Tooltip>
     ) : (
       <Label>{client.protocol}</Label>

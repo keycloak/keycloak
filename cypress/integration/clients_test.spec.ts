@@ -258,4 +258,33 @@ describe("Clients test", function () {
       cy.findByTestId("delete-client").should("not.exist");
     });
   });
+
+  describe("Bearer only", () => {
+    const clientId = "bearer-only";
+
+    before(() => {
+      new AdminClient().createClient({
+        clientId,
+        protocol: "openid-connect",
+        publicClient: false,
+        bearerOnly: true,
+      });
+    });
+
+    after(() => {
+      new AdminClient().deleteClient(clientId);
+    });
+
+    beforeEach(() => {
+      keycloakBefore();
+      loginPage.logIn();
+      sidebarPage.goToClients();
+      listingPage.searchItem(clientId).goToItemDetails(clientId);
+    });
+
+    it("shows an explainer text for bearer only clients", () => {
+      cy.findByTestId("bearer-only-explainer-label").trigger("mouseenter");
+      cy.findByTestId("bearer-only-explainer-tooltip").should("exist");
+    });
+  });
 });
