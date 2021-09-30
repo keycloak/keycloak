@@ -148,16 +148,14 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         String idpDisplayName = brokerContext.getIdpConfig().getDisplayName();
         idpAlias = ObjectUtil.capitalize(idpAlias);
 
-        if (idpDisplayName == null) {
-            idpDisplayName = idpAlias;
-        } else {
-            idpDisplayName = ObjectUtil.capitalize(idpDisplayName);
+        if (idpDisplayName != null) {
+            idpAlias = ObjectUtil.capitalize(idpDisplayName);
         }
 
         attributes.put("identityProviderContext", brokerContext);
         attributes.put("identityProviderAlias", idpAlias);
 
-        List<Object> subjectAttrs = Arrays.asList(idpAlias, idpDisplayName);
+        List<Object> subjectAttrs = Arrays.asList(idpAlias);
         send("identityProviderLinkSubject", subjectAttrs, "identity-provider-link.ftl", attributes);
     }
 
