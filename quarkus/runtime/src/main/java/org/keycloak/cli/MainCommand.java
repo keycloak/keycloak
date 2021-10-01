@@ -53,6 +53,7 @@ public class MainCommand {
     static final String START_DEV_COMMAND = "start-dev";
     static final String START_COMMAND = "start";
     static final String BUILD_COMMAND = "build";
+    public static final String AUTO_BUILD_OPTION = "--auto-build";
 
     public static boolean isStartDevCommand(CommandSpec commandSpec) {
         return START_DEV_COMMAND.equals(commandSpec.name());
@@ -117,7 +118,8 @@ public class MainCommand {
             mixinStandardHelpOptions = true,
             optionListHeading = "%nOptions%n",
             parameterListHeading = "Available Commands%n")
-    public void startDev(@Option(names = "--verbose", description = "Print out more details when running this command.", required = false) Boolean verbose) {
+    public void startDev(@Option(names = "--verbose", description = "Print out more details when running this command.", required = false) Boolean verbose,
+            @Option(names = AUTO_BUILD_OPTION, description = "Automatically detects whether the server configuration changed and a new server image must be built prior to starting the server. This option provides an alternative to manually running the '" + BUILD_COMMAND + "' prior to starting the server. Use this configuration carefully in production as it might impact the startup time.", required = false) Boolean autoConfig) {
         Environment.forceDevProfile();
         CommandLine cmd = spec.commandLine();
 
@@ -173,7 +175,8 @@ public class MainCommand {
             @Option(names = "--show-config", arity = "0..1", 
                     description = "Print out the configuration options when starting the server.",
                     fallbackValue = "show-config") String showConfig,
-            @Option(names = "--verbose", description = "Print out more details when running this command.", required = false) Boolean verbose) {
+            @Option(names = "--verbose", description = "Print out more details when running this command.", required = false) Boolean verbose,
+            @Option(names = AUTO_BUILD_OPTION, description = "Automatically detects whether the server configuration changed and a new server image must be built prior to starting the server. This option provides an alternative to manually running the '" + BUILD_COMMAND + "' prior to starting the server. Use this configuration carefully in production as it might impact the startup time.", required = false) Boolean autoConfig) {
         if ("show-config".equals(showConfig)) {
             System.setProperty("kc.show.config.runtime", Boolean.TRUE.toString());
             System.setProperty("kc.show.config", "all");
@@ -213,6 +216,6 @@ public class MainCommand {
         }
 
         setProfile(Environment.IMPORT_EXPORT_MODE);
-        start(null, verbose);
+        start(null, verbose, false);
     }
 }

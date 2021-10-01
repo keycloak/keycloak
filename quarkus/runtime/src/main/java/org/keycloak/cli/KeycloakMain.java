@@ -19,7 +19,6 @@ package org.keycloak.cli;
 
 import static org.keycloak.cli.MainCommand.BUILD_COMMAND;
 import static org.keycloak.cli.MainCommand.START_COMMAND;
-import static org.keycloak.cli.MainCommand.isStartDevCommand;
 import static org.keycloak.cli.Picocli.createCommandLine;
 import static org.keycloak.cli.Picocli.error;
 import static org.keycloak.cli.Picocli.getCliArgs;
@@ -98,23 +97,12 @@ public class KeycloakMain {
     }
     
     private static void parseAndRun(List<String> cliArgs) {
-        CommandLine cmd = createCommandLine();
+        CommandLine cmd = createCommandLine(cliArgs);
 
         try {
             CommandLine.ParseResult result = cmd.parseArgs(cliArgs.toArray(new String[0]));
 
-            if (result.hasSubcommand()) {
-                if (isStartDevCommand(result.subcommand().commandSpec())) {
-                    String profile = Environment.getProfile();
-
-                    if (profile == null) {
-                        // force the server image to be set with the dev profile
-                        Environment.forceDevProfile();
-                    }
-
-                    runReAugmentationIfNeeded(cliArgs, cmd);
-                }
-            } else if ((!result.isUsageHelpRequested() && !result.isVersionHelpRequested())) {
+            if (!result.hasSubcommand() && !result.isUsageHelpRequested() && !result.isVersionHelpRequested()) {
                 // if no command was set, the start command becomes the default
                 cliArgs.add(0, START_COMMAND);
             }
@@ -131,6 +119,8 @@ public class KeycloakMain {
             System.exit(cmd.getCommandSpec().exitCodeOnExecutionException());
         }
 
+        runReAugmentationIfNeeded(cliArgs, cmd);
+
         int exitCode = cmd.execute(cliArgs.toArray(new String[0]));
 
         if (!isDevMode()) {
@@ -139,11 +129,14 @@ public class KeycloakMain {
     }
 
     private static void runReAugmentationIfNeeded(List<String> cliArgs, CommandLine cmd) {
-        if (Boolean.getBoolean("kc.dev.rebuild")) {
+        if (cliArgs.contains("--auto-build")) {
             if (requiresReAugmentation(cliArgs)) {
                 runReAugmentation(cliArgs, cmd);
             }
-            System.exit(cmd.getCommandSpec().exitCodeOnSuccess());
+
+            if (Boolean.getBoolean("kc.config.rebuild-and-exit")) {
+                System.exit(cmd.getCommandSpec().exitCodeOnSuccess());
+            }
         }
     }
 
@@ -166,12 +159,22 @@ public class KeycloakMain {
     }
 
     private static void runReAugmentation(List<String> cliArgs, CommandLine cmd) {
+        if (MainCommand.START_DEV_COMMAND.equals(cliArgs.get(0))) {
+            String profile = Environment.getProfile();
+
+            if (profile == null) {
+                // force the server image to be set with the dev profile
+                Environment.forceDevProfile();
+            }
+        }
+
         List<String> configArgsList = new ArrayList<>(cliArgs);
 
         if (!configArgsList.get(0).startsWith("--")) {
             configArgsList.remove(0);
         }
 
+        configArgsList.remove("--auto-build");
         configArgsList.add(0, BUILD_COMMAND);
 
         cmd.execute(configArgsList.toArray(new String[0]));

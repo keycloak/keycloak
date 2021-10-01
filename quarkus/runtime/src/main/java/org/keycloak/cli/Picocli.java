@@ -43,11 +43,13 @@ final class Picocli {
 
     private static final Logger logger = Logger.getLogger(Picocli.class);
 
-    static CommandLine createCommandLine() {
+    static CommandLine createCommandLine(List<String> cliArgs) {
         CommandLine.Model.CommandSpec spec = CommandLine.Model.CommandSpec.forAnnotatedObject(new MainCommand())
                 .name(Environment.getCommand());
 
-        addOption(spec, START_COMMAND, false);
+        boolean addBuildOptionsToStartCommand = cliArgs.contains(MainCommand.AUTO_BUILD_OPTION);
+
+        addOption(spec, START_COMMAND, addBuildOptionsToStartCommand);
         addOption(spec, START_DEV_COMMAND, true);
         addOption(spec, BUILD_COMMAND, true);
 
