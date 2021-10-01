@@ -8,7 +8,7 @@ import {
   TabTitleText,
   ToolbarItem,
 } from "@patternfly/react-core";
-import { cellWidth, TableText } from "@patternfly/react-table";
+import { cellWidth, IRowData, TableText } from "@patternfly/react-table";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -17,7 +17,10 @@ import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { formattedLinkTableCell } from "../components/external-link/FormattedLink";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import {
+  Action,
+  KeycloakDataTable,
+} from "../components/table-toolbar/KeycloakDataTable";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
@@ -26,6 +29,7 @@ import { InitialAccessTokenList } from "./initial-access/InitialAccessTokenList"
 import { toAddClient } from "./routes/AddClient";
 import { toClient } from "./routes/Client";
 import { toImportClient } from "./routes/ImportClient";
+import { isRealmClient } from "./utils";
 
 export const ClientsSection = () => {
   const { t } = useTranslation("clients");
@@ -130,21 +134,29 @@ export const ClientsSection = () => {
                   </ToolbarItem>
                 </>
               }
-              actions={[
-                {
-                  title: t("common:export"),
-                  onRowClick: (client) => {
-                    exportClient(client);
+              actionResolver={(rowData: IRowData) => {
+                const client: ClientRepresentation = rowData.data;
+                const actions: Action<ClientRepresentation>[] = [
+                  {
+                    title: t("common:export"),
+                    onClick() {
+                      exportClient(client);
+                    },
                   },
-                },
-                {
-                  title: t("common:delete"),
-                  onRowClick: (client) => {
-                    setSelectedClient(client);
-                    toggleDeleteDialog();
-                  },
-                },
-              ]}
+                ];
+
+                if (!isRealmClient(client)) {
+                  actions.push({
+                    title: t("common:delete"),
+                    onClick() {
+                      setSelectedClient(client);
+                      toggleDeleteDialog();
+                    },
+                  });
+                }
+
+                return actions;
+              }}
               columns={[
                 {
                   name: "clientId",

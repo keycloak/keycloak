@@ -52,8 +52,7 @@ import { toClients } from "./routes/Clients";
 import { ClientScopes } from "./scopes/ClientScopes";
 import { EvaluateScopes } from "./scopes/EvaluateScopes";
 import { ServiceAccount } from "./service-account/ServiceAccount";
-
-const isRealmClient = (client: ClientRepresentation) => !client.protocol;
+import { isRealmClient } from "./utils";
 
 type ClientDetailHeaderProps = {
   onChange: (value: boolean) => void;
