@@ -1,5 +1,8 @@
 package org.keycloak.authentication.requiredactions;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.keycloak.Config;
 import org.keycloak.authentication.InitiatedActionSupport;
 import org.keycloak.authentication.RequiredActionContext;
@@ -19,6 +22,9 @@ import javax.ws.rs.core.Response;
 
 public class RecoveryAuthnCodesAction implements RequiredActionProvider, RequiredActionFactory {
 
+    private static final String FIELD_GENERATED_RECOVERY_AUTHN_CODES_HIDDEN = "generatedRecoveryAuthnCodes";
+    private static final String FIELD_GENERATED_AT_HIDDEN = "generatedAt";
+    private static final String FIELD_USER_LABEL_HIDDEN = "userLabel";
     public static final String PROVIDER_ID = UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name();
     private static final RecoveryAuthnCodesAction INSTANCE = new RecoveryAuthnCodesAction();
 
@@ -50,7 +56,6 @@ public class RecoveryAuthnCodesAction implements RequiredActionProvider, Require
         return true;
     }
 
-
     @Override
     public InitiatedActionSupport initiatedActionSupport() {
         return InitiatedActionSupport.SUPPORTED;
@@ -62,42 +67,36 @@ public class RecoveryAuthnCodesAction implements RequiredActionProvider, Require
 
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
-        Response challenge = context.form()
-                                    .createResponse(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES);
+        Response challenge = context.form().createResponse(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES);
         context.challenge(challenge);
     }
 
     @Override
     public void processAction(RequiredActionContext reqActionContext) {
-        CredentialProvider recvryCodeCredentialProvider;
-        RecoveryAuthnCodesCredentialModel recvryCodeCredentialModel;
-        MultivaluedMap<String,String> httpReqParamsMap;
-        String[] generatedCodesFromFormArray;
+        CredentialProvider recoveryCodeCredentialProvider;
+        MultivaluedMap<String, String> httpReqParamsMap;
         Long generatedAtTime;
         String generatedUserLabel;
 
-        recvryCodeCredentialProvider = reqActionContext.getSession()
-                                                       .getProvider(CredentialProvider.class,
-                                                                    RecoveryAuthnCodesCredentialProviderFactory.PROVIDER_ID);
+        recoveryCodeCredentialProvider = reqActionContext.getSession().getProvider(CredentialProvider.class,
+                RecoveryAuthnCodesCredentialProviderFactory.PROVIDER_ID);
 
         reqActionContext.getEvent().detail(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE);
 
         httpReqParamsMap = reqActionContext.getHttpRequest().getDecodedFormParameters();
         // TODO Validation iatanaso
-        generatedCodesFromFormArray = httpReqParamsMap.getFirst(RecoveryAuthnCodesUtils.FIELD_GENERATED_RECOVERY_AUTHN_CODES_HIDDEN)
-                                                      .split(",");
+        List<String> generatedCodes = new ArrayList<>(
+                Arrays.asList(httpReqParamsMap.getFirst(FIELD_GENERATED_RECOVERY_AUTHN_CODES_HIDDEN).split(",")));
         // TODO Validation iatanaso
-        generatedAtTime = Long.parseLong(httpReqParamsMap.getFirst(RecoveryAuthnCodesUtils.FIELD_GENERATED_AT_HIDDEN));
+        generatedAtTime = Long.parseLong(httpReqParamsMap.getFirst(FIELD_GENERATED_AT_HIDDEN));
         // TODO Validation iatanaso
-        generatedUserLabel = httpReqParamsMap.getFirst(RecoveryAuthnCodesUtils.FIELD_USER_LABEL_HIDDEN);
+        generatedUserLabel = httpReqParamsMap.getFirst(FIELD_USER_LABEL_HIDDEN);
 
-        recvryCodeCredentialModel = RecoveryAuthnCodesCredentialModel.createFromValues(generatedCodesFromFormArray,
-                                                                                       generatedAtTime,
-                                                                                       generatedUserLabel);
+        RecoveryAuthnCodesCredentialModel credentialModel = RecoveryAuthnCodesCredentialModel.createFromValues(generatedCodes,
+                generatedAtTime, generatedUserLabel);
 
-        recvryCodeCredentialProvider.createCredential(reqActionContext.getRealm(),
-                                                      reqActionContext.getUser(),
-                                                      recvryCodeCredentialModel);
+        recoveryCodeCredentialProvider.createCredential(reqActionContext.getRealm(), reqActionContext.getUser(),
+                credentialModel);
 
         reqActionContext.success();
     }

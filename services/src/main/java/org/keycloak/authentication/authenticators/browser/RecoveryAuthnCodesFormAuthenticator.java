@@ -25,35 +25,25 @@ public class RecoveryAuthnCodesFormAuthenticator implements Authenticator {
 
     private final UserCredentialManager userCredentialManager;
 
-
     public RecoveryAuthnCodesFormAuthenticator(KeycloakSession keycloakSession) {
         this.userCredentialManager = keycloakSession.userCredentialManager();
     }
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
-
-        context.challenge(createLoginForm(context,
-                                         false,
-                                          null,
-                                          null));
-
+        context.challenge(createLoginForm(context, false, null, null));
     }
 
     @Override
     public void action(AuthenticationFlowContext context) {
-
-        context.getEvent()
-               .detail(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE);
-
+        context.getEvent().detail(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE);
         if (isRecoveryAuthnCodeInputValid(context)) {
             context.success();
         }
-
     }
 
     private boolean isRecoveryAuthnCodeInputValid(AuthenticationFlowContext authnFlowContext) {
-        boolean bolResult = false;
+        boolean result = false;
         MultivaluedMap<String, String> formParamsMap;
         String recoveryAuthnCodeUserInput;
         RealmModel targetRealm;
@@ -64,123 +54,72 @@ public class RecoveryAuthnCodesFormAuthenticator implements Authenticator {
         RecoveryAuthnCodesCredentialModel recoveryCodeCredentialModel = null;
 
         formParamsMap = authnFlowContext.getHttpRequest().getDecodedFormParameters();
-
         recoveryAuthnCodeUserInput = formParamsMap.getFirst(RecoveryAuthnCodesUtils.FIELD_RECOVERY_CODE_IN_BROWSER_FLOW);
 
         if (ObjectUtil.isBlank(recoveryAuthnCodeUserInput)) {
-
-            authnFlowContext.forceChallenge(createLoginForm(authnFlowContext,
-                                                            true,
-                                                            RecoveryAuthnCodesUtils.RECOVERY_AUTHN_CODES_INPUT_DEFAULT_ERROR_MESSAGE,
-                                                            RecoveryAuthnCodesUtils.FIELD_RECOVERY_CODE_IN_BROWSER_FLOW));
-
+            authnFlowContext.forceChallenge(createLoginForm(authnFlowContext, true,
+                    RecoveryAuthnCodesUtils.RECOVERY_AUTHN_CODES_INPUT_DEFAULT_ERROR_MESSAGE,
+                    RecoveryAuthnCodesUtils.FIELD_RECOVERY_CODE_IN_BROWSER_FLOW));
         } else {
-
             targetRealm = authnFlowContext.getRealm();
             authenticatedUser = authnFlowContext.getUser();
-
             if (!isDisabledByBruteForce(authnFlowContext, authenticatedUser)) {
-
-                isValid = this.userCredentialManager.isValid(targetRealm,
-                                                             authenticatedUser,
-                                                             UserCredentialModel.buildFromBackupAuthnCode(recoveryAuthnCodeUserInput));
-
+                isValid = this.userCredentialManager.isValid(targetRealm, authenticatedUser,
+                        UserCredentialModel.buildFromBackupAuthnCode(recoveryAuthnCodeUserInput.replace("-", "")));
                 if (!isValid) {
-
-                    responseChallenge = createLoginForm(authnFlowContext,
-                                                        true,
-                                                        RecoveryAuthnCodesUtils.RECOVERY_AUTHN_CODES_INPUT_DEFAULT_ERROR_MESSAGE,
-                                                        RecoveryAuthnCodesUtils.FIELD_RECOVERY_CODE_IN_BROWSER_FLOW);
+                    responseChallenge = createLoginForm(authnFlowContext, true,
+                            RecoveryAuthnCodesUtils.RECOVERY_AUTHN_CODES_INPUT_DEFAULT_ERROR_MESSAGE,
+                            RecoveryAuthnCodesUtils.FIELD_RECOVERY_CODE_IN_BROWSER_FLOW);
                     authnFlowContext.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, responseChallenge);
-
                 } else {
-
-                    bolResult = true;
-
+                    result = true;
                     optUserCredentialFound = this.userCredentialManager.getStoredCredentialsByTypeStream(targetRealm,
-                                                                                                         authenticatedUser,
-                                                                                                         RecoveryAuthnCodesCredentialModel.TYPE)
-                                                                       .findFirst();
-
+                            authenticatedUser, RecoveryAuthnCodesCredentialModel.TYPE).findFirst();
                     if (optUserCredentialFound.isPresent()) {
-
-                        recoveryCodeCredentialModel = RecoveryAuthnCodesCredentialModel.createFromCredentialModel(optUserCredentialFound.get());
-
+                        recoveryCodeCredentialModel = RecoveryAuthnCodesCredentialModel
+                                .createFromCredentialModel(optUserCredentialFound.get());
                         if (recoveryCodeCredentialModel.allCodesUsed()) {
-
-                            this.userCredentialManager.removeStoredCredential(targetRealm,
-                                                                              authenticatedUser,
-                                                                              recoveryCodeCredentialModel.getId());
-
+                            this.userCredentialManager.removeStoredCredential(targetRealm, authenticatedUser,
+                                    recoveryCodeCredentialModel.getId());
                         }
-
                     }
-
                     if (recoveryCodeCredentialModel == null || recoveryCodeCredentialModel.allCodesUsed()) {
-
                         authenticatedUser.addRequiredAction(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES);
-
                     }
-
                 }
-
             }
-
         }
-
-        return bolResult;
-
+        return result;
     }
 
     protected boolean isDisabledByBruteForce(AuthenticationFlowContext authnFlowContext, UserModel authenticatedUser) {
         boolean bolResult = false;
         String bruteForceError;
         Response challengeResponse;
-
         bruteForceError = AuthenticatorUtils.getDisabledByBruteForceEventError(authnFlowContext.getProtector(),
-                                                                               authnFlowContext.getSession(),
-                                                                               authnFlowContext.getRealm(),
-                                                                               authenticatedUser);
-
+                authnFlowContext.getSession(), authnFlowContext.getRealm(), authenticatedUser);
         if (bruteForceError != null) {
-
             authnFlowContext.getEvent().user(authenticatedUser);
             authnFlowContext.getEvent().error(bruteForceError);
-            challengeResponse = createLoginForm(authnFlowContext,
-                                                false,
-                                                Messages.INVALID_USER,
-                                                FIELD_USERNAME);
+            challengeResponse = createLoginForm(authnFlowContext, false, Messages.INVALID_USER, FIELD_USERNAME);
             authnFlowContext.forceChallenge(challengeResponse);
-
             bolResult = true;
-
         }
-
         return bolResult;
     }
 
-    private Response createLoginForm(AuthenticationFlowContext authnFlowContext,
-                                     boolean withInvalidUserCredentialsError,
-                                     String errorToRaise,
-                                     String fieldError) {
-
+    private Response createLoginForm(AuthenticationFlowContext authnFlowContext, boolean withInvalidUserCredentialsError,
+            String errorToRaise, String fieldError) {
         Response challengeResponse;
         LoginFormsProvider loginFormsProvider;
-
         if (withInvalidUserCredentialsError) {
-
             loginFormsProvider = authnFlowContext.form();
             authnFlowContext.getEvent().user(authnFlowContext.getUser());
             authnFlowContext.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
             loginFormsProvider.addError(new FormMessage(fieldError, errorToRaise));
-
         } else {
-
-            loginFormsProvider = authnFlowContext.form()
-                                                 .setExecution(authnFlowContext.getExecution().getId());
-
+            loginFormsProvider = authnFlowContext.form().setExecution(authnFlowContext.getExecution().getId());
             if (errorToRaise != null) {
-
                 if (fieldError != null) {
                     loginFormsProvider.addError(new FormMessage(fieldError, errorToRaise));
                 } else {
@@ -188,9 +127,7 @@ public class RecoveryAuthnCodesFormAuthenticator implements Authenticator {
                 }
             }
         }
-
         challengeResponse = loginFormsProvider.createLoginRecoveryAuthnCode();
-
         return challengeResponse;
     }
 

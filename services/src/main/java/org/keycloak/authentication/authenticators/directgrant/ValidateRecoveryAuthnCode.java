@@ -18,14 +18,13 @@ import javax.ws.rs.core.Response;
 import java.util.LinkedList;
 import java.util.List;
 
-public class ValidateRecoveryAuthnCode extends AbstractDirectGrantAuthenticator implements CredentialValidator<RecoveryAuthnCodesCredentialProvider> {
+public class ValidateRecoveryAuthnCode extends AbstractDirectGrantAuthenticator
+        implements CredentialValidator<RecoveryAuthnCodesCredentialProvider> {
 
     public static final String PROVIDER_ID = "direct-grant-valid-recvry-authn-code";
     public static final String DISPLAY_TYPE = "Recovery Authentication Code Validator for DirectGrant Flow";
-    public static final String HELP_TEXT = "Validates the Recovery Authentication Code supplied as a '" +
-                                           RecoveryAuthnCodesUtils.FIELD_RECOVERY_CODE_IN_DIRECT_GRANT_FLOW +
-                                           "' form parameter in direct grant request";
-
+    public static final String HELP_TEXT = "Validates the Recovery Authentication Code supplied as a '"
+            + RecoveryAuthnCodesUtils.FIELD_RECOVERY_CODE_IN_DIRECT_GRANT_FLOW + "' form parameter in direct grant request";
 
     @Override
     public String getId() {
@@ -67,7 +66,6 @@ public class ValidateRecoveryAuthnCode extends AbstractDirectGrantAuthenticator 
         return false;
     }
 
-
     @Override
     public String getReferenceCategory() {
         return null;
@@ -83,11 +81,9 @@ public class ValidateRecoveryAuthnCode extends AbstractDirectGrantAuthenticator 
         return REQUIREMENT_CHOICES;
     }
 
-
     public RecoveryAuthnCodesCredentialProvider getCredentialProvider(KeycloakSession keycloakSession) {
-        return (RecoveryAuthnCodesCredentialProvider)
-                keycloakSession.getProvider(CredentialProvider.class,
-                                            RecoveryAuthnCodesCredentialProviderFactory.PROVIDER_ID);
+        return (RecoveryAuthnCodesCredentialProvider) keycloakSession.getProvider(CredentialProvider.class,
+                RecoveryAuthnCodesCredentialProviderFactory.PROVIDER_ID);
     }
 
     @Override
@@ -115,56 +111,32 @@ public class ValidateRecoveryAuthnCode extends AbstractDirectGrantAuthenticator 
         } else {
 
             recoveryAuthnCodesCredentialProvider = getCredentialProvider(authnFlowContext.getSession());
-
             httpReqParamsMap = authnFlowContext.getHttpRequest().getDecodedFormParameters();
-
             backupCodeInputValue = httpReqParamsMap.getFirst(RecoveryAuthnCodesUtils.FIELD_RECOVERY_CODE_IN_DIRECT_GRANT_FLOW);
-
             if (StringUtils.isEmpty(backupCodeInputValue)) {
-
                 if (authnFlowContext.getUser() != null) {
-
                     authnFlowContext.getEvent().user(authnFlowContext.getUser());
-
                 }
-
                 shouldRaiseFailure = true;
-
             } else {
-
                 credentialId = recoveryAuthnCodesCredentialProvider.getDefaultCredential(authnFlowContext.getSession(),
-                                                                                         authnFlowContext.getRealm(),
-                                                                                         authnFlowContext.getUser())
-                                                                   .getId();
-
+                        authnFlowContext.getRealm(), authnFlowContext.getUser()).getId();
                 isBackupCodeInputValid = recoveryAuthnCodesCredentialProvider.isValid(authnFlowContext.getRealm(),
-                                                                                    authnFlowContext.getUser(),
-                                                                                    UserCredentialModel.buildFromBackupAuthnCode(credentialId,
-                                                                                                                                 backupCodeInputValue));
-
+                        authnFlowContext.getUser(),
+                        UserCredentialModel.buildFromBackupAuthnCode(credentialId, backupCodeInputValue));
                 if (!isBackupCodeInputValid) {
-
                     shouldRaiseFailure = true;
-
                 } else {
-
                     authnFlowContext.success();
-
                 }
-
             }
         }
-
         if (shouldRaiseFailure) {
-
             authnFlowContext.getEvent().user(authnFlowContext.getUser());
             authnFlowContext.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-            challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(),
-                                        "invalid_grant",
-                                "Invalid User Credentials");
+            challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant",
+                    "Invalid User Credentials");
             authnFlowContext.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
-
         }
     }
-
 }

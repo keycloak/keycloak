@@ -12,7 +12,7 @@ public class RecoveryAuthnCodesCredentialData {
 
     @JsonCreator
     public RecoveryAuthnCodesCredentialData(@JsonProperty("hashIterations") int hashIterations,
-                                            @JsonProperty("algorithm") String algorithm, @JsonProperty("remaining") int remainingCodes) {
+            @JsonProperty("algorithm") String algorithm, @JsonProperty("remaining") int remainingCodes) {
         this.hashIterations = hashIterations;
         this.algorithm = algorithm;
         this.remainingCodes = remainingCodes;

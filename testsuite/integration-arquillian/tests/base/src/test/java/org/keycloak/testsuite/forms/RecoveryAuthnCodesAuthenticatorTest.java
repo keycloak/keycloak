@@ -108,7 +108,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractTestRealmKeyclo
                 RealmModel realm = session.realms().getRealmByName("test");
                 UserModel user = session.users().getUserByUsername(realm, "test-user@localhost");
                 CredentialModel recoveryAuthnCodesCred = RecoveryAuthnCodesCredentialModel.createFromValues(
-                        generatedRecoveryAuthnCodes.stream().toArray(String[]::new),
+                        generatedRecoveryAuthnCodes,
                         System.currentTimeMillis(),
                         null);
                 session.userCredentialManager().createCredential(realm, user, recoveryAuthnCodesCred);

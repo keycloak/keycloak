@@ -5,8 +5,8 @@
         ${msg("recovery-code-config-header")}
     <#elseif section = "form">
         <ol id="kc-recovery-codes-list">
-            <#list recoveryAuthnCodesConfigBean.generatedRecoveryAuthnCodesList as oneCode>
-                <li>${oneCode}</li>
+            <#list recoveryAuthnCodesConfigBean.generatedRecoveryAuthnCodesList as code>
+                <li>${code[0..3]}-${code[4..7]}-${code[8..]}</li>
             </#list>
         </ol>
 

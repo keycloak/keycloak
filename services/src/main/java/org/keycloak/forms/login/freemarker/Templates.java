@@ -18,7 +18,6 @@
 package org.keycloak.forms.login.freemarker;
 
 import org.keycloak.forms.login.LoginFormsPages;
-import org.keycloak.models.utils.RecoveryAuthnCodesUtils;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -38,9 +37,9 @@ public class Templates {
             case LOGIN_CONFIG_TOTP:
                 return "login-config-totp.ftl";
             case LOGIN_RECOVERY_AUTHN_CODES_INPUT:
-                return RecoveryAuthnCodesUtils.NAM_TEMPLATE_LOGIN_INPUT_RECOVERY_AUTHN_CODE;
+                return "login-recovery-authn-code-input.ftl";
             case LOGIN_RECOVERY_AUTHN_CODES_CONFIG:
-                return RecoveryAuthnCodesUtils.NAM_TEMPLATE_LOGIN_CONFIG_RECOVERY_AUTHN_CODE;
+                return "login-recovery-authn-code-config.ftl";
             case LOGIN_WEBAUTHN:
                 return "webauthn-authenticate.ftl";
             case LOGIN_VERIFY_EMAIL:
