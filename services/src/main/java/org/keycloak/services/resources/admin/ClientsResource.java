@@ -30,6 +30,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.representations.idm.ClientListRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.services.ErrorResponse;
@@ -100,7 +101,7 @@ public class ClientsResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public Stream<ClientRepresentation> getClients(@QueryParam("clientId") String clientId,
+    public ClientListRepresentation getClients(@QueryParam("clientId") String clientId,
                                                  @QueryParam("viewableOnly") @DefaultValue("false") boolean viewableOnly,
                                                  @QueryParam("search") @DefaultValue("false") boolean search,
                                                  @QueryParam("q") String searchQuery,
@@ -130,7 +131,6 @@ public class ClientsResource {
                 clientModels = Stream.of(client);
             }
         }
-
         Stream<ClientRepresentation> s = clientModels
                 .filter(c -> { try { c.getClientId(); return true; } catch (Exception ex) { return false; } } )
                 .map(c -> {
@@ -144,7 +144,6 @@ public class ClientsResource {
                         representation.setClientId(c.getClientId());
                         representation.setDescription(c.getDescription());
                     }
-
                     return representation;
                 })
                 .filter(Objects::nonNull);
@@ -153,7 +152,14 @@ public class ClientsResource {
             s = paginatedStream(s, firstResult, maxResults);
         }
 
-        return s;
+        long count = realm.getClientsCount();
+        ClientListRepresentation clientListRepresentation = new ClientListRepresentation();
+        clientListRepresentation.setTotal(count);
+        clientListRepresentation.setFirst(firstResult);
+        clientListRepresentation.setMax(maxResults);
+        clientListRepresentation.setItems(s);
+
+        return clientListRepresentation;
     }
 
     private AuthorizationService getAuthorizationService(ClientModel clientModel) {

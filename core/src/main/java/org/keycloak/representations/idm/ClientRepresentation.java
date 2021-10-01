@@ -40,6 +40,16 @@ public class ClientRepresentation {
     protected String clientAuthenticatorType;
     protected String secret;
     protected String registrationAccessToken;
+
+    public long getTotal() {
+        return total;
+    }
+
+    public void setTotal(long total) {
+        this.total = total;
+    }
+
+    protected long total;
     @Deprecated
     protected String[] defaultRoles;
     protected List<String> redirectUris;
