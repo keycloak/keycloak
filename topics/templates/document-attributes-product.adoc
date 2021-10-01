@@ -75,7 +75,7 @@
 :openshift_openjdk_image_repository: {openshift_image_repository_productline}/{openshift_openjdk_image_stream}
 :openshift_openjdk_project_templates_version: sso75
 :openshift_openj9_name: Red Hat Single Sign-On for OpenShift on Eclipse OpenJ9
-:openshift_openj9_link: {project_doc_base_url}/red_hat_single_sign-on_for_openshift_on_openj9/
+:openshift_openj9_link: {project_doc_base_url}/red_hat_single_sign-on_for_openshift_on_eclipse_openj9/
 :openshift_openj9_platforms: IBM Z/IBM Power Systems
 :openshift_openj9_image_stream: sso75-openj9-openshift-rhel8
 :openshift_openj9_image_repository: {openshift_image_repository_productline}/{openshift_openj9_image_stream}

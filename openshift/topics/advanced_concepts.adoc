@@ -55,7 +55,7 @@ See the https://access.redhat.com/documentation/en-us/jboss_enterprise_applicati
 ----
 $ openssl req -new -newkey rsa:4096 -x509 -keyout xpaas.key -out xpaas.crt -days 365 -subj "/CN=xpaas-sso-demo.ca"
 ----
-.. Generate a CA certificate for the HTTPS keystore. Provide `mykeystorepass` as the keystore password:
+.. Generate a private key for the HTTPS keystore. Provide `mykeystorepass` as the keystore password:
 +
 [source,bash,subs="attributes+,macros+"]
 ----
