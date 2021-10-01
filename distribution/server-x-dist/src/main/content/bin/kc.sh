@@ -29,7 +29,6 @@ DEBUG_MODE="${DEBUG:-false}"
 DEBUG_PORT="${DEBUG_PORT:-8787}"
 
 CONFIG_ARGS=${CONFIG_ARGS:-""}
-IS_DEV_MODE="false"
 
 while [ "$#" -gt 0 ]
 do
@@ -47,10 +46,10 @@ do
           ;;
       *)
           if [[ $1 = --* || ! $1 =~ ^-.* ]]; then
-            if [ "$1" = "start-dev" ]; then
-              IS_DEV_MODE=true
-            fi
             CONFIG_ARGS="$CONFIG_ARGS $1"
+            if [[ "$1" = "start-dev" ]]; then
+              CONFIG_ARGS="$CONFIG_ARGS --auto-build"
+            fi
           else
             SERVER_OPTS="$SERVER_OPTS $1"
           fi
@@ -82,8 +81,8 @@ CLASSPATH_OPTS="$DIRNAME/../lib/quarkus-run.jar"
 
 JAVA_RUN_OPTS="$JAVA_OPTS $SERVER_OPTS -cp $CLASSPATH_OPTS io.quarkus.bootstrap.runner.QuarkusEntryPoint ${CONFIG_ARGS#?}"
 
-if [ "$IS_DEV_MODE" = "true" ]; then
-    java -Dkc.dev.rebuild=true $JAVA_RUN_OPTS
+if [[ $CONFIG_ARGS = *"--auto-build"* ]]; then
+    java -Dkc.config.rebuild-and-exit=true $JAVA_RUN_OPTS
 fi
 
-exec java $JAVA_RUN_OPTS
+exec java ${JAVA_RUN_OPTS}
