@@ -27,7 +27,6 @@ import {
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import type { IdentityProviderAddMapperParams } from "../routes/AddMapper";
-import _ from "lodash";
 import { AssociatedRolesModal } from "../../realm-roles/AssociatedRolesModal";
 import type { RoleRepresentation } from "../../model/role-model";
 import { useAlerts } from "../../components/alert/Alerts";
@@ -35,8 +34,9 @@ import type { IdentityProviderEditMapperParams } from "../routes/EditMapper";
 import { convertToFormValues } from "../../util";
 import { toIdentityProvider } from "../routes/IdentityProvider";
 import type IdentityProviderMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperRepresentation";
+import { AddMapperForm } from "./AddMapperForm";
 
-type IdPMapperRepresentationWithAttributes =
+export type IdPMapperRepresentationWithAttributes =
   IdentityProviderMapperRepresentation & {
     attributes: KeyValueType[];
   };
@@ -166,18 +166,38 @@ export const AddMapper = () => {
     });
   };
 
-  const syncModes = ["inherit", "import", "legacy", "force"];
-  const [syncModeOpen, setSyncModeOpen] = useState(false);
   const targetOptions = ["local", "brokerId", "brokerUsername"];
   const [targetOptionsOpen, setTargetOptionsOpen] = useState(false);
-  const [mapperTypeOpen, setMapperTypeOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<RoleRepresentation[]>([]);
+
+  const formValues = form.getValues();
+
+  const isAdvancedAttrToRole =
+    formValues.identityProviderMapper === "saml-advanced-role-idp-mapper";
+
+  const isAttributeImporter =
+    formValues.identityProviderMapper === "saml-user-attribute-idp-mapper";
+
+  const isHardcodedAttribute =
+    form.getValues().identityProviderMapper ===
+    "hardcoded-attribute-idp-mapper";
+
+  const isHardcodedRole =
+    formValues.identityProviderMapper === "oidc-hardcoded-role-idp-mapper";
+
+  const isHardcodedUserSessionAttribute =
+    formValues.identityProviderMapper ===
+    "hardcoded-user-session-attribute-idp-mapper";
+
+  const isSAMLAttributeToRole =
+    formValues.identityProviderMapper === "saml-role-idp-mapper";
+
+  const isUsernameTemplateImporter =
+    formValues.identityProviderMapper === "saml-username-idp-mapper";
 
   const toggleModal = () => {
     setRolesModalOpen(!rolesModalOpen);
   };
-
-  const formValues = form.getValues();
 
   return (
     <PageSection variant="light">
@@ -232,155 +252,18 @@ export const AddMapper = () => {
             />
           </FormGroup>
         )}
-        <FormGroup
-          label={t("common:name")}
-          labelIcon={
-            <HelpItem
-              id="name-help-icon"
-              helpText="identity-providers-help:addIdpMapperName"
-              forLabel={t("common:name")}
-              forID={t(`common:helpLabel`, { label: t("common:name") })}
-            />
-          }
-          fieldId="kc-name"
-          isRequired
-          validated={
-            errors.name ? ValidatedOptions.error : ValidatedOptions.default
-          }
-          helperTextInvalid={t("common:required")}
-        >
-          <TextInput
-            ref={register({ required: true })}
-            type="text"
-            datatest-id="name-input"
-            id="kc-name"
-            name="name"
-            isDisabled={!!id}
-            validated={
-              errors.name ? ValidatedOptions.error : ValidatedOptions.default
-            }
-          />
-        </FormGroup>
-        <FormGroup
-          label={t("syncModeOverride")}
-          isRequired
-          labelIcon={
-            <HelpItem
-              helpText="identity-providers-help:syncModeOverride"
-              forLabel={t("syncModeOverride")}
-              forID={t(`common:helpLabel`, { label: t("syncModeOverride") })}
-            />
-          }
-          fieldId="syncMode"
-        >
-          <Controller
-            name="config.syncMode"
-            defaultValue={syncModes[0]}
-            control={control}
-            render={({ onChange, value }) => (
-              <Select
-                toggleId="syncMode"
-                datatest-id="syncmode-select"
-                required
-                direction="down"
-                onToggle={() => setSyncModeOpen(!syncModeOpen)}
-                onSelect={(_, value) => {
-                  onChange(value.toString().toUpperCase());
-                  setSyncModeOpen(false);
-                }}
-                selections={t(`syncModes.${value.toLowerCase()}`)}
-                variant={SelectVariant.single}
-                aria-label={t("syncMode")}
-                isOpen={syncModeOpen}
-              >
-                {syncModes.map((option) => (
-                  <SelectOption
-                    selected={option === value}
-                    key={option}
-                    data-testid={option}
-                    value={option.toUpperCase()}
-                  >
-                    {t(`syncModes.${option}`)}
-                  </SelectOption>
-                ))}
-              </Select>
-            )}
-          />
-        </FormGroup>
-        <FormGroup
-          label={t("mapperType")}
-          labelIcon={
-            <HelpItem
-              helpText={
-                mapperType === "attributeImporter" &&
-                (providerId === "oidc" || providerId === "keycloak-oidc")
-                  ? `identity-providers-help:oidcAttributeImporter`
-                  : `identity-providers-help:${mapperType}`
-              }
-              forLabel={t("mapperType")}
-              forID={t(`common:helpLabel`, { label: t("mapperType") })}
-            />
-          }
-          fieldId="identityProviderMapper"
-        >
-          <Controller
-            name="identityProviderMapper"
-            defaultValue={
-              providerId === "saml"
-                ? "saml-advanced-role-idp-mapper"
-                : "oidc-advanced-role-idp-mapper"
-            }
-            control={control}
-            render={({ onChange, value }) => (
-              <Select
-                toggleId="identityProviderMapper"
-                data-testid="idp-mapper-select"
-                isDisabled={!!id}
-                required
-                direction="down"
-                onToggle={() => setMapperTypeOpen(!mapperTypeOpen)}
-                onSelect={(e, value) => {
-                  const theMapper =
-                    mapperTypes &&
-                    Object.values(mapperTypes).find(
-                      (item) =>
-                        item.name?.toLowerCase() ===
-                        value.toString().toLowerCase()
-                    );
-
-                  setMapperType(_.camelCase(value.toString()));
-                  onChange(theMapper?.id);
-                  setMapperTypeOpen(false);
-                }}
-                selections={
-                  mapperTypes &&
-                  Object.values(mapperTypes).find(
-                    (item) => item.id?.toLowerCase() === value
-                  )?.name
-                }
-                variant={SelectVariant.single}
-                aria-label={t("syncMode")}
-                isOpen={mapperTypeOpen}
-              >
-                {mapperTypes &&
-                  Object.values(mapperTypes).map((option) => (
-                    <SelectOption
-                      selected={option === value}
-                      datatest-id={option.id}
-                      key={option.name}
-                      value={option.name?.toUpperCase()}
-                    >
-                      {t(`mapperTypes.${_.camelCase(option.name)}`)}
-                    </SelectOption>
-                  ))}
-              </Select>
-            )}
-          />
-        </FormGroup>
+        <AddMapperForm
+          form={form}
+          id={id}
+          providerId={providerId}
+          mapperTypes={mapperTypes}
+          updateMapperType={setMapperType}
+          formValues={formValues}
+          mapperType={mapperType}
+        />
         {isSAMLorOIDC ? (
           <>
-            {formValues.identityProviderMapper ===
-              "saml-advanced-role-idp-mapper" && (
+            {isAdvancedAttrToRole && (
               <>
                 <FormGroup
                   label={t("common:attributes")}
@@ -430,8 +313,7 @@ export const AddMapper = () => {
                 </FormGroup>
               </>
             )}
-            {formValues.identityProviderMapper ===
-              "saml-username-idp-mapper" && (
+            {isUsernameTemplateImporter && (
               <>
                 <FormGroup
                   label={t("template")}
@@ -526,11 +408,9 @@ export const AddMapper = () => {
                 </FormGroup>
               </>
             )}
-            {[
-              "saml-advanced-role-idp-mapper",
-              "oidc-hardcoded-role-idp-mapper",
-              "saml-role-idp-mapper",
-            ].includes(formValues.identityProviderMapper!) && (
+            {(isAdvancedAttrToRole ||
+              isHardcodedRole ||
+              isSAMLAttributeToRole) && (
               <FormGroup
                 label={t("common:role")}
                 labelIcon={
@@ -572,15 +452,11 @@ export const AddMapper = () => {
                 </Button>
               </FormGroup>
             )}
-            {[
-              "hardcoded-user-session-attribute-idp-mapper",
-              "hardcoded-attribute-idp-mapper",
-            ].includes(formValues.identityProviderMapper!) && (
+            {(isHardcodedAttribute || isHardcodedUserSessionAttribute) && (
               <>
                 <FormGroup
                   label={
-                    formValues.identityProviderMapper ===
-                    "hardcoded-user-session-attribute-idp-mapper"
+                    isHardcodedUserSessionAttribute
                       ? t("userSessionAttribute")
                       : t("userAttribute")
                   }
@@ -607,7 +483,11 @@ export const AddMapper = () => {
                     type="text"
                     defaultValue={currentMapper?.config.attribute}
                     id="kc-attribute"
-                    data-testid="user-session-attribute"
+                    data-testid={
+                      isHardcodedUserSessionAttribute
+                        ? "user-session-attribute"
+                        : "user-attribute"
+                    }
                     name="config.attribute"
                     validated={
                       errors.name
@@ -617,14 +497,24 @@ export const AddMapper = () => {
                   />
                 </FormGroup>
                 <FormGroup
-                  label={t("userSessionAttributeValue")}
+                  label={
+                    isHardcodedUserSessionAttribute
+                      ? t("userSessionAttributeValue")
+                      : t("userAttributeValue")
+                  }
                   labelIcon={
                     <HelpItem
                       id="user-session-attribute-value-help-icon"
                       helpText="identity-providers-help:userAttributeValue"
-                      forLabel={t("userSessionAttributeValue")}
+                      forLabel={
+                        isHardcodedUserSessionAttribute
+                          ? t("userSessionAttributeValue")
+                          : t("userAttributeValue")
+                      }
                       forID={t(`common:helpLabel`, {
-                        label: t("userSessionAttributeValue"),
+                        label: isHardcodedUserSessionAttribute
+                          ? t("userSessionAttributeValue")
+                          : t("userAttributeValue"),
                       })}
                     />
                   }
@@ -640,8 +530,120 @@ export const AddMapper = () => {
                     ref={register()}
                     type="text"
                     defaultValue={currentMapper?.config["attribute-value"]}
-                    data-testid="user-session-attribute-value"
+                    data-testid={
+                      isHardcodedUserSessionAttribute
+                        ? "user-session-attribute-value"
+                        : "user-attribute-value"
+                    }
                     id="kc-user-session-attribute-value"
+                    name="config.attribute-value"
+                    validated={
+                      errors.name
+                        ? ValidatedOptions.error
+                        : ValidatedOptions.default
+                    }
+                  />
+                </FormGroup>
+              </>
+            )}
+            {isAttributeImporter && (
+              <>
+                <FormGroup
+                  label={t("mapperAttributeName")}
+                  labelIcon={
+                    <HelpItem
+                      id="user-session-attribute-help-icon"
+                      helpText="identity-providers-help:attributeName"
+                      forLabel={t("mapperAttributeName")}
+                      forID={t(`common:helpLabel`, {
+                        label: t("mapperAttributeName"),
+                      })}
+                    />
+                  }
+                  fieldId="kc-attribute-name"
+                  validated={
+                    errors.name
+                      ? ValidatedOptions.error
+                      : ValidatedOptions.default
+                  }
+                  helperTextInvalid={t("common:required")}
+                >
+                  <TextInput
+                    ref={register()}
+                    type="text"
+                    defaultValue={currentMapper?.config["attribute-name"]}
+                    id="kc-attribute-name"
+                    data-testid="attribute-name"
+                    name="config.attribute-name"
+                    validated={
+                      errors.name
+                        ? ValidatedOptions.error
+                        : ValidatedOptions.default
+                    }
+                  />
+                </FormGroup>
+                <FormGroup
+                  label={t("mapperAttributeFriendlyName")}
+                  labelIcon={
+                    <HelpItem
+                      id="mapper-attribute-friendly-name"
+                      helpText="identity-providers-help:friendlyName"
+                      forLabel={t("mapperAttributeFriendlyName")}
+                      forID={t(`common:helpLabel`, {
+                        label: t("mapperAttributeFriendlyName"),
+                      })}
+                    />
+                  }
+                  fieldId="kc-friendly-name"
+                  validated={
+                    errors.name
+                      ? ValidatedOptions.error
+                      : ValidatedOptions.default
+                  }
+                  helperTextInvalid={t("common:required")}
+                >
+                  <TextInput
+                    ref={register()}
+                    type="text"
+                    defaultValue={
+                      currentMapper?.config["attribute-friendly-name"]
+                    }
+                    data-testid="attribute-friendly-name"
+                    id="kc-attribute-friendly-name"
+                    name="config.attribute-friendly-name"
+                    validated={
+                      errors.name
+                        ? ValidatedOptions.error
+                        : ValidatedOptions.default
+                    }
+                  />
+                </FormGroup>
+                <FormGroup
+                  label={t("mapperUserAttributeName")}
+                  labelIcon={
+                    <HelpItem
+                      id="user-attribute-name-help-icon"
+                      helpText="identity-providers-help:userAttributeName"
+                      forLabel={t("mapperUserAttributeName")}
+                      forID={t(`common:helpLabel`, {
+                        label: t("mapperUserAttributeName"),
+                      })}
+                    />
+                  }
+                  fieldId="kc-user-attribute-name"
+                  validated={
+                    errors.name
+                      ? ValidatedOptions.error
+                      : ValidatedOptions.default
+                  }
+                  helperTextInvalid={t("common:required")}
+                >
+                  <TextInput
+                    ref={register()}
+                    type="text"
+                    defaultValue={currentMapper?.config["attribute-value"]}
+                    data-testid="user-attribute-name"
+                    id="kc-user-attribute-name"
                     name="config.attribute-value"
                     validated={
                       errors.name

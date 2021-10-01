@@ -7,6 +7,12 @@ export default class AddMapperPage {
 
   private mapperNameInput = "#kc-name";
   private mapperRoleInput = "mapper-role-input";
+  private attributeName = "attribute-name";
+  private attributeFriendlyName = "attribute-friendly-name";
+  private attributeValue = "attribute-value";
+  private userAttribute = "user-attribute";
+  private userAttributeName = "user-attribute-name";
+  private userAttributeValue = "user-attribute-value";
   private userSessionAttribute = "user-session-attribute";
   private userSessionAttributeValue = "user-session-attribute-value";
   private newMapperSaveButton = "new-mapper-save-button";
@@ -91,7 +97,7 @@ export default class AddMapperPage {
     return this;
   }
 
-  fillSAMLorOIDCMapper(name: string) {
+  addAdvancedAttrToRoleMapper(name: string) {
     cy.get(this.mapperNameInput).clear();
 
     cy.get(this.mapperNameInput).clear().type(name);
@@ -144,6 +150,135 @@ export default class AddMapperPage {
     cy.get(this.target).click();
 
     cy.get(this.targetDropdown).contains("LOCAL").click();
+
+    this.saveNewMapper();
+
+    return this;
+  }
+
+  addHardcodedUserSessionAttrMapper(name: string) {
+    cy.get(this.mapperNameInput).clear();
+
+    cy.get(this.mapperNameInput).clear().type(name);
+
+    cy.get(this.syncmodeSelectToggle).click();
+
+    cy.findByTestId("inherit").click();
+
+    cy.get(this.idpMapperSelectToggle).click();
+
+    cy.findByTestId(this.idpMapperSelect)
+      .contains("Hardcoded User Session Attribute")
+      .click();
+
+    cy.findByTestId(this.userSessionAttribute).clear();
+    cy.findByTestId(this.userSessionAttribute).type("user session attribute");
+
+    cy.findByTestId(this.userSessionAttributeValue).clear();
+    cy.findByTestId(this.userSessionAttributeValue).type(
+      "user session attribute value"
+    );
+
+    this.saveNewMapper();
+
+    return this;
+  }
+
+  addAttrImporterMapper(name: string) {
+    cy.get(this.mapperNameInput).clear();
+
+    cy.get(this.mapperNameInput).clear().type(name);
+
+    cy.get(this.syncmodeSelectToggle).click();
+
+    cy.findByTestId("inherit").click();
+
+    cy.get(this.idpMapperSelectToggle).click();
+
+    cy.findByTestId(this.idpMapperSelect)
+      .contains("Attribute Importer")
+      .click();
+
+    cy.findByTestId(this.attributeName).clear();
+    cy.findByTestId(this.attributeName).type("attribute name");
+
+    cy.findByTestId(this.attributeFriendlyName).clear();
+    cy.findByTestId(this.attributeFriendlyName).type("friendly name");
+
+    cy.findByTestId(this.userAttributeName).clear();
+    cy.findByTestId(this.userAttributeName).type("user attribute name");
+
+    this.saveNewMapper();
+
+    return this;
+  }
+
+  addHardcodedRoleMapper(name: string) {
+    cy.get(this.mapperNameInput).clear();
+
+    cy.get(this.mapperNameInput).clear().type(name);
+
+    cy.get(this.syncmodeSelectToggle).click();
+
+    cy.findByTestId("inherit").click();
+
+    cy.get(this.idpMapperSelectToggle).click();
+
+    cy.findByTestId(this.idpMapperSelect).contains("Hardcoded Role").click();
+
+    cy.findByTestId(this.mapperRoleInput).clear();
+    cy.findByTestId(this.mapperRoleInput).type("admin");
+
+    this.saveNewMapper();
+
+    return this;
+  }
+
+  addHardcodedAttrMapper(name: string) {
+    cy.get(this.mapperNameInput).clear();
+
+    cy.get(this.mapperNameInput).clear().type(name);
+
+    cy.get(this.syncmodeSelectToggle).click();
+
+    cy.findByTestId("inherit").click();
+
+    cy.get(this.idpMapperSelectToggle).click();
+
+    cy.findByTestId(this.idpMapperSelect)
+      .contains("Hardcoded Attribute")
+      .click();
+
+    cy.findByTestId(this.userAttribute).clear();
+    cy.findByTestId(this.userAttribute).type("user session attribute");
+
+    cy.findByTestId(this.userAttributeValue).clear();
+    cy.findByTestId(this.userAttributeValue).type(
+      "user session attribute value"
+    );
+
+    this.saveNewMapper();
+
+    return this;
+  }
+
+  addSAMLAttributeToRoleMapper(name: string) {
+    cy.get(this.mapperNameInput).clear();
+
+    cy.get(this.mapperNameInput).clear().type(name);
+
+    cy.get(this.syncmodeSelectToggle).click();
+
+    cy.findByTestId("inherit").click();
+
+    cy.get(this.idpMapperSelectToggle).click();
+
+    cy.findByTestId(this.idpMapperSelect)
+      .contains("SAML Attribute To Role")
+      .click();
+
+    cy.findByTestId(this.mapperRoleInput).clear();
+    cy.findByTestId(this.mapperRoleInput).type("admin");
 
     this.saveNewMapper();
 

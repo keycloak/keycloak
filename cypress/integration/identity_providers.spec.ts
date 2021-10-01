@@ -142,7 +142,7 @@ describe("Identity provider test", () => {
       masthead.checkNotificationMessage(createMapperSuccessMsg);
     });
 
-    it("should add SAML mapper", () => {
+    it("should add SAML mapper of type Advanced Attribute to Role", () => {
       sidebarPage.goToIdentityProviders();
 
       listingPage.goToItemDetails("saml");
@@ -151,7 +151,7 @@ describe("Identity provider test", () => {
 
       addMapperPage.emptyStateAddMapper();
 
-      addMapperPage.fillSAMLorOIDCMapper("SAML mapper");
+      addMapperPage.addAdvancedAttrToRoleMapper("SAML mapper");
 
       masthead.checkNotificationMessage(createMapperSuccessMsg);
     });
@@ -168,6 +168,78 @@ describe("Identity provider test", () => {
       addMapperPage.addUsernameTemplateImporterMapper(
         "SAML Username Template Importer Mapper"
       );
+
+      masthead.checkNotificationMessage(createMapperSuccessMsg);
+    });
+
+    it("should add SAML mapper of type Hardcoded User Session Attribute", () => {
+      sidebarPage.goToIdentityProviders();
+
+      listingPage.goToItemDetails("saml");
+
+      addMapperPage.goToMappersTab();
+
+      addMapperPage.addMapper();
+
+      addMapperPage.addHardcodedUserSessionAttrMapper(
+        "Hardcoded User Session Attribute"
+      );
+
+      masthead.checkNotificationMessage(createMapperSuccessMsg);
+    });
+
+    it("should add SAML mapper of type Attribute Importer", () => {
+      sidebarPage.goToIdentityProviders();
+
+      listingPage.goToItemDetails("saml");
+
+      addMapperPage.goToMappersTab();
+
+      addMapperPage.addMapper();
+
+      addMapperPage.addAttrImporterMapper("Attribute Importer");
+
+      masthead.checkNotificationMessage(createMapperSuccessMsg);
+    });
+
+    it("should add SAML mapper of type Hardcoded Role", () => {
+      sidebarPage.goToIdentityProviders();
+
+      listingPage.goToItemDetails("saml");
+
+      addMapperPage.goToMappersTab();
+
+      addMapperPage.addMapper();
+
+      addMapperPage.addHardcodedRoleMapper("Hardcoded Role");
+
+      masthead.checkNotificationMessage(createMapperSuccessMsg);
+    });
+
+    it("should add SAML mapper of type Hardcoded Attribute", () => {
+      sidebarPage.goToIdentityProviders();
+
+      listingPage.goToItemDetails("saml");
+
+      addMapperPage.goToMappersTab();
+
+      addMapperPage.addMapper();
+
+      addMapperPage.addHardcodedAttrMapper("Hardcoded Attribute");
+
+      masthead.checkNotificationMessage(createMapperSuccessMsg);
+    });
+
+    it("should add SAML mapper of type SAML Attribute To Role", () => {
+      sidebarPage.goToIdentityProviders();
+
+      listingPage.goToItemDetails("saml");
+
+      addMapperPage.goToMappersTab();
+
+      addMapperPage.addMapper();
+
+      addMapperPage.addSAMLAttributeToRoleMapper("SAML Attribute To Role");
 
       masthead.checkNotificationMessage(createMapperSuccessMsg);
     });
