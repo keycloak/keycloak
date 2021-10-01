@@ -27,6 +27,7 @@ import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { useLoginProviders } from "../../context/server-info/ServerInfoProvider";
 import { convertToFormValues } from "../../util";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { getProtocolName } from "../../clients/utils";
 
 type ScopeFormProps = {
   clientScope: ClientScopeRepresentation;
@@ -35,6 +36,7 @@ type ScopeFormProps = {
 
 export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const { t } = useTranslation("client-scopes");
+  const { t: tc } = useTranslation("clients");
   const { register, control, handleSubmit, errors, setValue } =
     useForm<ClientScopeRepresentation>({
       defaultValues: { attributes: { "display-on-consent-screen": "true" } },
@@ -186,7 +188,10 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                     selected={option === value}
                     key={option}
                     value={option}
-                  />
+                    data-testid={`option-${option}`}
+                  >
+                    {getProtocolName(tc, option)}
+                  </SelectOption>
                 ))}
               </Select>
             )}

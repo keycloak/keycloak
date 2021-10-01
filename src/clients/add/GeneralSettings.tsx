@@ -12,6 +12,7 @@ import { useLoginProviders } from "../../context/server-info/ServerInfoProvider"
 import { ClientDescription } from "../ClientDescription";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { getProtocolName } from "../utils";
 
 export const GeneralSettings = () => {
   const { t } = useTranslation("clients");
@@ -56,7 +57,10 @@ export const GeneralSettings = () => {
                   selected={option === value}
                   key={option}
                   value={option}
-                />
+                  data-testid={`option-${option}`}
+                >
+                  {getProtocolName(t, option)}
+                </SelectOption>
               ))}
             </Select>
           )}

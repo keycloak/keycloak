@@ -3,7 +3,7 @@ export default {
     enableDisable:
       "Disabled clients cannot initiate a login or have obtained access tokens.",
     clientType:
-      "'OpenID connect' allows Clients to verify the identity of the End-User based on the authentication performed by an Authorization Server.'SAML' enables web-based authentication and authorization scenarios including cross-domain single sign-on (SSO) and uses security tokens containing assertions to pass information.",
+      "'OpenID Connect' allows Clients to verify the identity of the End-User based on the authentication performed by an Authorization Server.'SAML' enables web-based authentication and authorization scenarios including cross-domain single sign-on (SSO) and uses security tokens containing assertions to pass information.",
     serviceAccount:
       "Allows you to authenticate this client to Keycloak and retrieve access token dedicated to this client. In terms of OAuth2 specification, this enables support of 'Client Credentials Grant' for this client.",
     authentication:
@@ -68,7 +68,7 @@ export default {
     nodeReRegistrationTimeout:
       "Interval to specify max time for registered clients cluster nodes to re-register. If cluster node will not send re-registration request to Keycloak within this time, it will be unregistered from Keycloak",
     fineGrainOpenIdConnectConfiguration:
-      "This section is used to configure advanced settings of this client related to OpenID connect protocol.",
+      "This section is used to configure advanced settings of this client related to OpenID Connect protocol.",
     fineGrainSamlEndpointConfig:
       "This section to configure exact URLs for Assertion Consumer and Single Logout Service.",
     accessTokenSignatureAlgorithm:

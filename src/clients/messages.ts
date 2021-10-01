@@ -1,5 +1,9 @@
 export default {
   clients: {
+    protocol: {
+      openIdConnect: "OpenID Connect",
+      saml: "SAML",
+    },
     clientType: "Client type",
     clientAuthorization: "Authorization",
     implicitFlow: "Implicit flow",
@@ -193,7 +197,7 @@ export default {
     testClusterAvailability: "Test cluster availability",
     registerNodeManually: "Register node manually",
     fineGrainOpenIdConnectConfiguration:
-      "Fine grain OpenID connect configuration",
+      "Fine grain OpenID Connect configuration",
     fineGrainSamlEndpointConfig: "Fine Grain SAML Endpoint Configuration",
     accessTokenSignatureAlgorithm: "Access token signature algorithm",
     idTokenSignatureAlgorithm: "ID token signature algorithm",

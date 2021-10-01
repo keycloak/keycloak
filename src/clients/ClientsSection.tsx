@@ -29,7 +29,7 @@ import { InitialAccessTokenList } from "./initial-access/InitialAccessTokenList"
 import { toAddClient } from "./routes/AddClient";
 import { toClient } from "./routes/Client";
 import { toImportClient } from "./routes/ImportClient";
-import { isRealmClient } from "./utils";
+import { isRealmClient, getProtocolName } from "./utils";
 
 export const ClientsSection = () => {
   const { t } = useTranslation("clients");
@@ -166,7 +166,12 @@ export const ClientsSection = () => {
                   displayKey: "common:clientId",
                   cellRenderer: ClientDetailLink,
                 },
-                { name: "protocol", displayKey: "common:type" },
+                {
+                  name: "protocol",
+                  displayKey: "common:type",
+                  cellRenderer: (client) =>
+                    getProtocolName(t, client.protocol ?? "openid-connect"),
+                },
                 {
                   name: "description",
                   displayKey: "common:description",

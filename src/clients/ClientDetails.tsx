@@ -52,7 +52,7 @@ import { toClients } from "./routes/Clients";
 import { ClientScopes } from "./scopes/ClientScopes";
 import { EvaluateScopes } from "./scopes/EvaluateScopes";
 import { ServiceAccount } from "./service-account/ServiceAccount";
-import { isRealmClient } from "./utils";
+import { isRealmClient, getProtocolName } from "./utils";
 
 type ClientDetailHeaderProps = {
   onChange: (value: boolean) => void;
@@ -83,9 +83,10 @@ const ClientDetailHeader = ({
   });
 
   const badges = useMemo<ViewHeaderBadge[]>(() => {
-    if (!client.protocol) {
-      return [];
-    }
+    const protocolName = getProtocolName(
+      t,
+      client.protocol ?? "openid-connect"
+    );
 
     const text = client.bearerOnly ? (
       <Tooltip
@@ -96,15 +97,15 @@ const ClientDetailHeader = ({
           data-testid="bearer-only-explainer-label"
           icon={<InfoCircleIcon />}
         >
-          {client.protocol}
+          {protocolName}
         </Label>
       </Tooltip>
     ) : (
-      <Label>{client.protocol}</Label>
+      <Label>{protocolName}</Label>
     );
 
     return [{ text }];
-  }, [client]);
+  }, [client, t]);
 
   const dropdownItems = [
     <DropdownItem key="download" onClick={() => toggleDownloadDialog()}>

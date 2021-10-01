@@ -41,7 +41,7 @@ export default class CreateClientPage {
   //#region General Settings
   selectClientType(clientType: string) {
     cy.get(this.clientTypeDrpDwn).click();
-    cy.get(this.clientTypeList).contains(clientType).click();
+    cy.get(this.clientTypeList).findByTestId(`option-${clientType}`).click();
 
     return this;
   }
