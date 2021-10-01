@@ -55,12 +55,13 @@ export const InitialAccessTokenList = () => {
         searchPlaceholderKey="clients:searchInitialAccessToken"
         loader={loader}
         toolbarItem={
-          <>
-            {/* @ts-ignore */}
-            <Button component={Link} to={toCreateInitialAccessToken({ realm })}>
-              {t("common:create")}
-            </Button>
-          </>
+          <Button
+            component={(props) => (
+              <Link {...props} to={toCreateInitialAccessToken({ realm })} />
+            )}
+          >
+            {t("common:create")}
+          </Button>
         }
         actions={[
           {

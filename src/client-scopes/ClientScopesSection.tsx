@@ -204,8 +204,11 @@ export const ClientScopesSection = () => {
               />
 
               <ToolbarItem>
-                {/* @ts-ignore */}
-                <Button component={Link} to={toNewClientScope({ realm })}>
+                <Button
+                  component={(props) => (
+                    <Link {...props} to={toNewClientScope({ realm })} />
+                  )}
+                >
                   {t("createClientScope")}
                 </Button>
               </ToolbarItem>

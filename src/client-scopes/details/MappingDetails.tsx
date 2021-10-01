@@ -242,9 +242,12 @@ export const MappingDetails = () => {
             </Button>
             <Button
               variant="link"
-              component={Link}
-              // @ts-ignore
-              to={toClientScope({ realm, id, type, tab: "mappers" })}
+              component={(props) => (
+                <Link
+                  {...props}
+                  to={toClientScope({ realm, id, type, tab: "mappers" })}
+                />
+              )}
             >
               {t("common:cancel")}
             </Button>

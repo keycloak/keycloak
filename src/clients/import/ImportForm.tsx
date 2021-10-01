@@ -97,8 +97,12 @@ export const ImportForm = () => {
               <Button variant="primary" type="submit">
                 {t("common:save")}
               </Button>
-              {/* @ts-ignore */}
-              <Button variant="link" component={Link} to={toClients({ realm })}>
+              <Button
+                variant="link"
+                component={(props) => (
+                  <Link {...props} to={toClients({ realm })} />
+                )}
+              >
                 {t("common:cancel")}
               </Button>
             </ActionGroup>

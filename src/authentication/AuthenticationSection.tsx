@@ -223,9 +223,9 @@ export const AuthenticationSection = () => {
               toolbarItem={
                 <ToolbarItem>
                   <Button
-                    component={Link}
-                    // @ts-ignore
-                    to={toCreateFlow({ realm })}
+                    component={(props) => (
+                      <Link {...props} to={toCreateFlow({ realm })} />
+                    )}
                   >
                     {t("createFlow")}
                   </Button>

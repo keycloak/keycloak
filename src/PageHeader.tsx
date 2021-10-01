@@ -56,9 +56,9 @@ export const Header = () => {
     return (
       <DropdownItem
         key="server info"
-        component={Link}
-        // @ts-ignore
-        to={toDashboard({ realm })}
+        component={(props: any) => (
+          <Link {...props} to={toDashboard({ realm })} />
+        )}
       >
         {t("realmInfo")}
       </DropdownItem>

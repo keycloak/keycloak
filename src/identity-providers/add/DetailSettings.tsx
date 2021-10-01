@@ -321,7 +321,6 @@ export const DetailSettings = () => {
                 toolbarItem={
                   <ToolbarItem>
                     <Link
-                      // @ts-ignore
                       to={toIdentityProviderAddMapper({
                         realm,
                         alias: alias!,

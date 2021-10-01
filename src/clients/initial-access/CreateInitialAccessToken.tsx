@@ -130,9 +130,12 @@ export const CreateInitialAccessToken = () => {
             <Button
               data-testid="cancel"
               variant="link"
-              component={Link}
-              // @ts-ignore
-              to={toClients({ realm, tab: "initialAccessToken" })}
+              component={(props) => (
+                <Link
+                  {...props}
+                  to={toClients({ realm, tab: "initialAccessToken" })}
+                />
+              )}
             >
               {t("common:cancel")}
             </Button>
