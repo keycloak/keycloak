@@ -27,7 +27,7 @@ public class AuthenticationMethodSetupPage extends LanguageComboboxAwarePage {
     @FindBy(xpath = "//*[@id='modal-cancel']")
     private WebElement cancelBtn;
 
-    public void clickRemoveBackupCodesLink() {
+    public void clickRemoveRecoveryCodesLink() {
         removeRecoveryAuthnCodesLink.click();
     }
 
@@ -37,7 +37,6 @@ public class AuthenticationMethodSetupPage extends LanguageComboboxAwarePage {
 
     @Override
     public boolean isCurrent() {
-
         // Check the backup code text box and label available
         try {
             driver.findElement(By.id("basic-authentication-categ-title"));

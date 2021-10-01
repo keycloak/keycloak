@@ -21,13 +21,16 @@ public class EnterRecoveryAuthnCodePage extends LanguageComboboxAwarePage {
     @FindBy(id = "kc-login")
     private WebElement signInButton;
 
+    @FindBy(className = "kc-feedback-text")
+    private WebElement feedbackText;
+
     public int getRecoveryAuthnCodeToEnterNumber() {
         String [] recoveryAuthnCodeLabelParts = recoveryAuthnCodeLabel.getText().split("#");
         return Integer.valueOf(recoveryAuthnCodeLabelParts[1]) - 1; // Recovery Authn Code 1 is at element 0 in the list
     }
 
-    public void enterRecoveryAuthnCode(String backupCode) {
-        recoveryAuthnCodeTextField.sendKeys(backupCode);
+    public void enterRecoveryAuthnCode(String recoveryCode) {
+        recoveryAuthnCodeTextField.sendKeys(recoveryCode);
     }
 
     public void clickSignInButton() {
@@ -44,12 +47,15 @@ public class EnterRecoveryAuthnCodePage extends LanguageComboboxAwarePage {
         } catch (NoSuchElementException nfe) {
             return false;
         }
-
         return true;
     }
 
     @Override
     public void open() throws Exception {
         throw new UnsupportedOperationException();
+    }
+
+    public String getFeedbackText() {
+        return feedbackText.getText().trim();
     }
 }

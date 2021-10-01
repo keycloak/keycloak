@@ -29,12 +29,10 @@ public class SelectAuthenticatorPage extends LanguageComboboxAwarePage {
      */
     public List<String> getAvailableLoginMethods() {
         List<WebElement> rows = getLoginMethodsRows();
-
         return rows.stream()
                 .map(this::getLoginMethodNameFromRow)
                 .collect(Collectors.toList());
     }
-
 
     /**
      *
@@ -73,29 +71,23 @@ public class SelectAuthenticatorPage extends LanguageComboboxAwarePage {
                 .orElseThrow(() -> new AssertionError("Login method '" + loginMethodName + "' not found in the available authentication mechanisms"));
     }
 
-
     @Override
     public boolean isCurrent() {
         // Check the title
         if (!DroneUtils.getCurrentDriver().getTitle().startsWith("Sign in to ") && !DroneUtils.getCurrentDriver().getTitle().startsWith("Anmeldung bei ")) {
             return false;
         }
-
         // Check the authenticators-choice available
         try {
             driver.findElement(By.id("kc-select-credential-form"));
         } catch (NoSuchElementException nfe) {
             return false;
         }
-
         return true;
     }
-
 
     @Override
     public void open() throws Exception {
         throw new UnsupportedOperationException();
     }
-
-
 }

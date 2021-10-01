@@ -40,7 +40,6 @@ public class LandingPage extends LanguageComboboxAwarePage {
         } catch (NoSuchElementException nfe) {
             return false;
         }
-
         return true;
     }
 
