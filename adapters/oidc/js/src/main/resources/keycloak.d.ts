@@ -292,23 +292,19 @@ declare namespace Keycloak {
 	}
 
 	interface KeycloakTokenParsed {
-		acr?: string;
+		iss?: string;
+		sub?: string;
 		aud?: string;
-		auth_time?: number;
-		azp?: string;
-		email_varified?: boolean;
 		exp?: number;
 		iat?: number;
-		iss?: string;
-		jti?: string;
+		auth_time?: number;
 		nonce?: string;
-		preferred_username?: string;
+		acr?: string;
+		amr?: string;
+		azp?: string;
+		session_state?: string;
 		realm_access?: KeycloakRoles;
 		resource_access?: KeycloakResourceAccess;
-		scope?: string;
-		session_state?: string;
-		sub?: string;
-		typ?: string;
 	}
 
 	interface KeycloakResourceAccess {
