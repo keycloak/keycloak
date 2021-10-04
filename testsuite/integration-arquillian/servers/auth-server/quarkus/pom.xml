@@ -128,6 +128,21 @@
                             </resources>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>add-pw-blacklist-file</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${auth.server.home}/dependency/password-blacklists</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${keycloak.base.test.resource}/password-blacklists</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
