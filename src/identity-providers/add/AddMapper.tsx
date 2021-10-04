@@ -172,11 +172,20 @@ export const AddMapper = () => {
 
   const formValues = form.getValues();
 
-  const isAdvancedAttrToRole =
+  const isSAMLAdvancedAttrToRole =
     formValues.identityProviderMapper === "saml-advanced-role-idp-mapper";
 
-  const isAttributeImporter =
+  const isOIDCclaimToRole =
+    formValues.identityProviderMapper === "oidc-role-idp-mapper";
+
+  const isOIDCAdvancedClaimToRole =
+    formValues.identityProviderMapper === "oidc-advanced-role-idp-mapper";
+
+  const isSAMLAttributeImporter =
     formValues.identityProviderMapper === "saml-user-attribute-idp-mapper";
+
+  const isOIDCAttributeImporter =
+    formValues.identityProviderMapper === "oidc-user-attribute-idp-mapper";
 
   const isHardcodedAttribute =
     form.getValues().identityProviderMapper ===
@@ -192,8 +201,11 @@ export const AddMapper = () => {
   const isSAMLAttributeToRole =
     formValues.identityProviderMapper === "saml-role-idp-mapper";
 
-  const isUsernameTemplateImporter =
+  const isSAMLUsernameTemplateImporter =
     formValues.identityProviderMapper === "saml-username-idp-mapper";
+
+  const isOIDCUsernameTemplateImporter =
+    formValues.identityProviderMapper === "oidc-username-idp-mapper";
 
   const toggleModal = () => {
     setRolesModalOpen(!rolesModalOpen);
@@ -263,15 +275,35 @@ export const AddMapper = () => {
         />
         {isSAMLorOIDC ? (
           <>
-            {isAdvancedAttrToRole && (
+            {(isSAMLAdvancedAttrToRole || isOIDCAdvancedClaimToRole) && (
               <>
                 <FormGroup
-                  label={t("common:attributes")}
+                  label={
+                    isSAMLAdvancedAttrToRole
+                      ? t("common:attributes")
+                      : t("claims")
+                  }
                   labelIcon={
                     <HelpItem
-                      helpText="identity-providers-help:attributes"
-                      forLabel={t("attributes")}
-                      forID={t(`common:helpLabel`, { label: t("attributes") })}
+                      helpText={
+                        isSAMLAdvancedAttrToRole
+                          ? "identity-providers-help:attributes"
+                          : "identity-providers-help:claims"
+                      }
+                      forLabel={
+                        isSAMLAdvancedAttrToRole
+                          ? t("common:attributes")
+                          : t("common:claims")
+                      }
+                      forID={
+                        isSAMLAdvancedAttrToRole
+                          ? t(`common:helpLabel`, {
+                              label: t("attributes"),
+                            })
+                          : t(`common:helpLabel`, {
+                              label: t("claim"),
+                            })
+                      }
                     />
                   }
                   fieldId="kc-gui-order"
@@ -313,7 +345,8 @@ export const AddMapper = () => {
                 </FormGroup>
               </>
             )}
-            {isUsernameTemplateImporter && (
+            {(isSAMLUsernameTemplateImporter ||
+              isOIDCUsernameTemplateImporter) && (
               <>
                 <FormGroup
                   label={t("template")}
@@ -408,50 +441,7 @@ export const AddMapper = () => {
                 </FormGroup>
               </>
             )}
-            {(isAdvancedAttrToRole ||
-              isHardcodedRole ||
-              isSAMLAttributeToRole) && (
-              <FormGroup
-                label={t("common:role")}
-                labelIcon={
-                  <HelpItem
-                    id="name-help-icon"
-                    helpText="identity-providers-help:role"
-                    forLabel={t("identity-providers-help:role")}
-                    forID={t(`identity-providers:helpLabel`, {
-                      label: t("role"),
-                    })}
-                  />
-                }
-                fieldId="kc-role"
-                validated={
-                  errors.config?.role
-                    ? ValidatedOptions.error
-                    : ValidatedOptions.default
-                }
-                helperTextInvalid={t("common:required")}
-              >
-                <TextInput
-                  ref={register()}
-                  type="text"
-                  id="kc-role"
-                  data-testid="mapper-role-input"
-                  name="config.role"
-                  value={selectedRole[0]?.name}
-                  validated={
-                    errors.config?.role
-                      ? ValidatedOptions.error
-                      : ValidatedOptions.default
-                  }
-                />
-                <Button
-                  data-testid="select-role-button"
-                  onClick={() => toggleModal()}
-                >
-                  {t("selectRole")}
-                </Button>
-              </FormGroup>
-            )}
+
             {(isHardcodedAttribute || isHardcodedUserSessionAttribute) && (
               <>
                 <FormGroup
@@ -546,84 +536,137 @@ export const AddMapper = () => {
                 </FormGroup>
               </>
             )}
-            {isAttributeImporter && (
+            {(isSAMLAttributeImporter ||
+              isOIDCAttributeImporter ||
+              isOIDCclaimToRole) && (
               <>
-                <FormGroup
-                  label={t("mapperAttributeName")}
-                  labelIcon={
-                    <HelpItem
-                      id="user-session-attribute-help-icon"
-                      helpText="identity-providers-help:attributeName"
-                      forLabel={t("mapperAttributeName")}
-                      forID={t(`common:helpLabel`, {
-                        label: t("mapperAttributeName"),
-                      })}
-                    />
-                  }
-                  fieldId="kc-attribute-name"
-                  validated={
-                    errors.name
-                      ? ValidatedOptions.error
-                      : ValidatedOptions.default
-                  }
-                  helperTextInvalid={t("common:required")}
-                >
-                  <TextInput
-                    ref={register()}
-                    type="text"
-                    defaultValue={currentMapper?.config["attribute-name"]}
-                    id="kc-attribute-name"
-                    data-testid="attribute-name"
-                    name="config.attribute-name"
+                {isSAMLAttributeImporter ? (
+                  <>
+                    <FormGroup
+                      label={t("mapperAttributeName")}
+                      labelIcon={
+                        <HelpItem
+                          id="user-session-attribute-help-icon"
+                          helpText="identity-providers-help:attributeName"
+                          forLabel={t("mapperAttributeName")}
+                          forID={t(`common:helpLabel`, {
+                            label: t("mapperAttributeName"),
+                          })}
+                        />
+                      }
+                      fieldId="kc-attribute-name"
+                      validated={
+                        errors.name
+                          ? ValidatedOptions.error
+                          : ValidatedOptions.default
+                      }
+                      helperTextInvalid={t("common:required")}
+                    >
+                      <TextInput
+                        ref={register()}
+                        type="text"
+                        defaultValue={currentMapper?.config["attribute-name"]}
+                        id="kc-attribute-name"
+                        data-testid="attribute-name"
+                        name="config.attribute-name"
+                        validated={
+                          errors.name
+                            ? ValidatedOptions.error
+                            : ValidatedOptions.default
+                        }
+                      />
+                    </FormGroup>
+                    <FormGroup
+                      label={t("mapperAttributeFriendlyName")}
+                      labelIcon={
+                        <HelpItem
+                          id="mapper-attribute-friendly-name"
+                          helpText="identity-providers-help:friendlyName"
+                          forLabel={t("mapperAttributeFriendlyName")}
+                          forID={t(`common:helpLabel`, {
+                            label: t("mapperAttributeFriendlyName"),
+                          })}
+                        />
+                      }
+                      fieldId="kc-friendly-name"
+                      validated={
+                        errors.name
+                          ? ValidatedOptions.error
+                          : ValidatedOptions.default
+                      }
+                      helperTextInvalid={t("common:required")}
+                    >
+                      <TextInput
+                        ref={register()}
+                        type="text"
+                        defaultValue={
+                          currentMapper?.config["attribute-friendly-name"]
+                        }
+                        data-testid="attribute-friendly-name"
+                        id="kc-attribute-friendly-name"
+                        name="config.attribute-friendly-name"
+                        validated={
+                          errors.name
+                            ? ValidatedOptions.error
+                            : ValidatedOptions.default
+                        }
+                      />
+                    </FormGroup>
+                  </>
+                ) : (
+                  <FormGroup
+                    label={t("claim")}
+                    labelIcon={
+                      <HelpItem
+                        id="claim"
+                        helpText="identity-providers-help:claim"
+                        forLabel={t("claim")}
+                        forID={t(`common:helpLabel`, {
+                          label: t("claim"),
+                        })}
+                      />
+                    }
+                    fieldId="kc-friendly-name"
                     validated={
                       errors.name
                         ? ValidatedOptions.error
                         : ValidatedOptions.default
                     }
-                  />
-                </FormGroup>
-                <FormGroup
-                  label={t("mapperAttributeFriendlyName")}
-                  labelIcon={
-                    <HelpItem
-                      id="mapper-attribute-friendly-name"
-                      helpText="identity-providers-help:friendlyName"
-                      forLabel={t("mapperAttributeFriendlyName")}
-                      forID={t(`common:helpLabel`, {
-                        label: t("mapperAttributeFriendlyName"),
-                      })}
+                    helperTextInvalid={t("common:required")}
+                  >
+                    <TextInput
+                      ref={register()}
+                      type="text"
+                      defaultValue={currentMapper?.config["claim"]}
+                      data-testid="claim"
+                      id="kc-claim"
+                      name={"config.claim"}
+                      validated={
+                        errors.name
+                          ? ValidatedOptions.error
+                          : ValidatedOptions.default
+                      }
                     />
-                  }
-                  fieldId="kc-friendly-name"
-                  validated={
-                    errors.name
-                      ? ValidatedOptions.error
-                      : ValidatedOptions.default
-                  }
-                  helperTextInvalid={t("common:required")}
-                >
-                  <TextInput
-                    ref={register()}
-                    type="text"
-                    defaultValue={
-                      currentMapper?.config["attribute-friendly-name"]
-                    }
-                    data-testid="attribute-friendly-name"
-                    id="kc-attribute-friendly-name"
-                    name="config.attribute-friendly-name"
-                    validated={
-                      errors.name
-                        ? ValidatedOptions.error
-                        : ValidatedOptions.default
-                    }
-                  />
-                </FormGroup>
+                  </FormGroup>
+                )}
                 <FormGroup
-                  label={t("mapperUserAttributeName")}
+                  label={
+                    isOIDCclaimToRole
+                      ? t("claimValue")
+                      : t("mapperUserAttributeName")
+                  }
                   labelIcon={
                     <HelpItem
-                      id="user-attribute-name-help-icon"
-                      helpText="identity-providers-help:userAttributeName"
+                      id={
+                        isOIDCclaimToRole
+                          ? "claim-value-help-icon"
+                          : "user-attribute-name-help-icon"
+                      }
+                      helpText={
+                        isOIDCclaimToRole
+                          ? "identity-providers-help:claimValue"
+                          : "identity-providers-help:userAttributeName"
+                      }
                       forLabel={t("mapperUserAttributeName")}
                       forID={t(`common:helpLabel`, {
                         label: t("mapperUserAttributeName"),
@@ -641,10 +684,24 @@ export const AddMapper = () => {
                   <TextInput
                     ref={register()}
                     type="text"
-                    defaultValue={currentMapper?.config["attribute-value"]}
-                    data-testid="user-attribute-name"
-                    id="kc-user-attribute-name"
-                    name="config.attribute-value"
+                    defaultValue={
+                      isOIDCclaimToRole
+                        ? currentMapper?.config["claim-value"]
+                        : currentMapper?.config["attribute-value"]
+                    }
+                    data-testid={
+                      isOIDCclaimToRole ? "claim-value" : "user-attribute-name"
+                    }
+                    id={
+                      isOIDCclaimToRole
+                        ? "kc-claim-value"
+                        : "kc-user-attribute-name"
+                    }
+                    name={
+                      isOIDCclaimToRole
+                        ? "config.claim"
+                        : "config.user-attribute"
+                    }
                     validated={
                       errors.name
                         ? ValidatedOptions.error
@@ -653,6 +710,52 @@ export const AddMapper = () => {
                   />
                 </FormGroup>
               </>
+            )}
+            {(isSAMLAdvancedAttrToRole ||
+              isHardcodedRole ||
+              isSAMLAttributeToRole ||
+              isOIDCAdvancedClaimToRole ||
+              isOIDCclaimToRole) && (
+              <FormGroup
+                label={t("common:role")}
+                labelIcon={
+                  <HelpItem
+                    id="name-help-icon"
+                    helpText="identity-providers-help:role"
+                    forLabel={t("identity-providers-help:role")}
+                    forID={t(`identity-providers:helpLabel`, {
+                      label: t("role"),
+                    })}
+                  />
+                }
+                fieldId="kc-role"
+                validated={
+                  errors.config?.role
+                    ? ValidatedOptions.error
+                    : ValidatedOptions.default
+                }
+                helperTextInvalid={t("common:required")}
+              >
+                <TextInput
+                  ref={register()}
+                  type="text"
+                  id="kc-role"
+                  data-testid="mapper-role-input"
+                  name="config.role"
+                  value={selectedRole[0]?.name}
+                  validated={
+                    errors.config?.role
+                      ? ValidatedOptions.error
+                      : ValidatedOptions.default
+                  }
+                />
+                <Button
+                  data-testid="select-role-button"
+                  onClick={() => toggleModal()}
+                >
+                  {t("selectRole")}
+                </Button>
+              </FormGroup>
             )}
           </>
         ) : (

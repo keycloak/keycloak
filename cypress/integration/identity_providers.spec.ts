@@ -197,7 +197,7 @@ describe("Identity provider test", () => {
 
       addMapperPage.addMapper();
 
-      addMapperPage.addAttrImporterMapper("Attribute Importer");
+      addMapperPage.addSAMLAttrImporterMapper("Attribute Importer");
 
       masthead.checkNotificationMessage(createMapperSuccessMsg);
     });
@@ -240,6 +240,34 @@ describe("Identity provider test", () => {
       addMapperPage.addMapper();
 
       addMapperPage.addSAMLAttributeToRoleMapper("SAML Attribute To Role");
+
+      masthead.checkNotificationMessage(createMapperSuccessMsg);
+    });
+
+    it("should add OIDC mapper of type Attribute Importer", () => {
+      sidebarPage.goToIdentityProviders();
+
+      listingPage.goToItemDetails("oidc");
+
+      addMapperPage.goToMappersTab();
+
+      addMapperPage.emptyStateAddMapper();
+
+      addMapperPage.addOIDCAttrImporterMapper("OIDC Attribute Importer");
+
+      masthead.checkNotificationMessage(createMapperSuccessMsg);
+    });
+
+    it("should add OIDC mapper of type Claim To Role", () => {
+      sidebarPage.goToIdentityProviders();
+
+      listingPage.goToItemDetails("oidc");
+
+      addMapperPage.goToMappersTab();
+
+      addMapperPage.addMapper();
+
+      addMapperPage.addOIDCClaimToRoleMapper("OIDC Claim to Role");
 
       masthead.checkNotificationMessage(createMapperSuccessMsg);
     });

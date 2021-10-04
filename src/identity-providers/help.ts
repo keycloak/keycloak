@@ -134,7 +134,8 @@ export default {
       "Destination field for the mapper. LOCAL (default) means that the changes are applied to the username stored in local database upon user import. BROKER_ID and BROKER_USERNAME means that the changes are stored into the ID or username used for federation user lookup, respectively.",
     userSessionAttribute: "Name of user session attribute you want to hardcode",
     userAttribute: "Name of user attribute you want to hardcode",
-
+    claim:
+      "Name of claim to search for in token. You can reference nested claims by using a '.', i.e. 'address.locality'. To use dot (.) literally, escape it with backslash. (\\.)",
     userAttributeValue: "Value you want to hardcode",
     attributeName:
       "Name of attribute to search for in assertion. You can leave this blank and specify a friendly name instead.",
