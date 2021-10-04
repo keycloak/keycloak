@@ -42,6 +42,8 @@ import picocli.CommandLine;
 final class Picocli {
 
     private static final Logger logger = Logger.getLogger(Picocli.class);
+    private static final String ARG_SEPARATOR = ";;";
+    private static final String ARG_PREFIX = "--";
 
     static CommandLine createCommandLine(List<String> cliArgs) {
         CommandLine.Model.CommandSpec spec = CommandLine.Model.CommandSpec.forAnnotatedObject(new MainCommand())
@@ -86,9 +88,9 @@ final class Picocli {
                 iterator.remove();
             }
 
-            if (key.startsWith("--")) {
+            if (key.startsWith(ARG_PREFIX)) {
                 if (options.length() > 0) {
-                    options.append(",");
+                    options.append(ARG_SEPARATOR);
                 }
                 options.append(key);
             }
@@ -106,7 +108,7 @@ final class Picocli {
         }
 
         for (PropertyMapper mapper : mappers) {
-            String name = "--" + PropertyMappers.toCLIFormat(mapper.getFrom()).substring(3);
+            String name = ARG_PREFIX + PropertyMappers.toCLIFormat(mapper.getFrom()).substring(3);
             String description = mapper.getDescription();
 
             if (description == null || commandSpec.optionsMap().containsKey(name)) {
