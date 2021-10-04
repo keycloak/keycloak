@@ -43,7 +43,7 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
 
     private static final Logger log = Logger.getLogger(ConfigArgsConfigSource.class);
 
-    private static final Pattern ARG_SPLIT = Pattern.compile(",");
+    private static final Pattern ARG_SPLIT = Pattern.compile(";;");
     private static final Pattern ARG_KEY_VALUE_SPLIT = Pattern.compile("=");
     private static final String ARG_PREFIX = "--";
     private static final Pattern DOT_SPLIT = Pattern.compile("\\.");
