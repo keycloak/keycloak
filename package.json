@@ -58,7 +58,7 @@
     "@types/dagre": "^0.7.45",
     "@types/file-saver": "^2.0.3",
     "@types/lodash": "^4.14.175",
-    "@types/node": "^16.10.1",
+    "@types/node": "^16.10.2",
     "@types/react": "^17.0.24",
     "@types/react-dom": "^17.0.9",
     "@types/react-router-dom": "^5.3.0",
