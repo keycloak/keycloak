@@ -72,7 +72,7 @@
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-cypress": "^2.12.1",
     "eslint-plugin-prettier": "^4.0.0",
-    "eslint-plugin-react": "^7.26.0",
+    "eslint-plugin-react": "^7.26.1",
     "fork-ts-checker-webpack-plugin": "^6.3.3",
     "http2-proxy": "^5.0.53",
     "husky": "^7.0.2",
