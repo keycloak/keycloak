@@ -503,10 +503,35 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     /*************** Protocol mappers ****************/
 
+    private static MapProtocolMapperEntity fromModel(ProtocolMapperModel model) {
+        MapProtocolMapperEntity res = new MapProtocolMapperEntityImpl();
+        res.setId(model.getId());
+        res.setName(model.getName());
+        res.setProtocolMapper(model.getProtocolMapper());
+        res.setConfig(model.getConfig());
+        return res;
+    }
+
+    private ProtocolMapperModel toModel(MapProtocolMapperEntity entity) {
+        ProtocolMapperModel res = new ProtocolMapperModel();
+        res.setId(entity.getId());
+        res.setName(entity.getName());
+        res.setProtocolMapper(entity.getProtocolMapper());
+        res.setConfig(entity.getConfig());
+
+        res.setProtocol(safeGetProtocol());
+        return res;
+    }
+
     @Override
     public Stream<ProtocolMapperModel> getProtocolMappersStream() {
-        final Map<String, ProtocolMapperModel> protocolMappers = entity.getProtocolMappers();
-        return protocolMappers == null ? Stream.empty() : protocolMappers.values().stream().distinct();
+        final Map<String, MapProtocolMapperEntity> protocolMappers = entity.getProtocolMappers();
+        return protocolMappers == null ? Stream.empty() : protocolMappers.values().stream().distinct()
+          .map(this::toModel);
+    }
+
+    private String safeGetProtocol() {
+        return entity.getProtocol() == null ? "openid-connect" : entity.getProtocol();
     }
 
     @Override
@@ -515,20 +540,17 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
             return null;
         }
 
-        ProtocolMapperModel pm = new ProtocolMapperModel();
-        pm.setId(KeycloakModelUtils.generateId());
-        pm.setName(model.getName());
-        pm.setProtocol(model.getProtocol());
-        pm.setProtocolMapper(model.getProtocolMapper());
-
-        if (model.getConfig() != null) {
-            pm.setConfig(new HashMap<>(model.getConfig()));
-        } else {
+        MapProtocolMapperEntity pm = fromModel(model);
+        if (pm.getId() == null) {
+            String id = KeycloakModelUtils.generateId();
+            pm.setId(id);
+        }
+        if (model.getConfig() == null) {
             pm.setConfig(new HashMap<>());
         }
 
         entity.setProtocolMapper(pm.getId(), pm);
-        return pm;
+        return toModel(pm);
     }
 
     @Override
@@ -543,20 +565,25 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
     public void updateProtocolMapper(ProtocolMapperModel mapping) {
         final String id = mapping == null ? null : mapping.getId();
         if (id != null) {
-            entity.setProtocolMapper(id, mapping);
+            entity.setProtocolMapper(id, fromModel(mapping));
         }
     }
 
     @Override
     public ProtocolMapperModel getProtocolMapperById(String id) {
-        return entity.getProtocolMapper(id);
+        MapProtocolMapperEntity protocolMapper = entity.getProtocolMapper(id);
+        return protocolMapper == null ? null : toModel(protocolMapper);
     }
 
     @Override
     public ProtocolMapperModel getProtocolMapperByName(String protocol, String name) {
-        final Map<String, ProtocolMapperModel> protocolMappers = entity.getProtocolMappers();
+        final Map<String, MapProtocolMapperEntity> protocolMappers = entity.getProtocolMappers();
+        if (! Objects.equals(protocol, safeGetProtocol())) {
+            return null;
+        }
         return protocolMappers == null ? null : protocolMappers.values().stream()
-          .filter(pm -> Objects.equals(pm.getProtocol(), protocol) && Objects.equals(pm.getName(), name))
+          .filter(pm -> Objects.equals(pm.getName(), name))
+          .map(this::toModel)
           .findAny()
           .orElse(null);
     }

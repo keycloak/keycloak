@@ -16,7 +16,6 @@
  */
 package org.keycloak.models.map.client;
 
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.Collection;
@@ -35,7 +34,7 @@ import org.keycloak.models.map.annotations.GenerateEntityImplementations;
 @GenerateEntityImplementations(inherits="org.keycloak.models.map.client.MapClientEntity.AbstractClientEntity")
 public interface MapClientEntity extends AbstractEntity, UpdatableEntity {
 
-    static abstract class AbstractClientEntity implements MapClientEntity {
+    public abstract class AbstractClientEntity implements MapClientEntity {
         /**
          * Flag signalizing that any of the setters has been meaningfully used.
          */
@@ -74,9 +73,9 @@ public interface MapClientEntity extends AbstractEntity, UpdatableEntity {
     void setClientScope(String id, Boolean defaultScope);
     void removeClientScope(String id);
 
-    ProtocolMapperModel getProtocolMapper(String id);
-    Map<String, ProtocolMapperModel> getProtocolMappers();
-    void setProtocolMapper(String id, ProtocolMapperModel mapping);
+    MapProtocolMapperEntity getProtocolMapper(String id);
+    Map<String, MapProtocolMapperEntity> getProtocolMappers();
+    void setProtocolMapper(String id, MapProtocolMapperEntity mapping);
     void removeProtocolMapper(String id);
 
     void addRedirectUri(String redirectUri);

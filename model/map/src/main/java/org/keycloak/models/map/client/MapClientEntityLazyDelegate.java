@@ -16,7 +16,6 @@
  */
 package org.keycloak.models.map.client;
 
-import org.keycloak.models.ProtocolMapperModel;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -164,12 +163,12 @@ public class MapClientEntityLazyDelegate implements MapClientEntity {
     }
 
     @Override
-    public ProtocolMapperModel getProtocolMapper(String id) {
+    public MapProtocolMapperEntity getProtocolMapper(String id) {
         return getReadDelegate().getProtocolMapper(id);
     }
 
     @Override
-    public Map<String,ProtocolMapperModel> getProtocolMappers() {
+    public Map<String,MapProtocolMapperEntity> getProtocolMappers() {
         return getReadDelegate().getProtocolMappers();
     }
 
@@ -459,7 +458,7 @@ public class MapClientEntityLazyDelegate implements MapClientEntity {
     }
 
     @Override
-    public void setProtocolMapper(String id, ProtocolMapperModel mapping) {
+    public void setProtocolMapper(String id, MapProtocolMapperEntity mapping) {
         getWriteDelegate().setProtocolMapper(id, mapping);
     }
 
