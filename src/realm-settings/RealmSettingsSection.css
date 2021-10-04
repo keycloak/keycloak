@@ -194,6 +194,10 @@ article.pf-c-card.pf-m-flat.kc-login-settings-template
   transform: scale(1.6);
 }
 
-.kc-addExecutor {
-  float: right;
+.kc-emptyExecutors {
+  color: #8D9195;
+}
+
+.kc-action-dropdown {
+  background-color: transparent;
 }

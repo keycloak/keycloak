@@ -234,6 +234,7 @@ export default {
     deleteClientSuccess: "Client profile deleted",
     deleteClientError: "Could not delete profile: {{error}}",
     createClientProfile: "Create client profile",
+    deleteClientProfile: "Delete this client profile",
     createClientProfileSuccess: "New client profile created",
     createClientProfileError: "Could not create client profile: '{{error}}'",
     createClientProfileNameHelperText:
@@ -252,6 +253,10 @@ export default {
     executorsHelpItem: "Executors help item",
     addExecutor: "Add executor",
     emptyExecutors: "No executors configured",
+    updateClientProfilesSuccess:
+      "The client profiles configuration was updated",
+    updateClientProfilesError:
+      "Provided JSON is incorrect: Unexpected token { in JSON",
     tokens: "Tokens",
     key: "Key",
     value: "Value",

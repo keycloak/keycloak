@@ -469,5 +469,37 @@ describe("Realm settings tests", () => {
     it("Check deleting the client profile", () => {
       realmSettingsPage.shouldDeleteClientProfileDialog();
     });
+
+    it("Check navigating between Form View and JSON editor", () => {
+      realmSettingsPage.shouldNavigateBetweenFormAndJSONView();
+    });
+
+    it("Check saving changed JSON profiles", () => {
+      realmSettingsPage.shouldSaveChangedJSONProfiles();
+      realmSettingsPage.shouldDeleteClientProfileDialog();
+    });
+
+    it("Should not create duplicate client profile", () => {
+      realmSettingsPage.shouldCompleteAndCreateNewClientProfile();
+
+      sidebarPage.goToRealmSettings();
+      cy.findByTestId("rs-clientPolicies-tab").click();
+      cy.findByTestId("rs-profiles-clientPolicies-tab").click();
+      realmSettingsPage.shouldCompleteAndCreateNewClientProfile();
+      realmSettingsPage.shouldNotCreateDuplicateClientProfile();
+
+      sidebarPage.goToRealmSettings();
+      cy.findByTestId("rs-clientPolicies-tab").click();
+      cy.findByTestId("rs-profiles-clientPolicies-tab").click();
+      realmSettingsPage.shouldDeleteClientProfileDialog();
+    });
+
+    it("Check deleting newly created client profile from create view via dropdown", () => {
+      realmSettingsPage.shouldRemoveClientFromCreateView();
+    });
+
+    it("Check reloading JSON profiles", () => {
+      realmSettingsPage.shouldReloadJSONProfiles();
+    });
   });
 });

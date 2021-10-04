@@ -143,6 +143,8 @@ export default class RealmSettingsPage {
   executeActionsSelectMenu = "#kc-execute-actions-select-menu";
   executeActionsSelectMenuList = "#kc-execute-actions-select-menu > div > ul";
 
+  private formViewProfilesView = "formView-profilesView";
+  private jsonEditorProfilesView = "jsonEditor-profilesView";
   private createProfileBtn = "createProfile";
   private formViewSelect = "formView-profilesView";
   private jsonEditorSelect = "jsonEditor-profilesView";
@@ -156,6 +158,10 @@ export default class RealmSettingsPage {
   private deleteDialogTitle = ".pf-c-modal-box__title-text";
   private deleteDialogBodyText = ".pf-c-modal-box__body";
   private deleteDialogCancelBtn = ".pf-c-button.pf-m-link";
+  private jsonEditorSaveBtn = "jsonEditor-saveBtn";
+  private jsonEditorReloadBtn = "jsonEditor-reloadBtn";
+  private jsonEditor = ".monaco-scrollable-element.editor-scrollable.vs";
+  private createClientDrpDwn = ".pf-c-dropdown.pf-m-align-right";
 
   selectLoginThemeType(themeType: string) {
     cy.get(this.selectLoginTheme).click();
@@ -519,7 +525,64 @@ export default class RealmSettingsPage {
     cy.get(this.moreDrpDwn).last().click();
     cy.get(this.moreDrpDwnItems).click();
     cy.findByTestId("modalConfirm").contains("Delete").click();
-    cy.get("table").should("not.have.text", "Test");
     cy.get(this.alertMessage).should("be.visible", "Client profile deleted");
+    cy.get("table").should("not.have.text", "Test");
+  }
+
+  shouldNavigateBetweenFormAndJSONView() {
+    cy.findByTestId(this.jsonEditorProfilesView).check();
+    cy.findByTestId(this.jsonEditorSaveBtn).contains("Save");
+    cy.findByTestId(this.jsonEditorReloadBtn).contains("Reload");
+    cy.findByTestId(this.formViewProfilesView).check();
+    cy.findByTestId(this.createProfileBtn).contains("Create client profile");
+  }
+
+  shouldSaveChangedJSONProfiles() {
+    cy.findByTestId(this.jsonEditorProfilesView).check();
+    cy.get(this.jsonEditor).type(`{pageup}{del} [{
+      "name": "Test",
+      "description": "Test Description",
+      "executors": [],
+      "global": false
+    }, {downarrow}{end}{backspace}{backspace}`);
+    cy.findByTestId(this.jsonEditorSaveBtn).click();
+    cy.get(this.alertMessage).should(
+      "be.visible",
+      "The client profiles configuration was updated"
+    );
+    cy.findByTestId(this.formViewProfilesView).check();
+    cy.get("table").should("be.visible").contains("td", "Test");
+  }
+
+  shouldNotCreateDuplicateClientProfile() {
+    cy.get(this.alertMessage).should(
+      "be.visible",
+      "Could not create client profile: 'proposed client profile name duplicated.'"
+    );
+  }
+
+  shouldRemoveClientFromCreateView() {
+    cy.findByTestId(this.createProfileBtn).click();
+    cy.findByTestId(this.newClientProfileNameInput).type("Test again");
+    cy.findByTestId(this.newClientProfileDescriptionInput).type(
+      "Test Again Description"
+    );
+    cy.findByTestId(this.saveNewClientProfileBtn).click();
+    cy.get(this.alertMessage).should(
+      "be.visible",
+      "New client profile created"
+    );
+    cy.get(this.createClientDrpDwn).contains("Action").click();
+    cy.findByTestId("deleteClientProfileDropdown").click();
+    cy.findByTestId("modalConfirm").contains("Delete").click();
+    cy.get(this.alertMessage).should("be.visible", "Client profile deleted");
+    cy.get("table").should("not.have.text", "Test Again Description");
+  }
+
+  shouldReloadJSONProfiles() {
+    cy.findByTestId(this.jsonEditorProfilesView).check();
+    cy.findByTestId(this.jsonEditorReloadBtn).contains("Reload").click();
+    cy.findByTestId(this.jsonEditorSaveBtn).contains("Save");
+    cy.findByTestId(this.jsonEditorReloadBtn).contains("Reload");
   }
 }

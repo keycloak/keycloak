@@ -1,9 +1,11 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { omit } from "lodash";
 import {
+  ActionGroup,
   AlertVariant,
   Button,
   ButtonVariant,
+  FormGroup,
   Label,
   PageSection,
   Spinner,
@@ -38,6 +40,7 @@ export const ProfilesTab = () => {
     useState<ClientProfileRepresentation[]>();
   const [selectedProfile, setSelectedProfile] = useState<ClientProfile>();
   const [show, setShow] = useState(false);
+  const [code, setCode] = useState<string>();
   const [key, setKey] = useState(0);
 
   useFetch(
@@ -62,16 +65,16 @@ export const ProfilesTab = () => {
 
       const allClientProfiles = globalProfiles?.concat(profiles ?? []);
       setTableProfiles(allClientProfiles || []);
+      setCode(JSON.stringify(allClientProfiles, null, 2));
     },
     [key]
   );
 
   const loader = async () => tableProfiles ?? [];
 
-  const code = useMemo(
-    () => JSON.stringify(tableProfiles, null, 2),
-    [tableProfiles]
-  );
+  const normalizeProfile = (
+    profile: ClientProfile
+  ): ClientProfileRepresentation => omit(profile, "global");
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("deleteClientProfileConfirmTitle"),
@@ -83,7 +86,9 @@ export const ProfilesTab = () => {
         ?.filter(
           (profile) => profile.name !== selectedProfile?.name && !profile.global
         )
-        .map<ClientProfileRepresentation>((profile) => omit(profile, "global"));
+        .map<ClientProfileRepresentation>((profile) =>
+          normalizeProfile(profile)
+        );
 
       try {
         await adminClient.clientPolicies.createProfiles({
@@ -111,6 +116,39 @@ export const ProfilesTab = () => {
       </div>
     );
   }
+
+  const save = async () => {
+    if (!code) {
+      return;
+    }
+
+    try {
+      const obj: ClientProfile[] = JSON.parse(code);
+      const changedProfiles = obj
+        .filter((profile) => !profile.global)
+        .map((profile) => normalizeProfile(profile));
+
+      const changedGlobalProfiles = obj
+        .filter((profile) => profile.global)
+        .map((profile) => normalizeProfile(profile));
+
+      try {
+        await adminClient.clientPolicies.createProfiles({
+          profiles: changedProfiles,
+          globalProfiles: changedGlobalProfiles,
+        });
+        addAlert(
+          t("realm-settings:updateClientProfilesSuccess"),
+          AlertVariant.success
+        );
+        setKey(key + 1);
+      } catch (error) {
+        addError("realm-settings:updateClientProfilesError", error);
+      }
+    } catch (error) {
+      console.warn("Invalid json, ignoring value using {}");
+    }
+  };
 
   return (
     <>
@@ -195,26 +233,42 @@ export const ProfilesTab = () => {
           }
         />
       ) : (
-        <>
+        <FormGroup fieldId={"jsonEditor"}>
           <div className="pf-u-mt-md pf-u-ml-lg">
             <CodeEditor
               isLineNumbersVisible
               isLanguageLabelVisible
+              isReadOnly={false}
               code={code}
               language={Language.json}
               height="30rem"
+              onChange={(value) => {
+                setCode(value ?? "");
+              }}
             />
           </div>
-          <div className="pf-u-mt-md">
-            <Button
-              variant={ButtonVariant.primary}
-              className="pf-u-mr-md pf-u-ml-lg"
-            >
-              {t("save")}
-            </Button>
-            <Button variant={ButtonVariant.link}> {t("reload")}</Button>
-          </div>
-        </>
+          <ActionGroup>
+            <div className="pf-u-mt-md">
+              <Button
+                variant={ButtonVariant.primary}
+                className="pf-u-mr-md pf-u-ml-lg"
+                onClick={save}
+                data-testid="jsonEditor-saveBtn"
+              >
+                {t("save")}
+              </Button>
+              <Button
+                variant={ButtonVariant.link}
+                onClick={() => {
+                  setCode(JSON.stringify(tableProfiles, null, 2));
+                }}
+                data-testid="jsonEditor-reloadBtn"
+              >
+                {t("reload")}
+              </Button>
+            </div>
+          </ActionGroup>
+        </FormGroup>
       )}
     </>
   );
