@@ -1197,6 +1197,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
     $scope.samlEncrypt = false;
     $scope.samlForcePostBinding = false;
     $scope.samlForceNameIdFormat = false;
+    $scope.samlAllowECPFlow = false;
     $scope.samlXmlKeyNameTranformer = $scope.xmlKeyNameTranformers[1];
     $scope.disableAuthorizationTab = !client.authorizationServicesEnabled;
     $scope.disableServiceAccountRolesTab = !client.serviceAccountsEnabled;
@@ -1349,6 +1350,13 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
                 $scope.samlForceNameIdFormat = true;
             } else {
                 $scope.samlForceNameIdFormat = false;
+            }
+        }
+        if ($scope.client.attributes["saml.allow.ecp.flow"]) {
+            if ($scope.client.attributes["saml.allow.ecp.flow"] == "true") {
+                $scope.samlAllowECPFlow = true;
+            } else {
+                $scope.samlAllowECPFlow = false;
             }
         }
         if ($scope.client.attributes["saml.multivalued.roles"]) {
@@ -1960,6 +1968,12 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             $scope.clientEdit.attributes["saml_force_name_id_format"] = "true";
         } else {
             $scope.clientEdit.attributes["saml_force_name_id_format"] = "false";
+
+        }
+        if ($scope.samlAllowECPFlow == true) {
+            $scope.clientEdit.attributes["saml.allow.ecp.flow"] = "true";
+        } else {
+            $scope.clientEdit.attributes["saml.allow.ecp.flow"] = "false";
 
         }
         if ($scope.samlMultiValuedRoles == true) {
