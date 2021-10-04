@@ -8,14 +8,15 @@ Details for building from source and working with the codebase are provided in t
 
 ## Contributing to Keycloak
 
-Keycloak is an Open Source community-driven project and we welcome contributions as well as feedback from the community.
+Keycloak is an Open Source community-driven project and we welcome contributions as well as feedback from the community. We do have a few guidelines in place to help you be successful with your contribution to Keycloak.
 
-We do have a few guidelines in place to help you be successful with your contribution to Keycloak.
+Firstly, if you want to contribute a larger change to Keycloak we ask that you open a 
+discussion first. For minor changes you can skip this part and go straight ahead to sending a contribution. Bear in mind that if you open a discussion first you can identify if the change will be accepted, as well as getting early feedback.  
 
 Here's a quick checklist for a good PR, more details below:
 
-1. [Keycloak Dev Mailing List](https://groups.google.com/forum/#!forum/keycloak-dev)
-2. A JIRA associated with the PR
+1. A discussion around the change (https://github.com/keycloak/keycloak/discussions/categories/ideas)
+2. A JIRA with a good description associated with the PR
 3. One feature/change per PR
 4. One commit per PR
 5. PR rebased on master (`git rebase`, not `git pull`) 
@@ -36,13 +37,15 @@ If you would like to contribute to Keycloak, but are not sure exactly what to wo
 issues that are awaiting contributions in the 
 [Keycloak JIRA](https://issues.jboss.org/projects/KEYCLOAK/versions/12340167).
 
-### Open a discussion on Keycloak Dev Mailing List
+### Open a discussion on a proposed change
 
-As Keycloak is a community-driven project we require contributors to send a description of what they are planning to 
-work on to the [Keycloak Dev Mailing List](https://groups.google.com/forum/#!forum/keycloak-dev).
+As Keycloak is a community-driven project we require contributors to open a discussion on what they are planning to contribute.
 
-We recommend starting the discussion prior to submitting your PR. Through the mailing list you can get valuable
-feedback both from the core Keycloak team as well as the wider community.
+Discussions should first and foremost be done through [GitHub Discussions](https://github.com/keycloak/keycloak/discussions/categories/ideas).
+
+The [Keycloak Dev Mailing List](https://groups.google.com/forum/#!forum/keycloak-dev) can be used to notify the community on your new discussion, and can also be used for more low-level implementation discussions.
+
+For very large proposals it can be inefficient to capture all the information in the GitHub Discussion. In this cases a separate design proposal can be sent to the [Keycloak Community repository](https://github.com/keycloak/keycloak-community/tree/master/design), and linked to from the GitHub Discussion.
 
 ### Create an issue in Keycloak JIRA
 
