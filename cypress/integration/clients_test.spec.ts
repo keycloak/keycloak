@@ -19,15 +19,15 @@ const listingPage = new ListingPage();
 const createClientPage = new CreateClientPage();
 const modalUtils = new ModalUtils();
 
-describe("Clients test", function () {
-  describe("Client creation", function () {
-    beforeEach(function () {
+describe("Clients test", () => {
+  describe("Client creation", () => {
+    beforeEach(() => {
       keycloakBefore();
       loginPage.logIn();
       sidebarPage.goToClients();
     });
 
-    it("should fail creating client", function () {
+    it("should fail creating client", () => {
       listingPage.goToCreateItem();
 
       createClientPage.continue().checkClientIdRequiredMessage();
@@ -46,7 +46,7 @@ describe("Clients test", function () {
       );
     });
 
-    it("Client CRUD test", function () {
+    it("Client CRUD test", () => {
       itemId += "_" + (Math.random() + 1).toString(36).substring(7);
 
       // Create

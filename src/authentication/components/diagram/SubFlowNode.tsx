@@ -10,11 +10,11 @@ type SubFlowNodeProps = NodeProps & {
   prefix: string;
 };
 
-export const SubFlowNode = memo(function TheNode({
+const SubFlowNodeInner = ({
   data: { label },
   prefix,
   selected,
-}: SubFlowNodeProps) {
+}: SubFlowNodeProps) => {
   return (
     <>
       <Handle position={Position.Right} type="source" />
@@ -30,7 +30,9 @@ export const SubFlowNode = memo(function TheNode({
       <Handle position={Position.Left} type="target" />
     </>
   );
-});
+};
+
+export const SubFlowNode = memo(SubFlowNodeInner);
 
 export const StartSubFlowNode = ({ ...props }: NodeProps) => (
   <SubFlowNode {...props} prefix="Start" />

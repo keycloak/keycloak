@@ -6,10 +6,7 @@ type ConditionalNodeProps = {
   selected: boolean;
 };
 
-export const ConditionalNode = memo(function TheNode({
-  data,
-  selected,
-}: ConditionalNodeProps) {
+const ConditionalNodeInner = ({ data, selected }: ConditionalNodeProps) => {
   return (
     <>
       <Handle position={Position.Right} type="source" />
@@ -23,4 +20,6 @@ export const ConditionalNode = memo(function TheNode({
       <Handle position={Position.Left} type="target" />
     </>
   );
-});
+};
+
+export const ConditionalNode = memo(ConditionalNodeInner);

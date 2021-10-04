@@ -16,15 +16,15 @@ const listingPage = new ListingPage();
 const createRealmRolePage = new CreateRealmRolePage();
 const associatedRolesPage = new AssociatedRolesPage();
 
-describe("Realm roles test", function () {
-  describe("Realm roles creation", function () {
-    beforeEach(function () {
+describe("Realm roles test", () => {
+  describe("Realm roles creation", () => {
+    beforeEach(() => {
       keycloakBefore();
       loginPage.logIn();
       sidebarPage.goToRealmRoles();
     });
 
-    it("should fail creating realm role", function () {
+    it("should fail creating realm role", () => {
       listingPage.goToCreateItem();
 
       createRealmRolePage.save().checkRealmRoleNameRequiredMessage();
@@ -37,7 +37,7 @@ describe("Realm roles test", function () {
       );
     });
 
-    it("Realm role CRUD test", function () {
+    it("Realm role CRUD test", () => {
       itemId += "_" + (Math.random() + 1).toString(36).substring(7);
 
       // Create
@@ -63,7 +63,7 @@ describe("Realm roles test", function () {
       listingPage.itemExist(itemId, false);
     });
 
-    it("Associated roles test", function () {
+    it("Associated roles test", () => {
       itemId += "_" + (Math.random() + 1).toString(36).substring(7);
 
       // Create

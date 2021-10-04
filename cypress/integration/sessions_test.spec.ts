@@ -7,9 +7,9 @@ const loginPage = new LoginPage();
 const sidebarPage = new SidebarPage();
 const sessionsPage = new SessionsPage();
 
-describe("Sessions test", function () {
-  describe("Session type dropdown", function () {
-    beforeEach(function () {
+describe("Sessions test", () => {
+  describe("Session type dropdown", () => {
+    beforeEach(() => {
       keycloakBefore();
       loginPage.logIn();
       sidebarPage.goToSessions();

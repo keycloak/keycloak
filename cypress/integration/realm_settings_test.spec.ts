@@ -108,7 +108,7 @@ describe("Realm settings tests", () => {
       return this;
     };
 
-    it("Go to general tab", function () {
+    it("Go to general tab", () => {
       sidebarPage.goToRealmSettings();
       realmSettingsPage.toggleSwitch(realmSettingsPage.managedAccessSwitch);
       realmSettingsPage.save(realmSettingsPage.generalSaveBtn);
@@ -446,27 +446,27 @@ describe("Realm settings tests", () => {
       cy.findByTestId("rs-profiles-clientPolicies-tab").click();
     });
 
-    it("Go to client policies profiles tab", function () {
+    it("Go to client policies profiles tab", () => {
       realmSettingsPage.shouldDisplayProfilesTab();
     });
 
-    it("Check new client form is displaying", function () {
+    it("Check new client form is displaying", () => {
       realmSettingsPage.shouldDisplayNewClientProfileForm();
     });
 
-    it("Complete new client form and cancel", function () {
+    it("Complete new client form and cancel", () => {
       realmSettingsPage.shouldCompleteAndCancelCreateNewClientProfile();
     });
 
-    it("Complete new client form and submit", function () {
+    it("Complete new client form and submit", () => {
       realmSettingsPage.shouldCompleteAndCreateNewClientProfile();
     });
 
-    it("Check cancelling the client profile deletion", function () {
+    it("Check cancelling the client profile deletion", () => {
       realmSettingsPage.shouldDisplayDeleteClientProfileDialog();
     });
 
-    it("Check deleting the client profile", function () {
+    it("Check deleting the client profile", () => {
       realmSettingsPage.shouldDeleteClientProfileDialog();
     });
   });

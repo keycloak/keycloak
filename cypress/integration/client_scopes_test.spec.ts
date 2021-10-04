@@ -15,15 +15,15 @@ const listingPage = new ListingPage();
 const createClientScopePage = new CreateClientScopePage();
 const modalUtils = new ModalUtils();
 
-describe("Client Scopes test", function () {
-  describe("Client Scope creation", function () {
-    beforeEach(function () {
+describe("Client Scopes test", () => {
+  describe("Client Scope creation", () => {
+    beforeEach(() => {
       keycloakBefore();
       loginPage.logIn();
       sidebarPage.goToClientScopes();
     });
 
-    it("should fail creating client scope", function () {
+    it("should fail creating client scope", () => {
       listingPage.goToCreateItem();
 
       createClientScopePage.save().checkClientNameRequiredMessage();

@@ -34,7 +34,7 @@ describe("Identity provider test", () => {
   describe("Identity provider creation", () => {
     const identityProviderName = "github";
 
-    beforeEach(function () {
+    beforeEach(() => {
       keycloakBefore();
       loginPage.logIn();
       sidebarPage.goToIdentityProviders();

@@ -8,18 +8,18 @@ const password = "admin";
 const loginPage = new LoginPage();
 const masthead = new Masthead();
 
-describe("Logging In", function () {
-  beforeEach(function () {
+describe("Logging In", () => {
+  beforeEach(() => {
     keycloakBefore();
   });
 
-  it("displays errors on wrong credentials", function () {
+  it("displays errors on wrong credentials", () => {
     loginPage.logIn("wrong", "user{enter}");
 
     loginPage.checkErrorMessage("Invalid username or password.").isLogInPage();
   });
 
-  it("logs in", function () {
+  it("logs in", () => {
     loginPage.logIn(username, password);
 
     masthead.isAdminConsole();
