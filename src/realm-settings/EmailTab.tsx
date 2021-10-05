@@ -390,7 +390,7 @@ export const RealmSettingsEmailTab = ({
                   !(emailRegexPattern.test(watchFromValue) && watchHostValue)
                 }
               >
-                {t("realm-settings:testConnection")}
+                {t("common:testConnection")}
               </Button>
               <Button variant="link" onClick={reset}>
                 {t("common:revert")}

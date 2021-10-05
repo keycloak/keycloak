@@ -1,13 +1,18 @@
 /**
  * @jest-environment jsdom
  */
-import { Button } from "@patternfly/react-core";
-import { fireEvent, render, screen } from "@testing-library/react";
-import type { ServerInfoRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import React, { useState } from "react";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { Button } from "@patternfly/react-core";
+
+import type { ServerInfoRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
+import type WhoAmIRepresentation from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
 import { ServerInfoContext } from "../../context/server-info/ServerInfoProvider";
 import serverInfo from "../../context/server-info/__tests__/mock.json";
 import { AddMapperDialog, AddMapperDialogModalProps } from "./MapperDialog";
+import { WhoAmI, WhoAmIContext } from "../../context/whoami/WhoAmI";
+
+import whoami from "../../context/whoami/__tests__/mock-whoami.json";
 
 describe("MapperDialog", () => {
   const Test = (args: AddMapperDialogModalProps) => {
@@ -17,12 +22,21 @@ describe("MapperDialog", () => {
       <ServerInfoContext.Provider
         value={serverInfo as unknown as ServerInfoRepresentation}
       >
-        <AddMapperDialog
-          {...args}
-          open={open}
-          toggleDialog={() => setOpen(!open)}
-        />
-        <Button onClick={() => setOpen(true)}>{!open ? "Show" : "Hide"}</Button>
+        <WhoAmIContext.Provider
+          value={{
+            refresh: () => {},
+            whoAmI: new WhoAmI(whoami as WhoAmIRepresentation),
+          }}
+        >
+          <AddMapperDialog
+            {...args}
+            open={open}
+            toggleDialog={() => setOpen(!open)}
+          />
+          <Button onClick={() => setOpen(true)}>
+            {!open ? "Show" : "Hide"}
+          </Button>
+        </WhoAmIContext.Provider>
       </ServerInfoContext.Provider>
     );
   };
@@ -59,7 +73,7 @@ describe("MapperDialog", () => {
     render(<Test protocol={protocol} onConfirm={onConfirm} />);
 
     fireEvent.click(screen.getByText("Show"));
-    fireEvent.click(screen.getByLabelText("User Realm Role"));
+    fireEvent.click(screen.getByLabelText("Allowed Web Origins"));
 
     expect(onConfirm).toBeCalledWith(
       serverInfo.protocolMapperTypes[protocol][0]

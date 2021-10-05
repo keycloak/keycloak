@@ -50,7 +50,7 @@ export const AddUserEmailModal = ({
           form="email-form"
           isDisabled={!watchEmailInput}
         >
-          {t("realm-settings:testConnection")}
+          {t("common:testConnection")}
         </Button>,
         <Button
           id="modal-cancel"

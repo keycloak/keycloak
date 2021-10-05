@@ -40,6 +40,19 @@ const testLdapProperties: Array<keyof TestLdapConnectionRepresentation> = [
   "authType",
 ];
 
+type TestTypes = "testConnection" | "testAuthentication";
+
+const convertFormToSettings = (form: UseFormMethods) => {
+  const settings: TestLdapConnectionRepresentation = {};
+
+  testLdapProperties.forEach((key) => {
+    const value = _.get(form.getValues(), `config.${key}`);
+    settings[key] = Array.isArray(value) ? value[0] : "";
+  });
+
+  return settings;
+};
+
 export const LdapSettingsConnection = ({
   form,
   showSectionHeading = false,
@@ -52,17 +65,12 @@ export const LdapSettingsConnection = ({
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
 
-  const testLdap = async () => {
+  const testLdap = async (testType: TestTypes) => {
     try {
-      const settings: TestLdapConnectionRepresentation = {};
-
-      testLdapProperties.forEach((key) => {
-        const value = _.get(form.getValues(), `config.${key}`);
-        settings[key] = _.isArray(value) ? value[0] : "";
-      });
+      const settings = convertFormToSettings(form);
       await adminClient.realms.testLDAPConnection(
         { realm },
-        { ...settings, action: "testConnection" }
+        { ...settings, action: testType }
       );
       addAlert(t("testSuccess"), AlertVariant.success);
     } catch (error) {
@@ -235,6 +243,15 @@ export const LdapSettingsConnection = ({
             ref={form.register}
           />
         </FormGroup>
+        <FormGroup fieldId="kc-test-button">
+          <Button
+            variant="secondary"
+            id="kc-connection-test-button"
+            onClick={() => testLdap("testConnection")}
+          >
+            {t("common:testConnection")}
+          </Button>
+        </FormGroup>
         <FormGroup
           label={t("bindType")}
           labelIcon={
@@ -337,9 +354,9 @@ export const LdapSettingsConnection = ({
           <Button
             variant="secondary"
             id="kc-test-button"
-            onClick={() => testLdap()}
+            onClick={() => testLdap("testAuthentication")}
           >
-            {t("common:test")}
+            {t("testAuthentication")}
           </Button>
         </FormGroup>
       </FormAccess>

@@ -49,6 +49,7 @@ export default {
     enableHelpMode: "Enable help mode",
     learnMore: "Learn more",
     test: "Test",
+    testConnection: "Test connection",
     name: "Name",
     role: "Role",
     description: "Description",

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Button,
   ButtonVariant,
@@ -11,6 +11,7 @@ import {
   ModalVariant,
   Text,
   TextContent,
+  TextVariants,
 } from "@patternfly/react-core";
 import {
   Table,
@@ -23,6 +24,7 @@ import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/l
 import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
+import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 
 export type AddMapperDialogModalProps = {
@@ -42,21 +44,28 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
   const { t } = useTranslation("client-scopes");
 
   const serverInfo = useServerInfo();
+  const { whoAmI } = useWhoAmI();
   const protocol = props.protocol;
   const protocolMappers = serverInfo.protocolMapperTypes![protocol];
   const builtInMappers = serverInfo.builtinProtocolMappers![protocol];
   const [filter, setFilter] = useState<ProtocolMapperRepresentation[]>([]);
 
-  const allRows = builtInMappers.map((mapper) => {
-    const mapperType = protocolMappers.filter(
-      (type) => type.id === mapper.protocolMapper
-    )[0];
-    return {
-      item: mapper,
-      selected: false,
-      cells: [mapper.name, mapperType.helpText],
-    };
-  });
+  const allRows = useMemo(
+    () =>
+      builtInMappers
+        .sort((a, b) => a.name!.localeCompare(b.name!, whoAmI.getLocale()))
+        .map((mapper) => {
+          const mapperType = protocolMappers.filter(
+            (type) => type.id === mapper.protocolMapper
+          )[0];
+          return {
+            item: mapper,
+            selected: false,
+            cells: [mapper.name, mapperType.helpText],
+          };
+        }),
+    []
+  );
   const [rows, setRows] = useState(allRows);
 
   if (props.filter && props.filter.length !== filter.length) {
@@ -68,12 +77,29 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
   const selectedRows = rows
     .filter((row) => row.selected)
     .map((row) => row.item);
+
+  const sortedProtocolMappers = useMemo(
+    () =>
+      protocolMappers.sort((a, b) =>
+        a.name!.localeCompare(b.name!, whoAmI.getLocale())
+      ),
+    [protocolMappers]
+  );
+
   const isBuiltIn = !!props.filter;
+
+  const header = [t("common:name"), t("common:description")];
 
   return (
     <Modal
+      aria-labelledby={t("chooseAMapperType")}
       variant={ModalVariant.medium}
-      title={t("chooseAMapperType")}
+      header={
+        <TextContent>
+          <Text component={TextVariants.h1}>{t("chooseAMapperType")}</Text>
+          <Text>{t("predefinedMappingDescription")}</Text>
+        </TextContent>
+      }
       isOpen={props.open}
       onClose={props.toggleDialog}
       actions={
@@ -105,9 +131,6 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
           : []
       }
     >
-      <TextContent>
-        <Text>{t("predefinedMappingDescription")}</Text>
-      </TextContent>
       {!isBuiltIn && (
         <DataList
           onSelectDataListItem={(id) => {
@@ -118,7 +141,18 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
           aria-label={t("chooseAMapperType")}
           isCompact
         >
-          {protocolMappers.map((mapper) => (
+          <DataListItem aria-labelledby="headerName" id="header">
+            <DataListItemRow>
+              <DataListItemCells
+                dataListCells={header.map((name) => (
+                  <DataListCell style={{ fontWeight: 700 }} key={name}>
+                    {name}
+                  </DataListCell>
+                ))}
+              />
+            </DataListItemRow>
+          </DataListItem>
+          {sortedProtocolMappers.map((mapper) => (
             <DataListItem
               aria-label={mapper.name}
               key={mapper.id}
@@ -143,7 +177,7 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
       {isBuiltIn && rows.length > 0 && (
         <Table
           variant={TableVariant.compact}
-          cells={[t("common:name"), t("common:description")]}
+          cells={header}
           onSelect={(_, isSelected, rowIndex) => {
             rows[rowIndex].selected = isSelected;
             setRows([...rows]);

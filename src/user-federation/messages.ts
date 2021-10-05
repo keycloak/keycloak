@@ -90,6 +90,7 @@ export default {
     saveError: "User federation provider could not be saved: {{error}}",
     createSuccess: "User federation provider successfully created",
     createError: "User federation provider could not be created: {{error}}",
+    testAuthentication: "Test authentication",
     testSuccess: "Successfully connected to LDAP",
     testError:
       "Error when trying to connect to LDAP. See server.log for details. {{error}}",
