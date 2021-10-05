@@ -49,7 +49,7 @@
                 <td><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></td>
                 <td translate="{{client.enabled}}"></td>
                 <td ng-class="{'text-muted': !client.baseUrl}">
-                    <a href="{{client.rootUrl | resolveClientRootUrl}}{{client.baseUrl}}" target="_blank" data-ng-show="client.baseUrl">{{client.rootUrl | resolveClientRootUrl}}{{client.baseUrl}}</a>
+                    <a href="{{client.rootUrl | resolveClientRootUrl}}{{client.baseUrl}}" rel="noopener noreferrer" target="_blank" data-ng-show="client.baseUrl">{{client.rootUrl | resolveClientRootUrl}}{{client.baseUrl}}</a>
                     <span data-ng-hide="client.baseUrl">{{:: 'not-defined' | translate}}</span>
                 </td>
                 <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/clients/{{client.id}}">{{:: 'edit' | translate}}</td>
