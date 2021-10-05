@@ -462,6 +462,10 @@ describe("Realm settings tests", () => {
       realmSettingsPage.shouldCompleteAndCreateNewClientProfile();
     });
 
+    it("Should perform client profile search by profile name", () => {
+      realmSettingsPage.shouldSearchClientProfile();
+    });
+
     it("Check cancelling the client profile deletion", () => {
       realmSettingsPage.shouldDisplayDeleteClientProfileDialog();
     });

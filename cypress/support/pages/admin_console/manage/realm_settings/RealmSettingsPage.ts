@@ -162,6 +162,7 @@ export default class RealmSettingsPage {
   private jsonEditorReloadBtn = "jsonEditor-reloadBtn";
   private jsonEditor = ".monaco-scrollable-element.editor-scrollable.vs";
   private createClientDrpDwn = ".pf-c-dropdown.pf-m-align-right";
+  private searchFld = "[id^=realm-settings][id$=profilesinput]";
 
   selectLoginThemeType(themeType: string) {
     cy.get(this.selectLoginTheme).click();
@@ -507,6 +508,12 @@ export default class RealmSettingsPage {
       "be.visible",
       "New client profile created"
     );
+  }
+
+  shouldSearchClientProfile() {
+    cy.get(this.searchFld).click({ force: true }).type("Test").click();
+    cy.get("table").should("be.visible").contains("td", "Test");
+    cy.get(this.searchFld).click({ force: true }).clear();
   }
 
   shouldDisplayDeleteClientProfileDialog() {
