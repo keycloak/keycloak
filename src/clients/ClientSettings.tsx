@@ -20,37 +20,53 @@ import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { SaveReset } from "./advanced/SaveReset";
+import { SamlConfig } from "./add/SamlConfig";
+import { SamlSignature } from "./add/SamlSignature";
+import type { ClientForm } from "./ClientDetails";
 
 type ClientSettingsProps = {
   save: () => void;
   reset: () => void;
 };
 
+const baseSections = [
+  "generalSettings",
+  "capabilityConfig",
+  "accessSettings",
+  "loginSettings",
+] as const;
+
+const samlSections = [
+  "generalSettings",
+  "samlCapabilityConfig",
+  "signatureAndEncryption",
+  "accessSettings",
+  "loginSettings",
+] as const;
+
 export const ClientSettings = ({ save, reset }: ClientSettingsProps) => {
-  const { register, control, watch } = useFormContext();
+  const { register, control, watch } = useFormContext<ClientForm>();
   const { t } = useTranslation("clients");
 
   const [loginThemeOpen, setLoginThemeOpen] = useState(false);
   const loginThemes = useServerInfo().themes!["login"];
-  const consentRequired: boolean = watch("consentRequired");
+  const consentRequired = watch("consentRequired");
   const displayOnConsentScreen: string = watch(
     "attributes.display-on-consent-screen"
   );
+  const protocol = watch("protocol");
+  const sections = protocol === "saml" ? samlSections : baseSections;
 
   return (
     <ScrollForm
       className="pf-u-px-lg"
-      sections={[
-        t("generalSettings"),
-        t("capabilityConfig"),
-        t("accessSettings"),
-        t("loginSettings"),
-      ]}
+      sections={sections.map((section) => t(section))}
     >
       <Form isHorizontal>
         <ClientDescription />
       </Form>
-      <CapabilityConfig />
+      {protocol === "saml" ? <SamlConfig /> : <CapabilityConfig />}
+      {protocol === "saml" && <SamlSignature />}
       <FormAccess isHorizontal role="manage-clients">
         <FormGroup
           label={t("rootUrl")}

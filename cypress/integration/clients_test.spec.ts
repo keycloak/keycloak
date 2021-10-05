@@ -287,4 +287,49 @@ describe("Clients test", () => {
       cy.findByTestId("bearer-only-explainer-tooltip").should("exist");
     });
   });
+
+  describe("SAML test", () => {
+    const samlClientName = "saml";
+
+    before(() => {
+      new AdminClient().createClient({
+        protocol: "saml",
+        clientId: samlClientName,
+        publicClient: false,
+      });
+    });
+
+    after(() => {
+      new AdminClient().deleteClient(samlClientName);
+    });
+
+    beforeEach(() => {
+      keycloakBefore();
+      loginPage.logIn();
+      sidebarPage.goToClients();
+      listingPage.searchItem(samlClientName).goToItemDetails(samlClientName);
+    });
+
+    it("should display the saml sections on details screen", () => {
+      cy.get(".pf-c-jump-links__list").should(($ul) => {
+        expect($ul)
+          .to.contain("SAML capabilities")
+          .to.contain("Signature and Encryption");
+      });
+    });
+
+    it("should save force name id format", () => {
+      const load = "auth/admin/realms/master/client-scopes";
+      cy.intercept(load).as("load");
+
+      cy.get(".pf-c-jump-links__list").contains("SAML capabilities").click();
+      cy.wait("@load");
+
+      cy.findByTestId("forceNameIdFormat").click({
+        force: true,
+      });
+      cy.findByTestId("settingsSave").click();
+      masthead.checkNotificationMessage("Client successfully updated");
+    });
+  });
 });

@@ -180,7 +180,7 @@ export const ClientDetails = () => {
     setChangeAuthenticatorOpen(!changeAuthenticatorOpen);
   const [activeTab2, setActiveTab2] = useState(30);
 
-  const form = useForm<ClientForm>();
+  const form = useForm<ClientForm>({ shouldUnregister: false });
   const { clientId } = useParams<ClientParams>();
 
   const clientAuthenticatorType = useWatch({
@@ -341,7 +341,8 @@ export const ClientDetails = () => {
                 reset={() => setupForm(client)}
               />
             </Tab>
-            {!client.publicClient && !isRealmClient(client) && (
+            {((!client.publicClient && !isRealmClient(client)) ||
+              client.protocol === "saml") && (
               <Tab
                 id="keys"
                 eventKey="keys"

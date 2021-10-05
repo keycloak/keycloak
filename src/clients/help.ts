@@ -19,6 +19,25 @@ export default {
     rootURL: "Root URL appended to relative URLs",
     validRedirectURIs:
       "Valid URI pattern a browser can redirect to after a successful login or logout. Simple wildcards are allowed such as 'http://example.com/*'. Relative path can be specified too such as /my/relative/path/*. Relative paths are relative to the client root URL, or if none is specified the auth server root URL is used. For SAML, you must set valid URI patterns if you are relying on the consumer service URL embedded with the login request.",
+    nameIdFormat: "The name ID format to use for the subject.",
+    forceNameIdFormat:
+      "Ignore requested NameID subject format and use admin console configured one.",
+    forcePostBinding: "Always use POST binding for responses.",
+    forceArtifactBinding:
+      "Should response messages be returned to the client through the SAML ARTIFACT binding system?",
+    includeAuthnStatement:
+      "Should a statement specifying the method and timestamp be included in login responses?",
+    includeOneTimeUseCondition:
+      "Should a OneTimeUse Condition be included in login responses?",
+    optimizeLookup:
+      "When signing SAML documents in REDIRECT binding for SP that is secured by Keycloak adapter, should the ID of the signing key be included in SAML protocol message in <Extensions> element? This optimizes validation of the signature as the validating party uses a single key instead of trying every known key for validation.",
+    signDocuments: "Should SAML documents be signed by the realm?",
+    signAssertions:
+      "Should assertions inside SAML documents be signed? This setting is not needed if document is already being signed.",
+    signatureAlgorithm: "The signature algorithm to use to sign documents.",
+    signatureKeyName:
+      "Signed SAML documents contain identification of signing key in KeyName element. For Keycloak / RH-SSO counterparty, use KEY_ID, for MS AD FS use CERT_SUBJECT, for others check and use NONE if no other option works.",
+    canonicalization: "Canonicalization Method for XML signatures.",
     webOrigins:
       "Allowed CORS origins. To permit all origins of Valid Redirect URIs, add '+'. This does not include the '*' wildcard though. To permit all origins, explicitly add '*'.",
     homeURL:
