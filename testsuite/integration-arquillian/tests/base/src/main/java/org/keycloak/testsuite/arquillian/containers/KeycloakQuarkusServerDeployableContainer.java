@@ -180,9 +180,12 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
             commands.add("--debug");
             commands.add(System.getProperty("auth.server.debug.port", "5005"));
         }
-
         commands.add("--http-port=" + configuration.getBindHttpPort());
         commands.add("--https-port=" + configuration.getBindHttpsPort());
+
+        //for setting the spi.login-protocol.saml.known-protocols values correctly in keycloak.properties
+        commands.add("-Dauth.server.http.port=" + configuration.getBindHttpPort());
+        commands.add("-Dauth.server.https.port=" + configuration.getBindHttpsPort());
 
         if (configuration.getRoute() != null) {
             commands.add("-Djboss.node.name=" + configuration.getRoute());
