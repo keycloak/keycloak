@@ -44,6 +44,7 @@ import org.keycloak.testsuite.pages.social.InstagramLoginPage;
 import org.keycloak.testsuite.pages.social.LinkedInLoginPage;
 import org.keycloak.testsuite.pages.social.MicrosoftLoginPage;
 import org.keycloak.testsuite.pages.social.OpenShiftLoginPage;
+import org.keycloak.testsuite.pages.social.OrcidLoginPage;
 import org.keycloak.testsuite.pages.social.PayPalLoginPage;
 import org.keycloak.testsuite.pages.social.StackOverflowLoginPage;
 import org.keycloak.testsuite.pages.social.TwitterLoginPage;
@@ -91,6 +92,7 @@ import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT4;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.PAYPAL;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.STACKOVERFLOW;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.TWITTER;
+import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.ORCID;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -131,7 +133,8 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         OPENSHIFT4("openshift-v4", OpenShiftLoginPage.class),
         GITLAB("gitlab", GitLabLoginPage.class),
         BITBUCKET("bitbucket", BitbucketLoginPage.class),
-        INSTAGRAM("instagram", InstagramLoginPage.class);
+        INSTAGRAM("instagram", InstagramLoginPage.class),
+        ORCID("orcid", OrcidLoginPage.class);
 
         private final String id;
         private final Class<? extends AbstractSocialLoginPage> pageObjectClazz;
@@ -400,6 +403,18 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         assertUpdateProfile(false, false, true);
         assertAccount();
     }
+
+    @Test
+    @UncaughtServerErrorExpected
+    public void orcidLogin() throws InterruptedException {
+        //https://info.orcid.org/documentation/integration-guide/registering-a-public-api-client/#easy-faq-2606
+        //official orcid require only https Request URIs. Request URI: https://localhost:8543/auth/realms/social/broker/orcid/endpoint
+        //names and email fields in ORCID must not be to 'only me' visibility settings
+        setTestProvider(ORCID);
+        performLogin();
+        assertAccount();
+    }
+
 
     public IdentityProviderRepresentation buildIdp(Provider provider) {
         IdentityProviderRepresentation idp = IdentityProviderBuilder.create()

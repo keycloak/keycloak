@@ -1,0 +1,14 @@
+<div class="form-group clearfix">
+    <label class="col-md-2 control-label" for="baseUrl"> {{:: 'orcid.base-url' | translate}}</label>
+    <div class="col-md-6">
+        <input class="form-control" id="baseUrl" type="text" ng-model="identityProvider.config.baseUrl">
+    </div>
+    <kc-tooltip>{{:: 'orcid.base-url.tooltip' | translate}}</kc-tooltip>
+</div>
+<div class="form-group clearfix">
+    <label class="col-md-2 control-label" for="userInfoUrl"> {{:: 'user-info-url' | translate}}</label>
+    <div class="col-md-6">
+        <input class="form-control" id="userInfoUrl" type="text" ng-model="identityProvider.config.userInfoUrl">
+    </div>
+    <kc-tooltip>{{:: 'orcid.user-info-url.tooltip' | translate}}</kc-tooltip>
+</div>

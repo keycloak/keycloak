@@ -559,6 +559,11 @@ public class IdentityProviderTest extends AbstractAdminTest {
         mapperTypes = provider.getMapperTypes();
         assertMapperTypes(mapperTypes, "stackoverflow-user-attribute-mapper", "oidc-username-idp-mapper");
 
+        create(createRep("orcid", "orcid"));
+        provider = realm.identityProviders().get("orcid");
+        mapperTypes = provider.getMapperTypes();
+        assertMapperTypes(mapperTypes, "orcid-user-attribute-mapper", "oidc-username-idp-mapper");
+
         create(createRep("keycloak-oidc", "keycloak-oidc"));
         provider = realm.identityProviders().get("keycloak-oidc");
         mapperTypes = provider.getMapperTypes();
@@ -879,6 +884,11 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Assert.assertEquals("Status", 200, response.getStatus());
         body = response.readEntity(Map.class);
         assertProviderInfo(body, "stackoverflow", "StackOverflow");
+
+        response = realm.identityProviders().getIdentityProviders("orcid");
+        Assert.assertEquals("Status", 200, response.getStatus());
+        body = response.readEntity(Map.class);
+        assertProviderInfo(body, "orcid", "ORCID");
 
         response = realm.identityProviders().getIdentityProviders("nonexistent");
         Assert.assertEquals("Status", 400, response.getStatus());

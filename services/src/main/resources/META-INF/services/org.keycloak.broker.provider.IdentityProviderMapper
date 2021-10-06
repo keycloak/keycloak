@@ -36,3 +36,4 @@ org.keycloak.social.stackoverflow.StackoverflowUserAttributeMapper
 org.keycloak.social.microsoft.MicrosoftUserAttributeMapper
 org.keycloak.social.instagram.InstagramUserAttributeMapper
 org.keycloak.social.openshift.OpenshiftV4AttributeMapper
+org.keycloak.social.orcid.OrcidUserAttributeMapper

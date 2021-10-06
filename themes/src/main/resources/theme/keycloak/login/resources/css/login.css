@@ -695,3 +695,7 @@ ul#kc-totp-supported-apps {
 #kc-back {
     margin-top: 5px;
 }
+
+.fa-orcid {
+    content: url(../img/orcid-logo.png);
+}
