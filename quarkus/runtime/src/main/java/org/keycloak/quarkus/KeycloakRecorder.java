@@ -18,23 +18,14 @@
 package org.keycloak.quarkus;
 
 import static org.keycloak.configuration.Configuration.getBuiltTimeProperty;
-import static org.keycloak.configuration.Configuration.getConfig;
-import static org.keycloak.configuration.Configuration.getConfigValue;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
-import java.util.stream.StreamSupport;
 
-import io.smallrye.config.ConfigValue;
 import org.jboss.logging.Logger;
 import org.keycloak.QuarkusKeycloakSessionFactory;
-import org.keycloak.cli.ShowConfigCommand;
 import org.keycloak.common.Profile;
 import org.keycloak.configuration.Configuration;
-import org.keycloak.configuration.MicroProfileConfigProvider;
-import org.keycloak.configuration.PersistedConfigSource;
-import org.keycloak.configuration.PropertyMappers;
 import org.keycloak.connections.liquibase.FastServiceLocator;
 import org.keycloak.connections.liquibase.KeycloakLogger;
 import org.keycloak.provider.Provider;
@@ -44,7 +35,6 @@ import org.keycloak.provider.Spi;
 import io.quarkus.runtime.annotations.Recorder;
 import liquibase.logging.LogFactory;
 import liquibase.servicelocator.ServiceLocator;
-import org.keycloak.util.Environment;
 
 @Recorder
 public class KeycloakRecorder {
@@ -82,14 +72,6 @@ public class KeycloakRecorder {
             Boolean reaugmented) {
         Profile.setInstance(createProfile());
         QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories, defaultProviders, preConfiguredProviders, reaugmented));
-    }
-
-    /**
-     * This method should be executed during static init so that the configuration is printed (if demanded) based on the properties
-     * set from the previous reaugmentation
-     */
-    public void showConfig() {
-        ShowConfigCommand.run();
     }
 
     public static Profile createProfile() {

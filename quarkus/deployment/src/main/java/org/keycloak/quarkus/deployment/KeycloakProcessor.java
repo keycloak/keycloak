@@ -241,7 +241,7 @@ class KeycloakProcessor {
             }
         }
 
-        for (File jar : getProviderFiles()) {
+        for (File jar : getProviderFiles().values()) {
             properties.put(String.format("kc.provider.file.%s.last-modified", jar.getName()), String.valueOf(jar.lastModified()));
         }
 

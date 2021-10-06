@@ -46,7 +46,7 @@ public final class Configuration {
             String profile = Environment.getProfile();
 
             if (profile == null) {
-                profile = getConfig().getRawValue("kc.profile");
+                profile = getConfig().getRawValue(Environment.PROFILE);
             }
 
             value = KeycloakConfigSourceProvider.PERSISTED_CONFIG_SOURCE.getValue("%" + profile + "." + name);

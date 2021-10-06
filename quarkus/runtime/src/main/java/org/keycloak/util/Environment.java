@@ -21,7 +21,12 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.configuration.ProfileManager;
@@ -32,6 +37,10 @@ public final class Environment {
 
     public static final String IMPORT_EXPORT_MODE = "import_export";
     public static final String CLI_ARGS = "kc.config.args";
+    public static final String PROFILE ="kc.profile";
+    public static final String ENV_PROFILE ="KC_PROFILE";
+
+    private Environment() {}
 
     public static Boolean isRebuild() {
         return Boolean.getBoolean("quarkus.launch.rebuild");
@@ -69,9 +78,9 @@ public final class Environment {
         }
 
         if (isWindows()) {
-            return "kc.bat";
+            return "./kc.bat";
         }
-        return "kc.sh";
+        return "./kc.sh";
     }
     
     public static String getConfigArgs() {
@@ -79,13 +88,18 @@ public final class Environment {
     }
 
     public static String getProfile() {
-        String profile = System.getProperty("kc.profile");
+        String profile = System.getProperty(PROFILE);
         
         if (profile == null) {
-            profile = System.getenv("KC_PROFILE");
+            profile = System.getenv(ENV_PROFILE);
         }
 
         return profile;
+    }
+
+    public static void setProfile(String profile) {
+        System.setProperty(PROFILE, profile);
+        System.setProperty("quarkus.profile", profile);
     }
 
     public static String getProfileOrDefault(String defaultProfile) {
@@ -126,15 +140,15 @@ public final class Environment {
     }
 
     public static void forceDevProfile() {
-        System.setProperty("kc.profile", "dev");
+        System.setProperty(PROFILE, "dev");
         System.setProperty("quarkus.profile", "dev");
     }
 
-    public static File[] getProviderFiles() {
+    public static Map<String, File> getProviderFiles() {
         Path providersPath = Environment.getProvidersPath();
 
         if (providersPath == null) {
-            return new File[] {};
+            return Collections.emptyMap();
         }
 
         File providersDir = providersPath.toFile();
@@ -143,11 +157,11 @@ public final class Environment {
             throw new RuntimeException("The 'providers' directory does not exist or is not a valid directory.");
         }
 
-        return providersDir.listFiles(new FilenameFilter() {
+        return Arrays.stream(providersDir.listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
                 return name.endsWith(".jar");
             }
-        });
+        })).collect(Collectors.toMap(File::getName, Function.identity()));
     }
 }
