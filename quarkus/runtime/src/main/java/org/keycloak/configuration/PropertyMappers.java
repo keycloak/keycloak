@@ -173,7 +173,7 @@ public final class PropertyMappers {
                 && !Environment.CLI_ARGS.equals(name)
                 && !"kc.home.dir".equals(name)
                 && !"kc.config.file".equals(name)
-                && !"kc.profile".equals(name)
+                && !Environment.PROFILE.equals(name)
                 && !"kc.show.config".equals(name)
                 && !"kc.show.config.runtime".equals(name)
                 && !PropertyMappers.toCLIFormat("kc.config.file").equals(name);

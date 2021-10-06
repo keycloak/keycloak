@@ -41,6 +41,7 @@ import org.keycloak.configuration.MicroProfileConfigProvider;
 
 import io.quarkus.runtime.configuration.ConfigUtils;
 import io.smallrye.config.SmallRyeConfigProviderResolver;
+import org.keycloak.util.Environment;
 
 public class ConfigurationTest {
 
@@ -142,7 +143,7 @@ public class ConfigurationTest {
 
     @Test
     public void testKeycloakProfilePropertySubstitution() {
-        System.setProperty("kc.profile", "user-profile");
+        System.setProperty(Environment.PROFILE, "user-profile");
         assertEquals("http://filepropprofile.unittest", initConfig("hostname", "default").get("frontendUrl"));
     }
 
@@ -257,11 +258,11 @@ public class ConfigurationTest {
         Assert.assertEquals("cluster-default.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
 
         // If explicitly set, then it is always used regardless of the profile
-        System.clearProperty("kc.profile");
+        System.clearProperty(Environment.PROFILE);
         System.setProperty(CLI_ARGS, "--cluster=foo");
 
         Assert.assertEquals("cluster-foo.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
-        System.setProperty("kc.profile", "dev");
+        System.setProperty(Environment.PROFILE, "dev");
         Assert.assertEquals("cluster-foo.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
 
         System.setProperty(CLI_ARGS, "--cluster-stack=foo");
