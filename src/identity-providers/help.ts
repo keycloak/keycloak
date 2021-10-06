@@ -136,6 +136,8 @@ export default {
     userAttribute: "Name of user attribute you want to hardcode",
     claim:
       "Name of claim to search for in token. You can reference nested claims by using a '.', i.e. 'address.locality'. To use dot (.) literally, escape it with backslash. (\\.)",
+    socialProfileJSONFieldPath:
+      "Path of field in Social Provider User Profile JSON data to get value from. You can use dot notation for nesting and square brackets for array index. E.g. 'contact.address[0].country'.",
     userAttributeValue: "Value you want to hardcode",
     attributeName:
       "Name of attribute to search for in assertion. You can leave this blank and specify a friendly name instead.",
@@ -143,6 +145,7 @@ export default {
       "Friendly name of attribute to search for in assertion. You can leave this blank and specify a name instead.",
     userAttributeName:
       "User attribute name to store SAML attribute. Use email, lastName, and firstName to map to those predefined user properties.",
+    socialUserAttributeName: "User attribute name to store information.",
     attributeValue:
       "Value the attribute must have. If the attribute is a list, then the value must be contained in the list.",
     attributes:

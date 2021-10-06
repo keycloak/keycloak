@@ -74,6 +74,7 @@ export default {
     claim: "Claim",
     claimValue: "Claim Value",
     claims: "Claims",
+    socialProfileJSONFieldPath: "Social Profile JSON Field Path",
     mapperAttributeName: "Attribute Name",
     mapperUserAttributeName: "User Attribute Name",
     mapperAttributeFriendlyName: "Friendly name",

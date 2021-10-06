@@ -20,11 +20,11 @@ import type { IdPMapperRepresentationWithAttributes } from "./AddMapper";
 type AddMapperFormProps = {
   mapperTypes?: Record<string, IdentityProviderMapperRepresentation>;
   mapperType: string;
-  providerId: string;
   id: string;
   updateMapperType: (mapperType: string) => void;
   form: UseFormMethods<IdPMapperRepresentationWithAttributes>;
   formValues: IdPMapperRepresentationWithAttributes;
+  isSocialIdP: boolean;
 };
 
 export const AddMapperForm = ({
@@ -34,6 +34,7 @@ export const AddMapperForm = ({
   id,
   updateMapperType,
   formValues,
+  isSocialIdP,
 }: AddMapperFormProps) => {
   const { t } = useTranslation("identity-providers");
 
@@ -129,7 +130,9 @@ export const AddMapperForm = ({
             helpText={
               formValues.identityProviderMapper ===
                 "saml-user-attribute-idp-mapper" &&
-              (providerId === "oidc" || providerId === "keycloak-oidc")
+              (providerId === "oidc" ||
+                providerId === "keycloak-oidc" ||
+                isSocialIdP)
                 ? `identity-providers-help:oidcAttributeImporter`
                 : `identity-providers-help:${mapperType}`
             }
@@ -142,7 +145,9 @@ export const AddMapperForm = ({
         <Controller
           name="identityProviderMapper"
           defaultValue={
-            providerId === "saml"
+            isSocialIdP
+              ? `${providerId.toLowerCase()}-user-attribute-mapper`
+              : providerId === "saml"
               ? "saml-advanced-role-idp-mapper"
               : "oidc-advanced-role-idp-mapper"
           }

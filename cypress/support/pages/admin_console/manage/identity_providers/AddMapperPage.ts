@@ -9,7 +9,10 @@ export default class AddMapperPage {
   private mapperRoleInput = "mapper-role-input";
   private attributeName = "attribute-name";
   private attributeFriendlyName = "attribute-friendly-name";
+  private attributeValue = "attribute-value";
   private claimInput = "claim";
+  private claimValueInput = "claim-value-input";
+  private socialProfileJSONfieldPath = "social-profile-JSON-field-path";
   private userAttribute = "user-attribute";
   private userAttributeName = "user-attribute-name";
   private userAttributeValue = "user-attribute-value";
@@ -73,13 +76,16 @@ export default class AddMapperPage {
       .contains("Attribute Importer")
       .click();
 
-    cy.findByTestId(this.userSessionAttribute).clear();
-    cy.findByTestId(this.userSessionAttribute).type("user session attribute");
-    cy.findByTestId(this.userSessionAttributeValue).clear();
-
-    cy.findByTestId(this.userSessionAttributeValue).type(
-      "user session attribute value"
+    cy.findByTestId(this.socialProfileJSONfieldPath).clear();
+    cy.findByTestId(this.socialProfileJSONfieldPath).type(
+      "social profile JSON field path"
     );
+
+    cy.findByTestId(this.userAttributeName).clear();
+
+    cy.findByTestId(this.userAttributeName).type("user attribute name");
+
+    this.saveNewMapper();
 
     return this;
   }
@@ -332,15 +338,15 @@ export default class AddMapperPage {
 
     cy.findByTestId("inherit").click();
 
-    cy.findByTestId(this.userSessionAttribute).clear();
-    cy.findByTestId(this.userSessionAttribute).type(
-      "user session attribute_edited"
-    );
-    cy.findByTestId(this.userSessionAttributeValue).clear();
+    cy.findByTestId(this.socialProfileJSONfieldPath).clear();
 
-    cy.findByTestId(this.userSessionAttributeValue).type(
-      "user session attribute value_edited"
+    cy.findByTestId(this.socialProfileJSONfieldPath).type(
+      "social profile JSON field path edited"
     );
+
+    cy.findByTestId(this.userAttributeName).clear();
+
+    cy.findByTestId(this.userAttributeName).type("user attribute name edited");
 
     this.saveNewMapper();
 
