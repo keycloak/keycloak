@@ -37,6 +37,7 @@ export const CapabilityConfig = ({
       role="manage-clients"
       unWrap={unWrap}
       className="keycloak__capability-config__form"
+      data-testid="capability-config-form"
     >
       {protocol === "openid-connect" && (
         <>

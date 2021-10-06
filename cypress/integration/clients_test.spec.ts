@@ -279,12 +279,19 @@ describe("Clients test", () => {
       keycloakBefore();
       loginPage.logIn();
       sidebarPage.goToClients();
+      cy.intercept("/auth/admin/realms/master/clients/*").as("fetchClient");
       listingPage.searchItem(clientId).goToItemDetails(clientId);
+      cy.wait("@fetchClient");
     });
 
     it("shows an explainer text for bearer only clients", () => {
       cy.findByTestId("bearer-only-explainer-label").trigger("mouseenter");
       cy.findByTestId("bearer-only-explainer-tooltip").should("exist");
+    });
+
+    it("hides the capability config section", () => {
+      cy.findByTestId("capability-config-form").should("not.exist");
+      cy.findByTestId("jump-link-capability-config").should("not.exist");
     });
   });
 

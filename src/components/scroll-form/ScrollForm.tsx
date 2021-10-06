@@ -31,29 +31,33 @@ export const ScrollForm: FunctionComponent<ScrollFormProps> = ({
   ...rest
 }) => {
   const { t } = useTranslation("common");
-
   const nodes = Children.toArray(children);
+
   return (
     <Grid hasGutter {...rest}>
       <GridItem span={8}>
-        {sections.map((cat, index) => (
-          <Fragment key={cat}>
-            {!borders && (
-              <ScrollPanel scrollId={spacesToHyphens(cat)} title={cat}>
-                {nodes[index]}
-              </ScrollPanel>
-            )}
-            {borders && (
-              <FormPanel
-                scrollId={spacesToHyphens(cat)}
-                title={cat}
-                className="kc-form-panel__panel"
-              >
-                {nodes[index]}
-              </FormPanel>
-            )}
-          </Fragment>
-        ))}
+        {sections.map((cat, index) => {
+          const scrollId = spacesToHyphens(cat.toLowerCase());
+
+          return (
+            <Fragment key={cat}>
+              {!borders && (
+                <ScrollPanel scrollId={scrollId} title={cat}>
+                  {nodes[index]}
+                </ScrollPanel>
+              )}
+              {borders && (
+                <FormPanel
+                  scrollId={scrollId}
+                  title={cat}
+                  className="kc-form-panel__panel"
+                >
+                  {nodes[index]}
+                </FormPanel>
+              )}
+            </Fragment>
+          );
+        })}
       </GridItem>
       <GridItem span={4}>
         <PageSection className="kc-scroll-form--sticky">
@@ -65,12 +69,20 @@ export const ScrollForm: FunctionComponent<ScrollFormProps> = ({
             label={t("jumpToSection")}
             offset={100}
           >
-            {sections.map((cat) => (
-              // note that JumpLinks currently does not work with spaces in the href
-              <JumpLinksItem key={cat} href={`#${spacesToHyphens(cat)}`}>
-                {cat}
-              </JumpLinksItem>
-            ))}
+            {sections.map((cat) => {
+              const scrollId = spacesToHyphens(cat.toLowerCase());
+
+              return (
+                // note that JumpLinks currently does not work with spaces in the href
+                <JumpLinksItem
+                  key={cat}
+                  href={`#${scrollId}`}
+                  data-testid={`jump-link-${scrollId}`}
+                >
+                  {cat}
+                </JumpLinksItem>
+              );
+            })}
           </JumpLinks>
         </PageSection>
       </GridItem>

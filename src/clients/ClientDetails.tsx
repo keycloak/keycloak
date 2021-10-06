@@ -337,6 +337,7 @@ export const ClientDetails = () => {
               title={<TabTitleText>{t("common:settings")}</TabTitleText>}
             >
               <ClientSettings
+                client={client}
                 save={() => save()}
                 reset={() => setupForm(client)}
               />

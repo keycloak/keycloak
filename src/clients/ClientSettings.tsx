@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
+import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   FormGroup,
@@ -25,26 +26,16 @@ import { SamlSignature } from "./add/SamlSignature";
 import type { ClientForm } from "./ClientDetails";
 
 type ClientSettingsProps = {
+  client: ClientRepresentation;
   save: () => void;
   reset: () => void;
 };
 
-const baseSections = [
-  "generalSettings",
-  "capabilityConfig",
-  "accessSettings",
-  "loginSettings",
-] as const;
-
-const samlSections = [
-  "generalSettings",
-  "samlCapabilityConfig",
-  "signatureAndEncryption",
-  "accessSettings",
-  "loginSettings",
-] as const;
-
-export const ClientSettings = ({ save, reset }: ClientSettingsProps) => {
+export const ClientSettings = ({
+  client,
+  save,
+  reset,
+}: ClientSettingsProps) => {
   const { register, control, watch } = useFormContext<ClientForm>();
   const { t } = useTranslation("clients");
 
@@ -55,7 +46,18 @@ export const ClientSettings = ({ save, reset }: ClientSettingsProps) => {
     "attributes.display-on-consent-screen"
   );
   const protocol = watch("protocol");
-  const sections = protocol === "saml" ? samlSections : baseSections;
+
+  const sections = useMemo(() => {
+    let result = ["generalSettings"];
+
+    if (protocol === "saml") {
+      result = [...result, "samlCapabilityConfig", "signatureAndEncryption"];
+    } else if (!client.bearerOnly) {
+      result = [...result, "capabilityConfig"];
+    }
+
+    return [...result, "accessSettings", "loginSettings"];
+  }, [protocol, client]);
 
   return (
     <ScrollForm
@@ -65,7 +67,11 @@ export const ClientSettings = ({ save, reset }: ClientSettingsProps) => {
       <Form isHorizontal>
         <ClientDescription />
       </Form>
-      {protocol === "saml" ? <SamlConfig /> : <CapabilityConfig />}
+      {protocol === "saml" ? (
+        <SamlConfig />
+      ) : (
+        !client.bearerOnly && <CapabilityConfig />
+      )}
       {protocol === "saml" && <SamlSignature />}
       <FormAccess isHorizontal role="manage-clients">
         <FormGroup
