@@ -55,9 +55,11 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AuthorizationResponseToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
@@ -79,6 +81,7 @@ import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutorFa
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientUrisExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureLogoutExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutorFactory;
@@ -119,6 +122,7 @@ import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
@@ -144,6 +148,7 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureSigning
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createFullScopeDisabledExecutorConfig;
 
+import javax.ws.rs.BadRequestException;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -2579,6 +2584,88 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertEquals("Exception thrown intentionally", tokenResponse.getErrorDescription());
     }
 
+    @Test
+    public void testSecureLogoutExecutor() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Logout Test")
+                        .addExecutor(SecureLogoutExecutorFactory.PROVIDER_ID, null)
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Logout Policy", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID,
+                                createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String clientSecret = "secret";
+        try {
+            createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+                clientRep.setSecret(clientSecret);
+                clientRep.setStandardFlowEnabled(Boolean.TRUE);
+                clientRep.setImplicitFlowEnabled(Boolean.TRUE);
+                clientRep.setPublicClient(Boolean.FALSE);
+                clientRep.setFrontchannelLogout(true);
+            });
+        } catch (ClientPolicyException cpe) {
+            assertEquals("Front-channel logout is not allowed for this client", cpe.getErrorDetail());
+        }
+
+        String cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+            clientRep.setStandardFlowEnabled(Boolean.TRUE);
+            clientRep.setImplicitFlowEnabled(Boolean.TRUE);
+            clientRep.setPublicClient(Boolean.FALSE);
+        });
+
+        ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cid);
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+
+        clientRep.setFrontchannelLogout(true);
+
+        try {
+            clientResource.update(clientRep);
+        } catch (BadRequestException bre) {
+            assertEquals("Front-channel logout is not allowed for this client", bre.getResponse().readEntity(OAuth2ErrorRepresentation.class).getErrorDescription());
+        }
+
+        ClientPolicyExecutorConfigurationRepresentation config = new ClientPolicyExecutorConfigurationRepresentation();
+
+        config.setConfigAsMap(SecureLogoutExecutorFactory.ALLOW_FRONT_CHANNEL_LOGOUT, Boolean.TRUE.booleanValue());
+
+        json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Logout Test")
+                        .addExecutor(SecureLogoutExecutorFactory.PROVIDER_ID, config)
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setFrontChannelLogoutUrl(oauth.getRedirectUri());
+        clientResource.update(clientRep);
+
+        config.setConfigAsMap(SecureLogoutExecutorFactory.ALLOW_FRONT_CHANNEL_LOGOUT, Boolean.FALSE.toString());
+
+        json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Logout Test")
+                        .addExecutor(SecureLogoutExecutorFactory.PROVIDER_ID, config)
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        successfulLogin(clientId, clientSecret);
+
+        oauth.openLogout();
+
+        assertTrue(driver.getPageSource().contains("Front-channel logout is not allowed for this client"));
+    }
+
     private void openVerificationPage(String verificationUri) {
         driver.navigate().to(verificationUri);
     }
@@ -2753,6 +2840,12 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
     }
 
     private void successfulLoginAndLogout(String clientId, String clientSecret) {
+        OAuthClient.AccessTokenResponse res = successfulLogin(clientId, clientSecret);
+        oauth.doLogout(res.getRefreshToken(), clientSecret);
+        events.expectLogout(res.getSessionState()).client(clientId).clearDetails().assertEvent();
+    }
+
+    private OAuthClient.AccessTokenResponse successfulLogin(String clientId, String clientSecret) {
         oauth.clientId(clientId);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
@@ -2764,8 +2857,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertEquals(200, res.getStatusCode());
         events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
 
-        oauth.doLogout(res.getRefreshToken(), clientSecret);
-        events.expectLogout(sessionId).client(clientId).clearDetails().assertEvent();
+        return res;
     }
 
     private void successfulLoginAndLogoutWithPKCE(String clientId, String clientSecret, String userName, String userPassword) throws Exception {

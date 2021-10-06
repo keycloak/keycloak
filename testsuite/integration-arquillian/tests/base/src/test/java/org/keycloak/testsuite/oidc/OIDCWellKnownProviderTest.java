@@ -62,6 +62,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
@@ -204,6 +205,10 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             // Pushed Authorization Request (PAR)
             assertEquals(oauth.getParEndpointUrl(), oidcConfig.getPushedAuthorizationRequestEndpoint());
             assertEquals(Boolean.FALSE, oidcConfig.getRequirePushedAuthorizationRequests());
+
+            // frontchannel logout
+            assertTrue(oidcConfig.getFrontChannelLogoutSessionSupported());
+            assertTrue(oidcConfig.getFrontChannelLogoutSupported());
 
         } finally {
             client.close();

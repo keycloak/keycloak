@@ -1777,6 +1777,9 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         } else {
             $scope.clientEdit.attributes["request.uris"] = null;
         }
+        if (!$scope.clientEdit.frontchannelLogout) {
+            $scope.clientEdit.attributes["frontchannel.logout.url"] = null;
+        }
         delete $scope.clientEdit.requestUris;
 
         if ($scope.samlArtifactBinding == true) {
