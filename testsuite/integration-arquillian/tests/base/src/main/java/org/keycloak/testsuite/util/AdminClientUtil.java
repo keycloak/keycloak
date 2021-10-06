@@ -129,6 +129,7 @@ public class AdminClientUtil {
 
         resteasyClientBuilder
                 .hostnameVerification(ResteasyClientBuilder.HostnameVerificationPolicy.WILDCARD)
+                .disableTrustManager()
                 .connectionPoolSize(NUMBER_OF_CONNECTIONS)
                 .httpEngine(getCustomClientHttpEngine(resteasyClientBuilder, 1, followRedirects));
 
