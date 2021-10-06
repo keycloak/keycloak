@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.cli;
+package org.keycloak.cli.command;
 
 import static java.lang.Boolean.parseBoolean;
 import static org.keycloak.configuration.Configuration.getConfigValue;
@@ -31,17 +31,26 @@ import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-
 import org.keycloak.configuration.MicroProfileConfigProvider;
 import org.keycloak.configuration.PersistedConfigSource;
 import org.keycloak.configuration.PropertyMappers;
 import org.keycloak.util.Environment;
 
 import io.smallrye.config.ConfigValue;
+import picocli.CommandLine;
 
-public final class ShowConfigCommand {
+@CommandLine.Command(name = "show-config",
+        description = "Print out the current configuration.",
+        mixinStandardHelpOptions = true,
+        optionListHeading = "%nOptions%n",
+        parameterListHeading = "Available Commands%n")
+public final class ShowConfig extends AbstractCommand implements Runnable {
 
-    public static void run() {
+    @CommandLine.Parameters(paramLabel = "filter", defaultValue = "none", description = "Show all configuration options. Use 'all' to show all options.") String filter;
+
+    @Override
+    public void run() {
+        System.setProperty("kc.show.config", filter);
         String configArgs = System.getProperty("kc.show.config");
 
         if (configArgs != null) {
@@ -49,42 +58,42 @@ public final class ShowConfigCommand {
             Set<String> uniqueNames = new HashSet<>();
             String profile = getProfile();
 
-            System.out.printf("Current Profile: %s%n", profile == null ? "none" : profile);
+            spec.commandLine().getOut().printf("Current Profile: %s%n", profile == null ? "none" : profile);
 
-            System.out.println("Runtime Configuration:");
+            spec.commandLine().getOut().println("Runtime Configuration:");
             properties.get(MicroProfileConfigProvider.NS_KEYCLOAK).stream().sorted()
                     .filter(name -> {
                         String canonicalFormat = canonicalFormat(name);
-                        
+
                         if (!canonicalFormat.equals(name)) {
                             return uniqueNames.add(canonicalFormat);
                         }
                         return uniqueNames.add(name);
                     })
-                    .forEachOrdered(ShowConfigCommand::printProperty);
+                    .forEachOrdered(this::printProperty);
 
             if (configArgs.equalsIgnoreCase("all")) {
                 Set<String> profiles = properties.get("%");
-                
+
                 if (profiles != null) {
                     profiles.stream()
                             .sorted()
                             .collect(Collectors.groupingBy(s -> s.substring(1, s.indexOf('.'))))
                             .forEach((p, properties1) -> {
                                 if (p.equals(profile)) {
-                                    System.out.printf("Profile \"%s\" Configuration (%s):%n", p,
+                                    spec.commandLine().getOut().printf("Profile \"%s\" Configuration (%s):%n", p,
                                             p.equals(profile) ? "current" : "");
                                 } else {
-                                    System.out.printf("Profile \"%s\" Configuration:%n", p);
+                                    spec.commandLine().getOut().printf("Profile \"%s\" Configuration:%n", p);
                                 }
 
-                                properties1.stream().sorted().forEachOrdered(ShowConfigCommand::printProperty);
+                                properties1.stream().sorted().forEachOrdered(this::printProperty);
                             });
                 }
 
-                System.out.println("Quarkus Configuration:");
+                spec.commandLine().getOut().println("Quarkus Configuration:");
                 properties.get(MicroProfileConfigProvider.NS_QUARKUS).stream().sorted()
-                        .forEachOrdered(ShowConfigCommand::printProperty);
+                        .forEachOrdered(this::printProperty);
             }
 
             if (!parseBoolean(System.getProperty("kc.show.config.runtime", Boolean.FALSE.toString()))) {
@@ -106,8 +115,8 @@ public final class ShowConfigCommand {
     private static Map<String, Set<String>> getPropertiesByGroup() {
         Map<String, Set<String>> properties = StreamSupport
                 .stream(getPropertyNames().spliterator(), false)
-                .filter(ShowConfigCommand::filterByGroup)
-                .collect(Collectors.groupingBy(ShowConfigCommand::groupProperties, Collectors.toSet()));
+                .filter(ShowConfig::filterByGroup)
+                .collect(Collectors.groupingBy(ShowConfig::groupProperties, Collectors.toSet()));
 
         StreamSupport.stream(getPropertyNames().spliterator(), false)
                 .filter(new Predicate<String>() {
@@ -122,8 +131,8 @@ public final class ShowConfigCommand {
                         return PersistedConfigSource.NAME.equals(configValue.getConfigSourceName());
                     }
                 })
-                .filter(ShowConfigCommand::filterByGroup)
-                .collect(Collectors.groupingBy(ShowConfigCommand::groupProperties, Collectors.toSet()))
+                .filter(ShowConfig::filterByGroup)
+                .collect(Collectors.groupingBy(ShowConfig::groupProperties, Collectors.toSet()))
                 .forEach(new BiConsumer<String, Set<String>>() {
                     @Override
                     public void accept(String group, Set<String> propertyNames) {
@@ -134,20 +143,20 @@ public final class ShowConfigCommand {
         return properties;
     }
 
-    private static void printProperty(String property) {
+    private void printProperty(String property) {
         String canonicalFormat = PropertyMappers.canonicalFormat(property);
         ConfigValue configValue = getConfigValue(canonicalFormat);
 
         if (configValue.getValue() == null) {
             configValue = getConfigValue(property);
         }
-        
-        
+
+
         if (configValue.getValue() == null) {
             return;
         }
 
-        System.out.printf("\t%s =  %s (%s)%n", configValue.getName(), formatValue(configValue.getName(), configValue.getValue()), configValue.getConfigSourceName());
+        spec.commandLine().getOut().printf("\t%s =  %s (%s)%n", configValue.getName(), formatValue(configValue.getName(), configValue.getValue()), configValue.getConfigSourceName());
     }
 
     private static String groupProperties(String property) {
