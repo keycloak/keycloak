@@ -22,6 +22,7 @@ import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.utils.StringUtil;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -285,6 +286,24 @@ public class OIDCAdvancedConfigWrapper {
     public void setBackchannelLogoutRevokeOfflineTokens(boolean backchannelLogoutRevokeOfflineTokens) {
         String val = String.valueOf(backchannelLogoutRevokeOfflineTokens);
         setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_REVOKE_OFFLINE_TOKENS, val);
+    }
+
+    public void setFrontChannelLogoutUrl(String frontChannelLogoutUrl) {
+        if (clientRep != null) {
+            clientRep.setFrontchannelLogout(StringUtil.isNotBlank(frontChannelLogoutUrl));
+        }
+        if (clientModel != null) {
+            clientModel.setFrontchannelLogout(StringUtil.isNotBlank(frontChannelLogoutUrl));
+        }
+        setAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, frontChannelLogoutUrl);
+    }
+
+    public boolean isFrontChannelLogoutEnabled() {
+        return clientModel != null && clientModel.isFrontchannelLogout() && StringUtil.isNotBlank(getFrontChannelLogoutUrl());
+    }
+
+    public String getFrontChannelLogoutUrl() {
+        return getAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI);
     }
 
     private String getAttribute(String attrKey) {
