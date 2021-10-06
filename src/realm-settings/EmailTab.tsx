@@ -60,7 +60,7 @@ export const RealmSettingsEmailTab = ({
   const authenticationEnabled = useWatch({
     control,
     name: "smtpServer.authentication",
-    defaultValue: {},
+    defaultValue: "",
   });
 
   const handleModalToggle = () => {
@@ -104,10 +104,31 @@ export const RealmSettingsEmailTab = ({
   };
 
   const testConnection = async () => {
+    const serverSettings = { ...getValues()["smtpServer"] };
+
+    // Code below uses defensive coding as the server configuration uses an ambiguous record type.
+    if (typeof serverSettings.port === "string") {
+      serverSettings.port = Number(serverSettings.port);
+    }
+
+    if (typeof serverSettings.ssl === "string") {
+      serverSettings.ssl = serverSettings.ssl === true.toString();
+    }
+
+    if (typeof serverSettings.starttls === "string") {
+      serverSettings.starttls = serverSettings.starttls === true.toString();
+    }
+
+    // For some reason the API wants a duplicate field for the authentication status.
+    // Somebody thought this was a good idea, so here we are.
+    if (serverSettings.authentication === true.toString()) {
+      serverSettings.auth = true;
+    }
+
     try {
       await adminClient.realms.testSMTPConnection(
         { realm: realm.realm! },
-        getValues()["smtpServer"] || {}
+        serverSettings
       );
       addAlert(t("testConnectionSuccess"), AlertVariant.success);
     } catch (error) {
@@ -311,7 +332,7 @@ export const RealmSettingsEmailTab = ({
               <Controller
                 name="smtpServer.authentication"
                 control={control}
-                defaultValue={{}}
+                defaultValue=""
                 render={({ onChange, value }) => (
                   <Switch
                     id="kc-authentication-switch"
