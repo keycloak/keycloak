@@ -42,7 +42,10 @@ import { toIdentityProviderAddMapper } from "../routes/AddMapper";
 import { toIdentityProviderEditMapper } from "../routes/EditMapper";
 
 import { toUpperCase } from "../../util";
-import type { IdentityProviderParams } from "../routes/IdentityProvider";
+import {
+  IdentityProviderParams,
+  toIdentityProvider,
+} from "../routes/IdentityProvider";
 
 type HeaderProps = {
   onChange: (value: boolean) => void;
@@ -105,11 +108,15 @@ export const DetailSettings = () => {
   const form = useForm<IdentityProviderRepresentation>();
   const { handleSubmit, getValues, reset } = form;
   const [provider, setProvider] = useState<IdentityProviderRepresentation>();
+  const [selectedMapper, setSelectedMapper] =
+    useState<IdPWithMapperAttributes>();
 
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const history = useHistory();
   const { realm } = useRealm();
+  const [key, setKey] = useState(0);
+  const refresh = () => setKey(key + 1);
 
   const MapperLink = ({ name, mapperId }: IdPWithMapperAttributes) => (
     <Link
@@ -166,6 +173,30 @@ export const DetailSettings = () => {
     },
   });
 
+  const [toggleDeleteMapperDialog, DeleteMapperConfirm] = useConfirmDialog({
+    titleKey: "identity-providers:deleteProviderMapper",
+    messageKey: t("identity-providers:deleteMapperConfirm", {
+      mapper: selectedMapper?.name,
+    }),
+    continueButtonLabel: "common:delete",
+    continueButtonVariant: ButtonVariant.danger,
+    onConfirm: async () => {
+      try {
+        await adminClient.identityProviders.delMapper({
+          alias: alias,
+          id: selectedMapper?.mapperId!,
+        });
+        addAlert(t("deleteMapperSuccess"), AlertVariant.success);
+        refresh();
+        history.push(
+          toIdentityProvider({ providerId, alias, tab: "mappers", realm })
+        );
+      } catch (error) {
+        addError("identity-providers:deleteErrorError", error);
+      }
+    },
+  });
+
   if (!provider) {
     return <Spinner />;
   }
@@ -212,6 +243,7 @@ export const DetailSettings = () => {
   return (
     <>
       <DeleteConfirm />
+      <DeleteMapperConfirm />
       <Controller
         name="enabled"
         control={form.control}
@@ -315,6 +347,7 @@ export const DetailSettings = () => {
                   />
                 }
                 loader={loader}
+                key={key}
                 isPaginated
                 ariaLabelKey="identity-providers:mappersList"
                 searchPlaceholderKey="identity-providers:searchForMapper"
@@ -346,6 +379,15 @@ export const DetailSettings = () => {
                   {
                     name: "type",
                     displayKey: "common:type",
+                  },
+                ]}
+                actions={[
+                  {
+                    title: t("common:delete"),
+                    onRowClick: (mapper) => {
+                      setSelectedMapper(mapper);
+                      toggleDeleteMapperDialog();
+                    },
                   },
                 ]}
               />

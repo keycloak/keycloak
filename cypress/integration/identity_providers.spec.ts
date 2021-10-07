@@ -312,6 +312,18 @@ describe("Identity provider test", () => {
       addMapperPage.editSocialMapper();
     });
 
+    it("should delete facebook mapper", () => {
+      sidebarPage.goToIdentityProviders();
+
+      listingPage.goToItemDetails("facebook");
+
+      addMapperPage.goToMappersTab();
+
+      listingPage.deleteItem("facebook attribute importer");
+
+      cy.findByTestId("modalConfirm").click();
+    });
+
     it("should edit SAML mapper", () => {
       sidebarPage.goToIdentityProviders();
 
