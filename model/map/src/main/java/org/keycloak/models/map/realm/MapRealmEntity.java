@@ -43,7 +43,7 @@ import org.keycloak.models.map.realm.entity.MapRequiredActionProviderEntity;
 import org.keycloak.models.map.realm.entity.MapRequiredCredentialEntity;
 import org.keycloak.models.map.realm.entity.MapWebAuthnPolicyEntity;
 
-public class MapRealmEntity implements AbstractEntity, UpdatableEntity {
+public class MapRealmEntity extends UpdatableEntity.Impl implements AbstractEntity {
 
     private String id;
     private String name;
@@ -128,9 +128,8 @@ public class MapRealmEntity implements AbstractEntity, UpdatableEntity {
     /**
      * Flag signalizing that any of the setters has been meaningfully used.
      */
-    protected boolean updated;
 
-    protected MapRealmEntity() {}
+    public MapRealmEntity() {}
 
     public MapRealmEntity(String id) {
         this.id = id;

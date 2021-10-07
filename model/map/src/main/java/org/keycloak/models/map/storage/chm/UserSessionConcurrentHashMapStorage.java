@@ -21,6 +21,7 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
@@ -46,8 +47,8 @@ public class UserSessionConcurrentHashMapStorage<K> extends ConcurrentHashMapSto
 
         private final MapKeycloakTransaction<MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionTr;
 
-        public Transaction(MapKeycloakTransaction<MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionTr, StringKeyConvertor<K> keyConvertor) {
-            super(UserSessionConcurrentHashMapStorage.this, keyConvertor);
+        public Transaction(MapKeycloakTransaction<MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionTr, StringKeyConvertor<K> keyConvertor, DeepCloner cloner) {
+            super(UserSessionConcurrentHashMapStorage.this, keyConvertor, cloner);
             this.clientSessionTr = clientSessionTr;
         }
 
@@ -70,8 +71,8 @@ public class UserSessionConcurrentHashMapStorage<K> extends ConcurrentHashMapSto
 
     @SuppressWarnings("unchecked")
     public UserSessionConcurrentHashMapStorage(ConcurrentHashMapStorage<K, MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionStore,
-      StringKeyConvertor<K> keyConvertor) {
-        super(UserSessionModel.class, keyConvertor);
+      StringKeyConvertor<K> keyConvertor, DeepCloner cloner) {
+        super(UserSessionModel.class, keyConvertor, cloner);
         this.clientSessionStore = clientSessionStore;
     }
 
@@ -79,6 +80,6 @@ public class UserSessionConcurrentHashMapStorage<K> extends ConcurrentHashMapSto
     @SuppressWarnings("unchecked")
     public MapKeycloakTransaction<MapUserSessionEntity, UserSessionModel> createTransaction(KeycloakSession session) {
         MapKeycloakTransaction<MapUserSessionEntity, UserSessionModel> sessionTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
-        return sessionTransaction == null ? new Transaction(clientSessionStore.createTransaction(session), clientSessionStore.getKeyConvertor()) : sessionTransaction;
+        return sessionTransaction == null ? new Transaction(clientSessionStore.createTransaction(session), clientSessionStore.getKeyConvertor(), cloner) : sessionTransaction;
     }
 }

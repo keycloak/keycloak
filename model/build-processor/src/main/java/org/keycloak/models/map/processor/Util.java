@@ -16,6 +16,7 @@
  */
 package org.keycloak.models.map.processor;
 
+import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -63,6 +65,17 @@ public class Util {
     public static boolean isSetType(TypeElement typeElement) {
         Name name = typeElement.getQualifiedName();
         return SET_TYPES.contains(name.toString());
+    }
+
+    public static boolean isNotIgnored(Element el) {
+        do {
+            IgnoreForEntityImplementationGenerator a = el.getAnnotation(IgnoreForEntityImplementationGenerator.class);
+            if (a != null) {
+                return false;
+            }
+            el = el.getEnclosingElement();
+        } while (el != null);
+        return true;
     }
 
 }

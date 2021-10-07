@@ -26,26 +26,21 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.keycloak.models.map.annotations.GenerateEntityImplementations;
-import org.keycloak.models.map.common.Serialization;
+import org.keycloak.models.map.common.DeepCloner;
 
 /**
  *
  * @author hmlnarik
  */
-@GenerateEntityImplementations(inherits="org.keycloak.models.map.client.MapClientEntity.AbstractClientEntity")
+@GenerateEntityImplementations(
+  inherits = "org.keycloak.models.map.client.MapClientEntity.AbstractClientEntity"
+)
+@DeepCloner.Root
 public interface MapClientEntity extends AbstractEntity, UpdatableEntity {
 
     public abstract class AbstractClientEntity extends UpdatableEntity.Impl implements MapClientEntity {
-        /**
-         * Flag signalizing that any of the setters has been meaningfully used.
-         */
+
         private String id;
-
-        protected AbstractClientEntity() {}
-
-        public AbstractClientEntity(String id) {
-            this.id = id;
-        }
 
         @Override
         public String getId() {
@@ -57,10 +52,6 @@ public interface MapClientEntity extends AbstractEntity, UpdatableEntity {
             if (this.id != null) throw new IllegalStateException("Id cannot be changed");
             this.id = id;
             this.updated |= id != null;
-        }
-
-        public <V> V deepClone(V obj) {
-            return Serialization.from(obj);
         }
 
         @Override

@@ -20,7 +20,7 @@ import org.keycloak.models.map.common.StringKeyConvertor;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.common.AbstractEntity;
-import org.keycloak.models.map.common.Serialization;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
@@ -46,24 +46,25 @@ import static org.keycloak.utils.StreamsUtil.paginatedStream;
  */
 public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEntity, M> implements MapStorage<V, M> {
 
-    private final ConcurrentMap<K, V> store = new ConcurrentHashMap<>();
+    protected final ConcurrentMap<K, V> store = new ConcurrentHashMap<>();
 
-    private final Map<SearchableModelField<M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates;
-    private final StringKeyConvertor<K> keyConvertor;
+    protected final Map<SearchableModelField<M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates;
+    protected final StringKeyConvertor<K> keyConvertor;
+    protected final DeepCloner cloner;
 
     @SuppressWarnings("unchecked")
-    public ConcurrentHashMapStorage(Class<M> modelClass, StringKeyConvertor<K> keyConvertor) {
+    public ConcurrentHashMapStorage(Class<M> modelClass, StringKeyConvertor<K> keyConvertor, DeepCloner cloner) {
         this.fieldPredicates = MapFieldPredicates.getPredicates(modelClass);
         this.keyConvertor = keyConvertor;
+        this.cloner = cloner;
     }
 
     @Override
     public V create(V value) {
         K key = keyConvertor.fromStringSafe(value.getId());
         if (key == null) {
-            value = Serialization.from(value);
             key = keyConvertor.yieldNewUniqueKey();
-            value.setId(keyConvertor.keyToString(key));
+            value = cloner.from(keyConvertor.keyToString(key), value);
         }
         store.putIfAbsent(key, value);
         return value;
@@ -98,6 +99,7 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
             return res;
         }
 
+        @SuppressWarnings("unchecked")
         MapModelCriteriaBuilder<K, V, M> b = criteria.unwrap(MapModelCriteriaBuilder.class);
         if (b == null) {
             throw new IllegalStateException("Incompatible class: " + criteria.getClass());
@@ -130,7 +132,7 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
     @SuppressWarnings("unchecked")
     public MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session) {
         MapKeycloakTransaction<V, M> sessionTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
-        return sessionTransaction == null ? new ConcurrentHashMapKeycloakTransaction<>(this, keyConvertor) : sessionTransaction;
+        return sessionTransaction == null ? new ConcurrentHashMapKeycloakTransaction<>(this, keyConvertor, cloner) : sessionTransaction;
     }
 
     public StringKeyConvertor<K> getKeyConvertor() {
@@ -146,6 +148,7 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
         }
         Stream<Entry<K, V>> stream = store.entrySet().stream();
 
+        @SuppressWarnings("unchecked")
         MapModelCriteriaBuilder<K, V, M> b = criteria.unwrap(MapModelCriteriaBuilder.class);
         if (b == null) {
             throw new IllegalStateException("Incompatible class: " + criteria.getClass());

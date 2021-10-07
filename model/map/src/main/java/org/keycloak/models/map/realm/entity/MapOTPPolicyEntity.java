@@ -21,7 +21,7 @@ import java.util.Objects;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.map.common.UpdatableEntity;
 
-public class MapOTPPolicyEntity implements UpdatableEntity {
+public class MapOTPPolicyEntity extends UpdatableEntity.Impl {
 
     private Integer otpPolicyInitialCounter = 0;
     private Integer otpPolicyDigits = 0;
@@ -30,7 +30,6 @@ public class MapOTPPolicyEntity implements UpdatableEntity {
     private String otpPolicyType;
     private String otpPolicyAlgorithm;
 
-    private boolean updated;
 
     private MapOTPPolicyEntity() {}
 
@@ -56,11 +55,6 @@ public class MapOTPPolicyEntity implements UpdatableEntity {
         model.setType(entity.getOtpPolicyType());
         model.setPeriod(entity.getOtpPolicyPeriod());
         return model;
-    }
-
-    @Override
-    public boolean isUpdated() {
-        return updated;
     }
 
     public Integer getOtpPolicyInitialCounter() {

@@ -22,7 +22,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-public class MapAuthenticationExecutionEntity implements UpdatableEntity {
+public class MapAuthenticationExecutionEntity extends UpdatableEntity.Impl {
 
     private String id;
     private String authenticator;
@@ -33,7 +33,6 @@ public class MapAuthenticationExecutionEntity implements UpdatableEntity {
     private Boolean autheticatorFlow = false;
     private Integer priority = 0;
 
-    private boolean updated;
 
     private MapAuthenticationExecutionEntity() {}
 
@@ -64,11 +63,6 @@ public class MapAuthenticationExecutionEntity implements UpdatableEntity {
         model.setAuthenticatorFlow(entity.isAutheticatorFlow());
         model.setPriority(entity.getPriority());
         return model;
-    }
-
-    @Override
-    public boolean isUpdated() {
-        return updated;
     }
 
     public String getId() {
