@@ -31,7 +31,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.UpdatableEntity;
 
-public class MapClientScopeEntity implements AbstractEntity, UpdatableEntity {
+public class MapClientScopeEntity extends UpdatableEntity.Impl implements AbstractEntity {
 
     private String id;
     private String realmId;
@@ -47,9 +47,8 @@ public class MapClientScopeEntity implements AbstractEntity, UpdatableEntity {
     /**
      * Flag signalizing that any of the setters has been meaningfully used.
      */
-    protected boolean updated;
 
-    protected MapClientScopeEntity() {}
+    public MapClientScopeEntity() {}
 
     public MapClientScopeEntity(String id, String realmId) {
         this.id = id;
@@ -66,11 +65,6 @@ public class MapClientScopeEntity implements AbstractEntity, UpdatableEntity {
         if (this.id != null) throw new IllegalStateException("Id cannot be changed");
         this.id = id;
         this.updated |= id != null;
-    }
-
-    @Override
-    public boolean isUpdated() {
-        return this.updated;
     }
 
     public String getName() {

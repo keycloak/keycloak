@@ -25,7 +25,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.map.common.UpdatableEntity;
 
-public class MapWebAuthnPolicyEntity implements UpdatableEntity {
+public class MapWebAuthnPolicyEntity extends UpdatableEntity.Impl {
 
     // mandatory
     private String rpEntityName;
@@ -41,7 +41,6 @@ public class MapWebAuthnPolicyEntity implements UpdatableEntity {
     private Boolean avoidSameAuthenticatorRegister = false;
     private List<String> acceptableAaguids = new LinkedList<>();
 
-    private boolean updated;
 
     private MapWebAuthnPolicyEntity() {}
 
@@ -90,11 +89,6 @@ public class MapWebAuthnPolicyEntity implements UpdatableEntity {
         entity.setAvoidSameAuthenticatorRegister(false);
         entity.setAcceptableAaguids(new LinkedList<>());
         return entity;
-    }
-
-    @Override
-    public boolean isUpdated() {
-        return updated;
     }
 
     public String getRpEntityName() {

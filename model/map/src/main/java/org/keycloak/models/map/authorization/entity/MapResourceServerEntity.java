@@ -24,10 +24,9 @@ import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 
 import java.util.Objects;
 
-public class MapResourceServerEntity implements AbstractEntity, UpdatableEntity {
+public class MapResourceServerEntity extends UpdatableEntity.Impl implements AbstractEntity {
 
     private String id;
-    private boolean updated = false;
 
     private boolean allowRemoteResourceManagement;
     private PolicyEnforcementMode policyEnforcementMode = PolicyEnforcementMode.ENFORCING;
@@ -76,11 +75,6 @@ public class MapResourceServerEntity implements AbstractEntity, UpdatableEntity 
     public void setDecisionStrategy(DecisionStrategy decisionStrategy) {
         this.updated |= !Objects.equals(this.decisionStrategy, decisionStrategy);
         this.decisionStrategy = decisionStrategy;
-    }
-
-    @Override
-    public boolean isUpdated() {
-        return updated;
     }
 
     @Override

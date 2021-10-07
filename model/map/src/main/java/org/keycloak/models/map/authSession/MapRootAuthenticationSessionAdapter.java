@@ -119,7 +119,7 @@ public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticat
     }
 
     public void setUpdated(boolean updated) {
-        entity.updated |= updated;
+        entity.signalUpdated(updated);
     }
 
     private String generateTabId() {

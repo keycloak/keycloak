@@ -40,7 +40,7 @@ import java.util.stream.Stream;
  *
  * @author mhajas
  */
-public class MapUserEntity implements AbstractEntity, UpdatableEntity {
+public class MapUserEntity extends UpdatableEntity.Impl implements AbstractEntity {
 
     private String id;
     private String realmId;
@@ -69,9 +69,8 @@ public class MapUserEntity implements AbstractEntity, UpdatableEntity {
     /**
      * Flag signalizing that any of the setters has been meaningfully used.
      */
-    protected boolean updated;
 
-    protected MapUserEntity() {}
+    public MapUserEntity() {}
 
     public MapUserEntity(String id, String realmId) {
         this.id = id;

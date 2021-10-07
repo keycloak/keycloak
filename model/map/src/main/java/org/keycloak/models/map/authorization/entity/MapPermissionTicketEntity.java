@@ -22,7 +22,7 @@ import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.Objects;
 
-public class MapPermissionTicketEntity implements AbstractEntity, UpdatableEntity {
+public class MapPermissionTicketEntity extends UpdatableEntity.Impl implements AbstractEntity {
 
     private String id;
     private String owner;
@@ -33,7 +33,6 @@ public class MapPermissionTicketEntity implements AbstractEntity, UpdatableEntit
     private String scopeId;
     private String resourceServerId;
     private String policyId;
-    private boolean updated = false;
 
     public MapPermissionTicketEntity(String id) {
         this.id = id;
@@ -123,11 +122,6 @@ public class MapPermissionTicketEntity implements AbstractEntity, UpdatableEntit
     public void setPolicyId(String policyId) {
         this.updated |= !Objects.equals(this.policyId, policyId);
         this.policyId = policyId;
-    }
-
-    @Override
-    public boolean isUpdated() {
-        return updated;
     }
 
     @Override

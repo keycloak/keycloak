@@ -31,7 +31,7 @@ import java.util.Set;
  *
  * @author mhajas
  */
-public class MapGroupEntity implements AbstractEntity, UpdatableEntity {
+public class MapGroupEntity extends UpdatableEntity.Impl implements AbstractEntity {
 
     private String id;
     private String realmId;
@@ -44,9 +44,8 @@ public class MapGroupEntity implements AbstractEntity, UpdatableEntity {
     /**
      * Flag signalizing that any of the setters has been meaningfully used.
      */
-    protected boolean updated;
 
-    protected MapGroupEntity() {}
+    public MapGroupEntity() {}
 
     public MapGroupEntity(String id, String realmId) {
         this.id = id;
@@ -64,12 +63,6 @@ public class MapGroupEntity implements AbstractEntity, UpdatableEntity {
         this.id = id;
         this.updated |= id != null;
     }
-
-    @Override
-    public boolean isUpdated() {
-        return this.updated;
-    }
-
 
     public String getName() {
         return name;

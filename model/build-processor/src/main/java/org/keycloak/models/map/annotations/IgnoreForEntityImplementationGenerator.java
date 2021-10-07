@@ -26,7 +26,6 @@ import java.lang.annotation.Target;
  * @author hmlnarik
  */
 @Retention(RetentionPolicy.SOURCE)
-@Target(ElementType.METHOD)
-public @interface GenerateEnumMapFieldType {
-    Class<?> value() default Void.class;
+@Target({ElementType.TYPE, ElementType.METHOD})
+public @interface IgnoreForEntityImplementationGenerator {
 }
