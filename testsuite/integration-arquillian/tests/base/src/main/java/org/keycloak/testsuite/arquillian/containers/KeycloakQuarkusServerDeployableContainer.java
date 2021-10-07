@@ -176,10 +176,11 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         if (configuration.getDebugPort() > 0) {
             commands.add("--debug");
             commands.add(Integer.toString(configuration.getDebugPort()));
-        } else if (Boolean.valueOf(System.getProperty("auth.server.debug", "false"))) {
+        } else if (Boolean.parseBoolean(System.getProperty("auth.server.debug", "false"))) {
             commands.add("--debug");
             commands.add(System.getProperty("auth.server.debug.port", "5005"));
         }
+
         commands.add("--http-port=" + configuration.getBindHttpPort());
         commands.add("--https-port=" + configuration.getBindHttpsPort());
 
