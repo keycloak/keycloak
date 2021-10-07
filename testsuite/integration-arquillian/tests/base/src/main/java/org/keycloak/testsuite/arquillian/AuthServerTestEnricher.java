@@ -556,13 +556,9 @@ public class AuthServerTestEnricher {
         TestContext testContext = new TestContext(suiteContext, event.getTestClass().getJavaClass());
         testContextProducer.set(testContext);
 
-        if (!isAuthServerRemote() && !isAuthServerQuarkus()) {
+        if (!isAuthServerRemote()) {
             boolean wasUpdated = false;
 
-            if (event.getTestClass().isAnnotationPresent(EnableVault.class)) {
-                VaultUtils.enableVault(suiteContext, event.getTestClass().getAnnotation(EnableVault.class).providerId());
-                wasUpdated = true;
-            }
             if (event.getTestClass().isAnnotationPresent(SetDefaultProvider.class)) {
                 SetDefaultProvider defaultProvider = event.getTestClass().getAnnotation(SetDefaultProvider.class);
 
@@ -570,6 +566,11 @@ public class AuthServerTestEnricher {
                     SpiProvidersSwitchingUtils.addProviderDefaultValue(suiteContext, defaultProvider);
                     wasUpdated = true;
                 }
+            }
+
+            if (!isAuthServerQuarkus() && event.getTestClass().isAnnotationPresent(EnableVault.class)) {
+                VaultUtils.enableVault(suiteContext, event.getTestClass().getAnnotation(EnableVault.class).providerId());
+                wasUpdated = true;
             }
 
             if (wasUpdated) {
@@ -883,16 +884,17 @@ public class AuthServerTestEnricher {
 
         removeTestRealms(testContext, adminClient);
 
-        if (!isAuthServerRemote() && !isAuthServerQuarkus()) {
+        if (!isAuthServerRemote()) {
             
             boolean wasUpdated = false;
-            if (event.getTestClass().isAnnotationPresent(EnableVault.class)) {
-                VaultUtils.disableVault(suiteContext, event.getTestClass().getAnnotation(EnableVault.class).providerId());
-                wasUpdated = true;
-            }
 
             if (event.getTestClass().isAnnotationPresent(SetDefaultProvider.class)) {
                 SpiProvidersSwitchingUtils.removeProvider(suiteContext, event.getTestClass().getAnnotation(SetDefaultProvider.class));
+                wasUpdated = true;
+            }
+
+            if (event.getTestClass().isAnnotationPresent(EnableVault.class) && !isAuthServerQuarkus()) {
+                VaultUtils.disableVault(suiteContext, event.getTestClass().getAnnotation(EnableVault.class).providerId());
                 wasUpdated = true;
             }
 
