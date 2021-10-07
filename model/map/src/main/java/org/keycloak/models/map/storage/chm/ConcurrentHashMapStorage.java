@@ -61,6 +61,7 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
     public V create(V value) {
         K key = keyConvertor.fromStringSafe(value.getId());
         if (key == null) {
+            value = Serialization.from(value);
             key = keyConvertor.yieldNewUniqueKey();
             value.setId(keyConvertor.keyToString(key));
         }

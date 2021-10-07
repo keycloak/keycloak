@@ -71,6 +71,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
@@ -272,7 +273,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
                 try {
                     LOG.debugf("Restoring contents from %s", f.getCanonicalPath());
                     Class<?> valueImplType = INTERFACE_TO_IMPL.getOrDefault(valueType, valueType);
-                    JavaType type = Serialization.MAPPER.getTypeFactory().constructCollectionType(List.class, valueImplType);
+                    JavaType type = Serialization.MAPPER.getTypeFactory().constructCollectionType(LinkedList.class, valueImplType);
 
                     List<V> values = Serialization.MAPPER.readValue(f, type);
                     values.forEach((V mce) -> store.create(mce));
