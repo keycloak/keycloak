@@ -26,6 +26,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.keycloak.models.map.annotations.GenerateEntityImplementations;
+import org.keycloak.models.map.common.Serialization;
 
 /**
  *
@@ -34,11 +35,10 @@ import org.keycloak.models.map.annotations.GenerateEntityImplementations;
 @GenerateEntityImplementations(inherits="org.keycloak.models.map.client.MapClientEntity.AbstractClientEntity")
 public interface MapClientEntity extends AbstractEntity, UpdatableEntity {
 
-    public abstract class AbstractClientEntity implements MapClientEntity {
+    public abstract class AbstractClientEntity extends UpdatableEntity.Impl implements MapClientEntity {
         /**
          * Flag signalizing that any of the setters has been meaningfully used.
          */
-        protected boolean updated;
         private String id;
 
         protected AbstractClientEntity() {}
@@ -59,9 +59,8 @@ public interface MapClientEntity extends AbstractEntity, UpdatableEntity {
             this.updated |= id != null;
         }
 
-        @Override
-        public boolean isUpdated() {
-            return this.updated;
+        public <V> V deepClone(V obj) {
+            return Serialization.from(obj);
         }
 
         @Override
@@ -97,7 +96,7 @@ public interface MapClientEntity extends AbstractEntity, UpdatableEntity {
     void removeWebOrigin(String webOrigin);
     void setWebOrigins(Set<String> webOrigins);
 
-    default List<String> getAttribute(String name) { return getAttributes().get(name); }
+    default List<String> getAttribute(String name) { return getAttributes() == null ? null : getAttributes().get(name); }
     Map<String, List<String>> getAttributes();
     void removeAttribute(String name);
     void setAttribute(String name, List<String> values);

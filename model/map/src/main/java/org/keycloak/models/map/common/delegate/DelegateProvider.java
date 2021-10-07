@@ -14,23 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.client;
+package org.keycloak.models.map.common.delegate;
 
 /**
  *
  * @author hmlnarik
  */
-public class MapClientEntityDelegate extends MapClientEntityLazyDelegate {
+public interface DelegateProvider<T> {
+    /**
+     * Returns a delegate for and entity for an operation on a field.
+     * @param isRead {@code true} when the delegate requested for a read operation, false otherwise
+     * @param field Identification of the field this delegates operates on.
+     * @return
+     */
+    T getDelegate(boolean isRead, Object field);
 
-    private final MapClientEntity delegate;
-
-    public MapClientEntityDelegate(MapClientEntity delegate) {
-        super(null);
-        this.delegate = delegate;
-    }
-
-    @Override
-    protected MapClientEntity getWriteDelegate() {
-        return delegate;
-    }
+    default boolean isUpdated() { return false; }
 }

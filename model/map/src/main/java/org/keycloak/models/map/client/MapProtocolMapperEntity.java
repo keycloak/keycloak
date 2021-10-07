@@ -24,19 +24,8 @@ import java.util.Map;
  *
  * @author hmlnarik
  */
-@GenerateEntityImplementations(
-  inherits = "org.keycloak.models.map.client.MapProtocolMapperEntity.AbstractProtocolMapperEntity"
-)
+@GenerateEntityImplementations
 public interface MapProtocolMapperEntity extends UpdatableEntity {
-
-    public abstract class AbstractProtocolMapperEntity implements MapProtocolMapperEntity {
-        protected boolean updated;
-
-        @Override
-        public boolean isUpdated() {
-            return this.updated;
-        }
-    }
 
     String getId();
     void setId(String id);

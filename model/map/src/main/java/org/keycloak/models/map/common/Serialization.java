@@ -52,7 +52,7 @@ public class Serialization {
       .setSerializationInclusion(JsonInclude.Include.NON_NULL)
       .setVisibility(PropertyAccessor.ALL, Visibility.NONE)
       .setVisibility(PropertyAccessor.FIELD, Visibility.ANY)
-      .activateDefaultTyping(new LaissezFaireSubTypeValidator() /* TODO - see javadoc */, ObjectMapper.DefaultTyping.JAVA_LANG_OBJECT, JsonTypeInfo.As.PROPERTY)
+      .activateDefaultTyping(new LaissezFaireSubTypeValidator() /* TODO - see javadoc */, ObjectMapper.DefaultTyping.NON_CONCRETE_AND_ARRAYS, JsonTypeInfo.As.PROPERTY)
       .addMixIn(UpdatableEntity.class, IgnoreUpdatedMixIn.class)
     ;
 
@@ -71,7 +71,7 @@ public class Serialization {
     }
 
 
-    public static <T extends AbstractEntity> T from(T orig) {
+    public static <T> T from(T orig) {
         if (orig == null) {
             return null;
         }
