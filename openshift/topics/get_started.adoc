@@ -4,7 +4,7 @@
 === Using the {project_openshift_product_name} Image Streams and application templates
 
 [role="_abstract"]
-Red Hat JBoss Middleware for OpenShift images are pulled on demand from the secured Red Hat Registry: link://https://catalog.redhat.com/[registry.redhat.io], which requires authentication. To retrieve content, you will need to log into the registry using the Red Hat account.
+Red Hat JBoss Middleware for OpenShift images are pulled on demand from the secured Red Hat Registry: link:https://catalog.redhat.com/[registry.redhat.io], which requires authentication. To retrieve content, you will need to log into the registry using the Red Hat account.
 
 To consume container images from *_registry.redhat.io_* in shared environments such as OpenShift, it is recommended for an administrator to use a Registry Service Account, also referred to as authentication tokens, in place of an individual person's Red Hat Customer Portal credentials.
 

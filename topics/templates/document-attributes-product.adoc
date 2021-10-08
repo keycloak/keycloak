@@ -76,7 +76,7 @@
 :releasenotes_name: Release Notes
 :releasenotes_link: {project_doc_base_url}/release_notes/
 :openshift_image_repository_productline: rh-sso-7
-:openshift_openjdk_name: Red Hat Single Sign-On for OpenShift on OpenJDK
+:openshift_openjdk_name: Red Hat Single Sign-On for OpenShift
 :openshift_openjdk_link: {project_doc_base_url}/red_hat_single_sign-on_for_openshift/
 :openshift_openjdk_platforms: x86_64
 :openshift_openjdk_image_stream: sso75-openshift-rhel8
@@ -91,9 +91,9 @@
 
 // Aggregate various frequently referred links to the official OCP documentation
 :official_ocp_docs_link: https://docs.openshift.com/container-platform
-:ocpdocs_secrets_link:  {official_ocp_docs_link}/latest/builds/creating-build-inputs.html#builds-secrets-overview_creating-build-inputs
-:ocpdocs_serving_x509_secrets_link: {official_ocp_docs_link}/latest/builds/creating-build-inputs.html#builds-service-serving-certificate-secrets_creating-build-inputs
-:ocpdocs_binary_source_link: {official_ocp_docs_link}/latest/builds/creating-build-inputs.html#builds-binary-source_creating-build-inputs
+:ocpdocs_secrets_link:  {official_ocp_docs_link}/latest/cicd/builds/creating-build-inputs.html#builds-secrets-overview_creating-build-inputs
+:ocpdocs_serving_x509_secrets_link: {official_ocp_docs_link}/latest/cicd/builds/creating-build-inputs.html#builds-service-serving-certificate-secrets_creating-build-inputs
+:ocpdocs_binary_source_link: {official_ocp_docs_link}/latest/builds/cicd/creating-build-inputs.html#builds-binary-source_creating-build-inputs
 :ocpdocs_templates_link: {official_ocp_docs_link}/latest/openshift_images/using-templates.html
 :ocpdocs_idp_config_link: {official_ocp_docs_link}/latest/authentication/understanding-identity-provider.html
 :ocpdocs_htpasswd_idp_link: {official_ocp_docs_link}/latest/authentication/identity_providers/configuring-htpasswd-identity-provider.html

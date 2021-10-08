@@ -18,4 +18,5 @@ include::topics/templates/document-attributes-product.adoc[]
 
 = {openshift_name}
 
+include::topics/templates/making-open-source-more-inclusive.adoc[]
 include::topics.adoc[]

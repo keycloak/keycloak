@@ -574,7 +574,7 @@ Use the xref:sso-administrator-setup[administrator user credentials] to log in i
 Clients are {project_name} entities that request user authentication. A client can be an application requesting {project_name} to provide user authentication, or it can be making requests for access tokens to start services on behalf of an authenticated user. See the link:{project_doc_base_url}/server_administration_guide/index#assembly-managing-clients_server_administration_guide[Managing Clients chapter of the {project_name} documentation] for more information.
 
 {project_name} provides link:{project_doc_base_url}/server_administration_guide/clients#oidc_clients[OpenID-Connect] and link:{project_doc_base_url}/server_administration_guide/index#client-saml-configuration[SAML] client protocols.
-+
+
 OpenID-Connect is the preferred protocol and uses three different access types:
 
 - *public*: Useful for JavaScript applications that run directly in the browser and require no server configuration.

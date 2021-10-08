@@ -1,5 +1,3 @@
-include::topics/templates/making-open-source-more-inclusive.adoc[]
-
 include::topics/introduction.adoc[leveloffset=+0]
 
 include::topics/get_started.adoc[leveloffset=+0]
