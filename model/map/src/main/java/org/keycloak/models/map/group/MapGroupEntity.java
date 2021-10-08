@@ -34,7 +34,7 @@ import java.util.Set;
 public class MapGroupEntity implements AbstractEntity, UpdatableEntity {
 
     private String id;
-    private final String realmId;
+    private String realmId;
 
     private String name;
     private String parentId;
@@ -46,14 +46,9 @@ public class MapGroupEntity implements AbstractEntity, UpdatableEntity {
      */
     protected boolean updated;
 
-    protected MapGroupEntity() {
-        this.id = null;
-        this.realmId = null;
-    }
+    protected MapGroupEntity() {}
 
     public MapGroupEntity(String id, String realmId) {
-        Objects.requireNonNull(realmId, "realmId");
-
         this.id = id;
         this.realmId = realmId;
     }
@@ -61,6 +56,13 @@ public class MapGroupEntity implements AbstractEntity, UpdatableEntity {
     @Override
     public String getId() {
         return this.id;
+    }
+
+    @Override
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     @Override
@@ -111,6 +113,11 @@ public class MapGroupEntity implements AbstractEntity, UpdatableEntity {
 
     public String getRealmId() {
         return this.realmId;
+    }
+
+    public void setRealmId(String realmId) {
+        this.updated |= !Objects.equals(this.realmId, realmId);
+        this.realmId = realmId;
     }
 
     public Set<String> getGrantedRoles() {

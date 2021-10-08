@@ -29,7 +29,7 @@ import java.util.Set;
 
 public class MapResourceEntity implements AbstractEntity, UpdatableEntity {
     
-    private final String id;
+    private String id;
     private String name;
     private String displayName;
     private final Set<String> uris = new HashSet<>();
@@ -47,13 +47,18 @@ public class MapResourceEntity implements AbstractEntity, UpdatableEntity {
         this.id = id;
     }
 
-    public MapResourceEntity() {
-        this.id = null;
-    }
+    public MapResourceEntity() {}
 
     @Override
     public String getId() {
         return id;
+    }
+
+    @Override
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     public String getName() {

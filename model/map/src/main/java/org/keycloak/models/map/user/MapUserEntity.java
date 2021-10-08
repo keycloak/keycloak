@@ -42,8 +42,8 @@ import java.util.stream.Stream;
  */
 public class MapUserEntity implements AbstractEntity, UpdatableEntity {
 
-    private final String id;
-    private final String realmId;
+    private String id;
+    private String realmId;
 
     private String username;
     private String firstName;
@@ -71,14 +71,9 @@ public class MapUserEntity implements AbstractEntity, UpdatableEntity {
      */
     protected boolean updated;
 
-    protected MapUserEntity() {
-        this.id = null;
-        this.realmId = null;
-    }
+    protected MapUserEntity() {}
 
     public MapUserEntity(String id, String realmId) {
-        Objects.requireNonNull(realmId, "realmId");
-
         this.id = id;
         this.realmId = realmId;
     }
@@ -86,6 +81,13 @@ public class MapUserEntity implements AbstractEntity, UpdatableEntity {
     @Override
     public String getId() {
         return this.id;
+    }
+
+    @Override
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     @Override
@@ -98,6 +100,11 @@ public class MapUserEntity implements AbstractEntity, UpdatableEntity {
 
     public String getRealmId() {
         return realmId;
+    }
+
+    public void setRealmId(String realmId) {
+        this.updated |= !Objects.equals(this.realmId, realmId);
+        this.realmId = realmId;
     }
 
     public String getUsername() {

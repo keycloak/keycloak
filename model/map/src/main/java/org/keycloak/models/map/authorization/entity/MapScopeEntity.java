@@ -24,7 +24,7 @@ import java.util.Objects;
 
 public class MapScopeEntity implements AbstractEntity, UpdatableEntity {
 
-    private final String id;
+    private String id;
     private String name;
     private String displayName;
     private String iconUri;
@@ -35,13 +35,18 @@ public class MapScopeEntity implements AbstractEntity, UpdatableEntity {
         this.id = id;
     }
 
-    public MapScopeEntity() {
-        this.id = null;
-    }
+    public MapScopeEntity() {}
 
     @Override
     public String getId() {
         return id;
+    }
+
+    @Override
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     public String getName() {

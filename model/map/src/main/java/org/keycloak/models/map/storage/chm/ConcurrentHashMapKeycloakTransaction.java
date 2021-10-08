@@ -214,7 +214,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
         if (key == null) {
             K newKey = keyConvertor.yieldNewUniqueKey();
             key = keyConvertor.keyToString(newKey);
-            value = Serialization.from(value, key);
+            value.setId(key);
         }
         addTask(key, new CreateOperation(value));
         return value;

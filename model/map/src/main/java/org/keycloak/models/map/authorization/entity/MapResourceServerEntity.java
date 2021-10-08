@@ -26,7 +26,7 @@ import java.util.Objects;
 
 public class MapResourceServerEntity implements AbstractEntity, UpdatableEntity {
 
-    private final String id;
+    private String id;
     private boolean updated = false;
 
     private boolean allowRemoteResourceManagement;
@@ -37,13 +37,18 @@ public class MapResourceServerEntity implements AbstractEntity, UpdatableEntity 
         this.id = id;
     }
 
-    public MapResourceServerEntity() {
-        this.id = null;
-    }
+    public MapResourceServerEntity() {}
 
     @Override
     public String getId() {
         return id;
+    }
+
+    @Override
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     public boolean isAllowRemoteResourceManagement() {

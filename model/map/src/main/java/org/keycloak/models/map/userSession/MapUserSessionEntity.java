@@ -69,14 +69,9 @@ public class MapUserSessionEntity implements AbstractEntity, UpdatableEntity {
 
     private boolean offline;
 
-    public MapUserSessionEntity() {
-        this.id = null;
-        this.realmId = null;
-    }
+    public MapUserSessionEntity() {}
 
     public MapUserSessionEntity(String id, String realmId) {
-        Objects.requireNonNull(realmId, "realmId");
-
         this.id = id;
         this.realmId = realmId;
     }
@@ -101,6 +96,13 @@ public class MapUserSessionEntity implements AbstractEntity, UpdatableEntity {
     @Override
     public String getId() {
         return this.id;
+    }
+
+    @Override
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     @Override

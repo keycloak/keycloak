@@ -54,7 +54,6 @@ public class Serialization {
       .setVisibility(PropertyAccessor.FIELD, Visibility.ANY)
       .activateDefaultTyping(new LaissezFaireSubTypeValidator() /* TODO - see javadoc */, ObjectMapper.DefaultTyping.JAVA_LANG_OBJECT, JsonTypeInfo.As.PROPERTY)
       .addMixIn(UpdatableEntity.class, IgnoreUpdatedMixIn.class)
-      .addMixIn(AbstractEntity.class, AbstractEntityMixIn.class)
     ;
 
     public static final ConcurrentHashMap<Class<?>, ObjectReader> READERS = new ConcurrentHashMap<>();
@@ -62,11 +61,6 @@ public class Serialization {
 
     abstract class IgnoreUpdatedMixIn {
         @JsonIgnore public abstract boolean isUpdated();
-    }
-
-    abstract class AbstractEntityMixIn {
-        @JsonTypeInfo(property="id", use=Id.CLASS, include=As.WRAPPER_ARRAY)
-        abstract Object getId();
     }
 
     static {
@@ -78,10 +72,6 @@ public class Serialization {
 
 
     public static <T extends AbstractEntity> T from(T orig) {
-        return from(orig, null);
-    }
-
-    public static <T extends AbstractEntity> T from(T orig, String newId) {
         if (orig == null) {
             return null;
         }
@@ -94,26 +84,10 @@ public class Serialization {
             ObjectWriter writer = WRITERS.computeIfAbsent(origClass, MAPPER::writerFor);
             final T res;
             res = reader.readValue(writer.writeValueAsBytes(orig));
-            if (newId != null) {
-                updateId(origClass, res, newId);
-            }
+
             return res;
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
         }
     }
-
-    private static <K> void updateId(Class<?> origClass, AbstractEntity res, K newId) {
-        Field field = Reflections.findDeclaredField(origClass, "id");
-        if (field == null) {
-            throw new IllegalArgumentException("Cannot find id for " + origClass + " class");
-        }
-        try {
-            Reflections.setAccessible(field).set(res, newId);
-        } catch (IllegalArgumentException | IllegalAccessException ex) {
-            Logger.getLogger(Serialization.class.getName()).log(Level.SEVERE, null, ex);
-            throw new IllegalArgumentException("Cannot set id for " + origClass + " class");
-        }
-    }
-
 }

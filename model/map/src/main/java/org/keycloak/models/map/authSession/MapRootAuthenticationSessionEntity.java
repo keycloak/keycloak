@@ -38,14 +38,9 @@ public class MapRootAuthenticationSessionEntity implements AbstractEntity, Updat
     private int timestamp;
     private Map<String, MapAuthenticationSessionEntity> authenticationSessions = new ConcurrentHashMap<>();
 
-    protected MapRootAuthenticationSessionEntity() {
-        this.id = null;
-        this.realmId = null;
-    }
+    protected MapRootAuthenticationSessionEntity() {}
 
     public MapRootAuthenticationSessionEntity(String id, String realmId) {
-        Objects.requireNonNull(realmId, "realmId");
-
         this.id = id;
         this.realmId = realmId;
     }
@@ -53,6 +48,13 @@ public class MapRootAuthenticationSessionEntity implements AbstractEntity, Updat
     @Override
     public String getId() {
         return this.id;
+    }
+
+    @Override
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     @Override
