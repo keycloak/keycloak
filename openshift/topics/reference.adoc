@@ -1,11 +1,12 @@
 == Reference
 
 [[sso-artifact-repository-mirrors-section]]
-=== Artifact Repository Mirrors
+=== Artifact repository mirrors
 
 // This page describes MAVEN_MIRROR_URL variable usage
 // It requires 'bcname' attribute to be set to the name of the product
 
+[role="_abstract"]
 A repository in Maven holds build artifacts and dependencies of various types
 (all the project jars, library jar, plugins or any other project specific
 artifacts). It also specifies locations from where to download artifacts from,
@@ -25,17 +26,19 @@ Often, a repository manager can serve as local cache to a mirror. Assuming that
 the repository manager is already deployed and reachable externally at
 *_pass:[http://10.0.0.1:8080/repository/internal/]_*, the S2I build can then use this
 manager by supplying the `MAVEN_MIRROR_URL` environment variable to the
-build configuration of the application as follows:
+build configuration of the application using the following procedure:
+
+.Procedure
 
 . Identify the name of the build configuration to apply `MAVEN_MIRROR_URL`
-  variable against:
+  variable against.
 +
 [source,bash,subs="attributes+,macros+"]
 ----
 $ oc get bc -o name
 buildconfig/sso
 ----
-. Update build configuration of `sso` with a `MAVEN_MIRROR_URL` environment variable
+. Update build configuration of `sso` with a `MAVEN_MIRROR_URL` environment variable.
 +
 [source,bash,subs="attributes+,macros+"]
 ----
@@ -43,7 +46,7 @@ $ oc set env bc/sso \
   -e MAVEN_MIRROR_URL="http://10.0.0.1:8080/repository/internal/"
 buildconfig "sso" updated
 ----
-. Verify the setting
+. Verify the setting.
 +
 [source,bash,subs="attributes+,macros+"]
 ----
@@ -51,7 +54,7 @@ $ oc set env bc/sso --list
 # buildconfigs sso
 MAVEN_MIRROR_URL=http://10.0.0.1:8080/repository/internal/
 ----
-. Schedule new build of the application
+. Schedule new build of the application.
 
 NOTE: During application build, you will notice that Maven dependencies are
 pulled from the repository manager, instead of the default public repositories.
@@ -59,9 +62,9 @@ Also, after the build is finished, you will see that the mirror is filled with
 all the dependencies that were retrieved and used during the build.
 
 [[env_vars]]
-=== Environment Variables 
+=== Environment variables 
 
-==== Information Environment Variables
+==== Information environment variables
 The following information environment variables are designed to convey
 information about the image and should not be modified by the user:
 
@@ -95,7 +98,7 @@ information about the image and should not be modified by the user:
 
 |===
 
-==== Configuration Environment Variables
+==== Configuration environment variables
 Configuration environment variables are designed to conveniently adjust the
 image without requiring a rebuild, and should be set by the user as desired.
 
@@ -607,7 +610,7 @@ avoid man-in-the-middle security attacks.
 |{project_name} logout page for SAML applications.
 |===
 
-=== Exposed Ports
+=== Exposed ports
 [cols="2",options="header"]
 |===
 |Port Number | Description
@@ -624,13 +627,13 @@ avoid man-in-the-middle security attacks.
 
 === Clustering
 
-=== Security Domains
+=== Security domains
 
 === HTTPS
 
 === Source-to-Image (S2I)
 
-=== Known Issues
+=== Known issues
 * There is a known issue with the EAP6 Adapter _HttpServletRequest.logout()_ in which the adapter does not log out from the application, which can create a login loop. The workaround is to call _HttpSession.invalidate();_ after _request.logout()_ to clear the Keycloak token from the session. For more information, see https://issues.redhat.com/browse/KEYCLOAK-2665[KEYCLOAK-2665].
 * The SSO logs throw a duplication error if the SSO pod is restarted while backed by a database pod. This error can be safely ignored.
 * Setting _adminUrl_ to a "https://..." address in an OpenID Connect client will cause *javax.net.ssl.SSLHandshakeException* exceptions on the SSO server if the default secrets (*sso-app-secret* and *eap-app-secret*) are used. The application server must use either CA-signed certificates or configure the SSO trust store to trust the self-signed certificates.

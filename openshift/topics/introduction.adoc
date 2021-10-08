@@ -1,35 +1,66 @@
-== Introduction
+== Introduction to {project_openshift_product_name}
 
-=== What Is {project_name}?
+=== What is {project_name}?
+[role="_abstract"]
 {project_name} is an integrated sign-on solution available as a Red Hat JBoss Middleware for OpenShift containerized image. The {project_openshift_product_name} image provides an authentication server for users to centrally log in, log out, register, and manage user accounts for web applications, mobile applications, and RESTful web services.
 
-{openshift_name} is only available on the following platforms: *{openshift_image_platforms}*. For other available platforms, see link:{openshift_link_other}[{openshift_name_other}].
+{openshift_name} is available only on *{openshift_image_platforms}*. For other available platforms, see link:{openshift_link_other}[{openshift_name_other}].
+
+=== Comparison: {project_openshift_product_name} Image versus Red Hat Single Sign-On
+The {project_openshift_product_name} image version number {project_version} is based on {project_name} {project_version}. There are some important differences in functionality between the {project_openshift_product_name} image and {project_name} that should be considered:
+
+The {project_openshift_product_name} image includes all of the functionality of {project_name}. In addition, the {project_name}-enabled JBoss EAP image automatically handles OpenID Connect or SAML client registration and configuration for *_.war_* deployments that contain *<auth-method>KEYCLOAK</auth-method>* or *<auth-method>KEYCLOAK-SAML</auth-method>* in their respective *web.xml* files.
 
 [[sso-templates]]
-Red Hat offers multiple OpenShift application templates utilizing the {project_openshift_product_name} image version number {project_version}. These define the resources needed to develop {project_name} {project_version} server based deployment and can be split into the following two categories:
+=== Templates for use with this software
+
+Red Hat offers multiple OpenShift application templates using the {project_openshift_product_name} image version number {project_version}. These templates define the resources needed to develop {project_name} {project_version} server based deployment. The templates can mainly be split into two categories: passthrough templates and reencryption templates. Some other miscellaneous templates also exist.
 
 [[passthrough-templates]]
-* Templates using HTTPS and JGroups keystores and a truststore for the {project_name} server, all prepared beforehand. These secure the TLS communication using link:{ocp311docs_passthrough_route_link}[passthrough TLS termination]:
+==== Passthrough templates
 
-** *_{project_templates_version}-https_*: {project_name} {project_version} backed by internal H2 database on the same pod.
-** *_{project_templates_version}-postgresql_*: {project_name} {project_version} backed by ephemeral PostgreSQL database on a separate pod.
-** *_{project_templates_version}-postgresql-persistent_*: {project_name} {project_version} backed by persistent PostgreSQL database on a separate pod.
+These templates require that HTTPS, JGroups keystores, and a truststore for the {project_name} server exist beforehand.  They secure the TLS communication using passthrough TLS termination.
+
+* _{project_templates_version}-https_*: {project_name} {project_version} backed by internal H2 database on the same pod.
+
+* _{project_templates_version}-postgresql_*: {project_name} {project_version} backed by ephemeral PostgreSQL database on a separate pod.
+
+* _{project_templates_version}-postgresql-persistent_*: {project_name} {project_version} backed by persistent PostgreSQL database on a separate pod.
 
 [NOTE]
 Templates for using {project_name} with MySQL / MariaDB databases have been removed and are not available since {project_name} version 7.4.
 
+==== Re-encryption templates
 [[reencrypt-templates]]
-* Templates using OpenShift's internal link:{ocpdocs_serving_x509_secrets_link}[service serving x509 certificate secrets] to automatically create the HTTPS keystore used for serving secure content. The JGroups cluster traffic is authenticated using the `AUTH` protocol and encrypted using the `ASYM_ENCRYPT` protocol. The {project_name} server truststore is also created automatically, containing the */var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt* CA certificate file, which is used to sign the certificate for HTTPS keystore. Moreover, the truststore for the {project_name} server is pre-populated with the all known, trusted CA certificate files found in the Java system path. These templates secure the TLS communication using link:{ocp311docs_reencrypt_route_link}[re-encryption TLS termination]:
 
-** *_{project_templates_version}-x509-https_*: {project_name} {project_version} with auto-generated HTTPS keystore and {project_name} truststore, backed by internal H2 database. The `ASYM_ENCRYPT` JGroups protocol is used for encryption of cluster traffic.
-** *_{project_templates_version}-x509-postgresql-persistent_*: {project_name} {project_version} with auto-generated HTTPS keystore and {project_name} truststore, backed by persistent PostgreSQL database. The `ASYM_ENCRYPT` JGroups protocol is used for encryption of cluster traffic.
+These templates use OpenShift's internal link:{ocpdocs_serving_x509_secrets_link}[service serving x509 certificate secrets] to automatically create the HTTPS keystore used for serving secure content. The JGroups cluster traffic is authenticated using the `AUTH` protocol and encrypted using the `ASYM_ENCRYPT` protocol. The {project_name} server truststore is also created automatically, containing the */var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt* CA certificate file, which is used to sign the certificate for HTTPS keystore.
+
+Moreover, the truststore for the {project_name} server is pre-populated with the all known, trusted CA certificate files found in the Java system path. These templates secure the TLS communication using re-encryption TLS termination.
+
+* _{project_templates_version}-x509-https_*: {project_name} {project_version} with auto-generated HTTPS keystore and {project_name} truststore, backed by internal H2 database. The `ASYM_ENCRYPT` JGroups protocol is used for encryption of cluster traffic.
+* _{project_templates_version}-x509-postgresql-persistent_*: {project_name} {project_version} with auto-generated HTTPS keystore and {project_name} truststore, backed by persistent PostgreSQL database. The `ASYM_ENCRYPT` JGroups protocol is used for encryption of cluster traffic.
+
+==== Other templates
 
 Other templates that integrate with {project_name} are also available:
 
-* *_eap64-sso-s2i_*: {project_name}-enabled Red Hat JBoss Enterprise Application Platform 6.4.
-* *_eap71-sso-s2i_*: {project_name}-enabled Red Hat JBoss Enterprise Application Platform 7.1.
-* *_datavirt63-secure-s2i_*: {project_name}-enabled Red Hat JBoss Data Virtualization 6.3.
+* _eap64-sso-s2i_*: {project_name}-enabled Red Hat JBoss Enterprise Application Platform 6.4.
+* _eap71-sso-s2i_*: {project_name}-enabled Red Hat JBoss Enterprise Application Platform 7.1.
+* _datavirt63-secure-s2i_*: {project_name}-enabled Red Hat JBoss Data Virtualization 6.3.
 
 These templates contain environment variables specific to {project_name} that enable automatic {project_name} client registration when deployed.
 
-See xref:Auto-Man-Client-Reg[Automatic and Manual {project_name} Client Registration Methods] for more information.
+[role="_additional-resources"]
+.Additional resources
+
+* xref:Auto-Man-Client-Reg[Automatic and Manual {project_name} Client Registration Methods]
+* link:{ocp311docs_passthrough_route_link}[passthrough TLS termination]
+* link:{ocp311docs_reencrypt_route_link}[re-encryption TLS termination]
+
+=== Version compatibility and support
+For details about OpenShift image version compatibility, see the https://access.redhat.com/articles/2342861[Supported Configurations] page.
+
+NOTE: The {project_openshift_product_name} image version number between 7.0 and 7.3 are deprecated and they will no longer receive updates of image and application templates.
+
+To deploy new applications, use the version 7.4 or {project_version} of the {project_openshift_product_name} image along with the application templates specific to these image versions.
+

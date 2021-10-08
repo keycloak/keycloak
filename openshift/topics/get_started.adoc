@@ -1,15 +1,16 @@
-== Get Started
+== Configuring {project_openshift_product_name}
 
 [id="image-streams-applications-templates"]
-=== Using the {project_openshift_product_name} Image Streams and Application Templates
+=== Using the {project_openshift_product_name} Image Streams and application templates
 
-[IMPORTANT]
-====
-Red Hat JBoss Middleware for OpenShift images are pulled on demand from the secured Red Hat Registry: link:https://catalog.redhat.com[registry.redhat.io], which requires authentication. To retrieve content, you will need to log into the registry using the Red Hat account.
+[role="_abstract"]
+Red Hat JBoss Middleware for OpenShift images are pulled on demand from the secured Red Hat Registry: link://https://catalog.redhat.com/[registry.redhat.io], which requires authentication. To retrieve content, you will need to log into the registry using the Red Hat account.
 
 To consume container images from *_registry.redhat.io_* in shared environments such as OpenShift, it is recommended for an administrator to use a Registry Service Account, also referred to as authentication tokens, in place of an individual person's Red Hat Customer Portal credentials.
 
-To create a Registry Service Account, navigate to the link:https://access.redhat.com/terms-based-registry/[Registry Service Account Management Application], and log in if necessary.
+.Procedure
+
+. To create a Registry Service Account, navigate to the link:https://access.redhat.com/terms-based-registry/[Registry Service Account Management Application], and log in if necessary.
 
 . From the *_Registry Service Accounts_* page, click *_Create Service Account_*.
 . Provide a name for the Service Account, for example *_registry.redhat.io-sa_*. It will be prepended with a fixed, random string.
@@ -19,9 +20,10 @@ To create a Registry Service Account, navigate to the link:https://access.redhat
 . Finally, click the *_OpenShift Secret_* tab, and perform all steps listed on that page.
 
 See the link:https://access.redhat.com/RegistryAuthentication[Red Hat Container Registry Authentication] article for more information.
-====
 
-. Ensure that you are logged in as a cluster administrator or a user with project administrator access to the global openshift project:
+.Procedure
+
+. Ensure that you are logged in as a cluster administrator or a user with project administrator access to the global `openshift` project:
 
 . Choose a command based on your version of OpenShift Container Platform.
 
@@ -63,8 +65,11 @@ $ oc -n openshift import-image {openshift_image_repository}:{project_latest_imag
 [[Example-Deploying-SSO]]
 === Deploying the {project_name} Image
 [[Preparing-SSO-Authentication-for-OpenShift-Deployment]]
-==== Preparing the Deployment
-Log in to the OpenShift CLI with a user that holds the _cluster:admin_ role.
+==== Preparing for the deployment
+
+.Procedure
+
+. Log in to the OpenShift CLI with a user that holds the _cluster:admin_ role.
 
 . Create a new project:
 +
@@ -72,16 +77,29 @@ Log in to the OpenShift CLI with a user that holds the _cluster:admin_ role.
 ----
 $ oc new-project sso-app-demo
 ----
-. Add the `view` role to the link:{ocpdocs_default_service_accounts_link}[`default`] service account. This enables the service account to view all the resources in the sso-app-demo namespace, which is necessary for managing the cluster.
+. Add the `view` role to the link:{ocpdocs_default_service_accounts_link}[`default`] service account. This enables the service account to view all the resources in the *sso-app-demo* namespace, which is necessary for managing the cluster.
 +
 [source,bash,subs="attributes+,macros+"]
 ----
 $ oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default
 ----
 
-==== Deploying the {project_name} Image using the Application Template
+==== Deploying the {project_name} Image using the application template
 
+You can deploy the template using one of these interfaces:
+
+* xref:deploy_cli[OpenShift CLI]
+* xref:deploy3x[OpenShift 3.x web console]
+* xref:deploy4x[OpenShift 4.x web console]
+
+[id="deploy_cli"]
 ===== Deploying the Template using OpenShift CLI
+
+.Prerequisites
+
+* Perform the steps described in xref:image-streams-applications-templates[Using the {project_openshift_product_name} Image Streams and application templates].
+
+.Procedure
 
 . List the available {project_name} application templates:
 +
@@ -132,11 +150,16 @@ $ oc new-app --template={project_templates_version}-x509-https
     Run 'oc status' to view your app.
 ----
 
-Alternatively, perform one of the following procedures to deploy the {project_name} template by using the OpenShift 3.x or 4.x web console.
-
+[id="deploy3x"]
 ===== Deploying the Template using the OpenShift 3.x Web Console
 
-. Log in to the OpenShift web console and select the _sso-app-demo_ project space.
+.Prerequisites
+
+* Perform the steps described in xref:image-streams-applications-templates[Using the {project_openshift_product_name} Image Streams and application templates].
+
+.Procedure
+
+. Log in to the OpenShift web console and select the *sso-app-demo* project space.
 . Click *Add to Project*, then *Browse Catalog* to list the default image streams and templates.
 . Use the *Filter by Keyword* search bar to limit the list to those that match _sso_. You may need to click *Middleware*, then *Integration* to show the desired application template.
 . Select an {project_name} application template. This example uses *_{project_name} {project_versionDoc} (Ephemeral)_*.
@@ -145,46 +168,49 @@ Alternatively, perform one of the following procedures to deploy the {project_na
 . Select *Do not bind at this time* radio button in the *Binding* step. Click *Create* to continue.
 . In the *Results* step, click the *Continue to the project overview* link to verify the status of the deployment.
 
+[id="deploy4x"]
 ===== Deploying the Template using the OpenShift 4.x Web Console
 
 .Prerequisites
 
-* Perform the steps described in xref:image-streams-applications-templates[Using the {project_openshift_product_name} Image Streams and Application Templates].
+* Perform the steps described in xref:image-streams-applications-templates[Using the {project_openshift_product_name} Image Streams and application templates].
 
 .Procedure
 
 . Log in to the OpenShift web console and select the _sso-app-demo_ project space.
 
-. On the left sidebar, click the `Administrator` tab and then click `</> Developer`.
+. On the left sidebar, click the *Administrator* tab and then click *</> Developer*.
 +
 image:images/choose_developer_role.png[]
 
-. Click `From Catalog`.
+. Click *From Catalog*.
 +
 image:images/add_from_catalog.png[]
 
-. Search for `sso`.
+. Search for *sso*.
 +
 image:images/sso_keyword.png[]
 
-. Choose a template such as `Red Hat Single Sign-On 7.4 on OpenJDK (Ephemeral)`.
+. Choose a template such as *Red Hat Single Sign-On {project_version_base} on OpenJDK (Ephemeral)*.
 +
 image:images/choose_template.png[]
 
-. Click `Instantiate Template`.
+. Click *Instantiate Template*.
 +
 image:images/instantiate_template.png[]
 
-. Adjust the template parameters if necessary and click `Create`.
+. Adjust the template parameters if necessary and click *Create*.
 
 . Verify the Red Hat Single Sign-On for OpenShift image was deployed.
 +
 image:images/verify_deployment.png[]
 
-==== Accessing the Administrator Console of the {project_name} Pod
+=== Accessing the Administrator Console of the {project_name} Pod
 
-After the template is deployed, identify the available routes:
+.Procedure
 
+. After the template is deployed, identify the available routes.
++
 [source,bash,subs="attributes+,macros+"]
 ----
 $ oc get routes
@@ -192,8 +218,11 @@ NAME     HOST/PORT
 sso      sso-sso-app-demo.openshift.example.com
 ----
 
-and access the {project_name} administrator console at:
+. Access the {project_name} Admin Console.
++
+[source,bash,subs="attributes+,macros+"]
+----
+\https://sso-sso-app-demo.openshift.example.com/auth/admin
+----
 
-* *\https://sso-sso-app-demo.openshift.example.com/auth/admin*
-
-using the xref:sso-administrator-setup[administrator account].
+. Provide the login credentials for the xref:sso-administrator-setup[administrator account].
