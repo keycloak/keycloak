@@ -317,9 +317,29 @@ When the session is terminated at {project_name} the application will notice and
 
 ===== Frontchannel Logout
 
-This is also a browser-based logout. In contrast to the Session Managment based logout approach {project_name} will send logout
-requests to the clients. Applications or clients need to have a frontchannel logout URL registered at {project_name}.
-After triggering a logout at {project_name}, it will send logout requests to these registered URLs that will terminate the client sessions.
+This is also a browser-based logout where the logout starts by redirecting the user to a specific endpoint at {project_name}.
+
+Once the user is redirected to the logout endpoint, {project_name} is going to send logout requests to
+clients to let them to invalidate their local user sessions, and potentially redirect the user to some URL
+once the logout process is finished.
+
+Depending on the client configuration, logout requests can be sent to clients through the front-channel or through the back-channel.
+
+To configure clients to receive logout requests through the front-channel, look at the <<_front-channel-logout, Front-Channel Logout>> client setting. When using this method, consider the following:
+
+* Logout requests sent by {project_name} to clients rely on the browser and on embedded `iframes` that are rendered for the logout page.
+* By being based on `iframes`, front-channel logout might be impacted by Content Security Policies (CSP) and logout requests might be blocked.
+* If the user closes the browser prior to rendering the logout page or before logout requests are actually sent to clients, their sessions at
+the client might not be invalidated.
+
+[NOTE]
+====
+Consider using Back-Channel Logout as it provides a more reliable and secure approach to log out users and terminate their sessions
+on the clients.
+====
+
+If the client is not enabled with front-channel logout, then {project_name} is going to try first to send logout requests through the back-channel
+using the <<_back-channel-logout-url, Back-Channel Logout URL>>. If not defined, the server is going to fall back to using the <<_admin-url, Admin URL>>.
 
 ===== Backchannel Logout
 

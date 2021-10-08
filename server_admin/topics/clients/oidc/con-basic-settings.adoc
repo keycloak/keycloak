@@ -46,6 +46,7 @@ Exclusive redirect URL patterns are typically more secure.  See xref:unspecific-
 
 *Base URL*:: This URL is used when {project_name} needs to link to the client.
 
+[[_admin-url]]
 *Admin URL*:: Callback endpoint for a client.  The server uses this URL to make callbacks like pushing revocation policies, performing backchannel logout, and other administrative operations.  For {project_name} servlet adapters, this URL can be the root URL of the servlet application.
 For more information, see link:{adapterguide_link}[{adapterguide_name}].
 
@@ -56,3 +57,11 @@ If browser JavaScript attempts an AJAX HTTP request to a server whose domain is 
 JavaScript code came from, the request must use CORS. The server must handle CORS requests, otherwise the browser will not display or allow the request to be processed. This protocol protects against XSS, CSRF, and other JavaScript-based attacks.
 +
 Domain URLs listed here are embedded within the access token sent to the client application. The client application uses this information to decide whether to allow a CORS request to be invoked on it.  Only {project_name} client adapters support this feature. See link:{adapterguide_link}[{adapterguide_name}] for more information.
+
+[[_front-channel-logout]]
+*Front Channel Logout*:: If *Front Channel Logout* is enabled, the application should be able to log out users through the front channel as per link:https://openid.net/specs/openid-connect-frontchannel-1_0.html[OpenID Connect Front-Channel Logout] specification. If enabled, you should also provide the `Front-Channel Logout URL`.
+
+*Front-Channel Logout URL*:: URL that will be used by {project_name} to send logout requests to clients through the front-channel.
+
+[[_back-channel-logout-url]]
+*Backchannel Logout URL*:: URL that will cause the client to log itself out when a logout request is sent to this realm (via end_session_endpoint). If omitted, no logout requests are sent to the client.

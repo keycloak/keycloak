@@ -1,0 +1,9 @@
+= Highlights
+
+== OpenID Connect Front-Channel Logout Support
+
+{project_name} now supports https://openid.net/specs/openid-connect-frontchannel-1_0.html[OpenID Connect Front-Channel Logout 1.0].
+
+For more details, take a look at link:{adminguide_link}#_oidc-logout[{adminguide_name}].
+
+Thanks to https://github.com/rhyamada[Ronaldo Yamada] for the contribution.
