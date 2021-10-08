@@ -16,6 +16,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
+import { prettyPrintJSON } from "../../util";
 import { ConfirmDialogModal } from "../confirm-dialog/ConfirmDialog";
 import { useHelp } from "../help-enabler/HelpHeader";
 import { HelpItem } from "../help-enabler/HelpItem";
@@ -46,7 +47,7 @@ export const DownloadDialog = ({
   const [openType, setOpenType] = useState(false);
 
   const selectedConfig = useMemo(
-    () => configFormats?.find((config) => config.id === selected) ?? null,
+    () => configFormats.find((config) => config.id === selected) ?? null,
     [selected]
   );
 
@@ -59,7 +60,7 @@ export const DownloadDialog = ({
       if (typeof snippet === "string") {
         return snippet;
       } else {
-        return JSON.stringify(snippet, undefined, 3);
+        return prettyPrintJSON(snippet);
       }
     },
     (snippet) => setSnippet(snippet),

@@ -44,7 +44,7 @@ export const exportClient = (client: ClientRepresentation): void => {
   }
 
   FileSaver.saveAs(
-    new Blob([JSON.stringify(clientCopy, null, 2)], {
+    new Blob([prettyPrintJSON(clientCopy)], {
       type: "application/json",
     }),
     clientCopy.clientId + ".json"
@@ -190,3 +190,5 @@ export const interpolateTimespan = (forHumans: string) => {
 };
 
 export const KEY_PROVIDER_TYPE = "org.keycloak.keys.KeyProvider";
+
+export const prettyPrintJSON = (value: any) => JSON.stringify(value, null, 2);

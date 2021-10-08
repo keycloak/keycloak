@@ -20,6 +20,7 @@ import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useAlerts } from "../components/alert/Alerts";
+import { prettyPrintJSON } from "../util";
 import { Link } from "react-router-dom";
 import { toNewClientProfile } from "./routes/NewClientProfile";
 import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
@@ -260,7 +261,7 @@ export const ProfilesTab = () => {
               <Button
                 variant={ButtonVariant.link}
                 onClick={() => {
-                  setCode(JSON.stringify(tableProfiles, null, 2));
+                  setCode(prettyPrintJSON(tableProfiles));
                 }}
                 data-testid="jsonEditor-reloadBtn"
               >

@@ -35,6 +35,7 @@ import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTa
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
+import { prettyPrintJSON } from "../../util";
 import "./evaluate.css";
 
 export type EvaluateScopesProps = {
@@ -232,7 +233,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
       }
     },
     (accessToken) => {
-      setAccessToken(JSON.stringify(accessToken, undefined, 3));
+      setAccessToken(prettyPrintJSON(accessToken));
     },
     [user, selected]
   );

@@ -37,6 +37,7 @@ import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import { prettyPrintJSON } from "../util";
 import "./events.css";
 
 type DisplayDialogProps = {
@@ -541,21 +542,11 @@ export const AdminEvents = () => {
     [t("ipAddress"), authEvent?.authDetails?.ipAddress],
   ];
 
-  function prettyPrintJSON(json: string) {
-    try {
-      return JSON.stringify(JSON.parse(json), null, 2);
-    } catch (error) {
-      return json;
-    }
-  }
-
   const code = useMemo(
     () =>
-      prettyPrintJSON(
-        representationEvent?.representation
-          ? prettyPrintJSON(representationEvent.representation)
-          : ""
-      ),
+      representationEvent?.representation
+        ? prettyPrintJSON(JSON.parse(representationEvent.representation))
+        : "",
     [representationEvent?.representation]
   );
 

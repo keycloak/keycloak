@@ -17,7 +17,7 @@ import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useTranslation } from "react-i18next";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
-import { upperCaseFormatter } from "../util";
+import { prettyPrintJSON, upperCaseFormatter } from "../util";
 import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import { Link } from "react-router-dom";
 import type ClientPolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyRepresentation";
@@ -44,7 +44,7 @@ export const PoliciesTab = () => {
 
   const loader = async () => policies ?? [];
 
-  const code = useMemo(() => JSON.stringify(policies, null, 2), [policies]);
+  const code = useMemo(() => prettyPrintJSON(policies), [policies]);
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("deleteClientPolicyConfirmTitle"),
