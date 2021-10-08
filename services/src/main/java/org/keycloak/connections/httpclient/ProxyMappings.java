@@ -21,6 +21,7 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.jboss.logging.Logger;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -44,9 +45,11 @@ public class ProxyMappings {
 
   private static final ProxyMappings EMPTY_MAPPING = valueOf(Collections.emptyList());
 
+  private static final String NO_PROXY_DELIMITER = ",";
+
   private final List<ProxyMapping> entries;
 
-  private static Map<String, ProxyMapping> hostnameToProxyCache = new ConcurrentHashMap<>();
+  private static final Map<String, ProxyMapping> hostnameToProxyCache = new ConcurrentHashMap<>();
 
   /**
    * Creates a {@link ProxyMappings} from the provided {@link ProxyMapping Entries}.
@@ -91,6 +94,34 @@ public class ProxyMappings {
     }
 
     return valueOf(Arrays.asList(proxyMappings));
+  }
+
+  /**
+   * Creates a new {@link ProxyMappings} from provided parameters representing the established {@code HTTP(S)_PROXY}
+   * and {@code NO_PROXY} environment variables.
+   *
+   * @param httpProxy a proxy used for all hosts except the ones specified in {@code noProxy}
+   * @param noProxy a list of hosts (separated by comma) that should not use proxy;
+   *                all suffixes are matched too (e.g. redhat.com will also match access.redhat.com)
+   * @return
+   * @see <a href="https://about.gitlab.com/blog/2021/01/27/we-need-to-talk-no-proxy/">https://about.gitlab.com/blog/2021/01/27/we-need-to-talk-no-proxy/</a>
+   */
+  public static ProxyMappings valueOf(String httpProxy, String noProxy) {
+    List<ProxyMapping> proxyMappings = new ArrayList<>();
+
+    if (httpProxy != null && !httpProxy.isEmpty()) {
+      // noProxy must be first as it's more specific than .*
+      if (noProxy != null && !noProxy.isEmpty()) {
+        for (String host : noProxy.split(NO_PROXY_DELIMITER)) {
+          // do not support regex in no_proxy
+          proxyMappings.add(new ProxyMapping(Pattern.compile("(?:.+\\.)?" + Pattern.quote(host)), null, null));
+        }
+      }
+
+      proxyMappings.add(ProxyMapping.valueOf(".*" + ProxyMapping.DELIMITER + httpProxy));
+    }
+
+    return proxyMappings.isEmpty() ? EMPTY_MAPPING : new ProxyMappings(proxyMappings);
   }
 
 
