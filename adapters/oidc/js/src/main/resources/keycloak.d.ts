@@ -321,6 +321,7 @@ declare namespace Keycloak {
 		session_state?: string;
 		realm_access?: KeycloakRoles;
 		resource_access?: KeycloakResourceAccess;
+		[key: string]: any; // Add other attributes here.
 	}
 
 	interface KeycloakResourceAccess {
