@@ -103,8 +103,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         String userModelAttrName = getUserModelAttribute();
         String ldapAttrName = getLdapAttributeName();
         boolean isMandatoryInLdap = parseBooleanParameter(mapperModel, IS_MANDATORY_IN_LDAP);
-        String attributeDefaultValue = getAttributeDefaultValue();
-
+        String attributeDefaultValue = getAttributeDefaultValue(localUser);
         Property<Object> userModelProperty = userModelProperties.get(userModelAttrName.toLowerCase());
 
         if (userModelProperty != null) {
@@ -457,8 +456,12 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         }
     }
 
-    private String getAttributeDefaultValue() {
+    private String getAttributeDefaultValue(UserModel localUser) {
         String attributeDefaultValue = mapperModel.getConfig().getFirst(ATTRIBUTE_DEFAULT_VALUE);
+        if(attributeDefaultValue != null){
+            attributeDefaultValue = UserAttributeTranscriber.getTemplatedString(attributeDefaultValue, localUser);
+        }
+
         return (attributeDefaultValue == null || attributeDefaultValue.trim().isEmpty()) ? LDAPConstants.EMPTY_ATTRIBUTE_VALUE : attributeDefaultValue;
     }
 
