@@ -41,10 +41,8 @@ public interface MapClientEntity extends AbstractEntity, UpdatableEntity {
          */
         protected boolean updated;
         private String id;
-        
-        protected AbstractClientEntity() {
-            this.id = null;
-        }
+
+        protected AbstractClientEntity() {}
 
         public AbstractClientEntity(String id) {
             this.id = id;
@@ -53,6 +51,13 @@ public interface MapClientEntity extends AbstractEntity, UpdatableEntity {
         @Override
         public String getId() {
             return this.id;
+        }
+
+        @Override
+        public void setId(String id) {
+            if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+            this.id = id;
+            this.updated |= id != null;
         }
 
         @Override

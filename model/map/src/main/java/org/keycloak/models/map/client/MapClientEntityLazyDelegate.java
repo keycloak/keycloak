@@ -469,6 +469,11 @@ public class MapClientEntityLazyDelegate implements MapClientEntity {
     }
 
     @Override
+    public void setId(String id) {
+        getWriteDelegate().setId(id);
+    }
+
+    @Override
     public boolean isUpdated() {
         return isWriteDelegateInitialized() && getWriteDelegate().isUpdated();
     }

@@ -52,16 +52,9 @@ public class MapAuthenticatedClientSessionEntity implements AbstractEntity, Upda
 
     private boolean offline;
 
-    public MapAuthenticatedClientSessionEntity() {
-        this.id = null;
-        this.realmId = null;
-    }
+    public MapAuthenticatedClientSessionEntity() {}
 
     public MapAuthenticatedClientSessionEntity(String id, String userSessionId, String realmId, String clientId, boolean offline) {
-        Objects.requireNonNull(userSessionId, "userSessionId");
-        Objects.requireNonNull(realmId, "realmId");
-        Objects.requireNonNull(clientId, "clientId");
-
         this.id = id;
         this.userSessionId = userSessionId;
         this.realmId = realmId;
@@ -73,6 +66,13 @@ public class MapAuthenticatedClientSessionEntity implements AbstractEntity, Upda
     @Override
     public String getId() {
         return this.id;
+    }
+
+    @Override
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     @Override

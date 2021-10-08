@@ -24,7 +24,7 @@ import java.util.Objects;
 
 public class MapPermissionTicketEntity implements AbstractEntity, UpdatableEntity {
 
-    private final String id;
+    private String id;
     private String owner;
     private String requester;
     private Long createdTimestamp;
@@ -39,13 +39,18 @@ public class MapPermissionTicketEntity implements AbstractEntity, UpdatableEntit
         this.id = id;
     }
 
-    public MapPermissionTicketEntity() {
-        this.id = null;
-    }
+    public MapPermissionTicketEntity() {}
 
     @Override
     public String getId() {
         return id;
+    }
+
+    @Override
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     public String getOwner() {

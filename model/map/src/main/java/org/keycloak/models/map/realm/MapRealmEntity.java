@@ -130,9 +130,7 @@ public class MapRealmEntity implements AbstractEntity, UpdatableEntity {
      */
     protected boolean updated;
 
-    protected MapRealmEntity() {
-        this.id = null;
-    }
+    protected MapRealmEntity() {}
 
     public MapRealmEntity(String id) {
         this.id = id;
@@ -141,6 +139,13 @@ public class MapRealmEntity implements AbstractEntity, UpdatableEntity {
     @Override
     public String getId() {
         return this.id;
+    }
+
+    @Override
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     @Override

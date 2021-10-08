@@ -39,11 +39,7 @@ public class MapUserLoginFailureEntity implements AbstractEntity, UpdatableEntit
     private long lastFailure;
     private String lastIPFailure;
 
-    public MapUserLoginFailureEntity() {
-        this.id = null;
-        this.realmId = null;
-        this.userId = null;
-    }
+    public MapUserLoginFailureEntity() {}
 
     public MapUserLoginFailureEntity(String id, String realmId, String userId) {
         this.id = id;
@@ -54,6 +50,13 @@ public class MapUserLoginFailureEntity implements AbstractEntity, UpdatableEntit
     @Override
     public String getId() {
         return this.id;
+    }
+
+    @Override
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     @Override

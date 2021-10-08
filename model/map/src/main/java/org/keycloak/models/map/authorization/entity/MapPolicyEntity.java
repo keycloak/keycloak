@@ -30,7 +30,7 @@ import java.util.Objects;
 
 public class MapPolicyEntity implements AbstractEntity, UpdatableEntity {
     
-    private final String id;
+    private String id;
     private String name;
     private String description;
     private String type;
@@ -48,9 +48,7 @@ public class MapPolicyEntity implements AbstractEntity, UpdatableEntity {
         this.id = id;
     }
 
-    public MapPolicyEntity() {
-        this.id = null;
-    }
+    public MapPolicyEntity() {}
 
     public String getName() {
         return name;
@@ -180,6 +178,13 @@ public class MapPolicyEntity implements AbstractEntity, UpdatableEntity {
     @Override
     public String getId() {
         return id;
+    }
+
+    @Override
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     @Override
