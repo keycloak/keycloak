@@ -373,7 +373,6 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 ((session, realm1) -> {
 
                     RoleModel role = session.getProvider(RoleProvider.class).addRealmRole(realm1, "foo");
-                    realm1.addDefaultRole("foo");
                     return role.getId();
 
                 }),
@@ -418,7 +417,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 // Get ID of some object from realm1
                 ((session, realm1) -> {
 
-                    UserModel user = session.users().getUserByUsername("test-user@localhost", realm1);
+                    UserModel user = session.users().getUserByUsername(realm1, "test-user@localhost");
                     UserSessionModel userSession = session.sessions().createUserSession(realm1, user, user.getUsername(), "1.2.3.4", "bar", false, null, null);
                     return userSession.getId();
 

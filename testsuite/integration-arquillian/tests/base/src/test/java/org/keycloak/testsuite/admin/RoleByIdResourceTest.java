@@ -22,12 +22,14 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.RoleByIdResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
@@ -37,6 +39,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -144,6 +149,21 @@ public class RoleByIdResourceTest extends AbstractAdminTest {
         Set<RoleRepresentation> clientComposites = resource.getClientRoleComposites(ids.get("role-a"), clientUuid);
         Assert.assertNames(clientComposites, "role-c");
 
+        composites = resource.searchRoleComposites(ids.get("role-a"), null, null, null);
+        Assert.assertNames(composites, "role-b", "role-c");
+
+        composites = resource.searchRoleComposites(ids.get("role-a"), "b", null, null);
+        Assert.assertNames(composites, "role-b");
+
+        composites = resource.searchRoleComposites(ids.get("role-a"), null, 0, 0);
+        assertThat(composites, is(empty()));
+
+        composites = resource.searchRoleComposites(ids.get("role-a"), null, 0, 1);
+        Assert.assertNames(composites, "role-b");
+
+        composites = resource.searchRoleComposites(ids.get("role-a"), null, 1, 1);
+        Assert.assertNames(composites, "role-c");
+
         resource.deleteComposites(ids.get("role-a"), l);
         assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.roleByIdResourceCompositesPath(ids.get("role-a")), l, ResourceType.REALM_ROLE);
 
@@ -190,5 +210,10 @@ public class RoleByIdResourceTest extends AbstractAdminTest {
 
             Assert.assertRoleAttributes(attributes, roleAttributes);
         }
+    }
+
+    @Test (expected = BadRequestException.class)
+    public void deleteDefaultRole() {
+        resource.deleteRole(adminClient.realm(REALM_NAME).roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME).toRepresentation().getId());
     }
 }

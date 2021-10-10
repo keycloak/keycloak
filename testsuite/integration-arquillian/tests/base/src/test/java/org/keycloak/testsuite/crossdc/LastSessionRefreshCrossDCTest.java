@@ -105,10 +105,10 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
         Assert.assertNull("Expecting no access token present", tokenResponse.getAccessToken());
         Assert.assertNotNull(tokenResponse.getError());
 
-        // try refresh with new token on DC2. It should pass.
+        // try refresh with new token on DC2. It should fail because client session not valid anymore
         tokenResponse = oauth.doRefreshTokenRequest(refreshToken2, "password");
-        Assert.assertNotNull(tokenResponse.getAccessToken());
-        Assert.assertNull(tokenResponse.getError());
+        Assert.assertNull("Expecting no access token present", tokenResponse.getAccessToken());
+        Assert.assertNotNull(tokenResponse.getError());
 
         // Revert
         realmRep = testRealm().toRepresentation();
@@ -124,115 +124,127 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
                                              @JmxInfinispanCacheStatistics(dc=DC.SECOND, managementPortProperty = "cache.server.2.management.port", cacheName=InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME) InfinispanStatistics clientSessionCacheDc2Stats
 
     ) {
+        // Set the infinispan testTimeService on all started auth servers
+        setInfinispanTestTimeServiceOnAllStartedAuthServers();
 
-        // Ensure to remove all current sessions and offline sessions
-        setTimeOffset(10000000);
-        getTestingClientForStartedNodeInDc(0).testing("test").removeExpired("test");
-        setTimeOffset(0);
-
-        sessionCacheDc1Stats.reset();
-        sessionCacheDc2Stats.reset();
-        clientSessionCacheDc1Stats.reset();
-        clientSessionCacheDc2Stats.reset();
-
-        // Disable DC2 on loadbalancer
-        disableDcOnLoadBalancer(DC.SECOND);
-
-        // Get statistics
-        AtomicLong sessionStoresDc1 = new AtomicLong(getStores(sessionCacheDc1Stats));
-        AtomicLong sessionStoresDc2 = new AtomicLong(getStores(sessionCacheDc2Stats));
-        AtomicLong clientSessionStoresDc1 = new AtomicLong(getStores(clientSessionCacheDc1Stats));
-        AtomicLong clientSessionStoresDc2 = new AtomicLong(getStores(clientSessionCacheDc2Stats));
-        AtomicInteger lsrDc1 = new AtomicInteger(-1);
-        AtomicInteger lsrDc2 = new AtomicInteger(-1);
-
-        // Login
-        OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
-        String code = response1.getCode();
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
-        Assert.assertNotNull(tokenResponse.getAccessToken());
-        String sessionId = oauth.verifyToken(tokenResponse.getAccessToken()).getSessionState();
-        String refreshToken1 = tokenResponse.getRefreshToken();
-
-        // Assert statistics - sessions created on both DCs and created on remoteCaches too
-        assertStatistics("After session created", sessionId, sessionCacheDc1Stats, sessionCacheDc2Stats, clientSessionCacheDc1Stats, clientSessionCacheDc2Stats,
-                sessionStoresDc1, sessionStoresDc2, clientSessionStoresDc1, clientSessionStoresDc2,
-                lsrDc1, lsrDc2, true, true, true, false);
-
-
-        // Set time offset
-        setTimeOffset(100);
-
-        // refresh token on DC1
-        tokenResponse = oauth.doRefreshTokenRequest(refreshToken1, "password");
-        String refreshToken3 = tokenResponse.getRefreshToken();
-        Assert.assertNotNull(refreshToken3);
-
-        // Assert statistics - sessions updated on both DC1 and DC2. RemoteCaches not updated
-        assertStatistics("After refresh at time 100", sessionId, sessionCacheDc1Stats, sessionCacheDc2Stats, clientSessionCacheDc1Stats, clientSessionCacheDc2Stats,
-                sessionStoresDc1, sessionStoresDc2, clientSessionStoresDc1, clientSessionStoresDc2,
-                lsrDc1, lsrDc2, true, true, false, false);
-
-
-        // Set time offset
-        setTimeOffset(110);
-
-        // refresh token on DC1
-        tokenResponse = oauth.doRefreshTokenRequest(refreshToken1, "password");
-        String refreshToken2 = tokenResponse.getRefreshToken();
-        Assert.assertNotNull(refreshToken2);
-
-        // Assert statistics - sessions updated just on DC1.
-        // Update of DC2 is postponed (It's just 10 seconds since last message). RemoteCaches not updated
-        assertStatistics("After refresh at time 110", sessionId, sessionCacheDc1Stats, sessionCacheDc2Stats, clientSessionCacheDc1Stats, clientSessionCacheDc2Stats,
-                sessionStoresDc1, sessionStoresDc2, clientSessionStoresDc1, clientSessionStoresDc2,
-                lsrDc1, lsrDc2, true, false, false, false);
-
-
-        // 31 minutes after "100". Session should be still valid and not yet expired (RefreshToken will be invalid due the expiration on the JWT itself. Hence not testing refresh here)
-        setTimeOffset(1960);
-
-        boolean sessionValid = getTestingClientForStartedNodeInDc(1).server("test").fetch((KeycloakSession session) -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
-            return AuthenticationManager.isSessionValid(realm, userSession);
-        }, Boolean.class);
-
-        Assert.assertTrue(sessionValid);
-
-        getTestingClientForStartedNodeInDc(1).testing("test").removeExpired("test");
-
-        // Assert statistics - nothing was updated. No refresh happened and nothing was cleared during "removeExpired"
-        assertStatistics("After checking valid at time 1960", sessionId, sessionCacheDc1Stats, sessionCacheDc2Stats, clientSessionCacheDc1Stats, clientSessionCacheDc2Stats,
-                sessionStoresDc1, sessionStoresDc2, clientSessionStoresDc1, clientSessionStoresDc2,
-                lsrDc1, lsrDc2, false, false, false, false);
-
-
-        // 35 minutes after "100". Session not valid and will be expired by the cleaner
-        setTimeOffset(2200);
-
-        sessionValid = getTestingClientForStartedNodeInDc(1).server("test").fetch((KeycloakSession session) -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
-            return AuthenticationManager.isSessionValid(realm, userSession);
-        }, Boolean.class);
-
-        Assert.assertFalse(sessionValid);
-
-        getTestingClientForStartedNodeInDc(1).testing("test").removeExpired("test");
-
-        // Session should be removed on both DCs
         try {
-            getTestingClientForStartedNodeInDc(0).testing("test").getLastSessionRefresh("test", sessionId, false);
-            Assert.fail("It wasn't expected to find the session " + sessionId);
-        } catch (NotFoundException nfe) {
-            // Expected
-        }
-        try {
-            getTestingClientForStartedNodeInDc(1).testing("test").getLastSessionRefresh("test", sessionId, false);
-            Assert.fail("It wasn't expected to find the session " + sessionId);
-        } catch (NotFoundException nfe) {
-            // Expected
+            // Ensure to remove all current sessions and offline sessions
+            setTimeOffset(10000000);
+            getTestingClientForStartedNodeInDc(0).testing("test").removeExpired("test");
+            getTestingClientForStartedNodeInDc(1).testing("test").removeExpired("test");
+            setTimeOffset(0);
+
+            sessionCacheDc1Stats.reset();
+            sessionCacheDc2Stats.reset();
+            clientSessionCacheDc1Stats.reset();
+            clientSessionCacheDc2Stats.reset();
+
+            // Disable DC2 on loadbalancer
+            disableDcOnLoadBalancer(DC.SECOND);
+
+            // Get statistics
+            AtomicLong sessionStoresDc1 = new AtomicLong(getStores(sessionCacheDc1Stats));
+            AtomicLong sessionStoresDc2 = new AtomicLong(getStores(sessionCacheDc2Stats));
+            AtomicLong clientSessionStoresDc1 = new AtomicLong(getStores(clientSessionCacheDc1Stats));
+            AtomicLong clientSessionStoresDc2 = new AtomicLong(getStores(clientSessionCacheDc2Stats));
+            AtomicInteger lsrDc1 = new AtomicInteger(-1);
+            AtomicInteger lsrDc2 = new AtomicInteger(-1);
+
+            // Login
+            OAuthClient.AuthorizationEndpointResponse response1 = oauth.doLogin("test-user@localhost", "password");
+            String code = response1.getCode();
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            Assert.assertNotNull(tokenResponse.getAccessToken());
+            String sessionId = oauth.verifyToken(tokenResponse.getAccessToken()).getSessionState();
+            String refreshToken1 = tokenResponse.getRefreshToken();
+
+            // Assert statistics - sessions created on both DCs and created on remoteCaches too
+            assertStatistics("After session created", sessionId, sessionCacheDc1Stats, sessionCacheDc2Stats, clientSessionCacheDc1Stats, clientSessionCacheDc2Stats,
+                    sessionStoresDc1, sessionStoresDc2, clientSessionStoresDc1, clientSessionStoresDc2,
+                    lsrDc1, lsrDc2, true, true, true, false);
+
+
+            // Set time offset
+            setTimeOffset(100);
+
+            // refresh token on DC1
+            tokenResponse = oauth.doRefreshTokenRequest(refreshToken1, "password");
+            String refreshToken2 = tokenResponse.getRefreshToken();
+            Assert.assertNotNull(refreshToken2);
+
+            // Assert statistics - sessions updated on both DC1 and DC2. RemoteCaches not updated
+            assertStatistics("After refresh at time 100", sessionId, sessionCacheDc1Stats, sessionCacheDc2Stats, clientSessionCacheDc1Stats, clientSessionCacheDc2Stats,
+                    sessionStoresDc1, sessionStoresDc2, clientSessionStoresDc1, clientSessionStoresDc2,
+                    lsrDc1, lsrDc2, true, true, false, false);
+
+
+            // Set time offset
+            setTimeOffset(110);
+
+            // refresh token on DC1
+            tokenResponse = oauth.doRefreshTokenRequest(refreshToken1, "password");
+            String refreshToken3 = tokenResponse.getRefreshToken();
+            Assert.assertNotNull(refreshToken3);
+
+            // Assert statistics - sessions updated just on DC1.
+            // Update of DC2 is postponed (It's just 10 seconds since last message). RemoteCaches not updated
+            assertStatistics("After refresh at time 110", sessionId, sessionCacheDc1Stats, sessionCacheDc2Stats, clientSessionCacheDc1Stats, clientSessionCacheDc2Stats,
+                    sessionStoresDc1, sessionStoresDc2, clientSessionStoresDc1, clientSessionStoresDc2,
+                    lsrDc1, lsrDc2, true, false, false, false);
+
+
+            // 31 minutes after "100". Session should be still valid and not yet expired (RefreshToken will be invalid due the expiration on the JWT itself. Hence not testing refresh here)
+            setTimeOffset(1960);
+
+            boolean sessionValid = getTestingClientForStartedNodeInDc(1).server("test").fetch((KeycloakSession session) -> {
+                RealmModel realm = session.realms().getRealmByName("test");
+                UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
+                return AuthenticationManager.isSessionValid(realm, userSession);
+            }, Boolean.class);
+
+            Assert.assertTrue(sessionValid);
+
+            getTestingClientForStartedNodeInDc(1).testing("test").removeExpired("test");
+
+            // Assert statistics - nothing was updated. No refresh happened and nothing was cleared during "removeExpired"
+            assertStatistics("After checking valid at time 1960", sessionId, sessionCacheDc1Stats, sessionCacheDc2Stats, clientSessionCacheDc1Stats, clientSessionCacheDc2Stats,
+                    sessionStoresDc1, sessionStoresDc2, clientSessionStoresDc1, clientSessionStoresDc2,
+                    lsrDc1, lsrDc2, false, false, false, false);
+
+
+            // 35 minutes after "100". Session not valid and will be expired by the cleaner
+            setTimeOffset(2200);
+
+            sessionValid = getTestingClientForStartedNodeInDc(1).server("test").fetch((KeycloakSession session) -> {
+                RealmModel realm = session.realms().getRealmByName("test");
+                UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
+                return AuthenticationManager.isSessionValid(realm, userSession);
+            }, Boolean.class);
+
+            Assert.assertFalse(sessionValid);
+
+            // 2000 seconds after the previous. This should ensure that session would be expired from the cache due the invalid maxIdle.
+            // Previous read at time 2200 "refreshed" the maxIdle in the infinispan cache. This shouldn't happen in reality as an attempt to call refreshToken request on invalid session does backchannelLogout
+            setTimeOffset(4200);
+
+            getTestingClientForStartedNodeInDc(1).testing("test").removeExpired("test");
+
+            // Session should be removed on both DCs
+            try {
+                getTestingClientForStartedNodeInDc(0).testing("test").getLastSessionRefresh("test", sessionId, false);
+                Assert.fail("It wasn't expected to find the session " + sessionId);
+            } catch (NotFoundException nfe) {
+                // Expected
+            }
+            try {
+                getTestingClientForStartedNodeInDc(1).testing("test").getLastSessionRefresh("test", sessionId, false);
+                Assert.fail("It wasn't expected to find the session " + sessionId);
+            } catch (NotFoundException nfe) {
+                // Expected
+            }
+        } finally {
+            // Revert time service
+            revertInfinispanTestTimeServiceOnAllStartedAuthServers();
         }
     }
 
@@ -248,6 +260,7 @@ public class LastSessionRefreshCrossDCTest extends AbstractAdminCrossDCTest {
         // Ensure to remove all current sessions and offline sessions
         setTimeOffset(10000000);
         getTestingClientForStartedNodeInDc(0).testing("test").removeExpired("test");
+        getTestingClientForStartedNodeInDc(1).testing("test").removeExpired("test");
         setTimeOffset(0);
 
         sessionCacheDc1Stats.reset();

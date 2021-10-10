@@ -37,6 +37,8 @@ import javax.ws.rs.core.Response;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils.getDisabledByBruteForceEventError;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -74,21 +76,22 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
+
+        String bruteForceError = getDisabledByBruteForceEventError(context.getProtector(), context.getSession(), context.getRealm(), user);
+        if (bruteForceError != null) {
+            context.getEvent().user(user);
+            context.getEvent().error(bruteForceError);
+            Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
+            context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
+            return;
+        }
+
         if (!user.isEnabled()) {
             context.getEvent().user(user);
             context.getEvent().error(Errors.USER_DISABLED);
             Response challengeResponse = errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_grant", "Account disabled");
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
-        }
-        if (context.getRealm().isBruteForceProtected()) {
-            if (context.getProtector().isTemporarilyDisabled(context.getSession(), context.getRealm(), user)) {
-                context.getEvent().user(user);
-                context.getEvent().error(Errors.USER_TEMPORARILY_DISABLED);
-                Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
-                context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
-                return;
-            }
         }
         context.setUser(user);
         context.success();

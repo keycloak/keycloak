@@ -26,8 +26,9 @@ public class OfflineToken extends AbstractShowTokensPage {
     }
 
     public void logout() {
-        log.info("Logging out, navigating to: " + getUriBuilder().path("/logout").build().toASCIIString());
-        driver.navigate().to(getUriBuilder().path("/logout").build().toASCIIString());
+        String uri = getUriBuilder().path("/logout").build().toASCIIString();
+        log.info("Logging out, navigating to: " + uri);
+        driver.navigate().to(uri);
         pause(300); // this is needed for FF for some reason
         waitUntilElement(By.tagName("body")).is().visible();
     }

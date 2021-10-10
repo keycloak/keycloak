@@ -18,17 +18,17 @@ package org.keycloak.testsuite.metrics;
 
 import java.util.List;
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ContainerAssume;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.keycloak.testsuite.util.Matchers.body;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIs;
@@ -51,11 +51,12 @@ public class MetricsRestServiceTest extends AbstractKeycloakTest {
 
     @Test
     public void testHealthEndpoint() {
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
+        final String expectedString = "{\"name\" : \"server-state\", \"outcome\" : true, \"data\" : [{ \"value\" : \"running\" }]}";
 
         try (Response response = client.target("http://" + MGMT_HOST + ":" + MGMT_PORT + "/health").request().get()) {
-            Assert.assertThat(response, statusCodeIs(Status.OK));
-            Assert.assertThat(response, body(containsString("{\"status\":\"UP\",\"checks\":[]}")));
+            assertThat(response, statusCodeIs(Status.OK));
+            assertThat(response, body(containsString(expectedString)));
         } finally {
             client.close();
         }
@@ -63,11 +64,11 @@ public class MetricsRestServiceTest extends AbstractKeycloakTest {
 
     @Test
     public void  testMetricsEndpoint() {
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
 
         try (Response response = client.target("http://" + MGMT_HOST + ":" + MGMT_PORT + "/metrics").request().get()) {
-            Assert.assertThat(response, statusCodeIs(Status.OK));
-            Assert.assertThat(response, body(containsString("base_memory_maxHeap_bytes")));
+            assertThat(response, statusCodeIs(Status.OK));
+            assertThat(response, body(containsString("base_memory_maxHeap_bytes")));
         } finally {
             client.close();
         }

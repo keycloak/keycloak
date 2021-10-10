@@ -17,10 +17,13 @@
 
 package org.keycloak.protocol.oidc.mappers;
 
+import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 
 import java.util.ArrayList;
@@ -34,7 +37,8 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class HardcodedClaim extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
+public class HardcodedClaim extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper,
+        OIDCAccessTokenResponseMapper {
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
@@ -86,6 +90,15 @@ public class HardcodedClaim extends AbstractOIDCProtocolMapper implements OIDCAc
         String attributeValue = mappingModel.getConfig().get(CLAIM_VALUE);
         if (attributeValue == null) return;
         OIDCAttributeMapperHelper.mapClaim(token, mappingModel, attributeValue);
+    }
+
+    @Override
+    protected void setClaim(AccessTokenResponse accessTokenResponse, ProtocolMapperModel mappingModel, UserSessionModel userSession,
+            KeycloakSession keycloakSession, ClientSessionContext clientSessionCtx) {
+
+        String attributeValue = mappingModel.getConfig().get(CLAIM_VALUE);
+        if (attributeValue == null) return;
+        OIDCAttributeMapperHelper.mapClaim(accessTokenResponse, mappingModel, attributeValue);
     }
 
     public static ProtocolMapperModel create(String name,

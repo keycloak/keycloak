@@ -17,18 +17,24 @@
 
 package org.keycloak.models;
 
+import java.util.Comparator;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEvent;
+import org.keycloak.storage.SearchableModelField;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 import org.keycloak.storage.role.RoleStorageProvider;
 import org.keycloak.storage.role.RoleStorageProviderModel;
+import org.keycloak.utils.StringUtil;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -37,6 +43,22 @@ import java.util.stream.Stream;
  * @version $Revision: 1 $
  */
 public interface RealmModel extends RoleContainerModel {
+
+    Comparator<RealmModel> COMPARE_BY_NAME = Comparator.comparing(RealmModel::getName);
+
+    public static class SearchableFields {
+        public static final SearchableModelField<RealmModel> ID                     = new SearchableModelField<>("id", String.class);
+        public static final SearchableModelField<RealmModel> NAME                   = new SearchableModelField<>("name", String.class);
+        /**
+         * Search for realms that have some client initial access set.
+         */
+        public static final SearchableModelField<RealmModel> CLIENT_INITIAL_ACCESS  = new SearchableModelField<>("clientInitialAccess", Boolean.class);
+        /**
+         * Search for realms that have some component with 
+         */
+        public static final SearchableModelField<RealmModel> COMPONENT_PROVIDER_TYPE  = new SearchableModelField<>("componentProviderType", String.class);
+    }
+
     interface RealmCreationEvent extends ProviderEvent {
         RealmModel getCreatedRealm();
         KeycloakSession getKeycloakSession();
@@ -52,21 +74,6 @@ public interface RealmModel extends RoleContainerModel {
         KeycloakSession getKeycloakSession();
     }
 
-    interface ClientCreationEvent extends ProviderEvent {
-        ClientModel getCreatedClient();
-    }
-
-    // Called also during client creation after client is fully initialized (including all attributes etc)
-    interface ClientUpdatedEvent extends ProviderEvent {
-        ClientModel getUpdatedClient();
-        KeycloakSession getKeycloakSession();
-    }
-
-    interface ClientRemovedEvent extends ProviderEvent {
-        ClientModel getClient();
-        KeycloakSession getKeycloakSession();
-    }
-
     interface IdentityProviderUpdatedEvent extends ProviderEvent {
         RealmModel getRealm();
         IdentityProviderModel getUpdatedIdentityProvider();
@@ -79,6 +86,7 @@ public interface RealmModel extends RoleContainerModel {
         KeycloakSession getKeycloakSession();
     }
 
+    @Override
     String getId();
 
     String getName();
@@ -122,14 +130,29 @@ public interface RealmModel extends RoleContainerModel {
     void setUserManagedAccessAllowed(boolean userManagedAccessAllowed);
 
     void setAttribute(String name, String value);
-    void setAttribute(String name, Boolean value);
-    void setAttribute(String name, Integer value);
-    void setAttribute(String name, Long value);
+    default void setAttribute(String name, Boolean value) {
+        setAttribute(name, value.toString());
+    }
+    default void setAttribute(String name, Integer value) {
+        setAttribute(name, value.toString());
+    }
+    default void setAttribute(String name, Long value) {
+        setAttribute(name, value.toString());
+    }
     void removeAttribute(String name);
     String getAttribute(String name);
-    Integer getAttribute(String name, Integer defaultValue);
-    Long getAttribute(String name, Long defaultValue);
-    Boolean getAttribute(String name, Boolean defaultValue);
+    default Integer getAttribute(String name, Integer defaultValue) {
+        String v = getAttribute(name);
+        return v != null ? Integer.parseInt(v) : defaultValue;
+    }
+    default Long getAttribute(String name, Long defaultValue) {
+        String v = getAttribute(name);
+        return v != null ? Long.parseLong(v) : defaultValue;
+    }
+    default Boolean getAttribute(String name, Boolean defaultValue) {
+        String v = getAttribute(name);
+        return v != null ? Boolean.parseBoolean(v) : defaultValue;
+    }
     Map<String, String> getAttributes();
 
     //--- brute force settings
@@ -226,6 +249,12 @@ public interface RealmModel extends RoleContainerModel {
 
     void setAccessCodeLifespanUserAction(int seconds);
 
+    OAuth2DeviceConfig getOAuth2DeviceConfig();
+
+    CibaConfig getCibaPolicy();
+
+    ParConfig getParPolicy();
+
     /**
      * This method will return a map with all the lifespans available
      * or an empty map, but never null.
@@ -247,13 +276,17 @@ public interface RealmModel extends RoleContainerModel {
     void setActionTokenGeneratedByUserLifespan(String actionTokenType, Integer seconds);
 
     /**
-     * @deprecated Use {@link #getRequiredCredentialsStream()  getRequiredCredentialsStream} instead.
+     * @deprecated Use {@link #getRequiredCredentialsStream() getRequiredCredentialsStream} instead.
      */
     @Deprecated
     default List<RequiredCredentialModel> getRequiredCredentials() {
         return getRequiredCredentialsStream().collect(Collectors.toList());
     }
 
+    /**
+     * Returns required credentials as a stream.
+     * @return Stream of {@link RequiredCredentialModel}. Never returns {@code null}.
+     */
     Stream<RequiredCredentialModel> getRequiredCredentialsStream();
 
     void addRequiredCredential(String cred);
@@ -291,38 +324,68 @@ public interface RealmModel extends RoleContainerModel {
 
     RoleModel getRoleById(String id);
 
+    /**
+     * @deprecated Use {@link #getDefaultGroupsStream() getDefaultGroupsStream} instead.
+     */
     @Deprecated
     default List<GroupModel> getDefaultGroups() {
         return getDefaultGroupsStream().collect(Collectors.toList());
     }
 
+    /**
+     * Returns default groups as a stream.
+     * @return Stream of {@link GroupModel}. Never returns {@code null}.
+     */
     Stream<GroupModel> getDefaultGroupsStream();
 
     void addDefaultGroup(GroupModel group);
 
     void removeDefaultGroup(GroupModel group);
 
+    /**
+     * @deprecated Use {@link #getClientsStream() getClientsStream} instead.
+     */
     @Deprecated
     default List<ClientModel> getClients() {
         return getClientsStream(null, null).collect(Collectors.toList());
     }
 
+    /**
+     * Returns clients as a stream.
+     * @return Stream of {@link ClientModel}. Never returns {@code null}.
+     */
     Stream<ClientModel> getClientsStream();
 
+    /**
+     * @deprecated Use {@link #getClientsStream(Integer, Integer) getClientsStream} instead.
+     */
     @Deprecated
     default List<ClientModel> getClients(Integer firstResult, Integer maxResults) {
         return getClientsStream(firstResult, maxResults).collect(Collectors.toList());
     }
 
+    /**
+     * Returns clients as a stream.
+     * @param firstResult {@code Integer} Index of the first desired client. Ignored if negative or {@code null}.
+     * @param maxResults {@code Integer} Maximum number of returned clients. Ignored if negative or {@code null}.
+     * @return Stream of {@link ClientModel}. Never returns {@code null}.
+     */
     Stream<ClientModel> getClientsStream(Integer firstResult, Integer maxResults);
 
     Long getClientsCount();
 
+    /**
+     * @deprecated Use {@link #getAlwaysDisplayInConsoleClientsStream() getAlwaysDisplayInConsoleClientsStream} instead.
+     */
     @Deprecated
     default List<ClientModel> getAlwaysDisplayInConsoleClients() {
         return getAlwaysDisplayInConsoleClientsStream().collect(Collectors.toList());
     }
 
+    /**
+     * Returns clients which are always displayed in the admin console as a stream.
+     * @return Stream of {@link ClientModel}. Never returns {@code null}.
+     */
     Stream<ClientModel> getAlwaysDisplayInConsoleClientsStream();
 
     ClientModel addClient(String name);
@@ -334,13 +397,25 @@ public interface RealmModel extends RoleContainerModel {
     ClientModel getClientById(String id);
     ClientModel getClientByClientId(String clientId);
 
+    /**
+     * @deprecated Use {@link #searchClientByClientIdStream(String, Integer, Integer) searchClientByClientId} instead.
+     */
     @Deprecated
     default List<ClientModel> searchClientByClientId(String clientId, Integer firstResult, Integer maxResults) {
         return searchClientByClientIdStream(clientId, firstResult, maxResults).collect(Collectors.toList());
     }
 
+    /**
+     * Search for clients by provided client's id.
+     * @param clientId {@code String} Id of the client.
+     * @param firstResult Index of the first desired client. Ignored if negative or {@code null}.
+     * @param maxResults Maximum number of returned clients. Ignored if negative or {@code null}.
+     * @return Stream of {@link ClientModel}. Never returns {@code null}.
+     */
     Stream<ClientModel> searchClientByClientIdStream(String clientId, Integer firstResult, Integer maxResults);
-    
+
+    Stream<ClientModel> searchClientByAttributes(Map<String, String> attributes, Integer firstResult, Integer maxResults);
+
     void updateRequiredCredentials(Set<String> creds);
 
     Map<String, String> getBrowserSecurityHeaders();
@@ -369,13 +444,17 @@ public interface RealmModel extends RoleContainerModel {
     void setDockerAuthenticationFlow(AuthenticationFlowModel flow);
 
     /**
-     * @deprecated Use {@link #getAuthenticationFlowsStream()  getAuthenticationFlowsStream} instead.
+     * @deprecated Use {@link #getAuthenticationFlowsStream() getAuthenticationFlowsStream} instead.
      */
     @Deprecated
     default List<AuthenticationFlowModel> getAuthenticationFlows() {
         return getAuthenticationFlowsStream().collect(Collectors.toList());
     }
 
+    /**
+     * Returns authentications flows as a stream.
+     * @return Stream of {@link AuthenticationFlowModel}. Never returns {@code null}.
+     */
     Stream<AuthenticationFlowModel> getAuthenticationFlowsStream();
 
     AuthenticationFlowModel getFlowByAlias(String alias);
@@ -393,9 +472,10 @@ public interface RealmModel extends RoleContainerModel {
     }
 
     /**
-     * Returns sorted {@link AuthenticationExecutionModel AuthenticationExecutionModel} as a stream.
+     * Returns sorted (according to priority) {@link AuthenticationExecutionModel AuthenticationExecutionModel} as a stream.
      * It should be used with forEachOrdered if the ordering is required.
-     * @return Sorted stream
+     * @param flowId {@code String} Id of the flow.
+     * @return Sorted stream of {@link AuthenticationExecutionModel}. Never returns {@code null}.
      */
     Stream<AuthenticationExecutionModel> getAuthenticationExecutionsStream(String flowId);
 
@@ -413,6 +493,10 @@ public interface RealmModel extends RoleContainerModel {
         return getAuthenticatorConfigsStream().collect(Collectors.toList());
     }
 
+    /**
+     * Returns authentication configs as a stream.
+     * @return Stream of {@link AuthenticatorConfigModel}. Never returns {@code null}.
+     */
     Stream<AuthenticatorConfigModel> getAuthenticatorConfigsStream();
 
     AuthenticatorConfigModel addAuthenticatorConfig(AuthenticatorConfigModel model);
@@ -432,7 +516,7 @@ public interface RealmModel extends RoleContainerModel {
     /**
      * Returns sorted {@link RequiredActionProviderModel RequiredActionProviderModel} as a stream.
      * It should be used with forEachOrdered if the ordering is required.
-     * @return Sorted stream
+     * @return Sorted stream of {@link RequiredActionProviderModel}. Never returns {@code null}.
      */
     Stream<RequiredActionProviderModel> getRequiredActionProvidersStream();
 
@@ -450,6 +534,10 @@ public interface RealmModel extends RoleContainerModel {
         return getIdentityProvidersStream().collect(Collectors.toList());
     }
 
+    /**
+     * Returns identity providers as a stream.
+     * @return Stream of {@link IdentityProviderModel}. Never returns {@code null}.
+     */
     Stream<IdentityProviderModel> getIdentityProvidersStream();
 
     IdentityProviderModel getIdentityProviderByAlias(String alias);
@@ -465,6 +553,10 @@ public interface RealmModel extends RoleContainerModel {
         return getIdentityProviderMappersStream().collect(Collectors.toSet());
     }
 
+    /**
+     * Returns identity provider mappers as a stream.
+     * @return Stream of {@link IdentityProviderMapperModel}. Never returns {@code null}.
+     */
     Stream<IdentityProviderMapperModel> getIdentityProviderMappersStream();
 
     /**
@@ -475,6 +567,11 @@ public interface RealmModel extends RoleContainerModel {
         return getIdentityProviderMappersByAliasStream(brokerAlias).collect(Collectors.toSet());
     }
 
+    /**
+     * Returns identity provider mappers by the provided alias as a stream.
+     * @param brokerAlias {@code String} Broker's alias to filter results.
+     * @return Stream of {@link IdentityProviderMapperModel} Never returns {@code null}.
+     */
     Stream<IdentityProviderMapperModel> getIdentityProviderMappersByAliasStream(String brokerAlias);
 
     IdentityProviderMapperModel addIdentityProviderMapper(IdentityProviderMapperModel model);
@@ -500,8 +597,24 @@ public interface RealmModel extends RoleContainerModel {
      */
     ComponentModel importComponentModel(ComponentModel model);
 
+    /**
+     * Updates component model. Will call onUpdate() method of ComponentFactory
+     * @param component to be updated
+     */
     void updateComponent(ComponentModel component);
+
+    /**
+     * Removes given component. Will call preRemove() method of ComponentFactory.
+     * Also calls {@code this.removeComponents(component.getId())}.
+     * 
+     * @param component to be removed
+     */
     void removeComponent(ComponentModel component);
+
+    /**
+     * Removes all components with given {@code parentId}
+     * @param parentId {@code String} id of parent
+     */
     void removeComponents(String parentId);
 
     /**
@@ -512,15 +625,19 @@ public interface RealmModel extends RoleContainerModel {
         return getComponentsStream(parentId, providerType).collect(Collectors.toList());
     }
 
-
     /**
      * Returns stream of ComponentModels for specific parentId and providerType.
-     * @param parentId id of parent
-     * @param providerType type of provider
-     * @return stream of ComponentModels
+     * @param parentId {@code String} id of parent
+     * @param providerType {@code String} type of provider
+     * @return Stream of {@link ComponentModel}. Never returns {@code null}.
      */
     Stream<ComponentModel> getComponentsStream(String parentId, String providerType);
 
+    /**
+     * Returns stream of ComponentModels for specific parentId.
+     * @param parentId {@code String} id of parent
+     * @return Stream of {@link ComponentModel}. Never returns {@code null}.
+     */
     Stream<ComponentModel> getComponentsStream(String parentId);
 
     /**
@@ -539,6 +656,10 @@ public interface RealmModel extends RoleContainerModel {
         return getComponentsStream().collect(Collectors.toList());
     }
 
+    /**
+     * Returns stream of component models.
+     * @return Stream of {@link ComponentModel}. Never returns {@code null}.
+     */
     Stream<ComponentModel> getComponentsStream();
 
     ComponentModel getComponent(String id);
@@ -554,7 +675,7 @@ public interface RealmModel extends RoleContainerModel {
     /**
      * Returns sorted {@link UserStorageProviderModel UserStorageProviderModel} as a stream.
      * It should be used with forEachOrdered if the ordering is required.
-     * @return Sorted stream
+     * @return Sorted stream of {@link UserStorageProviderModel}. Never returns {@code null}.
      */
     default Stream<UserStorageProviderModel> getUserStorageProvidersStream() {
         return getComponentsStream(getId(), UserStorageProvider.class.getName())
@@ -573,7 +694,7 @@ public interface RealmModel extends RoleContainerModel {
     /**
      * Returns sorted {@link ClientStorageProviderModel ClientStorageProviderModel} as a stream.
      * It should be used with forEachOrdered if the ordering is required.
-     * @return Sorted stream
+     * @return Sorted stream of {@link ClientStorageProviderModel}. Never returns {@code null}.
      */
     default Stream<ClientStorageProviderModel> getClientStorageProvidersStream() {
         return getComponentsStream(getId(), ClientStorageProvider.class.getName())
@@ -592,7 +713,7 @@ public interface RealmModel extends RoleContainerModel {
     /**
      * Returns sorted {@link RoleStorageProviderModel RoleStorageProviderModel} as a stream.
      * It should be used with forEachOrdered if the ordering is required.
-     * @return Sorted stream
+     * @return Sorted stream of {@link RoleStorageProviderModel}. Never returns {@code null}.
      */
     default Stream<RoleStorageProviderModel> getRoleStorageProvidersStream() {
         return getComponentsStream(getId(), RoleStorageProvider.class.getName())
@@ -601,9 +722,9 @@ public interface RealmModel extends RoleContainerModel {
     }
 
     /**
-     * Returns stream of ComponentModels that represent StorageProviders for class storageProviderClass in this realm
-     * @param storageProviderClass class
-     * @return stream of StorageProviders
+     * Returns stream of ComponentModels that represent StorageProviders for class storageProviderClass in this realm.
+     * @param storageProviderClass {@code Class<? extends Provider>}
+     * @return Stream of {@link ComponentModel}. Never returns {@code null}.
      */
     default Stream<ComponentModel> getStorageProviders(Class<? extends Provider> storageProviderClass) {
         return getComponentsStream(getId(), storageProviderClass.getName());
@@ -655,6 +776,10 @@ public interface RealmModel extends RoleContainerModel {
         return getEventsListenersStream().collect(Collectors.toSet());
     }
 
+    /**
+     * Returns events listeners as a stream.
+     * @return Stream of {@code String}. Never returns {@code null}.
+     */
     Stream<String> getEventsListenersStream();
 
     void setEventsListeners(Set<String> listeners);
@@ -667,6 +792,10 @@ public interface RealmModel extends RoleContainerModel {
         return getEnabledEventTypesStream().collect(Collectors.toSet());
     }
 
+    /**
+     * Returns enabled event types as a stream.
+     * @return Stream of {@code String}. Never returns {@code null}.
+     */
     Stream<String> getEnabledEventTypesStream();
 
     void setEnabledEventTypes(Set<String> enabledEventTypes);
@@ -683,6 +812,18 @@ public interface RealmModel extends RoleContainerModel {
 
     void setMasterAdminClient(ClientModel client);
 
+    /**
+     * Returns default realm role. All both realm and client default roles are assigned as composite of this role.
+     * @return Default role of this realm
+     */
+    RoleModel getDefaultRole();
+
+    /**
+     * Sets default role for this realm
+     * @param role to be set
+     */
+    void setDefaultRole(RoleModel role);
+
     boolean isIdentityFederationEnabled();
 
     boolean isInternationalizationEnabled();
@@ -696,6 +837,10 @@ public interface RealmModel extends RoleContainerModel {
         return getSupportedLocalesStream().collect(Collectors.toSet());
     }
 
+    /**
+     * Returns supported locales as a stream.
+     * @return Stream of {@code String}. Never returns {@code null}.
+     */
     Stream<String> getSupportedLocalesStream();
 
     void setSupportedLocales(Set<String> locales);
@@ -726,6 +871,10 @@ public interface RealmModel extends RoleContainerModel {
         return getGroupsStream().collect(Collectors.toList());
     }
 
+    /**
+     * Returns groups as a stream.
+     * @return Stream of {@link GroupModel}. Never returns {@code null}.
+     */
     Stream<GroupModel> getGroupsStream();
 
     Long getGroupsCount(Boolean onlyTopGroups);
@@ -739,6 +888,10 @@ public interface RealmModel extends RoleContainerModel {
         return getTopLevelGroupsStream().collect(Collectors.toList());
     }
 
+    /**
+     * Returns top level groups as a stream.
+     * @return Stream of {@link GroupModel}. Never returns {@code null}.
+     */
     Stream<GroupModel> getTopLevelGroupsStream();
 
     /**
@@ -749,6 +902,12 @@ public interface RealmModel extends RoleContainerModel {
         return getTopLevelGroupsStream(first, max).collect(Collectors.toList());
     }
 
+    /**
+     * Returns top level groups as a stream.
+     * @param first {@code Integer} Index of the first desired group. Ignored if negative or {@code null}.
+     * @param max {@code Integer} Maximum number of returned groups. Ignored if negative or {@code null}.
+     * @return Stream of {@link GroupModel}. Never returns {@code null}.
+     */
     Stream<GroupModel> getTopLevelGroupsStream(Integer first, Integer max);
 
     /**
@@ -759,6 +918,13 @@ public interface RealmModel extends RoleContainerModel {
         return searchForGroupByNameStream(search, first, max).collect(Collectors.toList());
     }
 
+    /**
+     * Searches for groups by provided name. Results that match the given filter are returned as a stream.
+     * @param search {@code String} Name of a group to be used as a filter.
+     * @param first {@code Integer} Index of the first desired group. Ignored if negative or {@code null}.
+     * @param max {@code Integer} Maximum number of returned groups. Ignored if negative or {@code null}.
+     * @return Stream of {@link GroupModel}. Never returns {@code null}.
+     */
     Stream<GroupModel> searchForGroupByNameStream(String search, Integer first, Integer max);
 
     boolean removeGroup(GroupModel group);
@@ -772,18 +938,68 @@ public interface RealmModel extends RoleContainerModel {
         return getClientScopesStream().collect(Collectors.toList());
     }
 
+    /**
+     * Returns all client scopes of this realm as a stream.
+     * @return Stream of {@link ClientScopeModel}. Never returns {@code null}.
+     */
     Stream<ClientScopeModel> getClientScopesStream();
 
+    /**
+     * Creates new client scope with the given name. Internal ID is created automatically.
+     * If given name contains spaces, those are replaced by underscores.
+     * @param name {@code String} name of the client scope.
+     * @return Model of the created client scope.
+     * @throws ModelDuplicateException if client scope with same id or name already exists.
+     */
     ClientScopeModel addClientScope(String name);
 
+    /**
+     * Creates new client scope with the given internal ID and name. 
+     * If given name contains spaces, those are replaced by underscores.
+     * @param id {@code String} id of the client scope.
+     * @param name {@code String} name of the client scope.
+     * @return Model of the created client scope.
+     * @throws ModelDuplicateException if client scope with same id or name already exists.
+     */
     ClientScopeModel addClientScope(String id, String name);
 
+    /**
+     * Removes client scope with given {@code id} from this realm.
+     * @param id of the client scope
+     * @return true if the realm contained the scope and the removal was successful, false otherwise
+     */
     boolean removeClientScope(String id);
 
+    /**
+     * @param id of the client scope
+     * @return Client scope with the given {@code id}, or {@code null} when the scope does not exist.
+     */
     ClientScopeModel getClientScopeById(String id);
 
+    /**
+     * Adds given client scope among default/optional client scopes of this realm. 
+     * The scope will be assigned to each new client.
+     * @param clientScope to be added
+     * @param defaultScope if {@code true} the scope will be added among default client scopes, 
+     * if {@code false} it will be added among optional client scopes
+     */
     void addDefaultClientScope(ClientScopeModel clientScope, boolean defaultScope);
+
+    /**
+     * Removes given client scope from default or optional client scopes of this realm.
+     * @param clientScope to be removed
+     */
     void removeDefaultClientScope(ClientScopeModel clientScope);
+
+    /**
+     * Creates or updates the realm-specific localization texts for the given locale.
+     * This method will not delete any text.
+     * It updates texts, which are already stored or create new ones if the key does not exist yet.
+     */
+    void createOrUpdateRealmLocalizationTexts(String locale, Map<String, String> localizationTexts);
+    boolean removeRealmLocalizationTexts(String locale);
+    Map<String, Map<String, String>> getRealmLocalizationTexts();
+    Map<String, String> getRealmLocalizationTextsByLocale(String locale);
 
     /**
      * @deprecated Use {@link #getDefaultClientScopesStream(boolean) getDefaultClientScopesStream} instead.
@@ -793,5 +1009,25 @@ public interface RealmModel extends RoleContainerModel {
         return getDefaultClientScopesStream(defaultScope).collect(Collectors.toList());
     }
 
+    /**
+     * Returns default client scopes of this realm either default ones or optional ones.
+     * @param defaultScope if {@code true} default client scopes are returned, 
+     * if {@code false} optional client scopes are returned.
+     * @return Stream of {@link ClientScopeModel}. Never returns {@code null}.
+     */
     Stream<ClientScopeModel> getDefaultClientScopesStream(boolean defaultScope);
+
+    /**
+     * Adds a role as a composite to default role of this realm. 
+     * @param role to be added
+     */ 
+    default void addToDefaultRoles(RoleModel role) {
+        getDefaultRole().addCompositeRole(role);
+    }
+
+    ClientInitialAccessModel createClientInitialAccessModel(int expiration, int count);
+    ClientInitialAccessModel getClientInitialAccessModel(String id);
+    void removeClientInitialAccessModel(String id);
+    Stream<ClientInitialAccessModel> getClientInitialAccesses();
+    void decreaseRemainingCount(ClientInitialAccessModel clientInitialAccess);
 }

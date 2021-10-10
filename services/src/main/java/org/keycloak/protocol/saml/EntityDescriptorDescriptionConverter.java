@@ -31,7 +31,10 @@ import org.keycloak.exportimport.ClientDescriptionConverterFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
+import org.keycloak.protocol.saml.mappers.UserAttributeStatementMapper;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
@@ -48,6 +51,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -99,6 +103,46 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
                 return endpoint.getLocation().toString();
             }
 
+        }
+        return null;
+    }
+
+    /**
+     * Gets from a SPSSO descriptor the artifact resolution service for a given index
+     * @param sp an SPSSO descriptor
+     * @param index the index of the artifact resolution service to return
+     * @return the location of the artifact resolution service
+     */
+    private static String getArtifactResolutionService(SPSSODescriptorType sp, int index) {
+        List<IndexedEndpointType> endpoints = sp.getArtifactResolutionService();
+        for (IndexedEndpointType endpoint : endpoints) {
+            if (endpoint.getIndex() == index) {
+                return endpoint.getLocation().toString();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Tries to get from a SPSSO descriptor the default artifact resolution service. Or if it doesn't
+     * exist, the artifact resolution service with the lowest index
+     * @param sp an SPSSO descriptor
+     * @return the location of the artifact resolution service
+     */
+    private static String getArtifactResolutionService(SPSSODescriptorType sp) {
+        List<IndexedEndpointType> endpoints = sp.getArtifactResolutionService();
+        IndexedEndpointType firstEndpoint = null;
+        for (IndexedEndpointType endpoint : endpoints) {
+            if (endpoint.isIsDefault() != null && endpoint.isIsDefault()) {
+                firstEndpoint = endpoint;
+                break;
+            }
+            if (firstEndpoint == null || endpoint.getIndex() < firstEndpoint.getIndex()) {
+                firstEndpoint = endpoint;
+            }
+        }
+        if (firstEndpoint != null) {
+            return firstEndpoint.getLocation().toString();
         }
         return null;
     }
@@ -168,6 +212,16 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
         if (assertionConsumerServicePaosBinding != null) {
             redirectUris.add(assertionConsumerServicePaosBinding);
         }
+        String assertionConsumerServiceArtifactBinding = getServiceURL(spDescriptorType, JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.get());
+        if (assertionConsumerServiceArtifactBinding != null) {
+            attributes.put(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_ARTIFACT_ATTRIBUTE, assertionConsumerServiceArtifactBinding);
+            redirectUris.add(assertionConsumerServiceArtifactBinding);
+        }
+        String artifactResolutionService = getArtifactResolutionService(spDescriptorType);
+        if (artifactResolutionService != null) {
+            attributes.put(SamlProtocol.SAML_ARTIFACT_RESOLUTION_SERVICE_URL_ATTRIBUTE, artifactResolutionService);
+        }
+
         if (spDescriptorType.getNameIDFormat() != null) {
             for (String format : spDescriptorType.getNameIDFormat()) {
                 String attribute = SamlClient.samlNameIDFormatToClientAttribute(format);
@@ -177,6 +231,22 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
                 }
             }
         }
+        
+        app.setProtocolMappers(spDescriptorType.getAttributeConsumingService().stream().flatMap(att -> att.getRequestedAttribute().stream())
+            .map(attr -> {
+                ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
+                mapper.setName(attr.getName());
+                mapper.setProtocol("saml");
+                mapper.setProtocolMapper(UserAttributeStatementMapper.PROVIDER_ID);
+                Map<String, String> config = new HashMap<>();
+                config.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAME, attr.getName());
+                if (attr.getFriendlyName() != null)
+                    config.put(AttributeStatementHelper.FRIENDLY_NAME, attr.getFriendlyName());
+                if (attr.getNameFormat() != null)
+                    config.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT, getSAMLNameFormat(attr.getNameFormat()));
+                mapper.setConfig(config);
+                return mapper;
+            }).collect(Collectors.toList()));
 
         for (KeyDescriptorType keyDescriptor : spDescriptorType.getKeyDescriptor()) {
             X509Certificate cert = null;
@@ -198,6 +268,20 @@ public class EntityDescriptorDescriptionConverter implements ClientDescriptionCo
         }
 
         return app;
+    }
+    
+    private static String getSAMLNameFormat(String xmlValue) {
+        String value =null;
+        if (JBossSAMLURIConstants.ATTRIBUTE_FORMAT_URI.getUri().toString().equals(xmlValue)) {
+            value = AttributeStatementHelper.URI_REFERENCE;
+        } else if (JBossSAMLURIConstants.ATTRIBUTE_FORMAT_BASIC.getUri().toString().equals(xmlValue)) {
+            value = AttributeStatementHelper.BASIC;
+        } else if (JBossSAMLURIConstants.ATTRIBUTE_FORMAT_UNSPECIFIED.getUri().toString().equals(xmlValue)) {
+            value = AttributeStatementHelper.UNSPECIFIED;
+        }
+            
+       return value;
+        
     }
 
     private static String getLogoutLocation(SPSSODescriptorType idp, String bindingURI) {

@@ -17,6 +17,8 @@
 
 package org.keycloak.models;
 
+import java.util.stream.Stream;
+
 /**
  * @author <a href="mailto:external.Martin.Idel@bosch.io">Martin Idel</a>
  * @version $Revision: 1 $
@@ -50,7 +52,21 @@ public abstract class UserModelDefaultMethods implements UserModel {
 
     @Override
     public void setEmail(String email) {
-        email = email == null ? null : email.toLowerCase();
+        email = email == null || email.trim().isEmpty() ? null : email.toLowerCase();
         setSingleAttribute(EMAIL, email);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getName() + "@" + getId();
+    }
+
+    /**
+     * The {@link UserModelDefaultMethods.Streams} class extends the {@link UserModelDefaultMethods} abstract class and
+     * implements the {@link UserModel.Streams} interface, allowing subclasses to focus on the implementation of the
+     * {@link Stream}-based query methods and providing default implementations for the collections-based variants that
+     * delegate to their {@link Stream} counterparts.
+     */
+    public abstract static class Streams extends UserModelDefaultMethods implements UserModel.Streams {
     }
 }

@@ -7,6 +7,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -20,6 +21,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
@@ -28,6 +30,7 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.javascript.JSObjectBuilder;
+import org.keycloak.testsuite.util.javascript.JavascriptStateValidator;
 import org.keycloak.testsuite.util.javascript.JavascriptTestExecutor;
 import org.keycloak.testsuite.util.javascript.XMLHttpRequest;
 import org.openqa.selenium.TimeoutException;
@@ -280,6 +283,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     }
 
     @Test
+    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void grantBrowserBasedApp() {
         Assume.assumeTrue("This test doesn't work with phantomjs", !"phantomjs".equals(System.getProperty("js.browser")));
 
@@ -445,6 +449,53 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
         testExecutor.loginForm(testUser, this::assertOnTestAppUrl)
                 .init(defaultArguments(), this::assertInitAuth);
+    }
+
+    /**
+     * Test for scope handling via {@code initOptions}: <pre>{@code
+     * Keycloak keycloak = new Keycloak(); keycloak.init({.... scope: "profile email phone"})
+     * }</pre>
+     * See KEYCLOAK-14412
+     */
+    @Test
+    public void testScopeInInitOptionsShouldBeConsideredByLoginUrl() {
+
+        JSObjectBuilder initOptions = defaultArguments()
+                .loginRequiredOnLoad()
+                // phone is optional client scope
+                .add("scope", "openid profile email phone");
+
+        try {
+            testExecutor.init(initOptions);
+            // This throws exception because when JavascriptExecutor waits for AsyncScript to finish
+            // it is redirected to login page and executor gets no response
+
+            throw new RuntimeException("Probably the login-required OnLoad mode doesn't work, because testExecutor should fail with error that page was redirected.");
+        } catch (WebDriverException ex) {
+            // should happen
+        }
+
+        testExecutor.loginForm(testUser, this::assertOnTestAppUrl)
+                    .init(initOptions, this::assertAdapterIsLoggedIn)
+                    .executeScript("return window.keycloak.tokenParsed.scope", assertOutputContains("phone"));
+    }
+
+    /**
+     * Test for scope handling via {@code loginOptions}: <pre>{@code
+     * Keycloak keycloak = new Keycloak(); keycloak.login({.... scope: "profile email phone"})
+     * }</pre>
+     * See KEYCLOAK-14412
+     */
+    @Test
+    public void testScopeInLoginOptionsShouldBeConsideredByLoginUrl() {
+
+        testExecutor.configure().init(defaultArguments());
+
+        JSObjectBuilder loginOptions = JSObjectBuilder.create().add("scope", "profile email phone");
+
+        testExecutor.login(loginOptions, (JavascriptStateValidator) (driver, output, events) -> {
+            assertThat(driver.getCurrentUrl(), containsString("&scope=openid%20profile%20email%20phone"));
+        });
     }
 
     @Test
@@ -763,6 +814,48 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .login(this::assertOnLoginPage)
                 .loginForm(testUser, this::assertOnTestAppWithInitInHeadUrl)
                 .validateOutputField(this::assertInitAuth);
+    }
+
+    @Test
+    public void check3pCookiesMessageCallbackTest() {
+        testExecutor.attachCheck3pCookiesIframeMutationObserver()
+                .init(defaultArguments(), this::assertInitNotAuth);
+    }
+
+    // In case of incorrect/unavailable realm provided in KeycloakConfig,
+    // JavaScript Adapter init() should fail-fast and reject Promise with KeycloakError.
+    @Test
+    public void checkInitWithInvalidRealm() {
+
+        JSObjectBuilder keycloakConfig = JSObjectBuilder.create()
+                .add("url", authServerContextRootPage + "/auth")
+                .add("realm", "invalid-realm-name")
+                .add("clientId", CLIENT_ID);
+
+        JSObjectBuilder initOptions = defaultArguments().add("messageReceiveTimeout", 5000);
+
+        testExecutor
+                .configure(keycloakConfig)
+                .init(initOptions, assertErrorResponse("Timeout when waiting for 3rd party check iframe message."));
+
+    }
+
+    // In case of unavailable Authorization Server due to network or other kind of problems,
+    // JavaScript Adapter init() should fail-fast and reject Promise with KeycloakError.
+    @Test
+    public void checkInitWithUnavailableAuthServer() {
+
+        JSObjectBuilder keycloakConfig = JSObjectBuilder.create()
+                .add("url", "https://localhost:12345/auth")
+                .add("realm", REALM_NAME)
+                .add("clientId", CLIENT_ID);
+
+        JSObjectBuilder initOptions = defaultArguments().add("messageReceiveTimeout", 5000);
+
+        testExecutor
+                .configure(keycloakConfig)
+                .init(initOptions, assertErrorResponse("Timeout when waiting for 3rd party check iframe message."));
+
     }
 
     protected void assertAdapterIsLoggedIn(WebDriver driver1, Object output, WebElement events) {

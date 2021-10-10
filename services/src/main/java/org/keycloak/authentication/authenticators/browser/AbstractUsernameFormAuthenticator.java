@@ -29,6 +29,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ServicesLogger;
@@ -37,6 +38,10 @@ import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+
+import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils.getDisabledByBruteForceEventError;
+import static org.keycloak.services.validation.Validation.FIELD_PASSWORD;
+import static org.keycloak.services.validation.Validation.FIELD_USERNAME;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -55,9 +60,19 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
     }
 
     protected Response challenge(AuthenticationFlowContext context, String error) {
+        return challenge(context, error, null);
+    }
+
+    protected Response challenge(AuthenticationFlowContext context, String error, String field) {
         LoginFormsProvider form = context.form()
                 .setExecution(context.getExecution().getId());
-        if (error != null) form.setError(error);
+        if (error != null) {
+            if (field != null) {
+                form.addError(new FormMessage(field, error));
+            } else {
+                form.setError(error);
+            }
+        }
         return createLoginForm(form);
     }
 
@@ -65,8 +80,12 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         return form.createLoginUsernamePassword();
     }
 
-    protected String tempDisabledError() {
+    protected String disabledByBruteForceError() {
         return Messages.INVALID_USER;
+    }
+
+    protected String disabledByBruteForceFieldError(){
+        return FIELD_USERNAME;
     }
 
     protected Response setDuplicateUserChallenge(AuthenticationFlowContext context, String eventError, String loginFormError, AuthenticationFlowError authenticatorError) {
@@ -104,12 +123,13 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         if (user == null) {
             dummyHash(context);
             context.getEvent().error(Errors.USER_NOT_FOUND);
-            Response challengeResponse = challenge(context, getDefaultChallengeMessage(context));
+            Response challengeResponse = challenge(context, getDefaultChallengeMessage(context), FIELD_USERNAME);
             context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
         }
     }
 
     public boolean enabledUser(AuthenticationFlowContext context, UserModel user) {
+        if (isDisabledByBruteForce(context, user)) return false;
         if (!user.isEnabled()) {
             context.getEvent().user(user);
             context.getEvent().error(Errors.USER_DISABLED);
@@ -117,7 +137,6 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
             context.forceChallenge(challengeResponse);
             return false;
         }
-        if (isTemporarilyDisabledByBruteForce(context, user)) return false;
         return true;
     }
 
@@ -138,7 +157,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         String username = inputData.getFirst(AuthenticationManager.FORM_USERNAME);
         if (username == null) {
             context.getEvent().error(Errors.USER_NOT_FOUND);
-            Response challengeResponse = challenge(context, getDefaultChallengeMessage(context));
+            Response challengeResponse = challenge(context, getDefaultChallengeMessage(context), FIELD_USERNAME);
             context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return null;
         }
@@ -194,7 +213,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
             return badPasswordHandler(context, user, clearUser,true);
         }
 
-        if (isTemporarilyDisabledByBruteForce(context, user)) return false;
+        if (isDisabledByBruteForce(context, user)) return false;
 
         if (password != null && !password.isEmpty() && context.getSession().userCredentialManager().isValid(context.getRealm(), user, UserCredentialModel.password(password))) {
             return true;
@@ -207,7 +226,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
     private boolean badPasswordHandler(AuthenticationFlowContext context, UserModel user, boolean clearUser,boolean isEmptyPassword) {
         context.getEvent().user(user);
         context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-        Response challengeResponse = challenge(context, getDefaultChallengeMessage(context));
+        Response challengeResponse = challenge(context, getDefaultChallengeMessage(context), FIELD_PASSWORD);
         if(isEmptyPassword) {
             context.forceChallenge(challengeResponse);
         }else{
@@ -220,15 +239,14 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         return false;
     }
 
-    protected boolean isTemporarilyDisabledByBruteForce(AuthenticationFlowContext context, UserModel user) {
-        if (context.getRealm().isBruteForceProtected()) {
-            if (context.getProtector().isTemporarilyDisabled(context.getSession(), context.getRealm(), user)) {
-                context.getEvent().user(user);
-                context.getEvent().error(Errors.USER_TEMPORARILY_DISABLED);
-                Response challengeResponse = challenge(context, tempDisabledError());
-                context.forceChallenge(challengeResponse);
-                return true;
-            }
+    protected boolean isDisabledByBruteForce(AuthenticationFlowContext context, UserModel user) {
+        String bruteForceError = getDisabledByBruteForceEventError(context.getProtector(), context.getSession(), context.getRealm(), user);
+        if (bruteForceError != null) {
+            context.getEvent().user(user);
+            context.getEvent().error(bruteForceError);
+            Response challengeResponse = challenge(context, disabledByBruteForceError(), disabledByBruteForceFieldError());
+            context.forceChallenge(challengeResponse);
+            return true;
         }
         return false;
     }

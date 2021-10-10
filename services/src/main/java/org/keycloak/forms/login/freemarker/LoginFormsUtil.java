@@ -21,7 +21,6 @@ import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -29,7 +28,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.MultivaluedMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -56,16 +54,14 @@ public class LoginFormsUtil {
                 throw new IllegalStateException("USERNAME_EDIT_DISABLED but username not known");
             }
 
-            UserModel user = session.users().getUserByUsername(username, realm);
+            UserModel user = session.users().getUserByUsername(realm, username);
             if (user == null || !user.isEnabled()) {
                 throw new IllegalStateException("User " + username + " not found or disabled");
             }
 
-            Set<FederatedIdentityModel> fedLinks = session.users().getFederatedIdentities(user, realm);
-            Set<String> federatedIdentities = new HashSet<>();
-            for (FederatedIdentityModel fedLink : fedLinks) {
-                federatedIdentities.add(fedLink.getIdentityProvider());
-            }
+            Set<String> federatedIdentities = session.users().getFederatedIdentitiesStream(realm, user)
+                    .map(federatedIdentityModel -> federatedIdentityModel.getIdentityProvider())
+                    .collect(Collectors.toSet());
 
             List<IdentityProviderModel> result = new LinkedList<>();
             for (IdentityProviderModel idp : providers) {

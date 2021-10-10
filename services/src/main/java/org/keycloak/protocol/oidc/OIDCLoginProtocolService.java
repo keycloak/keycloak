@@ -17,14 +17,18 @@
 
 package org.keycloak.protocol.oidc;
 
+import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.jose.jwk.JSONWebKeySet;
@@ -41,14 +45,14 @@ import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
 import org.keycloak.protocol.oidc.endpoints.TokenRevocationEndpoint;
 import org.keycloak.protocol.oidc.endpoints.UserInfoEndpoint;
 import org.keycloak.protocol.oidc.ext.OIDCExtProvider;
+import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.CacheControlUtil;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Objects;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
@@ -113,6 +117,11 @@ public class OIDCLoginProtocolService {
     public static UriBuilder authUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
         return uriBuilder.path(OIDCLoginProtocolService.class, "auth");
+    }
+
+    public static UriBuilder delegatedUrl(UriInfo uriInfo) {
+        UriBuilder uriBuilder = tokenServiceBaseUrl(uriInfo);
+        return uriBuilder.path(OIDCLoginProtocolService.class, "kcinitBrowserLoginComplete");
     }
 
     public static UriBuilder tokenUrl(UriBuilder baseUriBuilder) {
@@ -215,23 +224,27 @@ public class OIDCLoginProtocolService {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Response certs() {
-        List<JWK> keys = new LinkedList<>();
-        for (KeyWrapper k : session.keys().getKeys(realm)) {
-            if (k.getStatus().isEnabled() && k.getUse().equals(KeyUse.SIG) && k.getPublicKey() != null) {
-                JWKBuilder b = JWKBuilder.create().kid(k.getKid()).algorithm(k.getAlgorithm());
-                if (k.getType().equals(KeyType.RSA)) {
-                    keys.add(b.rsa(k.getPublicKey(), k.getCertificate()));
-                } else if (k.getType().equals(KeyType.EC)) {
-                    keys.add(b.ec(k.getPublicKey()));
-                }
-            }
-        }
+        checkSsl();
+
+        JWK[] jwks = session.keys().getKeysStream(realm)
+                .filter(k -> k.getStatus().isEnabled() && k.getPublicKey() != null)
+                .map(k -> {
+                    JWKBuilder b = JWKBuilder.create().kid(k.getKid()).algorithm(k.getAlgorithmOrDefault());
+                    List<X509Certificate> certificates = Optional.ofNullable(k.getCertificateChain())
+                        .filter(certs -> !certs.isEmpty())
+                        .orElseGet(() -> Collections.singletonList(k.getCertificate()));
+                    if (k.getType().equals(KeyType.RSA)) {
+                        return b.rsa(k.getPublicKey(), certificates, k.getUse());
+                    } else if (k.getType().equals(KeyType.EC)) {
+                        return b.ec(k.getPublicKey());
+                    }
+                    return null;
+                })
+                .filter(Objects::nonNull)
+                .toArray(JWK[]::new);
 
         JSONWebKeySet keySet = new JSONWebKeySet();
-
-        JWK[] k = new JWK[keys.size()];
-        k = keys.toArray(k);
-        keySet.setKeys(k);
+        keySet.setKeys(jwks);
 
         Response.ResponseBuilder responseBuilder = Response.ok(keySet).cacheControl(CacheControlUtil.getDefaultCacheControl());
         return Cors.add(request, responseBuilder).allowedOrigins("*").auth().build();
@@ -306,6 +319,15 @@ public class OIDCLoginProtocolService {
             return provider;
         }
         throw new NotFoundException();
+    }
+
+    private void checkSsl() {
+        if (!session.getContext().getUri().getBaseUri().getScheme().equals("https")
+                && realm.getSslRequired().isRequired(clientConnection)) {
+            Cors cors = Cors.add(request).auth().allowedMethods(request.getHttpMethod()).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
+            throw new CorsErrorResponseException(cors.allowAllOrigins(), OAuthErrorException.INVALID_REQUEST, "HTTPS required",
+                    Response.Status.FORBIDDEN);
+        }
     }
 
 }

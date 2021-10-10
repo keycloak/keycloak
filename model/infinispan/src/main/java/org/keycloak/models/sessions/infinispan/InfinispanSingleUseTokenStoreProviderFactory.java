@@ -30,7 +30,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.SingleUseTokenStoreProviderFactory;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenValueEntity;
-import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
+import org.keycloak.connections.infinispan.InfinispanUtil;
+import static org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory.PROVIDER_PRIORITY;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -52,25 +53,29 @@ public class InfinispanSingleUseTokenStoreProviderFactory implements SingleUseTo
         if (tokenCache == null) {
             synchronized (this) {
                 if (tokenCache == null) {
-                    InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
-                    Cache cache = connections.getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE);
-
-                    RemoteCache remoteCache = InfinispanUtil.getRemoteCache(cache);
-
-                    if (remoteCache != null) {
-                        LOG.debugf("Having remote stores. Using remote cache '%s' for single-use cache of token", remoteCache.getName());
-                        this.tokenCache = () -> {
-                            // Doing this way as flag is per invocation
-                            return remoteCache.withFlags(Flag.FORCE_RETURN_VALUE);
-                        };
-                    } else {
-                        LOG.debugf("Not having remote stores. Using normal cache '%s' for single-use cache of token", cache.getName());
-                        this.tokenCache = () -> {
-                            return cache;
-                        };
-                    }
+                    this.tokenCache = getActionTokenCache(session);
                 }
             }
+        }
+    }
+
+    static Supplier getActionTokenCache(KeycloakSession session) {
+        InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
+        Cache cache = connections.getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE);
+
+        RemoteCache remoteCache = InfinispanUtil.getRemoteCache(cache);
+
+        if (remoteCache != null) {
+            LOG.debugf("Having remote stores. Using remote cache '%s' for single-use cache of token", remoteCache.getName());
+            return () -> {
+                // Doing this way as flag is per invocation
+                return remoteCache.withFlags(Flag.FORCE_RETURN_VALUE);
+            };
+        } else {
+            LOG.debugf("Not having remote stores. Using normal cache '%s' for single-use cache of token", cache.getName());
+            return () -> {
+                return cache;
+            };
         }
     }
 
@@ -92,5 +97,10 @@ public class InfinispanSingleUseTokenStoreProviderFactory implements SingleUseTo
     @Override
     public String getId() {
         return "infinispan";
+    }
+
+    @Override
+    public int order() {
+        return PROVIDER_PRIORITY;
     }
 }

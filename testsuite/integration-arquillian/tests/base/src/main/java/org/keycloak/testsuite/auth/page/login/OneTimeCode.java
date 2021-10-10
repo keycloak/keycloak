@@ -38,6 +38,9 @@ public class OneTimeCode extends Authenticate {
     @FindBy(className = "alert-error")
     private WebElement loginErrorMessage;
 
+    @FindBy(id = "input-error-otp-code")
+    private WebElement totpInputCodeError;
+
     public String getOtpLabel() {
         return getTextFromElement(otpInputLabel);
     }
@@ -55,8 +58,20 @@ public class OneTimeCode extends Authenticate {
         submit();
     }
 
-    public String getError() {
-        return loginErrorMessage != null ? loginErrorMessage.getText() : null;
+    public String getAlertError() {
+        try {
+            return UIUtils.getTextFromElement(loginErrorMessage);
+        } catch (NoSuchElementException e) {
+            return null;
+        }
+    }
+
+    public String getInputError() {
+        try {
+            return UIUtils.getTextFromElement(totpInputCodeError);
+        } catch (NoSuchElementException e) {
+            return null;
+        }
     }
 
     @Override

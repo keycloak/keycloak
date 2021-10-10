@@ -9,6 +9,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by st on 26.01.17.
@@ -20,7 +21,7 @@ public class RunHelpers {
 
             @Override
             public FetchOnServer getRunOnServer() {
-                return (FetchOnServer) session -> ModelToRepresentation.toRepresentation(session.getContext().getRealm(), true);
+                return (FetchOnServer) session -> ModelToRepresentation.toRepresentation(session, session.getContext().getRealm(), true);
             }
 
             @Override
@@ -54,8 +55,10 @@ public class RunHelpers {
             public FetchOnServer getRunOnServer() {
                 return (FetchOnServer) session -> {
                     RealmModel realm = session.getContext().getRealm();
-                    UserModel user = session.users().getUserByUsername(username, realm);
-                    List<CredentialModel> storedCredentialsByType = session.userCredentialManager().getStoredCredentialsByType(realm, user, CredentialRepresentation.PASSWORD);
+                    UserModel user = session.users().getUserByUsername(realm, username);
+                    List<CredentialModel> storedCredentialsByType = session.userCredentialManager()
+                            .getStoredCredentialsByTypeStream(realm, user, CredentialRepresentation.PASSWORD)
+                            .collect(Collectors.toList());
                     System.out.println(storedCredentialsByType.size());
                     return storedCredentialsByType.get(0);
                 };

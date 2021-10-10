@@ -385,14 +385,15 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
                                              Components,
                                              UserImpersonation, RequiredActions,
                                              UserStorageOperations,
-                                             $location, $http, Dialog, Notifications, $translate) {
+                                             $location, $http, Dialog, Notifications, $translate, $route, Groups) {
     $scope.realm = realm;
     $scope.create = !user.id;
     $scope.editUsername = $scope.create || $scope.realm.editUsernameAllowed;
     $scope.emailAsUsername = $scope.realm.registrationEmailAsUsername;
+    $scope.groupSearch = { selectedGroup : null };
 
     if ($scope.create) {
-        $scope.user = { enabled: true, attributes: {} }
+        $scope.user = { enabled: true, attributes: {}, groups: [] }
     } else {
         if (!user.attributes) {
             user.attributes = {}
@@ -464,6 +465,8 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
         convertAttributeValuesToLists();
 
         if ($scope.create) {
+            pushSelectedGroupsToUser();
+
             User.save({
                 realm: realm.realm
             }, $scope.user, function (data, headers) {
@@ -485,10 +488,8 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
                 realm: realm.realm,
                 userId: $scope.user.id
             }, $scope.user, function () {
-                $scope.changed = false;
-                convertAttributeValuesToString($scope.user);
-                user = angular.copy($scope.user);
                 Notifications.success($translate.instant('user.edit.success'));
+                $route.reload();
             });
         }
     };
@@ -513,6 +514,51 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
         }
     }
 
+    function pushSelectedGroupsToUser() {
+        var groups = $scope.user.groups;
+        if ($scope.selectedGroups) {
+            for (i = 0; i < $scope.selectedGroups.length; i++) {
+                var groupPath = $scope.selectedGroups[i].path;
+                if (!groups.includes(groupPath)) {
+                    groups.push(groupPath);
+                }
+            }
+        }
+    }
+
+    function bfs(tree, collection) {
+    	if (!tree["subGroups"] || tree["subGroups"].length === 0) return;
+    	for (var i=0; i < tree["subGroups"].length; i++) {
+    		var child = tree["subGroups"][i]
+    		collection.push(child);
+    		bfs(child, collection);
+    	}
+    	return;
+    }
+
+    function flattenGroups(groups) {
+        var flattenedGroups = [];
+        if (!groups || groups.length === 0) return groups;
+        for (var i=0; i < groups.length; i++) {
+            flattenedGroups.push(groups[i]);
+            bfs(groups[i], flattenedGroups);
+        }
+
+        return flattenedGroups;
+    }
+
+    /**
+     * Only keep groups that :
+     *   - include the search term in their path
+     *   - are not already selected
+     */
+    function filterSearchedGroups(groups, term, selectedGroups) {
+        if (!groups || groups.length === 0) return groups;
+        if (!selectedGroups) selectedGroups = [];
+
+        return groups.filter(group => group.path?.includes(term) && !selectedGroups.some(selGroup => selGroup.id === group.id));
+    }
+
     $scope.reset = function() {
         $scope.user = angular.copy(user);
         $scope.changed = false;
@@ -529,6 +575,67 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
 
     $scope.removeAttribute = function(key) {
         delete $scope.user.attributes[key];
+    }
+
+    $scope.groupsUiSelect = {
+        minimumInputLength: 1,
+        delay: 500,
+        allowClear: true,
+        query: function (query) {
+            var data = {results: []};
+            if ('' == query.term.trim()) {
+                query.callback(data);
+                return;
+            }
+            $scope.query = {
+                realm: realm.realm,
+                search: query.term.trim(),
+                max : 20,
+                first : 0
+            };
+            Groups.query($scope.query, function(response) {
+                data.results = filterSearchedGroups(flattenGroups(response), query.term.trim(), $scope.selectedGroups);
+                query.callback(data);
+            });
+        },
+        formatResult: function(object, container, query) {
+            object.text = object.path;
+            return object.path;
+        }
+    };
+
+    $scope.removeGroup = function(list, group) {
+        for (i = 0; i < angular.copy(list).length; i++) {
+            if (group.id == list[i].id) {
+                list.splice(i, 1);
+            }
+        }
+    }
+
+    $scope.selectGroup = function(group) {
+        if (!group || !group.id) {
+            return;
+        }
+
+        $scope.groupSearch.selectedGroup = group;
+
+        if (!$scope.selectedGroups) {
+            $scope.selectedGroups = [];
+        }
+
+        for (i = 0; i < $scope.selectedGroups.length; i++) {
+            if ($scope.selectedGroups[i].id == group.id) {
+                return;
+            }
+        }
+
+        $scope.selectedGroups.push(group);
+        $scope.groupSearch.selectedGroup = null;
+    }
+
+    $scope.clearGroupSelection = function() {
+        $scope.groupSearch.selectedGroup = null;
+        $('#groups').val(null).trigger('change.select2');
     }
 });
 
@@ -1158,6 +1265,7 @@ module.controller('UserGroupMembershipCtrl', function($scope, $q, realm, user, U
         }, function (failed) {
             Notifications.error(failed);
         });
+        return promiseGetCompleteUserGroupMembership.promise;
     };
 
     var refreshUserGroupMembership = function (search) {
@@ -1190,30 +1298,33 @@ module.controller('UserGroupMembershipCtrl', function($scope, $q, realm, user, U
         }, function() {
             promiseGetUserGroupMembership.reject($translate.instant('user.groups.fetch.error', {params: queryParams}));
         });
+
+        var promiseMembershipCount = $q.defer();
+
         promiseGetUserGroupMembership.promise.then(function(groups) {
             $scope.groupMemberships = groups;
+            UserGroupMembershipCount.query(countParams, function(entry) {
+                promiseMembershipCount.resolve(entry);
+            }, function() {
+                promiseMembershipCount.reject($translate.instant('user.groups.fetch.error', {params: countParams}));
+            });
+            promiseMembershipCount.promise.then(function(membershipEntry) {
+                if(angular.isDefined(membershipEntry.count) && membershipEntry.count > $scope.pageSize) {
+                    $scope.numberOfMembershipPages = Math.ceil(membershipEntry.count/$scope.pageSize);
+                } else {
+                    $scope.numberOfMembershipPages = 1;
+                }
+                if (parseInt($scope.currentMembershipPage, 10) > $scope.numberOfMembershipPages) {
+                    $scope.currentMembershipPage = $scope.numberOfMembershipPages;
+                }
+            }, function (failed) {
+                Notifications.error(failed);
+            });
         }, function (failed) {
             Notifications.error(failed);
         });
 
-        var promiseMembershipCount = $q.defer();
-        UserGroupMembershipCount.query(countParams, function(entry) {
-            promiseMembershipCount.resolve(entry);
-        }, function() {
-            promiseMembershipCount.reject($translate.instant('user.groups.fetch.error', {params: countParams}));
-        });
-        promiseMembershipCount.promise.then(function(membershipEntry) {
-            if(angular.isDefined(membershipEntry.count) && membershipEntry.count > $scope.pageSize) {
-                $scope.numberOfMembershipPages = Math.ceil(membershipEntry.count/$scope.pageSize);
-            } else {
-                $scope.numberOfMembershipPages = 1;
-            }
-            if (parseInt($scope.currentMembershipPage, 10) > $scope.numberOfMembershipPages) {
-                $scope.currentMembershipPage = $scope.numberOfMembershipPages;
-            }
-        }, function (failed) {
-            Notifications.error(failed);
-        });
+        return promiseMembershipCount.promise;
     };
 
     var refreshAvailableGroups = function (search) {
@@ -1242,28 +1353,29 @@ module.controller('UserGroupMembershipCtrl', function($scope, $q, realm, user, U
             promiseGetGroups.reject($translate.instant('user.groups.fetch.error', {params: queryParams}));
         });
 
+        var promiseCount = $q.defer();
+
         promiseGetGroups.promise.then(function(groups) {
             $scope.groupList = ComponentUtils.sortGroups('name', groups);
+            GroupsCount.query(countParams, function(entry) {
+                promiseCount.resolve(entry);
+            }, function() {
+                promiseCount.reject($translate.instant('user.groups.fetch.error', {params: countParams}));
+            });
+            promiseCount.promise.then(function(entry) {
+                if(angular.isDefined(entry.count) && entry.count > $scope.pageSize) {
+                    $scope.numberOfPages = Math.ceil(entry.count/$scope.pageSize);
+                } else {
+                    $scope.numberOfPages = 1;
+                }
+            }, function (failed) {
+                Notifications.error(failed);
+            });
         }, function (failed) {
             Notifications.error(failed);
         });
 
-        var promiseCount = $q.defer();
-        GroupsCount.query(countParams, function(entry) {
-            promiseCount.resolve(entry);
-        }, function() {
-            promiseCount.reject($translate.instant('user.groups.fetch.error', {params: countParams}));
-        });
-        promiseCount.promise.then(function(entry) {
-            if(angular.isDefined(entry.count) && entry.count > $scope.pageSize) {
-                $scope.numberOfPages = Math.ceil(entry.count/$scope.pageSize);
-            } else {
-                $scope.numberOfPages = 1;
-            }
-        }, function (failed) {
-            Notifications.error(failed);
-        });
-        return promiseGetGroups.promise;
+        return promiseCount.promise;
     };
 
     $scope.clearSearchMembership = function() {
@@ -1283,9 +1395,10 @@ module.controller('UserGroupMembershipCtrl', function($scope, $q, realm, user, U
         }
     };
 
-    refreshAvailableGroups();
-    refreshUserGroupMembership();
-    refreshCompleteUserGroupMembership();
+    refreshUserGroupMembership().then(function() {
+        refreshAvailableGroups();
+        refreshCompleteUserGroupMembership();
+    });
 
     $scope.$watch('currentPage', function(newValue, oldValue) {
         if(parseInt(newValue, 10) !== parseInt(oldValue, 10)) {

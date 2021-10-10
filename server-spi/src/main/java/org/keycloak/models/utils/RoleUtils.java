@@ -162,7 +162,7 @@ public class RoleUtils {
      * @param role
      * @param visited Track roles, which were already visited. Those will be ignored and won't be added to the stream. Besides that,
      *                the "visited" set itself will be updated as a result of this method call and all the tracked roles will be added to it
-     * @return Stream of containing all of the composite roles and their components.
+     * @return Stream of containing all of the composite roles and their components. Never returns {@code null}.
      */
     private static Stream<RoleModel> expandCompositeRolesStream(RoleModel role, Set<RoleModel> visited) {
         Stream.Builder<RoleModel> sb = Stream.builder();

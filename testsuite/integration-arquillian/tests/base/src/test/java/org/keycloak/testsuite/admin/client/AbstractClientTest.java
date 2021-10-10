@@ -29,7 +29,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.events.EventsListenerProviderFactory;
+import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -56,7 +56,7 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
     @Before
     public void setupAdminEvents() {
         RealmRepresentation realm = testRealmResource().toRepresentation();
-        if (realm.getEventsListeners() == null || !realm.getEventsListeners().contains(EventsListenerProviderFactory.PROVIDER_ID)) {
+        if (realm.getEventsListeners() == null || !realm.getEventsListeners().contains(TestEventsListenerProviderFactory.PROVIDER_ID)) {
             realm = RealmBuilder.edit(testRealmResource().toRepresentation()).testEventListener().build();
             testRealmResource().update(realm);
         }

@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
 import org.keycloak.credential.CredentialModel;
@@ -76,15 +77,17 @@ class AuthenticationSelectionResolver {
 
             //add credential authenticators in order
             if (processor.getAuthenticationSession().getAuthenticatedUser() != null) {
-                List<CredentialModel> credentials = processor.getSession().userCredentialManager()
-                        .getStoredCredentials(processor.getRealm(), processor.getAuthenticationSession().getAuthenticatedUser())
-                        .stream()
-                        .filter(credential -> typeAuthExecMap.containsKey(credential.getType()))
-                        .collect(Collectors.toList());
-
-                authenticationSelectionList = credentials.stream()
-                        .map(CredentialModel::getType)
+                authenticationSelectionList =
+                        Stream.concat(
+                            processor.getSession().userCredentialManager()
+                                .getStoredCredentialsStream(processor.getRealm(), processor.getAuthenticationSession().getAuthenticatedUser())
+                                .map(CredentialModel::getType),
+                            processor.getSession().userCredentialManager()
+                                .getConfiguredUserStorageCredentialTypesStream(
+                                    processor.getRealm(),
+                                    processor.getAuthenticationSession().getAuthenticatedUser()))
                         .distinct()
+                        .filter(typeAuthExecMap::containsKey)
                         .map(credentialType -> new AuthenticationSelectionOption(processor.getSession(), typeAuthExecMap.get(credentialType)))
                         .collect(Collectors.toList());
             }

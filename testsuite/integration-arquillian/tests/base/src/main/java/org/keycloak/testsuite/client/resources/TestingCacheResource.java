@@ -66,6 +66,15 @@ public interface TestingCacheResource {
     @Produces(MediaType.APPLICATION_JSON)
     void removeKey(@PathParam("id") String id);
 
+    /**
+     * Enforce calling of the expiration on the particular infinispan cache. This will immediately expire the expired cache entries, so that they won't be available in the cache.
+     * Without calling this, expired entries would be removed by the infinispan expiration (probably by infinispan periodic background cleaner task)
+     */
+    @POST
+    @Path("/process-expiration")
+    @Produces(MediaType.APPLICATION_JSON)
+    void processExpiration();
+
     @GET
     @Path("/jgroups-stats")
     @Produces(MediaType.APPLICATION_JSON)

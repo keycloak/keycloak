@@ -36,8 +36,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.OAuthClient.APP_ROOT;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 
@@ -116,8 +114,8 @@ public class ApplicationsTest extends BaseAccountPageTest {
         assertEquals(name, clientRep.getClientName());
         assertEquals(userConsentRequired, clientRep.isUserConsentRequired());
         assertEquals(inUse, clientRep.isInUse());
-        assertEquals(effectiveUrl, clientRep.getEffectiveUrl());
         assertEquals(applicationDetailsVisible, clientRep.isApplicationDetailsVisible());
+        if (applicationDetailsVisible) assertEquals(effectiveUrl, clientRep.getEffectiveUrl());
     }
 
 }

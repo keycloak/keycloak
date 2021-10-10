@@ -27,11 +27,13 @@ import org.jboss.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
+import org.junit.runners.model.TestTimedOutException;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.Time;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -76,6 +78,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -187,13 +190,13 @@ public abstract class AbstractKeycloakTest {
 
     protected void beforeAbstractKeycloakTestRealmImport() throws Exception {
     }
-    protected void postAfterAbstractKeycloak() {
+    protected void postAfterAbstractKeycloak() throws Exception {
     }
 
     protected void afterAbstractKeycloakTestRealmImport() {}
 
     @After
-    public void afterAbstractKeycloakTest() {
+    public void afterAbstractKeycloakTest() throws Exception {
         if (resetTimeOffset) {
             resetTimeOffset();
         }
@@ -252,19 +255,13 @@ public abstract class AbstractKeycloakTest {
     }
 
     public void deleteAllCookiesForMasterRealm() {
-        deleteAllCookiesForRealm(accountPage);
-    }
-
-    protected void deleteAllCookiesForRealm(Account realmAccountPage) {
-        // masterRealmPage.navigateTo();
-        realmAccountPage.navigateTo(); // Because IE webdriver freezes when loading a JSON page (realm page), we need to use this alternative
-        log.info("deleting cookies in '" + realmAccountPage.getAuthRealm() + "' realm");
-        driver.manage().deleteAllCookies();
+        deleteAllCookiesForRealm(MASTER);
     }
 
     protected void deleteAllCookiesForRealm(String realmName) {
-        // masterRealmPage.navigateTo();
-        navigateToUri(accountPage.getAuthRoot() + "/realms/" + realmName + "/account"); // Because IE webdriver freezes when loading a JSON page (realm page), we need to use this alternative
+        // we can't use /auth/realms/{realmName} because some browsers (e.g. Chrome) apparently don't send cookies
+        // to JSON pages and therefore can't delete realms cookies there; a non existing page will do just fine
+        navigateToUri(accountPage.getAuthRoot() + "/realms/" + realmName + "/super-random-page");
         log.info("deleting cookies in '" + realmName + "' realm");
         driver.manage().deleteAllCookies();
     }
@@ -405,6 +402,34 @@ public abstract class AbstractKeycloakTest {
               .replace("http", "https")
               .replace("8080", "8543")
               .replace("8180", "8543");
+    }
+
+    protected interface ExecutableTestMethod {
+        void execute() throws Exception;
+    }
+
+    protected void runTestWithTimeout(long timeout, ExecutableTestMethod executableTestMethod) throws Exception {
+        ExecutorService service = Executors.newSingleThreadExecutor();
+        Callable<Object> callable = new Callable<Object>() {
+            public Object call() throws Exception {
+                executableTestMethod.execute();
+                return null;
+            }
+        };
+        Future<Object> result = service.submit(callable);
+        service.shutdown();
+        try {
+            boolean terminated = service.awaitTermination(timeout,
+                    TimeUnit.MILLISECONDS);
+            if (!terminated) {
+                service.shutdownNow();
+            }
+            result.get(0, TimeUnit.MILLISECONDS); // throws the exception if one occurred during the invocation
+        } catch (TimeoutException e) {
+            throw new TestTimedOutException(timeout, TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            throw new Exception(e);
+        }
     }
 
     /**
@@ -663,5 +688,15 @@ public abstract class AbstractKeycloakTest {
             }
         }
         return in;
+    }
+
+    /**
+     * Get product/project name
+     *
+     * @return f.e. 'RH-SSO' or 'Keycloak'
+     */
+    protected String getProjectName() {
+        final boolean isProduct = adminClient.serverInfo().getInfo().getProfileInfo().getName().equals("product");
+        return isProduct ? Profile.PRODUCT_NAME : Profile.PROJECT_NAME;
     }
 }

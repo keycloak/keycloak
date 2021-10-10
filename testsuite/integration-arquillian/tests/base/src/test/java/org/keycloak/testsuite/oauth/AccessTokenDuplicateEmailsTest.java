@@ -117,13 +117,13 @@ public class AccessTokenDuplicateEmailsTest extends AbstractKeycloakTest {
     public void loginWithNonDuplicateEmail() throws Exception {
         oauth.doLogin("non-duplicate-email-user@localhost", "password");
 
-        assertEquals("Invalid username or password.", driver.findElement(By.xpath("//span[@class='kc-feedback-text']")).getText());
+        assertEquals("Invalid username or password.", driver.findElement(By.className("kc-feedback-text")).getText());
     }
     
     @Test
     public void loginWithDuplicateEmail() throws Exception {
         oauth.doLogin("duplicate-email-user@localhost", "password");
 
-        assertEquals("Invalid username or password.", driver.findElement(By.xpath("//span[@class='kc-feedback-text']")).getText());
+        assertEquals("Invalid username or password.", driver.findElement(By.className("kc-feedback-text")).getText());
     }
 }

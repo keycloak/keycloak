@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,21 +21,22 @@ import java.util.Collections;
 import java.util.List;
 
 import org.keycloak.Config.Scope;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProviderFactory;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public class TestRaiseExeptionConditionFactory implements ClientPolicyConditionProviderFactory {
 
-    public static final String PROVIDER_ID = "test-raise-exception-condition";
+    public static final String PROVIDER_ID = "test-raise-exception";
 
     @Override
-    public ClientPolicyConditionProvider create(KeycloakSession session, ComponentModel model) {
-        return new TestRaiseExeptionCondition(session, model);
-
+    public ClientPolicyConditionProvider create(KeycloakSession session) {
+        return new TestRaiseExeptionCondition(session);
     }
 
     @Override
@@ -63,5 +64,10 @@ public class TestRaiseExeptionConditionFactory implements ClientPolicyConditionP
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
         return Collections.emptyList();
+    }
+
+    @Override
+    public boolean isSupported() {
+        return true;
     }
 }

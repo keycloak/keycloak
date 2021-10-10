@@ -17,11 +17,14 @@
 
 package org.keycloak.models.utils;
 
+import org.keycloak.Config;
+import org.keycloak.Config.Scope;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -35,9 +38,9 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
-import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.storage.UserStorageProviderModel;
@@ -51,7 +54,6 @@ import java.security.Key;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.HashSet;
@@ -62,6 +64,11 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.keycloak.models.AccountRoles;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 /**
  * Set of helper methods, which are useful in various model implementations.
@@ -75,16 +82,6 @@ public final class KeycloakModelUtils {
 
     public static String generateId() {
         return UUID.randomUUID().toString();
-    }
-
-    public static byte[] generateSecret() {
-        return generateSecret(32);
-    }
-
-    public static byte[] generateSecret(int bytes) {
-        byte[] buf = new byte[bytes];
-        new SecureRandom().nextBytes(buf);
-        return buf;
     }
 
     public static PublicKey getPublicKey(String publicKeyPem) {
@@ -148,9 +145,9 @@ public final class KeycloakModelUtils {
         return rep;
     }
 
-    public static UserCredentialModel generateSecret(ClientModel client) {
-        UserCredentialModel secret = UserCredentialModel.generateSecret();
-        client.setSecret(secret.getChallengeResponse());
+    public static String generateSecret(ClientModel client) {
+        String secret = SecretGenerator.getInstance().randomString();
+        client.setSecret(secret);
         return secret;
     }
 
@@ -162,13 +159,28 @@ public final class KeycloakModelUtils {
         return UUID.randomUUID().toString();
     }
 
-    public static ClientModel createClient(RealmModel realm, String name) {
-        ClientModel app = realm.addClient(name);
-        app.setClientAuthenticatorType(getDefaultClientAuthenticatorType());
-        generateSecret(app);
-        app.setFullScopeAllowed(true);
+    public static ClientModel createManagementClient(RealmModel realm, String name) {
+        ClientModel client = createClient(realm, name);
 
-        return app;
+        client.setBearerOnly(true);
+
+        return client;
+    }
+
+    public static ClientModel createPublicClient(RealmModel realm, String name) {
+        ClientModel client = createClient(realm, name);
+
+        client.setPublicClient(true);
+
+        return client;
+    }
+
+    private static ClientModel createClient(RealmModel realm, String name) {
+        ClientModel client = realm.addClient(name);
+
+        client.setClientAuthenticatorType(getDefaultClientAuthenticatorType());
+
+        return client;
     }
 
     /**
@@ -204,13 +216,13 @@ public final class KeycloakModelUtils {
      */
     public static UserModel findUserByNameOrEmail(KeycloakSession session, RealmModel realm, String username) {
         if (realm.isLoginWithEmailAllowed() && username.indexOf('@') != -1) {
-            UserModel user = session.users().getUserByEmail(username, realm);
+            UserModel user = session.users().getUserByEmail(realm, username);
             if (user != null) {
                 return user;
             }
         }
 
-        return session.users().getUserByUsername(username, realm);
+        return session.users().getUserByUsername(realm, username);
     }
 
     /**
@@ -252,36 +264,117 @@ public final class KeycloakModelUtils {
      * @param timeoutInSeconds
      */
     public static void runJobInTransactionWithTimeout(KeycloakSessionFactory factory, KeycloakSessionTask task, int timeoutInSeconds) {
-        JtaTransactionManagerLookup lookup = (JtaTransactionManagerLookup)factory.getProviderFactory(JtaTransactionManagerLookup.class);
         try {
-            if (lookup != null) {
-                if (lookup.getTransactionManager() != null) {
-                    try {
-                        lookup.getTransactionManager().setTransactionTimeout(timeoutInSeconds);
-                    } catch (SystemException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
-
+            setTransactionLimit(factory, timeoutInSeconds);
             runJobInTransaction(factory, task);
-
         } finally {
-            if (lookup != null) {
-                if (lookup.getTransactionManager() != null) {
-                    try {
-                        // Reset to default transaction timeout
-                        lookup.getTransactionManager().setTransactionTimeout(0);
-                    } catch (SystemException e) {
-                        // Shouldn't happen for Wildfly transaction manager
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
+            setTransactionLimit(factory, 0);
         }
 
     }
 
+    public static void setTransactionLimit(KeycloakSessionFactory factory, int timeoutInSeconds) {
+        JtaTransactionManagerLookup lookup = (JtaTransactionManagerLookup) factory.getProviderFactory(JtaTransactionManagerLookup.class);
+        if (lookup != null) {
+            if (lookup.getTransactionManager() != null) {
+                try {
+                    // If timeout is set to 0, reset to default transaction timeout
+                    lookup.getTransactionManager().setTransactionTimeout(timeoutInSeconds);
+                } catch (SystemException e) {
+                    // Shouldn't happen for Wildfly transaction manager
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+    }
+
+    public static Function<KeycloakSessionFactory, ComponentModel> componentModelGetter(String realmId, String componentId) {
+        return factory -> getComponentModel(factory, realmId, componentId);
+    }
+
+    public static ComponentModel getComponentModel(KeycloakSessionFactory factory, String realmId, String componentId) {
+        AtomicReference<ComponentModel> cm = new AtomicReference<>();
+        KeycloakModelUtils.runJobInTransaction(factory, session -> {
+            RealmModel realm = session.realms().getRealm(realmId);
+            cm.set(realm == null ? null : realm.getComponent(componentId));
+        });
+        return cm.get();
+    }
+
+    public static <T extends Provider> ProviderFactory<T> getComponentFactory(KeycloakSessionFactory factory, Class<T> providerClass, Scope config, String spiName) {
+        String realmId = config.get("realmId");
+        String componentId = config.get("componentId");
+        if (realmId == null || componentId == null) {
+            realmId = "ROOT";
+            ComponentModel cm = new ScopeComponentModel(providerClass, config, spiName);
+            return factory.getProviderFactory(providerClass, realmId, cm.getId(), k -> cm);
+        } else {
+            return factory.getProviderFactory(providerClass, realmId, componentId, componentModelGetter(realmId, componentId));
+        }
+    }
+
+    private static class ScopeComponentModel extends ComponentModel {
+
+        private final String componentId;
+        private final String providerId;
+        private final String providerType;
+        private final Scope config;
+
+        public ScopeComponentModel(Class<?> providerClass, Scope baseConfiguration, String spiName) {
+            final String pr = baseConfiguration.get("provider", Config.getProvider(spiName));
+
+            this.providerId = pr == null ? "default" : pr;
+            this.config = baseConfiguration.scope(this.providerId);
+            this.componentId = spiName + "-" + this.providerId;
+            this.providerType = providerClass.getName();
+        }
+
+        @Override
+        public String getProviderType() {
+            return providerType;
+        }
+
+        @Override
+        public String getProviderId() {
+            return providerId;
+        }
+
+        @Override
+        public String getName() {
+            return componentId + "-config";
+        }
+
+        @Override
+        public String getId() {
+            return componentId;
+        }
+
+        @Override
+        public boolean get(String key, boolean defaultValue) {
+            return config.getBoolean(key, defaultValue);
+        }
+
+        @Override
+        public long get(String key, long defaultValue) {
+            return config.getLong(key, defaultValue);
+        }
+
+        @Override
+        public int get(String key, int defaultValue) {
+            return config.getInt(key, defaultValue);
+        }
+
+        @Override
+        public String get(String key, String defaultValue) {
+
+            return config.get(key, defaultValue);
+        }
+
+        @Override
+        public String get(String key) {
+            return get(key, null);
+        }
+    }
 
     public static String getMasterRealmAdminApplicationClientId(String realmName) {
         return realmName + "-realm";
@@ -338,18 +431,36 @@ public final class KeycloakModelUtils {
         return str==null ? null : str.toLowerCase();
     }
 
+    /**
+     * Creates default role for particular realm with the given name.
+     * @param realm Realm
+     * @param defaultRoleName Name of the newly created defaultRole
+     */
+    public static void setupDefaultRole(RealmModel realm, String defaultRoleName) {
+        RoleModel defaultRole = realm.addRole(defaultRoleName);
+        defaultRole.setDescription("${role_default-roles}");
+        realm.setDefaultRole(defaultRole);
+    }
+
     public static RoleModel setupOfflineRole(RealmModel realm) {
         RoleModel offlineRole = realm.getRole(Constants.OFFLINE_ACCESS_ROLE);
 
         if (offlineRole == null) {
             offlineRole = realm.addRole(Constants.OFFLINE_ACCESS_ROLE);
             offlineRole.setDescription("${role_offline-access}");
-            realm.addDefaultRole(Constants.OFFLINE_ACCESS_ROLE);
+            realm.addToDefaultRoles(offlineRole);
         }
 
         return offlineRole;
     }
 
+    public static void setupDeleteAccount(ClientModel accountClient) {
+        RoleModel deleteOwnAccount = accountClient.getRole(AccountRoles.DELETE_ACCOUNT);
+        if (deleteOwnAccount == null) {
+            deleteOwnAccount = accountClient.addRole(AccountRoles.DELETE_ACCOUNT);
+        }
+        deleteOwnAccount.setDescription("${role_" + AccountRoles.DELETE_ACCOUNT + "}");
+    }
 
     /**
      * Recursively find all AuthenticationExecutionModel from specified flow or all it's subflows
@@ -386,7 +497,7 @@ public final class KeycloakModelUtils {
 
 
     public static Collection<String> resolveAttribute(UserModel user, String name, boolean aggregateAttrs) {
-        List<String> values = user.getAttribute(name);
+        List<String> values = user.getAttributeStream(name).collect(Collectors.toList());
         Set<String> aggrValues = new HashSet<String>();
         if (!values.isEmpty()) {
             if (!aggregateAttrs) {
@@ -574,22 +685,12 @@ public final class KeycloakModelUtils {
                 Objects.equals(idp.getPostBrokerLoginFlowId(), model.getId()));
     }
 
-    public static boolean isClientScopeUsed(RealmModel realm, ClientScopeModel clientScope) {
-        return realm.getClientsStream()
-                .filter(c -> (c.getClientScopes(true, false).containsKey(clientScope.getName())) ||
-                (c.getClientScopes(false, false).containsKey(clientScope.getName())))
-                .findFirst().isPresent();
-    }
-
     public static ClientScopeModel getClientScopeByName(RealmModel realm, String clientScopeName) {
         return realm.getClientScopesStream()
                 .filter(clientScope -> Objects.equals(clientScopeName, clientScope.getName()))
                 .findFirst()
                 // check if we are referencing a client instead of a scope
-                .orElse(realm.getClientsStream()
-                        .filter(c -> Objects.equals(clientScopeName, c.getClientId()))
-                        .findFirst()
-                        .orElse(null));
+                .orElseGet(() -> realm.getClientByClientId(clientScopeName));
     }
 
     /**
@@ -625,7 +726,7 @@ public final class KeycloakModelUtils {
             if (realm.getRole(roleName) == null) {
                 RoleModel role = realm.addRole(roleName);
                 role.setDescription("${role_" + roleName + "}");
-                realm.addDefaultRole(roleName);
+                realm.addToDefaultRoles(role);
             }
         }
     }
@@ -670,6 +771,14 @@ public final class KeycloakModelUtils {
         } else {
             return provider.getAlias();
         }
+    }
+
+    /**
+     * @return true if implementation of realmProvider is "jpa" . Which is always the case in standard Keycloak installations.
+     */
+    public static boolean isRealmProviderJpa(KeycloakSession session) {
+        Set<String> providerIds = session.listProviderIds(RealmProvider.class);
+        return providerIds != null && providerIds.size() == 1 && providerIds.iterator().next().equals("jpa");
     }
 
 }

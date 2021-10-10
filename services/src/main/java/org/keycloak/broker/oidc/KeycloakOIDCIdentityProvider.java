@@ -41,7 +41,6 @@ import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
@@ -140,9 +139,6 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
                     .param(AdapterConstants.CLIENT_SESSION_STATE, "n/a");  // hack to get backchannel logout to work
 
         }
-
-
-
     }
 
     @Override

@@ -17,16 +17,20 @@
 
 package org.keycloak.models.sessions.infinispan;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.infinispan.Cache;
+import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
+import org.keycloak.models.utils.RealmInfoUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
@@ -35,24 +39,31 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
  */
 public class RootAuthenticationSessionAdapter implements RootAuthenticationSessionModel {
 
+    private static final Logger log = Logger.getLogger(RootAuthenticationSessionAdapter.class);
+
     private KeycloakSession session;
     private InfinispanAuthenticationSessionProvider provider;
     private Cache<String, RootAuthenticationSessionEntity> cache;
     private RealmModel realm;
     private RootAuthenticationSessionEntity entity;
+    private final int authSessionsLimit;
+    private static Comparator<Map.Entry<String, AuthenticationSessionEntity>> TIMESTAMP_COMPARATOR =
+            Comparator.comparingInt(e -> e.getValue().getTimestamp());
 
     public RootAuthenticationSessionAdapter(KeycloakSession session, InfinispanAuthenticationSessionProvider provider,
                                             Cache<String, RootAuthenticationSessionEntity> cache, RealmModel realm,
-                                            RootAuthenticationSessionEntity entity) {
+                                            RootAuthenticationSessionEntity entity, int authSessionsLimt) {
         this.session = session;
         this.provider = provider;
         this.cache = cache;
         this.realm = realm;
         this.entity = entity;
+        this.authSessionsLimit = authSessionsLimt;
     }
 
     void update() {
-        provider.tx.replace(cache, entity.getId(), entity);
+        int expirationSeconds = RealmInfoUtil.getDettachedClientSessionLifespan(realm);
+        provider.tx.replace(cache, entity.getId(), entity, expirationSeconds, TimeUnit.SECONDS);
     }
 
 
@@ -106,14 +117,29 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
 
     @Override
     public AuthenticationSessionModel createAuthenticationSession(ClientModel client) {
+        Map<String, AuthenticationSessionEntity> authenticationSessions = entity.getAuthenticationSessions();
+        if (authenticationSessions.size() >= authSessionsLimit) {
+            String tabId = authenticationSessions.entrySet().stream().min(TIMESTAMP_COMPARATOR).map(Map.Entry::getKey).orElse(null);
+
+            if (tabId != null) {
+                log.debugf("Reached limit (%s) of active authentication sessions per a root authentication session. Removing oldest authentication session with TabId %s.", authSessionsLimit, tabId);
+
+                // remove the oldest authentication session
+                authenticationSessions.remove(tabId);
+            }
+        }
+
         AuthenticationSessionEntity authSessionEntity = new AuthenticationSessionEntity();
         authSessionEntity.setClientUUID(client.getId());
 
+        int timestamp = Time.currentTime();
+        authSessionEntity.setTimestamp(timestamp);
+
         String tabId = provider.generateTabId();
-        entity.getAuthenticationSessions().put(tabId, authSessionEntity);
+        authenticationSessions.put(tabId, authSessionEntity);
 
         // Update our timestamp when adding new authenticationSession
-        entity.setTimestamp(Time.currentTime());
+        entity.setTimestamp(timestamp);
 
         update();
 

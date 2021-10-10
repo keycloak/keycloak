@@ -51,4 +51,11 @@ public class TestApplicationResourceUrls {
                 .path(TestOIDCEndpointsApplicationResource.class, "getSectorIdentifierRedirectUris");
         return builder.build().toString();
     }
+
+    public static String cibaClientNotificationEndpointUri() {
+        UriBuilder builder = oidcClientEndpoints()
+                .path(TestOIDCEndpointsApplicationResource.class, "cibaClientNotificationEndpoint");
+
+        return builder.build().toString();
+    }
 }

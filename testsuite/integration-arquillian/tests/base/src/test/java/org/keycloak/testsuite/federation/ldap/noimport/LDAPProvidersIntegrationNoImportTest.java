@@ -97,19 +97,19 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
             LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "username4", "John4", "Doel4", "user4@email.org", null, "124");
 
             // search by username
-            UserModel user = session.users().searchForUser("username1", appRealm).get(0);
+            UserModel user = session.users().searchForUserStream(appRealm, "username1").findFirst().get();
             LDAPTestAsserts.assertLoaded(user, "username1", "John1", "Doel1", "user1@email.org", "121");
 
             // search by email
-            user = session.users().searchForUser("user2@email.org", appRealm).get(0);
+            user = session.users().searchForUserStream(appRealm, "user2@email.org").findFirst().get();
             LDAPTestAsserts.assertLoaded(user, "username2", "John2", "Doel2", "user2@email.org", "122");
 
             // search by lastName
-            user = session.users().searchForUser("Doel3", appRealm).get(0);
+            user = session.users().searchForUserStream(appRealm, "Doel3").findFirst().get();
             LDAPTestAsserts.assertLoaded(user, "username3", "John3", "Doel3", "user3@email.org", "123");
 
             // search by firstName + lastName
-            user = session.users().searchForUser("John4 Doel4", appRealm).get(0);
+            user = session.users().searchForUserStream(appRealm, "John4 Doel4").findFirst().get();
             LDAPTestAsserts.assertLoaded(user, "username4", "John4", "Doel4", "user4@email.org", "124");
         });
     }
@@ -144,14 +144,14 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
             LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "username7", "John7", "Doel7", "user7@email.org", null, "127");
 
             // search by email
-            UserModel user = session.users().searchForUser("user5@email.org", appRealm).get(0);
+            UserModel user = session.users().searchForUserStream(appRealm, "user5@email.org").findFirst().get();
             LDAPTestAsserts.assertLoaded(user, "username5", "John5", "Doel5", "user5@email.org", "125");
 
-            user = session.users().searchForUser("John6 Doel6", appRealm).get(0);
+            user = session.users().searchForUserStream(appRealm, "John6 Doel6").findFirst().get();
             LDAPTestAsserts.assertLoaded(user, "username6", "John6", "Doel6", "user6@email.org", "126");
 
-            Assert.assertTrue(session.users().searchForUser("user7@email.org", appRealm).isEmpty());
-            Assert.assertTrue(session.users().searchForUser("John7 Doel7", appRealm).isEmpty());
+            Assert.assertEquals(0, session.users().searchForUserStream(appRealm, "user7@email.org").count());
+            Assert.assertEquals(0, session.users().searchForUserStream(appRealm, "John7 Doel7").count());
 
             // Remove custom filter
             ctx.getLdapModel().getConfig().remove(LDAPConstants.CUSTOM_USER_SEARCH_FILTER);
@@ -198,7 +198,7 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
             RealmModel appRealm = ctx.getRealm();
 
             // assert that user "fullnameUser" is not in local DB
-            Assert.assertNull(session.users().getUserByUsername("fullname", appRealm));
+            Assert.assertNull(session.users().getUserByUsername(appRealm, "fullname"));
 
             // Add the user with some fullName into LDAP directly. Ensure that fullName is saved into "cn" attribute in LDAP (currently mapped to model firstName)
             ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(appRealm);
@@ -238,7 +238,7 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            UserModel fullnameUser = session.users().getUserByUsername("fullname", appRealm);
+            UserModel fullnameUser = session.users().getUserByUsername(appRealm, "fullname");
             fullnameUser.setFirstName("James2");
             fullnameUser.setLastName("Dee2");
         });
@@ -252,7 +252,7 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
             LDAPTestAsserts.assertUserImported(session.users(), appRealm, "fullname", null, "Dee2", "fullname@email.org", "4578");
 
             // Remove "fullnameUser" to assert he is removed from LDAP. Revert mappers to previous state
-            UserModel fullnameUser = session.users().getUserByUsername("fullname", appRealm);
+            UserModel fullnameUser = session.users().getUserByUsername(appRealm, "fullname");
             session.users().removeUser(appRealm, fullnameUser);
 
             // Revert mappers
@@ -334,4 +334,10 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
         }
     }
 
+    // No need to test this in no-import mode. There won't be any users in localStorage.
+    @Test
+    @Ignore
+    @Override
+    public void updateLDAPUsernameTest() {
+    }
 }

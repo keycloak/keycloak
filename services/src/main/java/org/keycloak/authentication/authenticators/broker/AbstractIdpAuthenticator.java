@@ -123,7 +123,7 @@ public abstract class AbstractIdpAuthenticator implements Authenticator {
 
         ExistingUserInfo duplication = ExistingUserInfo.deserialize(existingUserId);
 
-        UserModel existingUser = session.users().getUserById(duplication.getExistingUserId(), realm);
+        UserModel existingUser = session.users().getUserById(realm, duplication.getExistingUserId());
         if (existingUser == null) {
             throw new AuthenticationFlowException("User with ID '" + existingUserId + "' not found.", AuthenticationFlowError.INVALID_USER);
         }

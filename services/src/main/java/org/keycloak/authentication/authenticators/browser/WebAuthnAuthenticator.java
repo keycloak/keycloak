@@ -49,6 +49,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -179,7 +180,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         String userVerificationRequirement = getWebAuthnPolicy(context).getUserVerificationRequirement();
         if (WebAuthnConstants.OPTION_REQUIRED.equals(userVerificationRequirement)) isUVFlagChecked = true;
 
-        UserModel user = session.users().getUserById(userId, context.getRealm());
+        UserModel user = session.users().getUserById(context.getRealm(), userId);
 
         AuthenticationRequest authenticationRequest = new AuthenticationRequest(
                 credentialId,
@@ -234,8 +235,9 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
 
     public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
         // ask the user to do required action to register webauthn authenticator
-        if (!user.getRequiredActions().contains(WebAuthnRegisterFactory.PROVIDER_ID)) {
-            user.addRequiredAction(WebAuthnRegisterFactory.PROVIDER_ID);
+        AuthenticationSessionModel authenticationSession = session.getContext().getAuthenticationSession();
+        if (!authenticationSession.getRequiredActions().contains(WebAuthnRegisterFactory.PROVIDER_ID)) {
+            authenticationSession.addRequiredAction(WebAuthnRegisterFactory.PROVIDER_ID);
         }
     }
 

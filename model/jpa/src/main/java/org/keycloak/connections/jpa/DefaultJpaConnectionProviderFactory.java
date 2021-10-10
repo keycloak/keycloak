@@ -17,14 +17,20 @@
 
 package org.keycloak.connections.jpa;
 
+import static org.keycloak.connections.jpa.util.JpaUtils.configureNamedQuery;
+import static org.keycloak.connections.jpa.util.JpaUtils.getDatabaseType;
+import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
+
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.engine.transaction.jta.platform.internal.AbstractJtaPlatform;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.ServerStartupError;
+import org.keycloak.common.util.StackUtil;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
 import org.keycloak.connections.jpa.util.JpaUtils;
+import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
@@ -80,6 +86,10 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
         logger.trace("Create JpaConnectionProvider");
         lazyInit(session);
 
+        return new DefaultJpaConnectionProvider(createEntityManager(session));
+    }
+
+    private EntityManager createEntityManager(KeycloakSession session) {
         EntityManager em;
         if (!jtaEnabled) {
             logger.trace("enlisting EntityManager in JpaKeycloakTransaction");
@@ -88,9 +98,28 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 
             em = emf.createEntityManager(SynchronizationType.SYNCHRONIZED);
         }
-        em = PersistenceExceptionConverter.create(em);
-        if (!jtaEnabled) session.getTransactionManager().enlist(new JpaKeycloakTransaction(em));
-        return new DefaultJpaConnectionProvider(em);
+        em = PersistenceExceptionConverter.create(session, em);
+        if (!jtaEnabled) {
+            session.getTransactionManager().enlist(new JpaKeycloakTransaction(em));
+        }
+        return em;
+    }
+
+    private void addSpecificNamedQueries(KeycloakSession session, Connection connection) {
+        EntityManager em = null;
+        try {
+            em = createEntityManager(session);
+            String dbKind = getDatabaseType(connection.getMetaData().getDatabaseProductName());
+            for (Map.Entry<Object, Object> query : loadSpecificNamedQueries(dbKind.toLowerCase()).entrySet()) {
+                String queryName = query.getKey().toString();
+                String querySql = query.getValue().toString();
+                configureNamedQuery(queryName, querySql, em);
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException(e);
+        } finally {
+            JpaUtils.closeEntityManager(em);
+        }
     }
 
     @Override
@@ -131,7 +160,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
             synchronized (this) {
                 if (emf == null) {
                     KeycloakModelUtils.suspendJtaTransaction(session.getKeycloakSessionFactory(), () -> {
-                        logger.debug("Initializing JPA connections");
+                        logger.debugf("Initializing JPA connections%s", StackUtil.getShortStackTrace());
 
                         Map<String, Object> properties = new HashMap<>();
 
@@ -208,10 +237,23 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                             classLoaders.add(getClass().getClassLoader());
                             properties.put(AvailableSettings.CLASSLOADERS, classLoaders);
                             emf = JpaUtils.createEntityManagerFactory(session, unitName, properties, jtaEnabled);
+                            addSpecificNamedQueries(session, connection);
                             logger.trace("EntityManagerFactory created");
 
                             if (globalStatsInterval != -1) {
                                 startGlobalStats(session, globalStatsInterval);
+                            }
+
+                            /*
+                             * Migrate model is executed just in case following providers are "jpa".
+                             * In Map Storage, there is an assumption that migrateModel is not needed.
+                             */
+                            if ((Config.getProvider("realm") == null || "jpa".equals(Config.getProvider("realm"))) &&
+                                (Config.getProvider("client") == null || "jpa".equals(Config.getProvider("client"))) &&
+                                (Config.getProvider("clientScope") == null || "jpa".equals(Config.getProvider("clientScope")))) {
+
+                                logger.debug("Calling migrateModel");
+                                migrateModel(session);
                             }
                         } finally {
                             // Close after creating EntityManagerFactory to prevent in-mem databases from closing
@@ -243,7 +285,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
             operationalInfo.put("databaseProduct", md.getDatabaseProductName() + " " + md.getDatabaseProductVersion());
             operationalInfo.put("databaseDriver", md.getDriverName() + " " + md.getDriverVersion());
 
-            logger.debugf("Database info: %s", operationalInfo.toString());
+            logger.infof("Database info: %s", operationalInfo.toString());
         } catch (SQLException e) {
             logger.warn("Unable to prepare operational info due database exception: " + e.getMessage());
         }
@@ -402,4 +444,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
         }
     }
 
+    private void migrateModel(KeycloakSession session) {
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), MigrationModelManager::migrate);
+    }
 }

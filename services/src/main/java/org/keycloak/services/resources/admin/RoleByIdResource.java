@@ -28,6 +28,8 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
@@ -40,10 +42,11 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -104,6 +107,13 @@ public class RoleByIdResource extends RoleResource {
     @DELETE
     @NoCache
     public void deleteRole(final @PathParam("role-id") String id) {
+        if (realm.getDefaultRole() == null) {
+            logger.warnf("Default role for realm with id '%s' doesn't exist.", realm.getId());
+        } else if (realm.getDefaultRole().getId().equals(id)) {
+            throw new ErrorResponseException(ErrorResponse.error(realm.getDefaultRole().getName() + " is default role of the realm and cannot be removed.", 
+                    Response.Status.BAD_REQUEST));
+        }
+
         RoleModel role = getRoleModel(id);
         auth.roles().requireManage(role);
         deleteRole(role);
@@ -167,12 +177,21 @@ public class RoleByIdResource extends RoleResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Stream<RoleRepresentation> getRoleComposites(final @PathParam("role-id") String id) {
+    public Stream<RoleRepresentation> getRoleComposites(final @PathParam("role-id") String id,
+                                                        final @QueryParam("search") String search,
+                                                        final @QueryParam("first") Integer first,
+                                                        final @QueryParam("max") Integer max
+    ) {
 
         if (logger.isDebugEnabled()) logger.debug("*** getRoleComposites: '" + id + "'");
         RoleModel role = getRoleModel(id);
         auth.roles().requireView(role);
-        return role.getCompositesStream().map(ModelToRepresentation::toBriefRepresentation);
+
+        if (search == null && first == null && max == null) {
+            return role.getCompositesStream().map(ModelToRepresentation::toBriefRepresentation);
+        }
+
+        return role.getCompositesStream(search, first, max).map(ModelToRepresentation::toBriefRepresentation);
     }
 
     /**

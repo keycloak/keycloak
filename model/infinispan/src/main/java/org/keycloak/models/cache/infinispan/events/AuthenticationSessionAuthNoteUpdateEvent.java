@@ -23,6 +23,8 @@ import java.io.ObjectOutput;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
+
 import org.infinispan.commons.marshall.Externalizer;
 import org.infinispan.commons.marshall.MarshallUtil;
 import org.infinispan.commons.marshall.SerializeWith;
@@ -69,6 +71,20 @@ public class AuthenticationSessionAuthNoteUpdateEvent implements ClusterEvent {
 
     public Map<String, String> getAuthNotesFragment() {
         return authNotesFragment;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        AuthenticationSessionAuthNoteUpdateEvent that = (AuthenticationSessionAuthNoteUpdateEvent) o;
+        return Objects.equals(authSessionId, that.authSessionId) && Objects.equals(tabId, that.tabId) && Objects.equals(clientUUID, that.clientUUID);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(authSessionId, tabId, clientUUID);
     }
 
     @Override

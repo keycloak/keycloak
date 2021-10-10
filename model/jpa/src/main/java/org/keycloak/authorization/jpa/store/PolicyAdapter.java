@@ -253,9 +253,4 @@ public class PolicyAdapter extends AbstractAuthorizationModel implements Policy,
             return em.getReference(PolicyEntity.class, policy.getId());
         }
     }
-
-    @Override
-    public boolean isFetched(String association) {
-        return em.getEntityManagerFactory().getPersistenceUnitUtil().isLoaded(entity, association);
-    }
 }

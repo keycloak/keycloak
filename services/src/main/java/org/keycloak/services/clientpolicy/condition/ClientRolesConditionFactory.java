@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,28 +21,30 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.Config.Scope;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public class ClientRolesConditionFactory implements ClientPolicyConditionProviderFactory {
 
-    public static final String PROVIDER_ID = "clientroles-condition";
+    public static final String PROVIDER_ID = "client-roles";
+
     public static final String ROLES = "roles";
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
     static {
         ProviderConfigProperty property;
-        property = new ProviderConfigProperty(ROLES, PROVIDER_ID + ".label", PROVIDER_ID + ".tooltip", ProviderConfigProperty.MULTIVALUED_STRING_TYPE, null);
+        property = new ProviderConfigProperty(ROLES, PROVIDER_ID + ".label", PROVIDER_ID + "-condition.tooltip", ProviderConfigProperty.MULTIVALUED_STRING_TYPE, null);
         configProperties.add(property);
     }
 
     @Override
-    public ClientPolicyConditionProvider create(KeycloakSession session, ComponentModel model) {
-        return new ClientRolesCondition(session, model);
-
+    public ClientPolicyConditionProvider create(KeycloakSession session) {
+        return new ClientRolesCondition(session);
     }
 
     @Override
@@ -64,7 +66,7 @@ public class ClientRolesConditionFactory implements ClientPolicyConditionProvide
 
     @Override
     public String getHelpText() {
-        return "The condition checks whether one of the specified client roles is applied to the client to determine whether the policy is applied.";
+        return "The condition checks whether one of the specified client roles exists on the client to determine whether the policy is applied. This effectively allows client administrator to create client role of specified name on the client to make sure that particular client policy will be applied on requests of this client. Condition is checked during most of OpenID Connect requests (Authorization request, token requests, introspection endpoint request etc).";
     }
 
     @Override

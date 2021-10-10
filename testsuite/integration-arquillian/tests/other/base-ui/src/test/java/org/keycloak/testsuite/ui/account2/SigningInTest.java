@@ -64,8 +64,6 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-@EnableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true)
-@EnableFeature(value = Profile.Feature.ACCOUNT_API, skipRestart = true)
 @EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
 public class SigningInTest extends BaseAccountPageTest {
     public static final String PASSWORD_LABEL = "My Password";
@@ -275,12 +273,12 @@ public class SigningInTest extends BaseAccountPageTest {
 
         if (passwordless) {
             credentialType = webAuthnPwdlessCredentialType;
-            expectedHelpText = "Use your security key for passwordless log in.";
+            expectedHelpText = "Use your security key for passwordless sign in.";
             providerId = WebAuthnPasswordlessRegisterFactory.PROVIDER_ID;
         }
         else {
             credentialType = webAuthnCredentialType;
-            expectedHelpText = "Use your security key to log in.";
+            expectedHelpText = "Use your security key to sign in.";
             providerId = WebAuthnRegisterFactory.PROVIDER_ID;
         }
 

@@ -21,6 +21,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -31,11 +33,72 @@ public interface UserCredentialStore extends Provider {
     CredentialModel createCredential(RealmModel realm, UserModel user, CredentialModel cred);
     boolean removeStoredCredential(RealmModel realm, UserModel user, String id);
     CredentialModel getStoredCredentialById(RealmModel realm, UserModel user, String id);
+
+    /**
+     * @deprecated Use {@link #getStoredCredentialsStream(RealmModel, UserModel) getStoredCredentialsStream} instead.
+     */
+    @Deprecated
     List<CredentialModel> getStoredCredentials(RealmModel realm, UserModel user);
+
+    /**
+     * Obtains the stored credentials associated with the specified user.
+     *
+     * @param realm a reference to the realm.
+     * @param user the user whose credentials are being searched.
+     * @return a non-null {@link Stream} of credentials.
+     */
+    default Stream<CredentialModel> getStoredCredentialsStream(RealmModel realm, UserModel user) {
+        List<CredentialModel> result = this.getStoredCredentials(realm, user);
+        return result != null ? result.stream() : Stream.empty();
+    }
+
+    /**
+     * @deprecated Use {@link #getStoredCredentialsByTypeStream(RealmModel, UserModel, String) getStoredCredentialsByTypeStream}
+     * instead.
+     */
+    @Deprecated
     List<CredentialModel> getStoredCredentialsByType(RealmModel realm, UserModel user, String type);
+
+    /**
+     * Obtains the stored credentials associated with the specified user that match the specified type.
+     *
+     * @param realm a reference to the realm.
+     * @param user the user whose credentials are being searched.
+     * @param type the type of credentials being searched.
+     * @return a non-null {@link Stream} of credentials.
+     */
+    default Stream<CredentialModel> getStoredCredentialsByTypeStream(RealmModel realm, UserModel user, String type) {
+        List<CredentialModel> result = this.getStoredCredentialsByType(realm, user, type);
+        return result != null ? result.stream() : Stream.empty();
+    }
+
     CredentialModel getStoredCredentialByNameAndType(RealmModel realm, UserModel user, String name, String type);
 
     //list operations
     boolean moveCredentialTo(RealmModel realm, UserModel user, String id, String newPreviousCredentialId);
 
+    /**
+     * The {@link UserCredentialStore.Streams} interface makes all collection-based methods in {@link UserCredentialStore}
+     * default by providing implementations that delegate to the {@link Stream}-based variants instead of the other way around.
+     * <p/>
+     * It allows for implementations to focus on the {@link Stream}-based approach for processing sets of data and benefit
+     * from the potential memory and performance optimizations of that approach.
+     */
+    interface Streams extends UserCredentialStore {
+        @Override
+        default List<CredentialModel> getStoredCredentials(RealmModel realm, UserModel user) {
+            return this.getStoredCredentialsStream(realm, user).collect(Collectors.toList());
+        }
+
+        @Override
+        Stream<CredentialModel> getStoredCredentialsStream(RealmModel realm, UserModel user);
+
+        @Override
+        default List<CredentialModel> getStoredCredentialsByType(RealmModel realm, UserModel user, String type) {
+            return this.getStoredCredentialsByTypeStream(realm, user, type).collect(Collectors.toList());
+        }
+
+        @Override
+        Stream<CredentialModel> getStoredCredentialsByTypeStream(RealmModel realm, UserModel user, String type);
+    }
 }

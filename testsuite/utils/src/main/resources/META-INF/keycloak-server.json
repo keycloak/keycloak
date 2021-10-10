@@ -14,12 +14,27 @@
         "provider": "${keycloak.eventsStore.provider:}"
     },
 
+    "deploymentState": {
+        "provider": "${keycloak.deploymentState.provider:jpa}",
+        "map": {
+            "resourcesVersionSeed": "1JZ379bzyOCFA"
+        }
+    },
+
+    "dblock": {
+        "provider": "${keycloak.dblock.provider:jpa}"
+    },
+
     "realm": {
-        "provider": "${keycloak.realm.provider:}"
+        "provider": "${keycloak.realm.provider:jpa}"
     },
 
     "client": {
         "provider": "${keycloak.client.provider:jpa}"
+    },
+
+    "clientScope": {
+        "provider": "${keycloak.clientScope.provider:jpa}"
     },
 
     "group": {
@@ -30,15 +45,32 @@
         "provider": "${keycloak.role.provider:jpa}"
     },
 
+    "authenticationSessions": {
+        "provider": "${keycloak.authSession.provider:infinispan}",
+        "infinispan": {
+            "authSessionsLimit": "${keycloak.authSessions.limit:300}"
+        }
+    },
+
+    "userSessions": {
+        "provider": "${keycloak.userSession.provider:infinispan}"
+    },
+
+    "loginFailure": {
+        "provider": "${keycloak.loginFailure.provider:infinispan}"
+    },
+
     "mapStorage": {
-        "provider": "${keycloak.mapStorage.provider:concurrenthashmap}",
+        "provider": "${keycloak.mapStorage.provider:}",
         "concurrenthashmap": {
-            "dir": "${project.build.directory:target}"
+            "dir": "${project.build.directory:target/map}",
+            "keyType.realms": "string", 
+            "keyType.authz-resource-servers": "string"
         }
     },
 
     "user": {
-        "provider": "${keycloak.user.provider:}"
+        "provider": "${keycloak.user.provider:jpa}"
     },
 
     "userFederatedStorage": {
@@ -50,7 +82,7 @@
     },
 
     "authorizationPersister": {
-        "provider": "${keycloak.authorization.provider:}"
+        "provider": "${keycloak.authorization.provider:jpa}"
     },
 
     "theme": {
@@ -108,6 +140,14 @@
         }
     },
 
+    "userProfile": {
+        "provider": "${keycloak.userProfile.provider:}",
+        "declarative-user-profile": {
+            "read-only-attributes": [ "deniedFoo", "deniedBar*", "deniedSome/thing", "deniedsome*thing" ],
+            "admin-read-only-attributes": [ "deniedSomeAdmin" ]
+        }
+    },
+
     "x509cert-lookup": {
         "provider": "${keycloak.x509cert.lookup.provider:}",
         "haproxy": {
@@ -126,4 +166,5 @@
             "certificateChainLength": 1
         }
     }
+
 }

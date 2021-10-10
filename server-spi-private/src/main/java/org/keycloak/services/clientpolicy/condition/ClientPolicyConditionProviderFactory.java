@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,18 @@
 
 package org.keycloak.services.clientpolicy.condition;
 
-import org.keycloak.component.ComponentFactory;
+import org.keycloak.common.Profile;
+import org.keycloak.provider.ConfiguredProvider;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.ProviderFactory;
 
-public interface ClientPolicyConditionProviderFactory extends ComponentFactory<ClientPolicyConditionProvider, ClientPolicyConditionProvider> { 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
+public interface ClientPolicyConditionProviderFactory extends ProviderFactory<ClientPolicyConditionProvider>, ConfiguredProvider, EnvironmentDependentProviderFactory {
+
+    @Override
+    default boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.CLIENT_POLICIES);
+    }
 }

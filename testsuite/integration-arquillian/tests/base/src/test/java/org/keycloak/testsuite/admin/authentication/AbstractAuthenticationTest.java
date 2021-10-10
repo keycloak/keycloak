@@ -107,7 +107,7 @@ public abstract class AbstractAuthenticationTest extends AbstractKeycloakTest {
         Assert.assertEquals("Execution flowAlias - " + actual.getFlowAlias(), expected.getFlowAlias(), actual.getFlowAlias());
         Assert.assertEquals("Execution authenticator - " + actual.getAuthenticator(), expected.getAuthenticator(), actual.getAuthenticator());
         Assert.assertEquals("Execution userSetupAllowed - " + actual.getAuthenticator(), expected.isUserSetupAllowed(), actual.isUserSetupAllowed());
-        Assert.assertEquals("Execution authenticatorFlow - " + actual.getAuthenticator(), expected.isAutheticatorFlow(), actual.isAutheticatorFlow());
+        Assert.assertEquals("Execution authenticatorFlow - " + actual.getAuthenticator(), expected.isAuthenticatorFlow(), actual.isAuthenticatorFlow());
         Assert.assertEquals("Execution authenticatorConfig - " + actual.getAuthenticator(), expected.getAuthenticatorConfig(), actual.getAuthenticatorConfig());
         Assert.assertEquals("Execution priority - " + actual.getAuthenticator(), expected.getPriority(), actual.getPriority());
         Assert.assertEquals("Execution requirement - " + actual.getAuthenticator(), expected.getRequirement(), actual.getRequirement());

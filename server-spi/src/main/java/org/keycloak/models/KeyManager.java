@@ -28,6 +28,8 @@ import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -38,9 +40,46 @@ public interface KeyManager {
 
     KeyWrapper getKey(RealmModel realm, String kid, KeyUse use, String algorithm);
 
-    List<KeyWrapper> getKeys(RealmModel realm);
+    /**
+     * Returns all {@code KeyWrapper} for the given realm.
+     *
+     * @param realm {@code RealmModel}.
+     * @return List of all {@code KeyWrapper} in the realm.
+     * @deprecated Use {@link #getKeysStream(RealmModel) getKeysStream} instead.
+     */
+    @Deprecated
+    default List<KeyWrapper> getKeys(RealmModel realm) {
+        return getKeysStream(realm).collect(Collectors.toList());
+    }
 
-    List<KeyWrapper> getKeys(RealmModel realm, KeyUse use, String algorithm);
+    /**
+     * Returns all {@code KeyWrapper} for the given realm.
+     * @param realm {@code RealmModel}.
+     * @return Stream of all {@code KeyWrapper} in the realm. Never returns {@code null}.
+     */
+    Stream<KeyWrapper> getKeysStream(RealmModel realm);
+
+    /**
+     * Returns all {@code KeyWrapper} for the given realm that match given criteria.
+     * @param realm {@code RealmModel}.
+     * @param use {@code KeyUse}.
+     * @param algorithm {@code String}.
+     * @return List of all {@code KeyWrapper} in the realm.
+     * @deprecated Use {@link #getKeysStream(RealmModel, KeyUse, String) getKeysStream} instead.
+     */
+    @Deprecated
+    default List<KeyWrapper> getKeys(RealmModel realm, KeyUse use, String algorithm) {
+        return getKeysStream(realm, use, algorithm).collect(Collectors.toList());
+    }
+
+    /**
+     * Returns all {@code KeyWrapper} for the given realm that match given criteria.
+     * @param realm {@code RealmModel}.
+     * @param use {@code KeyUse}.
+     * @param algorithm {@code String}.
+     * @return Stream of all {@code KeyWrapper} in the realm. Never returns {@code null}.
+     */
+    Stream<KeyWrapper> getKeysStream(RealmModel realm, KeyUse use, String algorithm);
 
     @Deprecated
     ActiveRsaKey getActiveRsaKey(RealmModel realm);

@@ -29,6 +29,14 @@ public class AuthDetails {
     private String userId;
 
     private String ipAddress;
+    
+    public AuthDetails() {}
+    public AuthDetails(AuthDetails toCopy) {
+        this.realmId = toCopy.getRealmId();
+        this.clientId = toCopy.getClientId();
+        this.userId = toCopy.getUserId();
+        this.ipAddress = toCopy.getIpAddress();
+    }
 
     public String getRealmId() {
         return realmId;

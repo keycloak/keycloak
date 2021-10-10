@@ -21,6 +21,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -34,12 +35,10 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
 import com.google.common.base.Charsets;
@@ -57,9 +56,11 @@ import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.representation.TokenIntrospectionResponse;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
@@ -70,6 +71,7 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.BasicAuthHelper;
@@ -426,7 +428,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         assertNotNull(refreshTokenToken.getAuthorization());
 
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
         UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
         URI uri = OIDCLoginProtocolService.tokenUrl(builder).build(REALM_NAME);
         WebTarget target = client.target(uri);
@@ -550,6 +552,25 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         assertThat((Collection<String>) claim.get("resource_scopes"), containsInAnyOrder("ScopeA", "ScopeB"));
         assertThat((Collection<String>) claim.get("scopes"), containsInAnyOrder("ScopeA", "ScopeB"));
+    }
+
+    @Test
+    public void testNoRefreshToken() {
+        ClientResource client = getClient(getRealm());
+        ClientRepresentation clientRepresentation = client.toRepresentation();
+        clientRepresentation.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "false");
+        client.update(clientRepresentation);
+
+        AccessTokenResponse accessTokenResponse = getAuthzClient().obtainAccessToken("marta", "password");
+        AuthorizationResponse response = authorize(null, null, null, null, accessTokenResponse.getToken(), null, null,
+            new PermissionRequest("Resource A", "ScopeA", "ScopeB"));
+        String rpt = response.getToken();
+        String refreshToken = response.getRefreshToken();
+        assertNotNull(rpt);
+        assertNull(refreshToken);
+
+        clientRepresentation.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "true");
+        client.update(clientRepresentation);
     }
 
     private String getIdToken(String username, String password) {

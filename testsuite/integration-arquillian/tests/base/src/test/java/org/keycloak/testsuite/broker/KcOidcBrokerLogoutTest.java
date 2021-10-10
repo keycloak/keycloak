@@ -66,7 +66,7 @@ public class KcOidcBrokerLogoutTest extends AbstractBaseBrokerTest {
 
         logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
         driver.navigate().to(getAccountUrl(getProviderRoot(), REALM_PROV_NAME));
-        waitForPage(driver, "log in to provider", true);
+        waitForPage(driver, "sign in to provider", true);
     }
 
     @Test
@@ -87,7 +87,7 @@ public class KcOidcBrokerLogoutTest extends AbstractBaseBrokerTest {
 
         logoutFromRealm(getConsumerRoot(), bc.consumerRealmName(), "something-else");
         driver.navigate().to(getAccountUrl(getProviderRoot(), REALM_PROV_NAME));
-        waitForPage(driver, "log in to provider", true);
+        waitForPage(driver, "sign in to provider", true);
     }
 
     @Test
@@ -115,6 +115,6 @@ public class KcOidcBrokerLogoutTest extends AbstractBaseBrokerTest {
         logoutFromRealm(getConsumerRoot(), bc.consumerRealmName(), null, idToken);
         driver.navigate().to(getAccountUrl(getProviderRoot(), REALM_PROV_NAME));
 
-        waitForPage(driver, "log in to provider", true);
+        waitForPage(driver, "sign in to provider", true);
     }
 }

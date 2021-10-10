@@ -61,6 +61,7 @@ import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.testsuite.arquillian.undertow.saml.util.RestSamlApplicationConfig;
 import org.keycloak.testsuite.utils.undertow.UndertowDeployerHelper;
 import org.keycloak.testsuite.utils.undertow.UndertowWarClassLoader;
+import java.io.InputStream;
 
 /**
  * @author <a href="mailto:vramik@redhat.com">Vlasta Ramik</a>
@@ -229,8 +230,12 @@ public class UndertowAppServer implements DeployableContainer<UndertowAppServerC
     }
 
     private boolean isJaxrsApp(WebArchive archive) throws DeploymentException {
-        try {
-            return IOUtils.toString(archive.get("/WEB-INF/web.xml").getAsset().openStream(), Charset.forName("UTF-8"))
+        if (! archive.contains("/WEB-INF/web.xml")) {
+            return false;
+        }
+        try (InputStream stream = archive.get("/WEB-INF/web.xml").getAsset().openStream()) {
+            return 
+              IOUtils.toString(stream, Charset.forName("UTF-8"))
                     .contains(Application.class.getName());
         } catch (IOException e) {
             throw new DeploymentException("Unable to read archive.", e);

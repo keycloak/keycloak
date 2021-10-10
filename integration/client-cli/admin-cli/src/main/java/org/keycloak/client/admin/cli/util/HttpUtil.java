@@ -56,6 +56,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 import static org.keycloak.common.util.ObjectUtil.capitalize;
 
@@ -68,6 +69,7 @@ public class HttpUtil {
     public static final String APPLICATION_JSON = "application/json";
     public static final String APPLICATION_FORM_URL_ENCODED = "application/x-www-form-urlencoded";
     public static final String UTF_8 = "utf-8";
+    private static final String[] DEFAULT_QUERY_PARAMS = { "first", "0", "max", "2" };
 
     private static HttpClient httpClient;
     private static SSLConnectionSocketFactory sslsf;
@@ -436,13 +438,29 @@ public class HttpUtil {
 
     public static String getIdForType(String rootUrl, String realm, String auth, String resourceEndpoint, String attrName, String attrValue, String inputAttrName) {
 
-        return getAttrForType(rootUrl, realm, auth, resourceEndpoint, attrName, attrValue, inputAttrName, "id");
+        return getAttrForType(rootUrl, realm, auth, resourceEndpoint, attrName, attrValue, inputAttrName, "id", null);
+    }
+
+    public static String getIdForType(String rootUrl, String realm, String auth, String resourceEndpoint, String attrName, String attrValue, String inputAttrName, Supplier<String[]> endpointParams) {
+        return getAttrForType(rootUrl, realm, auth, resourceEndpoint, attrName, attrValue, inputAttrName, "id", endpointParams);
     }
 
     public static String getAttrForType(String rootUrl, String realm, String auth, String resourceEndpoint, String attrName, String attrValue, String inputAttrName, String returnAttrName) {
+        return getAttrForType(rootUrl, realm, auth, resourceEndpoint, attrName, attrValue, inputAttrName, returnAttrName, null);
+    }
 
+    public static String getAttrForType(String rootUrl, String realm, String auth, String resourceEndpoint, String attrName, String attrValue, String inputAttrName, String returnAttrName, Supplier<String[]> endpointParams) {
         String resourceUrl = composeResourceUrl(rootUrl, realm, resourceEndpoint);
-        resourceUrl = HttpUtil.addQueryParamsToUri(resourceUrl, attrName, attrValue, "first", "0", "max", "2");
+        String[] defaultParams;
+
+        if (endpointParams == null) {
+            defaultParams = DEFAULT_QUERY_PARAMS;
+        } else {
+            defaultParams = endpointParams.get();
+        }
+
+        resourceUrl = HttpUtil.addQueryParamsToUri(resourceUrl, attrName, attrValue);
+        resourceUrl = HttpUtil.addQueryParamsToUri(resourceUrl, defaultParams);
 
         List<ObjectNode> users = doGetJSON(RoleOperations.LIST_OF_NODES.class, resourceUrl, auth);
 

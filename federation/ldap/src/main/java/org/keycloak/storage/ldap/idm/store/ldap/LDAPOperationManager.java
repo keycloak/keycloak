@@ -320,6 +320,14 @@ public class LDAPOperationManager {
                                     identityQuery.getPaginationContext().setCookie(cookie);
                                 }
                             }
+                        } else {
+                            /*
+                             * This ensures that PaginationContext#hasNextPage() will return false if we don't get ResponseControls back
+                             * from the LDAP query response. This helps to avoid an infinite loop in org.keycloak.storage.ldap.LDAPUtils.loadAllLDAPObjects
+                             * See KEYCLOAK-19036
+                             */
+                            identityQuery.getPaginationContext().setCookie(null);
+                            logger.warnf("Did not receive response controls for paginated query using DN [%s], filter [%s]. Did you hit a query result size limit?", baseDN, filter);
                         }
 
                         return result;
@@ -365,33 +373,12 @@ public class LDAPOperationManager {
         String filter = null;
 
         if (this.config.isObjectGUID()) {
-            final String strObjectGUID = "<GUID=" + id + ">";
+            byte[] objectGUID = LDAPUtil.encodeObjectGUID(id);
 
-            try {
-                Attributes attributes = execute(new LdapOperation<Attributes>() {
+            filter = "(&(objectClass=*)(" + getUuidAttributeName() + LDAPConstants.EQUAL + LDAPUtil.convertObjectGUIDToByteString(objectGUID) + "))";
 
-                    @Override
-                    public Attributes execute(LdapContext context) throws NamingException {
-                        return context.getAttributes(strObjectGUID);
-                    }
-
-
-                    @Override
-                    public String toString() {
-                        return new StringBuilder("LdapOperation: GUIDResolve\n")
-                                .append(" strObjectGUID: ").append(strObjectGUID)
-                                .toString();
-                    }
-
-
-                });
-
-                byte[] objectGUID = (byte[]) attributes.get(LDAPConstants.OBJECT_GUID).get();
-
-                filter = "(&(objectClass=*)(" + getUuidAttributeName() + LDAPConstants.EQUAL + LDAPUtil.convertObjectGUIDToByteString(objectGUID) + "))";
-            } catch (NamingException ne) {
-                filter = null;
-            }
+        } else if (this.config.isEdirectoryGUID()) {
+            filter = "(&(objectClass=*)(" + getUuidAttributeName().toUpperCase() + LDAPConstants.EQUAL + LDAPUtil.convertGUIDToEdirectoryHexString(id) + "))";
         }
 
         if (filter == null) {

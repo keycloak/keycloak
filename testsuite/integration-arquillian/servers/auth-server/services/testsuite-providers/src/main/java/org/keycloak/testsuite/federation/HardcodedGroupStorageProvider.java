@@ -68,7 +68,7 @@ public class HardcodedGroupStorageProvider implements GroupStorageProvider {
     }
 
 
-    public class HardcodedGroupAdapter implements GroupModel {
+    public class HardcodedGroupAdapter implements GroupModel.Streams {
 
         private final RealmModel realm;
         private StorageId storageId;

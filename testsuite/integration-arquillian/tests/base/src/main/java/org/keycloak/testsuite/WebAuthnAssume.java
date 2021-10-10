@@ -12,6 +12,7 @@ public class WebAuthnAssume {
 
     public static final String CHROME_NAME = BrowserType.CHROME;
     public static final int CHROME_MIN_VERSION = 68;
+    public static final int CHROME_MAX_VERSION = 80;
 
     public static void assumeChrome() {
         assumeChrome(getCurrentDriver());
@@ -28,6 +29,7 @@ public class WebAuthnAssume {
         int version = Integer.parseInt(cap.getVersion().substring(0, cap.getVersion().indexOf(".")));
 
         Assume.assumeTrue("Browser must be Chrome !", browserName.equals(CHROME_NAME));
-        Assume.assumeTrue("Version of chrome must be higher than or equal to " + CHROME_MIN_VERSION, version >= CHROME_MIN_VERSION);
+        Assume.assumeTrue("Version of Chrome must be higher than or equal to " + CHROME_MIN_VERSION, version >= CHROME_MIN_VERSION);
+        Assume.assumeTrue("Version of Chrome must be lower than or equal to " + CHROME_MAX_VERSION, version <= CHROME_MAX_VERSION);
     }
 }

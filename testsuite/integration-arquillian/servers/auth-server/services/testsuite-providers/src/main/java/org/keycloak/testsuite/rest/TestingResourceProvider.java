@@ -62,10 +62,12 @@ import org.keycloak.services.util.CookieHelper;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.components.TestProvider;
 import org.keycloak.testsuite.components.TestProviderFactory;
-import org.keycloak.testsuite.events.EventsListenerProvider;
+import org.keycloak.testsuite.components.amphibian.TestAmphibianProvider;
+import org.keycloak.testsuite.events.TestEventsListenerProvider;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.forms.PassThroughAuthenticator;
 import org.keycloak.testsuite.forms.PassThroughClientAuthenticator;
+import org.keycloak.testsuite.model.infinispan.InfinispanTestUtil;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
 import org.keycloak.testsuite.rest.resource.TestCacheResource;
 import org.keycloak.testsuite.rest.resource.TestJavascriptResource;
@@ -107,6 +109,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.UUID;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -181,6 +184,22 @@ public class TestingResourceProvider implements RealmResourceProvider {
         return Response.noContent().build();
     }
 
+    @POST
+    @Path("/set-testing-infinispan-time-service")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response setTestingInfinispanTimeService() {
+        InfinispanTestUtil.setTestingTimeService(session);
+        return Response.noContent().build();
+    }
+
+    @POST
+    @Path("/revert-testing-infinispan-time-service")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response revertTestingInfinispanTimeService() {
+        InfinispanTestUtil.revertTimeService();
+        return Response.noContent().build();
+    }
+
     @GET
     @Path("/get-client-sessions-count")
     @Produces(MediaType.APPLICATION_JSON)
@@ -227,7 +246,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/poll-event-queue")
     @Produces(MediaType.APPLICATION_JSON)
     public EventRepresentation getEvent() {
-        Event event = EventsListenerProvider.poll();
+        Event event = TestEventsListenerProvider.poll();
         if (event != null) {
             return ModelToRepresentation.toRepresentation(event);
         } else {
@@ -239,7 +258,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/poll-admin-event-queue")
     @Produces(MediaType.APPLICATION_JSON)
     public AdminEventRepresentation getAdminEvent() {
-        AdminEvent adminEvent = EventsListenerProvider.pollAdminEvent();
+        AdminEvent adminEvent = TestEventsListenerProvider.pollAdminEvent();
         if (adminEvent != null) {
             return ModelToRepresentation.toRepresentation(adminEvent);
         } else {
@@ -251,7 +270,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/clear-event-queue")
     @Produces(MediaType.APPLICATION_JSON)
     public Response clearEventQueue() {
-        EventsListenerProvider.clear();
+        TestEventsListenerProvider.clear();
         return Response.noContent().build();
     }
 
@@ -259,7 +278,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/clear-admin-event-queue")
     @Produces(MediaType.APPLICATION_JSON)
     public Response clearAdminEventQueue() {
-        EventsListenerProvider.clearAdminEvents();
+        TestEventsListenerProvider.clearAdminEvents();
         return Response.noContent().build();
     }
 
@@ -282,11 +301,11 @@ public class TestingResourceProvider implements RealmResourceProvider {
     }
 
     @GET
-    @Path("/clear-event-store-older-than")
+    @Path("/clear-expired-events")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response clearEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan) {
+    public Response clearExpiredEvents() {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-        eventStore.clear(realmId, olderThan);
+        eventStore.clearExpiredEvents();
         return Response.noContent().build();
     }
 
@@ -373,6 +392,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
     private Event repToModel(EventRepresentation rep) {
         Event event = new Event();
+        event.setId(UUID.randomUUID().toString());
         event.setClientId(rep.getClientId());
         event.setDetails(rep.getDetails());
         event.setError(rep.getError());
@@ -518,6 +538,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
     private AdminEvent repToModel(AdminEventRepresentation rep) {
         AdminEvent event = new AdminEvent();
+        event.setId(UUID.randomUUID().toString());
         event.setAuthDetails(repToModel(rep.getAuthDetails()));
         event.setError(rep.getError());
         event.setOperationType(OperationType.valueOf(rep.getOperationType()));
@@ -592,7 +613,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         RealmModel realm = session.realms().getRealm(realmName);
         if (realm == null) return false;
         UserProvider userProvider = session.getProvider(UserProvider.class);
-        UserModel user = userProvider.getUserByUsername(userName, realm);
+        UserModel user = userProvider.getUserByUsername(realm, userName);
         return session.userCredentialManager().isValid(realm, user, UserCredentialModel.password(password));
     }
 
@@ -604,7 +625,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
                                                          @QueryParam("userId") String userId,
                                                          @QueryParam("userName") String userName) {
         RealmModel realm = getRealmByName(realmName);
-        UserModel foundFederatedUser = session.users().getUserByFederatedIdentity(new FederatedIdentityModel(identityProvider, userId, userName), realm);
+        UserModel foundFederatedUser = session.users().getUserByFederatedIdentity(realm, new FederatedIdentityModel(identityProvider, userId, userName));
         if (foundFederatedUser == null) return null;
         return ModelToRepresentation.toRepresentation(session, realm, foundFederatedUser);
     }
@@ -616,7 +637,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
                                                                       @QueryParam("userName") String userName) {
         RealmModel realm = getRealmByName(realmName);
         DummyUserFederationProviderFactory factory = (DummyUserFederationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, "dummy");
-        UserModel user = factory.create(session, null).getUserByUsername(userName, realm);
+        UserModel user = factory.create(session, null).getUserByUsername(realm, userName);
         if (user == null) return null;
         return ModelToRepresentation.toRepresentation(session, realm, user);
     }
@@ -671,6 +692,20 @@ public class TestingResourceProvider implements RealmResourceProvider {
                         TestProvider p = (TestProvider) factory.create(session, componentModel);
                         return p.getDetails();
                         }));
+    }
+
+    @GET
+    @Path("/test-amphibian-component")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, Map<String, Object>> getTestAmphibianComponentDetails() {
+        RealmModel realm = session.getContext().getRealm();
+        return realm.getComponentsStream(realm.getId(), TestAmphibianProvider.class.getName())
+                .collect(Collectors.toMap(
+                  ComponentModel::getName,
+                  componentModel -> {
+                      TestAmphibianProvider t = session.getComponentProvider(TestAmphibianProvider.class, componentModel.getId());
+                      return t == null ? null : t.getDetails();
+                  }));
     }
 
 
@@ -744,7 +779,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
             RealmModel realm = getRealmByName(realmName);
             ClientModel serviceClient = realm.getClientByClientId(clientId);
             if (serviceClient == null) {
-                throw new NotFoundException("Referenced service client doesn't exists");
+                throw new NotFoundException("Referenced service client doesn't exist");
             }
 
             ClientScopeModel clientScopeModel = realm.addClientScope(clientId);
@@ -919,6 +954,18 @@ public class TestingResourceProvider implements RealmResourceProvider {
         }
     }
 
+    @GET
+    @Path("/set-system-property")
+    @Consumes(MediaType.TEXT_HTML_UTF_8)
+    @NoCache
+    public void setSystemPropertyOnServer(@QueryParam("property-name") String propertyName, @QueryParam("property-value") String propertyValue) {
+        if (propertyValue == null) {
+            System.getProperties().remove(propertyName);
+        } else {
+            System.setProperty(propertyName, propertyValue);
+        }
+    }
+
     /**
      * This will send POST request to specified URL with specified form parameters. It's not easily possible to "trick" web driver to send POST
      * request with custom parameters, which are not directly available in the form.
@@ -975,7 +1022,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
                 .entity(builder.toString()).build();
 
     }
-
 
     private RealmModel getRealmByName(String realmName) {
         RealmProvider realmProvider = session.getProvider(RealmProvider.class);

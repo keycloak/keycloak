@@ -95,7 +95,11 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
             RealmModel realm = context.getRealm();
             String clientId = token.getSubject();
             if (clientId == null) {
-                throw new RuntimeException("Can't identify client. Issuer missing on JWT token");
+                throw new RuntimeException("Can't identify client. Subject missing on JWT token");
+            }
+
+            if (!clientId.equals(token.getIssuer())) {
+                throw new RuntimeException("Issuer mismatch. The issuer should match the subject");
             }
 
             context.getEvent().client(clientId);

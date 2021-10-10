@@ -169,7 +169,7 @@ public class ClientsManagementService {
     }
 
     protected ClientModel authorizeClient() {
-        ClientModel client = AuthorizeClientUtil.authorizeClient(session, event).getClient();
+        ClientModel client = AuthorizeClientUtil.authorizeClient(session, event, null).getClient();
 
         if (client.isPublicClient()) {
             OAuth2ErrorRepresentation errorRep = new OAuth2ErrorRepresentation(OAuthErrorException.INVALID_CLIENT, "Public clients not allowed");

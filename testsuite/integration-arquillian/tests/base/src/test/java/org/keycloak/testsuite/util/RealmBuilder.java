@@ -18,12 +18,13 @@
 package org.keycloak.testsuite.util;
 
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.events.EventsListenerProviderFactory;
+import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -105,16 +106,16 @@ public class RealmBuilder {
             rep.setEventsListeners(new LinkedList<String>());
         }
 
-        if (!rep.getEventsListeners().contains(EventsListenerProviderFactory.PROVIDER_ID)) {
-            rep.getEventsListeners().add(EventsListenerProviderFactory.PROVIDER_ID);
+        if (!rep.getEventsListeners().contains(TestEventsListenerProviderFactory.PROVIDER_ID)) {
+            rep.getEventsListeners().add(TestEventsListenerProviderFactory.PROVIDER_ID);
         }
 
         return this;
     }
 
     public RealmBuilder removeTestEventListener() {
-        if (rep.getEventsListeners() != null && rep.getEventsListeners().contains(EventsListenerProviderFactory.PROVIDER_ID)) {
-            rep.getEventsListeners().remove(EventsListenerProviderFactory.PROVIDER_ID);
+        if (rep.getEventsListeners() != null && rep.getEventsListeners().contains(TestEventsListenerProviderFactory.PROVIDER_ID)) {
+            rep.getEventsListeners().remove(TestEventsListenerProviderFactory.PROVIDER_ID);
         }
 
         return this;
@@ -129,6 +130,18 @@ public class RealmBuilder {
             rep.setClients(new LinkedList<>());
         }
         rep.getClients().add(client);
+        return this;
+    }
+
+    public RealmBuilder clientScope(ClientScopeBuilder clientScope) {
+        return clientScope(clientScope.build());
+    }
+
+    public RealmBuilder clientScope(ClientScopeRepresentation clientScope) {
+        if (rep.getClientScopes() == null) {
+            rep.setClientScopes(new LinkedList<>());
+        }
+        rep.getClientScopes().add(clientScope);
         return this;
     }
 

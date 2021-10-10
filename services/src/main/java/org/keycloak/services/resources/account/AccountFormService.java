@@ -25,6 +25,7 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.PolicyStore;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
 import org.keycloak.common.util.UriUtils;
@@ -63,21 +64,19 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
-import org.keycloak.services.managers.UserSessionManager;
+import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.AbstractSecuredLocalService;
-import org.keycloak.services.resources.AttributeFormDataProcessor;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.storage.ReadOnlyException;
-import org.keycloak.userprofile.LegacyUserProfileProviderFactory;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.ValidationException;
+import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
-import org.keycloak.userprofile.profile.representations.AttributeUserProfile;
-import org.keycloak.userprofile.utils.UserUpdateHelper;
-import org.keycloak.userprofile.profile.DefaultUserProfileContext;
-import org.keycloak.userprofile.validation.UserProfileValidationResult;
+import org.keycloak.userprofile.EventAuditingAttributeChangeListener;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.CredentialHelper;
 
@@ -103,7 +102,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -184,7 +183,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
             account.setUser(auth.getUser());
         }
 
-        account.setFeatures(realm.isIdentityFederationEnabled(), eventStore != null && realm.isEventsEnabled(), true, true);
+        account.setFeatures(realm.isIdentityFederationEnabled(), eventStore != null && realm.isEventsEnabled(), true, Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION));
     }
 
     public static UriBuilder accountServiceBaseUrl(UriInfo uriInfo) {
@@ -322,7 +321,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
     @GET
     public Response sessionsPage() {
         if (auth != null) {
-            account.setSessions(session.sessions().getUserSessions(realm, auth.getUser()));
+            account.setSessions(session.sessions().getUserSessionsStream(realm, auth.getUser()).collect(Collectors.toList()));
         }
         return forwardToPage("sessions", AccountPages.SESSIONS);
     }
@@ -342,13 +341,14 @@ public class AccountFormService extends AbstractSecuredLocalService {
      * lastName
      * email
      *
-     * @param formData
      * @return
      */
     @Path("/")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processAccountUpdate(final MultivaluedMap<String, String> formData) {
+    public Response processAccountUpdate() {
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
+
         if (auth == null) {
             return login(null);
         }
@@ -364,40 +364,33 @@ public class AccountFormService extends AbstractSecuredLocalService {
         csrfCheck(formData);
 
         UserModel user = auth.getUser();
-        AttributeUserProfile updatedProfile = AttributeFormDataProcessor.toUserProfile(formData);
-        String oldEmail = user.getEmail();
-        String newEmail = updatedProfile.getAttributes().getFirstAttribute(UserModel.EMAIL);
 
-        event.event(EventType.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser());
+        event.event(EventType.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser()).detail(Details.CONTEXT, UserProfileContext.ACCOUNT_OLD.name());
 
-        UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class, LegacyUserProfileProviderFactory.PROVIDER_ID);
-
-        UserProfileValidationResult result = profileProvider.validate(DefaultUserProfileContext.forAccountService(user), updatedProfile);
-        List<FormMessage> errors = Validation.getFormErrorsFromValidation(result);
-
-        if (!errors.isEmpty()) {
-            setReferrerOnPage();
-            Response.Status status = Status.OK;
-
-            if (result.hasFailureOfErrorType(Messages.READ_ONLY_USERNAME)) {
-                status = Response.Status.BAD_REQUEST;
-            } else if (result.hasFailureOfErrorType(Messages.EMAIL_EXISTS, Messages.USERNAME_EXISTS)) {
-                status = Response.Status.CONFLICT;
-            }
-
-            return account.setErrors(status, errors).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);
-        }
+        UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
+        UserProfile profile = profileProvider.create(UserProfileContext.ACCOUNT_OLD, formData, user);
 
         try {
-            UserUpdateHelper.updateAccount(realm, user, updatedProfile);
+            // backward compatibility with old account console where attributes are not removed if missing
+            profile.update(false, new EventAuditingAttributeChangeListener(profile, event));
+        } catch (ValidationException pve) {
+            List<FormMessage> errors = Validation.getFormErrorsFromValidation(pve.getErrors());
+
+            if (!errors.isEmpty()) {
+                setReferrerOnPage();
+                Response.Status status = Status.OK;
+
+                if (pve.hasError(Messages.READ_ONLY_USERNAME)) {
+                    status = Response.Status.BAD_REQUEST;
+                } else if (pve.hasError(Messages.EMAIL_EXISTS, Messages.USERNAME_EXISTS)) {
+                    status = Response.Status.CONFLICT;
+                }
+
+                return account.setErrors(status, errors).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);
+            }
         } catch (ReadOnlyException e) {
             setReferrerOnPage();
             return account.setError(Response.Status.BAD_REQUEST, Messages.READ_ONLY_USER).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);
-        }
-
-        if (result.hasAttributeChanged(UserModel.EMAIL)) {
-            user.setEmailVerified(false);
-            event.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, newEmail).success();
         }
 
         event.success();
@@ -409,7 +402,9 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
     @Path("sessions")
     @POST
-    public Response processSessionsLogout(final MultivaluedMap<String, String> formData) {
+    public Response processSessionsLogout() {
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
+
         if (auth == null) {
             return login("sessions");
         }
@@ -423,10 +418,10 @@ public class AccountFormService extends AbstractSecuredLocalService {
         // as time on the token will be same like notBefore
         session.users().setNotBeforeForUser(realm, user, Time.currentTime() - 1);
 
-        List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
-        for (UserSessionModel userSession : userSessions) {
-            AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers, true);
-        }
+        session.sessions().getUserSessionsStream(realm, user)
+                .collect(Collectors.toList()) // collect to avoid concurrent modification as backchannelLogout removes the user sessions.
+                .forEach(userSession -> AuthenticationManager.backchannelLogout(session, realm, userSession,
+                        session.getContext().getUri(), clientConnection, headers, true));
 
         UriBuilder builder = Urls.accountBase(session.getContext().getUri().getBaseUri()).path(AccountFormService.class, "sessionsPage");
         String referrer = session.getContext().getUri().getQueryParameters().getFirst("referrer");
@@ -441,7 +436,9 @@ public class AccountFormService extends AbstractSecuredLocalService {
     @Path("applications")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processRevokeGrant(final MultivaluedMap<String, String> formData) {
+    public Response processRevokeGrant() {
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
+
         if (auth == null) {
             return login("applications");
         }
@@ -462,11 +459,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
         // Revoke grant in UserModel
         UserModel user = auth.getUser();
-        session.users().revokeConsentForClient(realm, user.getId(), client.getId());
-        new UserSessionManager(session).revokeOfflineToken(user, client);
-
-        // Logout clientSessions for this user and client
-        AuthenticationManager.backchannelLogoutUserFromClient(session, realm, user, client, session.getContext().getUri(), headers);
+        UserConsentManager.revokeConsentToClient(session, client, user);
 
         event.event(EventType.REVOKE_GRANT).client(auth.getClient()).user(auth.getUser()).detail(Details.REVOKED_CLIENT, client.getClientId()).success();
         setReferrerOnPage();
@@ -489,13 +482,14 @@ public class AccountFormService extends AbstractSecuredLocalService {
      * totp - otp generated by authenticator
      * totpSecret - totp secret to register
      *
-     * @param formData
      * @return
      */
     @Path("totp")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processTotpUpdate(final MultivaluedMap<String, String> formData) {
+    public Response processTotpUpdate() {
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
+
         if (auth == null) {
             return login("totp");
         }
@@ -559,13 +553,14 @@ public class AccountFormService extends AbstractSecuredLocalService {
      * password-new
      * pasword-confirm
      *
-     * @param formData
      * @return
      */
     @Path("password")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processPasswordUpdate(final MultivaluedMap<String, String> formData) {
+    public Response processPasswordUpdate() {
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
+
         if (auth == null) {
             return login("password");
         }
@@ -631,12 +626,9 @@ public class AccountFormService extends AbstractSecuredLocalService {
             return account.setError(Response.Status.INTERNAL_SERVER_ERROR, ape.getMessage()).createResponse(AccountPages.PASSWORD);
         }
 
-        List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, user);
-        for (UserSessionModel s : sessions) {
-            if (!s.getId().equals(auth.getSession().getId())) {
-                AuthenticationManager.backchannelLogout(session, realm, s, session.getContext().getUri(), clientConnection, headers, true);
-            }
-        }
+        session.sessions().getUserSessionsStream(realm, user).filter(s -> !Objects.equals(s.getId(), auth.getSession().getId()))
+                .collect(Collectors.toList()) // collect to avoid concurrent modification as backchannelLogout removes the user sessions.
+                .forEach(s -> AuthenticationManager.backchannelLogout(session, realm, s, session.getContext().getUri(), clientConnection, headers, true));
 
         event.event(EventType.UPDATE_PASSWORD).client(auth.getClient()).user(auth.getUser()).success();
 
@@ -647,7 +639,9 @@ public class AccountFormService extends AbstractSecuredLocalService {
     @Path("identity")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processFederatedIdentityUpdate(final MultivaluedMap<String, String> formData) {
+    public Response processFederatedIdentityUpdate() {
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
+
         if (auth == null) {
             return login("identity");
         }
@@ -703,11 +697,11 @@ public class AccountFormService extends AbstractSecuredLocalService {
                     return account.setError(Response.Status.INTERNAL_SERVER_ERROR, Messages.IDENTITY_PROVIDER_REDIRECT_ERROR).createResponse(AccountPages.FEDERATED_IDENTITY);
                 }
             case REMOVE:
-                FederatedIdentityModel link = session.users().getFederatedIdentity(user, providerId, realm);
+                FederatedIdentityModel link = session.users().getFederatedIdentity(realm, user, providerId);
                 if (link != null) {
 
                     // Removing last social provider is not possible if you don't have other possibility to authenticate
-                    if (session.users().getFederatedIdentities(user, realm).size() > 1 || user.getFederationLink() != null || isPasswordSet(session, realm, user)) {
+                    if (session.users().getFederatedIdentitiesStream(realm, user).count() > 1 || user.getFederationLink() != null || isPasswordSet(session, realm, user)) {
                         session.users().removeFederatedIdentity(realm, user, providerId);
 
                         logger.debugv("Social provider {0} removed successfully from user {1}", providerId, user.getUsername());
@@ -753,7 +747,9 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
     @Path("resource/{resource_id}/grant")
     @POST
-    public Response grantPermission(@PathParam("resource_id") String resourceId, @FormParam("action") String action, @FormParam("permission_id") String[] permissionId, @FormParam("requester") String requester, MultivaluedMap<String, String> formData) {
+    public Response grantPermission(@PathParam("resource_id") String resourceId, @FormParam("action") String action, @FormParam("permission_id") String[] permissionId, @FormParam("requester") String requester) {
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
+
         if (auth == null) {
             return login("resource");
         }
@@ -822,15 +818,15 @@ public class AccountFormService extends AbstractSecuredLocalService {
                 policyStore.delete(policy.getId());
             }
         } else {
-            Map<String, String> filters = new HashMap<>();
+            Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
 
-            filters.put(PermissionTicket.RESOURCE, resource.getId());
-            filters.put(PermissionTicket.REQUESTER, session.users().getUserByUsername(requester, realm).getId());
+            filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
+            filters.put(PermissionTicket.FilterOption.REQUESTER, session.users().getUserByUsername(realm, requester).getId());
 
             if (isRevoke) {
-                filters.put(PermissionTicket.GRANTED, Boolean.TRUE.toString());
+                filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
             } else {
-                filters.put(PermissionTicket.GRANTED, Boolean.FALSE.toString());
+                filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.FALSE.toString());
             }
 
             List<PermissionTicket> tickets = ticketStore.find(filters, resource.getResourceServer(), -1, -1);
@@ -875,7 +871,9 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
     @Path("resource/{resource_id}/share")
     @POST
-    public Response shareResource(@PathParam("resource_id") String resourceId, @FormParam("user_id") String[] userIds, @FormParam("scope_id") String[] scopes, MultivaluedMap<String, String> formData) {
+    public Response shareResource(@PathParam("resource_id") String resourceId, @FormParam("user_id") String[] userIds, @FormParam("scope_id") String[] scopes) {
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
+
         if (auth == null) {
             return login("resource");
         }
@@ -899,14 +897,14 @@ public class AccountFormService extends AbstractSecuredLocalService {
         }
 
         for (String id : userIds) {
-            UserModel user = session.users().getUserById(id, realm);
+            UserModel user = session.users().getUserById(realm, id);
 
             if (user == null) {
-                user = session.users().getUserByUsername(id, realm);
+                user = session.users().getUserByUsername(realm, id);
             }
 
             if (user == null) {
-                user = session.users().getUserByEmail(id, realm);
+                user = session.users().getUserByEmail(realm, id);
             }
 
             if (user == null) {
@@ -914,11 +912,11 @@ public class AccountFormService extends AbstractSecuredLocalService {
                 return account.setError(Status.BAD_REQUEST, Messages.INVALID_USER).createResponse(AccountPages.RESOURCE_DETAIL);
             }
 
-            Map<String, String> filters = new HashMap<>();
+            Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
 
-            filters.put(PermissionTicket.RESOURCE, resource.getId());
-            filters.put(PermissionTicket.OWNER, auth.getUser().getId());
-            filters.put(PermissionTicket.REQUESTER, user.getId());
+            filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
+            filters.put(PermissionTicket.FilterOption.OWNER, auth.getUser().getId());
+            filters.put(PermissionTicket.FilterOption.REQUESTER, user.getId());
 
             List<PermissionTicket> tickets = ticketStore.find(filters, resource.getResourceServer(), -1, -1);
 
@@ -962,7 +960,9 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
     @Path("resource")
     @POST
-    public Response processResourceActions(@FormParam("resource_id") String[] resourceIds, @FormParam("action") String action, MultivaluedMap<String, String> formData) {
+    public Response processResourceActions(@FormParam("resource_id") String[] resourceIds, @FormParam("action") String action) {
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
+
         if (auth == null) {
             return login("resource");
         }
@@ -984,15 +984,15 @@ public class AccountFormService extends AbstractSecuredLocalService {
                 return ErrorResponse.error("Invalid resource", Response.Status.BAD_REQUEST);
             }
 
-            HashMap<String, String> filters = new HashMap<>();
+            Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
 
-            filters.put(PermissionTicket.REQUESTER, auth.getUser().getId());
-            filters.put(PermissionTicket.RESOURCE, resource.getId());
+            filters.put(PermissionTicket.FilterOption.REQUESTER, auth.getUser().getId());
+            filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
 
             if ("cancel".equals(action)) {
-                filters.put(PermissionTicket.GRANTED, Boolean.TRUE.toString());
+                filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
             } else if ("cancelRequest".equals(action)) {
-                filters.put(PermissionTicket.GRANTED, Boolean.FALSE.toString());
+                filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.FALSE.toString());
             }
 
             for (PermissionTicket ticket : ticketStore.find(filters, resource.getResourceServer(), -1, -1)) {

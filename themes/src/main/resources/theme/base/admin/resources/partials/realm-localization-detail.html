@@ -1,0 +1,50 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/localization">{{:: 'localization' | translate}}</a></li>
+        <li data-ng-hide="create">{{key}}</li>
+        <li data-ng-show="create">{{:: 'add-localization-text' | translate}}</li>
+    </ol>
+
+    <form class="form-horizontal clearfix" name="localizationForm" novalidate>
+        <fieldset>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="locale">{{:: 'locale' | translate}}</label>
+
+                <div class="col-md-6">
+                    <input class="form-control" type="text" id="locale" name="locale" data-ng-model="locale"
+                           readonly>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="key">
+                    <span class="required" data-ng-show="create">*</span> {{:: 'key' | translate}}
+                </label>
+
+                <div class="col-md-6">
+                    <input class="form-control" type="text" id="key" name="key" data-ng-model="key" autofocus
+                           required data-ng-readonly="!create">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="value">
+                    <span class="required" data-ng-show="create">*</span> {{:: 'value' | translate}}
+                </label>
+
+                <div class="col-md-6">
+                    <input class="form-control" type="text" id="value" name="value" required data-ng-model="value">
+                </div>
+            </div>
+        </fieldset>
+
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2">
+                <button kc-save>{{:: 'save' | translate}}</button>
+                <button kc-cancel data-ng-click="cancel()">{{:: 'cancel' | translate}}</button>
+            </div>
+        </div>
+
+    </form>
+</div>
+
+<kc-menu></kc-menu>

@@ -17,19 +17,57 @@
 
 package org.keycloak.util;
 
+import java.io.File;
+import java.io.FilenameFilter;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-import io.smallrye.config.SmallRyeConfig;
-import org.keycloak.quarkus.KeycloakRecorder;
+import io.quarkus.runtime.LaunchMode;
+import io.quarkus.runtime.configuration.ProfileManager;
+import org.apache.commons.lang3.SystemUtils;
+import org.keycloak.configuration.Configuration;
 
 public final class Environment {
 
+    public static final String IMPORT_EXPORT_MODE = "import_export";
+    public static final String CLI_ARGS = "kc.config.args";
+    public static final String PROFILE ="kc.profile";
+    public static final String ENV_PROFILE ="KC_PROFILE";
+
+    private Environment() {}
+
     public static Boolean isRebuild() {
-        return Boolean.valueOf(System.getProperty("quarkus.launch.rebuild"));
+        return Boolean.getBoolean("quarkus.launch.rebuild");
     }
 
     public static String getHomeDir() {
         return System.getProperty("kc.home.dir");
+    }
+
+    public static Path getHomePath() {
+        String homeDir = getHomeDir();
+
+        if (homeDir != null) {
+            return Paths.get(homeDir);
+        }
+
+        return null;
+    }
+
+    public static Path getProvidersPath() {
+        Path homePath = Environment.getHomePath();
+
+        if (homePath != null) {
+            return homePath.resolve("providers");
+        }
+
+        return null;
     }
 
     public static String getCommand() {
@@ -39,21 +77,29 @@ public final class Environment {
             return "java -jar $KEYCLOAK_HOME/lib/quarkus-run.jar";
         }
 
-        return "kc.sh";
+        if (isWindows()) {
+            return "./kc.bat";
+        }
+        return "./kc.sh";
     }
     
     public static String getConfigArgs() {
-        return System.getProperty("kc.config.args");
+        return System.getProperty(CLI_ARGS);
     }
 
     public static String getProfile() {
-        String profile = System.getProperty("kc.profile");
+        String profile = System.getProperty(PROFILE);
         
         if (profile == null) {
-            profile = System.getenv("KC_PROFILE");
+            profile = System.getenv(ENV_PROFILE);
         }
 
         return profile;
+    }
+
+    public static void setProfile(String profile) {
+        System.setProperty(PROFILE, profile);
+        System.setProperty("quarkus.profile", profile);
     }
 
     public static String getProfileOrDefault(String defaultProfile) {
@@ -67,7 +113,7 @@ public final class Environment {
     }
 
     public static Optional<String> getBuiltTimeProperty(String name) {
-        String value = KeycloakRecorder.getBuiltTimeProperty(name);
+        String value = Configuration.getBuiltTimeProperty(name);
 
         if (value == null) {
             return Optional.empty();
@@ -76,7 +122,46 @@ public final class Environment {
         return Optional.of(value);
     }
 
-    public static SmallRyeConfig getConfig() {
-        return KeycloakRecorder.getConfig();
+    public static boolean isDevMode() {
+        if ("dev".equalsIgnoreCase(getProfile())) {
+            return true;
+        }
+
+        // if running in quarkus:dev mode
+        return ProfileManager.getLaunchMode() == LaunchMode.DEVELOPMENT;
+    }
+
+    public static boolean isImportExportMode() {
+        return IMPORT_EXPORT_MODE.equalsIgnoreCase(getProfile());
+    }
+
+    public static boolean isWindows() {
+        return SystemUtils.IS_OS_WINDOWS;
+    }
+
+    public static void forceDevProfile() {
+        System.setProperty(PROFILE, "dev");
+        System.setProperty("quarkus.profile", "dev");
+    }
+
+    public static Map<String, File> getProviderFiles() {
+        Path providersPath = Environment.getProvidersPath();
+
+        if (providersPath == null) {
+            return Collections.emptyMap();
+        }
+
+        File providersDir = providersPath.toFile();
+
+        if (!providersDir.exists() || !providersDir.isDirectory()) {
+            throw new RuntimeException("The 'providers' directory does not exist or is not a valid directory.");
+        }
+
+        return Arrays.stream(providersDir.listFiles(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                return name.endsWith(".jar");
+            }
+        })).collect(Collectors.toMap(File::getName, Function.identity()));
     }
 }

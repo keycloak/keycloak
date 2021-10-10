@@ -158,7 +158,7 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
 
                     completableFuture = clusterExecutor.submitConsumer(worker, (address, workerResult, throwable) -> {
                         log.tracef("Calling triConsumer on address %s, throwable message: %s, segment: %s", address, throwable == null ? "null" : throwable.getMessage(),
-                                workerResult.getSegment());
+                                workerResult == null ? null : workerResult.getSegment());
 
                         if (throwable != null) {
                             throw new CacheException(throwable);

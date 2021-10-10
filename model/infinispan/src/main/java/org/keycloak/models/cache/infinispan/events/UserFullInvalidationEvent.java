@@ -17,9 +17,9 @@
 
 package org.keycloak.models.cache.infinispan.events;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.keycloak.models.FederatedIdentityModel;
@@ -28,6 +28,9 @@ import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.infinispan.commons.marshall.Externalizer;
 import org.infinispan.commons.marshall.MarshallUtil;
 import org.infinispan.commons.marshall.SerializeWith;
@@ -47,7 +50,7 @@ public class UserFullInvalidationEvent extends InvalidationEvent implements User
     private boolean identityFederationEnabled;
     private Map<String, String> federatedIdentities;
 
-    public static UserFullInvalidationEvent create(String userId, String username, String email, String realmId, boolean identityFederationEnabled, Collection<FederatedIdentityModel> federatedIdentities) {
+    public static UserFullInvalidationEvent create(String userId, String username, String email, String realmId, boolean identityFederationEnabled, Stream<FederatedIdentityModel> federatedIdentities) {
         UserFullInvalidationEvent event = new UserFullInvalidationEvent();
         event.userId = userId;
         event.username = username;
@@ -56,10 +59,8 @@ public class UserFullInvalidationEvent extends InvalidationEvent implements User
 
         event.identityFederationEnabled = identityFederationEnabled;
         if (identityFederationEnabled) {
-            event.federatedIdentities = new HashMap<>();
-            for (FederatedIdentityModel socialLink : federatedIdentities) {
-                event.federatedIdentities.put(socialLink.getIdentityProvider(), socialLink.getUserId());
-            }
+            event.federatedIdentities = federatedIdentities.collect(Collectors.toMap(socialLink -> socialLink.getIdentityProvider(),
+                    socialLink -> socialLink.getUserId()));
         }
 
         return event;
@@ -82,6 +83,20 @@ public class UserFullInvalidationEvent extends InvalidationEvent implements User
     @Override
     public void addInvalidations(UserCacheManager userCache, Set<String> invalidations) {
         userCache.fullUserInvalidation(userId, username, email, realmId, identityFederationEnabled, federatedIdentities, invalidations);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        UserFullInvalidationEvent that = (UserFullInvalidationEvent) o;
+        return identityFederationEnabled == that.identityFederationEnabled && Objects.equals(userId, that.userId) && Objects.equals(username, that.username) && Objects.equals(email, that.email) && Objects.equals(realmId, that.realmId) && Objects.equals(federatedIdentities, that.federatedIdentities);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), userId, username, email, realmId, identityFederationEnabled, federatedIdentities);
     }
 
     public static class ExternalizerImpl implements Externalizer<UserFullInvalidationEvent> {

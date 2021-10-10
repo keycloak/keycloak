@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,35 +17,34 @@
 
 package org.keycloak.testsuite.services.clientpolicy.condition;
 
-import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
-import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
+import org.keycloak.services.clientpolicy.condition.AbstractClientPolicyConditionProvider;
+import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 
-public class TestRaiseExeptionCondition implements ClientPolicyConditionProvider {
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
+public class TestRaiseExeptionCondition extends AbstractClientPolicyConditionProvider<TestRaiseExeptionCondition.Configuration> {
 
-    private static final Logger logger = Logger.getLogger(TestRaiseExeptionCondition.class);
-
-    private final KeycloakSession session;
-    private final ComponentModel componentModel;
-
-    public TestRaiseExeptionCondition(KeycloakSession session, ComponentModel componentModel) {
-        this.session = session;
-        this.componentModel = componentModel;
+    public TestRaiseExeptionCondition(KeycloakSession session) {
+        super(session);
     }
 
     @Override
-    public String getName() {
-        return componentModel.getName();
+    public Class<Configuration> getConditionConfigurationClass() {
+        return Configuration.class;
+    }
+
+    public static class Configuration extends ClientPolicyConditionConfigurationRepresentation {
     }
 
     @Override
     public String getProviderId() {
-        return componentModel.getProviderId();
+        return TestRaiseExeptionConditionFactory.PROVIDER_ID;
     }
 
     @Override

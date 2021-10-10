@@ -287,7 +287,7 @@
     "clientRoles" : { },
     "subGroups" : [ ]
   } ],
-  "defaultRoles" : [ "offline_access", "uma_authorization" ],
+  "defaultRoles" : [ "offline_access", "uma_authorization", "migration-test-realm-role" ],
   "requiredCredentials" : [ "password" ],
   "otpPolicyType" : "totp",
   "otpPolicyAlgorithm" : "HmacSHA1",
@@ -708,6 +708,7 @@
     "enabled" : true,
     "clientAuthenticatorType" : "client-secret",
     "secret" : "secret",
+    "defaultRoles" : [ "migration-test-client-role" ],
     "redirectUris" : [ ],
     "webOrigins" : [ ],
     "notBefore" : 0,
@@ -809,6 +810,21 @@
     "useTemplateConfig" : false,
     "useTemplateScope" : false,
     "useTemplateMappers" : false
+  }, {
+    "clientId": "migration-saml-client",
+    "enabled": true,
+    "fullScopeAllowed": true,
+    "protocol": "saml",
+    "baseUrl": "http://localhost:8080/sales-post",
+    "redirectUris": [
+      "http://localhost:8080/sales-post/*"
+    ],
+    "attributes": {
+      "saml_assertion_consumer_url_post": "http://localhost:8080/sales-post/saml",
+      "saml_single_logout_service_url_post": "http://localhost:8080/sales-post/saml",
+      "saml.authnstatement": "true",
+      "saml_idp_initiated_sso_url_name": "sales-post"
+    }
   }, {
     "id" : "9a37d2c5-6a36-4a2c-b837-f2ea846fb0d5",
     "clientId" : "realm-management",
@@ -1629,7 +1645,8 @@
     "actionTokenGeneratedByAdminLifespan" : "43200",
     "bruteForceProtected" : "false",
     "_browser_header.contentSecurityPolicy" : "frame-src 'self'; frame-ancestors 'self'; object-src 'none';",
-    "waitIncrementSeconds" : "60"
+    "waitIncrementSeconds" : "60",
+    "custom_attribute": "custom_value"
   },
   "keycloakVersion" : "7.2.0.GA"
 }, {
@@ -1683,6 +1700,12 @@
       "composite" : false,
       "clientRole" : false,
       "containerId" : "Migration2"
+    }, {
+      "id" : "a495da40-f44c-4e28-8f82-75bb5677e597",
+      "name" : "default-roles-migration2",
+      "description" : "${role_default-roles}",
+      "scopeParamRequired" : true,
+      "composite" : false
     } ],
     "client" : {
       "realm-management" : [ {
@@ -3553,7 +3576,7 @@
     "clientRoles" : { },
     "subGroups" : [ ]
   } ],
-  "defaultRoles" : [ "offline_access", "uma_authorization" ],
+  "defaultRoles" : [ "offline_access", "uma_authorization", "master-test-realm-role" ],
   "requiredCredentials" : [ "password" ],
   "otpPolicyType" : "totp",
   "otpPolicyAlgorithm" : "HmacSHA1",
@@ -4266,6 +4289,7 @@
     "enabled" : true,
     "clientAuthenticatorType" : "client-secret",
     "secret" : "932dd4b7-42e8-44d6-9791-651bec2a757b",
+    "defaultRoles" : [ "master-test-client-role" ],
     "redirectUris" : [ ],
     "webOrigins" : [ ],
     "notBefore" : 0,

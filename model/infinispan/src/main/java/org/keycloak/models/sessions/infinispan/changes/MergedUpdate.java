@@ -20,21 +20,29 @@ package org.keycloak.models.sessions.infinispan.changes;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<S> {
+public class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<S> {
 
-    private List<SessionUpdateTask<S>> childUpdates = new LinkedList<>();
+    private static final Logger logger = Logger.getLogger(MergedUpdate.class);
+
+    private final List<SessionUpdateTask<S>> childUpdates = new LinkedList<>();
     private CacheOperation operation;
     private CrossDCMessageStatus crossDCMessageStatus;
+    private final long lifespanMs;
+    private final long maxIdleTimeMs;
 
 
-    private MergedUpdate(CacheOperation operation, CrossDCMessageStatus crossDCMessageStatus) {
+    private MergedUpdate(CacheOperation operation, CrossDCMessageStatus crossDCMessageStatus, long lifespanMs, long maxIdleTimeMs) {
         this.operation = operation;
         this.crossDCMessageStatus = crossDCMessageStatus;
+        this.lifespanMs = lifespanMs;
+        this.maxIdleTimeMs = maxIdleTimeMs;
     }
 
     @Override
@@ -54,8 +62,16 @@ class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<S> {
         return crossDCMessageStatus;
     }
 
+    public long getLifespanMs() {
+        return lifespanMs;
+    }
 
-    public static <S extends SessionEntity> MergedUpdate<S> computeUpdate(List<SessionUpdateTask<S>> childUpdates, SessionEntityWrapper<S> sessionWrapper) {
+    public long getMaxIdleTimeMs() {
+        return maxIdleTimeMs;
+    }
+
+
+    public static <S extends SessionEntity> MergedUpdate<S> computeUpdate(List<SessionUpdateTask<S>> childUpdates, SessionEntityWrapper<S> sessionWrapper, long lifespanMs, long maxIdleTimeMs) {
         if (childUpdates == null || childUpdates.isEmpty()) {
             return null;
         }
@@ -64,14 +80,21 @@ class MergedUpdate<S extends SessionEntity> implements SessionUpdateTask<S> {
         S session = sessionWrapper.getEntity();
         for (SessionUpdateTask<S> child : childUpdates) {
             if (result == null) {
-                result = new MergedUpdate<>(child.getOperation(session), child.getCrossDCMessageStatus(sessionWrapper));
+                CacheOperation operation = child.getOperation(session);
+
+                if (lifespanMs == SessionTimeouts.ENTRY_EXPIRED_FLAG || maxIdleTimeMs == SessionTimeouts.ENTRY_EXPIRED_FLAG) {
+                    operation = CacheOperation.REMOVE;
+                    logger.tracef("Entry '%s' is expired. Will remove it from the cache", sessionWrapper);
+                }
+
+                result = new MergedUpdate<>(operation, child.getCrossDCMessageStatus(sessionWrapper), lifespanMs, maxIdleTimeMs);
                 result.childUpdates.add(child);
             } else {
 
                 // Merge the operations. REMOVE is special case as other operations are not needed then.
                 CacheOperation mergedOp = result.getOperation(session).merge(child.getOperation(session), session);
                 if (mergedOp == CacheOperation.REMOVE) {
-                    result = new MergedUpdate<>(child.getOperation(session), child.getCrossDCMessageStatus(sessionWrapper));
+                    result = new MergedUpdate<>(child.getOperation(session), child.getCrossDCMessageStatus(sessionWrapper), lifespanMs, maxIdleTimeMs);
                     result.childUpdates.add(child);
                     return result;
                 }

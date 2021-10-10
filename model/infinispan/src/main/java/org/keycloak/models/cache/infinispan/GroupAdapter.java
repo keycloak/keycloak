@@ -36,7 +36,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class GroupAdapter implements GroupModel {
+public class GroupAdapter implements GroupModel.Streams {
 
     protected final CachedGroup cached;
     protected final RealmCacheSession cacheSession;
@@ -158,6 +158,13 @@ public class GroupAdapter implements GroupModel {
     public Stream<RoleModel> getClientRoleMappingsStream(ClientModel app) {
         if (isUpdated()) return updated.getClientRoleMappingsStream(app);
         return getRoleMappingsStream().filter(r -> RoleUtils.isClientRole(r, app));
+    }
+
+    @Override
+    public boolean hasDirectRole(RoleModel role) {
+        if (isUpdated()) return updated.hasDirectRole(role);
+
+        return cached.getRoleMappings(modelSupplier).contains(role.getId());
     }
 
     @Override

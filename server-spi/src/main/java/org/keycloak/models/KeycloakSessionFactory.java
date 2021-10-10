@@ -17,6 +17,8 @@
 
 package org.keycloak.models;
 
+import org.keycloak.component.ComponentModel;
+import org.keycloak.provider.InvalidationHandler;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEventManager;
 import org.keycloak.provider.ProviderFactory;
@@ -24,12 +26,16 @@ import org.keycloak.provider.Spi;
 
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface KeycloakSessionFactory extends ProviderEventManager {
+public interface KeycloakSessionFactory extends ProviderEventManager, InvalidationHandler {
+
     KeycloakSession create();
 
     Set<Spi> getSpis();
@@ -40,7 +46,25 @@ public interface KeycloakSessionFactory extends ProviderEventManager {
 
     <T extends Provider> ProviderFactory<T> getProviderFactory(Class<T> clazz, String id);
 
-    List<ProviderFactory> getProviderFactories(Class<? extends Provider> clazz);
+    <T extends Provider> ProviderFactory<T> getProviderFactory(Class<T> clazz, String realmId, String componentId, Function<KeycloakSessionFactory, ComponentModel> modelGetter);
+
+    /**
+     * Returns list of provider factories for the given provider.
+     * @param clazz {@code Class<? extends Provider>}
+     * @return {@code List<ProviderFactory>} List of provider factories
+     * @deprecated Use {@link #getProviderFactoriesStream(Class) getProviderFactoriesStream} instead.
+     */
+    @Deprecated
+    default List<ProviderFactory> getProviderFactories(Class<? extends Provider> clazz) {
+        return getProviderFactoriesStream(clazz).collect(Collectors.toList());
+    }
+
+    /**
+     * Returns stream of provider factories for the given provider.
+     * @param clazz {@code Class<? extends Provider>}
+     * @return {@code Stream<ProviderFactory>} Stream of provider factories. Never returns {@code null}.
+     */
+    Stream<ProviderFactory> getProviderFactoriesStream(Class<? extends Provider> clazz);
     
     long getServerStartupTimestamp();
 

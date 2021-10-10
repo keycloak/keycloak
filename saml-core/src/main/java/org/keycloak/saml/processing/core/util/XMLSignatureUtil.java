@@ -16,6 +16,7 @@
  */
 package org.keycloak.saml.processing.core.util;
 
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.dom.xmlsec.w3.xmldsig.DSAKeyValueType;
 import org.keycloak.dom.xmlsec.w3.xmldsig.KeyValueType;
 import org.keycloak.dom.xmlsec.w3.xmldsig.RSAKeyValueType;
@@ -577,7 +578,7 @@ public class XMLSignatureUtil {
     public static X509Certificate getX509CertificateFromKeyInfoString(String certificateString) throws ProcessingException {
         X509Certificate cert = null;
         StringBuilder builder = new StringBuilder();
-        builder.append("-----BEGIN CERTIFICATE-----\n").append(certificateString).append("\n-----END CERTIFICATE-----");
+        builder.append(PemUtils.BEGIN_CERT + "\n").append(certificateString).append("\n" + PemUtils.END_CERT);
 
         String derFormattedString = builder.toString();
 

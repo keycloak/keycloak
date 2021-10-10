@@ -151,7 +151,7 @@ public class UserCommands {
             int last = first + count;
             for (int counter = first; counter < last; counter++) {
                 String username = usernamePrefix + counter;
-                UserModel user = session.users().getUserByUsername(username, realm);
+                UserModel user = session.users().getUserByUsername(realm, username);
                 if (user == null) {
                     log.errorf("User '%s' not found", username);
                 } else {
@@ -213,7 +213,7 @@ public class UserCommands {
                 return;
             }
 
-            UserModel user = session.users().getUserByUsername(username, realm);
+            UserModel user = session.users().getUserByUsername(realm, username);
             if (user == null) {
                 log.infof("User '%s' doesn't exist in realm '%s'", username, realmName);
             } else {

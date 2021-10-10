@@ -61,6 +61,7 @@ class LiquibaseProcessor {
             } else {
                 classes.addAll(index.getAllKnownSubclasses(DotName.createSimple(c.getName())));
             }
+            filterImplementations(c, classes);
             for (ClassInfo found : classes) {
                 if (Modifier.isAbstract(found.flags()) ||
                         Modifier.isInterface(found.flags()) ||
@@ -82,5 +83,12 @@ class LiquibaseProcessor {
         services.get(SqlGenerator.class.getName()).add(CustomLockDatabaseChangeLogGenerator.class.getName());
 
         recorder.configureLiquibase(services);
+    }
+
+    private void filterImplementations(Class<?> types, Set<ClassInfo> classes) {
+        if (Database.class.equals(types)) {
+            // removes unsupported databases
+            classes.removeIf(classInfo -> !org.keycloak.configuration.Database.isSupported(classInfo.name().toString()));
+        }
     }
 }

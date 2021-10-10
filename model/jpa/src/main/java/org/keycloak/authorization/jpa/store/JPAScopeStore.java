@@ -25,7 +25,6 @@ import java.util.Map;
 import javax.persistence.EntityManager;
 import javax.persistence.FlushModeType;
 import javax.persistence.NoResultException;
-import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -39,6 +38,8 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import javax.persistence.LockModeType;
+
+import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -130,7 +131,7 @@ public class JPAScopeStore implements ScopeStore {
     }
 
     @Override
-    public List<Scope> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+    public List<Scope> findByResourceServer(Map<Scope.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
         CriteriaBuilder builder = entityManager.getCriteriaBuilder();
         CriteriaQuery<ScopeEntity> querybuilder = builder.createQuery(ScopeEntity.class);
         Root<ScopeEntity> root = querybuilder.from(ScopeEntity.class);
@@ -139,26 +140,24 @@ public class JPAScopeStore implements ScopeStore {
 
         predicates.add(builder.equal(root.get("resourceServer").get("id"), resourceServerId));
 
-        attributes.forEach((name, value) -> {
-            if ("id".equals(name)) {
-                predicates.add(root.get(name).in(value));
-            } else {
-                predicates.add(builder.like(builder.lower(root.get(name)), "%" + value[0].toLowerCase() + "%"));
+        attributes.forEach((filterOption, value) -> {
+            switch (filterOption) {
+                case ID:
+                    predicates.add(root.get(filterOption.getName()).in(value));
+                    break;
+                case NAME:
+                    predicates.add(builder.like(builder.lower(root.get(filterOption.getName())), "%" + value[0].toLowerCase() + "%"));
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unsupported filter [" + filterOption + "]");
             }
         });
 
         querybuilder.where(predicates.toArray(new Predicate[predicates.size()])).orderBy(builder.asc(root.get("name")));
 
-        Query query = entityManager.createQuery(querybuilder);
+        TypedQuery query = entityManager.createQuery(querybuilder);
 
-        if (firstResult != -1) {
-            query.setFirstResult(firstResult);
-        }
-        if (maxResult != -1) {
-            query.setMaxResults(maxResult);
-        }
-
-        List result = query.getResultList();
+        List result = paginateQuery(query, firstResult, maxResult).getResultList();
         List<Scope> list = new LinkedList<>();
         for (Object id : result) {
             list.add(provider.getStoreFactory().getScopeStore().findById((String)id, resourceServerId));

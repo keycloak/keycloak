@@ -25,6 +25,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
 import javax.persistence.EntityManager;
+import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_ID;
+import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_PRIORITY;
 
 public class JpaRoleProviderFactory implements RoleProviderFactory {
 
@@ -38,17 +40,22 @@ public class JpaRoleProviderFactory implements RoleProviderFactory {
 
     @Override
     public String getId() {
-        return "jpa";
+        return PROVIDER_ID;
     }
 
     @Override
     public RoleProvider create(KeycloakSession session) {
         EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-        return new JpaRealmProvider(session, em);
+        return new JpaRealmProvider(session, em, null);
     }
 
     @Override
     public void close() {
+    }
+
+    @Override
+    public int order() {
+        return PROVIDER_PRIORITY;
     }
 
 }

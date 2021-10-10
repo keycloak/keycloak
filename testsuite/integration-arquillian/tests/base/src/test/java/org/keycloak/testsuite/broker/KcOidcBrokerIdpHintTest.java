@@ -38,10 +38,10 @@ public class KcOidcBrokerIdpHintTest extends AbstractInitializedBaseBrokerTest {
     @Test
     public void testSuccessfulRedirect() {
         driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
         String url = driver.getCurrentUrl() + "&kc_idp_hint=" + bc.getIDPAlias();
         driver.navigate().to(url);
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
         Assert.assertTrue("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
 
@@ -56,23 +56,23 @@ public class KcOidcBrokerIdpHintTest extends AbstractInitializedBaseBrokerTest {
     @Test
     public void testSuccessfulRedirectToProviderAfterLoginPageShown() {
         driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
         
         String urlWithHint = driver.getCurrentUrl() + "&kc_idp_hint=" + bc.getIDPAlias();        
         driver.navigate().to(urlWithHint);
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
         Assert.assertTrue("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
         
         // do the same thing a second time
         driver.navigate().to(urlWithHint);
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
         Assert.assertTrue("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
         
         // redirect shouldn't happen
         driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
         Assert.assertTrue("Driver should be on the consumer realm page",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
     }
@@ -80,10 +80,10 @@ public class KcOidcBrokerIdpHintTest extends AbstractInitializedBaseBrokerTest {
         @Test
     public void testInvalidIdentityProviderHint() {
         driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
         String url = driver.getCurrentUrl() + "&kc_idp_hint=bogus-idp";
         driver.navigate().to(url);
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
         
         // Still on consumer login page
         Assert.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));

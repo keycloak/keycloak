@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 import javax.ws.rs.core.Response;
@@ -44,6 +45,7 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -83,7 +85,7 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
                     .redirectUris("http://localhost/resource-server-test")
                     .defaultRoles("uma_protection")
                     .directAccessGrants()
-                    .pairwise("http://pairwise.com"))
+                    .pairwise(TestApplicationResourceUrls.pairwiseSectorIdentifierUri()))
                 .client(ClientBuilder.create().clientId(TEST_CLIENT)
                     .secret("secret")
                     .authorizationServicesEnabled(true)
@@ -95,6 +97,8 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
                         .redirectUris("http://localhost/test-client")
                         .directAccessGrants())
                 .build());
+
+        testingClient.testApp().oidcClientEndpoints().setSectorIdentifierRedirectUris(Collections.singletonList("http://localhost/resource-server-test"));
     }
 
     @Before

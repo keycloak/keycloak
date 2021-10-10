@@ -8,12 +8,14 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.Urls;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.ClientManager;
@@ -35,6 +37,7 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
     private static final String SERVLET_URL = BASE_URL + "/TokenServlet";
 
@@ -71,7 +74,7 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
         String accessTokenId = tokenPage.getAccessToken().getId();
         String refreshTokenId = tokenPage.getRefreshToken().getId();
 
-        setAdapterAndServerTimeOffset(9999, SERVLET_URL);
+        setAdapterAndServerTimeOffset(19999, SERVLET_URL);
 
         driver.navigate().to(SERVLET_URL);
         waitForPageToLoad();
@@ -134,12 +137,16 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
                 .client("account").detail(Details.REVOKED_CLIENT, CLIENT_ID).assertEvent();
 
         // Assert refresh doesn't work now (increase time one more time)
-        setAdapterAndServerTimeOffset(9999, SERVLET_URL);
+        setAdapterAndServerTimeOffset(19999, SERVLET_URL);
         driver.navigate().to(SERVLET_URL);
         waitForPageToLoad();
 
         assertCurrentUrlStartsWith(testRealmLoginPage);
+        testRealmLoginPage.form().login(USER_LOGIN, USER_PASSWORD);
+        tokenPage.assertIsCurrent();
+
         setAdapterAndServerTimeOffset(0, SERVLET_URL);
+        driver.navigate().to(logoutPage(SERVLET_URL));
     }
 
     @Test

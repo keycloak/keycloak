@@ -29,7 +29,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 /**
- * Available in secured requests under HttpServlerRequest.getAttribute()
+ * Available in secured requests under HttpServletRequest.getAttribute()
  * Also available in HttpSession.getAttribute under the classname of this class
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

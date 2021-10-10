@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import org.infinispan.commons.marshall.Externalizer;
 import org.infinispan.commons.marshall.MarshallUtil;
@@ -59,6 +60,20 @@ public class ResourceRemovedEvent extends InvalidationEvent implements Authoriza
     @Override
     public String getId() {
         return id;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        ResourceRemovedEvent that = (ResourceRemovedEvent) o;
+        return Objects.equals(id, that.id) && Objects.equals(name, that.name) && Objects.equals(owner, that.owner) && Objects.equals(serverId, that.serverId) && Objects.equals(type, that.type);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), id, name, owner, serverId, type);
     }
 
     @Override

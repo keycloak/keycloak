@@ -22,12 +22,13 @@ import static org.keycloak.util.JsonSerialization.readValue;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.ws.rs.BadRequestException;
@@ -56,6 +57,7 @@ import org.keycloak.KeyPairVerifier;
 import org.keycloak.authentication.CredentialRegistrator;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.email.EmailTemplateProvider;
@@ -90,7 +92,6 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.partialimport.PartialImportManager;
 import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -113,6 +114,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
+import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.ReservedCharValidator;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -164,13 +166,12 @@ public class RealmAdminResource {
             throw new NotFoundException("Realm not found.");
         }
 
-        for (ProviderFactory<ClientDescriptionConverter> factory : session.getKeycloakSessionFactory().getProviderFactories(ClientDescriptionConverter.class)) {
-            if (((ClientDescriptionConverterFactory) factory).isSupported(description)) {
-                return factory.create(session).convertToInternal(description);
-            }
-        }
-
-        throw new BadRequestException("Unsupported format");
+        return session.getKeycloakSessionFactory().getProviderFactoriesStream(ClientDescriptionConverter.class)
+                .map(ClientDescriptionConverterFactory.class::cast)
+                .filter(factory -> factory.isSupported(description))
+                .map(factory -> factory.create(session).convertToInternal(description))
+                .findFirst()
+                .orElseThrow(() -> new BadRequestException("Unsupported format"));
     }
 
     /**
@@ -220,6 +221,15 @@ public class RealmAdminResource {
         return clientScopesResource;
     }
 
+    /**
+     * Base path for managing localization under this realm.
+     */
+    @Path("localization")
+    public RealmLocalizationResource getLocalization() {
+        RealmLocalizationResource resource = new RealmLocalizationResource(realm, auth);
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+        return resource;
+    }
 
     /**
      * Get realm default client scopes.  Only name and ids are returned.
@@ -241,6 +251,7 @@ public class RealmAdminResource {
             ClientScopeRepresentation rep = new ClientScopeRepresentation();
             rep.setId(clientScope.getId());
             rep.setName(clientScope.getName());
+            rep.setProtocol(clientScope.getProtocol());
             return rep;
         });
     }
@@ -362,7 +373,7 @@ public class RealmAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     public RealmRepresentation getRealm() {
         if (auth.realm().canViewRealm()) {
-            return ModelToRepresentation.toRepresentation(realm, false);
+            return ModelToRepresentation.toRepresentation(session, realm, false);
         } else {
             auth.realm().requireViewRealmNameList();
 
@@ -370,7 +381,7 @@ public class RealmAdminResource {
             rep.setRealm(realm.getName());
 
             if (auth.realm().canViewIdentityProviders()) {
-                RealmRepresentation r = ModelToRepresentation.toRepresentation(realm, false);
+                RealmRepresentation r = ModelToRepresentation.toRepresentation(session, realm, false);
                 rep.setIdentityProviders(r.getIdentityProviders());
                 rep.setIdentityProviderMappers(r.getIdentityProviderMappers());
             }
@@ -400,6 +411,7 @@ public class RealmAdminResource {
         }
         
         ReservedCharValidator.validate(rep.getRealm());
+        ReservedCharValidator.validateLocales(rep.getSupportedLocales());
 
         try {
             if (!Constants.GENERATE.equals(rep.getPublicKey()) && (rep.getPrivateKey() != null && rep.getPublicKey() != null)) {
@@ -428,6 +440,9 @@ public class RealmAdminResource {
             UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
             realm.getUserStorageProvidersStream().forEachOrdered(fedProvider ->
                     usersSyncManager.notifyToRefreshPeriodicSync(session, realm, fedProvider, false));
+
+            // This populates the map in DefaultKeycloakContext to be used when treating the event
+            session.getContext().getUri();
 
             adminEvent.operation(OperationType.UPDATE).representation(StripSecretsUtils.strip(rep)).success();
             
@@ -662,12 +677,11 @@ public class RealmAdminResource {
 
         RealmEventsConfigRepresentation config = ModelToRepresentation.toEventsConfigReprensetation(realm);
         if (config.getEnabledEventTypes() == null || config.getEnabledEventTypes().isEmpty()) {
-            config.setEnabledEventTypes(new LinkedList<String>());
-            for (EventType e : EventType.values()) {
-                if (e.isSaveByDefault()) {
-                    config.getEnabledEventTypes().add(e.name());
-                }
-            }
+            List<String> eventTypes = Arrays.stream(EventType.values())
+                    .filter(EventType::isSaveByDefault)
+                    .map(EventType::name)
+                    .collect(Collectors.toList());
+            config.setEnabledEventTypes(eventTypes);
         }
         return config;
     }
@@ -1190,9 +1204,24 @@ public class RealmAdminResource {
     public Stream<String> getCredentialRegistrators(){
         auth.realm().requireViewRealm();
         return session.getContext().getRealm().getRequiredActionProvidersStream()
-                .filter(ra -> ra.isEnabled())
+                .filter(RequiredActionProviderModel::isEnabled)
                 .map(RequiredActionProviderModel::getProviderId)
                 .filter(providerId ->  session.getProvider(RequiredActionProvider.class, providerId) instanceof CredentialRegistrator);
     }
 
+    @Path("client-policies/policies")
+    public ClientPoliciesResource getClientPoliciesResource() {
+        ProfileHelper.requireFeature(Profile.Feature.CLIENT_POLICIES);
+        ClientPoliciesResource resource = new ClientPoliciesResource(realm, auth);
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+        return resource;
+    }
+
+    @Path("client-policies/profiles")
+    public ClientProfilesResource getClientProfilesResource() {
+        ProfileHelper.requireFeature(Profile.Feature.CLIENT_POLICIES);
+        ClientProfilesResource resource = new ClientProfilesResource(realm, auth);
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+        return resource;
+    }
 }

@@ -171,8 +171,11 @@ public class UserStorageSyncManager {
             return;
 
         }
-        UserStorageProviderClusterEvent event = UserStorageProviderClusterEvent.createEvent(removed, realm.getId(), provider);
-        session.getProvider(ClusterProvider.class).notify(USER_STORAGE_TASK_KEY, event, false, ClusterProvider.DCNotify.ALL_DCS);
+        final ClusterProvider cp = session.getProvider(ClusterProvider.class);
+        if (cp != null) {
+            UserStorageProviderClusterEvent event = UserStorageProviderClusterEvent.createEvent(removed, realm.getId(), provider);
+            cp.notify(USER_STORAGE_TASK_KEY, event, false, ClusterProvider.DCNotify.ALL_DCS);
+        }
     }
 
 
@@ -336,6 +339,19 @@ public class UserStorageSyncManager {
             notification.setRealmId(realmId);
             notification.setStorageProvider(provider);
             return notification;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            UserStorageProviderClusterEvent that = (UserStorageProviderClusterEvent) o;
+            return removed == that.removed && Objects.equals(realmId, that.realmId) && Objects.equals(storageProvider.getId(), that.storageProvider.getId());
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(removed, realmId, storageProvider.getId());
         }
     }
 

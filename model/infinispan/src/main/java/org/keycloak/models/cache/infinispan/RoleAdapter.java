@@ -25,7 +25,6 @@ import org.keycloak.models.cache.infinispan.entities.CachedRealmRole;
 import org.keycloak.models.cache.infinispan.entities.CachedRole;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -145,6 +144,13 @@ public class RoleAdapter implements RoleModel {
     }
 
     @Override
+    public Stream<RoleModel> getCompositesStream(String search, Integer first, Integer max) {
+        if (isUpdated()) return updated.getCompositesStream(search, first, max);
+
+        return cacheSession.getRoleDelegate().getRolesStream(realm, cached.getComposites().stream(), search, first, max);
+    }
+
+    @Override
     public boolean isClientRole() {
         return cached instanceof CachedClientRole;
     }
@@ -182,7 +188,7 @@ public class RoleAdapter implements RoleModel {
     }
 
     @Override
-    public void setAttribute(String name, Collection<String> values) {
+    public void setAttribute(String name, List<String> values) {
         getDelegateForUpdate();
         updated.setAttribute(name, values);
     }

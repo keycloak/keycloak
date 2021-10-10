@@ -30,7 +30,9 @@ import org.keycloak.forms.login.freemarker.model.AuthenticationContextBean;
 import org.keycloak.forms.login.freemarker.model.ClientBean;
 import org.keycloak.forms.login.freemarker.model.CodeBean;
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
+import org.keycloak.forms.login.freemarker.model.IdpReviewProfileBean;
 import org.keycloak.forms.login.freemarker.model.LoginBean;
+import org.keycloak.forms.login.freemarker.model.FrontChannelLogoutBean;
 import org.keycloak.forms.login.freemarker.model.OAuthGrantBean;
 import org.keycloak.forms.login.freemarker.model.ProfileBean;
 import org.keycloak.forms.login.freemarker.model.RealmBean;
@@ -40,6 +42,7 @@ import org.keycloak.forms.login.freemarker.model.SAMLPostFormBean;
 import org.keycloak.forms.login.freemarker.model.TotpBean;
 import org.keycloak.forms.login.freemarker.model.TotpLoginBean;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
+import org.keycloak.forms.login.freemarker.model.VerifyProfileBean;
 import org.keycloak.forms.login.freemarker.model.X509ConfirmBean;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -62,6 +65,8 @@ import org.keycloak.theme.beans.MessageBean;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.theme.beans.MessageType;
 import org.keycloak.theme.beans.MessagesPerFieldBean;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -148,16 +153,27 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 this.attributes.put(UPDATE_PROFILE_CONTEXT_ATTR, userBasedContext);
 
                 actionMessage = Messages.UPDATE_PROFILE;
-                page = LoginFormsPages.LOGIN_UPDATE_PROFILE;
+                if(isDynamicUserProfile()) {
+                    page = LoginFormsPages.UPDATE_USER_PROFILE;
+                } else {
+                    page = LoginFormsPages.LOGIN_UPDATE_PROFILE;
+                }
                 break;
             case UPDATE_PASSWORD:
-                boolean isRequestedByAdmin = user.getRequiredActions().stream().filter(Objects::nonNull).anyMatch(UPDATE_PASSWORD.toString()::contains);
+                boolean isRequestedByAdmin = user.getRequiredActionsStream().filter(Objects::nonNull).anyMatch(UPDATE_PASSWORD.toString()::contains);
                 actionMessage = isRequestedByAdmin ? Messages.UPDATE_PASSWORD : Messages.RESET_PASSWORD;
                 page = LoginFormsPages.LOGIN_UPDATE_PASSWORD;
                 break;
             case VERIFY_EMAIL:
                 actionMessage = Messages.VERIFY_EMAIL;
                 page = LoginFormsPages.LOGIN_VERIFY_EMAIL;
+                break;
+            case VERIFY_PROFILE:
+                UpdateProfileContext verifyProfile = new UserUpdateProfileContext(realm, user);
+                this.attributes.put(UPDATE_PROFILE_CONTEXT_ATTR, verifyProfile);
+
+                actionMessage = Messages.UPDATE_PROFILE;
+                page = LoginFormsPages.UPDATE_USER_PROFILE;
                 break;
             default:
                 return Response.serverError().build();
@@ -172,6 +188,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     @SuppressWarnings("incomplete-switch")
     protected Response createResponse(LoginFormsPages page) {
+
         Theme theme;
         try {
             theme = getTheme();
@@ -207,20 +224,31 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 BrokeredIdentityContext brokerContext = (BrokeredIdentityContext) this.attributes.get(IDENTITY_PROVIDER_BROKER_CONTEXT);
                 String idpAlias = brokerContext.getIdpConfig().getAlias();
                 idpAlias = ObjectUtil.capitalize(idpAlias);
+                String displayName = idpAlias;
+                if (!ObjectUtil.isBlank(brokerContext.getIdpConfig().getDisplayName())) {
+                    displayName = brokerContext.getIdpConfig().getDisplayName();
+                }
 
                 attributes.put("brokerContext", brokerContext);
                 attributes.put("idpAlias", idpAlias);
+                attributes.put("idpDisplayName", displayName);
                 break;
             case LOGIN_TOTP:
                 attributes.put("otpLogin", new TotpLoginBean(session, realm, user, (String) this.attributes.get(OTPFormAuthenticator.SELECTED_OTP_CREDENTIAL_ID)));
                 break;
             case REGISTER:
-                attributes.put("register", new RegisterBean(formData));
+                if(isDynamicUserProfile()) {
+                    page = LoginFormsPages.REGISTER_USER_PROFILE;
+                }
+                RegisterBean rb = new RegisterBean(formData,session);
+                //legacy bean for static template
+                attributes.put("register", rb);
+                //bean for dynamic template
+                attributes.put("profile", rb);
                 break;
             case OAUTH_GRANT:
                 attributes.put("oauth",
                         new OAuthGrantBean(accessCode, client, clientScopesRequested));
-                attributes.put("advancedMsg", new AdvancedMessageFormatterMethod(locale, messagesBundle));
                 break;
             case CODE:
                 attributes.put(OAuth2Constants.CODE, new CodeBean(accessCode, messageType == MessageType.ERROR ? getFirstMessageUnformatted() : null));
@@ -231,11 +259,25 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             case SAML_POST_FORM:
                 attributes.put("samlPost", new SAMLPostFormBean(formData));
                 break;
+            case UPDATE_USER_PROFILE:
+                attributes.put("profile", new VerifyProfileBean(user, formData, session));
+                break;
+            case IDP_REVIEW_USER_PROFILE:
+                UpdateProfileContext idpCtx = (UpdateProfileContext) attributes.get(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR);
+                attributes.put("profile", new IdpReviewProfileBean(idpCtx, formData, session));
+                break;
+            case FRONTCHANNEL_LOGOUT:
+                attributes.put("logout", new FrontChannelLogoutBean(session));
+                break;
         }
 
         return processTemplate(theme, Templates.getTemplate(page), locale);
     }
     
+    private boolean isDynamicUserProfile() {
+        return session.getProvider(UserProfileProvider.class).getConfiguration() != null;
+    }
+
     @Override
     public Response createForm(String form) {
         Theme theme;
@@ -297,10 +339,12 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
      * @return message bundle for other use
      */
     protected Properties handleThemeResources(Theme theme, Locale locale) {
-        Properties messagesBundle;
+        Properties messagesBundle = new Properties();
         try {
-            messagesBundle = theme.getMessages(locale);
+            messagesBundle.putAll(theme.getMessages(locale));
+            messagesBundle.putAll(realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag()));
             attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
+            attributes.put("advancedMsg", new AdvancedMessageFormatterMethod(locale, messagesBundle));
         } catch (IOException e) {
             logger.warn("Failed to load messages", e);
             messagesBundle = new Properties();
@@ -353,6 +397,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         Locale locale = session.getContext().resolveLocale(user);
         Properties messagesBundle = handleThemeResources(theme, locale);
+        Map<String, String> localizationTexts = realm.getRealmLocalizationTextsByLocale(locale.getCountry());
+        messagesBundle.putAll(localizationTexts);
         FormMessage msg = new FormMessage(null, message);
         return formatMessage(msg, messagesBundle, locale);
     }
@@ -369,6 +415,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         Locale locale = session.getContext().resolveLocale(user);
         Properties messagesBundle = handleThemeResources(theme, locale);
+        Map<String, String> localizationTexts = realm.getRealmLocalizationTextsByLocale(locale.getCountry());
+        messagesBundle.putAll(localizationTexts);
         FormMessage msg = new FormMessage(message, (Object[]) parameters);
         return formatMessage(msg, messagesBundle, locale);
     }
@@ -516,7 +564,15 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             setMessage(MessageType.WARNING, Messages.UPDATE_PROFILE);
         }
 
-        return createResponse(LoginFormsPages.LOGIN_UPDATE_PROFILE);
+        if(isDynamicUserProfile()) {
+            UpdateProfileContext userCtx = (UpdateProfileContext) attributes.get(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR);
+            if(userCtx != null && userCtx.getUserProfileContext() == UserProfileContext.IDP_REVIEW)
+                return createResponse(LoginFormsPages.IDP_REVIEW_USER_PROFILE);
+            else
+                return createResponse(LoginFormsPages.UPDATE_USER_PROFILE);
+        } else {
+            return createResponse(LoginFormsPages.LOGIN_UPDATE_PROFILE);
+        }
     }
 
     @Override
@@ -534,7 +590,12 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         BrokeredIdentityContext brokerContext = (BrokeredIdentityContext) this.attributes.get(IDENTITY_PROVIDER_BROKER_CONTEXT);
         String idpAlias = brokerContext.getIdpConfig().getAlias();
         idpAlias = ObjectUtil.capitalize(idpAlias);
-        setMessage(MessageType.WARNING, Messages.LINK_IDP, idpAlias);
+        String displayName = idpAlias;
+        if (!ObjectUtil.isBlank(brokerContext.getIdpConfig().getDisplayName())) {
+            displayName = brokerContext.getIdpConfig().getDisplayName();
+        }
+
+        setMessage(MessageType.WARNING, Messages.LINK_IDP, displayName);
 
         return createResponse(LoginFormsPages.LOGIN_IDP_LINK_EMAIL);
     }
@@ -555,9 +616,13 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         return createResponse(LoginFormsPages.OAUTH_GRANT);
     }
 
-    @Override
     public Response createSelectAuthenticator() {
         return createResponse(LoginFormsPages.LOGIN_SELECT_AUTHENTICATOR);
+    }
+
+    @Override
+    public Response createOAuth2DeviceVerifyUserCodePage() {
+        return createResponse(LoginFormsPages.LOGIN_OAUTH2_DEVICE_VERIFY_USER_CODE);
     }
 
     @Override
@@ -573,6 +638,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     @Override
     public Response createSamlPostForm() {
         return createResponse(LoginFormsPages.SAML_POST_FORM);
+    }
+
+    @Override
+    public Response createFrontChannelLogoutPage() {
+        return createResponse(LoginFormsPages.FRONTCHANNEL_LOGOUT);
     }
 
     protected void setMessage(MessageType type, String message, Object... parameters) {

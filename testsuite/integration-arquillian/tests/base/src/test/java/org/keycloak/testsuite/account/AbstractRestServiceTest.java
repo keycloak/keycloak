@@ -38,7 +38,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -48,7 +47,6 @@ import javax.ws.rs.core.UriBuilder;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@EnableFeature(value = ACCOUNT_API, skipRestart = true)
 public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
@@ -105,6 +103,13 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
                 .directAccessGrants()
                 .secret("secret1").build();
         testRealm.getClients().add(offlineApp);
+
+        org.keycloak.representations.idm.ClientRepresentation offlineApp2 = ClientBuilder.create().clientId("offline-client-without-base-url")
+                .id(KeycloakModelUtils.generateId())
+                .name("Offline Client Without Base URL")
+                .directAccessGrants()
+                .secret("secret1").build();
+        testRealm.getClients().add(offlineApp2);
 
         org.keycloak.representations.idm.ClientRepresentation alwaysDisplayApp = ClientBuilder.create().clientId("always-display-client")
                 .id(KeycloakModelUtils.generateId())

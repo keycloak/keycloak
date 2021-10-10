@@ -26,6 +26,7 @@ import org.keycloak.models.UserModel;
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.OtpDecision.ABSTAIN;
@@ -189,15 +190,12 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
             return ABSTAIN;
         }
 
-        List<String> values = user.getAttribute(attributeName);
-
-        if (values.isEmpty()) {
+        Optional<String> value = user.getAttributeStream(attributeName).findFirst();
+        if (!value.isPresent()) {
             return ABSTAIN;
         }
 
-        String value = values.get(0).trim();
-
-        switch (value) {
+        switch (value.get().trim()) {
             case SKIP:
                 return SKIP_OTP;
             case FORCE:
@@ -326,7 +324,7 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
     public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
         if (!isOTPRequired(session, realm, user)) {
             user.removeRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
-        } else if (!user.getRequiredActions().contains(UserModel.RequiredAction.CONFIGURE_TOTP.name())) {
+        } else if (user.getRequiredActionsStream().noneMatch(UserModel.RequiredAction.CONFIGURE_TOTP.name()::equals)) {
             user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.name());
         }
     }

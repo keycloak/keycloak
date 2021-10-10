@@ -18,20 +18,19 @@
 package org.keycloak.protocol.oidc;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.Urls;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.IOException;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -56,7 +55,17 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
             if (accessToken != null) {
                 tokenMetadata = JsonSerialization.createObjectNode(accessToken);
                 tokenMetadata.put("client_id", accessToken.getIssuedFor());
-                tokenMetadata.put("username", accessToken.getPreferredUsername());
+
+                if (!tokenMetadata.has("username")) {
+                    if (accessToken.getPreferredUsername() != null) {
+                        tokenMetadata.put("username", accessToken.getPreferredUsername());
+                    } else {
+                        UserModel userModel = session.users().getUserById(realm, accessToken.getSubject());
+                        if (userModel != null) {
+                            tokenMetadata.put("username", userModel.getUsername());
+                        }
+                    }
+                }
             } else {
                 tokenMetadata = JsonSerialization.createObjectNode();
             }
@@ -69,7 +78,7 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
         }
     }
 
-    protected AccessToken verifyAccessToken(String token) throws OAuthErrorException, IOException {
+    protected AccessToken verifyAccessToken(String token) {
         AccessToken accessToken;
 
         try {
@@ -86,7 +95,7 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
 
         RealmModel realm = this.session.getContext().getRealm();
 
-        return tokenManager.checkTokenValidForIntrospection(session, realm, accessToken) ? accessToken : null;
+        return tokenManager.checkTokenValidForIntrospection(session, realm, accessToken, false) ? accessToken : null;
     }
 
     @Override

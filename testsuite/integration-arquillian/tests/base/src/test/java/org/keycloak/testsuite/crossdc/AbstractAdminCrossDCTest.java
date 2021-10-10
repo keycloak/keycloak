@@ -21,7 +21,7 @@ import org.keycloak.events.log.JBossLoggingEventListenerProviderFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.arquillian.InfinispanStatistics;
-import org.keycloak.testsuite.events.EventsListenerProviderFactory;
+import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 import org.keycloak.testsuite.util.TestCleanup;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -73,7 +73,7 @@ public abstract class AbstractAdminCrossDCTest extends AbstractCrossDCTest {
 
         List<String> eventListeners = new ArrayList<>();
         eventListeners.add(JBossLoggingEventListenerProviderFactory.ID);
-        eventListeners.add(EventsListenerProviderFactory.PROVIDER_ID);
+        eventListeners.add(TestEventsListenerProviderFactory.PROVIDER_ID);
         adminRealmRep.setEventsListeners(eventListeners);
 
         testRealms.add(adminRealmRep);

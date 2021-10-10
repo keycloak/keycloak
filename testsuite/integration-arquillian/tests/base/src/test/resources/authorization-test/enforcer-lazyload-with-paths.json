@@ -1,0 +1,19 @@
+{
+  "realm": "authz-test",
+  "auth-server-url": "http://localhost:8180/auth",
+  "ssl-required": "external",
+  "resource": "resource-server-test",
+  "credentials": {
+    "secret": "secret"
+  },
+  "bearer-only": true,
+  "policy-enforcer": {
+    "lazy-load-paths": true,
+    "paths": [
+      {
+        "path": "/disabled",
+        "enforcement-mode": "DISABLED"
+      }
+    ]
+  }
+}

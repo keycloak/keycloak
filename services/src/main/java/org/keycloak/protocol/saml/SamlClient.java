@@ -20,6 +20,7 @@ package org.keycloak.protocol.saml;
 import org.jboss.logging.Logger;
 import org.keycloak.models.ClientConfigResolver;
 import org.keycloak.models.ClientModel;
+import org.keycloak.protocol.saml.util.ArtifactBindingUtils;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
@@ -117,6 +118,14 @@ public class SamlClient extends ClientConfigResolver {
 
     public void setForceNameIDFormat(boolean val) {
         client.setAttribute(SamlConfigAttributes.SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE, Boolean.toString(val));
+    }
+
+    public boolean forceArtifactBinding(){
+        return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_ARTIFACT_BINDING));
+    }
+
+    public void setForceArtifactBinding(boolean val) {
+        client.setAttribute(SamlConfigAttributes.SAML_ARTIFACT_BINDING, Boolean.toString(val));
     }
 
     public boolean requiresRealmSignature() {
@@ -249,5 +258,13 @@ public class SamlClient extends ClientConfigResolver {
             logger.warnf("Invalid numeric value for saml attribute \"%s\": %s", SamlConfigAttributes.SAML_ASSERTION_LIFESPAN, value);
             return -1;
         }
+    }
+
+    public void setArtifactBindingIdentifierFrom(String identifierFrom) {
+        client.setAttribute(SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER, ArtifactBindingUtils.computeArtifactBindingIdentifierString(identifierFrom));
+    }
+
+    public String getArtifactBindingIdentifier() {
+        return client.getAttribute(SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER);
     }
 }

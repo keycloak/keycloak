@@ -417,7 +417,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         assertEquals(200, response.getStatusCode());
         Assert.assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
         Assert.assertThat(response.getRefreshExpiresIn(), allOf(greaterThanOrEqualTo(1750), lessThanOrEqualTo(1800)));
-        assertEquals("bearer", response.getTokenType());
+        assertEquals("Bearer", response.getTokenType());
 
         String expectedKid = oauth.doCertsRequest("test").getKeys()[0].getKeyId();
 
@@ -485,7 +485,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         Assert.assertNotEquals(token.getId(), refreshedToken.getId());
         Assert.assertNotEquals(refreshToken.getId(), refreshedRefreshToken.getId());
 
-        assertEquals("bearer", refreshResponse.getTokenType());
+        assertEquals("Bearer", refreshResponse.getTokenType());
 
         assertEquals(findUserByUsername(adminClient.realm("test"), "test-user@localhost").getId(), refreshedToken.getSubject());
         Assert.assertNotEquals("test-user@localhost", refreshedToken.getSubject());

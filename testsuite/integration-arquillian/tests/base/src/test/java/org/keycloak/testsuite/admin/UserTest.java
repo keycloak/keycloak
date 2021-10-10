@@ -32,6 +32,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.ObjectUtil;
@@ -39,6 +40,7 @@ import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
@@ -59,6 +61,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.page.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -82,6 +85,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 import javax.mail.internet.MimeMessage;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
@@ -97,6 +101,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -105,10 +111,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.Assert.assertNames;
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
+
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
@@ -354,6 +361,7 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void updateUserWithHashedCredentials() {
         String userId = createUser("user_hashed_creds", "user_hashed_creds@localhost");
 
@@ -373,7 +381,7 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(accountUrl);
 
-        assertEquals("Log In", PageUtils.getPageTitle(driver));
+        assertEquals("Sign in to your account", PageUtils.getPageTitle(driver));
 
         loginPage.login("user_hashed_creds", "admin");
 
@@ -719,6 +727,130 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    public void searchByIdp() {
+        // Add user without IDP
+        createUser();
+
+        // add sample Identity Providers
+        final String identityProviderAlias1 = "identity-provider-alias1";
+        addSampleIdentityProvider(identityProviderAlias1, 0);
+        final String identityProviderAlias2 = "identity-provider-alias2";
+        addSampleIdentityProvider(identityProviderAlias2, 1);
+
+        final String commonIdpUserId = "commonIdpUserId";
+
+        // create first IDP1 User with link
+        final String idp1User1Username = "idp1user1";
+        final String idp1User1KeycloakId = createUser(idp1User1Username, "idp1user1@localhost");
+        final String idp1User1UserId = "idp1user1Id";
+        FederatedIdentityRepresentation link1_1 = new FederatedIdentityRepresentation();
+        link1_1.setUserId(idp1User1UserId);
+        link1_1.setUserName(idp1User1Username);
+        addFederatedIdentity(idp1User1KeycloakId, identityProviderAlias1, link1_1);
+
+        // create second IDP1 User with link
+        final String idp1User2Username = "idp1user2";
+        final String idp1User2KeycloakId = createUser(idp1User2Username, "idp1user2@localhost");
+        FederatedIdentityRepresentation link1_2 = new FederatedIdentityRepresentation();
+        link1_2.setUserId(commonIdpUserId);
+        link1_2.setUserName(idp1User2Username);
+        addFederatedIdentity(idp1User2KeycloakId, identityProviderAlias1, link1_2);
+
+        // create IDP2 user with link
+        final String idp2UserUsername = "idp2user";
+        final String idp2UserKeycloakId = createUser(idp2UserUsername, "idp2user@localhost");
+        FederatedIdentityRepresentation link2 = new FederatedIdentityRepresentation();
+        link2.setUserId(commonIdpUserId);
+        link2.setUserName(idp2UserUsername);
+        addFederatedIdentity(idp2UserKeycloakId, identityProviderAlias2, link2);
+
+        // run search tests
+        List<UserRepresentation> searchForAllUsers =
+                realm.users().search(null, null, null, null, null, null, null, null, null, null, null);
+        assertEquals(4, searchForAllUsers.size());
+
+        List<UserRepresentation> searchByIdpAlias =
+                realm.users().search(null, null, null, null, null, identityProviderAlias1, null, null, null, null,
+                        null);
+        assertEquals(2, searchByIdpAlias.size());
+        assertEquals(idp1User1Username, searchByIdpAlias.get(0).getUsername());
+        assertEquals(idp1User2Username, searchByIdpAlias.get(1).getUsername());
+
+        List<UserRepresentation> searchByIdpUserId =
+                realm.users().search(null, null, null, null, null, null, commonIdpUserId, null, null, null, null);
+        assertEquals(2, searchByIdpUserId.size());
+        assertEquals(idp1User2Username, searchByIdpUserId.get(0).getUsername());
+        assertEquals(idp2UserUsername, searchByIdpUserId.get(1).getUsername());
+
+        List<UserRepresentation> searchByIdpAliasAndUserId =
+                realm.users().search(null, null, null, null, null, identityProviderAlias1, idp1User1UserId, null, null,
+                        null,
+                        null);
+        assertEquals(1, searchByIdpAliasAndUserId.size());
+        assertEquals(idp1User1Username, searchByIdpAliasAndUserId.get(0).getUsername());
+    }
+
+    private void addFederatedIdentity(String keycloakUserId, String identityProviderAlias1,
+            FederatedIdentityRepresentation link) {
+        Response response1 = realm.users().get(keycloakUserId).addFederatedIdentity(identityProviderAlias1, link);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE,
+                AdminEventPaths.userFederatedIdentityLink(keycloakUserId, identityProviderAlias1), link,
+                ResourceType.USER);
+        assertEquals(204, response1.getStatus());
+    }
+
+    @Test
+    public void searchByIdpAndEnabled() {
+        // add sample Identity Provider
+        final String identityProviderAlias = "identity-provider-alias";
+        addSampleIdentityProvider(identityProviderAlias, 0);
+
+        // add disabled user with IDP link
+        UserRepresentation disabledUser = new UserRepresentation();
+        final String disabledUsername = "disabled_username";
+        disabledUser.setUsername(disabledUsername);
+        disabledUser.setEmail("disabled@localhost");
+        disabledUser.setEnabled(false);
+        final String disabledUserKeycloakId = createUser(disabledUser);
+        FederatedIdentityRepresentation disabledUserLink = new FederatedIdentityRepresentation();
+        final String disabledUserId = "disabledUserId";
+        disabledUserLink.setUserId(disabledUserId);
+        disabledUserLink.setUserName(disabledUsername);
+        addFederatedIdentity(disabledUserKeycloakId, identityProviderAlias, disabledUserLink);
+
+        // add enabled user with IDP link
+        UserRepresentation enabledUser = new UserRepresentation();
+        final String enabledUsername = "enabled_username";
+        enabledUser.setUsername(enabledUsername);
+        enabledUser.setEmail("enabled@localhost");
+        enabledUser.setEnabled(true);
+        final String enabledUserKeycloakId = createUser(enabledUser);
+        FederatedIdentityRepresentation enabledUserLink = new FederatedIdentityRepresentation();
+        final String enabledUserId = "enabledUserId";
+        enabledUserLink.setUserId(enabledUserId);
+        enabledUserLink.setUserName(enabledUsername);
+        addFederatedIdentity(enabledUserKeycloakId, identityProviderAlias, enabledUserLink);
+
+        // run search tests
+        List<UserRepresentation> searchByIdpAliasAndEnabled =
+                realm.users().search(null, null, null, null, null, identityProviderAlias, null, null, null, true, null);
+        assertEquals(1, searchByIdpAliasAndEnabled.size());
+        assertEquals(enabledUsername, searchByIdpAliasAndEnabled.get(0).getUsername());
+
+        List<UserRepresentation> searchByIdpAliasAndDisabled =
+                realm.users().search(null, null, null, null, null, identityProviderAlias, null, null, null, false,
+                        null);
+        assertEquals(1, searchByIdpAliasAndDisabled.size());
+        assertEquals(disabledUsername, searchByIdpAliasAndDisabled.get(0).getUsername());
+
+        List<UserRepresentation> searchByIdpAliasWithoutEnabledFlag =
+                realm.users().search(null, null, null, null, null, identityProviderAlias, null, null, null, null, null);
+        assertEquals(2, searchByIdpAliasWithoutEnabledFlag.size());
+        assertEquals(disabledUsername, searchByIdpAliasWithoutEnabledFlag.get(0).getUsername());
+        assertEquals(enabledUsername, searchByIdpAliasWithoutEnabledFlag.get(1).getUsername());
+    }
+
+    @Test
     public void searchById() {
         String expectedUserId = createUsers().get(0);
         List<UserRepresentation> users = realm.users().search("id:" + expectedUserId, null, null);
@@ -829,9 +961,7 @@ public class UserTest extends AbstractAdminTest {
         FederatedIdentityRepresentation link = new FederatedIdentityRepresentation();
         link.setUserId("social-user-id");
         link.setUserName("social-username");
-        Response response = user.addFederatedIdentity("social-provider-id", link);
-        assertEquals(204, response.getStatus());
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userFederatedIdentityLink(id, "social-provider-id"), link, ResourceType.USER);
+        addFederatedIdentity(id, "social-provider-id", link);
 
         // Verify social link is here
         user = realm.users().get(id);
@@ -851,11 +981,15 @@ public class UserTest extends AbstractAdminTest {
     }
 
     private void addSampleIdentityProvider() {
+        addSampleIdentityProvider("social-provider-id", 0);
+    }
+
+    private void addSampleIdentityProvider(final String alias, final int expectedInitialIdpCount) {
         List<IdentityProviderRepresentation> providers = realm.identityProviders().findAll();
-        Assert.assertEquals(0, providers.size());
+        Assert.assertEquals(expectedInitialIdpCount, providers.size());
 
         IdentityProviderRepresentation rep = new IdentityProviderRepresentation();
-        rep.setAlias("social-provider-id");
+        rep.setAlias(alias);
         rep.setProviderId("oidc");
 
         realm.identityProviders().create(rep);
@@ -953,11 +1087,70 @@ public class UserTest extends AbstractAdminTest {
         assertAttributeValue("value2user1", user1.getAttributes().get("attr2"));
         assertAttributeValue("value4user1", user1.getAttributes().get("attr3"));
 
-        user1.getAttributes().clear();
+        // null attributes should not remove attributes
+        user1.setAttributes(null);
+        updateUser(realm.users().get(user1Id), user1);
+        user1 = realm.users().get(user1Id).toRepresentation();
+        assertNotNull(user1.getAttributes());
+        assertEquals(2, user1.getAttributes().size());
+
+        // empty attributes should remove attributes
+        user1.setAttributes(Collections.emptyMap());
         updateUser(realm.users().get(user1Id), user1);
 
         user1 = realm.users().get(user1Id).toRepresentation();
         assertNull(user1.getAttributes());
+    }
+
+    @Test
+    @AuthServerContainerExclude({REMOTE}) // TODO: Enable for remote
+    public void updateUserWithReadOnlyAttributes() {
+        // Admin is able to update "usercertificate" attribute
+        UserRepresentation user1 = new UserRepresentation();
+        user1.setUsername("user1");
+        user1.singleAttribute("usercertificate", "foo1");
+        String user1Id = createUser(user1);
+        user1 = realm.users().get(user1Id).toRepresentation();
+
+        // Update of the user should be rejected due adding the "denied" attribute LDAP_ID
+        try {
+            user1.singleAttribute("usercertificate", "foo");
+            user1.singleAttribute("saml.persistent.name.id.for.foo", "bar");
+            user1.singleAttribute(LDAPConstants.LDAP_ID, "baz");
+            updateUser(realm.users().get(user1Id), user1);
+            Assert.fail("Not supposed to successfully update user");
+        } catch (BadRequestException bre) {
+            // Expected
+        }
+
+        // The same test as before, but with the case-sensitivity used
+        try {
+            user1.getAttributes().remove(LDAPConstants.LDAP_ID);
+            user1.singleAttribute("LDap_Id", "baz");
+            updateUser(realm.users().get(user1Id), user1);
+            Assert.fail("Not supposed to successfully update user");
+        } catch (BadRequestException bre) {
+            // Expected
+        }
+
+        // Attribute "deniedSomeAdmin" was denied for administrator
+        try {
+            user1.getAttributes().remove("LDap_Id");
+            user1.singleAttribute("deniedSomeAdmin", "baz");
+            updateUser(realm.users().get(user1Id), user1);
+            Assert.fail("Not supposed to successfully update user");
+        } catch (BadRequestException bre) {
+            // Expected
+        }
+
+        // usercertificate and saml attribute are allowed by admin
+        user1.getAttributes().remove("deniedSomeAdmin");
+        updateUser(realm.users().get(user1Id), user1);
+
+        user1 = realm.users().get(user1Id).toRepresentation();
+        assertEquals("foo", user1.getAttributes().get("usercertificate").get(0));
+        assertEquals("bar", user1.getAttributes().get("saml.persistent.name.id.for.foo").get(0));
+        assertFalse(user1.getAttributes().containsKey(LDAPConstants.LDAP_ID));
     }
 
     @Test
@@ -1718,9 +1911,7 @@ public class UserTest extends AbstractAdminTest {
         } catch (ClientErrorException e) {
             assertEquals(409, e.getResponse().getStatus());
 
-            // TODO adminEvents: Event queue should be empty, but it's not because of bug in UsersResource.updateUser, which sends event earlier than transaction commit.
-            // assertAdminEvents.assertEmpty();
-            assertAdminEvents.poll();
+            assertAdminEvents.assertEmpty();
         } finally {
             enableBruteForce(false);
             switchEditUsernameAllowedOn(false);
@@ -1769,6 +1960,7 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void resetUserPassword() {
         String userId = createUser("user1", "user1@localhost");
 
@@ -1784,7 +1976,7 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(accountUrl);
 
-        assertEquals("Log In", PageUtils.getPageTitle(driver));
+        assertEquals("Sign in to your account", PageUtils.getPageTitle(driver));
 
         loginPage.login("user1", "password");
 
@@ -1853,7 +2045,6 @@ public class UserTest extends AbstractAdminTest {
         
         realm.roles().create(RoleBuilder.create().name("realm-role").build());
         realm.roles().create(realmCompositeRole);
-        realm.roles().get("realm-composite").update(realmCompositeRole);
         realm.roles().create(RoleBuilder.create().name("realm-child").build());
         realm.roles().get("realm-composite").addComposites(Collections.singletonList(realm.roles().get("realm-child").toRepresentation()));
 
@@ -1868,7 +2059,6 @@ public class UserTest extends AbstractAdminTest {
         realm.clients().get(clientUuid).roles().create(RoleBuilder.create().name("client-role").build());
         realm.clients().get(clientUuid).roles().create(RoleBuilder.create().name("client-role2").build());
         realm.clients().get(clientUuid).roles().create(clientCompositeRole);
-        realm.clients().get(clientUuid).roles().get("client-composite").update(clientCompositeRole);
         realm.clients().get(clientUuid).roles().create(RoleBuilder.create().name("client-child").build());
         realm.clients().get(clientUuid).roles().get("client-composite").addComposites(Collections.singletonList(realm.clients().get(clientUuid).roles().get("client-child").toRepresentation()));
 
@@ -1880,7 +2070,8 @@ public class UserTest extends AbstractAdminTest {
         assertAdminEvents.clear();
 
         RoleMappingResource roles = realm.users().get(userId).roles();
-        assertNames(roles.realmLevel().listAll(), "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
+        assertNames(roles.realmLevel().listAll(), Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
+        assertNames(roles.realmLevel().listEffective(), "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
 
         // Add realm roles
         List<RoleRepresentation> l = new LinkedList<>();
@@ -1899,9 +2090,9 @@ public class UserTest extends AbstractAdminTest {
         assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userClientRoleMappingsPath(userId, clientUuid), ResourceType.CLIENT_ROLE_MAPPING);
 
         // List realm roles
-        assertNames(roles.realmLevel().listAll(), "realm-role", "realm-composite", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
-        assertNames(roles.realmLevel().listAvailable(), "admin", "customer-user-premium", "realm-composite-role", "sample-realm-role", "attribute-role");
-        assertNames(roles.realmLevel().listEffective(), "realm-role", "realm-composite", "realm-child", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
+        assertNames(roles.realmLevel().listAll(), "realm-role", "realm-composite", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
+        assertNames(roles.realmLevel().listAvailable(), "realm-child", "admin", "customer-user-premium", "realm-composite-role", "sample-realm-role", "attribute-role", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
+        assertNames(roles.realmLevel().listEffective(), "realm-role", "realm-composite", "realm-child", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
 
         // List realm effective role with full representation
         List<RoleRepresentation> realmRolesFullRepresentations = roles.realmLevel().listEffective(false);
@@ -1911,7 +2102,7 @@ public class UserTest extends AbstractAdminTest {
         
         // List client roles
         assertNames(roles.clientLevel(clientUuid).listAll(), "client-role", "client-composite");
-        assertNames(roles.clientLevel(clientUuid).listAvailable(), "client-role2");
+        assertNames(roles.clientLevel(clientUuid).listAvailable(), "client-role2", "client-child");
         assertNames(roles.clientLevel(clientUuid).listEffective(), "client-role", "client-composite", "client-child");
         
         // List client effective role with full representation
@@ -1922,17 +2113,16 @@ public class UserTest extends AbstractAdminTest {
 
         // Get mapping representation
         MappingsRepresentation all = roles.getAll();
-        assertNames(all.getRealmMappings(), "realm-role", "realm-composite", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
-        assertEquals(2, all.getClientMappings().size());
+        assertNames(all.getRealmMappings(), "realm-role", "realm-composite", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
+        assertEquals(1, all.getClientMappings().size());
         assertNames(all.getClientMappings().get("myclient").getMappings(), "client-role", "client-composite");
-        assertNames(all.getClientMappings().get("account").getMappings(), "manage-account", "view-profile");
 
         // Remove realm role
         RoleRepresentation realmRoleRep = realm.roles().get("realm-role").toRepresentation();
         roles.realmLevel().remove(Collections.singletonList(realmRoleRep));
         assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.userRealmRoleMappingsPath(userId), Collections.singletonList(realmRoleRep), ResourceType.REALM_ROLE_MAPPING);
 
-        assertNames(roles.realmLevel().listAll(), "realm-composite", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
+        assertNames(roles.realmLevel().listAll(), "realm-composite", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
 
         // Remove client role
         RoleRepresentation clientRoleRep = realm.clients().get(clientUuid).roles().get("client-role").toRepresentation();
@@ -1940,6 +2130,103 @@ public class UserTest extends AbstractAdminTest {
         assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.userClientRoleMappingsPath(userId, clientUuid), Collections.singletonList(clientRoleRep), ResourceType.CLIENT_ROLE_MAPPING);
 
         assertNames(roles.clientLevel(clientUuid).listAll(), "client-composite");
+    }
+
+    /**
+     * Test for KEYCLOAK-10603.
+     */
+    @Test
+    public void rolesCanBeAssignedEvenWhenTheyAreAlreadyIndirectlyAssigned() {
+        RealmResource realm = adminClient.realms().realm("test");
+
+        RoleRepresentation realmCompositeRole = RoleBuilder.create().name("realm-composite").build();
+        realm.roles().create(realmCompositeRole);
+        realm.roles().create(RoleBuilder.create().name("realm-child").build());
+        realm.roles().get("realm-composite")
+                .addComposites(Collections.singletonList(realm.roles().get("realm-child").toRepresentation()));
+        realm.roles().create(RoleBuilder.create().name("realm-role-in-group").build());
+
+        Response response = realm.clients().create(ClientBuilder.create().clientId("myclient").build());
+        String clientUuid = ApiUtil.getCreatedId(response);
+        response.close();
+
+        RoleRepresentation clientCompositeRole = RoleBuilder.create().name("client-composite").build();
+        realm.clients().get(clientUuid).roles().create(clientCompositeRole);
+        realm.clients().get(clientUuid).roles().create(RoleBuilder.create().name("client-child").build());
+        realm.clients().get(clientUuid).roles().get("client-composite").addComposites(Collections
+                .singletonList(realm.clients().get(clientUuid).roles().get("client-child").toRepresentation()));
+        realm.clients().get(clientUuid).roles().create(RoleBuilder.create().name("client-role-in-group").build());
+
+        GroupRepresentation group = GroupBuilder.create().name("mygroup").build();
+        response = realm.groups().add(group);
+        String groupId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        response = realm.users().create(UserBuilder.create().username("myuser").build());
+        String userId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        // Make indirect assignments
+        // .. add roles to the group and add it to the user
+        realm.groups().group(groupId).roles().realmLevel()
+                .add(Collections.singletonList(realm.roles().get("realm-role-in-group").toRepresentation()));
+        realm.groups().group(groupId).roles().clientLevel(clientUuid).add(Collections
+                .singletonList(realm.clients().get(clientUuid).roles().get("client-role-in-group").toRepresentation()));
+        realm.users().get(userId).joinGroup(groupId);
+        // .. assign composite roles
+        RoleMappingResource userRoles = realm.users().get(userId).roles();
+        userRoles.realmLevel().add(Collections.singletonList(realm.roles().get("realm-composite").toRepresentation()));
+        userRoles.clientLevel(clientUuid).add(Collections
+                .singletonList(realm.clients().get(clientUuid).roles().get("client-composite").toRepresentation()));
+
+        // check state before making the direct assignments
+        assertNames(userRoles.realmLevel().listAll(), "realm-composite", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
+        assertNames(userRoles.realmLevel().listAvailable(), "realm-child", "realm-role-in-group",
+                "admin", "customer-user-premium", "realm-composite-role",
+                "sample-realm-role",
+                "attribute-role", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
+        assertNames(userRoles.realmLevel().listEffective(), "realm-composite", "realm-child", "realm-role-in-group",
+                "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION,
+                Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
+
+        assertNames(userRoles.clientLevel(clientUuid).listAll(), "client-composite");
+        assertNames(userRoles.clientLevel(clientUuid).listAvailable(), "client-child",
+                "client-role-in-group");
+        assertNames(userRoles.clientLevel(clientUuid).listEffective(), "client-composite", "client-child",
+                "client-role-in-group");
+
+        // Make direct assignments for roles which are already indirectly assigned
+        userRoles.realmLevel().add(Collections.singletonList(realm.roles().get("realm-child").toRepresentation()));
+        userRoles.realmLevel()
+                .add(Collections.singletonList(realm.roles().get("realm-role-in-group").toRepresentation()));
+        userRoles.clientLevel(clientUuid).add(Collections
+                .singletonList(realm.clients().get(clientUuid).roles().get("client-child").toRepresentation()));
+        userRoles.clientLevel(clientUuid).add(Collections
+                .singletonList(realm.clients().get(clientUuid).roles().get("client-role-in-group").toRepresentation()));
+
+        // List realm roles
+        assertNames(userRoles.realmLevel().listAll(), "realm-composite",
+                "realm-child", "realm-role-in-group", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
+        assertNames(userRoles.realmLevel().listAvailable(), "admin", "customer-user-premium", "realm-composite-role",
+                "sample-realm-role", "attribute-role", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
+        assertNames(userRoles.realmLevel().listEffective(), "realm-composite", "realm-child", "realm-role-in-group",
+                "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION,
+                Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
+
+        // List client roles
+        assertNames(userRoles.clientLevel(clientUuid).listAll(), "client-composite", "client-child",
+                "client-role-in-group");
+        assertNames(userRoles.clientLevel(clientUuid).listAvailable());
+        assertNames(userRoles.clientLevel(clientUuid).listEffective(), "client-composite", "client-child",
+                "client-role-in-group");
+
+        // Get mapping representation
+        MappingsRepresentation all = userRoles.getAll();
+        assertNames(all.getRealmMappings(), "realm-composite",
+                "realm-child", "realm-role-in-group", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
+        assertEquals(1, all.getClientMappings().size());
+        assertNames(all.getClientMappings().get("myclient").getMappings(), "client-composite", "client-child",
+                "client-role-in-group");
     }
 
     @Test
@@ -2033,6 +2320,7 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void loginShouldFailAfterPasswordDeleted() {
         String userName = "credential-tester";
         String userPass = "s3cr37";
@@ -2041,7 +2329,7 @@ public class UserTest extends AbstractAdminTest {
 
         String accountUrl = RealmsResource.accountUrl(UriBuilder.fromUri(getAuthServerRoot())).build(REALM_NAME).toString();
         driver.navigate().to(accountUrl);
-        assertEquals("Test user should be on the login page.", "Log In", PageUtils.getPageTitle(driver));
+        assertEquals("Test user should be on the login page.", "Sign in to your account", PageUtils.getPageTitle(driver));
         loginPage.login(userName, userPass);
         assertTrue("Test user should be successfully logged in.", driver.getTitle().contains("Account Management"));
         accountPage.logOut();
@@ -2054,7 +2342,7 @@ public class UserTest extends AbstractAdminTest {
         realm.users().get(userId).removeCredential(passwordCredential.get().getId());
 
         driver.navigate().to(accountUrl);
-        assertEquals("Test user should be on the login page.", "Log In", PageUtils.getPageTitle(driver));
+        assertEquals("Test user should be on the login page.", "Sign in to your account", PageUtils.getPageTitle(driver));
         loginPage.login(userName, userPass);
         assertTrue("Test user should fail to log in after password was deleted.",
                 driver.getCurrentUrl().contains(String.format("/realms/%s/login-actions/authenticate", REALM_NAME)));

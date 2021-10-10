@@ -13,6 +13,7 @@ import org.openqa.selenium.support.FindBy;
  * Login page with the list of authentication mechanisms, which are available to the user (Password, OTP, WebAuthn...)
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ * @author <a href="mailto:pzaoral@redhat.com">Peter Zaoral</a>
  */
 public class SelectAuthenticatorPage extends LanguageComboboxAwarePage {
 
@@ -21,11 +22,6 @@ public class SelectAuthenticatorPage extends LanguageComboboxAwarePage {
 
     // Corresponds to the OTPFormAuthenticator
     public static final String AUTHENTICATOR_APPLICATION = "Authenticator Application";
-
-
-    @FindBy(id = "authenticators-choice")
-    private WebElement authenticatorsSelect;
-
 
     /**
      * Return list of names like for example [ "Password", "Authenticator Application", "Security Key" ]
@@ -57,16 +53,16 @@ public class SelectAuthenticatorPage extends LanguageComboboxAwarePage {
      * @return
      */
     public String getLoginMethodHelpText(String loginMethodName) {
-        return getLoginMethodRowByName(loginMethodName).findElement(By.className("list-group-item-text")).getText();
+        return getLoginMethodRowByName(loginMethodName).findElement(By.className("select-auth-box-desc")).getText();
     }
 
 
     private List<WebElement> getLoginMethodsRows() {
-        return driver.findElements(By.className("list-view-pf-main-info"));
+        return driver.findElements(By.className("select-auth-box-parent"));
     }
 
     private String getLoginMethodNameFromRow(WebElement loginMethodRow) {
-        return loginMethodRow.findElement(By.className("list-group-item-heading")).getText();
+        return loginMethodRow.findElement(By.className("select-auth-box-headline")).getText();
     }
 
     private WebElement getLoginMethodRowByName(String loginMethodName) {
@@ -80,7 +76,7 @@ public class SelectAuthenticatorPage extends LanguageComboboxAwarePage {
     @Override
     public boolean isCurrent() {
         // Check the title
-        if (!DroneUtils.getCurrentDriver().getTitle().startsWith("Log in to ") && !DroneUtils.getCurrentDriver().getTitle().startsWith("Anmeldung bei ")) {
+        if (!DroneUtils.getCurrentDriver().getTitle().startsWith("Sign in to ") && !DroneUtils.getCurrentDriver().getTitle().startsWith("Anmeldung bei ")) {
             return false;
         }
 

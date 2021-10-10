@@ -18,6 +18,7 @@ package org.keycloak.test;
 
 import static org.keycloak.test.builders.ClientBuilder.AccessType.PUBLIC;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -36,6 +37,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
@@ -58,7 +60,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * <p>
  *    Usage example:
  *    <pre>{@code
- *    new TestsHelper()
+ *    new FluentTestsHelper()
  *        .init()
  *        .createDirectGrantClient("direct-grant-client")
  *        .deleteClient("direct-grant-client")
@@ -69,7 +71,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  *    }</pre>
  * </p>
  */
-public class FluentTestsHelper {
+public class FluentTestsHelper implements Closeable {
 
     protected static class ClientData {
         private final ClientRepresentation clientRepresentation;
@@ -151,7 +153,7 @@ public class FluentTestsHelper {
      * @return <code>this</code>
      */
     public FluentTestsHelper init() {
-        keycloak = getKeycloakInstance(keycloakBaseUrl, adminRealm, adminUserName, adminPassword, adminClient);
+        keycloak = createKeycloakInstance(keycloakBaseUrl, adminRealm, adminUserName, adminPassword, adminClient);
         accessToken = generateInitialAccessToken();
         isInitialized = true;
         return this;
@@ -164,8 +166,18 @@ public class FluentTestsHelper {
         return isInitialized;
     }
 
-    protected Keycloak getKeycloakInstance(String keycloakBaseUrl, String realm, String username, String password, String clientId) {
+    protected Keycloak createKeycloakInstance(String keycloakBaseUrl, String realm, String username, String password, String clientId) {
         return Keycloak.getInstance(keycloakBaseUrl, realm, username, password, clientId);
+    }
+
+    /**
+     * For more complex test scenarios
+     *
+     * @return Keycloak Client instance
+     */
+    public Keycloak getKeycloakInstance() {
+        assert isInitialized;
+        return keycloak;
     }
 
     protected String generateInitialAccessToken() {
@@ -256,6 +268,17 @@ public class FluentTestsHelper {
     public FluentTestsHelper importTestRealm(InputStream stream) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         RealmRepresentation realmRepresentation = mapper.readValue(stream, RealmRepresentation.class);
+        return createTestRealm(realmRepresentation);
+    }
+
+    /**
+     * Creates a test realm.
+     *
+     * @param realmRepresentation A test realm representation.
+     * @return <code>this</code>
+     */
+    public FluentTestsHelper createTestRealm(RealmRepresentation realmRepresentation) {
+        assert isInitialized;
         keycloak.realms().create(realmRepresentation);
         testRealm = realmRepresentation.getRealm();
         accessToken = generateInitialAccessToken();
@@ -269,7 +292,18 @@ public class FluentTestsHelper {
      * @return <code>this</code>
      */
     public FluentTestsHelper deleteRealm(String realmName) {
+        assert isInitialized;
         keycloak.realms().realm(realmName).remove();
+        return this;
+    }
+
+    /**
+     * Deletes the test realm. Meant to be called after testing has finished.
+     *
+     * @return <code>this</code>
+     */
+    public FluentTestsHelper deleteTestRealm() {
+        deleteRealm(testRealm);
         return this;
     }
 
@@ -281,6 +315,7 @@ public class FluentTestsHelper {
      * @return <code>this</code>
      */
     public FluentTestsHelper createTestUser(String username, String password) {
+        assert isInitialized;
         UserRepresentation userRepresentation = new UserRepresentation();
         userRepresentation.setUsername(username);
         userRepresentation.setEnabled(true);
@@ -303,6 +338,7 @@ public class FluentTestsHelper {
      * @return <code>this</code>
      */
     public FluentTestsHelper assignRoleWithUser(String userName, String roleName) {
+        assert isInitialized;
         if (keycloak.realms().realm(testRealm).roles().get(roleName) == null) {
             RoleRepresentation representation = new RoleRepresentation();
             representation.setName(roleName);
@@ -321,6 +357,7 @@ public class FluentTestsHelper {
      * @return <code>this</code>
      */
     public FluentTestsHelper deleteRole(String roleName) {
+        assert isInitialized;
         RoleResource role = keycloak.realms().realm(testRealm).roles().get(roleName);
         if (role != null) {
             keycloak.realms().realm(testRealm).roles().deleteRole(roleName);
@@ -335,6 +372,7 @@ public class FluentTestsHelper {
      * @return <code>this</code>
      */
     public FluentTestsHelper deleteTestUser(String userName) {
+        assert isInitialized;
         UserRepresentation userInKeycloak = keycloak.realms().realm(testRealm).users().search(userName).get(0);
         if (userInKeycloak != null) {
             keycloak.realms().realm(testRealm).users().delete(userInKeycloak.getId());
@@ -342,7 +380,11 @@ public class FluentTestsHelper {
         return this;
     }
 
-    protected String getCreatedId(Response response) {
+    /**
+     * @param response
+     * @return ID of the created record
+     */
+    public String getCreatedId(Response response) {
         URI location = response.getLocation();
         if (!response.getStatusInfo().equals(Response.Status.CREATED)) {
             Response.StatusType statusInfo = response.getStatusInfo();
@@ -419,4 +461,40 @@ public class FluentTestsHelper {
         return keycloak.tokenManager().getAccessTokenString();
     }
 
+    public String getKeycloakBaseUrl() {
+        return keycloakBaseUrl;
+    }
+
+    public String getAdminUserName() {
+        return adminUserName;
+    }
+
+    public String getAdminPassword() {
+        return adminPassword;
+    }
+
+    public String getAdminClientId() {
+        return adminClient;
+    }
+
+    public String getAdminRealmName() {
+        return adminRealm;
+    }
+
+    public String getTestRealmName() {
+        return testRealm;
+    }
+
+    public RealmResource getTestRealmResource() {
+        assert isInitialized;
+        return keycloak.realm(testRealm);
+    }
+
+    @Override
+    public void close() {
+        if (keycloak != null && !keycloak.isClosed()) {
+            keycloak.close();
+        }
+        isInitialized = false;
+    }
 }

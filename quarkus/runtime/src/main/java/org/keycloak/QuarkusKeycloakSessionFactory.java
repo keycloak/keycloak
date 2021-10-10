@@ -31,13 +31,16 @@ public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionF
     private static QuarkusKeycloakSessionFactory INSTANCE;
     private final Boolean reaugmented;
     private final Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories;
+    private Map<String, ProviderFactory> preConfiguredProviders;
 
     public QuarkusKeycloakSessionFactory(
             Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories,
             Map<Class<? extends Provider>, String> defaultProviders,
+            Map<String, ProviderFactory> preConfiguredProviders,
             Boolean reaugmented) {
         this.provider = defaultProviders;
         this.factories = factories;
+        this.preConfiguredProviders = preConfiguredProviders;
         this.reaugmented = reaugmented;
     }
 
@@ -54,7 +57,12 @@ public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionF
         for (Spi spi : spis) {
             for (Map<String, Class<? extends ProviderFactory>> factoryClazz : factories.get(spi).values()) {
                 for (Map.Entry<String, Class<? extends ProviderFactory>> entry : factoryClazz.entrySet()) {
-                    ProviderFactory factory = lookupProviderFactory(entry.getValue());
+                    ProviderFactory factory = preConfiguredProviders.get(entry.getKey());
+
+                    if (factory == null) {
+                        factory = lookupProviderFactory(entry.getValue());
+                    }
+
                     Config.Scope scope = Config.scope(spi.getName(), factory.getId());
 
                     factory.init(scope);
@@ -63,9 +71,16 @@ public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionF
             }
         }
 
+        // Component factory must be initialized first, so that postInit in other factories can use component factories
+        updateComponentFactoryProviderFactory();
+        if (componentFactoryPF != null) {
+            componentFactoryPF.postInit(this);
+        }
         for (Map<String, ProviderFactory> f : factoriesMap.values()) {
             for (ProviderFactory factory : f.values()) {
-                factory.postInit(this);
+                if (factory != componentFactoryPF) {
+                    factory.postInit(this);
+                }
             }
         }
 

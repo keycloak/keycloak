@@ -235,18 +235,9 @@ public class ConcurrencyVersioningTest {
 
     protected DefaultCacheManager getVersionedCacheManager() {
         GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
-
-
-        boolean clustered = false;
-        boolean async = false;
-        boolean allowDuplicateJMXDomains = true;
-
-        if (clustered) {
-            gcb.transport().defaultTransport();
-        }
-        gcb.globalJmxStatistics().allowDuplicateDomains(allowDuplicateJMXDomains);
-
+        gcb.jmx().domain(InfinispanConnectionProvider.JMX_DOMAIN).enable();
         final DefaultCacheManager cacheManager = new DefaultCacheManager(gcb.build());
+
         ConfigurationBuilder invalidationConfigBuilder = new ConfigurationBuilder();
         invalidationConfigBuilder
                 //.invocationBatching().enable()
@@ -259,14 +250,9 @@ public class ConcurrencyVersioningTest {
                 //.writeSkewCheck(true).versioning()
                 //.enable().scheme(VersioningScheme.SIMPLE);
 
-
-        //invalidationConfigBuilder.locking().isolationLevel(IsolationLevel.REPEATABLE_READ).writeSkewCheck(true).versioning().enable().scheme(VersioningScheme.SIMPLE);
-
-        if (clustered) {
-            invalidationConfigBuilder.clustering().cacheMode(async ? CacheMode.INVALIDATION_ASYNC : CacheMode.INVALIDATION_SYNC);
-        }
         Configuration invalidationCacheConfiguration = invalidationConfigBuilder.build();
         cacheManager.defineConfiguration(InfinispanConnectionProvider.REALM_CACHE_NAME, invalidationCacheConfiguration);
+
         return cacheManager;
     }
 }

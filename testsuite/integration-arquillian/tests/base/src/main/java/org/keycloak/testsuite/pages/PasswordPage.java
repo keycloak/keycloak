@@ -1,8 +1,8 @@
 package org.keycloak.testsuite.pages;
 
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
@@ -20,6 +20,9 @@ public class PasswordPage extends LanguageComboboxAwarePage {
 
     @FindBy(id = "password")
     private WebElement passwordInput;
+
+    @FindBy(id = "input-error-password")
+    private WebElement passwordError;
 
     @FindBy(name = "login")
     private WebElement submitButton;
@@ -46,8 +49,20 @@ public class PasswordPage extends LanguageComboboxAwarePage {
         return passwordInput.getAttribute("value");
     }
 
+    public String getPasswordError() {
+        try {
+            return UIUtils.getTextFromElement(passwordError);
+        } catch (NoSuchElementException e) {
+            return null;
+        }
+    }
+
     public String getError() {
-        return loginErrorMessage != null ? loginErrorMessage.getText() : null;
+        try {
+            return UIUtils.getTextFromElement(loginErrorMessage);
+        } catch (NoSuchElementException e) {
+            return null;
+        }
     }
 
 

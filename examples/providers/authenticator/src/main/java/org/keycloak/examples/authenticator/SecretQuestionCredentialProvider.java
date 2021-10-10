@@ -75,7 +75,7 @@ public class SecretQuestionCredentialProvider implements CredentialProvider<Secr
     @Override
     public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
         if (!supportsCredentialType(credentialType)) return false;
-        return !getCredentialStore().getStoredCredentialsByType(realm, user, credentialType).isEmpty();
+        return getCredentialStore().getStoredCredentialsByTypeStream(realm, user, credentialType).count() > 0;
     }
 
     @Override

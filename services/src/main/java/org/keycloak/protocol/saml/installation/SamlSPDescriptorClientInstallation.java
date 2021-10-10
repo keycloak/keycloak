@@ -19,7 +19,7 @@ package org.keycloak.protocol.saml.installation;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.dom.saml.v2.metadata.KeyTypes;
+import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -29,13 +29,17 @@ import org.keycloak.protocol.saml.SamlClient;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.saml.SPMetadataDescriptor;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.util.StaxUtil;
+import org.keycloak.saml.processing.core.saml.v2.writers.SAMLMetadataWriter;
 
 import org.w3c.dom.Element;
 
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import java.io.StringWriter;
 import java.net.URI;
 import java.util.Arrays;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.xml.stream.XMLStreamWriter;
 
 
 /**
@@ -54,27 +58,55 @@ public class SamlSPDescriptorClientInstallation implements ClientInstallationPro
             SamlClient samlClient = new SamlClient(client);
             String assertionUrl;
             String logoutUrl;
-            URI binding;
+            URI loginBinding;
+            URI logoutBinding = null;
+
             if (samlClient.forcePostBinding()) {
                 assertionUrl = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE);
                 logoutUrl = client.getAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE);
-                binding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.getUri();
+                loginBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.getUri();
             } else { //redirect binding
                 assertionUrl = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE);
                 logoutUrl = client.getAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE);
-                binding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.getUri();
+                loginBinding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.getUri();
             }
+            
+            if (samlClient.forceArtifactBinding()) {
+                if (client.getAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT_ATTRIBUTE) != null) {
+                    logoutBinding = JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.getUri();
+                    logoutUrl = client.getAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT_ATTRIBUTE);
+                } else {
+                    logoutBinding = loginBinding;
+                }
+                
+                assertionUrl = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_ARTIFACT_ATTRIBUTE);
+                loginBinding = JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.getUri();
+
+            }
+
             if (assertionUrl == null || assertionUrl.trim().isEmpty()) assertionUrl = client.getManagementUrl();
             if (assertionUrl == null || assertionUrl.trim().isEmpty()) assertionUrl = FALLBACK_ERROR_URL_STRING;
             if (logoutUrl == null || logoutUrl.trim().isEmpty()) logoutUrl = client.getManagementUrl();
             if (logoutUrl == null || logoutUrl.trim().isEmpty()) logoutUrl = FALLBACK_ERROR_URL_STRING;
+            if (logoutBinding == null) logoutBinding = loginBinding;
+
             String nameIdFormat = samlClient.getNameIDFormat();
             if (nameIdFormat == null) nameIdFormat = SamlProtocol.SAML_DEFAULT_NAMEID_FORMAT;
             Element spCertificate = SPMetadataDescriptor.buildKeyInfoElement(null, samlClient.getClientSigningCertificate());
             Element encCertificate = SPMetadataDescriptor.buildKeyInfoElement(null, samlClient.getClientEncryptingCertificate());
-            return SPMetadataDescriptor.getSPDescriptor(binding, new URI(assertionUrl), new URI(logoutUrl), samlClient.requiresClientSignature(), 
-                    samlClient.requiresAssertionSignature(), samlClient.requiresEncryption(),
-                    client.getClientId(), nameIdFormat, Arrays.asList(spCertificate), Arrays.asList(encCertificate));
+
+            StringWriter sw = new StringWriter();
+            XMLStreamWriter writer = StaxUtil.getXMLStreamWriter(sw);
+            SAMLMetadataWriter metadataWriter = new SAMLMetadataWriter(writer);
+
+            EntityDescriptorType entityDescriptor = SPMetadataDescriptor.buildSPdescriptor(
+                loginBinding, logoutBinding, new URI(assertionUrl), new URI(logoutUrl), 
+                samlClient.requiresClientSignature(), samlClient.requiresAssertionSignature(), samlClient.requiresEncryption(), 
+                client.getClientId(), nameIdFormat, Arrays.asList(spCertificate), Arrays.asList(encCertificate));
+            
+            metadataWriter.writeEntityDescriptor(entityDescriptor);
+
+            return sw.toString();
         } catch (Exception ex) {
             logger.error("Cannot generate SP metadata", ex);
             return "";

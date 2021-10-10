@@ -21,16 +21,27 @@ import org.keycloak.Config;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RealmProviderFactory;
 
 import javax.persistence.EntityManager;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleContainerModel;
+import org.keycloak.models.RoleContainerModel.RoleRemovedEvent;
+import org.keycloak.models.RoleModel;
+import org.keycloak.provider.ProviderEvent;
+import org.keycloak.provider.ProviderEventListener;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class JpaRealmProviderFactory implements RealmProviderFactory {
+public class JpaRealmProviderFactory implements RealmProviderFactory, ProviderEventListener {
+
+    private Runnable onClose;
+
+    public static final String PROVIDER_ID = "jpa";
+    public static final int PROVIDER_PRIORITY = 1;
 
     @Override
     public void init(Config.Scope config) {
@@ -38,22 +49,47 @@ public class JpaRealmProviderFactory implements RealmProviderFactory {
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-
+        factory.register(this);
+        onClose = () -> factory.unregister(this);
     }
 
     @Override
     public String getId() {
-        return "jpa";
+        return PROVIDER_ID;
     }
 
     @Override
-    public RealmProvider create(KeycloakSession session) {
+    public JpaRealmProvider create(KeycloakSession session) {
         EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-        return new JpaRealmProvider(session, em);
+        return new JpaRealmProvider(session, em, null);
     }
 
     @Override
     public void close() {
+        onClose.run();
+    }
+
+    @Override
+    public void onEvent(ProviderEvent event) {
+        if (event instanceof RoleContainerModel.RoleRemovedEvent) {
+            RoleRemovedEvent e = (RoleContainerModel.RoleRemovedEvent) event;
+            RoleModel role = e.getRole();
+            RoleContainerModel container = role.getContainer();
+            RealmModel realm;
+            if (container instanceof RealmModel) {
+                realm = (RealmModel) container;
+            } else if (container instanceof ClientModel) {
+                realm = ((ClientModel) container).getRealm();
+            } else {
+                return;
+            }
+            create(e.getKeycloakSession()).preRemove(realm, role);
+        }
+    }
+
+    @Override
+    public int order() {
+        return PROVIDER_PRIORITY;
     }
 
 }

@@ -73,8 +73,17 @@ public class ClientBuilder {
         return this;
     }
 
+    @Deprecated
     public ClientBuilder defaultRoles(String... roles) {
         rep.setDefaultRoles(roles);
+        return this;
+    }
+
+    public ClientBuilder addOptionalClientScopes(String... optionalClientScopes) {
+        if (rep.getOptionalClientScopes() == null) {
+            rep.setOptionalClientScopes(new ArrayList<>());
+        }
+        rep.getOptionalClientScopes().addAll(Arrays.asList(optionalClientScopes));
         return this;
     }
 

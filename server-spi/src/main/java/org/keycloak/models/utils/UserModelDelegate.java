@@ -24,7 +24,6 @@ import org.keycloak.models.UserModel;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -33,7 +32,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserModelDelegate implements UserModel {
+public class UserModelDelegate implements UserModel.Streams {
     protected UserModel delegate;
 
     public UserModelDelegate(UserModel delegate) {
@@ -86,8 +85,8 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
-    public List<String> getAttribute(String name) {
-        return delegate.getAttribute(name);
+    public Stream<String> getAttributeStream(String name) {
+        return delegate.getAttributeStream(name);
     }
 
     @Override
@@ -96,8 +95,8 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
-    public Set<String> getRequiredActions() {
-        return delegate.getRequiredActions();
+    public Stream<String> getRequiredActionsStream() {
+        return delegate.getRequiredActionsStream();
     }
 
     @Override

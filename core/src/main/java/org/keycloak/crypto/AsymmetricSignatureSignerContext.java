@@ -34,18 +34,18 @@ public class AsymmetricSignatureSignerContext implements SignatureSignerContext 
 
     @Override
     public String getAlgorithm() {
-        return key.getAlgorithm();
+        return key.getAlgorithmOrDefault();
     }
 
     @Override
     public String getHashAlgorithm() {
-        return JavaAlgorithm.getJavaAlgorithmForHash(key.getAlgorithm());
+        return JavaAlgorithm.getJavaAlgorithmForHash(key.getAlgorithmOrDefault());
     }
 
     @Override
     public byte[] sign(byte[] data) throws SignatureException {
         try {
-            Signature signature = Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(key.getAlgorithm()));
+            Signature signature = Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(key.getAlgorithmOrDefault()));
             signature.initSign((PrivateKey) key.getPrivateKey());
             signature.update(data);
             return signature.sign();

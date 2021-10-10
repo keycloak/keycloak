@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature-group-spec name="infinispan-dist" xmlns="urn:jboss:galleon:feature-group:1.0">
+
+    <feature-group name="infinispan-dist-keycloak"/>
+
+    <feature-group name="infinispan-dist-server"/>
+
+    <feature-group name="infinispan-dist-web"/>
+
+    <feature-group name="infinispan-dist-ejb"/>
+
+    <feature-group name="infinispan-dist-hibernate"/>
+
+</feature-group-spec>

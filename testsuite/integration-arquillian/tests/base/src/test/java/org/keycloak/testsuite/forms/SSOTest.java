@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
@@ -31,6 +32,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.drone.Different;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
@@ -74,6 +76,7 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void loginSuccess() {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
@@ -86,6 +89,7 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
 
         IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
         Assert.assertEquals("1", idToken.getAcr());
+        Long authTime = idToken.getAuth_time();
 
         appPage.open();
 
@@ -101,6 +105,8 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
         // acr is 0 as we authenticated through SSO cookie
         idToken = sendTokenRequestAndGetIDToken(loginEvent);
         Assert.assertEquals("0", idToken.getAcr());
+        // auth time hasn't changed as we authenticated through SSO cookie
+        Assert.assertEquals(authTime, idToken.getAuth_time());
 
         profilePage.open();
         assertTrue(profilePage.isCurrent());
@@ -159,7 +165,7 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
 
             oauth2.openLoginForm();
 
-            assertTrue(driver2.getTitle().equals("Log in to test"));
+            assertTrue(driver2.getTitle().equals("Sign in to test"));
         } finally {
             driver2.close();
         }

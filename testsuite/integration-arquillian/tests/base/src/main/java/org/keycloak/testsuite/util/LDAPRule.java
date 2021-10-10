@@ -227,9 +227,6 @@ public class LDAPRule extends ExternalResource {
             case VAULT_EXPRESSION:
                 config.put(LDAPConstants.BIND_CREDENTIAL, VAULT_EXPRESSION);
                 break;
-            default:
-                // Default to secret as the bind credential
-                config.put(LDAPConstants.BIND_CREDENTIAL, "secret");
         }
         switch (defaultProperties.getProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_ANONYMOUS_ACCESS)) {
             case "true":
@@ -264,6 +261,10 @@ public class LDAPRule extends ExternalResource {
 
     public int getSleepTime() {
         return ldapTestConfiguration.getSleepTime();
+    }
+
+    public LDAPEmbeddedServer getLdapEmbeddedServer() {
+        return ldapEmbeddedServer;
     }
 
     /** Allows to run particular LDAP test just under specific conditions (eg. some test running just on Active Directory) **/

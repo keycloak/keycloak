@@ -17,12 +17,13 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MimeTypeUtil;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
@@ -70,10 +71,13 @@ public class QuarkusWelcomeResource {
     private AtomicBoolean shouldBootstrap;
 
     @Context
-    protected HttpHeaders headers;
+    HttpHeaders headers;
 
     @Context
-    private KeycloakSession session;
+    HttpRequest request;
+
+    @Context
+    KeycloakSession session;
 
     /**
      * Welcome page of Keycloak
@@ -95,7 +99,9 @@ public class QuarkusWelcomeResource {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_HTML_UTF_8)
-    public Response createUser(final MultivaluedMap<String, String> formData) {
+    public Response createUser() {
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
+
         if (!shouldBootstrap()) {
             return createWelcomePage(null, null);
         } else {
@@ -245,7 +251,7 @@ public class QuarkusWelcomeResource {
     }
 
     private String setCsrfCookie() {
-        String stateChecker = Base64Url.encode(KeycloakModelUtils.generateSecret());
+        String stateChecker = Base64Url.encode(SecretGenerator.getInstance().randomBytes());
         String cookiePath = session.getContext().getUri().getPath();
         boolean secureOnly = session.getContext().getUri().getRequestUri().getScheme().equalsIgnoreCase("https");
         CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, stateChecker, cookiePath, null, null, 300, secureOnly, true);

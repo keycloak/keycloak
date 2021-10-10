@@ -31,28 +31,18 @@ public class ClusteredCacheBehaviorTest {
     public EmbeddedCacheManager createManager() {
         System.setProperty("java.net.preferIPv4Stack", "true");
         System.setProperty("jgroups.tcp.port", "53715");
+
         GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
-
-        boolean clustered = true;
-        boolean async = false;
-        boolean allowDuplicateJMXDomains = true;
-
-        if (clustered) {
-            gcb = gcb.clusteredDefault();
-            gcb.transport().clusterName("test-clustering");
-        }
-        gcb.globalJmxStatistics().allowDuplicateDomains(allowDuplicateJMXDomains);
-
+        gcb = gcb.clusteredDefault();
+        gcb.transport().clusterName("test-clustering");
+        gcb.jmx().domain(InfinispanConnectionProvider.JMX_DOMAIN).enable();
         EmbeddedCacheManager cacheManager = new DefaultCacheManager(gcb.build());
 
-
         ConfigurationBuilder invalidationConfigBuilder = new ConfigurationBuilder();
-        if (clustered) {
-            invalidationConfigBuilder.clustering().cacheMode(async ? CacheMode.INVALIDATION_ASYNC : CacheMode.INVALIDATION_SYNC);
-        }
+        invalidationConfigBuilder.clustering().cacheMode(CacheMode.INVALIDATION_SYNC);
         Configuration invalidationCacheConfiguration = invalidationConfigBuilder.build();
-
         cacheManager.defineConfiguration(InfinispanConnectionProvider.REALM_CACHE_NAME, invalidationCacheConfiguration);
+
         return cacheManager;
 
     }

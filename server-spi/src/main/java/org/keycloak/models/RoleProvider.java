@@ -82,8 +82,19 @@ public interface RoleProvider extends Provider, RoleLookupProvider {
     Stream<RoleModel> getRealmRolesStream(RealmModel realm, Integer first, Integer max);
 
     /**
+     * Returns a paginated stream of roles with given ids and given search value in role names.
+     *
+     * @param realm Realm. Cannot be {@code null}.
+     * @param ids Stream of ids. Returns empty {@code Stream} when {@code null}.
+     * @param search Case-insensitive string to search by role's name or description. Ignored if {@code null}.
+     * @param first Index of the first result to return. Ignored if negative or {@code null}.
+     * @param max Maximum number of results to return. Ignored if negative or {@code null}.
+     * @return Stream of desired roles. Never returns {@code null}.
+     */
+    Stream<RoleModel> getRolesStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max);
+
+    /**
      * Removes given realm role from the given realm.
-     * @param realm Realm.
      * @param role Role to be removed.
      * @return {@code true} if the role existed and has been removed, {@code false} otherwise.
      */
@@ -102,7 +113,9 @@ public interface RoleProvider extends Provider, RoleLookupProvider {
      * @param name String name of the role.
      * @return Model of the created role.
      */
-    RoleModel addClientRole(ClientModel client, String name);
+    default RoleModel addClientRole(ClientModel client, String name) {
+        return addClientRole(client, null, name);
+    }
 
     /**
      * Adds a client role with given internal ID and {@code name} to the given client.
@@ -117,7 +130,7 @@ public interface RoleProvider extends Provider, RoleLookupProvider {
      * Returns all the client roles of the given client.
      * Effectively the same as the call {@code getClientRoles(client, null, null)}.
      * @param client Client.
-     * @return List of the roles. Never returns {@code null}.
+     * @return Stream of the roles. Never returns {@code null}.
      */
     default Stream<RoleModel> getClientRolesStream(ClientModel client) {
         return getClientRolesStream(client, null, null);
@@ -128,7 +141,7 @@ public interface RoleProvider extends Provider, RoleLookupProvider {
      * @param client Client.
      * @param first First result to return. Ignored if negative or {@code null}.
      * @param max Maximum number of results to return. Ignored if negative or {@code null}.
-     * @return List of the roles. Never returns {@code null}.
+     * @return Stream of the roles. Never returns {@code null}.
      */
     Stream<RoleModel> getClientRolesStream(ClientModel client, Integer first, Integer max);
 

@@ -82,6 +82,27 @@ public class X509AuthenticatorConfigModel extends AuthenticatorConfigModel {
         }
     }
 
+    public enum CertificatePolicyModeType {
+        ALL(CERTIFICATE_POLICY_MODE_ALL),
+        ANY(CERTIFICATE_POLICY_MODE_ANY);
+
+        private String mode;
+        CertificatePolicyModeType(String mode) {
+            this.mode = mode;
+        }
+        public String getMode() {  return this.mode; }
+        public static CertificatePolicyModeType parse(String mode) throws IllegalArgumentException, IndexOutOfBoundsException {
+            if (mode == null || mode.trim().length() == 0)
+                throw new IllegalArgumentException("mode");
+
+            for (CertificatePolicyModeType value : CertificatePolicyModeType.values()) {
+                if (value.getMode().equalsIgnoreCase(mode))
+                    return value;
+            }
+            throw new IndexOutOfBoundsException("mode");
+        }
+    }
+
     public X509AuthenticatorConfigModel(AuthenticatorConfigModel model) {
         this.setAlias(model.getAlias());
         this.setId(model.getId());
@@ -106,6 +127,15 @@ public class X509AuthenticatorConfigModel extends AuthenticatorConfigModel {
 
     public X509AuthenticatorConfigModel setOCSPEnabled(boolean value) {
         getConfig().put(ENABLE_OCSP, Boolean.toString(value));
+        return this;
+    }
+
+    public boolean getOCSPFailOpen() {
+        return Boolean.parseBoolean(getConfig().getOrDefault(OCSP_FAIL_OPEN, Boolean.toString(false)));
+    }
+
+    public X509AuthenticatorConfigModel setOCSPFailOpen(boolean value) {
+        getConfig().put(OCSP_FAIL_OPEN, Boolean.toString(value));
         return this;
     }
 
@@ -227,6 +257,28 @@ public class X509AuthenticatorConfigModel extends AuthenticatorConfigModel {
         return this;
     }
 
+    public String getCertificatePolicy() {
+        return getConfig().getOrDefault(CERTIFICATE_POLICY, null);
+    }
+
+    public X509AuthenticatorConfigModel setCertificatePolicy(String value) {
+        if (value != null) {
+            getConfig().put(CERTIFICATE_POLICY, value);
+        } else {
+            getConfig().remove(CERTIFICATE_POLICY);
+        }
+        return this;
+    }
+
+    public CertificatePolicyModeType getCertificatePolicyMode() {
+        return CertificatePolicyModeType.parse(getConfig().getOrDefault(CERTIFICATE_POLICY_MODE, CERTIFICATE_POLICY_MODE_ALL));
+    }
+
+    public X509AuthenticatorConfigModel setCertificatePolicyMode(CertificatePolicyModeType value) {
+        getConfig().put(CERTIFICATE_POLICY_MODE, value.getMode());
+        return this;
+    }
+
     public boolean getConfirmationPageDisallowed() {
         return Boolean.parseBoolean(getConfig().get(CONFIRMATION_PAGE_DISALLOWED));
     }
@@ -269,6 +321,15 @@ public class X509AuthenticatorConfigModel extends AuthenticatorConfigModel {
 
     public X509AuthenticatorConfigModel setSerialnumberHex(boolean value) {
         getConfig().put(SERIALNUMBER_HEX, Boolean.toString(value));
+        return this;
+    }
+
+    public boolean getRevalidateCertificateEnabled() {
+        return Boolean.parseBoolean(getConfig().get(REVALIDATE_CERTIFICATE));
+    }
+
+    public X509AuthenticatorConfigModel setRevalidateCertificateEnabled(boolean value) {
+        getConfig().put(REVALIDATE_CERTIFICATE, Boolean.toString(value));
         return this;
     }
 }

@@ -42,10 +42,8 @@ public class TotpLoginBean {
     private final List<OTPCredential> userOtpCredentials;
 
     public TotpLoginBean(KeycloakSession session, RealmModel realm, UserModel user, String selectedCredentialId) {
-        List<CredentialModel> userOtpCredentials = session.userCredentialManager()
-                .getStoredCredentialsByType(realm, user, OTPCredentialModel.TYPE);
 
-        this.userOtpCredentials = userOtpCredentials.stream()
+        this.userOtpCredentials = session.userCredentialManager().getStoredCredentialsByTypeStream(realm, user, OTPCredentialModel.TYPE)
                 .map(OTPCredential::new)
                 .collect(Collectors.toList());
 

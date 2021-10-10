@@ -18,8 +18,10 @@
 package org.keycloak.connections.jpa.updater.liquibase.conn;
 
 import liquibase.Liquibase;
+import liquibase.change.ChangeFactory;
 import liquibase.changelog.ChangeSet;
 import liquibase.changelog.DatabaseChangeLog;
+import liquibase.database.AbstractJdbcDatabase;
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
@@ -33,11 +35,13 @@ import liquibase.servicelocator.ServiceLocator;
 import liquibase.sqlgenerator.SqlGeneratorFactory;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.connections.jpa.updater.liquibase.CustomForeignKeySnapshotGenerator;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider;
 import org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase;
 import org.keycloak.connections.jpa.updater.liquibase.MySQL8VarcharType;
 import org.keycloak.connections.jpa.updater.liquibase.UpdatedMariaDBDatabase;
 import org.keycloak.connections.jpa.updater.liquibase.UpdatedMySqlDatabase;
+import org.keycloak.connections.jpa.updater.liquibase.custom.CustomCreateIndexChange;
 import org.keycloak.connections.jpa.updater.liquibase.lock.CustomInsertLockRecordGenerator;
 import org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockDatabaseChangeLogGenerator;
 import org.keycloak.connections.jpa.updater.liquibase.lock.DummyLockService;
@@ -45,6 +49,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
 import java.sql.Connection;
+import java.util.concurrent.atomic.AtomicBoolean;
+import liquibase.changelog.ChangeLogHistoryServiceFactory;
+import liquibase.snapshot.SnapshotGeneratorFactory;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -53,15 +60,22 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
 
     private static final Logger logger = Logger.getLogger(DefaultLiquibaseConnectionProvider.class);
 
-    private volatile boolean initialized = false;
+    public static final String INDEX_CREATION_THRESHOLD_PARAM = "keycloak.indexCreationThreshold";
+
+    private int indexCreationThreshold;
+
+    private static final AtomicBoolean INITIALIZATION = new AtomicBoolean(false);
     
     @Override
     public LiquibaseConnectionProvider create(KeycloakSession session) {
-        if (!initialized) {
-            synchronized (this) {
-                if (!initialized) {
+        if (! INITIALIZATION.get()) {
+            // We need critical section synchronized on some static final field, otherwise
+            // e.g. several Undertows or parallel model tests could attempt initializing Liquibase
+            // in the same JVM at the same time which leads to concurrency failures
+            synchronized (INITIALIZATION) {
+                if (! INITIALIZATION.get()) {
                     baseLiquibaseInitialization();
-                    initialized = true;
+                    INITIALIZATION.set(true);
                 }
             }
         }
@@ -109,12 +123,20 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
 
         // Use "SELECT FOR UPDATE" for locking database
         SqlGeneratorFactory.getInstance().register(new CustomLockDatabaseChangeLogGenerator());
-    }
 
+        ChangeLogHistoryServiceFactory.getInstance().register(new CustomChangeLogHistoryService());
+
+        // Adding CustomCreateIndexChange for handling conditional indices creation
+        ChangeFactory.getInstance().register(CustomCreateIndexChange.class);
+
+        // Contains fix for https://liquibase.jira.com/browse/CORE-3141
+        SnapshotGeneratorFactory.getInstance().register(new CustomForeignKeySnapshotGenerator());
+    }
 
     @Override
     public void init(Config.Scope config) {
-
+        indexCreationThreshold = config.getInt("indexCreationThreshold", 300000);
+        logger.debugf("indexCreationThreshold is %d", indexCreationThreshold);
     }
 
     @Override
@@ -142,7 +164,8 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
         ResourceAccessor resourceAccessor = new ClassLoaderResourceAccessor(getClass().getClassLoader());
 
         logger.debugf("Using changelog file %s and changelogTableName %s", changelog, database.getDatabaseChangeLogTableName());
-        
+
+        ((AbstractJdbcDatabase) database).set(INDEX_CREATION_THRESHOLD_PARAM, indexCreationThreshold);
         return new Liquibase(changelog, resourceAccessor, database);
     }
 

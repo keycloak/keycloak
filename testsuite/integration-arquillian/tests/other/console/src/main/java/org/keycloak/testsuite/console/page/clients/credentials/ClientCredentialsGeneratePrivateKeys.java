@@ -22,18 +22,19 @@
 package org.keycloak.testsuite.console.page.clients.credentials;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.testsuite.console.page.clients.Client;
 
 /**
  *
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
-public class ClientCredentialsGeneratePrivateKeys extends ClientCredentials {
+public class ClientCredentialsGeneratePrivateKeys extends Client {
 
     @Override
     public String getUriFragment() {
-        return super.getUriFragment() + "/client-jwt/Signing/export/jwt.credential";
+        return super.getUriFragment() + "/oidc/Signing/export/jwt.credential";
     }
-    
+
     @Page
     private ClientCredentialsGeneratePrivateKeysForm form;
 

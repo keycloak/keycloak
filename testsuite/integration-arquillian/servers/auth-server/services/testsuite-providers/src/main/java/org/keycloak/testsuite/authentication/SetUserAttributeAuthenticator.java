@@ -7,9 +7,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class SetUserAttributeAuthenticator implements Authenticator {
     @Override
@@ -20,11 +20,11 @@ public class SetUserAttributeAuthenticator implements Authenticator {
         String attrValue = config.get(SetUserAttributeAuthenticatorFactory.CONF_ATTR_VALUE);
 
         UserModel user = context.getUser();
-        if (user.getAttribute(attrName) == null) {
+        List<String> attrValues = user.getAttributeStream(attrName).collect(Collectors.toList());
+        if (attrValues.isEmpty()) {
             user.setSingleAttribute(attrName, attrValue);
         }
         else {
-            List<String> attrValues = new ArrayList<>(user.getAttribute(attrName));
             if (!attrValues.contains(attrValue)) {
                 attrValues.add(attrValue);
             }

@@ -39,4 +39,8 @@ public class MacSecretSignatureProvider implements SignatureProvider {
         return new ServerMacSignatureVerifierContext(session, kid, algorithm);
     }
 
+    @Override
+    public boolean isAsymmetricAlgorithm() {
+        return false;
+    }
 }

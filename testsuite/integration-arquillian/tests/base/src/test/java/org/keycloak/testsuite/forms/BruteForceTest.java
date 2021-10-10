@@ -26,9 +26,11 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AssertEvents.ExpectedEvent;
@@ -364,7 +366,6 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
     public void testEmail() throws Exception {
         String userId = adminClient.realm("test").users().search("user2", null, null, null, 0, 1).get(0).getId();
 
-        loginSuccess("user2@localhost");
         loginInvalidPassword("user2@localhost");
         loginInvalidPassword("user2@localhost");
         expectTemporarilyDisabled("user2@localhost", userId);
@@ -420,7 +421,14 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
             // assert
             expectPermanentlyDisabled();
-            assertFalse(adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0).isEnabled());
+
+            UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
+            assertFalse(user.isEnabled());
+            assertUserDisabledReason(BruteForceProtector.DISABLED_BY_PERMANENT_LOCKOUT);
+
+            user.setEnabled(true);
+            updateUser(user);
+            assertUserDisabledReason(null);
         } finally {
             realm.setPermanentLockout(false);
             testRealm().update(realm);
@@ -490,7 +498,6 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
     public void testResetPassword() throws Exception {
         String userId = adminClient.realm("test").users().search("user2", null, null, null, 0, 1).get(0).getId();
 
-        loginSuccess("user2");
         loginInvalidPassword("user2");
         loginInvalidPassword("user2");
         expectTemporarilyDisabled("user2", userId, "invalid");
@@ -528,8 +535,6 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         appPage.logout();
 
         events.clear();
-
-        loginSuccess("user2");
     }
 
     public void expectTemporarilyDisabled() throws Exception {
@@ -546,7 +551,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.assertCurrent();
         String src = driver.getPageSource();
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
         ExpectedEvent event = events.expectLogin()
                 .session((String) null)
                 .error(Errors.USER_TEMPORARILY_DISABLED)
@@ -567,7 +572,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         loginPage.login(username, "password");
 
         loginPage.assertCurrent();
-        Assert.assertEquals("Account is disabled, contact your administrator.", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
         ExpectedEvent event = events.expectLogin()
             .session((String) null)
             .error(Errors.USER_DISABLED)
@@ -585,7 +590,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
     public void loginSuccess(String username) throws Exception {
         loginPage.open();
-        loginPage.login("test-user@localhost", "password");
+        loginPage.login(username, "password");
 
         loginTotpPage.assertCurrent();
 
@@ -610,7 +615,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
         loginTotpPage.login("123456");
         loginTotpPage.assertCurrent();
-        Assert.assertEquals("Invalid authenticator code.", loginPage.getError());
+        Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
         events.clear();
     }
 
@@ -634,7 +639,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         loginTotpPage.login(totpSecret);
 
         loginTotpPage.assertCurrent();
-        Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getError());
+        Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
 
         events.clear();
     }
@@ -645,7 +650,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         loginTotpPage.login("123456");
 
         loginTotpPage.assertCurrent();
-        Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getError());
+        Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
         events.clear();
     }
 
@@ -655,7 +660,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         loginTotpPage.login(null);
 
         loginTotpPage.assertCurrent();
-        Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getError());
+        Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
         events.clear();
     }
 
@@ -667,7 +672,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
         loginTotpPage.login(null);
         loginTotpPage.assertCurrent();
-        Assert.assertEquals("Invalid authenticator code.", loginPage.getError());
+        Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
 
         events.clear();
     }
@@ -682,7 +687,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.assertCurrent();
 
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
 
         events.clear();
     }
@@ -693,7 +698,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.assertCurrent();
 
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
         events.clear();
     }
 
@@ -711,5 +716,13 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
     private void assertUserDisabledEvent() {
         events.expect(EventType.LOGIN_ERROR).error(Errors.USER_TEMPORARILY_DISABLED).assertEvent();
+    }
+
+    private void assertUserDisabledReason(String expected) {
+        String actual = adminClient.realm("test").users()
+                .search("test-user@localhost", 0, 1)
+                .get(0)
+                .firstAttribute(UserModel.DISABLED_REASON);
+        assertEquals(expected, actual);
     }
 }

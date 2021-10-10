@@ -33,18 +33,18 @@ public class MacSignatureSignerContext implements SignatureSignerContext {
 
     @Override
     public String getAlgorithm() {
-        return key.getAlgorithm();
+        return key.getAlgorithmOrDefault();
     }
 
     @Override
     public String getHashAlgorithm() {
-        return JavaAlgorithm.getJavaAlgorithmForHash(key.getAlgorithm());
+        return JavaAlgorithm.getJavaAlgorithmForHash(key.getAlgorithmOrDefault());
     }
 
     @Override
     public byte[] sign(byte[] data) throws SignatureException {
         try {
-            Mac mac = Mac.getInstance(JavaAlgorithm.getJavaAlgorithm(key.getAlgorithm()));
+            Mac mac = Mac.getInstance(JavaAlgorithm.getJavaAlgorithm(key.getAlgorithmOrDefault()));
             mac.init(key.getSecretKey());
             mac.update(data);
             return mac.doFinal();

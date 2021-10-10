@@ -72,9 +72,13 @@ public class UserAttributeLDAPStorageMapperFactory extends AbstractLDAPStorageMa
                     .type(ProviderConfigProperty.BOOLEAN_TYPE).defaultValue("false").add();
         }
         config.property().name(UserAttributeLDAPStorageMapper.IS_MANDATORY_IN_LDAP).label("Is Mandatory In LDAP")
-                .helpText("If true, attribute is mandatory in LDAP. Hence if there is no value in Keycloak DB, the empty value will be set to be propagated to LDAP")
+                .helpText("If true, attribute is mandatory in LDAP. Hence if there is no value in Keycloak DB, the default or empty value will be set to be propagated to LDAP")
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("false").add()
+                .property().name(UserAttributeLDAPStorageMapper.ATTRIBUTE_DEFAULT_VALUE).label("Attribute default value")
+                .helpText("If there is no value in Keycloak DB and attribute is mandatory in LDAP, this value will be propagated to LDAP")
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .defaultValue("").add()
                 .property().name(UserAttributeLDAPStorageMapper.IS_BINARY_ATTRIBUTE).label("Is Binary Attribute")
                 .helpText("Should be true for binary LDAP attributes")
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)

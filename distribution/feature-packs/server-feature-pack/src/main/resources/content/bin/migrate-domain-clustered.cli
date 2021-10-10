@@ -72,7 +72,7 @@ set persistenceProvider=jpa
 if (outcome == failed) of /profile=$clusteredProfile/subsystem=infinispan/cache-container=keycloak/distributed-cache=authorization/:read-resource
     # In migration from 3.0.0 to 3.2.0 there is authorization distributed-cache replaced with local-cache
     try
-        echo 
+        echo
         /profile=$clusteredProfile/subsystem=infinispan/cache-container=keycloak/distributed-cache=authorization/:add(mode=SYNC,owners=1)
         echo Added distributed-cache=authorization
     catch
@@ -144,7 +144,7 @@ end-if
 
 
 # Migrate from 2.4.0 to 2.5.0
-if (result == NONE) of /profile=$clusteredProfile/subsystem=infinispan/cache-container=keycloak/local-cache=realms/component=eviction/:read-attribute(name=strategy)  
+if (result == NONE) of /profile=$clusteredProfile/subsystem=infinispan/cache-container=keycloak/local-cache=realms/component=eviction/:read-attribute(name=strategy)
   echo Adding eviction strategy to keycloak realms cache...
   /profile=$clusteredProfile/subsystem=infinispan/cache-container=keycloak/local-cache=realms/component=eviction/:write-attribute(name=strategy,value=LRU)
   /profile=$clusteredProfile/subsystem=infinispan/cache-container=keycloak/local-cache=realms/component=eviction/:write-attribute(name=max-entries,value=10000)
@@ -167,7 +167,7 @@ if (outcome == success) of /profile=$clusteredProfile/subsystem=infinispan/cache
 end-if
 
 
-# Migrate from 2.5.4 to 3.0.0 
+# Migrate from 2.5.4 to 3.0.0
 if (result == jpa) of /profile=$clusteredProfile/subsystem=keycloak-server/spi=eventsStore/:read-attribute(name=default-provider,include-defaults=false)
    echo Removing default provider for eventsStore
    /profile=$clusteredProfile/subsystem=keycloak-server/spi=eventsStore/:undefine-attribute(name=default-provider)
@@ -341,7 +341,7 @@ if (outcome == success) of /profile=$clusteredProfile/subsystem=jgroups/stack=tc
     /profile=$clusteredProfile/subsystem=jgroups/stack=tcp/protocol=FD/:remove
     /profile=$clusteredProfile/subsystem=jgroups/stack=tcp/protocol=FD_ALL/:add
     echo
-end-if   
+end-if
 
 if (result != undefined) of /profile=$clusteredProfile/subsystem=jgroups/stack=tcp/protocol=FD_SOCK/:read-attribute(name=socket-binding)
     echo Unsetting socket-binding from tcp FD_SOCK protocol
@@ -349,7 +349,7 @@ if (result != undefined) of /profile=$clusteredProfile/subsystem=jgroups/stack=t
     /profile=$clusteredProfile/subsystem=jgroups/stack=tcp/protocol=FD_SOCK/:remove
     /profile=$clusteredProfile/subsystem=jgroups/stack=tcp/protocol=FD_SOCK/:add
     echo
-end-if 
+end-if
 
 if (outcome == failed) of /profile=$clusteredProfile/subsystem=undertow/server=default-server/host=default-host/setting=http-invoker/:read-resource
     echo Adding http-invoker to default-host
@@ -397,7 +397,7 @@ if (outcome == success) of /profile=$clusteredProfile/subsystem=jdr/:read-resour
         echo
     end-try
 end-if
-    
+
 if (outcome == success) of /profile=$clusteredProfile/subsystem=jsf/:read-resource
     echo Removing jsf subsystem and extension
     /profile=$clusteredProfile/subsystem=jsf/:remove
@@ -579,13 +579,13 @@ if (result == NON_XA) of /profile=$clusteredProfile/subsystem=infinispan/cache-c
 end-if
 
 if (result == false) of /profile=$clusteredProfile/subsystem=datasources/data-source=ExampleDS/:read-attribute(name=statistics-enabled)
-    echo Adding statistics-enabled expression to ExampleDS datasource 
+    echo Adding statistics-enabled expression to ExampleDS datasource
     /profile=$clusteredProfile/subsystem=datasources/data-source=ExampleDS/:write-attribute(name=statistics-enabled,value=${wildfly.datasources.statistics-enabled:${wildfly.statistics-enabled:false}})
     echo
 end-if
 
 if (result == false) of /profile=$clusteredProfile/subsystem=datasources/data-source=KeycloakDS/:read-attribute(name=statistics-enabled)
-    echo Adding statistics-enabled expression to KeycloakDS datasource 
+    echo Adding statistics-enabled expression to KeycloakDS datasource
     /profile=$clusteredProfile/subsystem=datasources/data-source=KeycloakDS/:write-attribute(name=statistics-enabled,value=${wildfly.datasources.statistics-enabled:${wildfly.statistics-enabled:false}})
     echo
 end-if
@@ -700,6 +700,53 @@ end-if
 if (result != org.keycloak.keycloak-model-infinispan) of /profile=$clusteredProfile/subsystem=infinispan/cache-container=keycloak:read-attribute(name=module)
     echo Setting class loader for keycloak cache-container in auth-server-clustered profile so JBoss Marshalling works properly with Infinispan 10.x
     /profile=$clusteredProfile/subsystem=infinispan/cache-container=keycloak:write-attribute(name=module,value=org.keycloak.keycloak-model-infinispan)
+    echo
+end-if
+
+# Migrate from 12.0.0 to 13.0.0
+
+## Add ability to make use of automatically generated self-signed certificate with Elytron,
+## introduced by WFCORE-5095 in Wildfly Core 14.0.0.Final
+
+if (outcome == failed) of /profile=$clusteredProfile/subsystem=elytron/key-store=applicationKS:read-resource
+    echo Adding key store for the feature of auto-generation of self-signed certificate to Elytron subsystem...
+    /profile=$clusteredProfile/subsystem=elytron/key-store=applicationKS:add(credential-reference={clear-text=password},type=JKS)
+    /profile=$clusteredProfile/subsystem=elytron/key-store=applicationKS:write-attribute(name=path,value=application.keystore)
+    /profile=$clusteredProfile/subsystem=elytron/key-store=applicationKS:write-attribute(name=relative-to,value=jboss.domain.config.dir)
+    echo
+end-if
+
+if (outcome == failed) of /profile=$clusteredProfile/subsystem=elytron/key-manager=applicationKM:read-resource
+    echo Adding key manager for the feature of auto-generation of self-signed certificate to Elytron subsystem...
+    /profile=$clusteredProfile/subsystem=elytron/key-manager=applicationKM:add(key-store=applicationKS, credential-reference={clear-text=password})
+    /profile=$clusteredProfile/subsystem=elytron/key-manager=applicationKM:write-attribute(name=generate-self-signed-certificate-host,value=localhost)
+    echo
+end-if
+
+if (outcome == failed) of /profile=$clusteredProfile/subsystem=elytron/server-ssl-context=applicationSSC:read-resource
+    echo Adding SSL context for the feature of auto-generation of self-signed certificate to Elytron subsystem...
+    /profile=$clusteredProfile/subsystem=elytron/server-ssl-context=applicationSSC:add(key-manager=applicationKM)
+    echo
+end-if
+
+## Convert type of 'hung-task-termination-period' attribute for 'managed-executor-service' from INT to LONG
+if (result == 0) of /profile=$clusteredProfile/subsystem=ee/managed-executor-service=default:read-attribute(name=hung-task-termination-period)
+    echo Setting period for automatic termination of hung tasks for managed executor service to default value (0 miliseconds)
+    /profile=$clusteredProfile/subsystem=ee/managed-executor-service=default:write-attribute(name=hung-task-termination-period,value=0L)
+    echo
+end-if
+
+## Convert type of 'hung-task-termination-period' attribute for 'managed-scheduled-executor-service' from INT to LONG
+if (result == 0) of /profile=$clusteredProfile/subsystem=ee/managed-scheduled-executor-service=default:read-attribute(name=hung-task-termination-period)
+    echo Setting period for automatic termination of hung tasks for managed scheduled executor service to default value (0 miliseconds)
+    /profile=$clusteredProfile/subsystem=ee/managed-scheduled-executor-service=default:write-attribute(name=hung-task-termination-period,value=0L)
+    echo
+end-if
+
+## Set value of JPA default-datasource from empty string to 'undefined'
+if (outcome == success) && (result == "") of /profile=$clusteredProfile/subsystem=jpa:read-attribute(name=default-datasource)
+    echo Setting value of to default-datasource attribute in JPA subsystem to 'undefined'
+    /profile=$clusteredProfile/subsystem=jpa:undefine-attribute(name=default-datasource)
     echo
 end-if
 

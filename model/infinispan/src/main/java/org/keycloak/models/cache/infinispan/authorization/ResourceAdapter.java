@@ -269,11 +269,6 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
     }
 
     @Override
-    public boolean isFetched(String association) {
-        return modelSupplier.get().isFetched(association);
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Resource)) return false;

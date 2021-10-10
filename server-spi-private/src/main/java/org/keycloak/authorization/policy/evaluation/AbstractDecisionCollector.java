@@ -63,7 +63,7 @@ public abstract class AbstractDecisionCollector implements Decision<DefaultEvalu
                         }
                     }
 
-                    return null;
+                    return new Result(permission1, evaluation);
                 }).policy(parentPolicy);
             } else {
                 results.computeIfAbsent(permission, p -> new Result(p, evaluation)).policy(parentPolicy).policy(evaluation.getPolicy(), evaluation.getEffect());

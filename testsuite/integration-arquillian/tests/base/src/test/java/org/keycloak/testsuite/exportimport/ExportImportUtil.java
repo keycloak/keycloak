@@ -25,6 +25,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.Profile;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.models.Constants;
 import org.keycloak.models.LDAPConstants;
@@ -57,6 +58,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.RealmRepUtil;
@@ -101,10 +103,6 @@ public class ExportImportUtil {
         Assert.assertEquals(1, creds.size());
         String cred = (String)creds.iterator().next();
         Assert.assertEquals("password", cred);
-        Assert.assertEquals(4, realm.getDefaultRoles().size());
-
-        Assert.assertNotNull(RealmRepUtil.findDefaultRole(realm, "foo"));
-        Assert.assertNotNull(RealmRepUtil.findDefaultRole(realm, "bar"));
 
         RealmResource realmRsc = adminClient.realm(realm.getRealm());
 
@@ -411,24 +409,27 @@ public class ExportImportUtil {
         // Test service accounts
         Assert.assertFalse(application.isServiceAccountsEnabled());
         Assert.assertTrue(otherApp.isServiceAccountsEnabled());
-        Assert.assertTrue(testAppAuthzApp.isServiceAccountsEnabled());
-        Assert.assertNull(testingClient.testing().getUserByServiceAccountClient(realm.getRealm(), application.getClientId()));//session.users().getUserByServiceAccountClient(application));
-        UserRepresentation otherAppSA = testingClient.testing().getUserByServiceAccountClient(realm.getRealm(), otherApp.getClientId());//session.users().getUserByServiceAccountClient(otherApp);
-        Assert.assertNotNull(otherAppSA);
-        Assert.assertEquals("service-account-otherapp", otherAppSA.getUsername());
-        UserRepresentation testAppAuthzSA = testingClient.testing().getUserByServiceAccountClient(realm.getRealm(), testAppAuthzApp.getClientId());
-        Assert.assertNotNull(testAppAuthzSA);
-        Assert.assertEquals("service-account-test-app-authz", testAppAuthzSA.getUsername());
 
-        // test service account maintains the roles in OtherApp
-        allRoles = allRoles(realmRsc, otherAppSA);
-        Assert.assertEquals(3, allRoles.size());
-        Assert.assertTrue(containsRole(allRoles, findRealmRole(realmRsc, "user")));
-        Assert.assertTrue(containsRole(allRoles, findClientRole(realmRsc, otherApp.getId(), "otherapp-user")));
-        Assert.assertTrue(containsRole(allRoles, findClientRole(realmRsc, otherApp.getId(), "otherapp-admin")));
+        if (ProfileAssume.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) { 
+            Assert.assertTrue(testAppAuthzApp.isServiceAccountsEnabled());
+            Assert.assertNull(testingClient.testing().getUserByServiceAccountClient(realm.getRealm(), application.getClientId()));//session.users().getUserByServiceAccountClient(application));
+            UserRepresentation otherAppSA = testingClient.testing().getUserByServiceAccountClient(realm.getRealm(), otherApp.getClientId());//session.users().getUserByServiceAccountClient(otherApp);
+            Assert.assertNotNull(otherAppSA);
+            Assert.assertEquals("service-account-otherapp", otherAppSA.getUsername());
+            UserRepresentation testAppAuthzSA = testingClient.testing().getUserByServiceAccountClient(realm.getRealm(), testAppAuthzApp.getClientId());
+            Assert.assertNotNull(testAppAuthzSA);
+            Assert.assertEquals("service-account-test-app-authz", testAppAuthzSA.getUsername());
 
-        assertAuthorizationSettingsOtherApp(realmRsc);
-        assertAuthorizationSettingsTestAppAuthz(realmRsc);
+            // test service account maintains the roles in OtherApp
+            allRoles = allRoles(realmRsc, otherAppSA);
+            Assert.assertEquals(3, allRoles.size());
+            Assert.assertTrue(containsRole(allRoles, findRealmRole(realmRsc, "user")));
+            Assert.assertTrue(containsRole(allRoles, findClientRole(realmRsc, otherApp.getId(), "otherapp-user")));
+            Assert.assertTrue(containsRole(allRoles, findClientRole(realmRsc, otherApp.getId(), "otherapp-admin")));
+
+            assertAuthorizationSettingsOtherApp(realmRsc);
+            assertAuthorizationSettingsTestAppAuthz(realmRsc);
+        }
     }
 
 
@@ -478,7 +479,7 @@ public class ExportImportUtil {
 
     // Workaround for KEYCLOAK-3104.  For this realm, search() only works if username is null.
     private static UserRepresentation findByUsername(RealmResource realmRsc, String username) {
-        for (UserRepresentation user : realmRsc.users().search(null, 0, Integer.MAX_VALUE)) {
+        for (UserRepresentation user : realmRsc.users().search(null, 0, -1)) {
             if (user.getUsername().equalsIgnoreCase(username)) return user;
         }
         return null;

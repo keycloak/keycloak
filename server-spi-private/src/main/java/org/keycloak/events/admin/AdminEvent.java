@@ -22,6 +22,8 @@ package org.keycloak.events.admin;
  */
 public class AdminEvent {
 
+    private String id;
+
     private long time;
     
     private String realmId;
@@ -41,6 +43,32 @@ public class AdminEvent {
 
     private String error;
     
+    public AdminEvent() {}
+    public AdminEvent(AdminEvent toCopy) {
+        this.id = toCopy.getId();
+        this.time = toCopy.getTime();
+        this.realmId = toCopy.getRealmId();
+        this.authDetails = new AuthDetails(toCopy.getAuthDetails());
+        this.resourceType = toCopy.getResourceTypeAsString();
+        this.operationType = toCopy.getOperationType();
+        this.resourcePath = toCopy.getResourcePath();
+        this.representation = toCopy.getRepresentation();
+        this.error = toCopy.getError();
+    }
+
+    /**
+     * Returns the UUID of the event.
+     *
+     * @return
+     */
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
     /**
      * Returns the time of the event
      *

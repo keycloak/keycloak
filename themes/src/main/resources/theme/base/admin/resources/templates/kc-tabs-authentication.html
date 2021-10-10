@@ -12,4 +12,5 @@
         <a href="#/realms/{{realm.realm}}/authentication/webauthn-policy-passwordless">{{:: 'webauthn-policy-passwordless' | translate}}</a>
         <kc-tooltip>{{:: 'webauthn-policy-passwordless.tooltip' | translate}}</kc-tooltip>
     </li>
+    <li ng-class="{active: path[3] == 'ciba-policy'}" data-ng-show="access.viewRealm && serverInfo.featureEnabled('CIBA')"><a href="#/realms/{{realm.realm}}/authentication/ciba-policy">{{:: 'ciba-policy' | translate}}</a></li>
 </ul>

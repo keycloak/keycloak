@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -189,9 +190,9 @@ public class PolicyEvaluationResponseBuilder {
         representation.setDescription(policy.getDescription());
 
         if ("uma".equals(representation.getType())) {
-            Map<String, String> filters = new HashMap<>();
+            Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
 
-            filters.put(PermissionTicket.POLICY, policy.getId());
+            filters.put(PermissionTicket.FilterOption.POLICY_ID, policy.getId());
 
             List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(filters, policy.getResourceServer().getId(), -1, 1);
 
@@ -199,8 +200,8 @@ public class PolicyEvaluationResponseBuilder {
                 KeycloakSession keycloakSession = authorization.getKeycloakSession();
                 RealmModel realm = authorization.getRealm();
                 PermissionTicket ticket = tickets.get(0);
-                UserModel userOwner = keycloakSession.users().getUserById(ticket.getOwner(), realm);
-                UserModel requester = keycloakSession.users().getUserById(ticket.getRequester(), realm);
+                UserModel userOwner = keycloakSession.users().getUserById(realm, ticket.getOwner());
+                UserModel requester = keycloakSession.users().getUserById(realm, ticket.getRequester());
                 String resourceOwner;
                 if (userOwner != null) {
                     resourceOwner = getUserEmailOrUserName(userOwner);

@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 
 import java.io.BufferedInputStream;
@@ -36,6 +37,7 @@ import java.util.stream.Collectors;
 
 import javax.security.cert.X509Certificate;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.KeycloakSecurityContext;
@@ -65,6 +67,7 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -83,6 +86,11 @@ import org.keycloak.testsuite.util.UserBuilder;
 public class PolicyEnforcerClaimsTest extends AbstractKeycloakTest {
 
     protected static final String REALM_NAME = "authz-test";
+
+    @BeforeClass
+    public static void enabled() {
+        ProfileAssume.assumeFeatureEnabled(AUTHORIZATION);
+    }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {

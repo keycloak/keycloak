@@ -17,8 +17,15 @@
 
 package org.keycloak.testsuite.util.cli;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
@@ -166,28 +173,26 @@ public class LdapManyObjectsInitializerCommand extends AbstractCommand {
             }
 
             @Override
-            public List<String> getAttribute(String name) {
+            public Stream<String> getAttributeStream(String name) {
                 if (UserModel.FIRST_NAME.equals(name)) {
-                    return Collections.singletonList(firstName);
+                    return Stream.of(firstName);
                 } else if (UserModel.LAST_NAME.equals(name)) {
-                    return Collections.singletonList(lastName);
+                    return Stream.of(lastName);
                 } else if (UserModel.EMAIL.equals(name)) {
-                    return Collections.singletonList(email);
+                    return Stream.of(email);
                 } else if (UserModel.USERNAME.equals(name)) {
-                    return Collections.singletonList(username);
+                    return Stream.of(username);
                 } else if ("street".equals(name)) {
-
-                    List<String> groupNamesList = new ArrayList<>();
-                    for (int i=startOffsetGroups ; i<startOffsetGroups + countGroups ; i++) {
+                    Stream.Builder<String> builder = Stream.builder();
+                    for (int i = startOffsetGroups; i < startOffsetGroups + countGroups; i++) {
                         String groupName = "group" + i;
                         LDAPDn groupDn = LDAPDn.fromString(groupsDN);
                         groupDn.addFirst("cn", groupName);
-                        groupNamesList.add(groupDn.toString());
+                        builder.add(groupDn.toString());
                     }
-                    return groupNamesList;
-
+                    return builder.build();
                 } else {
-                    return Collections.emptyList();
+                    return Stream.empty();
                 }
             }
         };

@@ -16,13 +16,29 @@
  */
 package org.keycloak.models.map.common;
 
+import org.keycloak.common.util.reflections.Reflections;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.type.TypeFactory;
+import com.fasterxml.jackson.datatype.jdk8.StreamSerializer;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 /**
  *
@@ -30,18 +46,28 @@ import java.io.IOException;
  */
 public class Serialization {
 
-    public static final ObjectMapper MAPPER = new ObjectMapper();
+    public static final ObjectMapper MAPPER = new ObjectMapper()
+      .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
+      .enable(SerializationFeature.INDENT_OUTPUT)
+      .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+      .setVisibility(PropertyAccessor.ALL, Visibility.NONE)
+      .setVisibility(PropertyAccessor.FIELD, Visibility.ANY)
+      .activateDefaultTyping(new LaissezFaireSubTypeValidator() /* TODO - see javadoc */, ObjectMapper.DefaultTyping.JAVA_LANG_OBJECT, JsonTypeInfo.As.PROPERTY)
+      .addMixIn(UpdatableEntity.class, IgnoreUpdatedMixIn.class)
+    ;
 
-    abstract class IgnoreUpdatedMixIn { @JsonIgnore public abstract boolean isUpdated(); }
+    public static final ConcurrentHashMap<Class<?>, ObjectReader> READERS = new ConcurrentHashMap<>();
+    public static final ConcurrentHashMap<Class<?>, ObjectWriter> WRITERS = new ConcurrentHashMap<>();
+
+    abstract class IgnoreUpdatedMixIn {
+        @JsonIgnore public abstract boolean isUpdated();
+    }
 
     static {
-        MAPPER.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-        MAPPER.enable(SerializationFeature.INDENT_OUTPUT);
-        MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        MAPPER.setVisibility(PropertyAccessor.ALL, Visibility.NONE);
-        MAPPER.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
-
-        MAPPER.addMixIn(AbstractEntity.class, IgnoreUpdatedMixIn.class);
+        JavaType type = TypeFactory.unknownType();
+        JavaType streamType = MAPPER.getTypeFactory().constructParametricType(Stream.class, type);
+        SimpleModule module = new SimpleModule().addSerializer(new StreamSerializer(streamType, type));
+        MAPPER.registerModule(module);
     }
 
 
@@ -49,13 +75,19 @@ public class Serialization {
         if (orig == null) {
             return null;
         }
+        @SuppressWarnings("unchecked")
+        final Class<T> origClass = (Class<T>) orig.getClass();
+
+        // Naive solution but will do.
         try {
-            // Naive solution but will do.
-            final T res = MAPPER.readValue(MAPPER.writeValueAsBytes(orig), (Class<T>) orig.getClass());
+            ObjectReader reader = READERS.computeIfAbsent(origClass, MAPPER::readerFor);
+            ObjectWriter writer = WRITERS.computeIfAbsent(origClass, MAPPER::writerFor);
+            final T res;
+            res = reader.readValue(writer.writeValueAsBytes(orig));
+
             return res;
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
         }
     }
-
 }

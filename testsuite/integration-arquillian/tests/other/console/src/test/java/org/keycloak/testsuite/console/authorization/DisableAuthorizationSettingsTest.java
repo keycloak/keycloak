@@ -16,11 +16,12 @@
  */
 package org.keycloak.testsuite.console.authorization;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 import org.junit.Test;
+import org.keycloak.common.util.Retry;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -34,10 +35,13 @@ public class DisableAuthorizationSettingsTest extends AbstractAuthorizationSetti
         clientSettingsPage.navigateTo();
         clientSettingsPage.form().setAuthorizationSettingsEnabled(false);
         waitUntilElement(modalDialog.getMessage()).text().contains(WARNING_MESSAGE);
+
         clientSettingsPage.form().confirmDisableAuthorizationSettings();
-        Thread.sleep(1000);
-        clientSettingsPage.form().save();
-        assertAlertSuccess();
+        Retry.execute(() -> {
+            clientSettingsPage.form().save();
+        }, 10, 300);
+
+        Retry.execute(this::assertAlertSuccess, 10, 300);
 
         clientSettingsPage.navigateTo();
         assertFalse(clientSettingsPage.form().isAuthorizationSettingsEnabled());

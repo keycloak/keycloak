@@ -26,11 +26,8 @@ import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
@@ -51,14 +48,15 @@ import java.util.Set;
 @Entity
 @Table(name="CLIENT", uniqueConstraints = {@UniqueConstraint(columnNames = {"REALM_ID", "CLIENT_ID"})})
 @NamedQueries({
-        @NamedQuery(name="getClientsByRealm", query="select client from ClientEntity client where client.realm = :realm"),
-        @NamedQuery(name="getClientById", query="select client from ClientEntity client where client.id = :id and client.realm.id = :realm"),
-        @NamedQuery(name="getClientIdsByRealm", query="select client.id from ClientEntity client where client.realm.id = :realm order by client.clientId"),
-        @NamedQuery(name="getAlwaysDisplayInConsoleClients", query="select client.id from ClientEntity client where client.alwaysDisplayInConsole = true and client.realm.id = :realm  order by client.clientId"),
-        @NamedQuery(name="findClientIdByClientId", query="select client.id from ClientEntity client where client.clientId = :clientId and client.realm.id = :realm"),
-        @NamedQuery(name="searchClientsByClientId", query="select client.id from ClientEntity client where lower(client.clientId) like lower(concat('%',:clientId,'%')) and client.realm.id = :realm order by client.clientId"),
-        @NamedQuery(name="getRealmClientsCount", query="select count(client) from ClientEntity client where client.realm.id = :realm"),
-        @NamedQuery(name="findClientByClientId", query="select client from ClientEntity client where client.clientId = :clientId and client.realm.id = :realm"),
+        @NamedQuery(name="getClientsByRealm", query="select client from ClientEntity client where client.realmId = :realm"),
+        @NamedQuery(name="getClientById", query="select client from ClientEntity client where client.id = :id and client.realmId = :realm"),
+        @NamedQuery(name="getClientIdsByRealm", query="select client.id from ClientEntity client where client.realmId = :realm order by client.clientId"),
+        @NamedQuery(name="getAlwaysDisplayInConsoleClients", query="select client.id from ClientEntity client where client.alwaysDisplayInConsole = true and client.realmId = :realm order by client.clientId"),
+        @NamedQuery(name="findClientIdByClientId", query="select client.id from ClientEntity client where client.clientId = :clientId and client.realmId = :realm"),
+        @NamedQuery(name="searchClientsByClientId", query="select client.id from ClientEntity client where lower(client.clientId) like lower(concat('%',:clientId,'%')) and client.realmId = :realm order by client.clientId"),
+        @NamedQuery(name="getRealmClientsCount", query="select count(client) from ClientEntity client where client.realmId = :realm"),
+        @NamedQuery(name="findClientByClientId", query="select client from ClientEntity client where client.clientId = :clientId and client.realmId = :realm"),
+        @NamedQuery(name="getAllRedirectUrisOfEnabledClients", query="select new map(client as client, r as redirectUri) from ClientEntity client join client.redirectUris r where client.realmId = :realm and client.enabled = true"),
 })
 public class ClientEntity {
 
@@ -95,9 +93,8 @@ public class ClientEntity {
     @Column(name="FULL_SCOPE_ALLOWED")
     private boolean fullScopeAllowed;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "REALM_ID")
-    protected RealmEntity realm;
+    @Column(name = "REALM_ID")
+    protected String realmId;
 
     @ElementCollection
     @Column(name="VALUE")
@@ -154,13 +151,10 @@ public class ClientEntity {
     @Column(name="NODE_REREG_TIMEOUT")
     private int nodeReRegistrationTimeout;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="CLIENT_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="CLIENT_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
-    Collection<RoleEntity> defaultRoles;
-
-    @OneToMany(fetch = FetchType.LAZY)
-    @JoinTable(name="SCOPE_MAPPING", joinColumns = { @JoinColumn(name="CLIENT_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
-    protected Set<RoleEntity> scopeMapping;
+    @ElementCollection
+    @Column(name="ROLE_ID")
+    @CollectionTable(name="SCOPE_MAPPING", joinColumns = { @JoinColumn(name="CLIENT_ID")})
+    private Set<String> scopeMappingIds;
 
     @ElementCollection
     @MapKeyColumn(name="NAME")
@@ -168,12 +162,12 @@ public class ClientEntity {
     @CollectionTable(name="CLIENT_NODE_REGISTRATIONS", joinColumns={ @JoinColumn(name="CLIENT_ID") })
     Map<String, Integer> registeredNodes;
 
-    public RealmEntity getRealm() {
-        return realm;
+    public String getRealmId() {
+        return realmId;
     }
 
-    public void setRealm(RealmEntity realm) {
-        this.realm = realm;
+    public void setRealmId(String realmId) {
+        this.realmId = realmId;
     }
 
     public String getId() {
@@ -375,17 +369,6 @@ public class ClientEntity {
         this.managementUrl = managementUrl;
     }
 
-    public Collection<RoleEntity> getDefaultRoles() {
-        if (defaultRoles == null) {
-            defaultRoles = new LinkedList<>();
-        }
-        return defaultRoles;
-    }
-
-    public void setDefaultRoles(Collection<RoleEntity> defaultRoles) {
-        this.defaultRoles = defaultRoles;
-    }
-
     public boolean isBearerOnly() {
         return bearerOnly;
     }
@@ -453,15 +436,15 @@ public class ClientEntity {
         this.registeredNodes = registeredNodes;
     }
 
-    public Set<RoleEntity> getScopeMapping() {
-        if (scopeMapping == null) {
-            scopeMapping = new HashSet<>();
+    public Set<String> getScopeMappingIds() {
+        if (scopeMappingIds == null) {
+            scopeMappingIds = new HashSet<>();
         }
-        return scopeMapping;
+        return scopeMappingIds;
     }
 
-    public void setScopeMapping(Set<RoleEntity> scopeMapping) {
-        this.scopeMapping = scopeMapping;
+    public void setScopeMapping(Set<String> scopeMappingIds) {
+        this.scopeMappingIds = scopeMappingIds;
     }
 
     @Override

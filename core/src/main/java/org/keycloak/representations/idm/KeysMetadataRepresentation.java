@@ -20,6 +20,8 @@ package org.keycloak.representations.idm;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.crypto.KeyUse;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -58,6 +60,7 @@ public class KeysMetadataRepresentation {
 
         private String publicKey;
         private String certificate;
+        private KeyUse use;
 
         public String getProviderId() {
             return providerId;
@@ -121,6 +124,14 @@ public class KeysMetadataRepresentation {
 
         public void setCertificate(String certificate) {
             this.certificate = certificate;
+        }
+
+        public KeyUse getUse() {
+            return use;
+        }
+
+        public void setUse(KeyUse use) {
+            this.use = use;
         }
     }
 }

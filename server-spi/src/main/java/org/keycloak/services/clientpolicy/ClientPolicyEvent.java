@@ -17,16 +17,31 @@
 
 package org.keycloak.services.clientpolicy;
 
+/**
+ * Events on which client policies mechanism detects and do its operation
+ * 
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public enum ClientPolicyEvent {
 
     REGISTER,
+    REGISTERED,
     UPDATE,
+    UPDATED,
+    VIEW,
+    UNREGISTER,
     AUTHORIZATION_REQUEST,
     TOKEN_REQUEST,
+    SERVICE_ACCOUNT_TOKEN_REQUEST,
     TOKEN_REFRESH,
     TOKEN_REVOKE,
     TOKEN_INTROSPECT,
     USERINFO_REQUEST,
-    LOGOUT_REQUEST
+    LOGOUT_REQUEST,
+    BACKCHANNEL_AUTHENTICATION_REQUEST,
+    BACKCHANNEL_TOKEN_REQUEST,
+    PUSHED_AUTHORIZATION_REQUEST,
+    DEVICE_AUTHORIZATION_REQUEST,
+    DEVICE_TOKEN_REQUEST
 
 }

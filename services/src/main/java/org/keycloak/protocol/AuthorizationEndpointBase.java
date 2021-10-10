@@ -196,7 +196,7 @@ public abstract class AuthorizationEndpointBase {
                     AuthenticationManager.backchannelLogout(session, userSession, true);
                 } else {
                     String userSessionId = userSession.getId();
-                    rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(userSessionId, realm);
+                    rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm, userSessionId);
                     authSession = rootAuthSession.createAuthenticationSession(client);
                     logger.debugf("Sent request to authz endpoint. We don't have root authentication session with ID '%s' but we have userSession." +
                             "Re-created root authentication session with same ID. Client is: %s . New authentication session tab ID: %s", userSessionId, client.getClientId(), authSession.getTabId());

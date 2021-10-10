@@ -82,7 +82,7 @@ public class X509IdentityConfirmationPage extends LanguageComboboxAwarePage {
     }
 
     public boolean isCurrent() {
-        return driver.getTitle().equals("Log in to test") || driver.getTitle().equals("Anmeldung bei test");
+        return driver.getTitle().equals("Sign in to test") || driver.getTitle().equals("Anmeldung bei test");
     }
 
     @Override

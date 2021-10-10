@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature-group-spec name="infinispan-dist-keycloak" xmlns="urn:jboss:galleon:feature-group:1.0">
+    <feature spec="subsystem.infinispan">
+        <feature spec="subsystem.infinispan.cache-container">
+            <param name="cache-container" value="keycloak"/>
+            <param name="modules" value="[org.keycloak.keycloak-model-infinispan]"/>
+            <feature spec="subsystem.infinispan.cache-container.transport.jgroups">
+                <param name="lock-timeout" value="60000"/>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.local-cache">
+                <param name="local-cache" value="realms"/>
+                <feature spec="subsystem.infinispan.cache-container.local-cache.memory.heap">
+                    <param name="size" value="10000"/>
+                </feature>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.local-cache">
+                <param name="local-cache" value="users"/>
+                <feature spec="subsystem.infinispan.cache-container.local-cache.memory.heap">
+                    <param name="size" value="10000"/>
+                </feature>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.distributed-cache">
+                <param name="distributed-cache" value="sessions"/>
+                <param name="owners" value="1"/>
+                <feature spec="subsystem.infinispan.cache-container.distributed-cache.component.expiration">
+                    <param name="lifespan" value="900000000000000000"/>
+                </feature>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.distributed-cache">
+                <param name="distributed-cache" value="authenticationSessions"/>
+                <param name="owners" value="1"/>
+                <feature spec="subsystem.infinispan.cache-container.distributed-cache.component.expiration">
+                    <param name="lifespan" value="900000000000000000"/>
+                </feature>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.distributed-cache">
+                <param name="distributed-cache" value="offlineSessions"/>
+                <param name="owners" value="1"/>
+                <feature spec="subsystem.infinispan.cache-container.distributed-cache.component.expiration">
+                    <param name="lifespan" value="900000000000000000"/>
+                </feature>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.distributed-cache">
+                <param name="distributed-cache" value="clientSessions"/>
+                <param name="owners" value="1"/>
+                <feature spec="subsystem.infinispan.cache-container.distributed-cache.component.expiration">
+                    <param name="lifespan" value="900000000000000000"/>
+                </feature>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.distributed-cache">
+                <param name="distributed-cache" value="offlineClientSessions"/>
+                <param name="owners" value="1"/>
+                <feature spec="subsystem.infinispan.cache-container.distributed-cache.component.expiration">
+                    <param name="lifespan" value="900000000000000000"/>
+                </feature>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.distributed-cache">
+                <param name="distributed-cache" value="loginFailures"/>
+                <param name="owners" value="1"/>
+                <feature spec="subsystem.infinispan.cache-container.distributed-cache.component.expiration">
+                    <param name="lifespan" value="900000000000000000"/>
+                </feature>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.local-cache">
+                <param name="local-cache" value="authorization"/>
+                <feature spec="subsystem.infinispan.cache-container.local-cache.memory.heap">
+                    <param name="size" value="10000"/>
+                </feature>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.replicated-cache">
+                <param name="replicated-cache" value="work"/>
+                <feature spec="subsystem.infinispan.cache-container.replicated-cache.component.expiration">
+                    <param name="lifespan" value="900000000000000000"/>
+                </feature>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.local-cache">
+                <param name="local-cache" value="keys"/>
+                <feature spec="subsystem.infinispan.cache-container.local-cache.memory.heap">
+                    <param name="size" value="1000"/>
+                </feature>
+                <feature spec="subsystem.infinispan.cache-container.local-cache.component.expiration">
+                    <param name="max-idle" value="3600000"/>
+                </feature>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.distributed-cache">
+                <param name="distributed-cache" value="actionTokens"/>
+                <param name="owners" value="2"/>
+                <feature spec="subsystem.infinispan.cache-container.distributed-cache.memory.heap">
+                    <param name="size" value="-1"/>
+                </feature>
+                <feature spec="subsystem.infinispan.cache-container.distributed-cache.component.expiration">
+                    <param name="max-idle" value="-1"/>
+                    <param name="interval" value="300000"/>
+                    <param name="lifespan" value="900000000000000000"/>
+                </feature>
+            </feature>
+        </feature>
+    </feature>
+</feature-group-spec>

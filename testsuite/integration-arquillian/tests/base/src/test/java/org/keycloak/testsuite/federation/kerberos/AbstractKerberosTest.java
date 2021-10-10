@@ -162,7 +162,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
     @After
     @Override
-    public void afterAbstractKeycloakTest() {
+    public void afterAbstractKeycloakTest() throws Exception {
         cleanupApacheHttpClient();
 
         super.afterAbstractKeycloakTest();
@@ -287,13 +287,13 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
     protected void removeAllUsers() {
         RealmResource realm = testRealmResource();
-        List<UserRepresentation> users = realm.users().search("", 0, Integer.MAX_VALUE);
+        List<UserRepresentation> users = realm.users().search("", 0, -1);
         for (UserRepresentation user : users) {
             if (!user.getUsername().equals(AssertEvents.DEFAULT_USERNAME)) {
                 realm.users().get(user.getId()).remove();
             }
         }
-        Assert.assertEquals(1, realm.users().search("", 0, Integer.MAX_VALUE).size());
+        Assert.assertEquals(1, realm.users().search("", 0, -1).size());
     }
 
 
@@ -362,7 +362,11 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
 
     protected AuthenticationExecutionModel.Requirement updateKerberosAuthExecutionRequirement(AuthenticationExecutionModel.Requirement requirement) {
-        Optional<AuthenticationExecutionInfoRepresentation> kerberosAuthExecutionOpt = testRealmResource()
+        return updateKerberosAuthExecutionRequirement(requirement, testRealmResource());
+    }
+
+    public static AuthenticationExecutionModel.Requirement updateKerberosAuthExecutionRequirement(AuthenticationExecutionModel.Requirement requirement, RealmResource realmResource) {
+        Optional<AuthenticationExecutionInfoRepresentation> kerberosAuthExecutionOpt = realmResource
                 .flows()
                 .getExecutions(DefaultAuthenticationFlows.BROWSER_FLOW)
                 .stream()
@@ -376,7 +380,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
         AuthenticationExecutionModel.Requirement oldRequirement = AuthenticationExecutionModel.Requirement.valueOf(oldRequirementStr);
         kerberosAuthExecution.setRequirement(requirement.name());
 
-        testRealmResource()
+        realmResource
                 .flows()
                 .updateExecutions(DefaultAuthenticationFlows.BROWSER_FLOW, kerberosAuthExecution);
 

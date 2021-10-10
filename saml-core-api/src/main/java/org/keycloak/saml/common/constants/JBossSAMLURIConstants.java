@@ -88,6 +88,7 @@ public enum JBossSAMLURIConstants {
     SAML_HTTP_REDIRECT_BINDING("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"),
     SAML_SOAP_BINDING("urn:oasis:names:tc:SAML:2.0:bindings:SOAP"),
     SAML_PAOS_BINDING("urn:oasis:names:tc:SAML:2.0:bindings:PAOS"),
+    SAML_HTTP_ARTIFACT_BINDING("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"),
 
     SAML_11_NS("urn:oasis:names:tc:SAML:1.0:assertion"),
 

@@ -33,6 +33,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
  * Authenticator for WebAuthn authentication with passwordless credential. This class is temporary and will be likely
@@ -57,8 +58,9 @@ public class WebAuthnPasswordlessAuthenticator extends WebAuthnAuthenticator {
     @Override
     public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
         // ask the user to do required action to register webauthn authenticator
-        if (!user.getRequiredActions().contains(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID)) {
-            user.addRequiredAction(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
+        AuthenticationSessionModel authenticationSession = session.getContext().getAuthenticationSession();
+        if (!authenticationSession.getRequiredActions().contains(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID)) {
+            authenticationSession.addRequiredAction(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
         }
     }
 

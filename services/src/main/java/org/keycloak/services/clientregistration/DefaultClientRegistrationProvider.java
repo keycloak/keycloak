@@ -48,6 +48,7 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
     public Response createDefault(ClientRepresentation client) {
         DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(session, client, this);
         client = create(context);
+        validateClient(client, true);
         URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(client.getClientId()).build();
         return Response.created(uri).entity(client).build();
     }
@@ -68,6 +69,7 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
     public Response updateDefault(@PathParam("clientId") String clientId, ClientRepresentation client) {
         DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(session, client, this);
         client = update(clientId, context);
+        validateClient(client, false);
         return Response.ok(client).build();
     }
 

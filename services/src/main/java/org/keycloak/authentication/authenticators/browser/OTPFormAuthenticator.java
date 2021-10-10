@@ -36,6 +36,8 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.validation.Validation;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -86,7 +88,7 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
 
         UserModel userModel = context.getUser();
         if (!enabledUser(context, userModel)) {
-            // error in context is set in enabledUser/isTemporarilyDisabledByBruteForce
+            // error in context is set in enabledUser/isDisabledByBruteForce
             return;
         }
 
@@ -100,7 +102,7 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
         if (!valid) {
             context.getEvent().user(userModel)
                     .error(Errors.INVALID_USER_CREDENTIALS);
-            Response challengeResponse = challenge(context, Messages.INVALID_TOTP);
+            Response challengeResponse = challenge(context, Messages.INVALID_TOTP, Validation.FIELD_OTP_CODE);
             context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
             return;
         }
@@ -113,8 +115,13 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
     }
 
     @Override
-    protected String tempDisabledError() {
+    protected String disabledByBruteForceError() {
         return Messages.INVALID_TOTP;
+    }
+
+    @Override
+    protected String disabledByBruteForceFieldError() {
+        return Validation.FIELD_OTP_CODE;
     }
 
     @Override
@@ -129,8 +136,9 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
 
     @Override
     public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
-        if (!user.getRequiredActions().contains(UserModel.RequiredAction.CONFIGURE_TOTP.name())) {
-            user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.name());
+        AuthenticationSessionModel authenticationSession = session.getContext().getAuthenticationSession();
+        if (!authenticationSession.getRequiredActions().contains(UserModel.RequiredAction.CONFIGURE_TOTP.name())) {
+            authenticationSession.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
         }
     }
 

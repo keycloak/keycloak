@@ -48,6 +48,9 @@ import org.keycloak.testsuite.util.UserBuilder;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Map;
+import java.util.UUID;
+
+import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 
 /**
  * Tests for {@link org.keycloak.authentication.authenticators.browser.ScriptBasedAuthenticator}
@@ -64,14 +67,21 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
     public AssertEvents events = new AssertEvents(this);
 
     private AuthenticationFlowRepresentation flow;
+    private final static String userId = UUID.randomUUID().toString();
+    private final static String failId = UUID.randomUUID().toString();
 
     public static final String EXECUTION_ID = "scriptAuth";
+
+    @BeforeClass
+    public static void enabled() {
+        ProfileAssume.assumeFeatureEnabled(AUTHORIZATION);
+    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
 
         UserRepresentation failUser = UserBuilder.create()
-                .id("fail")
+                .id(failId)
                 .username("fail")
                 .email("fail@test.com")
                 .enabled(true)
@@ -79,7 +89,7 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
                 .build();
 
         UserRepresentation okayUser = UserBuilder.create()
-                .id("user")
+                .id(userId)
                 .username("user")
                 .email("user@test.com")
                 .enabled(true)
@@ -153,7 +163,7 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
 
         loginPage.login("user", "password");
 
-        events.expectLogin().user("user").detail(Details.USERNAME, "user").assertEvent();
+        events.expectLogin().user(userId).detail(Details.USERNAME, "user").assertEvent();
     }
 
     /**
@@ -184,7 +194,7 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
 
         loginPage.login("user", "password");
 
-        events.expectLogin().user("user").detail(Details.USERNAME, "user").assertEvent();
+        events.expectLogin().user(userId).detail(Details.USERNAME, "user").assertEvent();
     }
 
     private void addConfigFromFile(String filename) {

@@ -1,23 +1,36 @@
 <?xml version="1.0"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>12.0.0-SNAPSHOT</version>
+        <version>16.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>keycloak-themes</artifactId>
     <name>Keycloak Themes</name>
-    <description/>
+    <description />
     <packaging>jar</packaging>
 
     <properties>
         <dir.common>src/main/resources/theme/keycloak/common/resources</dir.common>
-        <dir.account2>src/main/resources/theme/keycloak-preview/account/src</dir.account2>
+        <dir.account2>src/main/resources/theme/keycloak.v2/account/src</dir.account2>
         <args.npm.install>ci --no-optional --ignore-scripts</args.npm.install>
     </properties>
+
+    <repositories>
+        <repository>
+            <id>github</id>
+            <url>https://keycloak-packages:&#103;hp_tSeU74eZVGTSupVCap28N8TX0M88YJ06kua9@maven.pkg.github.com/keycloak/keycloak-admin-ui</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+            </snapshots>
+        </repository>
+    </repositories>
 
     <build>
         <plugins>
@@ -122,11 +135,11 @@
                     <exclude>**/Gruntfile.js</exclude>
                     <exclude>**/Gemfile*</exclude>
                     <exclude>**/.*</exclude>
-                    
+
                     <!-- Remove once rcue stops shipping this file -->
                     <exclude>**/git-Logo.svg</exclude>
-                    
-                    <exclude>**/keycloak-preview/account/src/**</exclude>
+
+                    <exclude>**/keycloak.v2/account/src/**</exclude>
                 </excludes>
             </resource>
         </resources>
@@ -140,12 +153,44 @@
                     <name>!product</name>
                 </property>
             </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-admin-ui</artifactId>
+                </dependency>
+            </dependencies>
             <build>
                 <resources>
                     <resource>
                         <directory>src/main/resources-community</directory>
                     </resource>
                 </resources>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>unpack</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.keycloak</groupId>
+                                            <artifactId>keycloak-admin-ui</artifactId>
+                                            <type>jar</type>
+                                            <overWrite>true</overWrite>
+                                            <outputDirectory>${project.build.directory}/classes/theme/keycloak.v2</outputDirectory>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
             </build>
         </profile>
         <profile>

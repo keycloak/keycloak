@@ -21,8 +21,10 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.login.Registration;
 import org.keycloak.testsuite.auth.page.login.ResetCredentials;
@@ -38,7 +40,9 @@ import java.util.Set;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
+import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
@@ -51,6 +55,7 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLo
  *
  * @author tkyjovsk
  */
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class LoginSettingsTest extends AbstractRealmTest {
 
     private static final String NEW_USERNAME = "newUsername";
@@ -146,7 +151,7 @@ public class LoginSettingsTest extends AbstractRealmTest {
         testAccountPage.signOut();
         log.debug("edited");
         
-        log.info("log in with edited username");
+        log.info("sign in with edited username");
         assertCurrentUrlStartsWithLoginUrlOf(testAccountPage);
         testRealmLoginPage.form().login(NEW_USERNAME, PASSWORD);
         assertCurrentUrlStartsWith(testAccountPage);
@@ -229,6 +234,47 @@ public class LoginSettingsTest extends AbstractRealmTest {
         
     }
     
+    @Test
+    public void rememberMeWithUtf8Username() {
+        log.info("creating username with non-ASCII username");
+        UserRepresentation utf8TestUser = createUserRepresentation("täst", "test-utf8@email.test", "utf8", "test", true);
+        setPasswordFor(utf8TestUser, PASSWORD);
+
+        String id = createUserWithAdminClient(testRealmResource(), utf8TestUser);
+        assertNotNull(id);
+
+        log.info("enabling remember me");
+        loginSettingsPage.form().setRememberMeAllowed(true);
+        assertTrue(loginSettingsPage.form().isRememberMeAllowed());
+        loginSettingsPage.form().save();
+        assertAlertSuccess();
+        log.debug("enabled");
+
+        log.info("login with remember me checked");
+        testAccountPage.navigateTo();
+        testRealmLoginPage.form().rememberMe(true);
+        testRealmLoginPage.form().login(utf8TestUser);
+        assertCurrentUrlStartsWith(testAccountPage);
+
+        assertTrue("Cookie KEYCLOAK_REMEMBER_ME should be present.", getCookieNames().contains("KEYCLOAK_REMEMBER_ME"));
+
+        log.info("verified remember me is enabled");
+
+        log.info("disabling remember me");
+        loginSettingsPage.navigateTo();
+        loginSettingsPage.form().setRememberMeAllowed(false);
+        assertFalse(loginSettingsPage.form().isRememberMeAllowed());
+        loginSettingsPage.form().save();
+        assertAlertSuccess();
+        log.debug("disabled");
+
+        testAccountPage.navigateTo();
+        testAccountPage.signOut();
+        assertTrue(testRealmLoginPage.form().isLoginButtonPresent());
+        assertFalse(testRealmLoginPage.form().isRememberMePresent());
+        log.info("verified remember me is disabled");
+    }
+
     @Test 
     public void verifyEmail() {
 
@@ -268,7 +314,7 @@ public class LoginSettingsTest extends AbstractRealmTest {
         String id = createUserAndResetPasswordWithAdminClient(testRealmResource(), newUser, PASSWORD);
         newUser.setId(id);
         
-        log.info("log in as new user");
+        log.info("sign in as new user");
         testAccountPage.navigateTo();        
         testRealmLoginPage.form().login(newUser);
         assertCurrentUrlStartsWith(testAccountPage);

@@ -24,6 +24,7 @@ import org.keycloak.models.*;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenValueEntity;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenReducedKey;
 import org.infinispan.Cache;
+import static org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory.PROVIDER_PRIORITY;
 
 /**
  *
@@ -78,4 +79,8 @@ public class InfinispanActionTokenStoreProviderFactory implements ActionTokenSto
         return "infinispan";
     }
 
+    @Override
+    public int order() {
+        return PROVIDER_PRIORITY;
+    }
 }

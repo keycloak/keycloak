@@ -45,19 +45,17 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.error.KeycloakErrorHandler;
+import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.LogChecker;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.SpiProvidersSwitchingUtils;
 import org.keycloak.testsuite.util.SqlUtils;
 import org.keycloak.testsuite.util.SystemInfoHelper;
 import org.keycloak.testsuite.util.VaultUtils;
 import org.keycloak.testsuite.util.ServerURLs;
-import org.wildfly.extras.creaper.commands.undertow.AddUndertowListener;
-import org.wildfly.extras.creaper.commands.undertow.RemoveUndertowListener;
-import org.wildfly.extras.creaper.commands.undertow.SslVerifyClient;
-import org.wildfly.extras.creaper.commands.undertow.UndertowListenerType;
 import org.keycloak.testsuite.util.TextFileChecker;
 import org.wildfly.extras.creaper.core.ManagementClient;
 import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
@@ -71,6 +69,8 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.Provider;
+import java.security.Security;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -81,12 +81,22 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.ws.rs.NotFoundException;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import org.jboss.arquillian.test.spi.event.suite.After;
 import org.jboss.arquillian.test.spi.event.suite.Before;
 import org.jboss.shrinkwrap.api.importer.ZipImporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.Assert;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
+import static org.keycloak.testsuite.arquillian.ServerTestEnricherUtil.addHttpsListener;
+import static org.keycloak.testsuite.arquillian.ServerTestEnricherUtil.reloadOrRestartTimeoutClient;
+import static org.keycloak.testsuite.arquillian.ServerTestEnricherUtil.removeHttpsListener;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
 
@@ -171,6 +181,13 @@ public class AuthServerTestEnricher {
         return removeDefaultPorts(String.format("%s://%s:%s", "http", host, httpPort));
     }
 
+    public static String getHttpsAuthServerContextRoot() {
+        String host = System.getProperty("auth.server.host", "localhost");
+        int httpPort = Integer.parseInt(System.getProperty("auth.server.https.port")); // property must be set
+
+        return removeDefaultPorts(String.format("%s://%s:%s", "https", host, httpPort));
+    }
+
     public static String getAuthServerBrowserContextRoot() throws MalformedURLException {
         return getAuthServerBrowserContextRoot(new URL(getAuthServerContextRoot()));
     }
@@ -242,11 +259,15 @@ public class AuthServerTestEnricher {
                     });
 
             containers.stream()
-                    .filter(c -> c.getQualifier().startsWith("cache-server-cross-dc-"))
+                    .filter(c -> c.getQualifier().startsWith("cache-server-"))
                     .sorted((a, b) -> a.getQualifier().compareTo(b.getQualifier()))
                     .forEach(containerInfo -> {
-                        int prefixSize = "cache-server-cross-dc-".length();
-                        int dcIndex = Integer.parseInt(containerInfo.getQualifier().substring(prefixSize)) -1;
+                        
+                        log.info(String.format("cache container: %s", containerInfo.getQualifier()));
+                        
+                        int prefixSize = containerInfo.getQualifier().lastIndexOf("-") + 1;
+                        int dcIndex = Integer.parseInt(containerInfo.getQualifier().substring(prefixSize)) - 1;
+                        
                         suiteContext.addCacheServerInfo(dcIndex, containerInfo);
                     });
 
@@ -341,6 +362,19 @@ public class AuthServerTestEnricher {
         }
     }
 
+    public static void executeCli(String... commands) throws Exception {
+        OnlineManagementClient client = AuthServerTestEnricher.getManagementClient();
+        Administration administration = new Administration(client);
+
+        for (String c : commands) {
+            client.execute(c).assertSuccess();
+        }
+
+        administration.reload();
+
+        client.close();
+    }
+
     private ContainerInfo updateWithAuthServerInfo(ContainerInfo authServerInfo) {
         return updateWithAuthServerInfo(authServerInfo, 0);
     }
@@ -361,6 +395,7 @@ public class AuthServerTestEnricher {
         if (suiteContext.isAuthServerMigrationEnabled()) {
             log.info("\n\n### Starting keycloak " + System.getProperty("migrated.auth.server.version", "- previous") + " ###\n\n");
             startContainerEvent.fire(new StartContainer(suiteContext.getMigratedAuthServerInfo().getArquillianContainer()));
+            initializeTLS(suiteContext.getMigratedAuthServerInfo());
         }
     }
 
@@ -521,10 +556,27 @@ public class AuthServerTestEnricher {
         TestContext testContext = new TestContext(suiteContext, event.getTestClass().getJavaClass());
         testContextProducer.set(testContext);
 
-        if (!isAuthServerRemote() && !isAuthServerQuarkus() && event.getTestClass().isAnnotationPresent(EnableVault.class)) {
-            VaultUtils.enableVault(suiteContext, event.getTestClass().getAnnotation(EnableVault.class).providerId());
-            restartAuthServer();
-            testContext.reconnectAdminClient();
+        if (!isAuthServerRemote()) {
+            boolean wasUpdated = false;
+
+            if (event.getTestClass().isAnnotationPresent(SetDefaultProvider.class)) {
+                SetDefaultProvider defaultProvider = event.getTestClass().getAnnotation(SetDefaultProvider.class);
+
+                if (defaultProvider.beforeEnableFeature()) {
+                    SpiProvidersSwitchingUtils.addProviderDefaultValue(suiteContext, defaultProvider);
+                    wasUpdated = true;
+                }
+            }
+
+            if (!isAuthServerQuarkus() && event.getTestClass().isAnnotationPresent(EnableVault.class)) {
+                VaultUtils.enableVault(suiteContext, event.getTestClass().getAnnotation(EnableVault.class).providerId());
+                wasUpdated = true;
+            }
+
+            if (wasUpdated) {
+                restartAuthServer();
+                testContext.reconnectAdminClient();
+            }
         }
     }
 
@@ -539,10 +591,8 @@ public class AuthServerTestEnricher {
     public static void initializeTLS(ContainerInfo containerInfo) {
         if (ServerURLs.AUTH_SERVER_SSL_REQUIRED && containerInfo.isJBossBased()) {
             log.infof("\n\n### Setting up TLS for %s ##\n\n", containerInfo);
-            try {
-                OnlineManagementClient client = getManagementClient(containerInfo);
+            try (OnlineManagementClient client = getManagementClient(containerInfo)) {
                 AuthServerTestEnricher.enableTLS(client);
-                client.close();
             } catch (Exception e) {
                 log.warn("Failed to set up TLS for container '" + containerInfo.getQualifier() + "'. This may lead to unexpected behavior unless the test" +
                         " sets it up manually", e);
@@ -551,11 +601,202 @@ public class AuthServerTestEnricher {
         }
     }
 
+    /** KEYCLOAK-15692 Work-around the OpenJSSE TlsMasterSecretGenerator error:
+     *
+     *      https://github.com/openjsse/openjsse/issues/11
+     *
+     *  To prevent above TLS handshake error when initiating a TLS connection
+     *  ensure:
+     *  * Either both server and client endpoints of the future TLS connection
+     *    simultaneously utilize a JSSE security provider using the OpenJSSE
+     *    extension,
+     *
+     *  * Or both server and client endpoints simultaneously use a JSSE
+     *    security provider, which doesn't depend on the OpenJSSE extension.
+     *
+     *  Do this by performing the following:
+     *  * On platforms where implementation of the SunJSSE provider depends on
+     *  OpenJSSE extension ensure only SunJSSE provider is used to define the
+     *  SSL context of the Elytron client used for outbound SSL connections.
+     *
+     *  * On other platforms, use any suitable JSSE provider by querying all
+     *  the platform providers for respective property.
+     *
+     */
+    public static void setJsseSecurityProviderForOutboundSslConnectionsOfElytronClient(@Observes(precedence = 100) StartSuiteContainers event) {
+        log.info(
+            "Determining the JSSE security provider to use for outbound " +
+            "SSL/TLS connections of the Elytron client"
+        );
+
+        // Use path to wildfly-config.xml directly if specified
+        String wildflyConfigXmlPath =
+            System.getProperty("wildfly-client.config.path");
+
+        // Otherwise scan the classpath to determine its location
+        if (wildflyConfigXmlPath == null) {
+            log.debug("Scanning classpath to locate wildfly-config.xml");
+            final String javaClassPath = System.getProperty("java.class.path");
+            for (String dir : javaClassPath.split(File.pathSeparator)) {
+                if (!dir.isEmpty()) {
+                    String candidatePath = dir + File.separator +
+                        "wildfly-config.xml";
+                    if (new File(candidatePath).exists()) {
+                        wildflyConfigXmlPath = candidatePath;
+                        log.debugf(
+                            "Found wildfly-config.xml at '%s' location",
+                            wildflyConfigXmlPath
+                        );
+                        break;
+                    }
+                }
+            }
+        }
+
+        final File wildflyConfigXml = ( wildflyConfigXmlPath != null ) ?
+            new File(wildflyConfigXmlPath)                             :
+            null;
+
+        // Throw an error if wildfly-config.xml path specified directly via the
+        // 'wildfly-client.config.path' property doesn't represent a regular file
+        // on the file system, or if it wasn't found by scanning the classpath
+        if ( wildflyConfigXml == null || ! wildflyConfigXml.exists() ) {
+            throw new RuntimeException(
+                "Failed to locate the wildfly-config.xml to use for " +
+                "the configuration of Elytron client"
+            );
+        } else {
+            log.debugf(
+                "Using wildfly-config.xml from '%s' location",
+                wildflyConfigXmlPath
+            );
+        }
+
+        /** Determine the name of the system property from wildfly-config.xml
+         *  holding the name of the security provider which is used by Elytron
+         *  client to define its SSL context for outbound SSL connections.
+         */
+        String jsseSecurityProviderSystemProperty = null;
+        try {
+            DocumentBuilder documentBuilder = DocumentBuilderFactory
+                .newInstance().newDocumentBuilder();
+
+            Document xmlDoc = documentBuilder.parse(wildflyConfigXml);
+            NodeList nodeList = xmlDoc.getElementsByTagName("provider-name");
+            // Sanity check
+            if (nodeList.getLength() != 1) {
+                throw new RuntimeException(
+                    "Failed to locate the 'provider-name' element " +
+                    "in wildfly-config.xml XML file"
+                );
+            }
+            String providerNameElement = nodeList.item(0).getAttributes()
+                .getNamedItem("name").getNodeValue();
+
+            // Drop Wildfly's expressions notation from the attribute's value
+            jsseSecurityProviderSystemProperty = providerNameElement
+                .replaceAll("(\\$|\\{|\\}|(:.*$))", new String());
+
+        } catch (IOException e) {
+            throw new RuntimeException(String.format(
+                "Error reading the '%s' file. Please make sure the provided " +
+                "path is correct and retry",
+                wildflyConfigXml.getAbsolutePath()
+            ));
+        } catch (ParserConfigurationException|SAXException e) {
+            throw new RuntimeException(String.format(
+                "Failed to parse the '%s' XML file",
+                wildflyConfigXml.getAbsolutePath()
+            ));
+        }
+
+        boolean determineJsseSecurityProviderName = false;
+        if (jsseSecurityProviderSystemProperty != null) {
+            // Does JSSE security provider system property already exist?
+            if (
+                System.getProperty(jsseSecurityProviderSystemProperty) == null
+            ) {
+                // If not, determine it
+                determineJsseSecurityProviderName = true;
+            }
+        } else {
+            throw new RuntimeException(
+                "Failed to determine the name of system property " +
+                "holding JSSE security provider's name for Elytron client"
+            );
+        }
+
+        if (determineJsseSecurityProviderName) {
+
+            /** Detect if OpenJSSE extension is present on the platform
+             *
+             *  Since internal 'com.sun.net.ssl.*' classes of the SunJSSE
+             *  provider have identical names regardless if the OpenJSSE
+             *  extension is used or not:
+             *
+             *    https://github.com/openjsse/openjsse/blob/master/pom.xml#L125
+             *
+             *  detect the presence of the OpenJSSE extension by checking the
+             *  presence of the 'openjsse.jar' file within the JRE extensions
+             *  directory.
+             *
+             */
+            final String jreExtensionsDir = System.getProperty("java.home") +
+                File.separator + "lib" + File.separator + "ext" +
+                File.separator + "openjsse.jar";
+
+            boolean openJsseExtensionPresent = new File(
+                jreExtensionsDir).exists();
+
+            Provider platformJsseProvider = Security
+                .getProviders("SSLContext.TLSv1.2")[0];
+
+            if (platformJsseProvider != null) {
+                // If OpenJSSE extension is present
+                if (openJsseExtensionPresent) {
+                    // Sanity check - confirm SunJSSE provider is present on
+                    // the platform (if OpenJSSE extension is present, it
+                    // shouldn't ever happen SunJSSE won't be, but double-check
+                    // for any case)
+                    Provider sunJsseProvider = Stream.of(
+                            Security.getProviders()
+                        ).filter(p -> p.getName().equals("SunJSSE"))
+                        .collect(Collectors.toList())
+                        .get(0);
+
+                    // Use it or throw an error if absent
+                    if (sunJsseProvider != null) {
+                        platformJsseProvider = sunJsseProvider;
+                    } else {
+                        throw new RuntimeException(
+                            "The SunJSSE provider is not present " +
+                            "on the platform"
+                        );
+                    }
+                }
+                // Propagate the final provider name to system property used by
+                // wildfly-config.xml to configure the JSSE provider name
+                System.setProperty(
+                    jsseSecurityProviderSystemProperty,
+                    platformJsseProvider.getName()
+                );
+            } else {
+                throw new RuntimeException(
+                    "Cannot identify a security provider for Elytron client " +
+                    "offering the TLSv1.2 capability"
+                );
+            }
+            log.infof(
+                "Using the '%s' JSSE provider", platformJsseProvider.getName()
+            );
+        }
+    }
+
     private static OnlineManagementClient getManagementClient(ContainerInfo containerInfo) {
         try {
             return ManagementClient.online(OnlineOptions
                     .standalone()
-                    .hostAndPort("localhost", Integer.valueOf(containerInfo.getProperties().get("managementPort")))
+                    .hostAndPort("localhost", Integer.parseInt(containerInfo.getProperties().get("managementPort")))
                     .build()
             );
         } catch (IOException e) {
@@ -572,27 +813,18 @@ public class AuthServerTestEnricher {
             client.execute("/core-service=management/security-realm=UndertowRealm/server-identity=ssl:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=keycloak.jks");
             client.execute("/core-service=management/security-realm=UndertowRealm/authentication=truststore:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=keycloak.truststore");
 
-            client.apply(new RemoveUndertowListener.Builder(UndertowListenerType.HTTPS_LISTENER, "https")
-                  .forDefaultServer());
-
-            administration.reloadIfRequired();
-
-            client.apply(new AddUndertowListener.HttpsBuilder("https", "default-server", "https")
-                  .securityRealm("UndertowRealm")
-                  .verifyClient(SslVerifyClient.REQUESTED)
-                  .build());
-
-            administration.reloadIfRequired();
+            removeHttpsListener(client, administration);
+            addHttpsListener(client);
+            reloadOrRestartTimeoutClient(administration);
         } else {
-            log.info("## The Auth Server has already configured TLS. Skipping... ##");
+            log.info("## The Auth Server has already configured TLS. Skipping ##");
         }
     }
 
     protected boolean isAuthServerJBossBased() {
         return containerRegistry.get().getContainers().stream()
               .map(ContainerInfo::new)
-              .filter(ci -> ci.isJBossBased())
-              .findFirst().isPresent();
+              .anyMatch(ContainerInfo::isJBossBased);
     }
 
     public void initializeOAuthClient(@Observes(precedence = 4) BeforeClass event) {
@@ -652,10 +884,24 @@ public class AuthServerTestEnricher {
 
         removeTestRealms(testContext, adminClient);
 
-        if (!isAuthServerRemote() && event.getTestClass().isAnnotationPresent(EnableVault.class)) {
-            VaultUtils.disableVault(suiteContext, event.getTestClass().getAnnotation(EnableVault.class).providerId());
-            restartAuthServer();
-            testContext.reconnectAdminClient();
+        if (!isAuthServerRemote()) {
+            
+            boolean wasUpdated = false;
+
+            if (event.getTestClass().isAnnotationPresent(SetDefaultProvider.class)) {
+                SpiProvidersSwitchingUtils.removeProvider(suiteContext, event.getTestClass().getAnnotation(SetDefaultProvider.class));
+                wasUpdated = true;
+            }
+
+            if (event.getTestClass().isAnnotationPresent(EnableVault.class) && !isAuthServerQuarkus()) {
+                VaultUtils.disableVault(suiteContext, event.getTestClass().getAnnotation(EnableVault.class).providerId());
+                wasUpdated = true;
+            }
+
+            if (wasUpdated) {
+                restartAuthServer();
+                testContext.reconnectAdminClient();
+            }
         }
 
         if (adminClient != null) {

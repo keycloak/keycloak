@@ -13,8 +13,8 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -65,13 +65,9 @@ public class ConcurrencyLockingTest {
 
     protected DefaultCacheManager getVersionedCacheManager() {
         GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
-
-
-        boolean allowDuplicateJMXDomains = true;
-
-        gcb.globalJmxStatistics().allowDuplicateDomains(allowDuplicateJMXDomains);
-
+        gcb.jmx().domain(InfinispanConnectionProvider.JMX_DOMAIN).enable();
         final DefaultCacheManager cacheManager = new DefaultCacheManager(gcb.build());
+
         ConfigurationBuilder invalidationConfigBuilder = new ConfigurationBuilder();
         Configuration invalidationCacheConfiguration = invalidationConfigBuilder.build();
         cacheManager.defineConfiguration(InfinispanConnectionProvider.REALM_CACHE_NAME, invalidationCacheConfiguration);
@@ -81,8 +77,8 @@ public class ConcurrencyLockingTest {
         counterConfigBuilder.transaction().transactionManagerLookup(new EmbeddedTransactionManagerLookup());
         counterConfigBuilder.transaction().lockingMode(LockingMode.PESSIMISTIC);
         Configuration counterCacheConfiguration = counterConfigBuilder.build();
-
         cacheManager.defineConfiguration("COUNTER_CACHE", counterCacheConfiguration);
+
         return cacheManager;
     }
 

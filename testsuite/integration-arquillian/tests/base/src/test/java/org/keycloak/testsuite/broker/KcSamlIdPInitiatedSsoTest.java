@@ -10,6 +10,7 @@ import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.assertion.AudienceRestrictionType;
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.StatementAbstractType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.protocol.saml.SamlPrincipalType;
@@ -61,7 +62,10 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
@@ -122,6 +126,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
     public void resetPrincipalType() {
         IdentityProviderResource idp = adminClient.realm(REALM_CONS_NAME).identityProviders().get("saml-leaf");
         IdentityProviderRepresentation rep = idp.toRepresentation();
+        rep.getConfig().put(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get());
         rep.getConfig().put(SAMLIdentityProviderConfig.PRINCIPAL_TYPE, SamlPrincipalType.SUBJECT.name());
         idp.update(rep);
     }
@@ -145,7 +150,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
     public void testProviderIdpInitiatedLogin() throws Exception {
         driver.navigate().to(getSamlIdpInitiatedUrl(REALM_PROV_NAME, "samlbroker"));
 
-        waitForPage("log in to", true);
+        waitForPage("sign in to", true);
 
         Assert.assertThat("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_PROV_NAME + "/"));
@@ -395,6 +400,109 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
         FederatedIdentityRepresentation fed = users.get(id).getFederatedIdentity().get(0);
         assertThat(fed.getUserId(), is(PROVIDER_REALM_USER_NAME));
         assertThat(fed.getUserName(), is(PROVIDER_REALM_USER_NAME));
+    }
+    
+    @Test
+    public void testProviderTransientIdpInitiatedLogin() throws Exception {
+        IdentityProviderResource idp = adminClient.realm(REALM_CONS_NAME).identityProviders().get("saml-leaf");
+        IdentityProviderRepresentation rep = idp.toRepresentation();
+        rep.getConfig().put(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get());
+        rep.getConfig().put(SAMLIdentityProviderConfig.PRINCIPAL_TYPE, SamlPrincipalType.ATTRIBUTE.name());
+        rep.getConfig().put(SAMLIdentityProviderConfig.PRINCIPAL_ATTRIBUTE, X500SAMLProfileConstants.UID.get());
+        idp.update(rep);
+
+        SAMLDocumentHolder samlResponse = new SamlClientBuilder()
+          .navigateTo(getSamlIdpInitiatedUrl(REALM_PROV_NAME, "samlbroker"))
+          // Login in provider realm
+          .login().user(PROVIDER_REALM_USER_NAME, PROVIDER_REALM_USER_PASSWORD).build()
+
+          // Send the response to the consumer realm
+          .processSamlResponse(Binding.POST)
+            .transformObject(ob -> {
+                assertThat(ob, Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+                ResponseType resp = (ResponseType) ob;
+                assertThat(resp.getDestination(), is(getSamlBrokerIdpInitiatedUrl(REALM_CONS_NAME, "sales")));
+                assertAudience(resp, getSamlBrokerIdpInitiatedUrl(REALM_CONS_NAME, "sales"));
+
+                NameIDType nameId = new NameIDType();
+                nameId.setFormat(URI.create(JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get()));
+                nameId.setValue("subjectId1" );
+                resp.getAssertions().get(0).getAssertion().getSubject().getSubType().addBaseID(nameId);
+                
+                Set<StatementAbstractType> statements = resp.getAssertions().get(0).getAssertion().getStatements();
+
+                AttributeStatementType attributeType = (AttributeStatementType) statements.stream()
+                    .filter(statement -> statement instanceof AttributeStatementType).findFirst()
+                    .orElse(new AttributeStatementType());
+
+                AttributeType attr = new AttributeType(X500SAMLProfileConstants.UID.get());
+                attr.addAttributeValue(PROVIDER_REALM_USER_NAME);
+
+                attributeType.addAttribute(new AttributeStatementType.ASTChoiceType(attr));
+                resp.getAssertions().get(0).getAssertion().addStatement(attributeType);
+
+                return ob;
+            })
+          .build()
+
+          // Now login to the second app
+          .navigateTo(getSamlIdpInitiatedUrl(REALM_PROV_NAME, "samlbroker-2"))
+
+          // Login in provider realm
+          .login().sso(true).build()
+          
+          .processSamlResponse(Binding.POST)
+          .transformObject(ob -> {
+              assertThat(ob, Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+              ResponseType resp = (ResponseType) ob;
+              assertThat(resp.getDestination(), is(getSamlBrokerIdpInitiatedUrl(REALM_CONS_NAME, "sales2")));
+              assertAudience(resp, getSamlBrokerIdpInitiatedUrl(REALM_CONS_NAME, "sales2"));
+
+              NameIDType nameId = new NameIDType();
+              nameId.setFormat(URI.create(JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get()));
+              nameId.setValue("subjectId2" );
+              resp.getAssertions().get(0).getAssertion().getSubject().getSubType().addBaseID(nameId);
+              
+              Set<StatementAbstractType> statements = resp.getAssertions().get(0).getAssertion().getStatements();
+
+              AttributeStatementType attributeType = (AttributeStatementType) statements.stream()
+                  .filter(statement -> statement instanceof AttributeStatementType).findFirst()
+                  .orElse(new AttributeStatementType());
+
+              AttributeType attr = new AttributeType(X500SAMLProfileConstants.UID.get());
+              attr.addAttributeValue(PROVIDER_REALM_USER_NAME);
+
+              attributeType.addAttribute(new AttributeStatementType.ASTChoiceType(attr));
+              resp.getAssertions().get(0).getAssertion().addStatement(attributeType);
+
+              return ob;
+          })
+        .build()
+
+        .updateProfile().username(CONSUMER_CHOSEN_USERNAME).email("test@localhost").firstName("Firstname").lastName("Lastname").build()
+        .followOneRedirect()
+
+          // Obtain the response sent to the app
+          .getSamlResponse(Binding.POST);
+
+        assertThat(samlResponse.getSamlObject(), Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+        ResponseType resp = (ResponseType) samlResponse.getSamlObject();
+        assertThat(resp.getDestination(), is(urlRealmConsumer + "/app/auth2/saml"));
+        assertAudience(resp, urlRealmConsumer + "/app/auth2");
+        
+        UsersResource users = adminClient.realm(REALM_CONS_NAME).users();
+        List<UserRepresentation> userList= users.search(CONSUMER_CHOSEN_USERNAME);
+        assertEquals(1, userList.size());
+        String id = userList.get(0).getId();
+        FederatedIdentityRepresentation fed = users.get(id).getFederatedIdentity().get(0);
+        assertThat(fed.getUserId(), is(PROVIDER_REALM_USER_NAME));
+        assertThat(fed.getUserName(), is(PROVIDER_REALM_USER_NAME));
+        
+        //check that no user with sent subject-id was sent
+        userList = users.search("subjectId1");
+        assertTrue(userList.isEmpty());
+        userList = users.search("subjectId2");
+        assertTrue(userList.isEmpty());
     }
 
     private void assertSingleUserSession(String realmName, String userName, String... expectedClientIds) {

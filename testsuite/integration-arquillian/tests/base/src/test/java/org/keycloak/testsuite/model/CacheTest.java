@@ -29,6 +29,7 @@ import org.keycloak.models.cache.infinispan.RealmAdapter;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertNotNull;
@@ -111,7 +112,7 @@ public class CacheTest extends AbstractTestRealmKeycloakTest {
             user.setFirstName("firstName");
             user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
     	
-            UserSessionModel userSession = session.sessions().createUserSession("123", realm, user, "testAddUserNotAddedToCache",
+            UserSessionModel userSession = session.sessions().createUserSession(UUID.randomUUID().toString(), realm, user, "testAddUserNotAddedToCache",
 					"127.0.0.1", "auth", false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
             user = userSession.getUser();
 
@@ -136,14 +137,14 @@ public class CacheTest extends AbstractTestRealmKeycloakTest {
 
         testingClient.server().run(session -> {  
         	RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername("joel", realm);
+            UserModel user = session.users().getUserByUsername(realm, "joel");
             long grantedRolesCount = user.getRoleMappingsStream().count();
 
             ClientModel client = realm.getClientByClientId("foo");
             realm.removeClient(client.getId());
 
             realm = session.realms().getRealmByName("test");
-            user = session.users().getUserByUsername("joel", realm);
+            user = session.users().getUserByUsername(realm, "joel");
         
             Set<RoleModel> roles = user.getRoleMappingsStream().collect(Collectors.toSet());
             for (RoleModel role : roles) {

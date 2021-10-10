@@ -189,35 +189,24 @@ public class DistributedCacheConcurrentWritesTest {
     public static EmbeddedCacheManager createManager(String nodeName) {
         System.setProperty("java.net.preferIPv4Stack", "true");
         System.setProperty("jgroups.tcp.port", "53715");
+
         GlobalConfigurationBuilder gcb = new GlobalConfigurationBuilder();
-
-        boolean clustered = true;
-        boolean async = false;
-        boolean allowDuplicateJMXDomains = true;
-
-        if (clustered) {
-            gcb = gcb.clusteredDefault();
-            gcb.transport().clusterName("test-clustering");
-            gcb.transport().nodeName(nodeName);
-        }
-        gcb.globalJmxStatistics().allowDuplicateDomains(allowDuplicateJMXDomains);
-
+        gcb = gcb.clusteredDefault();
+        gcb.transport().clusterName("test-clustering");
+        gcb.transport().nodeName(nodeName);
+        gcb.jmx().domain(InfinispanConnectionProvider.JMX_DOMAIN).enable();
         EmbeddedCacheManager cacheManager = new DefaultCacheManager(gcb.build());
 
-
         ConfigurationBuilder distConfigBuilder = new ConfigurationBuilder();
-        if (clustered) {
-            distConfigBuilder.clustering().cacheMode(async ? CacheMode.DIST_ASYNC : CacheMode.DIST_SYNC);
-            distConfigBuilder.clustering().hash().numOwners(1);
+        distConfigBuilder.clustering().cacheMode(CacheMode.DIST_SYNC);
+        distConfigBuilder.clustering().hash().numOwners(1);
 
-            // Disable L1 cache
-            distConfigBuilder.clustering().hash().l1().enabled(false);
-        }
+        // Disable L1 cache
+        distConfigBuilder.clustering().hash().l1().enabled(false);
         Configuration distConfig = distConfigBuilder.build();
-
         cacheManager.defineConfiguration(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, distConfig);
-        return cacheManager;
 
+        return cacheManager;
     }
 
 

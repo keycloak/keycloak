@@ -17,10 +17,13 @@
 package org.keycloak.testsuite.adapter.example.authorization;
 
 import org.junit.Test;
+import org.keycloak.common.Profile;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public abstract class AbstractPhotozAccountResourcesAdapterTest extends AbstractBasePhotozExampleAdapterTest {
 
     @Test

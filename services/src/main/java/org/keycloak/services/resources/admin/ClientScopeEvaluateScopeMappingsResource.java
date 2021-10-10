@@ -17,9 +17,8 @@
 
 package org.keycloak.services.resources.admin;
 
-import java.util.List;
 import java.util.Set;
-import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -73,12 +72,8 @@ public class ClientScopeEvaluateScopeMappingsResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<RoleRepresentation> getGrantedScopeMappings() {
-        return getGrantedRoles().stream().map((RoleModel role) -> {
-
-            return ModelToRepresentation.toBriefRepresentation(role);
-
-        }).collect(Collectors.toList());
+    public Stream<RoleRepresentation> getGrantedScopeMappings() {
+        return getGrantedRoles().map(ModelToRepresentation::toBriefRepresentation);
     }
 
 
@@ -93,31 +88,30 @@ public class ClientScopeEvaluateScopeMappingsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Stream<RoleRepresentation> getNotGrantedScopeMappings() {
-        Set<RoleModel> grantedRoles = getGrantedRoles();
+        Set<RoleModel> grantedRoles = getGrantedRoles().collect(Collectors.toSet());
 
         return roleContainer.getRolesStream()
-                .filter(r -> !grantedRoles.contains(r))
+                .filter(((Predicate<RoleModel>) grantedRoles::contains).negate())
                 .map(ModelToRepresentation::toBriefRepresentation);
     }
 
 
 
 
-    private Set<RoleModel> getGrantedRoles() {
+    private Stream<RoleModel> getGrantedRoles() {
         if (client.isFullScopeAllowed()) {
-            // intentionally using deprecated method as a set is more appropriate here
-            return roleContainer.getRoles();
+            return roleContainer.getRolesStream();
         }
 
-        Set<ClientScopeModel> clientScopes = TokenManager.getRequestedClientScopes(scopeParam, client);
+        Set<ClientScopeModel> clientScopes = TokenManager.getRequestedClientScopes(scopeParam, client)
+                .collect(Collectors.toSet());
 
-        BiPredicate<Set<ClientScopeModel>, RoleModel> hasClientScope = (scopes, role) ->
-                scopes.stream().anyMatch(scopeContainer -> scopeContainer.hasScope(role));
+        Predicate<RoleModel> hasClientScope = role ->
+                clientScopes.stream().anyMatch(scopeContainer -> scopeContainer.hasScope(role));
 
         return roleContainer.getRolesStream()
                 .filter(auth.roles()::canView)
-                .filter(r -> hasClientScope.test(clientScopes, r))
-                .collect(Collectors.toSet());
+                .filter(hasClientScope);
     }
 
 }
