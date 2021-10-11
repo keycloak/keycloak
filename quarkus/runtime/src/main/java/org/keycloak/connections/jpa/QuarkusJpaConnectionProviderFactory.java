@@ -29,7 +29,6 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,17 +52,12 @@ import org.keycloak.Config;
 import org.keycloak.ServerStartupError;
 import org.keycloak.common.Version;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
-import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.exportimport.ExportImportManager;
+import org.keycloak.migration.MigrationModel;
 import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.migration.ModelVersion;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserProvider;
+import org.keycloak.models.*;
 import org.keycloak.models.dblock.DBLockManager;
 import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.utils.RepresentationToModel;
@@ -159,6 +153,10 @@ public final class QuarkusJpaConnectionProviderFactory implements JpaConnectionP
 
         if (schemaChanged || Environment.isImportExportMode()) {
             runJobInTransaction(factory, this::initSchema);
+        } else {
+            //KEYCLOAK-19521 - We should think about a solution which doesn't involve another db lookup in the future.
+            MigrationModel model = session.getProvider(DeploymentStateProvider.class).getMigrationModel();
+            Version.RESOURCES_VERSION = model.getResourcesTag();
         }
     }
 
