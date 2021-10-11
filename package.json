@@ -47,7 +47,7 @@
   "devDependencies": {
     "@cypress/webpack-batteries-included-preprocessor": "^2.2.3",
     "@cypress/webpack-preprocessor": "^5.9.1",
-    "@jest/types": "^27.2.3",
+    "@jest/types": "^27.2.5",
     "@snowpack/app-scripts-react": "^2.0.1",
     "@snowpack/plugin-postcss": "^1.4.3",
     "@snowpack/plugin-react-refresh": "^2.5.0",
