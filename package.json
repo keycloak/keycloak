@@ -32,7 +32,7 @@
     "@patternfly/react-table": "4.30.3",
     "dagre": "^0.8.5",
     "file-saver": "^2.0.5",
-    "i18next": "^21.2.0",
+    "i18next": "^21.2.6",
     "lodash": "^4.17.20",
     "moment": "^2.29.1",
     "react": "^17.0.2",
