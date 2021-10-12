@@ -127,6 +127,12 @@ export default {
       "SAML POST Binding URL for the client's single logout service. You can leave this blank if you are using a different binding",
     logoutServiceRedirectBindingURL:
       "SAML Redirect Binding URL for the client's single logout service. You can leave this blank if you are using a different binding.",
+    logoutServiceArtifactBindingUrl:
+      "SAML ARTIFACT Binding URL for the client's single logout service. You can leave this blank if you are using a different binding.",
+    artifactBindingUrl:
+      "URL to send the HTTP ARTIFACT messages to. You can leave this blank if you are using a different binding. This value should be set when forcing ARTIFACT binding together with IdP initiated login.",
+    artifactResolutionService:
+      "SAML Artifact resolution service for the client. This is the endpoint to which Keycloak will send a SOAP ArtifactResolve message. You can leave this blank if you do not have a URL for this binding.",
     authenticationOverrides: "Override realm authentication flow bindings.",
     browserFlow: "Select the flow you want to use for browser authentication.",
     directGrant:

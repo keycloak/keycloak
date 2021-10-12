@@ -97,6 +97,60 @@ export const FineGrainSamlEndpointConfig = ({
           name="attributes.saml_single_logout_service_url_redirect"
         />
       </FormGroup>
+      <FormGroup
+        label={t("logoutServiceArtifactBindingUrl")}
+        fieldId="logoutServiceArtifactBindingUrl"
+        labelIcon={
+          <HelpItem
+            helpText="clients-help:logoutServiceArtifactBindingUrl"
+            forLabel={t("logoutServiceArtifactBindingUrl")}
+            forID="logoutServiceArtifactBindingUrl"
+          />
+        }
+      >
+        <TextInput
+          ref={register()}
+          type="text"
+          id="logoutServiceArtifactBindingUrl"
+          name="attributes.saml_single_logout_service_url_redirect"
+        />
+      </FormGroup>
+      <FormGroup
+        label={t("artifactBindingUrl")}
+        fieldId="artifactBindingUrl"
+        labelIcon={
+          <HelpItem
+            helpText="clients-help:artifactBindingUrl"
+            forLabel={t("artifactBindingUrl")}
+            forID="artifactBindingUrl"
+          />
+        }
+      >
+        <TextInput
+          ref={register()}
+          type="text"
+          id="artifactBindingUrl"
+          name="attributes.saml_artifact_binding_url"
+        />
+      </FormGroup>
+      <FormGroup
+        label={t("artifactResolutionService")}
+        fieldId="artifactResolutionService"
+        labelIcon={
+          <HelpItem
+            helpText="clients-help:artifactResolutionService"
+            forLabel={t("artifactResolutionService")}
+            forID="artifactResolutionService"
+          />
+        }
+      >
+        <TextInput
+          ref={register()}
+          type="text"
+          id="artifactResolutionService"
+          name="attributes.saml_artifact_resolution_service_url"
+        />
+      </FormGroup>
 
       <ActionGroup>
         <Button variant="tertiary" onClick={save}>
