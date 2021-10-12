@@ -194,7 +194,9 @@ export default {
     noClientPolicies: "No client policies",
     noClientPoliciesInstructions:
       "There are no client policies. Select 'Create client policy' to create a new client policy.",
+    createPolicy: "Create policy",
     createClientPolicy: "Create client policy",
+    createClientPolicySuccess: "New policy created",
     clientPolicySearch: "Search client policy",
     policiesConfigType: "Configure via:",
     policiesConfigTypes: {
@@ -257,6 +259,21 @@ export default {
       "The client profiles configuration was updated",
     updateClientProfilesError:
       "Provided JSON is incorrect: Unexpected token { in JSON",
+
+    conditions: "Conditions",
+    conditionsHelpItem: "Conditions help item",
+    addCondition: "Add condition",
+    emptyConditions: "No conditions configured",
+    updateClientPoliciesSuccess:
+      "The client policies configuration was updated",
+    updateClientPoliciesError:
+      "Provided JSON is incorrect: Unexpected token { in JSON",
+
+    clientProfiles: "Client profiles",
+    clientProfilesHelpItem: "Client profiles help item",
+    addClientProfile: "Add client profile",
+    emptyProfiles: "No client profiles configured",
+
     tokens: "Tokens",
     key: "Key",
     value: "Value",

@@ -259,20 +259,20 @@ describe("Realm settings tests", () => {
     });
 
     /*it("delete providers", () => {
-    sidebarPage.goToRealmSettings();
-    const url = `/auth/admin/realms/${realmName}/keys`;
-    cy.intercept(url).as("load");
+        sidebarPage.goToRealmSettings();
+        const url = `/auth/admin/realms/${realmName}/keys`;
+        cy.intercept(url).as("load");
 
-    cy.findByTestId("rs-keys-tab").click();
-    cy.findByTestId("rs-providers-tab").click();
+        cy.findByTestId("rs-keys-tab").click();
+        cy.findByTestId("rs-providers-tab").click();
 
-    cy.wait("@load");
+        cy.wait("@load");
 
-    deleteProvider("test_aes-generated");
-    deleteProvider("test_ecdsa-generated");
-    deleteProvider("test_hmac-generated");
-    deleteProvider("test_rsa-generated");
-  });*/
+        deleteProvider("test_aes-generated");
+        deleteProvider("test_ecdsa-generated");
+        deleteProvider("test_hmac-generated");
+        deleteProvider("test_rsa-generated");
+      });*/
     it("Test keys", () => {
       sidebarPage.goToRealmSettings();
       goToKeys();
@@ -443,7 +443,7 @@ describe("Realm settings tests", () => {
       loginPage.logIn();
       sidebarPage.goToRealmSettings();
       cy.findByTestId("rs-clientPolicies-tab").click();
-      cy.findByTestId("rs-profiles-clientPolicies-tab").click();
+      cy.findByTestId("rs-policies-clientProfiles-tab").click();
     });
 
     it("Go to client policies profiles tab", () => {
@@ -484,18 +484,11 @@ describe("Realm settings tests", () => {
     });
 
     it("Should not create duplicate client profile", () => {
-      realmSettingsPage.shouldCompleteAndCreateNewClientProfile();
-
       sidebarPage.goToRealmSettings();
       cy.findByTestId("rs-clientPolicies-tab").click();
-      cy.findByTestId("rs-profiles-clientPolicies-tab").click();
+      cy.findByTestId("rs-policies-clientProfiles-tab").click();
       realmSettingsPage.shouldCompleteAndCreateNewClientProfile();
       realmSettingsPage.shouldNotCreateDuplicateClientProfile();
-
-      sidebarPage.goToRealmSettings();
-      cy.findByTestId("rs-clientPolicies-tab").click();
-      cy.findByTestId("rs-profiles-clientPolicies-tab").click();
-      realmSettingsPage.shouldDeleteClientProfileDialog();
     });
 
     it("Check deleting newly created client profile from create view via dropdown", () => {

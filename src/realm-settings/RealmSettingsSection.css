@@ -198,6 +198,14 @@ article.pf-c-card.pf-m-flat.kc-login-settings-template
   color: #8D9195;
 }
 
+.kc-emptyConditions {
+  color: #8D9195;
+}
+
+.kc-emptyClientProfiles {
+  color: #8D9195;
+}
+
 .kc-action-dropdown {
   background-color: transparent;
 }

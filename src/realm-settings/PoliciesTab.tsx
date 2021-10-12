@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import {
   AlertVariant,
   Button,
@@ -19,32 +19,68 @@ import { useTranslation } from "react-i18next";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { prettyPrintJSON, upperCaseFormatter } from "../util";
 import { CodeEditor, Language } from "@patternfly/react-code-editor";
-import { Link } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import type ClientPolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyRepresentation";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useAlerts } from "../components/alert/Alerts";
 
 import "./RealmSettingsSection.css";
-
+import { useRealm } from "../context/realm-context/RealmContext";
+import { toNewClientPolicy } from "./routes/NewClientPolicy";
 export const PoliciesTab = () => {
   const { t } = useTranslation("realm-settings");
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
-
+  const { realm } = useRealm();
+  const history = useHistory();
   const [show, setShow] = useState(false);
   const [policies, setPolicies] = useState<ClientPolicyRepresentation[]>();
   const [selectedPolicy, setSelectedPolicy] =
     useState<ClientPolicyRepresentation>();
+  const [key, setKey] = useState(0);
+  const [code, setCode] = useState<string>();
+  const [tablePolicies, setTablePolicies] =
+    useState<ClientPolicyRepresentation[]>();
+
+  const refresh = () => setKey(key + 1);
 
   useFetch(
     () => adminClient.clientPolicies.listPolicies(),
-    (policies) => setPolicies(policies.policies),
-    []
+    (policies) => {
+      setPolicies(policies.policies),
+        setTablePolicies(policies.policies || []),
+        setCode(prettyPrintJSON(policies.policies));
+    },
+    [key]
   );
 
   const loader = async () => policies ?? [];
 
-  const code = useMemo(() => prettyPrintJSON(policies), [policies]);
+  const save = async () => {
+    if (!code) {
+      return;
+    }
+
+    try {
+      const obj: ClientPolicyRepresentation[] = JSON.parse(code);
+
+      try {
+        await adminClient.clientPolicies.updatePolicy({
+          policies: obj,
+        });
+        addAlert(
+          t("realm-settings:updateClientPoliciesSuccess"),
+          AlertVariant.success
+        );
+        refresh();
+      } catch (error) {
+        addError("realm-settings:updateClientPoliciesError", error);
+      }
+    } catch (error) {
+      console.warn("Invalid json, ignoring value using {}");
+      addError("realm-settings:updateClientPoliciesError", error);
+    }
+  };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("deleteClientPolicyConfirmTitle"),
@@ -54,9 +90,16 @@ export const PoliciesTab = () => {
     continueButtonLabel: t("delete"),
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
+      const updatedPolicies = policies?.filter(
+        (policy) => policy.name !== selectedPolicy?.name
+      );
+
       try {
-        // delete client policy here
+        await adminClient.clientPolicies.updatePolicy({
+          policies: updatedPolicies,
+        });
         addAlert(t("deleteClientPolicySuccess"), AlertVariant.success);
+        refresh();
       } catch (error) {
         addError(t("deleteClientPolicyError"), error);
       }
@@ -87,6 +130,7 @@ export const PoliciesTab = () => {
               onChange={() => setShow(false)}
               label={t("policiesConfigTypes.formView")}
               id="formView-policiesView"
+              data-testid="formView-policiesView"
               className="kc-form-radio-btn pf-u-mr-sm pf-u-ml-sm"
             />
           </FlexItem>
@@ -97,6 +141,7 @@ export const PoliciesTab = () => {
               onChange={() => setShow(true)}
               label={t("policiesConfigTypes.jsonEditor")}
               id="jsonEditor-policiesView"
+              data-testid="jsonEditor-policiesView"
               className="kc-editor-radio-btn"
             />
           </FlexItem>
@@ -111,6 +156,7 @@ export const PoliciesTab = () => {
               message={t("realm-settings:noClientPolicies")}
               instructions={t("realm-settings:noClientPoliciesInstructions")}
               primaryActionText={t("realm-settings:createClientPolicy")}
+              onPrimaryAction={() => history.push(toNewClientPolicy({ realm }))}
             />
           }
           ariaLabelKey="realm-settings:clientPolicies"
@@ -120,7 +166,9 @@ export const PoliciesTab = () => {
             <ToolbarItem>
               <Button
                 id="createPolicy"
-                component={Link}
+                component={(props) => (
+                  <Link {...props} to={toNewClientPolicy({ realm })} />
+                )}
                 data-testid="createPolicy"
               >
                 {t("createClientPolicy")}
@@ -155,19 +203,34 @@ export const PoliciesTab = () => {
             <CodeEditor
               isLineNumbersVisible
               isLanguageLabelVisible
+              isReadOnly={false}
               code={code}
               language={Language.json}
               height="30rem"
+              onChange={(value) => {
+                setCode(value ?? "");
+              }}
             />
           </div>
           <div className="pf-u-mt-md">
             <Button
               variant={ButtonVariant.primary}
               className="pf-u-mr-md pf-u-ml-lg"
+              data-testid="jsonEditor-policies-saveBtn"
+              onClick={save}
             >
               {t("save")}
             </Button>
-            <Button variant={ButtonVariant.secondary}> {t("reload")}</Button>
+            <Button
+              variant={ButtonVariant.secondary}
+              data-testid="jsonEditor-reloadBtn"
+              onClick={() => {
+                setCode(prettyPrintJSON(tablePolicies));
+              }}
+            >
+              {" "}
+              {t("reload")}
+            </Button>
           </div>
         </>
       )}

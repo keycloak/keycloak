@@ -112,5 +112,8 @@ export default {
       "The locales to support for this realm. The user chooses one of these locales on the login screen.",
     defaultLocale:
       "The initial locale to use. It is used on the login screen and other screens in the Admin Console and Account Console.",
+    conditions:
+      "Conditions, which will be evaluated to determine if client policy should be applied during particular action or not.",
+    clientProfiles: "Client profiles applied on this policy.",
   },
 };
