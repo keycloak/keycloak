@@ -45,6 +45,7 @@ import static org.keycloak.common.Profile.Feature.WEB_AUTHN;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.ALTERNATIVE;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
@@ -125,6 +126,8 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
         webAuthnRegisterPage.assertCurrent();
         webAuthnRegisterPage.cancelAIA();
 
+        waitForPageToLoad();
+
         assertKcActionStatus("cancelled");
     }
 
@@ -137,6 +140,9 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
         webAuthnRegisterPage.assertCurrent();
         webAuthnRegisterPage.clickRegister();
         webAuthnRegisterPage.registerWebAuthnCredential("authenticator1");
+
+        waitForPageToLoad();
+
         assertKcActionStatus("success");
     }
 
