@@ -86,6 +86,9 @@
             challenge: base64url.decode(challenge, { loose: true })
         };
 
+        let createTimeout = ${createTimeout};
+        if (createTimeout !== 0) publicKey.timeout = createTimeout * 1000;
+
         if (allowCredentials.length) {
             publicKey.allowCredentials = allowCredentials;
         }

@@ -86,7 +86,7 @@
                 if (isAuthenticatorSelectionSpecified) publicKey.authenticatorSelection = authenticatorSelection;
 
                 let createTimeout = ${createTimeout};
-                if (createTimeout != 0) publicKey.timeout = createTimeout * 1000;
+                if (createTimeout !== 0) publicKey.timeout = createTimeout * 1000;
 
                 let excludeCredentialIds = "${excludeCredentialIds}";
                 let excludeCredentials = getExcludeCredentials(excludeCredentialIds);
