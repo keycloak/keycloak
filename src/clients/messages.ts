@@ -169,6 +169,29 @@ export default {
       "If you regenerate registration access token, the access data regarding the client registration service will be updated.",
     clientSecretSuccess: "Client secret regenerated",
     clientSecretError: "Could not regenerate client secret due to: {{error}}",
+    signingKeysConfig: "Signing keys config",
+    signingKeysConfigExplain:
+      'If you enable the "Client signature required" below, you must configure the signing keys by generating or importing keys, and the client will sign their saml requests and responses. The signature will be validated.',
+    encryptionKeysConfig: "Encryption keys config",
+    encryptionKeysConfigExplain:
+      'If you enable the "Encryption assertions" below, you must configure the encryption keys by generating or importing keys, and the SAML assertions will be encrypted with the client\'s public key using AES.',
+    enableClientSignatureRequired: 'Enable "Client signature required"?',
+    enableClientSignatureRequiredExplain:
+      'If you enable "Client signature required", the adapter of this client will be updated. You may need to download a new adapter for this client. You need to generate or import keys for this client otherwise the authentication will not work.',
+    selectMethod: "Select method",
+    selectMethodType: {
+      generate: "Generate",
+      import: "Import",
+    },
+    confirm: "Confirm",
+    browse: "Browse",
+    importKey: "Import key",
+    disableSigning: 'Disable "{{key}}"',
+    disableSigningExplain:
+      'If you disable "{{key}}", the Keycloak database will be updated and you may need to download a new adapter for this client.',
+    reGenerateSigning: "Regenerate signing key for this client",
+    reGenerateSigningExplain:
+      "If you regenerate signing key for client, the Keycloak database will be updated and you may need to download a new adapter for this client.",
     registrationAccessToken: "Registration access token",
     accessTokenSuccess: "Access token regenerated",
     accessTokenError: "Could not regenerate access token due to: {{error}}",

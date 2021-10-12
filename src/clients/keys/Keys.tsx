@@ -13,7 +13,6 @@ import {
   PageSection,
   Switch,
   Text,
-  TextArea,
   TextContent,
   TextInput,
 } from "@patternfly/react-core";
@@ -28,6 +27,7 @@ import { GenerateKeyDialog } from "./GenerateKeyDialog";
 import { useFetch, useAdminClient } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
 import { ImportKeyDialog, ImportFile } from "./ImportKeyDialog";
+import { Certificate } from "./Certificate";
 
 type KeysProps = {
   save: () => void;
@@ -155,24 +155,7 @@ export const Keys = ({ clientId, save }: KeysProps) => {
             </FormGroup>
             {useJwksUrl !== "true" &&
               (keyInfo ? (
-                <FormGroup
-                  label={t("certificate")}
-                  fieldId="certificate"
-                  labelIcon={
-                    <HelpItem
-                      helpText="clients-help:certificate"
-                      forLabel={t("certificate")}
-                      forID="certificate"
-                    />
-                  }
-                >
-                  <TextArea
-                    readOnly
-                    rows={5}
-                    id="certificate"
-                    value={keyInfo.certificate}
-                  />
-                </FormGroup>
+                <Certificate plain keyInfo={keyInfo} />
               ) : (
                 "No client certificate configured"
               ))}

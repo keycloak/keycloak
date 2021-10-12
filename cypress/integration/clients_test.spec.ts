@@ -294,7 +294,6 @@ describe("Clients test", () => {
       cy.findByTestId("jump-link-capability-config").should("not.exist");
     });
   });
-
   describe("SAML test", () => {
     const samlClientName = "saml";
 
@@ -337,6 +336,62 @@ describe("Clients test", () => {
       });
       cy.findByTestId("settingsSave").click();
       masthead.checkNotificationMessage("Client successfully updated");
+    });
+  });
+
+  describe("SAML keys tab", () => {
+    const clientId = "saml-keys";
+
+    before(() => {
+      new AdminClient().createClient({
+        clientId,
+        protocol: "saml",
+      });
+    });
+
+    after(() => {
+      new AdminClient().deleteClient(clientId);
+    });
+
+    beforeEach(() => {
+      keycloakBefore();
+      loginPage.logIn();
+      sidebarPage.goToClients();
+      listingPage.searchItem(clientId).goToItemDetails(clientId);
+      cy.get("#pf-tab-keys-keys").click();
+    });
+
+    it("doesn't disable when no", () => {
+      cy.findByTestId("clientSignature").click({ force: true });
+
+      modalUtils
+        .checkModalTitle('Disable "Client signature required"')
+        .cancelModal();
+
+      cy.findAllByTestId("certificate").should("have.length", 1);
+    });
+
+    it("disable client signature", () => {
+      cy.findByTestId("clientSignature").click({ force: true });
+
+      modalUtils
+        .checkModalTitle('Disable "Client signature required"')
+        .confirmModal();
+
+      masthead.checkNotificationMessage("Client successfully updated");
+      cy.findAllByTestId("certificate").should("have.length", 0);
+    });
+
+    it("should enable Encryption keys config", () => {
+      cy.findByTestId("encryptAssertions").click({ force: true });
+
+      cy.findByTestId("generate").click();
+      masthead.checkNotificationMessage(
+        "New key pair and certificate generated successfully"
+      );
+
+      modalUtils.confirmModal();
+      cy.findAllByTestId("certificate").should("have.length", 1);
     });
   });
 });

@@ -53,6 +53,7 @@ import { ClientScopes } from "./scopes/ClientScopes";
 import { EvaluateScopes } from "./scopes/EvaluateScopes";
 import { ServiceAccount } from "./service-account/ServiceAccount";
 import { isRealmClient, getProtocolName } from "./utils";
+import { SamlKeys } from "./keys/SamlKeys";
 
 type ClientDetailHeaderProps = {
   onChange: (value: boolean) => void;
@@ -349,7 +350,12 @@ export const ClientDetails = () => {
                 eventKey="keys"
                 title={<TabTitleText>{t("keys")}</TabTitleText>}
               >
-                <Keys clientId={clientId} save={() => save()} />
+                {client.protocol === "openid-connect" && (
+                  <Keys clientId={clientId} save={save} />
+                )}
+                {client.protocol === "saml" && (
+                  <SamlKeys clientId={clientId} save={save} />
+                )}
               </Tab>
             )}
             {!client.publicClient && !isRealmClient(client) && (
