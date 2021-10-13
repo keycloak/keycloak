@@ -27,6 +27,7 @@ import { useAlerts } from "../components/alert/Alerts";
 import "./RealmSettingsSection.css";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toNewClientPolicy } from "./routes/NewClientPolicy";
+import { toEditClientPolicy } from "./routes/EditClientPolicy";
 export const PoliciesTab = () => {
   const { t } = useTranslation("realm-settings");
   const adminClient = useAdminClient();
@@ -55,6 +56,10 @@ export const PoliciesTab = () => {
   );
 
   const loader = async () => policies ?? [];
+
+  const ClientPolicyDetailLink = ({ name }: ClientPolicyRepresentation) => (
+    <Link to={toEditClientPolicy({ realm, policyName: name! })}>{name}</Link>
+  );
 
   const save = async () => {
     if (!code) {
@@ -187,6 +192,7 @@ export const PoliciesTab = () => {
           columns={[
             {
               name: "name",
+              cellRenderer: ClientPolicyDetailLink,
             },
             {
               name: "enabled",

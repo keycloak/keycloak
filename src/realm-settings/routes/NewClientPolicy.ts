@@ -9,7 +9,7 @@ export const NewClientPolicyRoute: RouteDef = {
   path: "/:realm/realm-settings/clientPolicies/new-client-policy",
   component: NewClientPolicyForm,
   breadcrumb: (t) => t("realm-settings:createPolicy"),
-  access: "manage-realm",
+  access: "manage-clients",
 };
 
 export const toNewClientPolicy = (
