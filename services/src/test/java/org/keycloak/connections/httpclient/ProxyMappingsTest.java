@@ -32,7 +32,6 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for {@link ProxyMappings}.
@@ -209,7 +208,7 @@ public class ProxyMappingsTest {
 
   @Test
   public void shouldReturnMappingForHttpProxy() {
-    ProxyMappings proxyMappings = ProxyMappings.valueOf("https://some-proxy.redhat.com:8080", null);
+    ProxyMappings proxyMappings = ProxyMappings.withFixedProxyMapping("https://some-proxy.redhat.com:8080", null);
 
     ProxyMapping forGoogle = proxyMappings.getProxyFor("login.google.com");
     assertEquals("some-proxy.redhat.com", forGoogle.getProxyHost().getHostName());
@@ -217,7 +216,7 @@ public class ProxyMappingsTest {
 
   @Test
   public void shouldReturnMappingForHttpProxyWithNoProxy() {
-    ProxyMappings proxyMappings = ProxyMappings.valueOf("https://some-proxy.redhat.com:8080", "login.facebook.com");
+    ProxyMappings proxyMappings = ProxyMappings.withFixedProxyMapping("https://some-proxy.redhat.com:8080", "login.facebook.com");
 
     assertEquals("some-proxy.redhat.com", proxyMappings.getProxyFor("login.google.com").getProxyHost().getHostName());
     assertEquals("some-proxy.redhat.com", proxyMappings.getProxyFor("facebook.com").getProxyHost().getHostName());
@@ -228,7 +227,7 @@ public class ProxyMappingsTest {
 
   @Test
   public void shouldReturnMappingForHttpProxyWithMultipleNoProxy() {
-    ProxyMappings proxyMappings = ProxyMappings.valueOf("https://some-proxy.redhat.com:8080", "login.facebook.com,corp.com");
+    ProxyMappings proxyMappings = ProxyMappings.withFixedProxyMapping("https://some-proxy.redhat.com:8080", "login.facebook.com,corp.com");
 
     assertEquals("some-proxy.redhat.com", proxyMappings.getProxyFor("login.google.com").getProxyHost().getHostName());
     assertEquals("some-proxy.redhat.com", proxyMappings.getProxyFor("facebook.com").getProxyHost().getHostName());
@@ -240,7 +239,7 @@ public class ProxyMappingsTest {
 
   @Test
   public void shouldReturnMappingForNoProxyWithInvalidChars() {
-    ProxyMappings proxyMappings = ProxyMappings.valueOf("https://some-proxy.redhat.com:8080", "[lj]ogin.facebook.com");
+    ProxyMappings proxyMappings = ProxyMappings.withFixedProxyMapping("https://some-proxy.redhat.com:8080", "[lj]ogin.facebook.com");
 
     assertEquals("some-proxy.redhat.com", proxyMappings.getProxyFor("login.facebook.com").getProxyHost().getHostName());
     assertEquals("some-proxy.redhat.com", proxyMappings.getProxyFor("jogin.facebook.com").getProxyHost().getHostName());
@@ -248,6 +247,6 @@ public class ProxyMappingsTest {
 
   @Test
   public void shouldReturnEmptyMappingForEmptyHttpProxy() {
-    assertNull(ProxyMappings.valueOf(null, "facebook.com"));
+    assertNull(ProxyMappings.withFixedProxyMapping(null, "facebook.com"));
   }
 }

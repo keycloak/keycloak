@@ -35,10 +35,11 @@ import org.keycloak.truststore.TruststoreProvider;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.util.EntityUtils;
+
+import static org.keycloak.utils.StringUtil.isBlank;
 
 /**
  * The default {@link HttpClientFactory} for {@link HttpClientProvider HttpClientProvider's} used by Keycloak for outbound HTTP calls.
@@ -162,13 +163,13 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                     if (proxyMappings == null || proxyMappings.isEmpty()) {
                         logger.debug("Trying to use proxy mapping from env vars");
                         String httpProxy = getEnvVarValue(HTTPS_PROXY);
-                        if (httpProxy == null || httpProxy.isEmpty()) {
+                        if (isBlank(httpProxy)) {
                             httpProxy = getEnvVarValue(HTTP_PROXY);
                         }
                         String noProxy = getEnvVarValue(NO_PROXY);
 
                         logger.debugf("httpProxy: %s, noProxy: %s", httpProxy, noProxy);
-                        proxyMappings = ProxyMappings.valueOf(httpProxy, noProxy);
+                        proxyMappings = ProxyMappings.withFixedProxyMapping(httpProxy, noProxy);
                     }
 
                     HttpClientBuilder builder = new HttpClientBuilder();
@@ -237,7 +238,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
 
     private String getEnvVarValue(String name) {
         String value = System.getenv(name.toLowerCase());
-        if (value == null || value.isEmpty()) {
+        if (isBlank(value)) {
             value = System.getenv(name.toUpperCase());
         }
         return value;

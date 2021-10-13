@@ -31,6 +31,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.keycloak.utils.StringUtil.isBlank;
+
 /**
  * {@link ProxyMappings} describes an ordered mapping for hostname regex patterns to a {@link HttpHost} proxy.
  * <p>
@@ -106,12 +108,12 @@ public class ProxyMappings {
    * @return
    * @see <a href="https://about.gitlab.com/blog/2021/01/27/we-need-to-talk-no-proxy/">https://about.gitlab.com/blog/2021/01/27/we-need-to-talk-no-proxy/</a>
    */
-  public static ProxyMappings valueOf(String httpProxy, String noProxy) {
+  public static ProxyMappings withFixedProxyMapping(String httpProxy, String noProxy) {
     List<ProxyMapping> proxyMappings = new ArrayList<>();
 
-    if (httpProxy != null && !httpProxy.isEmpty()) {
+    if (!isBlank(httpProxy)) {
       // noProxy must be first as it's more specific than .*
-      if (noProxy != null && !noProxy.isEmpty()) {
+      if (!isBlank(noProxy)) {
         for (String host : noProxy.split(NO_PROXY_DELIMITER)) {
           // do not support regex in no_proxy
           proxyMappings.add(new ProxyMapping(Pattern.compile("(?:.+\\.)?" + Pattern.quote(host)), null, null));
