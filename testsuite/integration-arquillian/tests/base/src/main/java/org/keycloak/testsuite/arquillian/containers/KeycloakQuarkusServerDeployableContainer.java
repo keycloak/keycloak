@@ -44,7 +44,7 @@ import org.keycloak.testsuite.arquillian.SuiteContext;
  */
 public class KeycloakQuarkusServerDeployableContainer implements DeployableContainer<KeycloakQuarkusConfiguration> {
 
-    protected static final Logger log = Logger.getLogger(KeycloakQuarkusServerDeployableContainer.class);
+    private static final Logger log = Logger.getLogger(KeycloakQuarkusServerDeployableContainer.class);
     
     private KeycloakQuarkusConfiguration configuration;
     private Process container;
@@ -53,9 +53,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
     @Inject
     private Instance<SuiteContext> suiteContext;
 
-    private boolean forceReaugmentation;
-    private List<String> additionalArgs = Collections.emptyList();
-    private List<String> runtimeProperties = Collections.emptyList();
+    private List<String> additionalBuildArgs = Collections.emptyList();
 
     @Override
     public Class<KeycloakQuarkusConfiguration> getConfigurationClass() {
@@ -98,7 +96,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
 
         try {
             deployArchiveToServer(archive);
-            restartServer(true);
+            restartServer();
         } catch (Exception e) {
             throw new DeploymentException(e.getMessage(),e);
         }
@@ -111,7 +109,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         File wrkDir = configuration.getProvidersPath().resolve("providers").toFile();
         try {
             Files.deleteIfExists(wrkDir.toPath().resolve(archive.getName()));
-            restartServer(true);
+            restartServer();
         } catch (Exception e) {
             throw new DeploymentException(e.getMessage(),e);
         }
@@ -167,23 +165,14 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         commands.add("--http-port=" + configuration.getBindHttpPort());
         commands.add("--https-port=" + configuration.getBindHttpsPort());
 
-        //for setting the spi.login-protocol.saml.known-protocols values correctly in keycloak.properties
-        commands.add("-Dauth.server.http.port=" + configuration.getBindHttpPort());
-        commands.add("-Dauth.server.https.port=" + configuration.getBindHttpsPort());
-
         if (configuration.getRoute() != null) {
             commands.add("-Djboss.node.name=" + configuration.getRoute());
         }
 
         commands.add("--cluster=" + System.getProperty("auth.server.quarkus.cluster.config", "local"));
 
-        commands.addAll(getRuntimeProperties());
-        addAdditionalCommands(commands);
+        commands.addAll(getAdditionalBuildArgs());
         return commands.toArray(new String[0]);
-    }
-
-    private void addAdditionalCommands(List<String> commands) {
-        commands.addAll(additionalArgs);
     }
 
     private void waitForReadiness() throws MalformedURLException, LifecycleException {
@@ -278,13 +267,8 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         return TimeUnit.SECONDS.toMillis(configuration.getStartupTimeoutInSeconds());
     }
 
-    public void forceReAugmentation(String... args) {
-        additionalArgs = Arrays.asList(args);
-    }
-
     public void resetConfiguration() {
-        additionalArgs = Collections.emptyList();
-        runtimeProperties = Collections.emptyList();
+        additionalBuildArgs = Collections.emptyList();
     }
 
     private void deployArchiveToServer(Archive<?> archive) throws IOException {
@@ -293,19 +277,16 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         Files.copy(zipStream, providersDir.toPath().resolve(archive.getName()), StandardCopyOption.REPLACE_EXISTING);
     }
 
-    public void restartServer(boolean isReaugmentation) throws Exception {
-        if(isReaugmentation) {
-            forceReaugmentation = true;
-        }
+    public void restartServer() throws Exception {
         stop();
         start();
     }
 
-    public List<String> getRuntimeProperties() {
-        return runtimeProperties;
+    public List<String> getAdditionalBuildArgs() {
+        return additionalBuildArgs;
     }
 
-    public void setRuntimeProperties(List<String> runtimeProperties) {
-        this.runtimeProperties = runtimeProperties;
+    public void setAdditionalBuildArgs(List<String> newArgs) {
+        additionalBuildArgs = newArgs;
     }
 }

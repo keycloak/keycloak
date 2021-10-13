@@ -168,9 +168,11 @@ public final class PropertyMappers {
     }
 
     public static boolean isBuildTimeProperty(String name) {
-        if ("kc.features".equals(name)) {
+
+        if (isFeaturesBuildTimeProperty(name) || isSpiBuildTimeProperty(name)) {
             return true;
         }
+
         return name.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)
                 && PropertyMapper.MAPPERS.entrySet().stream()
                     .anyMatch(entry -> entry.getValue().getFrom().equals(name) && entry.getValue().isBuildTime())
@@ -182,6 +184,14 @@ public final class PropertyMappers {
                 && !"kc.show.config".equals(name)
                 && !"kc.show.config.runtime".equals(name)
                 && !PropertyMappers.toCLIFormat("kc.config.file").equals(name);
+    }
+
+    private static boolean isSpiBuildTimeProperty(String name) {
+        return name.startsWith("kc.spi") && (name.endsWith("provider") || name.endsWith("enabled"));
+    }
+
+    private static boolean isFeaturesBuildTimeProperty(String name) {
+        return name.startsWith("kc.features");
     }
 
     public static String toCLIFormat(String name) {

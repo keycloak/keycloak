@@ -10,6 +10,7 @@ import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
 import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public abstract class AbstractHostnameTest extends AbstractKeycloakTest {
@@ -41,6 +42,7 @@ public abstract class AbstractHostnameTest extends AbstractKeycloakTest {
             controller.stop(suiteContext.getAuthServerInfo().getQualifier());
             KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer)suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
             container.resetConfiguration();
+            container.setAdditionalBuildArgs(Collections.singletonList("--spi-hostname-provider=default"));
             controller.start(suiteContext.getAuthServerInfo().getQualifier());
         } else {
             throw new RuntimeException("Don't know how to config");
@@ -71,13 +73,13 @@ public abstract class AbstractHostnameTest extends AbstractKeycloakTest {
         } else if (suiteContext.getAuthServerInfo().isQuarkus()) {
             controller.stop(suiteContext.getAuthServerInfo().getQualifier());
             KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer)suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
-            List<String> runtimeProperties = new ArrayList<>();
-            runtimeProperties.add("--spi-hostname-default-frontend-url="+frontendUrl);
-            runtimeProperties.add("--spi-hostname-default-force-backend-url-to-frontend-url="+ forceBackendUrlToFrontendUrl);
+            List<String> additionalArgs = new ArrayList<>();
+            additionalArgs.add("--spi-hostname-default-frontend-url="+frontendUrl);
+            additionalArgs.add("--spi-hostname-default-force-backend-url-to-frontend-url="+ forceBackendUrlToFrontendUrl);
             if (adminUrl != null){
-                runtimeProperties.add("--spi-hostname-default-admin-url="+adminUrl);
+                additionalArgs.add("--spi-hostname-default-admin-url="+adminUrl);
             }
-            container.setRuntimeProperties(runtimeProperties);
+            container.setAdditionalBuildArgs(additionalArgs);
             controller.start(suiteContext.getAuthServerInfo().getQualifier());
         } else {
             throw new RuntimeException("Don't know how to config");
@@ -103,11 +105,11 @@ public abstract class AbstractHostnameTest extends AbstractKeycloakTest {
         } else if (suiteContext.getAuthServerInfo().isQuarkus()) {
             controller.stop(suiteContext.getAuthServerInfo().getQualifier());
             KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer)suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
-            container.forceReAugmentation("--spi-hostname-provider=fixed" +
-                    " --spi-hostname-fixed-hostname="+ hostname +
-                    " --spi-hostname-fixed-http-port="+ httpPort +
-                    " --spi-hostname-fixed-https-port="+ httpsPort +
-                    " --spi-hostname-fixed-always-https="+ alwaysHttps);
+            container.setAdditionalBuildArgs(Collections.singletonList("--spi-hostname-provider=fixed" +
+                    " --spi-hostname-fixed-hostname=" + hostname +
+                    " --spi-hostname-fixed-http-port=" + httpPort +
+                    " --spi-hostname-fixed-https-port=" + httpsPort +
+                    " --spi-hostname-fixed-always-https=" + alwaysHttps));
             controller.start(suiteContext.getAuthServerInfo().getQualifier());
         } else {
             throw new RuntimeException("Don't know how to config");
