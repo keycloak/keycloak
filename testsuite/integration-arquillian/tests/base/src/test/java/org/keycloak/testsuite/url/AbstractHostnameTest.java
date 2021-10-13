@@ -16,8 +16,6 @@ public abstract class AbstractHostnameTest extends AbstractKeycloakTest {
 
     private static final Logger LOGGER = Logger.getLogger(AbstractHostnameTest.class);
 
-    private boolean isReaugmentationNeeded;
-
     @ArquillianResource
     protected ContainerController controller;
 
@@ -42,7 +40,7 @@ public abstract class AbstractHostnameTest extends AbstractKeycloakTest {
         } else if (suiteContext.getAuthServerInfo().isQuarkus()) {
             controller.stop(suiteContext.getAuthServerInfo().getQualifier());
             KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer)suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
-            container.resetConfiguration(isReaugmentationNeeded);
+            container.resetConfiguration();
             controller.start(suiteContext.getAuthServerInfo().getQualifier());
         } else {
             throw new RuntimeException("Don't know how to config");
@@ -81,7 +79,6 @@ public abstract class AbstractHostnameTest extends AbstractKeycloakTest {
             }
             container.setRuntimeProperties(runtimeProperties);
             controller.start(suiteContext.getAuthServerInfo().getQualifier());
-            isReaugmentationNeeded = false;
         } else {
             throw new RuntimeException("Don't know how to config");
         }
@@ -112,7 +109,6 @@ public abstract class AbstractHostnameTest extends AbstractKeycloakTest {
                     " --spi-hostname-fixed-https-port="+ httpsPort +
                     " --spi-hostname-fixed-always-https="+ alwaysHttps);
             controller.start(suiteContext.getAuthServerInfo().getQualifier());
-            isReaugmentationNeeded = true;
         } else {
             throw new RuntimeException("Don't know how to config");
         }

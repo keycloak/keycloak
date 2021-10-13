@@ -145,33 +145,16 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
             FileUtils.deleteDirectory(configuration.getProvidersPath().resolve("data").toFile());
         }
 
-        if (isReaugmentBeforeStart()) {
-            List<String> commands = new ArrayList<>(Arrays.asList("./kc.sh", "build", "-Dquarkus.http.root-path=/auth", "--http-enabled=true"));
-
-            addAdditionalCommands(commands);
-            ProcessBuilder reaugment = new ProcessBuilder(commands);
-
-            reaugment.directory(wrkDir).inheritIO();
-
-            try {
-                log.infof("Re-building the server with the new configuration");
-                reaugment.start().waitFor(10, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                throw new RuntimeException("Timeout while waiting for re-augmentation", e);
-            }
-        }
-
         return builder.start();
-    }
-
-    private boolean isReaugmentBeforeStart() {
-        return configuration.isReaugmentBeforeStart() || forceReaugmentation;
     }
 
     private String[] getProcessCommands() {
         List<String> commands = new ArrayList<>();
 
         commands.add("./kc.sh");
+        commands.add("-Dquarkus.http.root-path=/auth");
+        commands.add("--auto-build");
+        commands.add("--http-enabled=true");
 
         if (configuration.getDebugPort() > 0) {
             commands.add("--debug");
@@ -296,16 +279,12 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
     }
 
     public void forceReAugmentation(String... args) {
-        forceReaugmentation = true;
         additionalArgs = Arrays.asList(args);
     }
 
-    public void resetConfiguration(boolean isReAugmentationNeeded) {
+    public void resetConfiguration() {
         additionalArgs = Collections.emptyList();
         runtimeProperties = Collections.emptyList();
-        if (isReAugmentationNeeded) {
-            forceReAugmentation();
-        }
     }
 
     private void deployArchiveToServer(Archive<?> archive) throws IOException {
