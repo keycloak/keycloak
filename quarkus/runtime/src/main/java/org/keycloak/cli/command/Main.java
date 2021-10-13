@@ -52,16 +52,21 @@ import picocli.CommandLine.Option;
 )
 public final class Main {
 
-    @Option(names = { "--help" }, description = "This help message.", usageHelp = true)
+    @CommandLine.Option(names = "-D<key>=<value>", description = "Set a Java system property", scope = CommandLine.ScopeType.INHERIT, order = 0)
+    Boolean sysProps;
+
+    @Option(names = { "-h", "--help" }, description = "This help message.", usageHelp = true)
     boolean help;
 
-    @Option(names = { "--version" }, description = "Show version information", versionHelp = true)
+    @Option(names = { "-V", "--version" }, description = "Show version information", versionHelp = true)
     boolean version;
 
-    @CommandLine.Option(names = "--verbose", description = "Print out more details when running this command. Useful for troubleshooting if some unexpected error occurs.", required = false,
-        scope = CommandLine.ScopeType.INHERIT) Boolean verbose;
+    @Option(names = { "-v", "--verbose" },
+            description = "Print out more details when running this command. Useful for troubleshooting if some unexpected error occurs.", required = false,
+            scope = CommandLine.ScopeType.INHERIT)
+    Boolean verbose;
 
-    @Option(names = "--config-file", arity = "1", description = "Set the path to a configuration file.", paramLabel = "<path>")
+    @Option(names = {"-cf", "--config-file"}, arity = "1", description = "Set the path to a configuration file.", paramLabel = "<path>")
     public void setConfigFile(String path) {
         System.setProperty(KeycloakConfigSourceProvider.KEYCLOAK_CONFIG_FILE_PROP, path);
     }

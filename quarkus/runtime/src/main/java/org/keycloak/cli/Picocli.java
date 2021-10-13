@@ -116,7 +116,7 @@ public final class Picocli {
 
             List<String> suggestedArgs = cliArgs.subList(1, cliArgs.size());
 
-            suggestedArgs.removeAll(Arrays.asList("--verbose", "--help"));
+            suggestedArgs.removeAll(Arrays.asList("--verbose", "-v", "--help", "-h"));
 
             cmd.getOut().printf("For an optional runtime and bypass this step, please run the '%s' command prior to starting the server:%n%n\t%s config %s%n",
                     Build.NAME,
@@ -330,7 +330,7 @@ public final class Picocli {
         logError(errorWriter, "ERROR: " + message);
 
         if (throwable != null) {
-            boolean verbose = cliArgs.stream().anyMatch("--verbose"::equals);
+            boolean verbose = cliArgs.contains("--verbose") || cliArgs.contains("-v");
 
             if (throwable instanceof InitializationException) {
                 InitializationException initializationException = (InitializationException) throwable;
