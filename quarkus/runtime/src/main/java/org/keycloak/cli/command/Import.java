@@ -24,7 +24,7 @@ import static org.keycloak.exportimport.Strategy.OVERWRITE_EXISTING;
 import picocli.CommandLine;
 
 @CommandLine.Command(name = "import",
-        description = "%nImport data from a directory or a file.%n",
+        description = "Import data from a directory or a file.",
         mixinStandardHelpOptions = true,
         showDefaultValues = true,
         optionListHeading = "%nOptions%n",

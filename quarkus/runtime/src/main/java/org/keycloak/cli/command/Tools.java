@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,13 +19,11 @@ package org.keycloak.cli.command;
 
 import picocli.CommandLine;
 
-@CommandLine.Command(name = Start.NAME,
-        description = "Start the server.",
+@CommandLine.Command(name = "tools",
+        description = "Provides utilities for using and interacting with the server.",
         mixinStandardHelpOptions = true,
-        usageHelpAutoWidth = true,
         optionListHeading = "%nOptions%n",
-        parameterListHeading = "Available Commands%n")
-public final class Start extends AbstractStartCommand implements Runnable {
-
-    public static final String NAME = "start";
+        parameterListHeading = "Available Commands%n",
+        subcommands = {Completion.class})
+public class Tools {
 }

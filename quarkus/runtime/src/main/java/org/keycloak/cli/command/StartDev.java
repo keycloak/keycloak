@@ -22,7 +22,7 @@ import org.keycloak.util.Environment;
 import picocli.CommandLine;
 
 @CommandLine.Command(name = StartDev.NAME,
-        description = "%nStart the server in development mode.%n",
+        description = "Start the server in development mode.",
         mixinStandardHelpOptions = true,
         optionListHeading = "%nOptions%n",
         parameterListHeading = "Available Commands%n")

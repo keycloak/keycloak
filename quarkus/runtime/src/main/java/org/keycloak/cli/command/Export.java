@@ -22,7 +22,7 @@ import static org.keycloak.exportimport.ExportImportConfig.ACTION_EXPORT;
 import picocli.CommandLine;
 
 @CommandLine.Command(name = "export",
-        description = "%nExport data from realms to a file or directory.%n",
+        description = "Export data from realms to a file or directory.",
         mixinStandardHelpOptions = true,
         showDefaultValues = true,
         optionListHeading = "%nOptions%n",

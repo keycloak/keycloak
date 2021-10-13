@@ -20,6 +20,7 @@ package org.keycloak.cli;
 import static org.keycloak.configuration.Configuration.getConfig;
 import static org.keycloak.configuration.PropertyMappers.isBuildTimeProperty;
 import static org.keycloak.util.Environment.isDevMode;
+import static picocli.CommandLine.Model.UsageMessageSpec.SECTION_KEY_COMMAND_LIST;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -57,6 +58,7 @@ public final class Picocli {
     private static final Logger logger = Logger.getLogger(Picocli.class);
     private static final String ARG_SEPARATOR = ";;";
     private static final String ARG_PREFIX = "--";
+    public static final char ARG_KEY_VALUE_SEPARATOR = '=';
 
     private Picocli() {
     }
@@ -232,11 +234,12 @@ public final class Picocli {
 
         for (Profile.Feature feature : Profile.Feature.values()) {
             addOption(spec.subcommands().get(Build.NAME).getCommandSpec(), "--features-" + feature.name().toLowerCase(),
-                    "Enables the " + feature.name() + " feature. Set enabled to enable the feature or disabled otherwise.");
+                    "Enables the " + feature.name() + " feature. Set enabled to enable the feature or disabled otherwise.", null);
         }
         
         CommandLine cmd = new CommandLine(spec);
 
+        cmd.getHelpSectionMap().put(SECTION_KEY_COMMAND_LIST, new SubCommandListRenderer());
         cmd.setExecutionExceptionHandler(new ExecutionExceptionHandler());
         
         return cmd;
@@ -245,6 +248,7 @@ public final class Picocli {
     public static String parseConfigArgs(List<String> argsList) {
         StringBuilder options = new StringBuilder();
         Iterator<String> iterator = argsList.iterator();
+        boolean expectValue = false;
 
         while (iterator.hasNext()) {
             String key = iterator.next();
@@ -259,7 +263,16 @@ public final class Picocli {
                 if (options.length() > 0) {
                     options.append(ARG_SEPARATOR);
                 }
+
                 options.append(key);
+
+                if (key.indexOf(ARG_KEY_VALUE_SEPARATOR) == -1) {
+                    // values can be set using spaces (e.g.: --option <value>)
+                    expectValue = true;
+                }
+            } else if (expectValue) {
+                options.append(ARG_KEY_VALUE_SEPARATOR).append(key);
+                expectValue = false;
             }
         }
 
@@ -282,19 +295,25 @@ public final class Picocli {
                 continue;
             }
 
-            addOption(commandSpec, name, description);
+            addOption(commandSpec, name, description, mapper);
         }
 
         addOption(commandSpec, "--features", "Enables a group of features. Possible values are: "
                 + String.join(",", Arrays.stream(Profile.Type.values()).map(
-                type -> type.name().toLowerCase()).toArray((IntFunction<CharSequence[]>) String[]::new)));
+                type -> type.name().toLowerCase()).toArray((IntFunction<CharSequence[]>) String[]::new)), null);
     }
 
-    private static void addOption(CommandLine.Model.CommandSpec commandSpec, String name, String description) {
-        commandSpec.addOption(CommandLine.Model.OptionSpec.builder(name)
+    private static void addOption(CommandLine.Model.CommandSpec commandSpec, String name, String description, PropertyMapper mapper) {
+        CommandLine.Model.OptionSpec.Builder builder = CommandLine.Model.OptionSpec.builder(name)
                 .description(description)
-                .paramLabel("<value>")
-                .type(String.class).build());
+                .paramLabel(name.substring(2))
+                .type(String.class);
+
+        if (mapper != null) {
+            builder.completionCandidates(mapper.getExpectedValues());
+        }
+
+        commandSpec.addOption(builder.build());
     }
 
     public static List<String> getCliArgs(CommandLine cmd) {
