@@ -45,7 +45,7 @@ do
           break
           ;;
       *)
-          if [[ $1 = --* || ! $1 =~ ^-.* ]]; then
+          if [[ $1 = --* || ! $1 =~ ^-D.* ]]; then
             CONFIG_ARGS="$CONFIG_ARGS $1"
             if [[ "$1" = "start-dev" ]]; then
               CONFIG_ARGS="$CONFIG_ARGS --auto-build"
