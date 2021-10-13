@@ -25,8 +25,13 @@ import picocli.CommandLine.Option;
 
 @Command(name = "keycloak",
         usageHelpWidth = 150, 
-        header = "Keycloak - Open Source Identity and Access Management%n%nFind more information at: https://www.keycloak.org/%n",
-        description = "Use this command-line tool to manage your Keycloak cluster%n", footerHeading = "%nUse \"${COMMAND-NAME} <command> --help\" for more information about a command.%nUse \"${COMMAND-NAME} options\" for a list of all command-line options.",
+        header = {
+            "Keycloak - Open Source Identity and Access Management",
+            "",
+            "Find more information at: https://www.keycloak.org/",
+            ""
+        },
+        description = "Use this command-line tool to manage your Keycloak cluster%n", footerHeading = "%nUse \"${COMMAND-NAME} <command> --help\" for more information about a command.",
         footer = "%nby Red Hat",
         optionListHeading = "Configuration Options%n%n",
         commandListHeading = "%nCommands%n%n",
@@ -41,7 +46,8 @@ import picocli.CommandLine.Option;
                 StartDev.class,
                 Export.class,
                 Import.class,
-                ShowConfig.class
+                ShowConfig.class,
+                Tools.class
         }
 )
 public final class Main {

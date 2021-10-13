@@ -27,7 +27,12 @@ import io.quarkus.bootstrap.runner.RunnerClassLoader;
 import picocli.CommandLine;
 
 @CommandLine.Command(name = Build.NAME,
-        description = "%nCreates a new and optimized server image based on the options passed to this command. Once created, configuration will be read from the server image and the server can be started without passing the same options again. Some configuration options require this command to be executed in order to actually change a configuration. For instance, the database vendor.%n",
+        header = "Creates a new and optimized server image based on the configuration options passed to this command.",
+        description = {
+            "Creates a new and optimized server image based on the configuration options passed to this command. Once created, configuration will be read from the server image and the server can be started without passing the same options again.",
+            "",
+            "Some configuration options require this command to be executed in order to actually change a configuration. For instance, the database vendor."
+        },
         mixinStandardHelpOptions = true,
         usageHelpAutoWidth = true,
         optionListHeading = "%nOptions%n",
