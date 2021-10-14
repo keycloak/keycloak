@@ -17,6 +17,7 @@ export default {
     encryptAssertions: "Encrypt assertions",
     clientSignature: "Client signature required",
     downloadAdaptorTitle: "Download adaptor configs",
+    privateKeyMask: "PRIVATE KEY NOT SET UP OR KNOWN",
     keys: "Keys",
     credentials: "Credentials",
     roles: "Roles",

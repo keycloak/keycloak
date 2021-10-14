@@ -51,6 +51,12 @@ export const DownloadDialog = ({
     [selected]
   );
 
+  const sanitizeSnippet = (snippet: string) =>
+    snippet.replace(
+      /(?<=<PrivateKeyPem>).*(?=<\/PrivateKeyPem>)/gs,
+      t("clients:privateKeyMask")
+    );
+
   useFetch(
     async () => {
       const snippet = await adminClient.clients.getInstallationProviders({
@@ -58,7 +64,7 @@ export const DownloadDialog = ({
         providerId: selected,
       });
       if (typeof snippet === "string") {
-        return snippet;
+        return sanitizeSnippet(snippet);
       } else {
         return prettyPrintJSON(snippet);
       }
