@@ -314,7 +314,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         Files.copy(zipStream, providersDir.toPath().resolve(archive.getName()), StandardCopyOption.REPLACE_EXISTING);
     }
 
-    private void restartServer(boolean isReaugmentation) throws Exception {
+    public void restartServer(boolean isReaugmentation) throws Exception {
         if(isReaugmentation) {
             forceReaugmentation = true;
         }
