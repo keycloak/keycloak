@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { Fragment, useState } from "react";
 import FileSaver from "file-saver";
 import { useTranslation } from "react-i18next";
 import { Controller, useFormContext } from "react-hook-form";
@@ -230,7 +230,7 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
       <DisableConfirm />
       <ReGenerateConfirm />
       {KEYS.map((attr, index) => (
-        <>
+        <Fragment key={attr}>
           {openImport && (
             <SamlImportKeyDialog
               id={clientId}
@@ -239,7 +239,6 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
             />
           )}
           <KeySection
-            key={attr}
             keyInfo={keyInfo?.[index]}
             attr={attr}
             onChanged={setIsChanged}
@@ -253,7 +252,7 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
             }}
             onImport={() => setImportOpen(true)}
           />
-        </>
+        </Fragment>
       ))}
     </PageSection>
   );
