@@ -82,11 +82,11 @@ CLASSPATH_OPTS="$DIRNAME/../lib/quarkus-run.jar"
 JAVA_RUN_OPTS="$JAVA_OPTS $SERVER_OPTS -cp $CLASSPATH_OPTS io.quarkus.bootstrap.runner.QuarkusEntryPoint ${CONFIG_ARGS#?}"
 
 if [[ $CONFIG_ARGS = *"--auto-build"* ]]; then
-    java -Dkc.config.rebuild-and-exit=true $JAVA_RUN_OPTS
+    eval java -Dkc.config.rebuild-and-exit=true $JAVA_RUN_OPTS
     EXIT_CODE=$?
     if [ $EXIT_CODE != 0 ]; then
       exit $EXIT_CODE
     fi
 fi
 
-exec java ${JAVA_RUN_OPTS}
+eval exec java ${JAVA_RUN_OPTS}

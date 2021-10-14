@@ -17,6 +17,9 @@
 
 package org.keycloak.configuration;
 
+import static org.keycloak.cli.Picocli.ARG_KEY_VALUE_SPLIT;
+import static org.keycloak.cli.Picocli.ARG_PREFIX;
+import static org.keycloak.cli.Picocli.ARG_SPLIT;
 import static org.keycloak.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.configuration.MicroProfileConfigProvider.NS_QUARKUS_PREFIX;
 
@@ -43,9 +46,6 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
 
     private static final Logger log = Logger.getLogger(ConfigArgsConfigSource.class);
 
-    private static final Pattern ARG_SPLIT = Pattern.compile(";;");
-    private static final Pattern ARG_KEY_VALUE_SPLIT = Pattern.compile("=");
-    private static final String ARG_PREFIX = "--";
     private static final Pattern DOT_SPLIT = Pattern.compile("\\.");
 
     ConfigArgsConfigSource() {
