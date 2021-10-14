@@ -14,3 +14,4 @@ org.keycloak.protocol.oidc.grants.ciba.clientpolicy.executor.SecureCibaSessionEn
 org.keycloak.protocol.oidc.grants.ciba.clientpolicy.executor.SecureCibaSignedAuthenticationRequestExecutorFactory
 org.keycloak.protocol.oidc.grants.ciba.clientpolicy.executor.SecureCibaAuthenticationRequestSigningAlgorithmExecutorFactory
 org.keycloak.services.clientpolicy.executor.SecureLogoutExecutorFactory
+org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCredentialsGrantExecutorFactory
