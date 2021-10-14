@@ -84,7 +84,7 @@ public final class Environment {
     }
     
     public static String getConfigArgs() {
-        return System.getProperty(CLI_ARGS);
+        return System.getProperty(CLI_ARGS, "");
     }
 
     public static String getProfile() {

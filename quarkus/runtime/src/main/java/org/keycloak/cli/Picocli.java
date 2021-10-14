@@ -17,6 +17,8 @@
 
 package org.keycloak.cli;
 
+import static java.util.Arrays.asList;
+import static org.keycloak.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION;
 import static org.keycloak.configuration.Configuration.getConfig;
 import static org.keycloak.configuration.PropertyMappers.isBuildTimeProperty;
 import static org.keycloak.util.Environment.isDevMode;
@@ -35,10 +37,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.IntFunction;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
-import org.keycloak.cli.command.AbstractStartCommand;
 import org.keycloak.cli.command.Build;
 import org.keycloak.cli.command.Main;
 import org.keycloak.cli.command.Start;
@@ -56,9 +58,12 @@ import picocli.CommandLine;
 public final class Picocli {
 
     private static final Logger logger = Logger.getLogger(Picocli.class);
+
     private static final String ARG_SEPARATOR = ";;";
-    private static final String ARG_PREFIX = "--";
+    public static final String ARG_PREFIX = "--";
     public static final char ARG_KEY_VALUE_SEPARATOR = '=';
+    public static final Pattern ARG_SPLIT = Pattern.compile(";;");
+    public static final Pattern ARG_KEY_VALUE_SPLIT = Pattern.compile("=");
 
     private Picocli() {
     }
@@ -99,8 +104,8 @@ public final class Picocli {
     }
 
     private static void runReAugmentationIfNeeded(List<String> cliArgs, CommandLine cmd) {
-        if (cliArgs.contains(AbstractStartCommand.AUTO_BUILD_OPTION)) {
-            if (requiresReAugmentation(cliArgs, cmd)) {
+        if (cliArgs.contains(AUTO_BUILD_OPTION)) {
+            if (requiresReAugmentation(cmd)) {
                 runReAugmentation(cliArgs, cmd);
             }
 
@@ -110,18 +115,14 @@ public final class Picocli {
         }
     }
 
-    private static boolean requiresReAugmentation(List<String> cliArgs, CommandLine cmd) {
+    private static boolean requiresReAugmentation(CommandLine cmd) {
         if (hasConfigChanges()) {
             cmd.getOut().println("Changes detected in configuration. Updating the server image.");
-
-            List<String> suggestedArgs = cliArgs.subList(1, cliArgs.size());
-
-            suggestedArgs.removeAll(Arrays.asList("--verbose", "-v", "--help", "-h"));
-
-            cmd.getOut().printf("For an optional runtime and bypass this step, please run the '%s' command prior to starting the server:%n%n\t%s config %s%n",
+            cmd.getOut().printf("For an optional runtime and bypass this step, please run the '%s' command prior to starting the server:%n%n\t%s %s %s%n",
                     Build.NAME,
                     Environment.getCommand(),
-                    String.join(" ", suggestedArgs) + "\n");
+                    Build.NAME,
+                    String.join(" ", asList(ARG_SPLIT.split(Environment.getConfigArgs()))) + "\n");
 
             return true;
         }
@@ -226,7 +227,7 @@ public final class Picocli {
         CommandLine.Model.CommandSpec spec = CommandLine.Model.CommandSpec.forAnnotatedObject(new Main())
                 .name(Environment.getCommand());
 
-        boolean addBuildOptionsToStartCommand = cliArgs.contains(AbstractStartCommand.AUTO_BUILD_OPTION);
+        boolean addBuildOptionsToStartCommand = cliArgs.contains(AUTO_BUILD_OPTION);
 
         addOption(spec, Start.NAME, addBuildOptionsToStartCommand);
         addOption(spec, StartDev.NAME, true);
@@ -241,7 +242,7 @@ public final class Picocli {
 
         cmd.getHelpSectionMap().put(SECTION_KEY_COMMAND_LIST, new SubCommandListRenderer());
         cmd.setExecutionExceptionHandler(new ExecutionExceptionHandler());
-        
+
         return cmd;
     }
 
@@ -249,6 +250,7 @@ public final class Picocli {
         StringBuilder options = new StringBuilder();
         Iterator<String> iterator = argsList.iterator();
         boolean expectValue = false;
+        List<String> ignoredArgs = asList("--verbose", "-v", "--help", "-h", AUTO_BUILD_OPTION);
 
         while (iterator.hasNext()) {
             String key = iterator.next();
@@ -257,6 +259,10 @@ public final class Picocli {
             // change this once we are able to obtain properties from providers
             if (key.startsWith("--spi")) {
                 iterator.remove();
+            }
+
+            if (ignoredArgs.contains(key)) {
+                continue;
             }
 
             if (key.startsWith(ARG_PREFIX)) {
