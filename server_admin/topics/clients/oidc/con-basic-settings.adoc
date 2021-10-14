@@ -50,6 +50,18 @@ Exclusive redirect URL patterns are typically more secure.  See xref:unspecific-
 *Admin URL*:: Callback endpoint for a client.  The server uses this URL to make callbacks like pushing revocation policies, performing backchannel logout, and other administrative operations.  For {project_name} servlet adapters, this URL can be the root URL of the servlet application.
 For more information, see link:{adapterguide_link}[{adapterguide_name}].
 
+*Logo URL*
+
+URL that references a logo for the Client application.
+
+*Policy URL*
+
+URL that the Relying Party Client provides to the End-User to read about how the profile data will be used.
+
+*Terms of Service URL*
+
+URL that the Relying Party Client provides to the End-User to read about the Relying Party's terms of service.
+
 *Web Origins*:: Enter a URL pattern and click *+* to add and *-* to remove existing URLs. Click *Save*.
 +
 This option handles link:https://fetch.spec.whatwg.org/[Cross-Origin Resource Sharing (CORS)].
