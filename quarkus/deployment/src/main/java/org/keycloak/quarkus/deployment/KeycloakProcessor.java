@@ -17,7 +17,6 @@
 
 package org.keycloak.quarkus.deployment;
 
-import static java.util.Collections.emptyList;
 import static org.keycloak.configuration.Configuration.getPropertyNames;
 import static org.keycloak.connections.jpa.QuarkusJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX;
 import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
@@ -28,6 +27,7 @@ import static org.keycloak.representations.provider.ScriptProviderDescriptor.POL
 import static org.keycloak.util.Environment.CLI_ARGS;
 import static org.keycloak.util.Environment.getProviderFiles;
 
+import javax.persistence.Entity;
 import javax.persistence.spi.PersistenceUnitTransactionType;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -37,6 +37,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -52,11 +53,14 @@ import java.util.jar.JarFile;
 
 import io.quarkus.agroal.spi.JdbcDataSourceBuildItem;
 import io.quarkus.deployment.IsDevelopment;
+import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
 import io.quarkus.deployment.builditem.LaunchModeBuildItem;
 import io.quarkus.deployment.builditem.StaticInitConfigSourceProviderBuildItem;
+import io.quarkus.hibernate.orm.deployment.AdditionalJpaModelBuildItem;
 import io.quarkus.hibernate.orm.deployment.HibernateOrmConfig;
+import io.quarkus.hibernate.orm.deployment.PersistenceXmlDescriptorBuildItem;
 import io.quarkus.resteasy.server.common.deployment.ResteasyDeploymentCustomizerBuildItem;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.smallrye.health.runtime.SmallRyeHealthHandler;
@@ -64,7 +68,11 @@ import io.quarkus.vertx.http.deployment.RouteBuildItem;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 import org.hibernate.cfg.AvailableSettings;
-import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
+import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
+import org.jboss.jandex.AnnotationInstance;
+import org.jboss.jandex.AnnotationTarget;
+import org.jboss.jandex.DotName;
+import org.jboss.jandex.IndexView;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
 import org.jboss.resteasy.spi.ResteasyDeployment;
@@ -99,7 +107,6 @@ import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;
 import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
-import io.quarkus.hibernate.orm.deployment.PersistenceUnitDescriptorBuildItem;
 import io.quarkus.vertx.http.deployment.FilterBuildItem;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
 import org.keycloak.representations.provider.ScriptProviderMetadata;
@@ -151,16 +158,23 @@ class KeycloakProcessor {
      * file so that we can build the application with whatever dialect we want. In addition to the dialect, we should also be 
      * allowed to set any additional defaults that we think that makes sense.
      *
-     * @param recorder
      * @param config
      * @param descriptors
      */
-    @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
-    void configureHibernate(KeycloakRecorder recorder, HibernateOrmConfig config, List<PersistenceUnitDescriptorBuildItem> descriptors,
+    void configureHibernate(HibernateOrmConfig config,
+            List<PersistenceXmlDescriptorBuildItem> descriptors,
+            List<JdbcDataSourceBuildItem> jdbcDataSources,
+            BuildProducer<AdditionalJpaModelBuildItem> additionalJpaModel,
+            CombinedIndexBuildItem indexBuildItem) {
+        ParsedPersistenceXmlDescriptor descriptor = descriptors.get(0).getDescriptor();
+        configureJpaProperties(descriptor, config, jdbcDataSources);
+        configureJpaModel(descriptor, indexBuildItem);
+    }
+
+    private void configureJpaProperties(ParsedPersistenceXmlDescriptor descriptor, HibernateOrmConfig config,
             List<JdbcDataSourceBuildItem> jdbcDataSources) {
-        PersistenceUnitDescriptor unit = descriptors.get(0).asOutputPersistenceUnitDefinition(emptyList()).getActualHibernateDescriptor();
-        Properties unitProperties = unit.getProperties();
+        Properties unitProperties = descriptor.getProperties();
 
         unitProperties.setProperty(AvailableSettings.DIALECT, config.defaultPersistenceUnit.dialect.dialect.orElse(null));
         unitProperties.setProperty(AvailableSettings.JPA_TRANSACTION_TYPE, PersistenceUnitTransactionType.JTA.name());
@@ -171,6 +185,24 @@ class KeycloakProcessor {
         for (Entry<Object, Object> query : loadSpecificNamedQueries(dbKind.toLowerCase()).entrySet()) {
             unitProperties.setProperty(QUERY_PROPERTY_PREFIX + query.getKey(), query.getValue().toString());
         }
+    }
+
+    private void configureJpaModel(ParsedPersistenceXmlDescriptor descriptor, CombinedIndexBuildItem indexBuildItem) {
+        IndexView index = indexBuildItem.getIndex();
+        Collection<AnnotationInstance> annotations = index.getAnnotations(DotName.createSimple(Entity.class.getName()));
+
+        for (AnnotationInstance annotation : annotations) {
+            AnnotationTarget target = annotation.target();
+            String targetName = target.asClass().name().toString();
+
+            if (isCustomJpaModel(targetName)) {
+                descriptor.addClasses(targetName);
+            }
+        }
+    }
+
+    private boolean isCustomJpaModel(String targetName) {
+        return !targetName.startsWith("org.keycloak") || targetName.startsWith("org.keycloak.testsuite");
     }
 
     /**
