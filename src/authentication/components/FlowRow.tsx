@@ -26,6 +26,7 @@ import { EditFlowDropdown } from "./EditFlowDropdown";
 import "./flow-row.css";
 
 type FlowRowProps = {
+  builtIn: boolean;
   execution: ExpandableExecution;
   onRowClick: (execution: ExpandableExecution) => void;
   onRowChange: (execution: AuthenticationExecutionInfoRepresentation) => void;
@@ -38,6 +39,7 @@ type FlowRowProps = {
 };
 
 export const FlowRow = ({
+  builtIn,
   execution,
   onRowClick,
   onRowChange,
@@ -101,20 +103,22 @@ export const FlowRow = ({
                 {execution.configurable && (
                   <ExecutionConfigModal execution={execution} />
                 )}
-                {execution.authenticationFlow && (
+                {execution.authenticationFlow && !builtIn && (
                   <EditFlowDropdown
                     execution={execution}
                     onAddExecution={onAddExecution}
                     onAddFlow={onAddFlow}
                   />
                 )}
-                <Button
-                  variant="plain"
-                  aria-label={t("common:delete")}
-                  onClick={onDelete}
-                >
-                  <TrashIcon />
-                </Button>
+                {!builtIn && (
+                  <Button
+                    variant="plain"
+                    aria-label={t("common:delete")}
+                    onClick={onDelete}
+                  >
+                    <TrashIcon />
+                  </Button>
+                )}
               </DataListCell>,
             ]}
           />
@@ -124,6 +128,7 @@ export const FlowRow = ({
         hasSubList &&
         execution.executionList?.map((execution) => (
           <FlowRow
+            builtIn={builtIn}
             key={execution.id}
             execution={execution}
             onRowClick={onRowClick}

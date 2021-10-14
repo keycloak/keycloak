@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useHistory, useParams } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
 import {
   DataList,
@@ -13,13 +13,14 @@ import {
   ActionGroup,
   Button,
   ButtonVariant,
+  DropdownItem,
 } from "@patternfly/react-core";
 import { CheckCircleIcon, PlusIcon, TableIcon } from "@patternfly/react-icons";
 
 import type AuthenticationExecutionInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationExecutionInfoRepresentation";
 import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
 import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
-import type { FlowParams } from "./routes/Flow";
+import { FlowParams, toFlow } from "./routes/Flow";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { EmptyExecutionState } from "./EmptyExecutionState";
@@ -37,6 +38,10 @@ import { useAlerts } from "../components/alert/Alerts";
 import { AddStepModal } from "./components/modals/AddStepModal";
 import { AddSubFlowModal, Flow } from "./components/modals/AddSubFlowModal";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { DuplicateFlowModal } from "./DuplicateFlowModal";
+import { useRealm } from "../context/realm-context/RealmContext";
+import { toAuthentication } from "./routes/Authentication";
+import { EditFlowModal } from "./EditFlowModal";
 
 export const providerConditionFilter = (
   value: AuthenticationProviderRepresentation
@@ -45,8 +50,10 @@ export const providerConditionFilter = (
 export const FlowDetails = () => {
   const { t } = useTranslation("authentication");
   const adminClient = useAdminClient();
+  const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const { id, usedBy, builtIn } = useParams<FlowParams>();
+  const history = useHistory();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
 
@@ -62,6 +69,8 @@ export const FlowDetails = () => {
   const [showAddSubFlowDialog, setShowSubFlowDialog] = useState<boolean>();
   const [selectedExecution, setSelectedExecution] =
     useState<ExpandableExecution>();
+  const [open, setOpen] = useState(false);
+  const [edit, setEdit] = useState(false);
 
   useFetch(
     async () => {
@@ -168,6 +177,20 @@ export const FlowDetails = () => {
     }
   };
 
+  const setAsDefault = async () => {
+    try {
+      const r = await adminClient.realms.findOne({ realm });
+      await adminClient.realms.update(
+        { realm },
+        { ...r, browserFlow: flow?.alias }
+      );
+      addAlert(t("updateFlowSuccess"), AlertVariant.success);
+      history.push(toFlow({ id, realm, usedBy: "default", builtIn }));
+    } catch (error) {
+      addError("authentication:updateFlowError", error);
+    }
+  };
+
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "authentication:deleteConfirmExecution",
     children: (
@@ -191,10 +214,90 @@ export const FlowDetails = () => {
     },
   });
 
+  const [toggleDeleteFlow, DeleteFlowConfirm] = useConfirmDialog({
+    titleKey: "authentication:deleteConfirmFlow",
+    children: (
+      <Trans i18nKey="authentication:deleteConfirmFlowMessage">
+        {" "}
+        <strong>{{ flow: flow?.alias || "" }}</strong>.
+      </Trans>
+    ),
+    continueButtonLabel: "common:delete",
+    continueButtonVariant: ButtonVariant.danger,
+    onConfirm: async () => {
+      try {
+        await adminClient.authenticationManagement.deleteFlow({
+          flowId: flow!.id!,
+        });
+        history.push(toAuthentication({ realm }));
+        addAlert(t("deleteFlowSuccess"), AlertVariant.success);
+      } catch (error) {
+        addError("authentication:deleteFlowError", error);
+      }
+    },
+  });
+
   const hasExecutions = executionList?.expandableList.length !== 0;
+
+  const dropdownItems = [
+    ...(usedBy !== "default"
+      ? [
+          <DropdownItem
+            data-testid="set-as-default"
+            key="default"
+            onClick={() => setAsDefault()}
+          >
+            {t("setAsDefault")}
+          </DropdownItem>,
+        ]
+      : []),
+    <DropdownItem key="duplicate" onClick={() => setOpen(true)}>
+      {t("duplicate")}
+    </DropdownItem>,
+    ...(!builtIn
+      ? [
+          <DropdownItem
+            data-testid="edit-flow"
+            key="edit"
+            onClick={() => setEdit(true)}
+          >
+            {t("editInfo")}
+          </DropdownItem>,
+          <DropdownItem
+            data-testid="delete-flow"
+            key="delete"
+            onClick={() => toggleDeleteFlow()}
+          >
+            {t("common:delete")}
+          </DropdownItem>,
+        ]
+      : []),
+  ];
 
   return (
     <>
+      {open && (
+        <DuplicateFlowModal
+          name={flow?.alias!}
+          description={flow?.description!}
+          toggleDialog={() => setOpen(!open)}
+          onComplete={() => {
+            refresh();
+            setOpen(false);
+          }}
+        />
+      )}
+      {edit && (
+        <EditFlowModal
+          flow={flow!}
+          toggleDialog={() => {
+            setEdit(!edit);
+            refresh();
+          }}
+        />
+      )}
+      <DeleteFlowConfirm />
+
       <ViewHeader
         titleKey={toUpperCase(flow?.alias || "")}
         badges={[
@@ -213,6 +316,7 @@ export const FlowDetails = () => {
               }
             : {},
         ]}
+        dropdownItems={dropdownItems}
       />
       <PageSection variant="light">
         {hasExecutions && (
@@ -279,6 +383,7 @@ export const FlowDetails = () => {
               <>
                 {executionList.expandableList.map((execution) => (
                   <FlowRow
+                    builtIn={!!builtIn}
                     key={execution.id}
                     execution={execution}
                     onRowClick={(execution) => {

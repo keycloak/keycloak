@@ -10,65 +10,50 @@ import {
   ModalVariant,
 } from "@patternfly/react-core";
 
+import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 import { NameDescription } from "./form/NameDescription";
 
-type DuplicateFlowModalProps = {
-  name: string;
-  description: string;
+type EditFlowModalProps = {
+  flow: AuthenticationFlowRepresentation;
   toggleDialog: () => void;
-  onComplete: () => void;
 };
 
-export const DuplicateFlowModal = ({
-  name,
-  description,
-  toggleDialog,
-  onComplete,
-}: DuplicateFlowModalProps) => {
+type EditForm = {
+  alias: string;
+  description: string;
+};
+
+export const EditFlowModal = ({ flow, toggleDialog }: EditFlowModalProps) => {
   const { t } = useTranslation("authentication");
-  const form = useForm({
+  const form = useForm<EditForm>({
     shouldUnregister: false,
   });
-  const { setValue, trigger, getValues } = form;
+  const { reset, handleSubmit } = form;
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   useEffect(() => {
-    setValue("description", description);
-    setValue("alias", t("copyOf", { name }));
-  }, [name, description, setValue]);
+    reset(flow);
+  }, [flow, reset]);
 
-  const save = async () => {
-    await trigger();
-    const form = getValues();
+  const save = async (values: EditForm) => {
     try {
-      await adminClient.authenticationManagement.copyFlow({
-        flow: name,
-        newName: form.alias,
-      });
-      if (form.description !== description) {
-        const newFlow = (
-          await adminClient.authenticationManagement.getFlows()
-        ).find((flow) => flow.alias === form.alias)!;
-
-        newFlow.description = form.description;
-        await adminClient.authenticationManagement.updateFlow(
-          { flowId: newFlow.id! },
-          newFlow
-        );
-      }
-      addAlert(t("copyFlowSuccess"), AlertVariant.success);
+      await adminClient.authenticationManagement.updateFlow(
+        { flowId: flow.id! },
+        { ...flow, ...values }
+      );
+      addAlert(t("updateFlowSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("authentication:copyFlowError", error);
+      addError("authentication:updateFlowError", error);
     }
-    onComplete();
+    toggleDialog();
   };
 
   return (
     <Modal
-      title={t("duplicateFlow")}
+      title={t("editFlow")}
       isOpen={true}
       onClose={toggleDialog}
       variant={ModalVariant.small}
@@ -76,10 +61,10 @@ export const DuplicateFlowModal = ({
         <Button
           id="modal-confirm"
           key="confirm"
-          onClick={save}
+          onClick={handleSubmit(save)}
           data-testid="confirm"
         >
-          {t("duplicate")}
+          {t("edit")}
         </Button>,
         <Button
           data-testid="cancel"

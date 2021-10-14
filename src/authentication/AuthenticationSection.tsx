@@ -219,7 +219,7 @@ export const AuthenticationSection = () => {
               key={key}
               loader={loader}
               ariaLabelKey="authentication:title"
-              searchPlaceholderKey="authentication:searchForEvent"
+              searchPlaceholderKey="authentication:searchForFlow"
               toolbarItem={
                 <ToolbarItem>
                   <Button

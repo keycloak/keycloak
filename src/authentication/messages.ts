@@ -3,6 +3,7 @@ export default {
     title: "Authentication",
     flows: "Flows",
     flowName: "Flow name",
+    searchForFlow: "Search for flow",
     usedBy: "Used by",
     buildIn: "Built-in",
     appliedByProviders: "Applied by the following providers",
@@ -12,6 +13,10 @@ export default {
     default: "Default",
     notInUse: "Not in use",
     duplicate: "Duplicate",
+    setAsDefault: "Set as default",
+    editInfo: "Edit info",
+    editFlow: "Edit flow",
+    edit: "Edit",
     deleteConfirmFlow: "Delete flow?",
     deleteConfirmFlowMessage:
       'Are you sure you want to permanently delete the flow "<1>{{flow}}</1>".',

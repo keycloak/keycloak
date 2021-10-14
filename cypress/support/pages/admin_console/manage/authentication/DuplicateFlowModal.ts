@@ -5,7 +5,7 @@ export default class DuplicateFlowModal {
 
   fill(name?: string, description?: string) {
     if (name) {
-      cy.findByTestId(this.aliasInput).type(name);
+      cy.findByTestId(this.aliasInput).clear().type(name);
       if (description) cy.get(this.descriptionInput).type(description);
     }
 
