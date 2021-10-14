@@ -70,15 +70,15 @@ public class VirtualAuthenticatorsManagerTest extends AbstractWebAuthnVirtualTes
         assertAuthenticatorOptions(defaultTesting);
         assertThat(manager.getActualAuthenticator(), is(defaultTesting));
 
-        VirtualAuthenticatorOptions defaultBteOptions = DefaultVirtualAuthOptions.DEFAULT_BTE;
-        assertThat(defaultBteOptions, notNullValue());
+        VirtualAuthenticatorOptions defaultBleOptions = DefaultVirtualAuthOptions.DEFAULT_BLE.getOptions();
+        assertThat(defaultBleOptions, notNullValue());
 
-        KcVirtualAuthenticator defaultBTE = manager.useAuthenticator(defaultBteOptions);
-        assertThat(defaultBTE, notNullValue());
+        KcVirtualAuthenticator defaultBLE = manager.useAuthenticator(defaultBleOptions);
+        assertThat(defaultBLE, notNullValue());
         assertAuthenticatorOptions(defaultTesting);
 
-        assertThat(manager.getActualAuthenticator(), is(defaultBTE));
-        assertThat(manager.getActualAuthenticator().getOptions().clone(), is(defaultBteOptions));
+        assertThat(manager.getActualAuthenticator(), is(defaultBLE));
+        assertThat(manager.getActualAuthenticator().getOptions().clone(), is(defaultBleOptions));
     }
 
     @Test
