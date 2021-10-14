@@ -19,40 +19,47 @@ package org.keycloak.testsuite.webauthn.authenticators;
 
 import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
 
+import java.util.function.Supplier;
+
+import static org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions.Protocol.U2F;
+import static org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions.Transport.BLE;
+import static org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions.Transport.INTERNAL;
+import static org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions.Transport.NFC;
+import static org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions.Transport.USB;
+
 /**
  * Default Options for various authenticators
  *
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
-public class DefaultVirtualAuthOptions {
+public enum DefaultVirtualAuthOptions {
+    DEFAULT(VirtualAuthenticatorOptions::new),
 
-    public static VirtualAuthenticatorOptions DEFAULT = getDefault();
+    DEFAULT_BLE(() -> DEFAULT.getOptions().setTransport(BLE)),
+    DEFAULT_NFC(() -> DEFAULT.getOptions().setTransport(NFC)),
+    DEFAULT_USB(() -> DEFAULT.getOptions().setTransport(USB)),
+    DEFAULT_INTERNAL(() -> DEFAULT.getOptions().setTransport(INTERNAL)),
 
-    // Default authenticators with different Transport type
-    public static VirtualAuthenticatorOptions DEFAULT_BTE = getDefault().setTransport(VirtualAuthenticatorOptions.Transport.BLE);
-    public static VirtualAuthenticatorOptions DEFAULT_NFC = getDefault().setTransport(VirtualAuthenticatorOptions.Transport.NFC);
-    public static VirtualAuthenticatorOptions DEFAULT_USB = getDefault().setTransport(VirtualAuthenticatorOptions.Transport.USB);
-    public static VirtualAuthenticatorOptions DEFAULT_INTERNAL = getDefault().setTransport(VirtualAuthenticatorOptions.Transport.INTERNAL);
+    YUBIKEY_4(DefaultVirtualAuthOptions::getYubiKeyGeneralOptions),
+    YUBIKEY_5_USB(DefaultVirtualAuthOptions::getYubiKeyGeneralOptions),
+    YUBIKEY_5_NFC(() -> getYubiKeyGeneralOptions().setTransport(NFC));
 
-    // Default authenticators with different Protocol type
-    public static VirtualAuthenticatorOptions DEFAULT_CTAP_2 = getDefault().setProtocol(VirtualAuthenticatorOptions.Protocol.CTAP2);
-    public static VirtualAuthenticatorOptions DEFAULT_U2F = getDefault().setProtocol(VirtualAuthenticatorOptions.Protocol.U2F);
+    private final Supplier<VirtualAuthenticatorOptions> options;
 
-    // YubiKey authenticators
-    public static VirtualAuthenticatorOptions YUBIKEY_4 = getYubikeyGeneral();
-    public static VirtualAuthenticatorOptions YUBIKEY_5_USB = getYubikeyGeneral();
-    public static VirtualAuthenticatorOptions YUBIKEY_5_NFC = getYubikeyGeneral().setTransport(VirtualAuthenticatorOptions.Transport.NFC);
+    DefaultVirtualAuthOptions(Supplier<VirtualAuthenticatorOptions> options) {
+        this.options = options;
+    }
 
-    private static VirtualAuthenticatorOptions getYubikeyGeneral() {
+    public VirtualAuthenticatorOptions getOptions() {
+        return options.get();
+    }
+
+    private static VirtualAuthenticatorOptions getYubiKeyGeneralOptions() {
         return new VirtualAuthenticatorOptions()
-                .setTransport(VirtualAuthenticatorOptions.Transport.USB)
-                .setProtocol(VirtualAuthenticatorOptions.Protocol.U2F)
+                .setTransport(USB)
+                .setProtocol(U2F)
                 .setHasUserVerification(true)
                 .setIsUserConsenting(true)
                 .setIsUserVerified(true);
-    }
-
-    private static VirtualAuthenticatorOptions getDefault() {
-        return new VirtualAuthenticatorOptions();
     }
 }

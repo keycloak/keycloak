@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.webauthn;
+package org.keycloak.testsuite.webauthn.authenticators;
 
 /**
  * Interface for test classes which use Virtual Authenticators
