@@ -1,13 +1,11 @@
 import { Breadcrumb, BreadcrumbItem, Spinner } from "@patternfly/react-core";
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { KEY_PROVIDER_TYPE } from "../util";
 import { toRealmSettings } from "./routes/RealmSettings";
 import { RealmSettingsTabs } from "./RealmSettingsTabs";
@@ -50,8 +48,6 @@ export const RealmSettingsSection = () => {
   const [realm, setRealm] = useState<RealmRepresentation>();
   const [realmComponents, setRealmComponents] =
     useState<ComponentRepresentation[]>();
-  const [currentUser, setCurrentUser] = useState<UserRepresentation>();
-  const { whoAmI } = useWhoAmI();
   const [key, setKey] = useState(0);
 
   const refresh = () => {
@@ -65,19 +61,17 @@ export const RealmSettingsSection = () => {
         type: KEY_PROVIDER_TYPE,
         realm: realmName,
       });
-      const user = await adminClient.users.findOne({ id: whoAmI.getUserId() });
 
-      return { user, realm, realmComponents };
+      return { realm, realmComponents };
     },
-    ({ user, realm, realmComponents }) => {
+    ({ realm, realmComponents }) => {
       setRealmComponents(sortByPriority(realmComponents));
-      setCurrentUser(user);
       setRealm(realm);
     },
     [key]
   );
 
-  if (!realm || !realmComponents || !currentUser) {
+  if (!realm || !realmComponents) {
     return (
       <div className="pf-u-text-align-center">
         <Spinner />
@@ -89,7 +83,6 @@ export const RealmSettingsSection = () => {
       realm={realm}
       refresh={refresh}
       realmComponents={realmComponents}
-      currentUser={currentUser}
     />
   );
 };

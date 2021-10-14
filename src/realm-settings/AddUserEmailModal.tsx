@@ -11,36 +11,44 @@ import {
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { useForm, UseFormMethods } from "react-hook-form";
+import { useForm } from "react-hook-form";
 
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { emailRegexPattern } from "../util";
+import { useAdminClient } from "../context/auth/AdminClient";
+import { useWhoAmI } from "../context/whoami/WhoAmI";
+import type { EmailRegistrationCallback } from "./EmailTab";
 
 type AddUserEmailModalProps = {
-  id?: string;
-  form: UseFormMethods<UserRepresentation>;
-  rename?: string;
-  handleModalToggle: () => void;
-  testConnection: () => void;
-  user: UserRepresentation;
-  save: (user?: UserRepresentation) => void;
+  callback: EmailRegistrationCallback;
 };
 
-export const AddUserEmailModal = ({
-  handleModalToggle,
-  save,
-}: AddUserEmailModalProps) => {
+type AddUserEmailForm = {
+  email: string;
+};
+
+export const AddUserEmailModal = ({ callback }: AddUserEmailModalProps) => {
   const { t } = useTranslation("groups");
-  const { register, errors, handleSubmit, watch } = useForm();
+  const adminClient = useAdminClient();
+  const { whoAmI } = useWhoAmI();
+  const { register, errors, handleSubmit, watch } = useForm<AddUserEmailForm>({
+    defaultValues: { email: "" },
+  });
 
   const watchEmailInput = watch("email", "");
+  const cancel = () => callback(false);
+  const proceed = () => callback(true);
+
+  const save = async (formData: AddUserEmailForm) => {
+    await adminClient.users.update({ id: whoAmI.getUserId() }, formData);
+    proceed();
+  };
 
   return (
     <Modal
       variant={ModalVariant.small}
       title={t("realm-settings:provideEmailTitle")}
       isOpen={true}
-      onClose={handleModalToggle}
+      onClose={cancel}
       actions={[
         <Button
           data-testid="modal-test-connection-button"
@@ -56,9 +64,7 @@ export const AddUserEmailModal = ({
           id="modal-cancel"
           key="cancel"
           variant={ButtonVariant.link}
-          onClick={() => {
-            handleModalToggle();
-          }}
+          onClick={cancel}
         >
           {t("common:cancel")}
         </Button>,

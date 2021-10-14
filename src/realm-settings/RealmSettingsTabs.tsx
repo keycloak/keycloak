@@ -15,7 +15,6 @@ import {
 
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
@@ -141,13 +140,11 @@ type RealmSettingsTabsProps = {
   realm: RealmRepresentation;
   refresh: () => void;
   realmComponents: ComponentRepresentation[];
-  currentUser: UserRepresentation;
 };
 
 export const RealmSettingsTabs = ({
   realm,
   realmComponents,
-  currentUser,
   refresh,
 }: RealmSettingsTabsProps) => {
   const { t } = useTranslation("realm-settings");
@@ -260,7 +257,7 @@ export const RealmSettingsTabs = ({
               data-testid="rs-email-tab"
               aria-label="email-tab"
             >
-              <RealmSettingsEmailTab user={currentUser} realm={realm} />
+              <RealmSettingsEmailTab realm={realm} />
             </Tab>
             <Tab
               eventKey="themes"
