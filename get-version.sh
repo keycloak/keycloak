@@ -1,3 +1,3 @@
 #!/bin/bash -e
 
-awk '/"version":/ { print $2 }' package.json | sed 's/"//g' | sed 's/,//'
+mvn --file=./keycloak-theme/pom.xml help:evaluate -Dexpression=project.version -q -DforceStdout

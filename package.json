@@ -1,6 +1,5 @@
 {
   "name": "keycloak-admin-ui",
-  "version": "0.0.1",
   "main": "index.js",
   "homepage": "https://github.com/keycloak/keycloak-admin-ui",
   "bugs": "https://github.com/keycloak/keycloak-admin-ui/issues",
