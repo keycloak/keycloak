@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.configuration.PropertyMappingInterceptor
+org.keycloak.quarkus.runtime.configuration.PropertyMappingInterceptor

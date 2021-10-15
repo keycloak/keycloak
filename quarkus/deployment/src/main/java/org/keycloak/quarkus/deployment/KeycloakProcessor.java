@@ -17,15 +17,15 @@
 
 package org.keycloak.quarkus.deployment;
 
-import static org.keycloak.configuration.Configuration.getPropertyNames;
-import static org.keycloak.connections.jpa.QuarkusJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
+import static org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX;
 import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
-import static org.keycloak.configuration.MicroProfileConfigProvider.NS_KEYCLOAK;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.AUTHENTICATORS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.MAPPERS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.POLICIES;
-import static org.keycloak.util.Environment.CLI_ARGS;
-import static org.keycloak.util.Environment.getProviderFiles;
+import static org.keycloak.quarkus.runtime.Environment.CLI_ARGS;
+import static org.keycloak.quarkus.runtime.Environment.getProviderFiles;
 
 import javax.persistence.Entity;
 import javax.persistence.spi.PersistenceUnitTransactionType;
@@ -77,16 +77,16 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.Config;
-import org.keycloak.QuarkusKeycloakApplication;
+import org.keycloak.quarkus.runtime.integration.jaxrs.QuarkusKeycloakApplication;
 import org.keycloak.authentication.AuthenticatorSpi;
 import org.keycloak.authentication.authenticators.browser.DeployedScriptAuthenticatorFactory;
 import org.keycloak.authorization.policy.provider.PolicySpi;
 import org.keycloak.authorization.policy.provider.js.DeployedScriptPolicyFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.StreamUtil;
-import org.keycloak.configuration.Configuration;
-import org.keycloak.configuration.KeycloakConfigSourceProvider;
-import org.keycloak.configuration.MicroProfileConfigProvider;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
+import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProviderFactory;
 import org.keycloak.connections.jpa.updater.liquibase.conn.DefaultLiquibaseConnectionProvider;
@@ -98,9 +98,9 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.Spi;
-import org.keycloak.provider.quarkus.QuarkusRequestFilter;
-import org.keycloak.provider.quarkus.dev.QuarkusDevRequestFilter;
-import org.keycloak.quarkus.KeycloakRecorder;
+import org.keycloak.quarkus.runtime.integration.web.QuarkusRequestFilter;
+import org.keycloak.quarkus.runtime.dev.QuarkusDevRequestFilter;
+import org.keycloak.quarkus.runtime.KeycloakRecorder;
 
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
@@ -110,11 +110,11 @@ import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.vertx.http.deployment.FilterBuildItem;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
 import org.keycloak.representations.provider.ScriptProviderMetadata;
-import org.keycloak.services.NotFoundHandler;
+import org.keycloak.quarkus.runtime.integration.web.NotFoundHandler;
 import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.health.KeycloakMetricsHandler;
+import org.keycloak.quarkus.runtime.services.health.KeycloakMetricsHandler;
 import org.keycloak.transaction.JBossJtaTransactionManagerLookup;
-import org.keycloak.util.Environment;
+import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.util.JsonSerialization;
 
 class KeycloakProcessor {
@@ -251,7 +251,7 @@ class KeycloakProcessor {
      * <p>Make the build time configuration available at runtime so that the server can run without having to specify some of
      * the properties again.
      *
-     * <p>This build step also adds a static call to {@link org.keycloak.cli.ShowConfigCommand#run} via the recorder
+     * <p>This build step also adds a static call to {@link org.keycloak.quarkus.runtime.cli.ShowConfigCommand#run} via the recorder
      * so that the configuration can be shown when requested.
      *
      * @param recorder the recorder
@@ -327,7 +327,7 @@ class KeycloakProcessor {
      * running in a different thread than the worker thread started by {@link QuarkusRequestFilter}.
      * See https://github.com/quarkusio/quarkus/issues/12990.
      *
-     * <p>By doing this, custom health checks such as {@link org.keycloak.services.health.KeycloakReadyHealthCheck} is
+     * <p>By doing this, custom health checks such as {@link org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck} is
      * executed within an active {@link org.keycloak.models.KeycloakSession}, making possible to use it when calculating the
      * status.
      *

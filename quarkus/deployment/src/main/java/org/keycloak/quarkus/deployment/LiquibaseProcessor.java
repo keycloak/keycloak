@@ -17,7 +17,7 @@ import org.jboss.jandex.IndexView;
 import org.keycloak.connections.jpa.updater.liquibase.lock.CustomInsertLockRecordGenerator;
 import org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockDatabaseChangeLogGenerator;
 import org.keycloak.connections.jpa.updater.liquibase.lock.DummyLockService;
-import org.keycloak.connections.liquibase.KeycloakLogger;
+import org.keycloak.quarkus.runtime.storage.database.liquibase.KeycloakLogger;
 
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;
@@ -29,7 +29,7 @@ import liquibase.parser.ChangeLogParser;
 import liquibase.parser.core.xml.XMLChangeLogSAXParser;
 import liquibase.servicelocator.LiquibaseService;
 import liquibase.sqlgenerator.SqlGenerator;
-import org.keycloak.quarkus.KeycloakRecorder;
+import org.keycloak.quarkus.runtime.KeycloakRecorder;
 
 class LiquibaseProcessor {
 
@@ -88,7 +88,7 @@ class LiquibaseProcessor {
     private void filterImplementations(Class<?> types, Set<ClassInfo> classes) {
         if (Database.class.equals(types)) {
             // removes unsupported databases
-            classes.removeIf(classInfo -> !org.keycloak.configuration.Database.isSupported(classInfo.name().toString()));
+            classes.removeIf(classInfo -> !org.keycloak.quarkus.runtime.storage.database.Database.isSupported(classInfo.name().toString()));
         }
     }
 }
