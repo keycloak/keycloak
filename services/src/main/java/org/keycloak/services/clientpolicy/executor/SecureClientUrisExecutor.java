@@ -62,7 +62,14 @@ public class SecureClientUrisExecutor implements ClientPolicyExecutorProvider<Cl
         switch (context.getEvent()) {
             case REGISTER:
                 if (context instanceof AdminClientRegisterContext || context instanceof DynamicClientRegisterContext) {
-                    confirmSecureUris(((ClientCRUDContext)context).getProposedClientRepresentation());
+                    ClientRepresentation clientRep = ((ClientCRUDContext)context).getProposedClientRepresentation();
+                    confirmSecureUris(clientRep);
+
+                    // Use rootUrl as default redirectUrl to avoid creation of redirectUris with wildcards, which is done at later stages during client creation
+                    if (clientRep.getRootUrl() != null && (clientRep.getRedirectUris() == null || clientRep.getRedirectUris().isEmpty())) {
+                        logger.debugf("Setup Redirect URI = %s for client %s", clientRep.getRootUrl(), clientRep.getClientId());
+                        clientRep.setRedirectUris(Collections.singletonList(clientRep.getRootUrl()));
+                    }
                 } else {
                     throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed input format.");
                 }
