@@ -18,7 +18,7 @@
 package org.keycloak.quarkus.deployment;
 
 import java.util.function.BooleanSupplier;
-import org.keycloak.util.Environment;
+import org.keycloak.quarkus.runtime.Environment;
 
 public class isReAugmentation implements BooleanSupplier {
 

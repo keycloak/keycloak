@@ -18,7 +18,7 @@
 package org.keycloak.provider.quarkus;
 
 import static org.junit.Assert.assertEquals;
-import static org.keycloak.util.Environment.CLI_ARGS;
+import static org.keycloak.quarkus.runtime.Environment.CLI_ARGS;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -36,12 +36,12 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.Config;
-import org.keycloak.configuration.KeycloakConfigSourceProvider;
-import org.keycloak.configuration.MicroProfileConfigProvider;
+import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
+import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 import io.quarkus.runtime.configuration.ConfigUtils;
 import io.smallrye.config.SmallRyeConfigProviderResolver;
-import org.keycloak.util.Environment;
+import org.keycloak.quarkus.runtime.Environment;
 
 public class ConfigurationTest {
 
