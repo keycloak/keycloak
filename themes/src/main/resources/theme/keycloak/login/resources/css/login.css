@@ -695,3 +695,41 @@ ul#kc-totp-supported-apps {
 #kc-back {
     margin-top: 5px;
 }
+
+/* Recovery codes */
+.kc-recovery-codes-warning {
+    margin-bottom: 32px;
+}
+.kc-recovery-codes-warning .pf-c-alert__description p {
+    font-size: 0.875rem;
+}
+.kc-recovery-codes-list {
+    list-style: none;
+    columns: 3;
+    column-gap: 5px;
+    margin: 16px 0;
+    padding: 16px 16px 8px 16px;
+    border: 1px solid #D2D2D2;
+}
+.kc-recovery-codes-list li {
+    margin-bottom: 8px;
+}
+.kc-recovery-codes-list li span {
+    color: #6A6E73;
+}
+
+.kc-recovery-codes-actions {
+    margin-bottom: 24px;
+}
+.kc-recovery-codes-actions button {
+    padding-left: 0;
+}
+.kc-recovery-codes-actions button i {
+    margin-right: 8px;
+}
+
+.kc-recovery-codes-confirmation {
+    align-items: baseline;
+    margin-bottom: 16px;
+}
+/* End Recovery codes */
