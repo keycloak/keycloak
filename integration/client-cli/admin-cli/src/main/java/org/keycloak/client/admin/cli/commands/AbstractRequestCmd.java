@@ -378,7 +378,7 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
             if (returnId) {
                 printOut(id);
             } else if (!outputResult) {
-                printErr("Created new " + typeName + " with id '" + id + "'");
+                printOut("Created new " + typeName + " with id '" + id + "'");
             }
         }
 

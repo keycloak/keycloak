@@ -39,6 +39,7 @@ import static org.keycloak.client.admin.cli.util.ConfigUtil.getHandler;
 import static org.keycloak.client.admin.cli.util.ConfigUtil.loadConfig;
 import static org.keycloak.client.admin.cli.util.ConfigUtil.saveTokens;
 import static org.keycloak.client.admin.cli.util.IoUtil.printErr;
+import static org.keycloak.client.admin.cli.util.IoUtil.printOut;
 import static org.keycloak.client.admin.cli.util.IoUtil.readSecret;
 import static org.keycloak.client.admin.cli.util.OsUtil.CMD;
 import static org.keycloak.client.admin.cli.util.OsUtil.EOL;
@@ -125,7 +126,7 @@ public class ConfigCredentialsCmd extends AbstractAuthOptionsCmd {
 
         if (user != null) {
             grantTypeForAuthentication = OAuth2Constants.PASSWORD;
-            printErr("Logging into " + server + " as user " + user + " of realm " + realm);
+            printOut("Logging into " + server + " as user " + user + " of realm " + realm);
 
             // if user was set there needs to be a password so we can authenticate
             if (password == null) {
@@ -137,7 +138,7 @@ public class ConfigCredentialsCmd extends AbstractAuthOptionsCmd {
             }
         } else if (keystore != null || secret != null || clientSet) {
             grantTypeForAuthentication = OAuth2Constants.CLIENT_CREDENTIALS;
-            printErr("Logging into " + server + " as " + "service-account-" + clientId + " of realm " + realm);
+            printOut("Logging into " + server + " as " + "service-account-" + clientId + " of realm " + realm);
             if (keystore == null) {
                 if (secret == null) {
                     secret = readSecret("Enter client secret: ", commandInvocation);
