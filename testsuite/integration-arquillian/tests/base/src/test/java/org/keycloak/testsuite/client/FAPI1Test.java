@@ -278,6 +278,16 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
         });
         ClientRepresentation client = getClientByAdmin(clientUUID);
         Assert.assertNames(client.getRedirectUris(), "https://hostname.com");
+        getCleanup().addClientUuid(clientUUID);
+
+        // Try to register client with valid root URL. Makes sure that there is not auto-created redirect URI with wildcard at the end (See KEYCLOAK-19556)
+        String clientUUID2 = createClientByAdmin("invalid2", (ClientRepresentation clientRep) -> {
+            clientRep.setRootUrl("https://hostname2.com");
+            clientRep.setRedirectUris(null);
+        });
+        ClientRepresentation client2 = getClientByAdmin(clientUUID2);
+        Assert.assertNames(client2.getRedirectUris(), "https://hostname2.com");
+        getCleanup().addClientUuid(clientUUID2);
     }
 
 
