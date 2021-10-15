@@ -138,6 +138,7 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateC
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateSourceGroupsConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateSourceHostsConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateSourceRolesConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createConsentRequiredExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createHolderOfKeyEnforceExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createPKCEEnforceExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureClientAuthenticatorExecutorConfig;
@@ -2379,7 +2380,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Test Profile")
-                    .addExecutor(ConsentRequiredExecutorFactory.PROVIDER_ID, null)
+                    .addExecutor(ConsentRequiredExecutorFactory.PROVIDER_ID, createConsentRequiredExecutorConfig(true))
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
@@ -2394,6 +2395,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
                 ).toString();
         updatePolicies(json);
 
+        // Client will be auto-configured to enable consentRequired
         String clientId = generateSuffixedName("aaa-app");
         String cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
             clientRep.setImplicitFlowEnabled(Boolean.FALSE);
@@ -2402,6 +2404,32 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         ClientRepresentation clientRep = getClientByAdmin(cid);
         assertEquals(Boolean.TRUE, clientRep.isConsentRequired());
 
+        // Client cannot be updated to disable consentRequired
+        updateClientByAdmin(cid, (ClientRepresentation cRep) -> {
+            cRep.setConsentRequired(Boolean.FALSE);
+        });
+        clientRep = getClientByAdmin(cid);
+        assertEquals(Boolean.TRUE, clientRep.isConsentRequired());
+
+        // Switch auto-configure to false. Auto-configuration won't happen, but validation will still be here, so should not be possible to disable consentRequired
+        json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Test Profile")
+                        .addExecutor(ConsentRequiredExecutorFactory.PROVIDER_ID, createConsentRequiredExecutorConfig(false))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // Not possible to register client with consentRequired due the validation
+        try {
+            createClientByAdmin(clientId, (ClientRepresentation clientRep2) -> {
+                clientRep2.setConsentRequired(Boolean.FALSE);
+            });
+            fail();
+        } catch (ClientPolicyException cpe) {
+            assertEquals(Errors.INVALID_REGISTRATION, cpe.getError());
+        }
+
+        // Not possible to update existing client to consentRequired due the validation
         try {
             updateClientByAdmin(cid, (ClientRepresentation cRep) -> {
                 cRep.setConsentRequired(Boolean.FALSE);
@@ -2419,6 +2447,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
             });
             clientRep = getClientByAdmin(cid);
             assertEquals(Boolean.TRUE, clientRep.isImplicitFlowEnabled());
+            assertEquals(Boolean.TRUE, clientRep.isConsentRequired());
         } catch (ClientPolicyException cpe) {
             fail();
         }

@@ -37,6 +37,7 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditio
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceGroupsCondition;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceHostsCondition;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesCondition;
+import org.keycloak.services.clientpolicy.executor.ConsentRequiredExecutor;
 import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutor;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutor;
@@ -156,6 +157,12 @@ public final class ClientPoliciesUtil {
 
     public static FullScopeDisabledExecutor.Configuration createFullScopeDisabledExecutorConfig(Boolean autoConfigure) {
         FullScopeDisabledExecutor.Configuration config = new FullScopeDisabledExecutor.Configuration();
+        config.setAutoConfigure(autoConfigure);
+        return config;
+    }
+
+    public static ConsentRequiredExecutor.Configuration createConsentRequiredExecutorConfig(Boolean autoConfigure) {
+        ConsentRequiredExecutor.Configuration config = new ConsentRequiredExecutor.Configuration();
         config.setAutoConfigure(autoConfigure);
         return config;
     }
