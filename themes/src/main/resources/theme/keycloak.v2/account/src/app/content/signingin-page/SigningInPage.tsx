@@ -60,12 +60,19 @@ type CredType = string;
 type CredTypeMap = Map<CredType, CredentialContainer>;
 type CredContainerMap = Map<CredCategory, CredTypeMap>;
 
+interface CredData {
+    algorithm?: string;
+    hashIterations?: number;
+    remainingCodes?: number;
+}
+
 interface UserCredential {
     id: string;
     type: string;
     userLabel: string;
     createdDate?: number;
     strCreatedDate?: string;
+    credentialData?: string;
 }
 
 // A CredentialContainer is unique by combo of credential type and credential category
@@ -249,7 +256,13 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
 
     private credentialRowCells(credential: UserCredential, type: string): React.ReactNode[] {
         const credRowCells: React.ReactNode[] = [];
-        credRowCells.push(<DataListCell id={`${SigningInPage.credElementId(type, credential.id, 'label')}`} key={'userLabel-' + credential.id}>{credential.userLabel}</DataListCell>);
+        const credData: CredData = JSON.parse(credential.credentialData!);
+        credRowCells.push(<DataListCell id={`${SigningInPage.credElementId(type, credential.id, 'label')}`} key={'userLabel-' + credential.id}>
+            {credential.userLabel}
+            {credData.remainingCodes &&
+                <div>{15 - credData.remainingCodes}/15 recovery codes used</div>
+            }
+        </DataListCell>);
         if (credential.strCreatedDate) {
             credRowCells.push(<DataListCell id={`${SigningInPage.credElementId(type, credential.id, 'created-at')}`} key={'created-' + credential.id}><strong><Msg msgKey='credentialCreatedAt'/>: </strong>{credential.strCreatedDate}</DataListCell>);
             credRowCells.push(<DataListCell key={'spacer-' + credential.id}/>);
