@@ -16,6 +16,7 @@
  */
 package org.keycloak.storage.user;
 
+import java.util.Optional;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
@@ -82,6 +83,11 @@ public interface UserLookupProvider {
      */
     @Deprecated
     UserModel getUserByEmail(String email, RealmModel realm);
+
+    default UserModel getUserByEmailOrUsername(RealmModel realm, String emailOrUsername) {
+        return Optional.ofNullable(getUserByEmail(realm, emailOrUsername))
+                .orElseGet(() -> getUserByUsername(realm, emailOrUsername));
+    }
     
     interface Streams extends UserLookupProvider {
         @Override

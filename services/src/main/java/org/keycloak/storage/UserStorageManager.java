@@ -289,9 +289,9 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
     @Override
     public UserModel getUserByUsername(RealmModel realm, String username) {
-        UserModel user = localStorage().getUserByUsername(realm, username);
+        UserModel user = getUserByUsernameLocally(realm, username);
         if (user != null) {
-            return importValidation(realm, user);
+            return user;
         }
 
         return mapEnabledStorageProvidersWithTimeout(realm, UserLookupProvider.class,
@@ -300,17 +300,38 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
     @Override
     public UserModel getUserByEmail(RealmModel realm, String email) {
-        UserModel user = localStorage().getUserByEmail(realm, email);
+        UserModel user = getUserByEmailLocally(realm, email);
         if (user != null) {
-            user = importValidation(realm, user);
-            // Case when email was changed directly in the userStorage and doesn't correspond anymore to the email from local DB
-            if (email.equalsIgnoreCase(user.getEmail())) {
-                return user;
-            }
+            return user;
         }
 
         return mapEnabledStorageProvidersWithTimeout(realm, UserLookupProvider.class,
                 provider -> provider.getUserByEmail(realm, email)).findFirst().orElse(null);
+    }
+
+    @Override
+    public UserModel getUserByEmailOrUsername(RealmModel realm, String emailOrUsername) {
+        UserModel user = Optional.ofNullable(getUserByEmailLocally(realm, emailOrUsername))
+                .orElseGet(() -> getUserByUsernameLocally(realm, emailOrUsername));
+        if (user != null) {
+            return user;
+        }
+
+        return mapEnabledStorageProvidersWithTimeout(realm, UserLookupProvider.class,
+                provider -> provider.getUserByEmailOrUsername(realm, emailOrUsername)).findFirst().orElse(null);
+    }
+
+    private UserModel getUserByUsernameLocally(RealmModel realm, String username) {
+        return Optional.ofNullable(localStorage().getUserByUsername(realm, username))
+                .map(user -> importValidation(realm, user))
+                .orElse(null);
+    }
+
+    private UserModel getUserByEmailLocally(RealmModel realm, String email) {
+        return Optional.ofNullable(localStorage().getUserByEmail(realm, email))
+                .map(user -> importValidation(realm, user))
+                .filter(user -> email.equalsIgnoreCase(user.getEmail()))
+                .orElse(null);
     }
 
     /** {@link UserLookupProvider} methods implementations end here

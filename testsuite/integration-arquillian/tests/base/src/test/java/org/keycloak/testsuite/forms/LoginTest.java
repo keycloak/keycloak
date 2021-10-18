@@ -22,8 +22,10 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Retry;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
@@ -35,15 +37,20 @@ import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.console.page.AdminConsole;
+import org.keycloak.testsuite.federation.DummyUserFederationProvider;
+import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
+import org.keycloak.testsuite.federation.FailableHardcodedStorageProviderFactory;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -81,6 +88,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 import static org.keycloak.testsuite.util.OAuthClient.SERVER_ROOT;
@@ -440,6 +448,36 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
         events.expectLogin().user(userId).detail(Details.USERNAME, "login@test.com").assertEvent();
+    }
+
+    @Test
+    // KEYCLOAK-19560
+    public void givenAFailingFederationLoginUserWithUsernameContainingEmail() {
+        String email = UUID.randomUUID() + "@test.com";
+
+        UserRepresentation user = UserBuilder.create()
+                .username(email)
+                .enabled(true)
+                .password("password")
+                .build();
+        String userId = ApiUtil.getCreatedId(testRealm().users().create(user));
+
+        ComponentRepresentation failingFederation = new ComponentRepresentation();
+        failingFederation.setName("failing");
+        failingFederation.setId(FailableHardcodedStorageProviderFactory.PROVIDER_ID);
+        failingFederation.setProviderId(FailableHardcodedStorageProviderFactory.PROVIDER_ID);
+        failingFederation.setProviderType(UserStorageProvider.class.getName());
+        failingFederation.setConfig(new MultivaluedHashMap<>());
+        failingFederation.getConfig().putSingle("fail", Boolean.toString(true));
+        testRealm().components().add(failingFederation);
+
+        loginPage.open();
+        loginPage.login(email, "password");
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        events.expectLogin().user(userId).detail(Details.USERNAME, email).assertEvent();
     }
 
     @Test

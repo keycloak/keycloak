@@ -17,6 +17,7 @@
 
 package org.keycloak.models.cache.infinispan;
 
+import java.util.function.Supplier;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.models.ClientScopeModel;
@@ -225,6 +226,10 @@ public class UserCacheSession implements UserCache.Streams {
         return realmId + ".email." + email;
     }
 
+    static String getUserByEmailOrUsernameCacheKey(String realmId, String emailOrUsername) {
+        return realmId + ".emailorusername." + emailOrUsername;
+    }
+
     private static String getUserByFederatedIdentityCacheKey(String realmId, FederatedIdentityModel socialLink) {
         return getUserByFederatedIdentityCacheKey(realmId, socialLink.getIdentityProvider(), socialLink.getUserId());
     }
@@ -239,52 +244,12 @@ public class UserCacheSession implements UserCache.Streams {
 
     @Override
     public UserModel getUserByUsername(RealmModel realm, String username) {
-        logger.tracev("getUserByUsername: {0}", username);
-        username = username.toLowerCase();
-        if (realmInvalidations.contains(realm.getId())) {
-            logger.tracev("realmInvalidations");
-            return getDelegate().getUserByUsername(realm, username);
-        }
-        String cacheKey = getUserByUsernameCacheKey(realm.getId(), username);
-        if (invalidations.contains(cacheKey)) {
-            logger.tracev("invalidations");
-            return getDelegate().getUserByUsername(realm, username);
-        }
-        UserListQuery query = cache.get(cacheKey, UserListQuery.class);
-
-        String userId = null;
-        if (query == null) {
-            logger.tracev("query null");
-            Long loaded = cache.getCurrentRevision(cacheKey);
-            UserModel model = getDelegate().getUserByUsername(realm, username);
-            if (model == null) {
-                logger.tracev("model from delegate null");
-                return null;
-            }
-            userId = model.getId();
-            if (invalidations.contains(userId)) return model;
-            if (managedUsers.containsKey(userId)) {
-                logger.tracev("return managed user");
-                return managedUsers.get(userId);
-            }
-
-            UserModel adapter = getUserAdapter(realm, userId, loaded, model);
-            if (adapter instanceof UserAdapter) { // this was cached, so we can cache query too
-                query = new UserListQuery(loaded, cacheKey, realm, model.getId());
-                cache.addRevisioned(query, startupRevision);
-            }
-            managedUsers.put(userId, adapter);
-            return adapter;
-        } else {
-            userId = query.getUsers().iterator().next();
-            if (invalidations.contains(userId)) {
-                logger.tracev("invalidated cache return delegate");
-                return getDelegate().getUserByUsername(realm, username);
-
-            }
-            logger.trace("return getUserById");
-            return getUserById(realm, userId);
-        }
+        return getUserBySimpleCriterion(
+                realm,
+                username,
+                getUserByUsernameCacheKey(realm.getId(), username),
+                () -> getDelegate().getUserByUsername(realm, username)
+        );
     }
 
     protected UserModel getUserAdapter(RealmModel realm, String userId, Long loaded, UserModel delegate) {
@@ -370,27 +335,55 @@ public class UserCacheSession implements UserCache.Streams {
     @Override
     public UserModel getUserByEmail(RealmModel realm, String email) {
         if (email == null) return null;
-        email = email.toLowerCase();
+        return getUserBySimpleCriterion(
+                realm,
+                email,
+                getUserByEmailCacheKey(realm.getId(), email),
+                () -> getDelegate().getUserByEmail(realm, email)
+        );
+    }
+
+    @Override
+    public UserModel getUserByEmailOrUsername(RealmModel realm, String emailOrUsername) {
+        return getUserBySimpleCriterion(
+                realm,
+                emailOrUsername,
+                getUserByEmailOrUsernameCacheKey(realm.getId(), emailOrUsername),
+                () -> getDelegate().getUserByEmailOrUsername(realm, emailOrUsername)
+        );
+    }
+
+    private UserModel getUserBySimpleCriterion(RealmModel realm, String criterionValue, String cacheKey, Supplier<UserModel> fallbackSupplier) {
+        logger.tracev("getUserByCriterion: {0}", criterionValue);
+        criterionValue = criterionValue.toLowerCase();
         if (realmInvalidations.contains(realm.getId())) {
-            return getDelegate().getUserByEmail(realm, email);
+            logger.tracev("realmInvalidations");
+            return fallbackSupplier.get();
         }
-        String cacheKey = getUserByEmailCacheKey(realm.getId(), email);
         if (invalidations.contains(cacheKey)) {
-            return getDelegate().getUserByEmail(realm, email);
+            logger.tracev("invalidations");
+            return fallbackSupplier.get();
         }
         UserListQuery query = cache.get(cacheKey, UserListQuery.class);
 
         String userId = null;
         if (query == null) {
+            logger.tracev("query null");
             Long loaded = cache.getCurrentRevision(cacheKey);
-            UserModel model = getDelegate().getUserByEmail(realm, email);
-            if (model == null) return null;
+            UserModel model = fallbackSupplier.get();
+            if (model == null) {
+                logger.tracev("model from delegate null");
+                return null;
+            }
             userId = model.getId();
             if (invalidations.contains(userId)) return model;
-            if (managedUsers.containsKey(userId)) return managedUsers.get(userId);
+            if (managedUsers.containsKey(userId)) {
+                logger.tracev("return managed user");
+                return managedUsers.get(userId);
+            }
 
             UserModel adapter = getUserAdapter(realm, userId, loaded, model);
-            if (adapter instanceof UserAdapter) {
+            if (adapter instanceof UserAdapter) { // this was cached, so we can cache query too
                 query = new UserListQuery(loaded, cacheKey, realm, model.getId());
                 cache.addRevisioned(query, startupRevision);
             }
@@ -399,9 +392,11 @@ public class UserCacheSession implements UserCache.Streams {
         } else {
             userId = query.getUsers().iterator().next();
             if (invalidations.contains(userId)) {
-                return getDelegate().getUserByEmail(realm, email);
+                logger.tracev("invalidated cache return delegate");
+                return fallbackSupplier.get();
 
             }
+            logger.trace("return getUserById");
             return getUserById(realm, userId);
         }
     }
