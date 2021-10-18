@@ -9,6 +9,7 @@ import org.wildfly.extras.creaper.core.online.CliException;
 import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
 
 import java.io.IOException;
+import java.util.Collections;
 
 public class SpiProvidersSwitchingUtils {
 
@@ -24,7 +25,7 @@ public class SpiProvidersSwitchingUtils {
             System.setProperty("keycloak." + annotation.spi() + ".provider", annotation.providerId());
         } else if (authServerInfo.isQuarkus()) {
             KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer) authServerInfo.getArquillianContainer().getDeployableContainer();
-            container.forceReAugmentation(KEYCLOAKX_ARG_SPI_PREFIX + toDashCase(annotation.spi()) +"-provider="+annotation.providerId());
+            container.setAdditionalBuildArgs(Collections.singletonList(KEYCLOAKX_ARG_SPI_PREFIX + toDashCase(annotation.spi()) + "-provider=" + annotation.providerId()));
         } else {
             OnlineManagementClient client = AuthServerTestEnricher.getManagementClient();
 
@@ -45,7 +46,8 @@ public class SpiProvidersSwitchingUtils {
             System.clearProperty("keycloak." + annotation.spi() + ".provider");
         } else if (authServerInfo.isQuarkus()) {
             KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer) authServerInfo.getArquillianContainer().getDeployableContainer();
-            container.resetConfiguration(true);
+            container.resetConfiguration();
+            container.setAdditionalBuildArgs(Collections.singletonList(KEYCLOAKX_ARG_SPI_PREFIX + toDashCase(annotation.spi()) + "-provider=default"));
         } else {
             OnlineManagementClient client = AuthServerTestEnricher.getManagementClient();
             if (annotation.onlyUpdateDefault()) {

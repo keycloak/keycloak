@@ -160,7 +160,7 @@ public class ClientSearchTest extends AbstractClientTest {
             String s = String.join(",",searchableAttributes);
             controller.stop(suiteContext.getAuthServerInfo().getQualifier());
             KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer)suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
-            container.setRuntimeProperties(Collections.singletonList("--spi-client-jpa-searchable-attributes=\""+ s + "\""));
+            container.setAdditionalBuildArgs(Collections.singletonList("--spi-client-jpa-searchable-attributes=\""+ s + "\""));
             controller.start(suiteContext.getAuthServerInfo().getQualifier());
         } else {
             throw new RuntimeException("Don't know how to config");
@@ -180,8 +180,8 @@ public class ClientSearchTest extends AbstractClientTest {
             executeCli("/subsystem=keycloak-server/spi=client:remove");
         } else if(suiteContext.getAuthServerInfo().isQuarkus()) {
             KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer)suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
-            container.setRuntimeProperties(Collections.emptyList());
-            container.restartServer(false);
+            container.setAdditionalBuildArgs(Collections.emptyList());
+            container.restartServer();
         } else {
             throw new RuntimeException("Don't know how to config");
         }
