@@ -203,6 +203,7 @@ export default {
       formView: "Form view",
       jsonEditor: "JSON editor",
     },
+    deleteClientPolicy: "Delete client policy",
     deleteClientPolicyConfirmTitle: "Delete policy?",
     deleteClientPolicyConfirm:
       "This action will permanently delete the policy {{policyName}}. This cannot be undone.",

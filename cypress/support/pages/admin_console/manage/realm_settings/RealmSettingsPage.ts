@@ -148,10 +148,18 @@ export default class RealmSettingsPage {
   private createProfileBtn = "createProfile";
   private formViewSelect = "formView-profilesView";
   private jsonEditorSelect = "jsonEditor-profilesView";
+  private formViewSelectPolicies = "formView-policiesView";
+  private jsonEditorSelectPolicies = "jsonEditor-policiesView";
   private newClientProfileNameInput = "client-profile-name";
   private newClientProfileDescriptionInput = "client-profile-description";
   private saveNewClientProfileBtn = "saveCreateProfile";
   private cancelNewClientProfile = "cancelCreateProfile";
+  private createPolicyEmptyStateBtn = "no-client-policies-empty-action";
+  private createPolicyBtn = "createPolicy";
+  private newClientPolicyNameInput = "client-policy-name";
+  private newClientPolicyDescriptionInput = "client-policy-description";
+  private saveNewClientPolicyBtn = "saveCreatePolicy";
+  private cancelNewClientPolicyBtn = "cancelCreatePolicy";
   private alertMessage = ".pf-c-alert__title";
   private moreDrpDwn = ".pf-c-dropdown__toggle.pf-m-plain";
   private moreDrpDwnItems = ".pf-c-dropdown__menu-item";
@@ -159,10 +167,12 @@ export default class RealmSettingsPage {
   private deleteDialogBodyText = ".pf-c-modal-box__body";
   private deleteDialogCancelBtn = ".pf-c-button.pf-m-link";
   private jsonEditorSaveBtn = "jsonEditor-saveBtn";
+  private jsonEditorSavePoliciesBtn = "jsonEditor-policies-saveBtn";
   private jsonEditorReloadBtn = "jsonEditor-reloadBtn";
   private jsonEditor = ".monaco-scrollable-element.editor-scrollable.vs";
   private createClientDrpDwn = ".pf-c-dropdown.pf-m-align-right";
   private searchFld = "[id^=realm-settings][id$=profilesinput]";
+  private searchFldPolicies = "[id^=realm-settings][id$=clientPoliciesinput]";
 
   selectLoginThemeType(themeType: string) {
     cy.get(this.selectLoginTheme).click();
@@ -516,12 +526,12 @@ export default class RealmSettingsPage {
     cy.get(this.searchFld).click({ force: true }).clear();
   }
 
-  shouldDisplayDeleteClientProfileDialog() {
+  shouldDisplayDeleteClientPolicyDialog() {
     cy.get(this.moreDrpDwn).last().click();
     cy.get(this.moreDrpDwnItems).click();
-    cy.get(this.deleteDialogTitle).contains("Delete profile?");
+    cy.get(this.deleteDialogTitle).contains("Delete policy?");
     cy.get(this.deleteDialogBodyText).contains(
-      "This action will permanently delete the profile custom-profile. This cannot be undone."
+      "This action will permanently delete the policy Test. This cannot be undone."
     );
     cy.findByTestId("modalConfirm").contains("Delete");
     cy.get(this.deleteDialogCancelBtn).contains("Cancel").click();
@@ -568,6 +578,13 @@ export default class RealmSettingsPage {
     );
   }
 
+  shouldNotCreateDuplicateClientPolicy() {
+    cy.get(this.alertMessage).should(
+      "be.visible",
+      "Could not create client policy: 'proposed client policy name duplicated.'"
+    );
+  }
+
   shouldRemoveClientFromCreateView() {
     cy.findByTestId(this.createProfileBtn).click();
     cy.findByTestId(this.newClientProfileNameInput).type("Test again");
@@ -590,6 +607,142 @@ export default class RealmSettingsPage {
     cy.findByTestId(this.jsonEditorProfilesView).check();
     cy.findByTestId(this.jsonEditorReloadBtn).contains("Reload").click();
     cy.findByTestId(this.jsonEditorSaveBtn).contains("Save");
+    cy.findByTestId(this.jsonEditorReloadBtn).contains("Reload");
+  }
+
+  shouldSaveChangedJSONPolicies() {
+    cy.findByTestId(this.jsonEditorSelectPolicies).check();
+    cy.findByTestId(this.jsonEditorReloadBtn).click();
+
+    cy.get(this.jsonEditor).type(`{pageup}{del} [{
+      "name": "Reload", 
+    }, {downarrow}{end}{backspace}{backspace}{backspace}{backspace}`);
+
+    cy.findByTestId(this.jsonEditorReloadBtn).click();
+
+    cy.get(this.jsonEditor).type(`{pageup}{del} [{
+      "name": "Test", 
+      "description": "Test Description",
+      "enabled": false,
+      "conditions": [], 
+      "profiles": [],
+    }, {downarrow}{end}{backspace}{backspace}{backspace}{backspace}`);
+
+    cy.findByTestId(this.jsonEditorSavePoliciesBtn).click();
+
+    cy.get(this.alertMessage).should(
+      "be.visible",
+      "The client policy configuration was updated"
+    );
+    cy.findByTestId(this.formViewSelectPolicies).check();
+    cy.get("table").should("be.visible").contains("td", "Test");
+  }
+
+  shouldNavigateBetweenFormAndJSONViewPolicies() {
+    cy.findByTestId(this.jsonEditorSelectPolicies).check();
+    cy.findByTestId(this.jsonEditorSavePoliciesBtn).contains("Save");
+    cy.findByTestId(this.jsonEditorReloadBtn).contains("Reload");
+    cy.findByTestId(this.formViewSelectPolicies).check();
+    cy.findByTestId(this.createPolicyEmptyStateBtn).contains(
+      "Create client policy"
+    );
+  }
+
+  shouldDisplayPoliciesTab() {
+    cy.findByTestId(this.createPolicyEmptyStateBtn).should("exist");
+    cy.findByTestId(this.formViewSelectPolicies).should("exist");
+    cy.findByTestId(this.jsonEditorSelectPolicies).should("exist");
+  }
+
+  shouldDisplayNewClientPolicyForm() {
+    cy.findByTestId(this.createPolicyEmptyStateBtn).click();
+    cy.findByTestId(this.newClientPolicyNameInput).should("exist");
+    cy.findByTestId(this.newClientPolicyDescriptionInput).should("exist");
+    cy.findByTestId(this.saveNewClientPolicyBtn).should("exist");
+    cy.findByTestId(this.cancelNewClientPolicyBtn).should("exist");
+  }
+
+  shouldCompleteAndCancelCreateNewClientPolicy() {
+    cy.findByTestId(this.createPolicyEmptyStateBtn).click();
+    cy.findByTestId(this.newClientPolicyNameInput).type("Test");
+    cy.findByTestId(this.newClientPolicyDescriptionInput).type(
+      "Test Description"
+    );
+    cy.findByTestId(this.cancelNewClientPolicyBtn).click();
+    cy.get("table").should("not.have.text", "Test");
+  }
+
+  shouldCompleteAndCreateNewClientPolicy() {
+    cy.findByTestId(this.createPolicyBtn).click();
+    cy.findByTestId(this.newClientPolicyNameInput).type("Test");
+    cy.findByTestId(this.newClientPolicyDescriptionInput).type(
+      "Test Description"
+    );
+    cy.findByTestId(this.saveNewClientPolicyBtn).click();
+    cy.get(this.alertMessage).should(
+      "be.visible",
+      "New client profile created"
+    );
+  }
+
+  shouldCompleteAndCreateNewClientPolicyFromEmptyState() {
+    cy.findByTestId(this.createPolicyEmptyStateBtn).click();
+    cy.findByTestId(this.newClientPolicyNameInput).type("Test");
+    cy.findByTestId(this.newClientPolicyDescriptionInput).type(
+      "Test Description"
+    );
+    cy.findByTestId(this.saveNewClientPolicyBtn).click();
+    cy.get(this.alertMessage).should(
+      "be.visible",
+      "New client profile created"
+    );
+  }
+
+  shouldSearchClientPolicy() {
+    cy.get(this.searchFldPolicies).click({ force: true }).type("Test").click();
+    cy.get("table").should("be.visible").contains("td", "Test");
+    cy.get(this.searchFldPolicies).click({ force: true }).clear();
+  }
+
+  shouldDisplayDeleteClientProfileDialog() {
+    cy.get(this.moreDrpDwn).last().click();
+    cy.get(this.moreDrpDwnItems).click();
+    cy.get(this.deleteDialogTitle).contains("Delete profile?");
+    cy.get(this.deleteDialogBodyText).contains(
+      "This action will permanently delete the profile custom-profile. This cannot be undone."
+    );
+    cy.findByTestId("modalConfirm").contains("Delete");
+    cy.get(this.deleteDialogCancelBtn).contains("Cancel").click();
+    cy.get("table").should("not.have.text", "Test");
+  }
+
+  shouldDeleteClientPolicyDialog() {
+    cy.get(this.moreDrpDwn).last().click();
+    cy.get(this.moreDrpDwnItems).click();
+    cy.findByTestId("modalConfirm").contains("Delete").click();
+    cy.get(this.alertMessage).should("be.visible", "Client profile deleted");
+    cy.get("table").should("not.have.text", "Test");
+  }
+
+  shouldRemoveClientPolicyFromCreateView() {
+    cy.findByTestId(this.createPolicyEmptyStateBtn).click();
+    cy.findByTestId(this.newClientPolicyNameInput).type("Test again");
+    cy.findByTestId(this.newClientPolicyDescriptionInput).type(
+      "Test Again Description"
+    );
+    cy.findByTestId(this.saveNewClientPolicyBtn).click();
+    cy.get(this.alertMessage).should("be.visible", "New client policy created");
+    cy.get(this.createClientDrpDwn).contains("Action").click();
+    cy.findByTestId("deleteClientPolicyDropdown").click();
+    cy.findByTestId("modalConfirm").contains("Delete").click();
+    cy.get(this.alertMessage).should("be.visible", "Client profile deleted");
+    cy.get("table").should("not.have.text", "Test Again Description");
+  }
+
+  shouldReloadJSONPolicies() {
+    cy.findByTestId(this.jsonEditorSelectPolicies).check();
+    cy.findByTestId(this.jsonEditorReloadBtn).contains("Reload").click();
+    cy.findByTestId(this.jsonEditorSavePoliciesBtn).contains("Save");
     cy.findByTestId(this.jsonEditorReloadBtn).contains("Reload");
   }
 }

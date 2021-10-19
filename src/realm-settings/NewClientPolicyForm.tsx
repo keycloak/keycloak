@@ -119,23 +119,25 @@ export const NewClientPolicyForm = () => {
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: t("deleteClientProfileConfirmTitle"),
-    messageKey: t("deleteClientProfileConfirm"),
+    titleKey: t("deleteClientPolicyConfirmTitle"),
+    messageKey: t("deleteClientPolicyConfirm", {
+      policyName: policyName,
+    }),
     continueButtonLabel: t("delete"),
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       const updatedPolicies = policies.filter(
-        (policy) => policy.name !== createdPolicy?.name
+        (policy) => policy.name !== policyName
       );
 
       try {
         await adminClient.clientPolicies.updatePolicy({
           policies: updatedPolicies,
         });
-        addAlert(t("deleteClientSuccess"), AlertVariant.success);
+        addAlert(t("deleteClientPolicySuccess"), AlertVariant.success);
         history.push(toClientPolicies({ realm }));
       } catch (error) {
-        addError(t("deleteClientError"), error);
+        addError(t("deleteClientPolicyError"), error);
       }
     },
   });
@@ -151,17 +153,17 @@ export const NewClientPolicyForm = () => {
         }
         divider
         dropdownItems={
-          showAddConditionsAndProfilesForm
+          showAddConditionsAndProfilesForm || policyName
             ? [
                 <DropdownItem
                   key="delete"
                   value="delete"
                   onClick={() => {
-                    toggleDeleteDialog;
+                    toggleDeleteDialog();
                   }}
-                  data-testid="deleteClientProfileDropdown"
+                  data-testid="deleteClientPolicyDropdown"
                 >
-                  {t("deleteClientProfile")}
+                  {t("deleteClientPolicy")}
                 </DropdownItem>,
               ]
             : undefined
