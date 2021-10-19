@@ -221,7 +221,7 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
 
       return (
         <ContentPage title="device-activity" onRefresh={this.fetchDevices.bind(this)}>
-          <Stack gutter="md">
+          <Stack hasGutter={true}>
             <StackItem isFilled>
               <DataList aria-label={Msg.localize('signedInDevices')}>
                   <DataListItem key="SignedInDevicesHeader" aria-labelledby="signedInDevicesTitle" isExpanded={false}>
@@ -257,7 +257,7 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
 
                   <DataListItem aria-labelledby='sessions'>
                   <DataListItemRow>
-                    <Grid gutter='sm'>
+                    <Grid hasGutter={true}>
                       <GridItem span={12} /> {/* <-- top spacing */}
                       {this.state.devices.map((device: Device, deviceIndex: number) => {
                         return (

@@ -91,13 +91,13 @@ export class PermissionSelect extends React.Component<PermissionSelectProps, Per
         <Select
           direction={this.props.direction || 'down'}
           variant={SelectVariant.typeaheadMulti}
-          ariaLabelTypeAhead="Select the permissions"
+          typeAheadAriaLabel="Select the permissions"
           onToggle={this.onToggle}
           onSelect={this.onSelect}
           onClear={this.clearSelection}
           selections={selected}
-          isExpanded={isExpanded}
-          ariaLabelledBy={titleId}
+          isOpen={isExpanded}
+          aria-labelledby={titleId}
           placeholderText="Select the permissions"
         >
           {this.state.scopes}

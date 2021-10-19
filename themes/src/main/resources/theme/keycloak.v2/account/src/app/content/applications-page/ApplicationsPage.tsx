@@ -170,7 +170,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                   />
                 </DataListItemRow>
                 <DataListContent
-                  noPadding={false}
+                  hasNoPadding={false}
                   aria-label={Msg.localize('applicationDetails')}
                   id={this.elementId("expandable", application)}
                   isHidden={!this.state.isRowOpen[appIndex]}
@@ -211,7 +211,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                     </div>
                   </Grid>
                   {(application.consent || application.offlineAccess) &&
-                    <Grid gutter='sm'>
+                    <Grid hasGutter>
                       <hr />
                       <GridItem>
                         <React.Fragment>

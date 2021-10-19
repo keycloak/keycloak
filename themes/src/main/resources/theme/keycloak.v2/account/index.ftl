@@ -230,8 +230,8 @@
             <#list content as item>
               <div class="pf-l-gallery__item pf-c-card" id="landing-${item.id}">
                 <div>
-                  <div class="pf-c-card__header pf-c-content">
-                      <h2>
+                  <div class="pf-c-card__header pf-c-content" style="flex-direction:column;align-items:flex-start">
+                      <h2 class="pf-u-display-flex pf-u-flex-direction-column" style="margin-bottom:1rem">
                         <#if item.icon??>
                           <i class="pf-icon ${item.icon}"></i>&nbsp;
                         <#elseif item.iconSvg??>
