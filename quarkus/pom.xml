@@ -32,18 +32,20 @@
 
     <properties>
         <!-- Quarkus version -->
-        <quarkus.version>2.3.0.Final</quarkus.version>
+        <quarkus.version>2.4.0.CR1</quarkus.version>
 
         <!--
             Override versions based on Quarkus dependencies.
             Make sure to update these dependencies when Quarkus version changes.
+            See https://github.com/quarkusio/quarkus/blob/<versionTag>/bom/application/pom.xml
+            for reference
         -->
         <resteasy.version>4.7.0.Final</resteasy.version>
         <jackson.version>2.12.5</jackson.version>
         <jackson.databind.version>${jackson.version}</jackson.databind.version>
-        <hibernate.core.version>5.6.0.Beta2</hibernate.core.version>
+        <hibernate.core.version>5.6.0.CR1</hibernate.core.version>
         <mysql.driver.version>8.0.26</mysql.driver.version>
-        <postgresql.version>42.2.23</postgresql.version>
+        <postgresql.version>42.2.24</postgresql.version>
         <microprofile-metrics-api.version>3.0</microprofile-metrics-api.version>
         <wildfly.common.version>1.5.4.Final-format-001</wildfly.common.version>
 
