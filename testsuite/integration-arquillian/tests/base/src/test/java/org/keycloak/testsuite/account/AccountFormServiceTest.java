@@ -1357,7 +1357,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         loginPage.login("realm-admin", "password");
         Assert.assertTrue(applicationsPage.isCurrent());
         Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
-        Assert.assertThat(apps.keySet(), hasItems("Admin CLI", "Security Admin Console"));
+        Assert.assertThat(apps.keySet(), hasItems("Admin CLI", "security admin console"));
         events.clear();
     }
 

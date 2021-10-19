@@ -139,11 +139,11 @@ public class DeviceActivityPage extends AbstractLoggedInPage {
         }
 
         public String getStarted() {
-            return getTextFromItem("started").split("Started at ")[1];
+            return getTextFromItem("started").split("Started ")[1];
         }
 
         public String getExpires() {
-            return getTextFromItem("expires").split("Expires at ")[1];
+            return getTextFromItem("expires").split("Expires ")[1];
         }
 
         public boolean isSignOutDisplayed() {
