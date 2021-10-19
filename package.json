@@ -64,7 +64,7 @@
     "@types/snowpack-env": "^2.3.4",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
     "@typescript-eslint/parser": "^5.0.0",
-    "cypress": "8.6.0",
+    "cypress": "^8.5.0",
     "decompress": "^4.2.1",
     "decompress-targz": "^4.1.1",
     "eslint": "^8.0.1",
