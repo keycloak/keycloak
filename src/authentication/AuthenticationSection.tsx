@@ -27,6 +27,7 @@ import { toUpperCase } from "../util";
 import { DuplicateFlowModal } from "./DuplicateFlowModal";
 import { toCreateFlow } from "./routes/CreateFlow";
 import { toFlow } from "./routes/Flow";
+import { RequiredActions } from "./RequiredActions";
 
 import "./authentication-section.css";
 
@@ -280,6 +281,13 @@ export const AuthenticationSection = () => {
                 />
               }
             />
+          </Tab>
+          <Tab
+            id="requiredActions"
+            eventKey="requiredActions"
+            title={<TabTitleText>{t("requiredActions")}</TabTitleText>}
+          >
+            <RequiredActions />
           </Tab>
         </KeycloakTabs>
       </PageSection>

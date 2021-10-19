@@ -3,10 +3,10 @@ import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
 import { AuthenticationSection } from "../AuthenticationSection";
 
-export type AuthenticationParams = { realm: string };
+export type AuthenticationParams = { realm: string; tab?: string };
 
 export const AuthenticationRoute: RouteDef = {
-  path: "/:realm/authentication",
+  path: "/:realm/authentication/:tab?",
   component: AuthenticationSection,
   breadcrumb: (t) => t("authentication"),
   access: "view-realm",

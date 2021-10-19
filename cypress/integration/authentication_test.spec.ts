@@ -5,6 +5,8 @@ import Masthead from "../support/pages/admin_console/Masthead";
 import ListingPage from "../support/pages/admin_console/ListingPage";
 import DuplicateFlowModal from "../support/pages/admin_console/manage/authentication/DuplicateFlowModal";
 import FlowDetails from "../support/pages/admin_console/manage/authentication/FlowDetail";
+import RequiredActions from "../support/pages/admin_console/manage/authentication/RequiredActions";
+import AdminClient from "../support/util/AdminClient";
 
 describe("Authentication test", () => {
   const loginPage = new LoginPage();
@@ -105,5 +107,51 @@ describe("Authentication test", () => {
     masthead.checkNotificationMessage("Flow successfully updated");
 
     detailPage.flowExists(flowName);
+  });
+
+  describe("Required actions", () => {
+    const requiredActionsPage = new RequiredActions();
+    beforeEach(() => {
+      keycloakBefore();
+      loginPage.logIn();
+      sidebarPage.goToRealm("Test");
+      sidebarPage.goToAuthentication();
+      requiredActionsPage.goToTab();
+    });
+
+    before(() => {
+      new AdminClient().createRealm("Test");
+    });
+
+    after(() => {
+      new AdminClient().deleteRealm("Test");
+    });
+
+    it("should enable delete account", () => {
+      const action = "Delete Account";
+      requiredActionsPage.enableAction(action);
+      masthead.checkNotificationMessage("Updated required action successfully");
+      requiredActionsPage.isChecked(action);
+    });
+
+    it("should register an unregistered action", () => {
+      const action = "Verify Profile";
+      requiredActionsPage.enableAction(action);
+      masthead.checkNotificationMessage("Updated required action successfully");
+      requiredActionsPage.isChecked(action).isDefaultEnabled(action);
+    });
+
+    it("should set action as default", () => {
+      const action = "Configure OTP";
+      requiredActionsPage.setAsDefault(action);
+      masthead.checkNotificationMessage("Updated required action successfully");
+      requiredActionsPage.isDefaultChecked(action);
+    });
+
+    it("should reorder required actions", () => {
+      const action = "Terms and Conditions";
+      requiredActionsPage.moveRowTo(action, "Update Profile");
+      masthead.checkNotificationMessage("Updated required action successfully");
+    });
   });
 });

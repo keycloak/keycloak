@@ -1,6 +1,6 @@
 export default class ListingPage {
   private searchInput = '.pf-c-toolbar__item [type="search"]:visible';
-  private itemsRows = "table";
+  private itemsRows = "table:visible";
   private itemRowDrpDwn = ".pf-c-dropdown__toggle";
   public exportBtn = '[role="menuitem"]:nth-child(1)';
   public deleteBtn = '[role="menuitem"]:nth-child(2)';

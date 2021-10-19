@@ -6,7 +6,7 @@ import { CreateFlow } from "../form/CreateFlow";
 export type CreateFlowParams = { realm: string };
 
 export const CreateFlowRoute: RouteDef = {
-  path: "/:realm/authentication/create",
+  path: "/:realm/authentication/flows/create",
   component: CreateFlow,
   breadcrumb: (t) => t("authentication:createFlow"),
   access: "manage-authorization",

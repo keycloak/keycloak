@@ -2,6 +2,7 @@ export default {
   authentication: {
     title: "Authentication",
     flows: "Flows",
+    requiredActions: "Required actions",
     flowName: "Flow name",
     searchForFlow: "Search for flow",
     usedBy: "Used by",
@@ -70,5 +71,9 @@ export default {
     alias: "Alias",
     configSaveSuccess: "Successfully saved the execution config",
     configSaveError: "Could not save the execution config: {{error}}",
+    setAsDefaultAction: "Set as default action",
+    disabledOff: "Disabled off",
+    updatedRequiredActionSuccess: "Updated required action successfully",
+    updatedRequiredActionError: "Could not update required action: {{error}}",
   },
 };
