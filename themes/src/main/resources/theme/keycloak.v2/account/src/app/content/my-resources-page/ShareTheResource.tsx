@@ -20,7 +20,6 @@ import {
     Button,
     Chip,
     ChipGroup,
-    ChipGroupToolbarItem,
     Form,
     FormGroup,
     Gallery,
@@ -28,7 +27,8 @@ import {
     Modal,
     Stack,
     StackItem,
-    TextInput
+    TextInput,
+    ModalVariant
 } from '@patternfly/react-core';
 
 import { AccountServiceContext } from '../../account-service/AccountServiceContext';
@@ -166,7 +166,7 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
 
                 <Modal
                 title={'Share the resource - ' + this.props.resource.name}
-                isLarge={true}
+                variant={ModalVariant.large}
                 isOpen={this.state.isOpen}
                 onClose={this.handleToggleDialog}
                 actions={[
@@ -178,7 +178,7 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
                     </Button>
                 ]}
                 >
-                    <Stack gutter='md'>
+                    <Stack hasGutter>
                         <StackItem isFilled>
                         <Form>
                             <FormGroup
@@ -187,13 +187,13 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
                                 helperTextInvalid={Msg.localize('resourceAlreadyShared')}
                                 fieldId="username"
                                 isRequired
-                                isValid={!this.isAlreadyShared()}
+                                // isValid={!this.isAlreadyShared()}
                                 >
-                                    <Gallery gutter='sm'>
+                                    <Gallery hasGutter>
                                         <GalleryItem>
                                             <TextInput
                                                 value={this.state.usernameInput}
-                                                isValid={!this.isAlreadyShared()}
+                                                // isValid={!this.isAlreadyShared()}
                                                 id="username"
                                                 aria-describedby="username-helper"
                                                 placeholder="Username or email"
@@ -208,14 +208,12 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
                                         </GalleryItem>
 
                                 </Gallery>
-                                <ChipGroup withToolbar>
-                                    <ChipGroupToolbarItem key='users-selected' categoryName='Share with '>
+                                <ChipGroup categoryName='Share with '>
                                     {this.state.usernames.map((currentChip: string) => (
                                         <Chip key={currentChip} onClick={() => this.handleDeleteUsername(currentChip)}>
                                             {currentChip}
                                         </Chip>
                                     ))}
-                                    </ChipGroupToolbarItem>
                                 </ChipGroup>
                             </FormGroup>
                             <FormGroup

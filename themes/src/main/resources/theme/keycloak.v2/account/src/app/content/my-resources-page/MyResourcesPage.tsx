@@ -170,10 +170,10 @@ export class MyResourcesPage extends React.Component<MyResourcesPageProps, MyRes
     private makeTab(eventKey: number, title: string, resources: PaginatedResources, sharedResourcesTab: boolean): React.ReactNode {
         return (
             <Tab id={title} eventKey={eventKey} title={Msg.localize(title)}>
-                <Stack gutter="md">
+                <Stack hasGutter>
                     <StackItem isFilled><span/></StackItem>
                     <StackItem isFilled>
-                        <Level gutter='md'>
+                        <Level hasGutter>
                             <LevelItem>
                                 <TextInput value={this.state.nameFilter} onChange={this.handleFilterRequest} id={'filter-' + title} type="text" placeholder={Msg.localize('filterByName')} />
                             </LevelItem>
@@ -196,7 +196,7 @@ export class MyResourcesPage extends React.Component<MyResourcesPageProps, MyRes
                     {this.makeTab(1, 'sharedwithMe', this.state.sharedWithMe, true)}
                 </Tabs>
 
-                <Level gutter='md'>
+                <Level hasGutter>
                     <LevelItem>
                         {this.hasPrevious() && <Button onClick={this.handlePreviousClick}>&lt;<Msg msgKey='previousPage'/></Button>}
                     </LevelItem>

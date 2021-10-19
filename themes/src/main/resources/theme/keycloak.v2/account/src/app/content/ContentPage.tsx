@@ -57,7 +57,7 @@ export class ContentPage extends React.Component<ContentPageProps> {
                     </Grid>
                 </section>
 
-                <section className="pf-c-page__main-section pf-m-no-padding-mobile">
+                <section className="pf-m-no-padding-mobile">
                     {this.props.children}
                 </section>
             </React.Fragment>

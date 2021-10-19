@@ -22,7 +22,8 @@ import {
     Form,
     FormGroup,
     TextInput,
-    InputGroup
+    InputGroup,
+    ModalVariant
 } from '@patternfly/react-core';
 import { OkIcon } from '@patternfly/react-icons';
 
@@ -91,7 +92,7 @@ export class EditTheResource extends React.Component<EditTheResourceProps, EditT
 
                 <Modal
                     title={'Edit the resource - ' + this.props.resource.name}
-                    isLarge
+                    variant={ModalVariant.large}
                     isOpen={this.state.isOpen}
                     onClose={this.handleToggleDialog}
                     actions={[

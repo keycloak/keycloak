@@ -28,8 +28,6 @@ import {
         Stack,
         StackItem,
         Title,
-        TitleLevel,
-        DataListActionVisibility,
         Dropdown,
         DropdownPosition,
         KebabToggle,
@@ -143,7 +141,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         return (
             <ContentPage title="signingIn"
                      introMessage="signingInSubMessage">
-                <Stack gutter='md'>
+                <Stack hasGutter>
                     {this.renderCategories()}
                 </Stack>
             </ContentPage>
@@ -154,7 +152,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         return (<> {
             Array.from(this.state.credentialContainers.keys()).map(category => (
                 <StackItem key={category} isFilled>
-                    <Title id={`${category}-categ-title`} headingLevel={TitleLevel.h2} size='2xl'>
+                    <Title id={`${category}-categ-title`} headingLevel="h2" size='2xl'>
                         <strong><Msg msgKey={category}/></strong>
                     </Title>
                     <DataList aria-label='foo'>
@@ -274,7 +272,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
                         <DataListItemCells
                             dataListCells={[
                                 <DataListCell width={5} key={'credTypeTitle-' + credContainer.type}>
-                                    <Title headingLevel={TitleLevel.h3} size='2xl'>
+                                    <Title headingLevel="h3" size='2xl'>
                                         <strong id={`${credContainer.type}-cred-title`}><Msg msgKey={credContainer.displayName}/></strong>
                                     </Title>
                                     <span id={`${credContainer.type}-cred-help`}>
@@ -288,7 +286,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
                             aria-labelledby='create'
                             aria-label='create action'
                             id={'mob-setUpAction-' + credContainer.type}
-                            className={DataListActionVisibility.hiddenOnLg}
+                            visibility={{ lg: 'hidden' }}
                         >
                             <Dropdown
                                 isPlain
@@ -312,7 +310,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
                             aria-labelledby='create'
                             aria-label='create action'
                             id={'setUpAction-' + credContainer.type}
-                            className={css(DataListActionVisibility.visibleOnLg, DataListActionVisibility.hidden)}
+                            visibility={{ default: 'visible', lg: 'hidden' }}
                         >
                             <button id={`${credContainer.type}-set-up`} className="pf-c-button pf-m-link" type="button" onClick={()=> setupAction.execute()}>
                                 <span className="pf-c-button__icon">
