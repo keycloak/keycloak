@@ -126,6 +126,12 @@ class KeycloakProcessor {
     private static final Map<String, Function<ScriptProviderMetadata, ProviderFactory>> DEPLOYEABLE_SCRIPT_PROVIDERS = new HashMap<>();
     private static final String KEYCLOAK_SCRIPTS_JSON_PATH = "META-INF/keycloak-scripts.json";
 
+    private static final List<Class<? extends ProviderFactory>> IGNORED_PROVIDER_FACTORY = Arrays.asList(
+            JBossJtaTransactionManagerLookup.class,
+            DefaultJpaConnectionProviderFactory.class,
+            DefaultLiquibaseConnectionProvider.class,
+            LiquibaseJpaUpdaterProviderFactory.class);
+
     static {
         DEPLOYEABLE_SCRIPT_PROVIDERS.put(AUTHENTICATORS, KeycloakProcessor::registerScriptAuthenticator);
         DEPLOYEABLE_SCRIPT_PROVIDERS.put(POLICIES, KeycloakProcessor::registerScriptPolicy);
@@ -387,11 +393,7 @@ class KeycloakProcessor {
             preConfiguredProviders.putAll(deployedScriptProviders);
 
             for (ProviderFactory factory : loadedFactories) {
-                if (Arrays.asList(
-                        JBossJtaTransactionManagerLookup.class,
-                        DefaultJpaConnectionProviderFactory.class,
-                        DefaultLiquibaseConnectionProvider.class,
-                        LiquibaseJpaUpdaterProviderFactory.class).contains(factory.getClass())) {
+                if (IGNORED_PROVIDER_FACTORY.contains(factory.getClass())) {
                     continue;
                 }
 
