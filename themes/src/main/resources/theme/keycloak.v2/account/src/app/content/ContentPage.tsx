@@ -16,7 +16,6 @@
 
 import * as React from 'react';
 import {Button, Grid, GridItem, Title, Tooltip} from '@patternfly/react-core';
-import {RedoIcon} from '@patternfly/react-icons';
 
 import {Msg} from '../widgets/Msg';
 import {ContentAlert} from './ContentAlert';
@@ -48,7 +47,7 @@ export class ContentPage extends React.Component<ContentPageProps> {
                             <GridItem span={1}>
                                 <Tooltip content={<Msg msgKey='refreshPage'/>}>
                                     <Button aria-describedby="refresh page" id='refresh-page' variant='plain' onClick={this.props.onRefresh}>
-                                        <RedoIcon size='sm'/>
+                                        Refresh
                                     </Button>
                                 </Tooltip>
                             </GridItem>
