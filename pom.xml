@@ -32,7 +32,6 @@
         <module>header-maven-plugin</module>
         <module>api_documentation</module>
         <module>authorization_services</module>
-        <module>getting_started</module>
         <module>securing_apps</module>
         <module>server_admin</module>
         <module>server_development</module>
@@ -55,6 +54,7 @@
                 <imagesDir>rhsso-images</imagesDir>
             </properties>
             <modules>
+                <module>getting_started</module>
                 <module>openshift</module>
                 <module>openshift-openj9</module>
             </modules>

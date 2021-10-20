@@ -59,12 +59,6 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak.documentation</groupId>
-            <artifactId>getting-started</artifactId>
-            <version>${project.version}</version>
-            <type>pom</type>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak.documentation</groupId>
             <artifactId>securing-apps</artifactId>
             <version>${project.version}</version>
             <type>pom</type>
@@ -134,6 +128,14 @@
                     <name>product</name>
                 </property>
             </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.documentation</groupId>
+                    <artifactId>getting-started</artifactId>
+                    <version>${project.version}</version>
+                    <type>pom</type>
+                </dependency>
+            </dependencies>
         </profile>
     </profiles>
 
