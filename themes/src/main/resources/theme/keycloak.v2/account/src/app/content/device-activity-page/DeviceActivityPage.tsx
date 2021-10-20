@@ -29,6 +29,7 @@ import {
   DataListItemCells,
   Grid,
   GridItem,
+  Label,
   Stack,
   StackItem
 } from '@patternfly/react-core';
@@ -276,7 +277,7 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
                                       </StackItem>
                                       {session.current &&
                                         <StackItem isFilled={false}>
-                                          <Bullseye id={this.elementId('current-badge', session)}><strong className='pf-c-badge pf-m-read'><Msg msgKey="currentSession" /></strong></Bullseye>
+                                          <Label><strong className='pf-c-badge pf-m-read'><Msg msgKey="currentSession" /></strong></Label>
                                         </StackItem>
                                       }
                                     </Stack>
@@ -286,8 +287,8 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
                                     <p id={this.elementId('browser', session)}><strong>{session.browser} / {this.findOS(device)} {this.findOSVersion(device)}</strong></p>}
                                     <p id={this.elementId('last-access', session)}><strong>{Msg.localize('lastAccessedOn')}</strong> {this.time(session.lastAccess)}</p>
                                     <p id={this.elementId('clients', session)}><strong>{Msg.localize('clients')}</strong> {this.makeClientsString(session.clients)}</p>
-                                    <p id={this.elementId('started', session)}><strong>{Msg.localize('startedAt')}</strong> {this.time(session.started)}</p>
-                                    <p id={this.elementId('expires', session)}><strong>{Msg.localize('expiresAt')}</strong> {this.time(session.expires)}</p>
+                                    <p id={this.elementId('started', session)}><strong>{Msg.localize('started')}</strong> {this.time(session.started)}</p>
+                                    <p id={this.elementId('expires', session)}><strong>{Msg.localize('expires')}</strong> {this.time(session.expires)}</p>
                                     {!session.current &&
                                       <ContinueCancelModal buttonTitle='doSignOut'
                                         buttonId={this.elementId('sign-out', session)}
