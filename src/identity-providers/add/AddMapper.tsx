@@ -31,7 +31,7 @@ import { AssociatedRolesModal } from "../../realm-roles/AssociatedRolesModal";
 import type { RoleRepresentation } from "../../model/role-model";
 import { useAlerts } from "../../components/alert/Alerts";
 import type { IdentityProviderEditMapperParams } from "../routes/EditMapper";
-import { convertToFormValues } from "../../util";
+import { convertFormValuesToObject, convertToFormValues } from "../../util";
 import { toIdentityProvider } from "../routes/IdentityProvider";
 import type IdentityProviderMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperRepresentation";
 import { AddMapperForm } from "./AddMapperForm";
@@ -83,16 +83,19 @@ export const AddMapper = () => {
   const [rolesModalOpen, setRolesModalOpen] = useState(false);
 
   const save = async (idpMapper: IdentityProviderMapperRepresentation) => {
+    const attributes = JSON.stringify(idpMapper.config?.attributes ?? []);
+    const config = convertFormValuesToObject({
+      ...idpMapper.config,
+      attributes,
+    });
+
     if (id) {
       const updatedMapper = {
         ...idpMapper,
         identityProviderAlias: alias!,
         id: id,
         name: currentMapper?.name!,
-        config: {
-          ...idpMapper.config,
-          attributes: JSON.stringify(idpMapper.config?.attributes!),
-        },
+        config,
       };
       try {
         await adminClient.identityProviders.updateMapper(
@@ -112,10 +115,7 @@ export const AddMapper = () => {
           identityProviderMapper: {
             ...idpMapper,
             identityProviderAlias: alias,
-            config: {
-              ...idpMapper.config,
-              attributes: JSON.stringify(idpMapper.config.attributes),
-            },
+            config,
           },
           alias: alias!,
         });
@@ -157,10 +157,10 @@ export const AddMapper = () => {
     form.reset();
     Object.entries(mapper).map(([key, value]) => {
       if (key === "config") {
-        if (mapper.config?.["are-attribute-values-regex"]) {
+        if (mapper.config?.["are.attribute.values.regex"]) {
           form.setValue(
             "config.are-attribute-values-regex",
-            value["are-attribute-values-regex"][0]
+            mapper.config["are.attribute.values.regex"]
           );
         }
 
