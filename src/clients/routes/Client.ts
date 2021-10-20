@@ -3,7 +3,12 @@ import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
 import { ClientDetails } from "../ClientDetails";
 
-export type ClientTab = "settings" | "roles" | "clientScopes" | "advanced";
+export type ClientTab =
+  | "settings"
+  | "roles"
+  | "clientScopes"
+  | "advanced"
+  | "mappers";
 
 export type ClientParams = {
   realm: string;

@@ -294,5 +294,6 @@ export default {
       expires: "Expires in",
       never: "Never expires",
     },
+    mappers: "Mappers",
   },
 };

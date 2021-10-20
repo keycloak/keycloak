@@ -54,6 +54,10 @@ import { EvaluateScopes } from "./scopes/EvaluateScopes";
 import { ServiceAccount } from "./service-account/ServiceAccount";
 import { isRealmClient, getProtocolName } from "./utils";
 import { SamlKeys } from "./keys/SamlKeys";
+import { MapperList } from "../client-scopes/details/MapperList";
+import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
+import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
+import { toMapper } from "./routes/Mapper";
 
 type ClientDetailHeaderProps = {
   onChange: (value: boolean) => void;
@@ -279,6 +283,51 @@ export const ClientDetails = () => {
     }
   };
 
+  const addMappers = async (
+    mappers: ProtocolMapperTypeRepresentation | ProtocolMapperRepresentation[]
+  ): Promise<void> => {
+    if (!Array.isArray(mappers)) {
+      const mapper = mappers as ProtocolMapperTypeRepresentation;
+      history.push(
+        toMapper({
+          realm,
+          id: client!.id!,
+          mapperId: mapper.id!,
+        })
+      );
+    } else {
+      try {
+        await adminClient.clients.addMultipleProtocolMappers(
+          { id: client!.id! },
+          mappers as ProtocolMapperRepresentation[]
+        );
+        setClient(await adminClient.clients.findOne({ id: client!.id! }));
+        addAlert(t("common:mappingCreatedSuccess"), AlertVariant.success);
+      } catch (error) {
+        addError("common:mappingCreatedError", error);
+      }
+    }
+  };
+
+  const onDeleteMapper = async (mapper: ProtocolMapperRepresentation) => {
+    try {
+      await adminClient.clients.delProtocolMapper({
+        id: client!.id!,
+        mapperId: mapper.id!,
+      });
+      setClient({
+        ...client,
+        protocolMappers: client?.protocolMappers?.filter(
+          (m) => m.id !== mapper.id
+        ),
+      });
+      addAlert(t("common:mappingDeletedSuccess"), AlertVariant.success);
+    } catch (error) {
+      addError("common:mappingDeletedError", error);
+    }
+    return true;
+  };
+
   if (!client) {
     return (
       <div className="pf-u-text-align-center">
@@ -365,6 +414,22 @@ export const ClientDetails = () => {
                 title={<TabTitleText>{t("credentials")}</TabTitleText>}
               >
                 <Credentials clientId={clientId} save={() => save()} />
+              </Tab>
+            )}
+            {!isRealmClient(client) && (
+              <Tab
+                id="mappers"
+                eventKey="mappers"
+                title={<TabTitleText>{t("mappers")}</TabTitleText>}
+              >
+                <MapperList
+                  model={client}
+                  onAdd={addMappers}
+                  onDelete={onDeleteMapper}
+                  detailLink={(mapperId) =>
+                    toMapper({ realm, id: client.id!, mapperId })
+                  }
+                />
               </Tab>
             )}
             <Tab

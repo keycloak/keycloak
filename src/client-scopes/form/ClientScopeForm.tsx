@@ -25,12 +25,15 @@ import {
   Row,
 } from "../../components/role-mapping/RoleMapping";
 import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
+import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
 import {
   AllClientScopes,
   changeScope,
   ClientScopeDefaultOptionalType,
 } from "../../components/client-scope/ClientScopeTypes";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { toMapper } from "../routes/Mapper";
 
 export const ClientScopeForm = () => {
   const { t } = useTranslation("client-scopes");
@@ -187,6 +190,47 @@ export const ClientScopeForm = () => {
     }
   };
 
+  const addMappers = async (
+    mappers: ProtocolMapperTypeRepresentation | ProtocolMapperRepresentation[]
+  ): Promise<void> => {
+    if (!Array.isArray(mappers)) {
+      const mapper = mappers as ProtocolMapperTypeRepresentation;
+      history.push(
+        toMapper({
+          realm,
+          id: clientScope!.id!,
+          type,
+          mapperId: mapper.id!,
+        })
+      );
+    } else {
+      try {
+        await adminClient.clientScopes.addMultipleProtocolMappers(
+          { id: clientScope!.id! },
+          mappers as ProtocolMapperRepresentation[]
+        );
+        refresh();
+        addAlert(t("common:mappingCreatedSuccess"), AlertVariant.success);
+      } catch (error) {
+        addError("common:mappingCreatedError", error);
+      }
+    }
+  };
+
+  const onDelete = async (mapper: ProtocolMapperRepresentation) => {
+    try {
+      await adminClient.clientScopes.delProtocolMapper({
+        id: clientScope!.id!,
+        mapperId: mapper.id!,
+      });
+      addAlert(t("common:mappingDeletedSuccess"), AlertVariant.success);
+      refresh();
+    } catch (error) {
+      addError("common:mappingDeletedError", error);
+    }
+    return true;
+  };
+
   if (id && !clientScope) {
     return (
       <div className="pf-u-text-align-center">
@@ -236,9 +280,12 @@ export const ClientScopeForm = () => {
               title={<TabTitleText>{t("common:mappers")}</TabTitleText>}
             >
               <MapperList
-                clientScope={clientScope}
-                type={type}
-                refresh={refresh}
+                model={clientScope}
+                onAdd={addMappers}
+                onDelete={onDelete}
+                detailLink={(id) =>
+                  toMapper({ realm, id: clientScope.id!, type, mapperId: id! })
+                }
               />
             </Tab>
             <Tab

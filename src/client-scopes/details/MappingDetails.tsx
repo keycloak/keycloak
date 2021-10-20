@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useHistory, useParams } from "react-router-dom";
+import { Link, useHistory, useParams, useRouteMatch } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { FormProvider, useForm } from "react-hook-form";
 import {
@@ -25,11 +25,11 @@ import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import type { MapperParams } from "../routes/Mapper";
+import { MapperParams, MapperRoute } from "../routes/Mapper";
 import { Components, COMPONENTS } from "../add/components/components";
+import { toClientScope } from "../routes/ClientScope";
 
 import "./mapping-details.css";
-import { toClientScope } from "../routes/ClientScope";
 
 export const MappingDetails = () => {
   const { t } = useTranslation("client-scopes");
@@ -47,15 +47,29 @@ export const MappingDetails = () => {
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
   const isGuid = /^[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?$/;
-  const isUpdating = mapperId.match(isGuid);
+  const isUpdating = !!mapperId.match(isGuid);
+
+  const isOnClientScope = !!useRouteMatch(MapperRoute.path);
+  const toDetails = () =>
+    isOnClientScope
+      ? toClientScope({ realm, id, type: type!, tab: "mappers" })
+      : `/${realm}/clients/${id}/mappers`;
 
   useFetch(
     async () => {
+      let data: ProtocolMapperRepresentation | undefined;
       if (isUpdating) {
-        const data = await adminClient.clientScopes.findProtocolMapper({
-          id,
-          mapperId,
-        });
+        if (isOnClientScope) {
+          data = await adminClient.clientScopes.findProtocolMapper({
+            id,
+            mapperId,
+          });
+        } else {
+          data = await adminClient.clients.findProtocolMapperById({
+            id,
+            mapperId,
+          });
+        }
         if (!data) {
           throw new Error(t("common:notFound"));
         }
@@ -74,12 +88,14 @@ export const MappingDetails = () => {
           data,
         };
       } else {
-        const scope = await adminClient.clientScopes.findOne({ id });
-        if (!scope) {
+        const model = type
+          ? await adminClient.clientScopes.findOne({ id })
+          : await adminClient.clients.findOne({ id });
+        if (!model) {
           throw new Error(t("common:notFound"));
         }
         const protocolMappers =
-          serverInfo.protocolMapperTypes![scope.protocol!];
+          serverInfo.protocolMapperTypes![model.protocol!];
         const mapping = protocolMappers.find(
           (mapper) => mapper.id === mapperId
         );
@@ -89,7 +105,7 @@ export const MappingDetails = () => {
         return {
           mapping,
           config: {
-            protocol: scope.protocol,
+            protocol: model.protocol,
             protocolMapper: mapperId,
           },
         };
@@ -117,12 +133,19 @@ export const MappingDetails = () => {
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
-        await adminClient.clientScopes.delProtocolMapper({
-          id,
-          mapperId: mapperId,
-        });
+        if (isOnClientScope) {
+          await adminClient.clientScopes.delProtocolMapper({
+            id,
+            mapperId,
+          });
+        } else {
+          await adminClient.clients.delProtocolMapper({
+            id,
+            mapperId,
+          });
+        }
         addAlert(t("common:mappingDeletedSuccess"), AlertVariant.success);
-        history.push(`/${realm}/client-scopes/${id}/mappers`);
+        history.push(toDetails());
       } catch (error) {
         addError("common:mappingDeletedError", error);
       }
@@ -133,16 +156,21 @@ export const MappingDetails = () => {
     const configAttributes = convertFormValuesToObject(formMapping.config);
     const key = isUpdating ? "Updated" : "Created";
     try {
+      const mapping = { ...formMapping, ...config, config: configAttributes };
       if (isUpdating) {
-        await adminClient.clientScopes.updateProtocolMapper(
-          { id, mapperId },
-          { ...formMapping, config: configAttributes }
-        );
+        isOnClientScope
+          ? await adminClient.clientScopes.updateProtocolMapper(
+              { id, mapperId },
+              { id: mapperId, ...mapping }
+            )
+          : await adminClient.clients.updateProtocolMapper(
+              { id, mapperId },
+              { id: mapperId, ...mapping }
+            );
       } else {
-        await adminClient.clientScopes.addProtocolMapper(
-          { id },
-          { ...formMapping, ...config, config: configAttributes }
-        );
+        isOnClientScope
+          ? await adminClient.clientScopes.addProtocolMapper({ id }, mapping)
+          : await adminClient.clients.addProtocolMapper({ id }, mapping);
       }
       addAlert(t(`common:mapping${key}Success`), AlertVariant.success);
     } catch (error) {
@@ -180,49 +208,42 @@ export const MappingDetails = () => {
           role="manage-clients"
           className="keycloak__client-scope-mapping-details__form"
         >
-          {!mapperId.match(isGuid) && (
-            <>
-              <FormGroup label={t("common:mapperType")} fieldId="mapperType">
-                <TextInput
-                  type="text"
-                  id="mapperType"
-                  name="mapperType"
-                  isReadOnly
-                  value={mapping?.name}
-                />
-              </FormGroup>
-              <FormGroup
-                label={t("common:name")}
-                labelIcon={
-                  <HelpItem
-                    helpText="client-scopes-help:mapperName"
-                    forLabel={t("common:name")}
-                    forID="name"
-                  />
-                }
-                fieldId="name"
-                isRequired
-                validated={
-                  errors.name
-                    ? ValidatedOptions.error
-                    : ValidatedOptions.default
-                }
-                helperTextInvalid={t("common:required")}
-              >
-                <TextInput
-                  ref={register({ required: true })}
-                  type="text"
-                  id="name"
-                  name="name"
-                  validated={
-                    errors.name
-                      ? ValidatedOptions.error
-                      : ValidatedOptions.default
-                  }
-                />
-              </FormGroup>
-            </>
-          )}
+          <FormGroup label={t("common:mapperType")} fieldId="mapperType">
+            <TextInput
+              type="text"
+              id="mapperType"
+              name="mapperType"
+              isReadOnly
+              value={mapping?.name}
+            />
+          </FormGroup>
+          <FormGroup
+            label={t("common:name")}
+            labelIcon={
+              <HelpItem
+                helpText="client-scopes-help:mapperName"
+                forLabel={t("common:name")}
+                forID="name"
+              />
+            }
+            fieldId="name"
+            isRequired
+            validated={
+              errors.name ? ValidatedOptions.error : ValidatedOptions.default
+            }
+            helperTextInvalid={t("common:required")}
+          >
+            <TextInput
+              ref={register({ required: true })}
+              type="text"
+              id="name"
+              name="name"
+              isReadOnly={isUpdating}
+              validated={
+                errors.name ? ValidatedOptions.error : ValidatedOptions.default
+              }
+            />
+          </FormGroup>
           <FormProvider {...form}>
             {mapping?.properties.map((property) => {
               const componentType = property.type!;
@@ -242,12 +263,7 @@ export const MappingDetails = () => {
             </Button>
             <Button
               variant="link"
-              component={(props) => (
-                <Link
-                  {...props}
-                  to={toClientScope({ realm, id, type, tab: "mappers" })}
-                />
-              )}
+              component={(props) => <Link {...props} to={toDetails()} />}
             >
               {t("common:cancel")}
             </Button>

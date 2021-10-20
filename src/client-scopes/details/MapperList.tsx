@@ -1,31 +1,27 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useHistory } from "react-router-dom";
-import {
-  AlertVariant,
-  Dropdown,
-  DropdownItem,
-  DropdownToggle,
-} from "@patternfly/react-core";
+import type { LocationDescriptorObject } from "history";
+import { Link } from "react-router-dom";
+import { Dropdown, DropdownItem, DropdownToggle } from "@patternfly/react-core";
 import { CaretDownIcon } from "@patternfly/react-icons";
 
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
 import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
-import { useAlerts } from "../../components/alert/Alerts";
 import { AddMapperDialog } from "../add/MapperDialog";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
-import { useRealm } from "../../context/realm-context/RealmContext";
-import { toMapper } from "../routes/Mapper";
 
 type MapperListProps = {
-  clientScope: ClientScopeRepresentation;
-  type: string;
-  refresh: () => void;
+  model: ClientScopeRepresentation | ClientRepresentation;
+  onAdd: (
+    mappers: ProtocolMapperTypeRepresentation | ProtocolMapperRepresentation[]
+  ) => void;
+  onDelete: (mapper: ProtocolMapperRepresentation) => void;
+  detailLink: (id: string) => LocationDescriptorObject;
 };
 
 type Row = ProtocolMapperRepresentation & {
@@ -34,24 +30,23 @@ type Row = ProtocolMapperRepresentation & {
   priority: number;
 };
 
-export const MapperList = ({ clientScope, type, refresh }: MapperListProps) => {
+export const MapperList = ({
+  model,
+  onAdd,
+  onDelete,
+  detailLink,
+}: MapperListProps) => {
   const { t } = useTranslation("client-scopes");
-  const adminClient = useAdminClient();
-  const { addAlert, addError } = useAlerts();
-
-  const history = useHistory();
-  const { realm } = useRealm();
 
   const [mapperAction, setMapperAction] = useState(false);
-  const mapperList = clientScope.protocolMappers;
-  const mapperTypes =
-    useServerInfo().protocolMapperTypes![clientScope.protocol!];
+  const mapperList = model.protocolMappers;
+  const mapperTypes = useServerInfo().protocolMapperTypes![model.protocol!];
 
   const [key, setKey] = useState(0);
-  useEffect(() => setKey(new Date().getTime()), [mapperList]);
+  useEffect(() => setKey(key + 1), [mapperList]);
 
   const [addMapperDialogOpen, setAddMapperDialogOpen] = useState(false);
-  const [filter, setFilter] = useState(clientScope.protocolMappers);
+  const [filter, setFilter] = useState(model.protocolMappers);
   const toggleAddMapperDialog = (buildIn: boolean) => {
     if (buildIn) {
       setFilter(mapperList || []);
@@ -59,33 +54,6 @@ export const MapperList = ({ clientScope, type, refresh }: MapperListProps) => {
       setFilter(undefined);
     }
     setAddMapperDialogOpen(!addMapperDialogOpen);
-  };
-
-  const addMappers = async (
-    mappers: ProtocolMapperTypeRepresentation | ProtocolMapperRepresentation[]
-  ): Promise<void> => {
-    if (filter === undefined) {
-      const mapper = mappers as ProtocolMapperTypeRepresentation;
-      history.push(
-        toMapper({
-          realm,
-          id: clientScope.id!,
-          type,
-          mapperId: mapper.id!,
-        })
-      );
-    } else {
-      try {
-        await adminClient.clientScopes.addMultipleProtocolMappers(
-          { id: clientScope.id! },
-          mappers as ProtocolMapperRepresentation[]
-        );
-        refresh();
-        addAlert(t("common:mappingCreatedSuccess"), AlertVariant.success);
-      } catch (error) {
-        addError("common:mappingCreatedError", error);
-      }
-    }
   };
 
   const loader = async () =>
@@ -106,17 +74,15 @@ export const MapperList = ({ clientScope, type, refresh }: MapperListProps) => {
     );
 
   const MapperLink = ({ id, name }: Row) => (
-    <Link to={toMapper({ realm, id: clientScope.id!, type, mapperId: id! })}>
-      {name}
-    </Link>
+    <Link to={detailLink(id!)}>{name}</Link>
   );
 
   return (
     <>
       <AddMapperDialog
-        protocol={clientScope.protocol!}
+        protocol={model.protocol!}
         filter={filter}
-        onConfirm={addMappers}
+        onConfirm={onAdd}
         open={addMapperDialogOpen}
         toggleDialog={() => setAddMapperDialogOpen(!addMapperDialogOpen)}
       />
@@ -159,22 +125,7 @@ export const MapperList = ({ clientScope, type, refresh }: MapperListProps) => {
         actions={[
           {
             title: t("common:delete"),
-            onRowClick: async (mapper) => {
-              try {
-                await adminClient.clientScopes.delProtocolMapper({
-                  id: clientScope.id!,
-                  mapperId: mapper.id!,
-                });
-                addAlert(
-                  t("common:mappingDeletedSuccess"),
-                  AlertVariant.success
-                );
-                refresh();
-              } catch (error) {
-                addError("common:mappingDeletedError", error);
-              }
-              return true;
-            },
+            onRowClick: onDelete,
           },
         ]}
         columns={[

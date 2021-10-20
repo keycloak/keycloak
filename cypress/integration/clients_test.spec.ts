@@ -188,6 +188,36 @@ describe("Clients test", () => {
     });
   });
 
+  describe("Mapping tab", () => {
+    const mappingClient = "mapping-client";
+    beforeEach(() => {
+      keycloakBefore();
+      loginPage.logIn();
+      sidebarPage.goToClients();
+      listingPage.searchItem(mappingClient).goToItemDetails(mappingClient);
+    });
+
+    before(() => {
+      new AdminClient().createClient({
+        protocol: "openid-connect",
+        clientId: mappingClient,
+        publicClient: false,
+      });
+    });
+
+    after(() => {
+      new AdminClient().deleteClient(mappingClient);
+    });
+
+    it("add mapping to openid client", () => {
+      cy.get("#pf-tab-mappers-mappers").click();
+      cy.findByText("Add predefined mapper").click();
+      cy.get("table input").first().click();
+      cy.findByTestId("modalConfirm").click();
+      masthead.checkNotificationMessage("Mapping successfully created");
+    });
+  });
+
   describe("Keys tab test", () => {
     const keysName = "keys-client";
     beforeEach(() => {

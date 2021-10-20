@@ -10,6 +10,7 @@ import {
 } from "@patternfly/react-core";
 import { cellWidth, IRowData, TableText } from "@patternfly/react-table";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
+import type { ClientQuery } from "@keycloak/keycloak-admin-client/lib/resources/clients";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -44,13 +45,13 @@ export const ClientsSection = () => {
   const [selectedClient, setSelectedClient] = useState<ClientRepresentation>();
 
   const loader = async (first?: number, max?: number, search?: string) => {
-    const params: { [name: string]: string | number } = {
+    const params: ClientQuery = {
       first: first!,
       max: max!,
     };
     if (search) {
       params.clientId = search;
-      params.search = "true";
+      params.search = true;
     }
     return await adminClient.clients.find({ ...params });
   };
