@@ -15,7 +15,7 @@ This section describes how to install and start a {project_name} server in stand
 
 ifeval::[{project_product}==true]
 .Additional Resources
-This installation is intended for practice use of {project_name}. For instructions on installation in a production environment and full details on all product features, see the other guides in the link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/{project_versionDoc}/[{project_name}] documentation.
+This installation is intended for practice use of {project_name}. For instructions on installation in a production environment and full details on all product features, see the other guides in the link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/{project_versionDoc}[{project_name}] documentation.
 endif::[]
 
 ifeval::[{project_community}==true]
