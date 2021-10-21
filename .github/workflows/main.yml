@@ -14,7 +14,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v2
         with:
-          node-version: 16
+          node-version: 17
           check-latest: true
           cache: npm
 
@@ -51,7 +51,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v2
         with:
-          node-version: 16
+          node-version: 17
 
       - name: Run ${{ matrix.command }} task
         run: npm run ${{ matrix.command }}

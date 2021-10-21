@@ -79,7 +79,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <nodeVersion>v16.5.0</nodeVersion>
+                    <nodeVersion>v17.0.1</nodeVersion>
                     <workingDirectory>../</workingDirectory>
                     <installDirectory>.</installDirectory>
                 </configuration>
