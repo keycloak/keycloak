@@ -216,7 +216,7 @@ public class MapClientProvider implements ClientProvider {
         ModelCriteriaBuilder<ClientModel> mcb = clientStore.createCriteriaBuilder()
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
-        return this.clientStore.getCount(withCriteria(mcb));
+        return tx.getCount(withCriteria(mcb));
     }
 
     @Override

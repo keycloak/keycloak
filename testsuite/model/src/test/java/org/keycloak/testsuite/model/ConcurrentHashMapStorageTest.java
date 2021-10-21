@@ -50,9 +50,9 @@ import static org.hamcrest.Matchers.nullValue;
 @RequireProvider(value = ClientProvider.class, only = {MapClientProviderFactory.PROVIDER_ID})
 @RequireProvider(RealmProvider.class)
 @RequireProvider(value = MapStorageProvider.class, only = {ConcurrentHashMapStorageProviderFactory.PROVIDER_ID})
-public class MapStorageTest extends KeycloakModelTest {
+public class ConcurrentHashMapStorageTest extends KeycloakModelTest {
 
-    private static final Logger LOG = Logger.getLogger(MapStorageTest.class.getName());
+    private static final Logger LOG = Logger.getLogger(ConcurrentHashMapStorageTest.class.getName());
 
     private String realmId;
 
@@ -155,7 +155,7 @@ public class MapStorageTest extends KeycloakModelTest {
         assertClientsPersisted(component1Id, component2Id, idMain, id1, id2);
     }
 
-    private <K,K1> void assertClientDoesNotExist(MapStorage<MapClientEntity, ClientModel> storage, String id, final StringKeyConvertor<K1> kc, final StringKeyConvertor<K> kcStorage) {
+    private <K,K1> void assertClientDoesNotExist(ConcurrentHashMapStorage<K, MapClientEntity, ClientModel> storage, String id, final StringKeyConvertor<K1> kc, final StringKeyConvertor<K> kcStorage) {
         // Assert that the other stores do not contain the to-be-created clients (if they use compatible key format)
         try {
             assertThat(storage.read(id), nullValue());

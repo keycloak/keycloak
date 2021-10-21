@@ -42,6 +42,11 @@ import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 /**
  *
+ * It contains basic object CRUD operations as well as bulk {@link #read(org.keycloak.models.map.storage.QueryParameters)}
+ * and bulk {@link #delete(org.keycloak.models.map.storage.QueryParameters)} operations,
+ * and operation for determining the number of the objects satisfying given criteria
+ * ({@link #getCount(org.keycloak.models.map.storage.QueryParameters)}).
+ *
  * @author hmlnarik
  */
 public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEntity, M> implements MapStorage<V, M> {
@@ -59,7 +64,15 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
         this.cloner = cloner;
     }
 
-    @Override
+    /**
+     * Creates an object in the store. ID of the {@code value} may be prescribed in id of the {@code value}.
+     * If the id is {@code null} or its format is not matching the store internal format for ID, then
+     * the {@code value}'s ID will be generated and returned in the id of the return value.
+     * @param value Entity to create in the store
+     * @throws NullPointerException if {@code value} is {@code null}
+     * @see AbstractEntity#getId()
+     * @return Entity representing the {@code value} in the store. It may or may not be the same instance as {@code value}
+     */
     public V create(V value) {
         K key = keyConvertor.fromStringSafe(value.getId());
         if (key == null) {
@@ -70,26 +83,49 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
         return value;
     }
 
-    @Override
+    /**
+     * Returns object with the given {@code key} from the storage or {@code null} if object does not exist.
+     * <br>
+     * TODO: Consider returning {@code Optional<V>} instead.
+     * @param key Key of the object. Must not be {@code null}.
+     * @return See description
+     * @throws NullPointerException if the {@code key} is {@code null}
+     */
     public V read(String key) {
         Objects.requireNonNull(key, "Key must be non-null");
         K k = keyConvertor.fromStringSafe(key);
         return store.get(k);
     }
 
-    @Override
+    /**
+     * Updates the object with the key of the {@code value}'s ID in the storage if it already exists.
+     *
+     * @param value Updated value
+     * @throws NullPointerException if the object or its {@code id} is {@code null}
+     * @see AbstractEntity#getId()
+     */
     public V update(V value) {
         K key = getKeyConvertor().fromStringSafe(value.getId());
         return store.replace(key, value);
     }
 
-    @Override
+    /**
+     * Deletes object with the given {@code key} from the storage, if exists, no-op otherwise.
+     * @param key
+     * @return Returns {@code true} if the object has been deleted or result cannot be determined, {@code false} otherwise.
+     */
     public boolean delete(String key) {
         K k = getKeyConvertor().fromStringSafe(key);
         return store.remove(k) != null;
     }
 
-    @Override
+    /**
+     * Deletes objects that match the given criteria.
+     * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
+     * @return Number of removed objects (might return {@code -1} if not supported)
+     * @throws IllegalStateException If {@code criteria} is not compatible, i.e. has not been originally created
+     *   by the {@link #createCriteriaBuilder()} method of this object.
+     */
     public long delete(QueryParameters<M> queryParameters) {
         ModelCriteriaBuilder<M> criteria = queryParameters.getModelCriteriaBuilder();
 
@@ -139,7 +175,15 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
         return keyConvertor;
     }
 
-    @Override
+    /**
+     * Returns stream of objects satisfying given {@code criteria} from the storage.
+     * The criteria are specified in the given criteria builder based on model properties.
+     *
+     * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
+     * @return Stream of objects. Never returns {@code null}.
+     * @throws IllegalStateException If {@code criteria} is not compatible, i.e. has not been originally created
+     *   by the {@link #createCriteriaBuilder()} method of this object.
+     */
     public Stream<V> read(QueryParameters<M> queryParameters) {
         ModelCriteriaBuilder<M> criteria = queryParameters.getModelCriteriaBuilder();
 
@@ -160,7 +204,15 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
         return stream.map(Map.Entry::getValue);
     }
 
-    @Override
+    /**
+     * Returns the number of objects satisfying given {@code criteria} from the storage.
+     * The criteria are specified in the given criteria builder based on model properties.
+     *
+     * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
+     * @return Number of objects. Never returns {@code null}.
+     * @throws IllegalStateException If {@code criteria} is not compatible, i.e. has not been originally created
+     *   by the {@link #createCriteriaBuilder()} method of this object.
+     */
     public long getCount(QueryParameters<M> queryParameters) {
         return read(queryParameters).count();
     }
