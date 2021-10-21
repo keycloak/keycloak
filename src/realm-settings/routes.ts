@@ -6,10 +6,10 @@ import { JavaKeystoreSettingsRoute } from "./routes/JavaKeystoreSettings";
 import { RealmSettingsRoute } from "./routes/RealmSettings";
 import { RsaGeneratedSettingsRoute } from "./routes/RsaGeneratedSettings";
 import { RsaSettingsRoute } from "./routes/RsaSettings";
-import { ClientPoliciesRoute } from "./routes/ClientPolicies";
 import { NewClientProfileRoute } from "./routes/NewClientProfile";
 import { NewClientPolicyRoute } from "./routes/NewClientPolicy";
 import { EditClientPolicyRoute } from "./routes/EditClientPolicy";
+import { NewClientPolicyConditionRoute } from "./routes/AddCondition";
 
 const routes: RouteDef[] = [
   RealmSettingsRoute,
@@ -19,10 +19,10 @@ const routes: RouteDef[] = [
   JavaKeystoreSettingsRoute,
   RsaGeneratedSettingsRoute,
   RsaSettingsRoute,
-  ClientPoliciesRoute,
   NewClientProfileRoute,
   NewClientPolicyRoute,
   EditClientPolicyRoute,
+  NewClientPolicyConditionRoute,
 ];
 
 export default routes;

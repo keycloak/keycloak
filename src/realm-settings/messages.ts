@@ -14,6 +14,7 @@ export default {
     deleteProviderError: "Error deleting the provider",
     deletedSuccess: "The realm has been deleted",
     deleteError: "Could not delete realm: {{error}}",
+    deleteConditionSuccess: "The condition has been deleted",
     disableConfirmTitle: "Disable realm?",
     disableConfirm:
       "User and clients can't access the realm if it's disabled. Are you sure you want to continue?",
@@ -197,6 +198,10 @@ export default {
     createPolicy: "Create policy",
     createClientPolicy: "Create client policy",
     createClientPolicySuccess: "New policy created",
+    createClientConditionSuccess: "Condition created successfully.",
+    createClientConditionError: "Error creating condition: {{error}}",
+    deleteClientConditionSuccess: "Condition deleted successfully.",
+    deleteClientConditionError: "Error creating condition: {{error}}",
     clientPolicySearch: "Search client policy",
     policiesConfigType: "Configure via:",
     policiesConfigTypes: {
@@ -260,8 +265,28 @@ export default {
       "The client profiles configuration was updated",
     updateClientProfilesError:
       "Provided JSON is incorrect: Unexpected token { in JSON",
-
+    deleteClientPolicyConditionConfirmTitle: "Delete condition?",
+    deleteClientPolicyConditionConfirm:
+      "This action will permanently delete {{condition}}. This cannot be undone.",
+    selectACondition: "Select a condition",
     conditions: "Conditions",
+    conditionType: "Condition type",
+    policyDetails: "Policy details",
+    anyClient: "The condition is satisfied by any client on any event.",
+    clientAccessType:
+      "It uses the client's access type (confidential, public, bearer-only) to determine whether the policy is applied. Condition is checked during most of OpenID Connect requests (Authorization requests, token requests, introspection endpoint request, etc.)",
+    clientRoles:
+      "The condition checks whether one of the specified client roles exists on the client to determine whether the policy is applied. This effectively allows client administrator to create client role of specified name on the client to make sure that particular client policy will be applied on requests of this client. Condition is checked during most of OpenID Connect requests (Authorization requests, token requests, introspection endpoint request, etc.)",
+    clientScopes:
+      "It uses the scopes requested or assigned in advance to the client to determine whether the policy is applied to this client. Condition is evaluated during OpenID Connect authorization request and/or token request.",
+    clientUpdaterContext:
+      "The condition checks the context how is client created/updated to determine whether the policy is applied. For example it checks if client is created with admin REST API or OIDC dynamic client registration. And for the letter case if it is ANONYMOUS client registration or AUTHENTICATED client registration with Initial access token or Registration access token and so on.",
+    clientUpdaterSourceGroups:
+      "The condition checks the group of the entity who tries to create/update the client to determine whether the policy is applied.",
+    clientUpdaterSourceHost:
+      "The condition checks the host/domain of the entity who tries to create/update the client to determine whether the policy is applied.",
+    clientUpdaterSourceRoles:
+      "The condition checks the role of the entity who tries to create/update the client to determine whether the policy is applied.",
     conditionsHelpItem: "Conditions help item",
     addCondition: "Add condition",
     emptyConditions: "No conditions configured",

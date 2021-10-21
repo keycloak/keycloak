@@ -9,6 +9,7 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { KEY_PROVIDER_TYPE } from "../util";
 import { toRealmSettings } from "./routes/RealmSettings";
 import { RealmSettingsTabs } from "./RealmSettingsTabs";
+import { toClientPolicies } from "./routes/ClientPolicies";
 
 export const EditProviderCrumb = () => {
   const { t } = useTranslation("realm-settings");
@@ -25,6 +26,50 @@ export const EditProviderCrumb = () => {
       />
       <BreadcrumbItem>{t("providers")}</BreadcrumbItem>
       <BreadcrumbItem isActive>{t("editProvider")}</BreadcrumbItem>
+    </Breadcrumb>
+  );
+};
+
+export const ToClientPolicies = () => {
+  const { t } = useTranslation("realm-settings");
+  const { realm } = useRealm();
+
+  return (
+    <BreadcrumbItem
+      render={(props) => (
+        <Link {...props} to={toClientPolicies({ realm })}>
+          {t("clientPolicies")}
+        </Link>
+      )}
+    />
+  );
+};
+
+export const EditPolicyCrumb = () => {
+  const { t } = useTranslation("realm-settings");
+
+  return (
+    <Breadcrumb>
+      <ToClientPolicies />
+      <BreadcrumbItem isActive>{t("policyDetails")}</BreadcrumbItem>
+    </Breadcrumb>
+  );
+};
+
+export const NewPolicyCrumb = () => {
+  const { t } = useTranslation("realm-settings");
+  const { realm } = useRealm();
+
+  return (
+    <Breadcrumb>
+      <BreadcrumbItem
+        render={(props) => (
+          <Link {...props} to={toClientPolicies({ realm })}>
+            {t("clientPolicies")}
+          </Link>
+        )}
+      />
+      <BreadcrumbItem isActive>{t("createPolicy")}</BreadcrumbItem>
     </Breadcrumb>
   );
 };
