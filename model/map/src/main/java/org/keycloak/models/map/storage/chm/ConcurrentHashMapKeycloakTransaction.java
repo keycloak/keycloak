@@ -43,7 +43,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
     protected boolean active;
     protected boolean rollback;
     protected final Map<String, MapTaskWithValue> tasks = new LinkedHashMap<>();
-    protected final MapStorage<V, M> map;
+    protected final ConcurrentHashMapStorage<K, V, M> map;
     protected final StringKeyConvertor<K> keyConvertor;
     protected final DeepCloner cloner;
 
@@ -51,7 +51,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
         CREATE, UPDATE, DELETE,
     }
 
-    public ConcurrentHashMapKeycloakTransaction(MapStorage<V, M> map, StringKeyConvertor<K> keyConvertor, DeepCloner cloner) {
+    public ConcurrentHashMapKeycloakTransaction(ConcurrentHashMapStorage<K, V, M> map, StringKeyConvertor<K> keyConvertor, DeepCloner cloner) {
         this.map = map;
         this.keyConvertor = keyConvertor;
         this.cloner = cloner;
