@@ -253,10 +253,13 @@ class SigningInPage extends React.Component<
                         <DataListItemCells
                             dataListCells={[
                                 <DataListCell key={'no-credentials-cell-0'}/>,
-                                <strong id={`${type}-not-set-up`} key={'no-credentials-cell-1'}><Msg msgKey='notSetUp' params={[localizedDisplayName]}/></strong>,
+                                <EmptyState id={`${type}-not-set-up`} key={'no-credentials-cell-1'} variant={EmptyStateVariant.xs}>
+                                    <EmptyStateBody>
+                                        <Msg msgKey='notSetUp' params={[localizedDisplayName]}/>
+                                    </EmptyStateBody>
+                                </EmptyState>,
                                 <DataListCell key={'no-credentials-cell-2'}/>
-                            ]}
-                        />
+                            ]}/>
                     </DataListItemRow>
                 </DataListItem>
             );
