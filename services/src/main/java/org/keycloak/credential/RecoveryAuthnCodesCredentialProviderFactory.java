@@ -2,7 +2,8 @@ package org.keycloak.credential;
 
 import org.keycloak.models.KeycloakSession;
 
-public class RecoveryAuthnCodesCredentialProviderFactory implements CredentialProviderFactory<RecoveryAuthnCodesCredentialProvider> {
+public class RecoveryAuthnCodesCredentialProviderFactory
+        implements CredentialProviderFactory<RecoveryAuthnCodesCredentialProvider> {
 
     public static final String PROVIDER_ID = "keycloak-recovery-authn-codes";
 
@@ -15,5 +16,4 @@ public class RecoveryAuthnCodesCredentialProviderFactory implements CredentialPr
     public RecoveryAuthnCodesCredentialProvider create(KeycloakSession session) {
         return new RecoveryAuthnCodesCredentialProvider(session);
     }
-
 }

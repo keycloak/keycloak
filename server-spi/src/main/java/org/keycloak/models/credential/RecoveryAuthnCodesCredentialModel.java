@@ -77,7 +77,6 @@ public class RecoveryAuthnCodesCredentialModel extends CredentialModel {
         RecoveryAuthnCodesCredentialData credentialData;
         RecoveryAuthnCodesSecretData secretData;
         RecoveryAuthnCodesCredentialModel newModel;
-
         try {
             credentialData = JsonSerialization.readValue(credentialModel.getCredentialData(),
                     RecoveryAuthnCodesCredentialData.class);
@@ -89,7 +88,6 @@ public class RecoveryAuthnCodesCredentialModel extends CredentialModel {
             newModel.setId(credentialModel.getId());
             newModel.setSecretData(credentialModel.getSecretData());
             newModel.setCredentialData(credentialModel.getCredentialData());
-
             return newModel;
         } catch (IOException e) {
             throw new RuntimeException(e);

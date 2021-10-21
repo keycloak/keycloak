@@ -5,7 +5,6 @@ import org.keycloak.common.util.RandomString;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.jose.jws.crypto.HashUtils;
-import org.keycloak.utils.StringUtil;
 
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
@@ -35,16 +34,12 @@ public class RecoveryAuthnCodesUtils {
     }
 
     public static boolean verifyRecoveryCodeInput(String rawInputRecoveryCode, String hashedSavedRecoveryCode) {
-
         String hashedInputBackupCode = hashRawCode(rawInputRecoveryCode);
-
         return (hashedInputBackupCode.equals(hashedSavedRecoveryCode));
     }
 
     public static List<String> generateRawCodes() {
-        return Stream.generate(RANDOM_GENERATOR::nextString)
-                .limit(QUANTITY_OF_CODES_TO_GENERATE)
-                .collect(Collectors.toList());
+        return Stream.generate(RANDOM_GENERATOR::nextString).limit(QUANTITY_OF_CODES_TO_GENERATE).collect(Collectors.toList());
     }
 
 }
