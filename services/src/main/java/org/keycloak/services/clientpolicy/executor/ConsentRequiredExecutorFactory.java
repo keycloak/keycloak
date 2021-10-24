@@ -32,6 +32,12 @@ public class ConsentRequiredExecutorFactory implements ClientPolicyExecutorProvi
 
     public static final String PROVIDER_ID = "consent-required";
 
+    public static final String AUTO_CONFIGURE = "auto-configure";
+
+    private static final ProviderConfigProperty AUTO_CONFIGURE_PROPERTY = new ProviderConfigProperty(
+            AUTO_CONFIGURE, "Auto-configure", "If On, the configuration of the client will be auto-configured to enable consentRequired during client creation or update." +
+            "If Off, the clients are validated to have consentRequired enabled during create/update client", ProviderConfigProperty.BOOLEAN_TYPE, true);
+
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session) {
         return new ConsentRequiredExecutor();
@@ -56,12 +62,12 @@ public class ConsentRequiredExecutorFactory implements ClientPolicyExecutorProvi
 
     @Override
     public String getHelpText() {
-        return "When present, then newly registered client will always have 'consentRequired' switch enabled";
+        return "When present, then registered/updated clients will be verified to have 'consentRequired' switch enabled and eventually will be auto-configured for 'consentRequired' switch to be enabled";
     }
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return Collections.emptyList();
+        return Collections.singletonList(AUTO_CONFIGURE_PROPERTY);
     }
 
 }

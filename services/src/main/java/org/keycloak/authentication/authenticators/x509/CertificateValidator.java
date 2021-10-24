@@ -76,6 +76,12 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 
+import org.bouncycastle.asn1.x509.Extensions;
+import org.bouncycastle.asn1.x509.CertificatePolicies;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
+
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_POLICY_MODE_ANY;
+
 /**
  * @author <a href="mailto:pnalyvayko@agi.com">Peter Nalyvayko</a>
  * @version $Revision: 1 $
@@ -391,10 +397,13 @@ public class CertificateValidator {
     X509Certificate[] _certChain;
     int _keyUsageBits;
     List<String> _extendedKeyUsage;
+    List<String> _certificatePolicy;
+    String _certificatePolicyMode;
     boolean _crlCheckingEnabled;
     boolean _crldpEnabled;
     CRLLoaderImpl _crlLoader;
     boolean _ocspEnabled;
+    boolean _ocspFailOpen;
     OCSPChecker ocspChecker;
     boolean _timestampValidationEnabled;
     boolean _trustValidationEnabled;
@@ -404,10 +413,12 @@ public class CertificateValidator {
     }
     protected CertificateValidator(X509Certificate[] certChain,
                          int keyUsageBits, List<String> extendedKeyUsage,
+                                   List<String> certificatePolicy, String certificatePolicyMode,
                                    boolean cRLCheckingEnabled,
                                    boolean cRLDPCheckingEnabled,
                                    CRLLoaderImpl crlLoader,
                                    boolean oCSPCheckingEnabled,
+                                   boolean ocspFailOpen,
                                    OCSPChecker ocspChecker,
                                    KeycloakSession session,
                                    boolean timestampValidationEnabled,
@@ -415,10 +426,13 @@ public class CertificateValidator {
         _certChain = certChain;
         _keyUsageBits = keyUsageBits;
         _extendedKeyUsage = extendedKeyUsage;
+        _certificatePolicy = certificatePolicy;
+        _certificatePolicyMode = certificatePolicyMode;
         _crlCheckingEnabled = cRLCheckingEnabled;
         _crldpEnabled = cRLDPCheckingEnabled;
         _crlLoader = crlLoader;
         _ocspEnabled = oCSPCheckingEnabled;
+        _ocspFailOpen = ocspFailOpen;
         this.ocspChecker = ocspChecker;
         this.session = session;
         _timestampValidationEnabled = timestampValidationEnabled;
@@ -495,6 +509,46 @@ public class CertificateValidator {
         }
     }
 
+    private static void validatePolicy(X509Certificate[] certs, List<String> expectedPolicies, String policyCheckMode) throws GeneralSecurityException {
+        if (expectedPolicies == null || expectedPolicies.size() == 0) {
+            logger.debug("Certificate Policy validation is not enabled.");
+            return;
+        }
+
+        Extensions certExtensions = new JcaX509CertificateHolder(certs[0]).getExtensions();
+        if (certExtensions == null)
+            throw new GeneralSecurityException("Certificate Policy validation was expected, but no certificate extensions were found");
+
+        CertificatePolicies policies = CertificatePolicies.fromExtensions(certExtensions);
+
+        if (policies == null)
+            throw new GeneralSecurityException("Certificate Policy validation was expected, but no certificate policy extensions were found");
+
+        List<String> policyList = new LinkedList<>();
+        Arrays.stream(policies.getPolicyInformation()).forEach(p -> policyList.add(p.getPolicyIdentifier().toString().toLowerCase()));
+
+        logger.debugf("Certificate policies found: %s", String.join(",", policyList));
+
+        if (policyCheckMode == CERTIFICATE_POLICY_MODE_ANY)
+        {
+            boolean hasMatch = expectedPolicies.stream().anyMatch(p -> policyList.contains(p.toLowerCase()));
+            if (!hasMatch) {
+                String message = String.format("Certificate Policy check failed: mode = ANY, found = \'%s\', expected = \'%s\'.",
+                    String.join(",", policyList), String.join(",", expectedPolicies));
+                throw new GeneralSecurityException(message);
+            }
+        }
+        else
+        {
+            for (String policy : expectedPolicies) {
+                if (!policyList.contains(policy.toLowerCase())) {
+                    String message = String.format("Certificate Policy check failed: mode = ALL, certificate policy \'%s\' is missing.", policy);
+                    throw new GeneralSecurityException(message);
+                }
+            }
+        }
+    }
+
     public CertificateValidator validateKeyUsage() throws GeneralSecurityException {
         validateKeyUsage(_certChain, _keyUsageBits);
         return this;
@@ -502,6 +556,11 @@ public class CertificateValidator {
 
     public CertificateValidator validateExtendedKeyUsage() throws GeneralSecurityException {
         validateExtendedKeyUsage(_certChain, _extendedKeyUsage);
+        return this;
+    }
+
+    public CertificateValidator validatePolicy() throws GeneralSecurityException {
+        validatePolicy(_certChain, _certificatePolicy, _certificatePolicyMode);
         return this;
     }
 
@@ -649,25 +708,38 @@ public class CertificateValidator {
             }
         }
 
-        OCSPUtils.OCSPRevocationStatus rs = ocspChecker.check(cert, issuer);
+        try {
+            OCSPUtils.OCSPRevocationStatus rs = ocspChecker.check(cert, issuer);
 
-        if (rs == null) {
-            throw new GeneralSecurityException("Unable to check client revocation status using OCSP");
-        }
+            if (rs == null) {
+                if (_ocspFailOpen)
+                    logger.warnf("Unable to check client revocation status using OCSP - continuing certificate authentication because of fail-open OCSP configuration setting");
+                else
+                    throw new GeneralSecurityException("Unable to check client revocation status using OCSP");
+            }
 
-        if (rs.getRevocationStatus() == OCSPUtils.RevocationStatus.UNKNOWN) {
-            throw new GeneralSecurityException("Unable to determine certificate's revocation status.");
-        }
-        else if (rs.getRevocationStatus() == OCSPUtils.RevocationStatus.REVOKED) {
+            if (rs.getRevocationStatus() == OCSPUtils.RevocationStatus.UNKNOWN) {
+                if (_ocspFailOpen)
+                    logger.warnf("Unable to determine certificate's revocation status - continuing certificate authentication because of fail-open OCSP configuration setting");
+                else
+                    throw new GeneralSecurityException("Unable to determine certificate's revocation status.");
+            }
+            else if (rs.getRevocationStatus() == OCSPUtils.RevocationStatus.REVOKED) {
 
-            StringBuilder sb = new StringBuilder();
-            sb.append("Certificate's been revoked.");
-            sb.append("\n");
-            sb.append(rs.getRevocationReason().toString());
-            sb.append("\n");
-            sb.append(String.format("Revoked on: %s",rs.getRevocationTime().toString()));
+                StringBuilder sb = new StringBuilder();
+                sb.append("Certificate's been revoked.");
+                sb.append("\n");
+                sb.append(rs.getRevocationReason().toString());
+                sb.append("\n");
+                sb.append(String.format("Revoked on: %s",rs.getRevocationTime().toString()));
 
-            throw new GeneralSecurityException(sb.toString());
+                throw new GeneralSecurityException(sb.toString());
+            }
+        } catch (CertPathValidatorException e) {
+            if (_ocspFailOpen)
+                logger.warnf("Unable to check client revocation status using OCSP - continuing certificate authentication because of fail-open OCSP configuration setting");
+            else
+                throw e;
         }
     }
 
@@ -730,10 +802,13 @@ public class CertificateValidator {
         KeycloakSession session;
         int _keyUsageBits;
         List<String> _extendedKeyUsage;
+        List<String> _certificatePolicy;
+        String _certificatePolicyMode;
         boolean _crlCheckingEnabled;
         boolean _crldpEnabled;
         CRLLoaderImpl _crlLoader;
         boolean _ocspEnabled;
+        boolean _ocspFailOpen;
         String _responderUri;
         X509Certificate _responderCert;
         boolean _timestampValidationEnabled;
@@ -741,6 +816,7 @@ public class CertificateValidator {
 
         public CertificateValidatorBuilder() {
             _extendedKeyUsage = new LinkedList<>();
+            _certificatePolicy = new LinkedList<>();
             _keyUsageBits = 0;
         }
 
@@ -844,6 +920,30 @@ public class CertificateValidator {
             }
         }
 
+        public class CertificatePolicyValidationBuilder {
+
+            CertificateValidatorBuilder _parent;
+            protected CertificatePolicyValidationBuilder(CertificateValidatorBuilder parent) {
+                _parent = parent;
+            }
+
+            public CertificatePolicyValidationBuilder mode(String mode) {
+                _certificatePolicyMode = mode;
+                return this;
+            }
+
+            public CertificateValidatorBuilder parse(String certificatePolicy) {
+                if (certificatePolicy == null || certificatePolicy.trim().length() == 0)
+                    return _parent;
+
+                String[] strs = certificatePolicy.split("[,;:]");
+                for (String str : strs) {
+                    _certificatePolicy.add(str.trim());
+                }
+                return _parent;
+            }
+        }
+
         public class RevocationStatusCheckBuilder {
 
             CertificateValidatorBuilder _parent;
@@ -884,7 +984,14 @@ public class CertificateValidator {
             }
 
             public class GotOCSP {
-                public GotOCSP oCSPResponseCertificate(String responderCert) {
+                public GotOCSPFailOpen oCSPFailOpen(boolean ocspFailOpen) {
+                    _ocspFailOpen = ocspFailOpen;
+                    return new GotOCSPFailOpen();
+                }
+            }
+
+            public class GotOCSPFailOpen {
+                public GotOCSPFailOpen oCSPResponseCertificate(String responderCert) {
                     if (responderCert != null && !responderCert.isEmpty()) {
                         try {
                             _responderCert = XMLSignatureUtil.getX509CertificateFromKeyInfoString(responderCert);
@@ -896,7 +1003,7 @@ public class CertificateValidator {
                             throw new RuntimeException(e);
                         }
                     }
-                    return new GotOCSP();
+                    return new GotOCSPFailOpen();
                 }
 
                 public CertificateValidatorBuilder oCSPResponderURI(String responderURI) {
@@ -945,6 +1052,10 @@ public class CertificateValidator {
             return new ExtendedKeyUsageValidationBuilder(this);
         }
 
+        public CertificatePolicyValidationBuilder certificatePolicy() {
+            return new CertificatePolicyValidationBuilder(this);
+        }
+
         public RevocationStatusCheckBuilder revocation() {
             return new RevocationStatusCheckBuilder(this);
         }
@@ -962,7 +1073,8 @@ public class CertificateValidator {
                  _crlLoader = new CRLFileLoader(session, "");
             }
             return new CertificateValidator(certs, _keyUsageBits, _extendedKeyUsage,
-                    _crlCheckingEnabled, _crldpEnabled, _crlLoader, _ocspEnabled,
+                    _certificatePolicy, _certificatePolicyMode,
+                    _crlCheckingEnabled, _crldpEnabled, _crlLoader, _ocspEnabled, _ocspFailOpen,
                     new BouncyCastleOCSPChecker(session, _responderUri, _responderCert), session, _timestampValidationEnabled, _trustValidationEnabled);
         }
     }

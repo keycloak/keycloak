@@ -19,6 +19,7 @@ package org.keycloak.services.managers;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -99,7 +100,7 @@ class CodeGenerateUtil {
         public String retrieveCode(KeycloakSession session, AuthenticationSessionModel authSession) {
             String nextCode = authSession.getAuthNote(ACTIVE_CODE);
             if (nextCode == null) {
-                String actionId = Base64Url.encode(KeycloakModelUtils.generateSecret());
+                String actionId = Base64Url.encode(SecretGenerator.getInstance().randomBytes());
                 authSession.setAuthNote(ACTIVE_CODE, actionId);
 
                 // We need to set the active code to the authSession in the separate sub-transaction as well

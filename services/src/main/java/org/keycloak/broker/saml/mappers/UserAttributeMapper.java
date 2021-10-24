@@ -232,19 +232,14 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper implemen
             requestedAttribute.setFriendlyName(attributeFriendlyName);
 
         // Add the requestedAttribute item to any AttributeConsumingServices
-        for (EntityDescriptorType.EDTChoiceType choiceType: entityDescriptor.getChoiceType()) {
+        for (EntityDescriptorType.EDTChoiceType choiceType : entityDescriptor.getChoiceType()) {
             List<EntityDescriptorType.EDTDescriptorChoiceType> descriptors = choiceType.getDescriptors();
-
-            if (descriptors != null) {
-                for (EntityDescriptorType.EDTDescriptorChoiceType descriptor: descriptors) {
-                    if (descriptor.getSpDescriptor() != null && descriptor.getSpDescriptor().getAttributeConsumingService() != null) {
-                        for (AttributeConsumingServiceType attributeConsumingService: descriptor.getSpDescriptor().getAttributeConsumingService())
-                        {
-                            attributeConsumingService.addRequestedAttribute(requestedAttribute);
-                        }
-                    }
+            for (EntityDescriptorType.EDTDescriptorChoiceType descriptor : descriptors) {
+                for (AttributeConsumingServiceType attributeConsumingService : descriptor.getSpDescriptor().getAttributeConsumingService()) {
+                    attributeConsumingService.addRequestedAttribute(requestedAttribute);
                 }
             }
+
         }
     }
 }

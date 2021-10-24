@@ -175,7 +175,7 @@ public class MapRealmProvider implements RealmProvider {
         if (! updateLocalizationText(realm, locale, key, text)) {
             Map<String, String> texts = new HashMap<>();
             texts.put(key, text);
-            realm.patchRealmLocalizationTexts(locale, texts);
+            realm.createOrUpdateRealmLocalizationTexts(locale, texts);
         }
     }
 
@@ -183,7 +183,7 @@ public class MapRealmProvider implements RealmProvider {
     @Override
     public void saveLocalizationTexts(RealmModel realm, String locale, Map<String, String> localizationTexts) {
         if (locale == null || localizationTexts == null) return;
-        realm.patchRealmLocalizationTexts(locale, localizationTexts);
+        realm.createOrUpdateRealmLocalizationTexts(locale, localizationTexts);
     }
 
     //TODO move the following method to adapter
@@ -192,7 +192,7 @@ public class MapRealmProvider implements RealmProvider {
         if (locale == null || key == null || text == null || (! realm.getRealmLocalizationTextsByLocale(locale).containsKey(key))) return false;
         Map<String, String> texts = new HashMap<>(realm.getRealmLocalizationTextsByLocale(locale));
         texts.replace(key, text);
-        realm.patchRealmLocalizationTexts(locale, texts);
+        realm.createOrUpdateRealmLocalizationTexts(locale, texts);
         return true;
     }
 
@@ -210,7 +210,7 @@ public class MapRealmProvider implements RealmProvider {
         Map<String, String> texts = new HashMap<>(realm.getRealmLocalizationTextsByLocale(locale));
         texts.remove(key);
         realm.removeRealmLocalizationTexts(locale);
-        realm.patchRealmLocalizationTexts(locale, texts);
+        realm.createOrUpdateRealmLocalizationTexts(locale, texts);
         return true;
     }
 
@@ -429,6 +429,11 @@ public class MapRealmProvider implements RealmProvider {
     @Deprecated
     public Stream<RoleModel> getRealmRolesStream(RealmModel realm, Integer first, Integer max) {
         return session.roles().getRealmRolesStream(realm, first, max);
+    }
+
+    @Override
+    public Stream<RoleModel> getRolesStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max) {
+        return session.roles().getRolesStream(realm, ids, search, first, max);
     }
 
     @Override

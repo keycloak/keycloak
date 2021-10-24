@@ -74,6 +74,18 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void getResourceIllegalTraversal() {
+        testingClient.server().run(session -> {
+            try {
+                Theme theme = session.theme().getTheme("base", Theme.Type.LOGIN);
+                Assert.assertNull(theme.getResourceAsStream("../templates/test.ftl"));
+            } catch (IOException e) {
+                Assert.fail(e.getMessage());
+            }
+        });
+    }
+
+    @Test
     public void gzipEncoding() throws IOException {
         final String resourcesVersion = testingClient.server().fetch(session -> Version.RESOURCES_VERSION, String.class);
 

@@ -147,7 +147,7 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
         ModelCriteriaBuilder<RootAuthenticationSessionModel> mcb = sessionStore.createCriteriaBuilder()
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
-        sessionStore.delete(withCriteria(mcb));
+        tx.delete(withCriteria(mcb));
     }
 
     @Override

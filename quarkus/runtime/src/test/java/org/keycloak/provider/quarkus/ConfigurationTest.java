@@ -18,6 +18,7 @@
 package org.keycloak.provider.quarkus;
 
 import static org.junit.Assert.assertEquals;
+import static org.keycloak.quarkus.runtime.Environment.CLI_ARGS;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -35,16 +36,18 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.Config;
-import org.keycloak.configuration.KeycloakConfigSourceProvider;
-import org.keycloak.configuration.MicroProfileConfigProvider;
+import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
+import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 import io.quarkus.runtime.configuration.ConfigUtils;
 import io.smallrye.config.SmallRyeConfigProviderResolver;
+import org.keycloak.quarkus.runtime.Environment;
 
 public class ConfigurationTest {
 
     private static final Properties SYSTEM_PROPERTIES = (Properties) System.getProperties().clone();
     private static final Map<String, String> ENVIRONMENT_VARIABLES = new HashMap<>(System.getenv());
+    private static final String ARG_SEPARATOR = ";;";
 
     @SuppressWarnings("unchecked")
     public static void putEnvVar(String name, String value) {
@@ -109,72 +112,72 @@ public class ConfigurationTest {
 
     @Test
     public void testEnvVarPriorityOverPropertiesFile() {
-        putEnvVar("KC_SPI_HOSTNAME_DEFAULT_FRONTEND_URL", "http://envvar.com");
-        assertEquals("http://envvar.com", initConfig("hostname", "default").get("frontendUrl"));
+        putEnvVar("KC_SPI_HOSTNAME_DEFAULT_FRONTEND_URL", "http://envvar.unittest");
+        assertEquals("http://envvar.unittest", initConfig("hostname", "default").get("frontendUrl"));
     }
 
     @Test
     public void testSysPropPriorityOverEnvVar() {
-        putEnvVar("KC_SPI_HOSTNAME_DEFAULT_FRONTEND_URL", "http://envvar.com");
-        System.setProperty("kc.spi.hostname.default.frontend-url", "http://propvar.com");
-        assertEquals("http://propvar.com", initConfig("hostname", "default").get("frontendUrl"));
+        putEnvVar("KC_SPI_HOSTNAME_DEFAULT_FRONTEND_URL", "http://envvar.unittest");
+        System.setProperty("kc.spi.hostname.default.frontend-url", "http://propvar.unittest");
+        assertEquals("http://propvar.unittest", initConfig("hostname", "default").get("frontendUrl"));
     }
 
     @Test
     public void testCLIPriorityOverSysProp() {
-        System.setProperty("kc.spi.hostname.default.frontend-url", "http://propvar.com");
-        System.setProperty("kc.config.args", "--spi-hostname-default-frontend-url=http://cli.com");
-        assertEquals("http://cli.com", initConfig("hostname", "default").get("frontendUrl"));
+        System.setProperty("kc.spi.hostname.default.frontend-url", "http://propvar.unittest");
+        System.setProperty(CLI_ARGS, "--spi-hostname-default-frontend-url=http://cli.unittest");
+        assertEquals("http://cli.unittest", initConfig("hostname", "default").get("frontendUrl"));
     }
 
     @Test
     public void testDefaultValueFromProperty() {
-        System.setProperty("keycloak.frontendUrl", "http://defaultvalueprop.com");
-        assertEquals("http://defaultvalueprop.com", initConfig("hostname", "default").get("frontendUrl"));
+        System.setProperty("keycloak.frontendUrl", "http://defaultvalueprop.unittest");
+        assertEquals("http://defaultvalueprop.unittest", initConfig("hostname", "default").get("frontendUrl"));
     }
 
     @Test
     public void testDefaultValue() {
-        assertEquals("http://filepropdefault.com", initConfig("hostname", "default").get("frontendUrl"));
+        assertEquals("http://filepropdefault.unittest", initConfig("hostname", "default").get("frontendUrl"));
     }
 
     @Test
     public void testKeycloakProfilePropertySubstitution() {
-        System.setProperty("kc.profile", "user-profile");
-        assertEquals("http://filepropprofile.com", initConfig("hostname", "default").get("frontendUrl"));
+        System.setProperty(Environment.PROFILE, "user-profile");
+        assertEquals("http://filepropprofile.unittest", initConfig("hostname", "default").get("frontendUrl"));
     }
 
     @Test
     public void testQuarkusProfilePropertyStillWorks() {
         System.setProperty("quarkus.profile", "user-profile");
-        assertEquals("http://filepropprofile.com", initConfig("hostname", "default").get("frontendUrl"));
+        assertEquals("http://filepropprofile.unittest", initConfig("hostname", "default").get("frontendUrl"));
     }
 
     @Test
     public void testCommandLineArguments() {
-        System.setProperty("kc.config.args", "--spi-hostname-default-frontend-url=http://fromargs.com,--no-ssl");
-        assertEquals("http://fromargs.com", initConfig("hostname", "default").get("frontendUrl"));
+        System.setProperty(CLI_ARGS, "--spi-hostname-default-frontend-url=http://fromargs.unittest" + ARG_SEPARATOR + "--no-ssl");
+        assertEquals("http://fromargs.unittest", initConfig("hostname", "default").get("frontendUrl"));
     }
     
     @Test
     public void testSpiConfigurationUsingCommandLineArguments() {
-        System.setProperty("kc.config.args", "--spi-hostname-default-frontend-url=http://spifull.com");
-        assertEquals("http://spifull.com", initConfig("hostname", "default").get("frontendUrl"));
+        System.setProperty(CLI_ARGS, "--spi-hostname-default-frontend-url=http://spifull.unittest");
+        assertEquals("http://spifull.unittest", initConfig("hostname", "default").get("frontendUrl"));
 
         // test multi-word SPI names using camel cases
-        System.setProperty("kc.config.args", "--spi-action-token-handler-verify-email-some-property=test");
+        System.setProperty(CLI_ARGS, "--spi-action-token-handler-verify-email-some-property=test");
         assertEquals("test", initConfig("action-token-handler", "verify-email").get("some-property"));
-        System.setProperty("kc.config.args", "--spi-action-token-handler-verify-email-some-property=test");
+        System.setProperty(CLI_ARGS, "--spi-action-token-handler-verify-email-some-property=test");
         assertEquals("test", initConfig("actionTokenHandler", "verifyEmail").get("someProperty"));
 
         // test multi-word SPI names using slashes
-        System.setProperty("kc.config.args", "--spi-client-registration-openid-connect-static-jwk-url=http://c.jwk.url");
+        System.setProperty(CLI_ARGS, "--spi-client-registration-openid-connect-static-jwk-url=http://c.jwk.url");
         assertEquals("http://c.jwk.url", initConfig("client-registration", "openid-connect").get("static-jwk-url"));
     }
 
     @Test
     public void testPropertyMapping() {
-        System.setProperty("kc.config.args", "--db=mariadb,--db-url=jdbc:mariadb://localhost/keycloak");
+        System.setProperty(CLI_ARGS, "--db=mariadb" + ARG_SEPARATOR + "--db-url=jdbc:mariadb://localhost/keycloak");
         SmallRyeConfig config = createConfig();
         assertEquals(MariaDBDialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
         assertEquals("jdbc:mariadb://localhost/keycloak", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
@@ -182,7 +185,7 @@ public class ConfigurationTest {
 
     @Test
     public void testDatabaseUrlProperties() {
-        System.setProperty("kc.config.args", "--db=mariadb,--db-url=jdbc:mariadb:aurora://foo/bar?a=1&b=2");
+        System.setProperty(CLI_ARGS, "--db=mariadb" + ARG_SEPARATOR + "--db-url=jdbc:mariadb:aurora://foo/bar?a=1&b=2");
         SmallRyeConfig config = createConfig();
         assertEquals(MariaDBDialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
         assertEquals("jdbc:mariadb:aurora://foo/bar?a=1&b=2", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
@@ -190,12 +193,12 @@ public class ConfigurationTest {
 
     @Test
     public void testDatabaseDefaults() {
-        System.setProperty("kc.config.args", "--db=h2-file");
+        System.setProperty(CLI_ARGS, "--db=h2-file");
         SmallRyeConfig config = createConfig();
         assertEquals(QuarkusH2Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
         assertEquals("jdbc:h2:file:~/data/keycloakdb;;AUTO_SERVER=TRUE", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
 
-        System.setProperty("kc.config.args", "--db=h2-mem");
+        System.setProperty(CLI_ARGS, "--db=h2-mem");
         config = createConfig();
         assertEquals(QuarkusH2Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
         assertEquals("jdbc:h2:mem:keycloakdb", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
@@ -204,7 +207,7 @@ public class ConfigurationTest {
 
     @Test
     public void testDatabaseKindProperties() {
-        System.setProperty("kc.config.args", "--db=postgres-10,--db-url=jdbc:postgresql://localhost/keycloak");
+        System.setProperty(CLI_ARGS, "--db=postgres-10" + ARG_SEPARATOR + "--db-url=jdbc:postgresql://localhost/keycloak");
         SmallRyeConfig config = createConfig();
         assertEquals("io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL10Dialect",
             config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
@@ -216,13 +219,13 @@ public class ConfigurationTest {
     public void testDatabaseProperties() {
         System.setProperty("kc.db.url.properties", ";;test=test;test1=test1");
         System.setProperty("kc.db.url.path", "test-dir");
-        System.setProperty("kc.config.args", "--db=h2-file");
+        System.setProperty(CLI_ARGS, "--db=h2-file");
         SmallRyeConfig config = createConfig();
         assertEquals(QuarkusH2Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
         assertEquals("jdbc:h2:file:test-dir" + File.separator + "data" + File.separator + "keycloakdb;;test=test;test1=test1", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
 
         System.setProperty("kc.db.url.properties", "?test=test&test1=test1");
-        System.setProperty("kc.config.args", "--db=mariadb");
+        System.setProperty(CLI_ARGS, "--db=mariadb");
         config = createConfig();
         assertEquals("jdbc:mariadb://localhost/keycloak?test=test&test1=test1", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
     }
@@ -255,15 +258,30 @@ public class ConfigurationTest {
         Assert.assertEquals("cluster-default.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
 
         // If explicitly set, then it is always used regardless of the profile
-        System.clearProperty("kc.profile");
-        System.setProperty("kc.config.args", "--cluster=foo");
+        System.clearProperty(Environment.PROFILE);
+        System.setProperty(CLI_ARGS, "--cluster=foo");
 
         Assert.assertEquals("cluster-foo.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
-        System.setProperty("kc.profile", "dev");
+        System.setProperty(Environment.PROFILE, "dev");
         Assert.assertEquals("cluster-foo.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
 
-        System.setProperty("kc.config.args", "--cluster-stack=foo");
+        System.setProperty(CLI_ARGS, "--cluster-stack=foo");
         Assert.assertEquals("foo", initConfig("connectionsInfinispan", "quarkus").get("stack"));
+    }
+
+    @Test
+    public void testCommaSeparatedArgValues() {
+        System.setProperty(CLI_ARGS, "--spi-client-jpa-searchable-attributes=bar,foo");
+        assertEquals("bar,foo", initConfig("client-jpa").get("searchable-attributes"));
+
+        System.setProperty(CLI_ARGS, "--spi-client-jpa-searchable-attributes=bar,foo,foo bar");
+        assertEquals("bar,foo,foo bar", initConfig("client-jpa").get("searchable-attributes"));
+
+        System.setProperty(CLI_ARGS, "--spi-client-jpa-searchable-attributes=bar,foo, \"foo bar\"");
+        assertEquals("bar,foo, \"foo bar\"", initConfig("client-jpa").get("searchable-attributes"));
+
+        System.setProperty(CLI_ARGS, "--spi-client-jpa-searchable-attributes=bar,foo, \"foo bar\"" + ARG_SEPARATOR + "--spi-hostname-default-frontend-url=http://foo.unittest");
+        assertEquals("http://foo.unittest", initConfig("hostname-default").get("frontend-url"));
     }
 
     private Config.Scope initConfig(String... scope) {

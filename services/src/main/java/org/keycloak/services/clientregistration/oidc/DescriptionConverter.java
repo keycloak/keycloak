@@ -22,7 +22,6 @@ import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
-import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
@@ -66,7 +65,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.keycloak.models.CibaConfig.CIBA_POLL_MODE;
 import static org.keycloak.models.OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED;
 import static org.keycloak.models.CibaConfig.OIDC_CIBA_GRANT_ENABLED;
 
@@ -217,6 +215,8 @@ public class DescriptionConverter {
             attr.put(ParConfig.REQUIRE_PUSHED_AUTHORIZATION_REQUESTS, requirePushedAuthorizationRequests.toString());
             client.setAttributes(attr);
         }
+
+        configWrapper.setFrontChannelLogoutUrl(Optional.ofNullable(clientOIDC.getFrontChannelLogoutUri()).orElse(null));
 
         return client;
     }
@@ -395,6 +395,8 @@ public class DescriptionConverter {
             String sectorIdentifierUri = PairwiseSubMapperHelper.getSectorIdentifierUri(foundPairwiseMappers.get(0));
             response.setSectorIdentifierUri(sectorIdentifierUri);
         }
+
+        response.setFrontChannelLogoutUri(config.getFrontChannelLogoutUrl());
 
         return response;
     }

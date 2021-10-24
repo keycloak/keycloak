@@ -25,7 +25,7 @@ import java.util.Set;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.UpdatableEntity;
 
-public class MapRoleEntity implements AbstractEntity, UpdatableEntity {
+public class MapRoleEntity extends UpdatableEntity.Impl implements AbstractEntity {
 
     private String id;
     private String realmId;
@@ -40,16 +40,10 @@ public class MapRoleEntity implements AbstractEntity, UpdatableEntity {
     /**
      * Flag signalizing that any of the setters has been meaningfully used.
      */
-    protected boolean updated;
 
-    protected MapRoleEntity() {
-        this.id = null;
-        this.realmId = null;
-    }
+    public MapRoleEntity() {}
 
     public MapRoleEntity(String id, String realmId) {
-        Objects.requireNonNull(realmId, "realmId");
-
         this.id = id;
         this.realmId = realmId;
     }
@@ -60,8 +54,10 @@ public class MapRoleEntity implements AbstractEntity, UpdatableEntity {
     }
 
     @Override
-    public boolean isUpdated() {
-        return this.updated;
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     public String getName() {

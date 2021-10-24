@@ -37,9 +37,11 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditio
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceGroupsCondition;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceHostsCondition;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesCondition;
+import org.keycloak.services.clientpolicy.executor.ConsentRequiredExecutor;
 import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutor;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutor;
+import org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCredentialsGrantExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutor;
@@ -160,6 +162,12 @@ public final class ClientPoliciesUtil {
         return config;
     }
 
+    public static ConsentRequiredExecutor.Configuration createConsentRequiredExecutorConfig(Boolean autoConfigure) {
+        ConsentRequiredExecutor.Configuration config = new ConsentRequiredExecutor.Configuration();
+        config.setAutoConfigure(autoConfigure);
+        return config;
+    }
+
     public static SecureClientAuthenticatorExecutor.Configuration createSecureClientAuthenticatorExecutorConfig(List<String> allowedClientAuthenticators, String defaultClientAuthenticator) {
         SecureClientAuthenticatorExecutor.Configuration config = new SecureClientAuthenticatorExecutor.Configuration();
         config.setAllowedClientAuthenticators(allowedClientAuthenticators);
@@ -201,6 +209,12 @@ public final class ClientPoliciesUtil {
     public static SecureCibaAuthenticationRequestSigningAlgorithmExecutor.Configuration createSecureCibaAuthenticationRequestSigningAlgorithmExecutorConfig(String defaultAlgorithm) {
         SecureCibaAuthenticationRequestSigningAlgorithmExecutor.Configuration config = new SecureCibaAuthenticationRequestSigningAlgorithmExecutor.Configuration();
         config.setDefaultAlgorithm(defaultAlgorithm);
+        return config;
+    }
+
+    public static RejectResourceOwnerPasswordCredentialsGrantExecutor.Configuration createRejectisResourceOwnerPasswordCredentialsGrantExecutorConfig(Boolean autoConfigure) {
+        RejectResourceOwnerPasswordCredentialsGrantExecutor.Configuration config = new RejectResourceOwnerPasswordCredentialsGrantExecutor.Configuration();
+        config.setAutoConfigure(autoConfigure);
         return config;
     }
 

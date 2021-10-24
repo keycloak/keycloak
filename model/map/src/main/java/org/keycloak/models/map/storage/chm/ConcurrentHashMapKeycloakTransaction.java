@@ -18,7 +18,7 @@ package org.keycloak.models.map.storage.chm;
 
 import org.keycloak.models.map.common.StringKeyConvertor;
 import org.keycloak.models.map.common.AbstractEntity;
-import org.keycloak.models.map.common.Serialization;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -40,19 +40,21 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
 
     private final static Logger log = Logger.getLogger(ConcurrentHashMapKeycloakTransaction.class);
 
-    private boolean active;
-    private boolean rollback;
-    private final Map<String, MapTaskWithValue> tasks = new LinkedHashMap<>();
-    private final MapStorage<V, M> map;
-    private final StringKeyConvertor<K> keyConvertor;
+    protected boolean active;
+    protected boolean rollback;
+    protected final Map<String, MapTaskWithValue> tasks = new LinkedHashMap<>();
+    protected final ConcurrentHashMapStorage<K, V, M> map;
+    protected final StringKeyConvertor<K> keyConvertor;
+    protected final DeepCloner cloner;
 
     enum MapOperation {
         CREATE, UPDATE, DELETE,
     }
 
-    public ConcurrentHashMapKeycloakTransaction(MapStorage<V, M> map, StringKeyConvertor<K> keyConvertor) {
+    public ConcurrentHashMapKeycloakTransaction(ConcurrentHashMapStorage<K, V, M> map, StringKeyConvertor<K> keyConvertor, DeepCloner cloner) {
         this.map = map;
         this.keyConvertor = keyConvertor;
+        this.cloner = cloner;
     }
 
     @Override
@@ -62,14 +64,15 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
 
     @Override
     public void commit() {
-        log.tracef("Commit - %s", map);
-
         if (rollback) {
             throw new RuntimeException("Rollback only!");
         }
 
-        for (MapTaskWithValue value : tasks.values()) {
-            value.execute();
+        if (! tasks.isEmpty()) {
+            log.tracef("Commit - %s", map);
+            for (MapTaskWithValue value : tasks.values()) {
+                value.execute();
+            }
         }
     }
 
@@ -118,7 +121,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
             return current.getValue();
         }
         // Else enlist its copy in the transaction. Never return direct reference to the underlying map
-        final V res = Serialization.from(origEntity);
+        final V res = cloner.from(origEntity);
         return updateIfChanged(res, e -> e.isUpdated());
     }
 
@@ -213,7 +216,9 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
         if (key == null) {
             K newKey = keyConvertor.yieldNewUniqueKey();
             key = keyConvertor.keyToString(newKey);
-            value = Serialization.from(value, key);
+            value = cloner.from(key, value);
+        } else {
+            value = cloner.from(value);
         }
         addTask(key, new CreateOperation(value));
         return value;

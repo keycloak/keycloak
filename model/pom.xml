@@ -34,5 +34,6 @@
         <module>jpa</module>
         <module>infinispan</module>
         <module>map</module>
+        <module>build-processor</module>
     </modules>
 </project>

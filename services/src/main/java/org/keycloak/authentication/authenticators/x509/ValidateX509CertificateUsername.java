@@ -77,7 +77,8 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
                     .validateTrust()
                     .validateKeyUsage()
                     .validateExtendedKeyUsage()
-                    .validateTimestamps();
+                    .validateTimestamps()
+                    .validatePolicy();
         } catch(Exception e) {
             logger.error(e.getMessage(), e);
             // TODO use specific locale to load error messages

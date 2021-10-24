@@ -24,10 +24,9 @@ import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 
 import java.util.Objects;
 
-public class MapResourceServerEntity implements AbstractEntity, UpdatableEntity {
+public class MapResourceServerEntity extends UpdatableEntity.Impl implements AbstractEntity {
 
-    private final String id;
-    private boolean updated = false;
+    private String id;
 
     private boolean allowRemoteResourceManagement;
     private PolicyEnforcementMode policyEnforcementMode = PolicyEnforcementMode.ENFORCING;
@@ -37,13 +36,18 @@ public class MapResourceServerEntity implements AbstractEntity, UpdatableEntity 
         this.id = id;
     }
 
-    public MapResourceServerEntity() {
-        this.id = null;
-    }
+    public MapResourceServerEntity() {}
 
     @Override
     public String getId() {
         return id;
+    }
+
+    @Override
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     public boolean isAllowRemoteResourceManagement() {
@@ -71,11 +75,6 @@ public class MapResourceServerEntity implements AbstractEntity, UpdatableEntity 
     public void setDecisionStrategy(DecisionStrategy decisionStrategy) {
         this.updated |= !Objects.equals(this.decisionStrategy, decisionStrategy);
         this.decisionStrategy = decisionStrategy;
-    }
-
-    @Override
-    public boolean isUpdated() {
-        return updated;
     }
 
     @Override

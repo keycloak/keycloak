@@ -145,7 +145,12 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
         BrokeredIdentityContext brokerContext = (BrokeredIdentityContext) this.attributes.get(IDENTITY_PROVIDER_BROKER_CONTEXT);
         String idpAlias = brokerContext.getIdpConfig().getAlias();
+        String idpDisplayName = brokerContext.getIdpConfig().getDisplayName();
         idpAlias = ObjectUtil.capitalize(idpAlias);
+
+        if (idpDisplayName != null) {
+            idpAlias = ObjectUtil.capitalize(idpDisplayName);
+        }
 
         attributes.put("identityProviderContext", brokerContext);
         attributes.put("identityProviderAlias", idpAlias);

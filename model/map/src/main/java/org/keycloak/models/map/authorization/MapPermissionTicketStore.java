@@ -109,7 +109,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
                     + ", Resource: " + resourceId + ", owner: " + owner + ", scopeId: " + scopeId + " already exists.");
         }
 
-        MapPermissionTicketEntity entity = new MapPermissionTicketEntity(null);
+        MapPermissionTicketEntity entity = new MapPermissionTicketEntity();
         entity.setResourceId(resourceId);
         entity.setRequester(requester);
         entity.setCreatedTimestamp(System.currentTimeMillis());

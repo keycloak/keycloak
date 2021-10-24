@@ -19,6 +19,7 @@ package org.keycloak.models.map.common;
 import org.keycloak.common.util.reflections.Reflections;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreType;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
@@ -29,6 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.datatype.jdk8.StreamSerializer;
@@ -51,20 +53,19 @@ public class Serialization {
       .setSerializationInclusion(JsonInclude.Include.NON_NULL)
       .setVisibility(PropertyAccessor.ALL, Visibility.NONE)
       .setVisibility(PropertyAccessor.FIELD, Visibility.ANY)
+      .activateDefaultTyping(new LaissezFaireSubTypeValidator() /* TODO - see javadoc */, ObjectMapper.DefaultTyping.NON_CONCRETE_AND_ARRAYS, JsonTypeInfo.As.PROPERTY)
       .addMixIn(UpdatableEntity.class, IgnoreUpdatedMixIn.class)
-      .addMixIn(AbstractEntity.class, AbstractEntityMixIn.class)
+      .addMixIn(DeepCloner.class, IgnoredTypeMixIn.class)
     ;
 
     public static final ConcurrentHashMap<Class<?>, ObjectReader> READERS = new ConcurrentHashMap<>();
     public static final ConcurrentHashMap<Class<?>, ObjectWriter> WRITERS = new ConcurrentHashMap<>();
 
+    @JsonIgnoreType
+    class IgnoredTypeMixIn {}
+
     abstract class IgnoreUpdatedMixIn {
         @JsonIgnore public abstract boolean isUpdated();
-    }
-
-    abstract class AbstractEntityMixIn {
-        @JsonTypeInfo(property="id", use=Id.CLASS, include=As.WRAPPER_ARRAY)
-        abstract Object getId();
     }
 
     static {
@@ -75,11 +76,7 @@ public class Serialization {
     }
 
 
-    public static <T extends AbstractEntity> T from(T orig) {
-        return from(orig, null);
-    }
-
-    public static <T extends AbstractEntity> T from(T orig, String newId) {
+    public static <T> T from(T orig) {
         if (orig == null) {
             return null;
         }
@@ -92,26 +89,34 @@ public class Serialization {
             ObjectWriter writer = WRITERS.computeIfAbsent(origClass, MAPPER::writerFor);
             final T res;
             res = reader.readValue(writer.writeValueAsBytes(orig));
-            if (newId != null) {
-                updateId(origClass, res, newId);
-            }
+
             return res;
         } catch (IOException ex) {
             throw new IllegalStateException(ex);
         }
     }
 
-    private static <K> void updateId(Class<?> origClass, AbstractEntity res, K newId) {
-        Field field = Reflections.findDeclaredField(origClass, "id");
-        if (field == null) {
-            throw new IllegalArgumentException("Cannot find id for " + origClass + " class");
+    public static <T> T from(T orig, T target) {
+        if (orig == null) {
+            return null;
         }
+        @SuppressWarnings("unchecked")
+        final Class<T> origClass = (Class<T>) orig.getClass();
+
+        // Naive solution but will do.
         try {
-            Reflections.setAccessible(field).set(res, newId);
-        } catch (IllegalArgumentException | IllegalAccessException ex) {
-            Logger.getLogger(Serialization.class.getName()).log(Level.SEVERE, null, ex);
-            throw new IllegalArgumentException("Cannot set id for " + origClass + " class");
+            ObjectReader reader = MAPPER.readerForUpdating(target);
+            ObjectWriter writer = WRITERS.computeIfAbsent(origClass, MAPPER::writerFor);
+            final T res;
+            res = reader.readValue(writer.writeValueAsBytes(orig));
+
+            if (res != target) {
+                throw new IllegalStateException("Should clone into desired target");
+            }
+
+            return res;
+        } catch (IOException ex) {
+            throw new IllegalStateException(ex);
         }
     }
-
 }

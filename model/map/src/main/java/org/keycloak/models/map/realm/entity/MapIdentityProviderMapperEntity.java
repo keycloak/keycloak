@@ -24,7 +24,7 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-public class MapIdentityProviderMapperEntity implements UpdatableEntity {
+public class MapIdentityProviderMapperEntity extends UpdatableEntity.Impl {
 
     private String id;
     private String name;
@@ -32,7 +32,6 @@ public class MapIdentityProviderMapperEntity implements UpdatableEntity {
     private String identityProviderMapper;
     private Map<String, String> config = new HashMap<>();
 
-    private boolean updated;
 
     private MapIdentityProviderMapperEntity() {}
 
@@ -57,11 +56,6 @@ public class MapIdentityProviderMapperEntity implements UpdatableEntity {
         model.setIdentityProviderMapper(entity.getIdentityProviderMapper());
         model.setConfig(entity.getConfig() == null ? null : new HashMap<>(entity.getConfig()));
         return model;
-    }
-
-    @Override
-    public boolean isUpdated() {
-        return updated;
     }
 
     public String getId() {

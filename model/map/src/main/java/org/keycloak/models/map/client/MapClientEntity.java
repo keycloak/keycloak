@@ -16,42 +16,89 @@
  */
 package org.keycloak.models.map.client;
 
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
+import org.keycloak.models.map.annotations.GenerateEntityImplementations;
+import org.keycloak.models.map.common.DeepCloner;
 
 /**
  *
  * @author hmlnarik
  */
+@GenerateEntityImplementations(
+  inherits = "org.keycloak.models.map.client.MapClientEntity.AbstractClientEntity"
+)
+@DeepCloner.Root
 public interface MapClientEntity extends AbstractEntity, UpdatableEntity {
 
-    void addClientScope(String id, Boolean defaultScope);
+    public abstract class AbstractClientEntity extends UpdatableEntity.Impl implements MapClientEntity {
 
-    ProtocolMapperModel addProtocolMapper(ProtocolMapperModel model);
+        private String id;
+
+        @Override
+        public String getId() {
+            return this.id;
+        }
+
+        @Override
+        public void setId(String id) {
+            if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+            this.id = id;
+            this.updated |= id != null;
+        }
+
+        @Override
+        public Stream<String> getClientScopes(boolean defaultScope) {
+            final Map<String, Boolean> clientScopes = getClientScopes();
+            return clientScopes == null ? Stream.empty() : clientScopes.entrySet().stream()
+              .filter(me -> Objects.equals(me.getValue(), defaultScope))
+              .map(Entry::getKey);
+        }
+    }
+
+    Map<String, Boolean> getClientScopes();
+    Stream<String> getClientScopes(boolean defaultScope);
+    void setClientScope(String id, Boolean defaultScope);
+    void removeClientScope(String id);
+
+    MapProtocolMapperEntity getProtocolMapper(String id);
+    Map<String, MapProtocolMapperEntity> getProtocolMappers();
+    void setProtocolMapper(String id, MapProtocolMapperEntity mapping);
+    void removeProtocolMapper(String id);
 
     void addRedirectUri(String redirectUri);
+    Set<String> getRedirectUris();
+    void removeRedirectUri(String redirectUri);
+    void setRedirectUris(Set<String> redirectUris);
 
     void addScopeMapping(String id);
+    void removeScopeMapping(String id);
+    Collection<String> getScopeMappings();
 
     void addWebOrigin(String webOrigin);
+    Set<String> getWebOrigins();
+    void removeWebOrigin(String webOrigin);
+    void setWebOrigins(Set<String> webOrigins);
 
-    void deleteScopeMapping(String id);
-
-    List<String> getAttribute(String name);
-
+    default List<String> getAttribute(String name) { return getAttributes() == null ? null : getAttributes().get(name); }
     Map<String, List<String>> getAttributes();
+    void removeAttribute(String name);
+    void setAttribute(String name, List<String> values);
 
     Map<String, String> getAuthFlowBindings();
+    void setAuthFlowBindings(Map<String, String> authFlowBindings);
 
     String getAuthenticationFlowBindingOverride(String binding);
-
     Map<String, String> getAuthenticationFlowBindingOverrides();
+    void removeAuthenticationFlowBindingOverride(String binding);
+    void setAuthenticationFlowBindingOverride(String binding, String flowId);
 
     String getBaseUrl();
 
@@ -59,27 +106,19 @@ public interface MapClientEntity extends AbstractEntity, UpdatableEntity {
 
     String getClientId();
 
-    Stream<String> getClientScopes(boolean defaultScope);
-
     String getDescription();
 
     String getManagementUrl();
 
     String getName();
 
-    int getNodeReRegistrationTimeout();
+    Integer getNodeReRegistrationTimeout();
 
-    int getNotBefore();
+    Integer getNotBefore();
 
     String getProtocol();
 
-    ProtocolMapperModel getProtocolMapperById(String id);
-
-    Collection<ProtocolMapperModel> getProtocolMappers();
-
     String getRealmId();
-
-    Set<String> getRedirectUris();
 
     String getRegistrationToken();
 
@@ -87,11 +126,7 @@ public interface MapClientEntity extends AbstractEntity, UpdatableEntity {
 
     Set<String> getScope();
 
-    Collection<String> getScopeMappings();
-
     String getSecret();
-
-    Set<String> getWebOrigins();
 
     Boolean isAlwaysDisplayInConsole();
 
@@ -117,25 +152,7 @@ public interface MapClientEntity extends AbstractEntity, UpdatableEntity {
 
     Boolean isSurrogateAuthRequired();
 
-    void removeAttribute(String name);
-
-    void removeAuthenticationFlowBindingOverride(String binding);
-
-    void removeClientScope(String id);
-
-    void removeProtocolMapper(String id);
-
-    void removeRedirectUri(String redirectUri);
-
-    void removeWebOrigin(String webOrigin);
-
     void setAlwaysDisplayInConsole(Boolean alwaysDisplayInConsole);
-
-    void setAttribute(String name, List<String> values);
-
-    void setAuthFlowBindings(Map<String, String> authFlowBindings);
-
-    void setAuthenticationFlowBindingOverride(String binding, String flowId);
 
     void setBaseUrl(String baseUrl);
 
@@ -163,17 +180,15 @@ public interface MapClientEntity extends AbstractEntity, UpdatableEntity {
 
     void setName(String name);
 
-    void setNodeReRegistrationTimeout(int nodeReRegistrationTimeout);
+    void setNodeReRegistrationTimeout(Integer nodeReRegistrationTimeout);
 
-    void setNotBefore(int notBefore);
+    void setNotBefore(Integer notBefore);
 
     void setProtocol(String protocol);
 
-    void setProtocolMappers(Collection<ProtocolMapperModel> protocolMappers);
-
     void setPublicClient(Boolean publicClient);
 
-    void setRedirectUris(Set<String> redirectUris);
+    void setRealmId(String realmId);
 
     void setRegistrationToken(String registrationToken);
 
@@ -188,9 +203,5 @@ public interface MapClientEntity extends AbstractEntity, UpdatableEntity {
     void setStandardFlowEnabled(Boolean standardFlowEnabled);
 
     void setSurrogateAuthRequired(Boolean surrogateAuthRequired);
-
-    void setWebOrigins(Set<String> webOrigins);
-
-    void updateProtocolMapper(String id, ProtocolMapperModel mapping);
 
 }

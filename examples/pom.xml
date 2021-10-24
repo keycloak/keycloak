@@ -56,11 +56,8 @@
         <module>admin-client</module>
         <module>broker</module>
         <module>cors</module>
-        <module>demo-template</module>
         <module>providers</module>
         <module>js-console</module>
-        <module>multi-tenant</module>
-        <module>basic-auth</module>
         <module>kerberos</module>
         <module>themes</module>
         <module>saml</module>

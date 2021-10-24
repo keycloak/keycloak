@@ -13,7 +13,6 @@
     <name>Keycloak Quarkus Server Extension</name>
     <artifactId>keycloak-quarkus-server</artifactId>
     <description>Keycloak Server</description>
-
     <dependencies>
         <!-- Quarkus -->
         <dependency>
@@ -343,6 +342,11 @@
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-server-hotrod</artifactId>
+            <version>${infinispan.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
             <artifactId>infinispan-client-hotrod</artifactId>
             <version>${infinispan.version}</version>
             <exclusions>
@@ -479,9 +483,34 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- logging wrapper for log4j-->
+        <dependency>
+            <groupId>org.jboss.logmanager</groupId>
+            <artifactId>log4j-jboss-logmanager</artifactId>
+        </dependency>
+
+        <!-- twitter api -->
         <dependency>
             <groupId>org.twitter4j</groupId>
             <artifactId>twitter4j-core</artifactId>
+        </dependency>
+
+        <!-- Openshift -->
+        <dependency>
+            <groupId>com.openshift</groupId>
+            <artifactId>openshift-restclient-java</artifactId>
+            <version>${version.com.openshift.openshift-restclient-java}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 

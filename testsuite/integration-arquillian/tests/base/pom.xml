@@ -143,6 +143,11 @@
             <version>${systemrules.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-server-hotrod</artifactId>
+            <version>${infinispan.version}</version>
+        </dependency>
     </dependencies>
     
     <build>

@@ -140,7 +140,9 @@ public class MapClientProvider implements ClientProvider {
     public ClientModel addClient(RealmModel realm, String id, String clientId) {
         LOG.tracef("addClient(%s, %s, %s)%s", realm, id, clientId, getShortStackTrace());
 
-        MapClientEntity entity = new MapClientEntityImpl(id, realm.getId());
+        MapClientEntity entity = new MapClientEntityImpl();
+        entity.setId(id);
+        entity.setRealmId(realm.getId());
         entity.setClientId(clientId);
         entity.setEnabled(true);
         entity.setStandardFlowEnabled(true);
@@ -214,7 +216,7 @@ public class MapClientProvider implements ClientProvider {
         ModelCriteriaBuilder<ClientModel> mcb = clientStore.createCriteriaBuilder()
           .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
-        return this.clientStore.getCount(withCriteria(mcb));
+        return tx.getCount(withCriteria(mcb));
     }
 
     @Override
@@ -294,7 +296,7 @@ public class MapClientProvider implements ClientProvider {
         clientScopes.stream()
                 .filter(clientScope -> ! existingClientScopes.containsKey(clientScope.getName()))
                 .filter(clientScope -> Objects.equals(clientScope.getProtocol(), clientProtocol))
-                .forEach(clientScope -> entity.addClientScope(clientScope.getId(), defaultScope));
+                .forEach(clientScope -> entity.setClientScope(clientScope.getId(), defaultScope));
     }
 
     @Override

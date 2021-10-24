@@ -42,6 +42,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -176,12 +177,21 @@ public class RoleByIdResource extends RoleResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Stream<RoleRepresentation> getRoleComposites(final @PathParam("role-id") String id) {
+    public Stream<RoleRepresentation> getRoleComposites(final @PathParam("role-id") String id,
+                                                        final @QueryParam("search") String search,
+                                                        final @QueryParam("first") Integer first,
+                                                        final @QueryParam("max") Integer max
+    ) {
 
         if (logger.isDebugEnabled()) logger.debug("*** getRoleComposites: '" + id + "'");
         RoleModel role = getRoleModel(id);
         auth.roles().requireView(role);
-        return role.getCompositesStream().map(ModelToRepresentation::toBriefRepresentation);
+
+        if (search == null && first == null && max == null) {
+            return role.getCompositesStream().map(ModelToRepresentation::toBriefRepresentation);
+        }
+
+        return role.getCompositesStream(search, first, max).map(ModelToRepresentation::toBriefRepresentation);
     }
 
     /**

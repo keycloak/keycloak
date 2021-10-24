@@ -19,6 +19,8 @@
         <offline.session.cache.owners>2</offline.session.cache.owners>
         <login.failure.cache.owners>2</login.failure.cache.owners>
         <auth.server.quarkus.cluster.config>local</auth.server.quarkus.cluster.config>
+        <!-- Path to testsuite/test resources : Themes-->
+        <keycloak.base.test.resource>${project.parent.basedir}/../../tests/base/src/test/resources</keycloak.base.test.resource>
     </properties>
     
     <dependencies>
@@ -109,6 +111,36 @@
                                 </resource>
                             </resources>
                             <overwrite>true</overwrite>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>add-extending-theme</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${auth.server.home}/themes</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${keycloak.base.test.resource}/theme</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>add-pw-blacklist-file</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${auth.server.home}/dependency/password-blacklists</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${keycloak.base.test.resource}/password-blacklists</directory>
+                                </resource>
+                            </resources>
                         </configuration>
                     </execution>
                 </executions>

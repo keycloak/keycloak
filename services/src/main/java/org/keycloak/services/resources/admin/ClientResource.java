@@ -247,8 +247,12 @@ public class ClientResource {
         auth.clients().requireConfigure(client);
 
         logger.debug("regenerateSecret");
-        UserCredentialModel cred = KeycloakModelUtils.generateSecret(client);
-        CredentialRepresentation rep = ModelToRepresentation.toRepresentation(cred);
+        String secret = KeycloakModelUtils.generateSecret(client);
+
+        CredentialRepresentation rep = new CredentialRepresentation();
+        rep.setType(CredentialRepresentation.SECRET);
+        rep.setValue(secret);
+
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(rep).success();
         return rep;
     }
