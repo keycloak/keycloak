@@ -24,6 +24,10 @@ import {
   DataListToggle,
   DataListContent,
   DataListItemCells,
+  DescriptionList,
+  DescriptionListTerm,
+  DescriptionListGroup,
+  DescriptionListDescription,
   Grid,
   GridItem,
   Button,
@@ -175,29 +179,57 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                   id={this.elementId("expandable", application)}
                   isHidden={!this.state.isRowOpen[appIndex]}
                 >
-                  <Grid sm={12} md={12} lg={12}>
-                    <div className='pf-c-content'>
-                      <GridItem><strong>{Msg.localize('client') + ': '}</strong> {application.clientId}</GridItem>
-                      {application.description &&
-                        <GridItem><strong>{Msg.localize('description') + ': '}</strong> {application.description}</GridItem>
-                      }
-                      {application.effectiveUrl &&
-                        <GridItem><strong>URL: </strong> <span id={this.elementId('effectiveurl', application)}>{application.effectiveUrl.split('"')}</span></GridItem>
-                      }
-                      {application.consent &&
-                        <React.Fragment>
-                          <GridItem span={12}>
-                            <strong>Has access to:</strong>
-                          </GridItem>
+                  <DescriptionList>
+                    <DescriptionListGroup>
+                      <DescriptionListTerm>
+                        {Msg.localize('client')}
+                      </DescriptionListTerm>
+                      <DescriptionListDescription>
+                        {application.clientId}
+                      </DescriptionListDescription>
+                    </DescriptionListGroup>
+                    {application.description &&
+                      <DescriptionListGroup>
+                        <DescriptionListTerm>
+                          {Msg.localize('description')}
+                        </DescriptionListTerm>
+                        <DescriptionListDescription>
+                          {application.description}
+                        </DescriptionListDescription>
+                      </DescriptionListGroup>
+                    }
+                    {application.effectiveUrl &&
+                      <DescriptionListGroup>
+                        <DescriptionListTerm>
+                          URL
+                        </DescriptionListTerm>
+                        <DescriptionListDescription>
+                          {application.effectiveUrl.split('"')}
+                        </DescriptionListDescription>
+                      </DescriptionListGroup>
+                    }
+                    {application.consent &&
+                      <>
+                        <DescriptionListGroup>
+                          <DescriptionListTerm>
+                            Has access to:
+                          </DescriptionListTerm>
+                          <DescriptionListDescription>
                           {application.consent.grantedScopes.map((scope: GrantedScope, scopeIndex: number) => {
-                            return (
-                              <React.Fragment key={'scope-' + scopeIndex} >
-                                <GridItem offset={1}><CheckIcon /> {scope.name}</GridItem>
-                              </React.Fragment>
-                            )
-                          })}
-                          <GridItem><strong>{Msg.localize('accessGrantedOn') + ': '}</strong>
-                            {new Intl.DateTimeFormat(locale, {
+                              return (
+                                <React.Fragment key={'scope-' + scopeIndex} >
+                                  <GridItem offset={1}><CheckIcon /> {scope.name}</GridItem>
+                                </React.Fragment>
+                              )
+                            })}
+                          </DescriptionListDescription>
+                        </DescriptionListGroup>
+                        <DescriptionListGroup>
+                          <DescriptionListTerm>
+                            {Msg.localize('accessGrantedOn')}
+                          </DescriptionListTerm>
+                          <DescriptionListDescription>
+                          {new Intl.DateTimeFormat(locale, {
                               year: 'numeric',
                               month: 'long',
                               day: 'numeric',
@@ -205,11 +237,11 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                               minute: 'numeric',
                               second: 'numeric'
                             }).format(application.consent.createDate)}
-                          </GridItem>
-                        </React.Fragment>
-                      }
-                    </div>
-                  </Grid>
+                          </DescriptionListDescription>
+                      </DescriptionListGroup>
+                      </>
+                    }
+                  </DescriptionList>
                   {(application.consent || application.offlineAccess) &&
                     <Grid hasGutter>
                       <hr />
