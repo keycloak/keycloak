@@ -16,7 +16,7 @@
 
 import * as React from 'react';
 import {Route, Switch} from 'react-router-dom';
-import {NavItem, NavExpandable} from '@patternfly/react-core';
+import {NavItem, NavExpandable, NavGroup} from '@patternfly/react-core';
 import {Msg} from './widgets/Msg';
 import {PageNotFound} from './content/page-not-found/PageNotFound';
 import { ForbiddenPage } from './content/forbidden-page/ForbiddenPage';
@@ -81,13 +81,11 @@ function createNavItems(activePage: PageDef, contentParam: ContentItem[], groupN
     const links: React.ReactElement[] = contentParam.map((item: ContentItem) => {
         const navLinkId = `nav-link-${item.id}`;
         if (isExpansion(item)) {
-            return <NavExpandable id={navLinkId}
-                                  groupId={item.groupId}
-                                  key={item.groupId}
+            return <NavGroup id={navLinkId}
                                   title={Msg.localize(item.label, item.labelParams)}
-                                  isExpanded={isChildOf(item, activePage)}>
+                                  >
                         {createNavItems(activePage, item.content, groupNum + 1)}
-                    </NavExpandable>
+                    </NavGroup>
         } else {
             const page: PageDef = item as PageDef;
             return <NavItem id={navLinkId}
