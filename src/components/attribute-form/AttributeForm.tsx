@@ -192,7 +192,12 @@ export const AttributesForm = ({
       </TableComposable>
       {!noSaveCancelButtons && (
         <ActionGroup className="kc-attributes__action-group">
-          <Button variant="primary" type="submit" isDisabled={!watchLast}>
+          <Button
+            data-testid="save-attributes"
+            variant="primary"
+            type="submit"
+            isDisabled={!watchLast}
+          >
             {t("common:save")}
           </Button>
           <Button

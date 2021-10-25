@@ -3,16 +3,11 @@ const expect = chai.expect;
 export default class GroupDetailPage {
   private groupNamesColumn = '[data-label="Group name"] > a';
   private memberTab = "members";
-  private attributesTab = "attributes";
   private memberNameColumn = 'tbody > tr > [data-label="Name"]';
   private includeSubGroupsCheck = "includeSubGroupsCheck";
   private addMembers = "addMember";
   private addMember = "add";
   private memberUsernameColumn = 'tbody > tr > [data-label="Username"]';
-
-  private keyInput = '[name="attributes[0].key"]';
-  private valueInput = '[name="attributes[0].value"]';
-  private saveAttributeBtn = ".pf-c-form__actions > .pf-m-primary";
 
   checkListSubGroup(subGroups: string[]) {
     cy.get(this.groupNamesColumn).should((groups) => {
@@ -70,23 +65,8 @@ export default class GroupDetailPage {
     return this;
   }
 
-  clickAttributesTab() {
-    cy.findByTestId(this.attributesTab).click();
-    return this;
-  }
-
   clickAddMembers() {
     cy.findByTestId(this.addMembers).click();
-    return this;
-  }
-
-  fillAttribute(key: string, value: string) {
-    cy.get(this.keyInput).type(key).get(this.valueInput).type(value);
-    return this;
-  }
-
-  saveAttribute() {
-    cy.get(this.saveAttributeBtn).click();
     return this;
   }
 }

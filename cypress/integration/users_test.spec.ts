@@ -4,6 +4,7 @@ import CreateUserPage from "../support/pages/admin_console/manage/users/CreateUs
 import Masthead from "../support/pages/admin_console/Masthead";
 import ListingPage from "../support/pages/admin_console/ListingPage";
 import UserDetailsPage from "../support/pages/admin_console/manage/users/UserDetailsPage";
+import AttributesTab from "../support/pages/admin_console/manage/AttributesTab";
 import ModalUtils from "../support/util/ModalUtils";
 import { keycloakBefore } from "../support/util/keycloak_before";
 import GroupModal from "../support/pages/admin_console/manage/groups/GroupModal";
@@ -53,6 +54,7 @@ describe("Users test", () => {
   const modalUtils = new ModalUtils();
   const listingPage = new ListingPage();
   const userDetailsPage = new UserDetailsPage();
+  const attributesTab = new AttributesTab();
 
   let itemId = "user_crud";
 
@@ -114,6 +116,19 @@ describe("Users test", () => {
 
       sidebarPage.goToUsers();
       listingPage.searchItem(itemId).itemExist(itemId);
+    });
+
+    it("User attributes test", () => {
+      listingPage.searchItem(itemId).itemExist(itemId);
+
+      listingPage.goToItemDetails(itemId);
+
+      attributesTab
+        .goToAttributesTab()
+        .fillAttribute("key", "value")
+        .saveAttribute();
+
+      masthead.checkNotificationMessage("The user has been saved");
     });
 
     it("Add user to groups test", () => {

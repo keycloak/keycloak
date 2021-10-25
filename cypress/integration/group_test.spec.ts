@@ -1,6 +1,7 @@
 import ListingPage from "../support/pages/admin_console/ListingPage";
 import GroupModal from "../support/pages/admin_console/manage/groups/GroupModal";
 import GroupDetailPage from "../support/pages/admin_console/manage/groups/GroupDetailPage";
+import AttributesTab from "../support/pages/admin_console/manage//AttributesTab";
 import MoveGroupModal from "../support/pages/admin_console/manage/groups/MoveGroupModal";
 import { SearchGroupPage } from "../support/pages/admin_console/manage/groups/SearchGroup";
 import Masthead from "../support/pages/admin_console/Masthead";
@@ -21,6 +22,7 @@ describe("Group test", () => {
   const searchGroupPage = new SearchGroupPage();
   const moveGroupModal = new MoveGroupModal();
   const modalUtils = new ModalUtils();
+  const attributesTab = new AttributesTab();
 
   let groupName = "group";
 
@@ -205,8 +207,8 @@ describe("Group test", () => {
 
     it("Attributes CRUD test", () => {
       clickGroup(groups[0]);
-      detailPage
-        .clickAttributesTab()
+      attributesTab
+        .goToAttributesTab()
         .fillAttribute("key", "value")
         .saveAttribute();
 

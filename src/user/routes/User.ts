@@ -3,7 +3,7 @@ import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
 import { UsersTabs } from "../UsersTabs";
 
-export type UserTab = "settings" | "groups" | "consents";
+export type UserTab = "settings" | "groups" | "consents" | "attributes";
 
 export type UserParams = {
   realm: string;
