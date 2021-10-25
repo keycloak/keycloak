@@ -26,8 +26,8 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
-import java.util.Stack;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -39,8 +39,8 @@ import java.util.function.Predicate;
  */
 public class DefaultTreeNode<Self extends DefaultTreeNode<Self>> implements TreeNode<Self> {
 
-    private final Map<String, Object> edgeProperties = new HashMap<>();
-    private final Map<String, Object> nodeProperties = new HashMap<>();
+    private final Map<String, Object> nodeProperties;
+    private final Map<String, Object> edgeProperties;
     private final Map<String, Object> treeProperties;
     private final LinkedList<Self> children = new LinkedList<>();
     private String id;
@@ -50,6 +50,14 @@ public class DefaultTreeNode<Self extends DefaultTreeNode<Self>> implements Tree
      * @param treeProperties Reference to tree properties map. Tree properties are maintained outside of this node.
      */
     protected DefaultTreeNode(Map<String, Object> treeProperties) {
+        this.treeProperties = treeProperties;
+        this.edgeProperties = new HashMap<>();
+        this.nodeProperties = new HashMap<>();
+    }
+
+    public DefaultTreeNode(Map<String, Object> nodeProperties, Map<String, Object> edgeProperties, Map<String, Object> treeProperties) {
+        this.nodeProperties = nodeProperties;
+        this.edgeProperties = edgeProperties;
         this.treeProperties = treeProperties;
     }
 
@@ -106,7 +114,7 @@ public class DefaultTreeNode<Self extends DefaultTreeNode<Self>> implements Tree
     @Override
     public Optional<Self> findFirstDfs(Predicate<Self> visitor) {
         Deque<Self> stack = new LinkedList<>();
-        stack.add((Self) this);
+        stack.add(getThis());
         while (! stack.isEmpty()) {
             Self node = stack.pop();
             if (visitor.test(node)) {
@@ -124,7 +132,7 @@ public class DefaultTreeNode<Self extends DefaultTreeNode<Self>> implements Tree
     @Override
     public Optional<Self> findFirstBottommostDfs(Predicate<Self> visitor) {
         Deque<Self> stack = new LinkedList<>();
-        stack.add((Self) this);
+        stack.add(getThis());
         while (! stack.isEmpty()) {
             Self node = stack.pop();
             if (visitor.test(node)) {
@@ -149,7 +157,7 @@ public class DefaultTreeNode<Self extends DefaultTreeNode<Self>> implements Tree
     @Override
     public Optional<Self> findFirstBfs(Predicate<Self> visitor) {
         Queue<Self> queue = new LinkedList<>();
-        queue.add((Self) this);
+        queue.add(getThis());
         while (! queue.isEmpty()) {
             Self node = queue.poll();
             if (visitor.test(node)) {
@@ -165,7 +173,7 @@ public class DefaultTreeNode<Self extends DefaultTreeNode<Self>> implements Tree
     public List<Self> getPathToRoot(PathOrientation orientation) {
         LinkedList<Self> res = new LinkedList<>();
         Consumer<Self> addFunc = orientation == PathOrientation.BOTTOM_FIRST ? res::addLast : res::addFirst;
-        Optional<Self> p = Optional.of((Self) this);
+        Optional<Self> p = Optional.of(getThis());
         while (p.isPresent()) {
             addFunc.accept(p.get());
             p = p.get().getParent();
@@ -186,7 +194,7 @@ public class DefaultTreeNode<Self extends DefaultTreeNode<Self>> implements Tree
         if (! this.children.contains(node)) {
             this.children.add(node);
         }
-        node.setParent((Self) this);
+        node.setParent(getThis());
 
         // Prevent setting a parent of this node as a child of this node. In such a case, remove the parent of this node
         for (Optional<Self> p = getParent(); p.isPresent(); p = p.get().getParent()) {
@@ -205,7 +213,7 @@ public class DefaultTreeNode<Self extends DefaultTreeNode<Self>> implements Tree
         if (! this.children.contains(node)) {
             this.children.add(index, node);
         }
-        node.setParent((Self) this);
+        node.setParent(getThis());
 
         // Prevent setting a parent of this node as a child of this node. In such a case, remove the parent of this node
         for (Optional<Self> p = getParent(); p.isPresent(); p = p.get().getParent()) {
@@ -276,12 +284,23 @@ public class DefaultTreeNode<Self extends DefaultTreeNode<Self>> implements Tree
         if (this.parent != null) {
             Self previousParent = this.parent;
             this.parent = null;
-            previousParent.removeChild((Self) this);
+            previousParent.removeChild(getThis());
         }
 
         if (parent != null) {
             this.parent = parent;
-            parent.addChild((Self) this);
+            parent.addChild(getThis());
         }
+    }
+
+    public <RNode extends TreeNode<? super RNode>> RNode cloneTree(Function<Self, RNode> instantiateFunc) {
+        final RNode res = instantiateFunc.apply(getThis());
+        this.getChildren().forEach(c -> res.addChild(c.cloneTree(instantiateFunc)));
+        return res;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Self getThis() {
+        return (Self) this;
     }
 }
