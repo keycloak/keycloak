@@ -66,6 +66,7 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 	 * Key in {@link BrokeredIdentityContext#getContextData()} where {@link JsonNode} with user profile is stored.
 	 */
 	public static final String CONTEXT_JSON_NODE = OIDCIdentityProvider.USER_INFO;
+	public static final String EMAIL_VERIFIED = "emailVerified";
 
 	private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
@@ -136,7 +137,9 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 
 		Object value = getJsonValue(mapperModel, context);
 		if (value != null) {
-			if (value instanceof List) {
+			if (EMAIL_VERIFIED.equalsIgnoreCase(attribute)) {
+				context.setEmailVerified(Boolean.valueOf(value.toString()));
+			} else if (value instanceof List) {
 				context.setUserAttribute(attribute, (List<String>) value);
 			} else {
 				context.setUserAttribute(attribute, value.toString());

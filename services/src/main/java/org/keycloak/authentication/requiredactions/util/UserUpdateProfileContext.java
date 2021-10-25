@@ -74,6 +74,16 @@ public class UserUpdateProfileContext implements UpdateProfileContext {
     }
 
     @Override
+    public Boolean isEmailVerified() {
+        return user.isEmailVerified();
+    }
+
+    @Override
+    public void setEmailVerified(Boolean emailVerified) {
+        user.setEmailVerified(emailVerified);
+    }
+
+    @Override
     public String getFirstName() {
         return user.getFirstName();
     }

@@ -33,7 +33,7 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractIdentityPr
     protected static final String MAPPED_ATTRIBUTE_NAME = "mapped-user-attribute";
     protected static final String MAPPED_ATTRIBUTE_FRIENDLY_NAME = "mapped-user-attribute-friendly";
 
-    private static final Set<String> PROTECTED_NAMES = ImmutableSet.<String>builder().add("email").add("lastName").add("firstName").build();
+    private static final Set<String> PROTECTED_NAMES = ImmutableSet.<String>builder().add("email").add("lastName").add("firstName").add("emailVerified").build();
     private static final Map<String, String> ATTRIBUTE_NAME_TRANSLATION = ImmutableMap.<String, String>builder()
       .put("dotted.email", "dotted.email")
       .put("nested.email", "nested.email")
@@ -83,14 +83,17 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractIdentityPr
         if (attrs.containsKey("lastName")) {
             assertThat(userRep.getLastName(), equalTo(attrs.get("lastName").get(0)));
         }
+        if (attrs.containsKey("emailVerified")) {
+            assertThat(userRep.isEmailVerified(), equalTo(Boolean.valueOf(attrs.get("emailVerified").get(0))));
+        }
     }
 
-    private void testValueMappingForImportSyncMode(Map<String, List<String>> initialUserAttributes, Map<String, List<String>> modifiedUserAttributes) {
+    protected void testValueMappingForImportSyncMode(Map<String, List<String>> initialUserAttributes, Map<String, List<String>> modifiedUserAttributes) {
         addIdentityProviderToConsumerRealm(IdentityProviderMapperSyncMode.IMPORT);
         testValueMapping(initialUserAttributes, modifiedUserAttributes, initialUserAttributes);
     }
 
-    private void testValueMappingForForceSyncMode(Map<String, List<String>> initialUserAttributes, Map<String, List<String>> modifiedUserAttributes) {
+    protected void testValueMappingForForceSyncMode(Map<String, List<String>> initialUserAttributes, Map<String, List<String>> modifiedUserAttributes) {
         addIdentityProviderToConsumerRealm(IdentityProviderMapperSyncMode.FORCE);
         testValueMapping(initialUserAttributes, modifiedUserAttributes, modifiedUserAttributes);
     }
@@ -127,6 +130,9 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractIdentityPr
         }
         if (modifiedUserAttributes.containsKey("lastName")) {
             userRepProvider.setLastName(modifiedUserAttributes.get("lastName").get(0));
+        }
+        if (modifiedUserAttributes.containsKey("emailVerified")) {
+            userRepProvider.setEmailVerified(Boolean.valueOf(modifiedUserAttributes.get("emailVerified").get(0)));
         }
         adminClient.realm(bc.providerRealmName()).users().get(userRepProvider.getId()).update(userRepProvider);
 

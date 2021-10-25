@@ -1,5 +1,8 @@
 package org.keycloak.testsuite.broker;
 
+import java.util.List;
+import com.google.common.collect.ImmutableList;
+import org.junit.Test;
 import org.keycloak.broker.oidc.mappers.UserAttributeMapper;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
@@ -53,7 +56,38 @@ public class OidcUserAttributeMapperTest extends AbstractUserAttributeMapperTest
           .put(UserAttributeMapper.USER_ATTRIBUTE, "dotted.email")
           .build());
 
-        return Lists.newArrayList(attrMapper1, emailAttrMapper, nestedEmailAttrMapper, dottedEmailAttrMapper);
+        IdentityProviderMapperRepresentation emailVerifiedAttrMapper = new IdentityProviderMapperRepresentation();
+        emailVerifiedAttrMapper.setName("emailVerified");
+        emailVerifiedAttrMapper.setIdentityProviderMapper(UserAttributeMapper.PROVIDER_ID);
+        emailVerifiedAttrMapper.setConfig(ImmutableMap.<String,String>builder()
+                .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
+                .put(UserAttributeMapper.CLAIM, "email_verified")
+                .put(UserAttributeMapper.USER_ATTRIBUTE, "emailVerified")
+                .build());
+
+        return Lists.newArrayList(attrMapper1, emailAttrMapper, nestedEmailAttrMapper, dottedEmailAttrMapper, emailVerifiedAttrMapper);
+    }
+
+    @Test
+    public void testImportEmailVerified() {
+        testValueMappingForImportSyncMode(ImmutableMap.<String, List<String>>builder()
+                        .put("emailVerified", ImmutableList.<String>builder().add("true").build())
+                        .build(),
+                ImmutableMap.<String, List<String>>builder()
+                        .put("emailVerified", ImmutableList.<String>builder().add("false").build())
+                        .build()
+        );
+    }
+
+    @Test
+    public void testForceEmailVerified() {
+        testValueMappingForForceSyncMode(ImmutableMap.<String, List<String>>builder()
+                        .put("emailVerified", ImmutableList.<String>builder().add("true").build())
+                        .build(),
+                ImmutableMap.<String, List<String>>builder()
+                        .put("emailVerified", ImmutableList.<String>builder().add("false").build())
+                        .build()
+        );
     }
 
 }

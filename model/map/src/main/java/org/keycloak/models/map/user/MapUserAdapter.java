@@ -113,6 +113,9 @@ public abstract class MapUserAdapter extends AbstractUserModel<MapUserEntity> {
         } else if (UserModel.USERNAME.equals(name)) {
             setUsername(value);
             return true;
+        }else if (UserModel.EMAIL_VERIFIED.equals(name)) {
+            setEmailVerified(Boolean.valueOf(value));
+            return true;
         }
 
         return false;

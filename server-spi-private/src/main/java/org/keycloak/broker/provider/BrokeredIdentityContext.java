@@ -40,6 +40,7 @@ public class BrokeredIdentityContext {
     private String username;
     private String modelUsername;
     private String email;
+    private boolean emailVerified;
     private String firstName;
     private String lastName;
     private String brokerSessionId;
@@ -111,6 +112,14 @@ public class BrokeredIdentityContext {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
     }
 
     public String getBrokerSessionId() {

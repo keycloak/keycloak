@@ -51,6 +51,7 @@ public class UserAttributeMapper extends AbstractClaimMapper {
 
     public static final String USER_ATTRIBUTE = "user.attribute";
     public static final String EMAIL = "email";
+    public static final String EMAIL_VERIFIED = "emailVerified";
     public static final String FIRST_NAME = "firstName";
     public static final String LAST_NAME = "lastName";
     private static final Set<IdentityProviderSyncMode> IDENTITY_PROVIDER_SYNC_MODES = new HashSet<>(Arrays.asList(IdentityProviderSyncMode.values()));
@@ -111,21 +112,26 @@ public class UserAttributeMapper extends AbstractClaimMapper {
             return;
         }
         Object value = getClaimValue(mapperModel, context);
-        List<String> values = toList(value);
-
-        if (EMAIL.equalsIgnoreCase(attribute)) {
-            setIfNotEmpty(context::setEmail, values);
-        } else if (FIRST_NAME.equalsIgnoreCase(attribute)) {
-            setIfNotEmpty(context::setFirstName, values);
-        } else if (LAST_NAME.equalsIgnoreCase(attribute)) {
-            setIfNotEmpty(context::setLastName, values);
+        if (EMAIL_VERIFIED.equalsIgnoreCase(attribute)) {
+            boolean verified = value == null ? false : Boolean.valueOf(value.toString());
+            context.setEmailVerified(verified);
         } else {
-            List<String> valuesToString = values.stream()
-                    .filter(Objects::nonNull)
-                    .map(Object::toString)
-                    .collect(Collectors.toList());
+            List<String> values = toList(value);
 
-            context.setUserAttribute(attribute, valuesToString);
+            if (EMAIL.equalsIgnoreCase(attribute)) {
+                setIfNotEmpty(context::setEmail, values);
+            } else if (FIRST_NAME.equalsIgnoreCase(attribute)) {
+                setIfNotEmpty(context::setFirstName, values);
+            } else if (LAST_NAME.equalsIgnoreCase(attribute)) {
+                setIfNotEmpty(context::setLastName, values);
+            }  else {
+                List<String> valuesToString = values.stream()
+                        .filter(Objects::nonNull)
+                        .map(Object::toString)
+                        .collect(Collectors.toList());
+
+                context.setUserAttribute(attribute, valuesToString);
+            }
         }
     }
 
