@@ -74,7 +74,7 @@
     "eslint-plugin-react": "^7.26.1",
     "fork-ts-checker-webpack-plugin": "^6.4.0",
     "http2-proxy": "^5.0.53",
-    "husky": "^7.0.2",
+    "husky": "^7.0.4",
     "jest": "^27.3.1",
     "lint-staged": "^11.2.4",
     "postcss": "^8.3.11",
