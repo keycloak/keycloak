@@ -155,11 +155,8 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         return (<> {
             Array.from(this.state.credentialContainers.keys()).map(category => (
                 <StackItem key={category} isFilled>
-                    <Title id={`${category}-categ-title`} headingLevel="h2" size='2xl'>
-                        <strong><Msg msgKey={category}/></strong>
-                    </Title>
                     <DataList aria-label='foo'>
-                        {this.renderTypes(this.state.credentialContainers.get(category)!)}
+                        {this.renderTypes(category!)}
                     </DataList>
                 </StackItem>
             ))
@@ -167,13 +164,16 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         }</>)
     }
 
-    private renderTypes(credTypeMap: CredTypeMap): React.ReactNode {
+    private renderTypes(category: CredCategory): React.ReactNode {
+      
+      let credTypeMap:CredTypeMap = this.state.credentialContainers.get(category);
+      // this.state.credentialContainers.get(category)!
         return (
         <KeycloakContext.Consumer> 
         { keycloak => (
             <>{
             Array.from(credTypeMap.keys()).map((credType: CredType, index: number, typeArray: string[]) => ([
-                this.renderCredTypeTitle(credTypeMap.get(credType)!, keycloak!),
+                this.renderCredTypeTitle(credTypeMap.get(credType)!, keycloak!, category),
                 this.renderUserCredentials(credTypeMap, credType, keycloak!),
                 this.renderEmptyRow(credTypeMap.get(credType)!.type, index === typeArray.length - 1)
             ]))
@@ -263,7 +263,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         return credRowCells;
     }
 
-    private renderCredTypeTitle(credContainer: CredentialContainer, keycloak: KeycloakService): React.ReactNode {
+    private renderCredTypeTitle(credContainer: CredentialContainer, keycloak: KeycloakService, category: CredCategory): React.ReactNode {
         if (!credContainer.hasOwnProperty('helptext') && !credContainer.hasOwnProperty('createAction')) return;
 
         let setupAction: AIACommand;
@@ -271,15 +271,19 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
             setupAction = new AIACommand(keycloak, credContainer.createAction);
         }
         const credContainerDisplayName: string = Msg.localize(credContainer.displayName);
-
         return (
             <React.Fragment key={'credTypeTitle-' + credContainer.type}>
                 <DataListItem aria-labelledby={'type-datalistitem-' + credContainer.type}>
+                    <DataListItemRow>
+                        <Title id={`${category}-categ-title`} headingLevel="h2" size="2xl">
+                            <strong><Msg msgKey={category}/></strong>
+                        </Title>
+                    </DataListItemRow>
                     <DataListItemRow key={'credTitleRow-' + credContainer.type}>
                         <DataListItemCells
                             dataListCells={[
                                 <DataListCell width={5} key={'credTypeTitle-' + credContainer.type}>
-                                    <Title headingLevel="h3" size='2xl'>
+                                    <Title headingLevel="h3" size='xl'>
                                         <strong id={`${credContainer.type}-cred-title`}><Msg msgKey={credContainer.displayName}/></strong>
                                     </Title>
                                     <span id={`${credContainer.type}-cred-help`}>
