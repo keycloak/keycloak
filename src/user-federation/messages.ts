@@ -109,7 +109,7 @@ export default {
 
     removeImportedUsers: "Remove imported users?",
     removeImportedUsersMessage:
-      'Do you really want to remove all imported users? The option "Unlink users" makes sense just for the Edit Mode "Unsynced" and there should be a warning that "unlinked" users without the password in the Keycloak database won\'t be able to authenticate.',
+      "Do you really want to remove all imported users?",
     removeImportedUsersSuccess: "Imported users have been removed.",
     removeImportedUsersError: "Could not remove imported users: '{{error}}'",
 
