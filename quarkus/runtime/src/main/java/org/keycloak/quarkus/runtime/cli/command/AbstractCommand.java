@@ -19,14 +19,20 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import org.keycloak.quarkus.runtime.Environment;
 
-import picocli.CommandLine;
+import picocli.CommandLine.Model.CommandSpec;
+import picocli.CommandLine.Spec;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.ScopeType;
 
 public abstract class AbstractCommand {
 
-    @CommandLine.Spec
-    protected CommandLine.Model.CommandSpec spec;
+    @Spec
+    protected CommandSpec spec;
 
-    @CommandLine.Option(names = "--profile", arity = "1", description = "Set the profile. Use 'dev' profile to enable development mode.", scope = CommandLine.ScopeType.INHERIT)
+    @Option(names = "--profile",
+            arity = "1",
+            description = "Set the profile. Use 'dev' profile to enable development mode.",
+            scope = ScopeType.INHERIT)
     public void setProfile(String profile) {
         Environment.setProfile(profile);
     }

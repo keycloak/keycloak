@@ -28,12 +28,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.nio.file.FileSystemException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.IntFunction;
@@ -47,13 +49,20 @@ import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
 import org.keycloak.common.Profile;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
+import org.keycloak.quarkus.runtime.configuration.Messages;
 import org.keycloak.quarkus.runtime.configuration.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.PropertyMappers;
 import org.keycloak.platform.Platform;
 import org.keycloak.quarkus.runtime.InitializationException;
 import org.keycloak.quarkus.runtime.integration.QuarkusPlatform;
 import org.keycloak.quarkus.runtime.Environment;
+
+import io.smallrye.config.ConfigValue;
 import picocli.CommandLine;
+import picocli.CommandLine.Model.CommandSpec;
+import picocli.CommandLine.UnmatchedArgumentException;
+import picocli.CommandLine.ParseResult;
+import picocli.CommandLine.Model.OptionSpec;
 
 public final class Picocli {
 
@@ -72,13 +81,13 @@ public final class Picocli {
         CommandLine cmd = createCommandLine(cliArgs);
 
         try {
-            CommandLine.ParseResult result = cmd.parseArgs(cliArgs.toArray(new String[0]));
+            ParseResult result = cmd.parseArgs(cliArgs.toArray(new String[0]));
 
             if (!result.hasSubcommand() && !result.isUsageHelpRequested() && !result.isVersionHelpRequested()) {
                 // if no command was set, the start command becomes the default
                 cliArgs.add(0, Start.NAME);
             }
-        } catch (CommandLine.UnmatchedArgumentException e) {
+        } catch (UnmatchedArgumentException e) {
             // if no command was set but options were provided, the start command becomes the default
             if (!cmd.getParseResult().hasSubcommand() && cliArgs.get(0).startsWith("--")) {
                 cliArgs.add(0, "start");
@@ -196,6 +205,13 @@ public final class Picocli {
     }
 
     private static boolean hasConfigChanges() {
+        Optional<String> currentProfile = Optional.ofNullable(Environment.getProfile());
+        Optional<String> persistedProfile = Environment.getBuiltTimeProperty("kc.profile");
+
+        if (!persistedProfile.orElse("").equals(currentProfile.orElse(""))) {
+            return true;
+        }
+
         for (String propertyName : getConfig().getPropertyNames()) {
             // only check keycloak build-time properties
             if (!isBuildTimeProperty(propertyName)) {
@@ -224,8 +240,10 @@ public final class Picocli {
     }
 
     private static CommandLine createCommandLine(List<String> cliArgs) {
-        CommandLine.Model.CommandSpec spec = CommandLine.Model.CommandSpec.forAnnotatedObject(new Main())
+        CommandSpec spec = CommandSpec.forAnnotatedObject(new Main())
                 .name(Environment.getCommand());
+
+        spec.usageMessage().width(100);
 
         boolean addBuildOptionsToStartCommand = cliArgs.contains(AUTO_BUILD_OPTION);
 
@@ -285,8 +303,8 @@ public final class Picocli {
         return options.toString();
     }
 
-    private static void addOption(CommandLine.Model.CommandSpec spec, String command, boolean includeBuildTime) {
-        CommandLine.Model.CommandSpec commandSpec = spec.subcommands().get(command).getCommandSpec();
+    private static void addOption(CommandSpec spec, String command, boolean includeBuildTime) {
+        CommandSpec commandSpec = spec.subcommands().get(command).getCommandSpec();
         List<PropertyMapper> mappers = new ArrayList<>(PropertyMappers.getRuntimeMappers());
 
         if (includeBuildTime) {
@@ -309,8 +327,8 @@ public final class Picocli {
                 type -> type.name().toLowerCase()).toArray((IntFunction<CharSequence[]>) String[]::new)), null);
     }
 
-    private static void addOption(CommandLine.Model.CommandSpec commandSpec, String name, String description, PropertyMapper mapper) {
-        CommandLine.Model.OptionSpec.Builder builder = CommandLine.Model.OptionSpec.builder(name)
+    private static void addOption(CommandSpec commandSpec, String name, String description, PropertyMapper mapper) {
+        OptionSpec.Builder builder = OptionSpec.builder(name)
                 .description(description)
                 .paramLabel(name.substring(2))
                 .type(String.class);
@@ -323,7 +341,7 @@ public final class Picocli {
     }
 
     public static List<String> getCliArgs(CommandLine cmd) {
-        CommandLine.ParseResult parseResult = cmd.getParseResult();
+        ParseResult parseResult = cmd.getParseResult();
 
         if (parseResult == null) {
             return Collections.emptyList();
@@ -385,7 +403,20 @@ public final class Picocli {
                 if (cause.getMessage() != null) {
                     logError(errorWriter, String.format("ERROR: %s", cause.getMessage()));
                 }
+                printErrorHints(errorWriter, cause);
             } while ((cause = cause.getCause())!= null);
+        }
+        printErrorHints(errorWriter, cause);
+    }
+
+    private static void printErrorHints(PrintWriter errorWriter, Throwable cause) {
+        if (cause instanceof FileSystemException) {
+            FileSystemException fse = (FileSystemException) cause;
+            ConfigValue httpsCertFile = getConfig().getConfigValue("kc.https.certificate.file");
+
+            if (fse.getFile().equals(Optional.ofNullable(httpsCertFile.getValue()).orElse(null))) {
+                logError(errorWriter, Messages.httpsConfigurationNotSet().getMessage());
+            }
         }
     }
 

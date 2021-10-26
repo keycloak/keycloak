@@ -21,22 +21,28 @@ import java.util.Collection;
 import java.util.Map;
 
 import picocli.CommandLine;
+import picocli.CommandLine.Help;
+import picocli.CommandLine.Help.Column;
+import picocli.CommandLine.Help.TextTable;
+import picocli.CommandLine.Model.CommandSpec;
+import picocli.CommandLine.Model.UsageMessageSpec;
 
 /**
- * A {@link picocli.CommandLine.IHelpSectionRenderer} based on Quarkus CLI to show subcomands in help messages.
+ * A {@link picocli.CommandLine.IHelpSectionRenderer} based on Quarkus CLI to show subcommands in help messages.
  */
 class SubCommandListRenderer implements CommandLine.IHelpSectionRenderer {
     // @Override
-    public String render(CommandLine.Help help) {
-        CommandLine.Model.CommandSpec spec = help.commandSpec();
+    public String render(Help help) {
+        CommandSpec spec = help.commandSpec();
         if (spec.subcommands().isEmpty()) {
             return "";
         }
 
-        CommandLine.Help.Column commands = new CommandLine.Help.Column(24, 2, CommandLine.Help.Column.Overflow.SPAN);
-        CommandLine.Help.Column descriptions = new CommandLine.Help.Column(spec.usageMessage().width() - 24, 2,
-                CommandLine.Help.Column.Overflow.WRAP);
-        CommandLine.Help.TextTable textTable = CommandLine.Help.TextTable.forColumns(help.colorScheme(), commands, descriptions);
+        Column commands = new Column(24, 2, Column.Overflow.SPAN);
+        Column descriptions = new Column(spec.usageMessage().width() - 24, 2,
+                Column.Overflow.WRAP);
+
+        TextTable textTable = TextTable.forColumns(help.colorScheme(), commands, descriptions);
         textTable.setAdjustLineBreaksForWideCJKCharacters(spec.usageMessage().adjustLineBreaksForWideCJKCharacters());
 
         addHierarchy(spec.subcommands().values(), textTable, "");
@@ -58,7 +64,7 @@ class SubCommandListRenderer implements CommandLine.IHelpSectionRenderer {
         });
     }
 
-    private String description(CommandLine.Model.UsageMessageSpec usageMessage) {
+    private String description(UsageMessageSpec usageMessage) {
         if (usageMessage.header().length > 0) {
             return usageMessage.header()[0];
         }

@@ -18,11 +18,12 @@
 package org.keycloak.quarkus.runtime.cli;
 
 import picocli.CommandLine;
+import picocli.CommandLine.ParseResult;
 
 public class ExecutionExceptionHandler implements CommandLine.IExecutionExceptionHandler {
 
     @Override
-    public int handleExecutionException(Exception ex, CommandLine commandLine, CommandLine.ParseResult parseResult) {
+    public int handleExecutionException(Exception ex, CommandLine commandLine, ParseResult parseResult) {
         commandLine.getErr().println(ex.getMessage());
         commandLine.usage(commandLine.getErr());
         return commandLine.getCommandSpec().exitCodeOnExecutionException();

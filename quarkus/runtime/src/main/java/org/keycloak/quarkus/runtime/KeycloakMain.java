@@ -17,6 +17,7 @@
 
 package org.keycloak.quarkus.runtime;
 
+import static org.keycloak.quarkus.runtime.Environment.isDevMode;
 import static org.keycloak.quarkus.runtime.cli.Picocli.error;
 import static org.keycloak.quarkus.runtime.cli.Picocli.parseAndRun;
 import static org.keycloak.quarkus.runtime.Environment.getProfileOrDefault;
@@ -29,6 +30,7 @@ import java.util.List;
 import io.quarkus.runtime.ApplicationLifecycleManager;
 import io.quarkus.runtime.Quarkus;
 
+import org.jboss.logging.Logger;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.common.Version;
 
@@ -40,6 +42,8 @@ import io.quarkus.runtime.annotations.QuarkusMain;
  */
 @QuarkusMain(name = "keycloak")
 public class KeycloakMain implements QuarkusApplication {
+
+    private static final Logger LOGGER = Logger.getLogger(KeycloakMain.class);
 
     public static void main(String[] args) {
         System.setProperty("kc.version", Version.VERSION_KEYCLOAK);
@@ -61,13 +65,13 @@ public class KeycloakMain implements QuarkusApplication {
             Quarkus.run(KeycloakMain.class, (integer, cause) -> {
                 if (cause != null) {
                     error(cliArgs, errorWriter,
-                            String.format("Failed to start server using profile (%s)", getProfileOrDefault("none")),
+                            String.format("Failed to start server using profile (%s)", getProfileOrDefault("prod")),
                             cause.getCause());
                 }
             });
         } catch (Throwable cause) {
             error(cliArgs, errorWriter,
-                    String.format("Unexpected error when starting the server using profile (%s)", getProfileOrDefault("none")),
+                    String.format("Unexpected error when starting the server using profile (%s)", getProfileOrDefault("prod")),
                     cause.getCause());
         }
     }
@@ -77,6 +81,9 @@ public class KeycloakMain implements QuarkusApplication {
      */
     @Override
     public int run(String... args) throws Exception {
+        if (isDevMode()) {
+            LOGGER.warnf("Running the server in dev mode. DO NOT use this configuration in production.");
+        }
         Quarkus.waitForExit();
         return ApplicationLifecycleManager.getExitCode();
     }

@@ -29,10 +29,10 @@ public final class Messages {
         return new IllegalArgumentException("Invalid value [" + mode + "] for configuration property [proxy].");
     }
 
-    static IllegalStateException httpsConfigurationNotSet() {
-        StringBuilder builder = new StringBuilder("Key material not provided to setup HTTPS. Please configure your keys/certificates or enable HTTP");
+    public static IllegalStateException httpsConfigurationNotSet() {
+        StringBuilder builder = new StringBuilder("Key material not provided to setup HTTPS. Please configure your keys/certificates");
         if (!"dev".equals(Environment.getProfile())) {
-            builder.append(" or start the server using the 'dev' profile");
+            builder.append(" or start the server in development mode");
         }
         builder.append(".");
         return new IllegalStateException(builder.toString());
