@@ -17,14 +17,18 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import picocli.CommandLine;
+import picocli.CommandLine.Command;
 
-@CommandLine.Command(name = Start.NAME,
-        description = "Start the server.",
-        mixinStandardHelpOptions = true,
-        usageHelpAutoWidth = true,
-        optionListHeading = "%nOptions%n",
-        parameterListHeading = "Available Commands%n")
+@Command(name = Start.NAME,
+        header = "Start the server.",
+        description = {
+            "%nUse this command to run the server in production."
+        },
+        footerHeading = "%nYou may use the \"--auto-build\" option when starting the server to avoid running the \"build\" command everytime you need to change a static property:%n%n"
+                + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --auto-build <OPTIONS>%n%n"
+                + "By doing that you have an additional overhead when the server is starting. Run \"${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} build -h\" for more details.%n%n",
+        optionListHeading = "%nConfiguration Options%n%n",
+        mixinStandardHelpOptions = true)
 public final class Start extends AbstractStartCommand implements Runnable {
 
     public static final String NAME = "start";

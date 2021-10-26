@@ -22,14 +22,29 @@ import static org.keycloak.quarkus.runtime.cli.Picocli.error;
 import org.keycloak.quarkus.runtime.Environment;
 
 import picocli.CommandLine;
+import picocli.CommandLine.Option;
 
 public abstract class AbstractExportImportCommand extends AbstractCommand implements Runnable {
 
     private final String action;
 
-    @CommandLine.Option(names = "--dir", arity = "1", description = "Set the path to a directory where files will be created with the exported data.", paramLabel = "<path>") String toDir;
-    @CommandLine.Option(names = "--file", arity = "1", description = "Set the path to a file that will be created with the exported data.", paramLabel = "<path>") String toFile;
-    @CommandLine.Option(names = "--realm", arity = "1", description = "Set the name of the realm to export", paramLabel = "<realm>") String realm;
+    @Option(names = "--dir",
+            arity = "1",
+            description = "Set the path to a directory where files will be created with the exported data.",
+            paramLabel = "<path>")
+    String toDir;
+
+    @Option(names = "--file",
+            arity = "1",
+            description = "Set the path to a file that will be created with the exported data.",
+            paramLabel = "<path>")
+    String toFile;
+
+    @Option(names = "--realm",
+            arity = "1",
+            description = "Set the name of the realm to export",
+            paramLabel = "<realm>")
+    String realm;
 
     protected AbstractExportImportCommand(String action) {
         this.action = action;

@@ -19,9 +19,10 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import static org.keycloak.exportimport.ExportImportConfig.ACTION_EXPORT;
 
-import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 
-@CommandLine.Command(name = "export",
+@Command(name = "export",
         description = "Export data from realms to a file or directory.",
         mixinStandardHelpOptions = true,
         showDefaultValues = true,
@@ -29,8 +30,19 @@ import picocli.CommandLine;
         parameterListHeading = "Available Commands%n")
 public final class Export extends AbstractExportImportCommand implements Runnable {
 
-    @CommandLine.Option(names = "--users", arity = "1", description = "Set how users should be exported. Possible values are: skip, realm_file, same_file, different_files.", paramLabel = "<strategy>", defaultValue = "different_files") String users;
-    @CommandLine.Option(names = "--users-per-file", arity = "1", description = "Set the number of users per file. It’s used only if --users=different_files.", paramLabel = "<number>", defaultValue = "50") Integer usersPerFile;
+    @Option(names = "--users",
+            arity = "1",
+            description = "Set how users should be exported. Possible values are: skip, realm_file, same_file, different_files.",
+            paramLabel = "<strategy>",
+            defaultValue = "different_files")
+    String users;
+
+    @Option(names = "--users-per-file",
+            arity = "1",
+            description = "Set the number of users per file. It’s used only if --users=different_files.",
+            paramLabel = "<number>",
+            defaultValue = "50")
+    Integer usersPerFile;
 
     public Export() {
         super(ACTION_EXPORT);

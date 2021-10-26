@@ -20,12 +20,17 @@ package org.keycloak.quarkus.runtime.cli.command;
 import org.keycloak.quarkus.runtime.KeycloakMain;
 
 import picocli.CommandLine;
+import picocli.CommandLine.Option;
 
 public abstract class AbstractStartCommand extends AbstractCommand implements Runnable {
 
     public static final String AUTO_BUILD_OPTION = "--auto-build";
 
-    @CommandLine.Option(names = AUTO_BUILD_OPTION, description = "Automatically detects whether the server configuration changed and a new server image must be built prior to starting the server. This option provides an alternative to manually running the '" + Build.NAME + "' prior to starting the server. Use this configuration carefully in production as it might impact the startup time.", order = 1)
+    @Option(names = AUTO_BUILD_OPTION,
+            description = "Automatically detects whether the server configuration changed and a new server image must be built" +
+                    " prior to starting the server. This option provides an alternative to manually running the '" + Build.NAME + "'" +
+                    " prior to starting the server. Use this configuration carefully in production as it might impact the startup time.",
+            order = 1)
     Boolean autoConfig;
 
     @Override

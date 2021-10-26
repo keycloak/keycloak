@@ -31,22 +31,28 @@ import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.configuration.PropertyMappers;
 import org.keycloak.quarkus.runtime.Environment;
 
 import io.smallrye.config.ConfigValue;
-import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Parameters;
 
-@CommandLine.Command(name = "show-config",
+@Command(name = "show-config",
         description = "Print out the current configuration.",
         mixinStandardHelpOptions = true,
         optionListHeading = "%nOptions%n",
         parameterListHeading = "Available Commands%n")
 public final class ShowConfig extends AbstractCommand implements Runnable {
 
-    @CommandLine.Parameters(paramLabel = "filter", defaultValue = "none", description = "Show all configuration options. Use 'all' to show all options.") String filter;
+    @Parameters(
+            paramLabel = "filter",
+            defaultValue = "none",
+            description = "Show all configuration options. Use 'all' to show all options.")
+    String filter;
 
     @Override
     public void run() {
@@ -101,7 +107,7 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
                     .forEach((p, properties1) -> {
                         if (p.equals(profile)) {
                             spec.commandLine().getOut().printf("Profile \"%s\" Configuration (%s):%n", p,
-                                    p.equals(profile) ? "current" : "");
+                                    "current");
                         } else {
                             spec.commandLine().getOut().printf("Profile \"%s\" Configuration:%n", p);
                         }

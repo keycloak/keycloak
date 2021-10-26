@@ -128,7 +128,11 @@ public final class Environment {
         }
 
         // if running in quarkus:dev mode
-        return ProfileManager.getLaunchMode() == LaunchMode.DEVELOPMENT;
+        if (ProfileManager.getLaunchMode() == LaunchMode.DEVELOPMENT) {
+            return true;
+        }
+
+        return "dev".equals(getBuiltTimeProperty(PROFILE).orElse(null));
     }
 
     public static boolean isImportExportMode() {
@@ -140,8 +144,7 @@ public final class Environment {
     }
 
     public static void forceDevProfile() {
-        System.setProperty(PROFILE, "dev");
-        System.setProperty("quarkus.profile", "dev");
+        setProfile("dev");
     }
 
     public static Map<String, File> getProviderFiles() {

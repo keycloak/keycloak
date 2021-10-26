@@ -21,9 +21,10 @@ import static org.keycloak.exportimport.ExportImportConfig.ACTION_IMPORT;
 import static org.keycloak.exportimport.Strategy.IGNORE_EXISTING;
 import static org.keycloak.exportimport.Strategy.OVERWRITE_EXISTING;
 
-import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 
-@CommandLine.Command(name = "import",
+@Command(name = "import",
         description = "Import data from a directory or a file.",
         mixinStandardHelpOptions = true,
         showDefaultValues = true,
@@ -31,7 +32,12 @@ import picocli.CommandLine;
         parameterListHeading = "Available Commands%n")
 public final class Import extends AbstractExportImportCommand implements Runnable {
 
-    @CommandLine.Option(names = "--override", arity = "1", description = "Set if existing data should be skipped or overridden.", paramLabel = "false", defaultValue = "true") boolean override;
+    @Option(names = "--override",
+            arity = "1",
+            description = "Set if existing data should be skipped or overridden.",
+            paramLabel = "false",
+            defaultValue = "true")
+    boolean override;
 
     public Import() {
         super(ACTION_IMPORT);

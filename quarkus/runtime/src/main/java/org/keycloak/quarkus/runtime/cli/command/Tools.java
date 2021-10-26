@@ -17,10 +17,10 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import picocli.CommandLine;
+import picocli.CommandLine.Command;
 
-@CommandLine.Command(name = "tools",
-        description = "Provides utilities for using and interacting with the server.",
+@Command(name = "tools",
+        description = "Utilities for use and interaction with the server.",
         mixinStandardHelpOptions = true,
         optionListHeading = "%nOptions%n",
         parameterListHeading = "Available Commands%n",
