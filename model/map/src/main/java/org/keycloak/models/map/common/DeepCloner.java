@@ -296,6 +296,24 @@ public class DeepCloner {
     }
 
     /**
+     * Returns a class type of an instance that would be instantiated by {@link #newInstance(java.lang.Class)} method.
+     * @param <V> Type (class or a {@code @Root} interface) to create a new instance
+     * @param clazz Type (class or a {@code @Root} interface) to create a new instance
+     * @return See description
+     */
+    public <V> Class<? extends V> newInstanceType(Class<V> valueType) {
+        if (valueType == null) {
+            return null;
+        }
+        try {
+            V v = newInstance(valueType);
+            return v == null ? null : (Class<? extends V>) v.getClass();
+        } catch (IllegalStateException ex) {
+            return null;
+        }
+    }
+
+    /**
      * Deeply clones properties from the {@code from} instance to the {@code to} instance.
      * @param <V> Type (class or a {@code @Root} interface) to clone the instance
      * @param from Original instance
