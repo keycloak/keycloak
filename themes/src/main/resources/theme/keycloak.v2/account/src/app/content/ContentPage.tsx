@@ -16,6 +16,7 @@
 
 import * as React from 'react';
 import {Button, Grid, GridItem, Title, Tooltip} from '@patternfly/react-core';
+import { SyncAltIcon } from '@patternfly/react-icons';
 
 import {Msg} from '../widgets/Msg';
 import {ContentAlert} from './ContentAlert';
@@ -46,7 +47,7 @@ export class ContentPage extends React.Component<ContentPageProps> {
                         {this.props.onRefresh &&
                             <GridItem span={1}>
                                 <Tooltip content={<Msg msgKey='refreshPage'/>}>
-                                    <Button aria-describedby="refresh page" id='refresh-page' variant='plain' onClick={this.props.onRefresh}>
+                                    <Button aria-describedby="refresh page" id='refresh-page' variant='link' onClick={this.props.onRefresh} icon={<SyncAltIcon />}>
                                         Refresh
                                     </Button>
                                 </Tooltip>
