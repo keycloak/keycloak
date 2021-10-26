@@ -68,7 +68,7 @@ const groupLdapMapper = "group-ldap-mapper";
 const roleLdapMapper = "role-ldap-mapper";
 const hcLdapRoleMapper = "hardcoded-ldap-role-mapper";
 
-/* Used by "Delete default mappers" test
+// Used by "Delete default mappers" test
 const creationDateMapper = "creation date";
 const emailMapper = "email";
 const lastNameMapper = "last name";
@@ -76,7 +76,6 @@ const modifyDateMapper = "modify date";
 const usernameMapper = "username";
 const firstNameMapper = "first name";
 const MsadAccountControlsMapper = "MSAD account controls";
-*/
 
 describe("User Fed LDAP mapper tests", () => {
   beforeEach(() => {
@@ -146,7 +145,7 @@ describe("User Fed LDAP mapper tests", () => {
   });
 
   // delete default mappers
-  /*it("Delete default mappers", () => {
+  it("Delete default mappers", () => {
     providersPage.clickExistingCard(ldapName);
     providersPage.goToMappers();
 
@@ -185,7 +184,7 @@ describe("User Fed LDAP mapper tests", () => {
       .deleteItem(MsadAccountControlsMapper);
     modalUtils.checkModalTitle(mapperDeleteTitle).confirmModal();
     masthead.checkNotificationMessage(mapperDeletedSuccess);
-  });*/
+  });
 
   // mapper CRUD tests
   // create mapper

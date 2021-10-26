@@ -15,11 +15,8 @@ describe("Sessions test", () => {
       sidebarPage.goToSessions();
     });
 
-    it("Check dropdown display", () => {
+    it("Check dropdown display and all options exist", () => {
       sessionsPage.shouldDisplay();
-    });
-
-    it("Check dropdown options exist", () => {
       sessionsPage.shouldNotBeEmpty();
     });
 

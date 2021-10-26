@@ -21,7 +21,7 @@ export default class SidebarPage {
   }
 
   goToRealm(realmName: string) {
-    cy.findByTestId(this.realmsDrpDwn).scrollIntoView().click();
+    cy.findByTestId(this.realmsList).scrollIntoView().click();
     cy.findByTestId(this.realmsList).get("ul").contains(realmName).click();
 
     return this;

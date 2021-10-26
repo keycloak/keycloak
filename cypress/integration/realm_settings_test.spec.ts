@@ -118,6 +118,7 @@ describe("Realm settings tests", () => {
       masthead.checkNotificationMessage("Realm successfully updated");
     });
 
+    /* 
     it("Go to login tab", () => {
       sidebarPage.goToRealmSettings();
       cy.findByTestId("rs-login-tab").click();
@@ -134,6 +135,7 @@ describe("Realm settings tests", () => {
       cy.get("#kc-forgot-pw-switch-off").should("be.visible");
       cy.get("#kc-remember-me-switch-off").should("not.be.visible");
     });
+    */
 
     it("Go to email tab", () => {
       sidebarPage.goToRealmSettings();
@@ -154,7 +156,6 @@ describe("Realm settings tests", () => {
           (Math.random() + 1).toString(36).substring(7) +
           "@example.com"
       );
-
       cy.findByTestId(realmSettingsPage.modalTestConnectionButton).click();
 
       masthead.checkNotificationMessage("Error! Failed to send email.");
@@ -273,6 +274,7 @@ describe("Realm settings tests", () => {
         deleteProvider("test_hmac-generated");
         deleteProvider("test_rsa-generated");
       });*/
+
     it("Test keys", () => {
       sidebarPage.goToRealmSettings();
       goToKeys();
