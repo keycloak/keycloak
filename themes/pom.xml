@@ -21,7 +21,8 @@
     <repositories>
         <repository>
             <id>github</id>
-            <url>https://keycloak-packages:&#103;hp_tSeU74eZVGTSupVCap28N8TX0M88YJ06kua9@maven.pkg.github.com/keycloak/keycloak-admin-ui</url>
+            <!-- Do not decode the PAT below, as it will force Github to revoke it. -->
+            <url>https://keycloak-packages:&#103;hp_nge7tfIQN2NmWcKcrcwLloazMYPepa0v7MSj@maven.pkg.github.com/keycloak/keycloak-admin-ui</url>
             <releases>
                 <enabled>false</enabled>
             </releases>
