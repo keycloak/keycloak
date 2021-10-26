@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.UserModel;
+import org.keycloak.storage.ReadOnlyException;
 
 /**
  * <p>The default implementation for {@link UserProfile}. Should be reused as much as possible by the different implementations
@@ -146,9 +147,9 @@ public final class DefaultUserProfile implements UserProfile {
                     }
                 }
             }
-        } catch (ModelException me) {
-            // some client code relies on this exception to react to exceptions from the storage
-            throw me;
+        } catch (ModelException | ReadOnlyException e) {
+            // some client code relies on these exceptions to react to exceptions from the storage
+            throw e;
         } catch (Exception cause) {
             throw new RuntimeException("Unexpected error when persisting user profile", cause);
         }
