@@ -197,7 +197,7 @@ public class UserResource {
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("User exists with same username or email");
         } catch (ReadOnlyException re) {
-            return ErrorResponse.exists("User is read only!");
+            return ErrorResponse.error("User is read only!", Status.BAD_REQUEST);
         } catch (ModelException me) {
             logger.warn("Could not update user!", me);
             return ErrorResponse.error("Could not update user!", Status.BAD_REQUEST);
