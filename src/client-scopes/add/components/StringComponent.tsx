@@ -25,6 +25,7 @@ export const StringComponent = ({
     >
       <TextInput
         id={name!}
+        data-testid={name}
         ref={register()}
         type="text"
         name={`config.${name?.replaceAll(".", "-")}`}

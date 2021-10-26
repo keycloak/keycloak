@@ -26,6 +26,7 @@ export const BooleanComponent = ({
     >
       <Controller
         name={`config.${name?.replaceAll(".", "-")}`}
+        data-testid={name}
         defaultValue={defaultValue}
         control={control}
         render={({ onChange, value }) => (
@@ -33,7 +34,7 @@ export const BooleanComponent = ({
             id={name!}
             label={t("common:on")}
             labelOff={t("common:off")}
-            isChecked={value === "true"}
+            isChecked={value === "true" || value === true}
             onChange={(value) => onChange("" + value)}
           />
         )}

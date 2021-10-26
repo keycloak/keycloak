@@ -271,8 +271,8 @@ export const AdminEvents = () => {
                       data-testid="resource-types-searchField"
                       chipGroupProps={{
                         numChips: 1,
-                        expandedText: "Hide",
-                        collapsedText: "Show ${remaining}",
+                        expandedText: t("common:hide"),
+                        collapsedText: t("common:showRemaining"),
                       }}
                       variant={SelectVariant.typeaheadMulti}
                       typeAheadAriaLabel="Select"
@@ -336,8 +336,8 @@ export const AdminEvents = () => {
                       data-testid="operation-types-searchField"
                       chipGroupProps={{
                         numChips: 1,
-                        expandedText: "Hide",
-                        collapsedText: "Show ${remaining}",
+                        expandedText: t("common:hide"),
+                        collapsedText: t("common:showRemaining"),
                       }}
                       variant={SelectVariant.typeaheadMulti}
                       typeAheadAriaLabel="Select"

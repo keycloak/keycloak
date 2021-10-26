@@ -35,6 +35,7 @@ export const ScriptComponent = ({
         render={({ onChange, value }) => (
           <CodeEditor
             id={name!}
+            data-testid={name}
             type="text"
             onChange={onChange}
             code={value}

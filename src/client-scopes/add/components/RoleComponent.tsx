@@ -142,6 +142,7 @@ export const RoleComponent = ({ name, label, helpText }: ComponentProps) => {
                 {clients && (
                   <Select
                     toggleId={name!}
+                    data-testid={name}
                     onToggle={() => setClientsOpen(!clientsOpen)}
                     isOpen={clientsOpen}
                     variant={SelectVariant.typeahead}

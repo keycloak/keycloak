@@ -32,6 +32,7 @@ export const ListComponent = ({
     >
       <Controller
         name={`config.${name?.replaceAll(".", "-")}`}
+        data-testid={name}
         defaultValue={defaultValue || ""}
         control={control}
         render={({ onChange, value }) => (

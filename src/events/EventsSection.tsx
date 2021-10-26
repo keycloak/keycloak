@@ -252,8 +252,8 @@ export const EventsSection = () => {
                       data-testid="event-type-searchField"
                       chipGroupProps={{
                         numChips: 1,
-                        expandedText: "Hide",
-                        collapsedText: "Show ${remaining}",
+                        expandedText: t("common:hide"),
+                        collapsedText: t("common:showRemaining"),
                       }}
                       variant={SelectVariant.typeaheadMulti}
                       typeAheadAriaLabel="Select"

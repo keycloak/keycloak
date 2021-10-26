@@ -25,8 +25,8 @@ import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { COMPONENTS, isValidComponentType } from "../add/components/components";
 import { MapperParams, MapperRoute } from "../routes/Mapper";
-import { Components, COMPONENTS } from "../add/components/components";
 import { toClientScope } from "../routes/ClientScope";
 
 import "./mapping-details.css";
@@ -177,9 +177,6 @@ export const MappingDetails = () => {
       addError(`common:mapping${key}Error`, error);
     }
   };
-
-  const isValidComponentType = (value: string): value is Components =>
-    value in COMPONENTS;
 
   return (
     <>
