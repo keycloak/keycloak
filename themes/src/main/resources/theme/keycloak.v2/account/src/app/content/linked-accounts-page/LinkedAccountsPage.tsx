@@ -18,13 +18,13 @@ import * as React from 'react';
 import {withRouter, RouteComponentProps} from 'react-router-dom';
 
 import {
-    Badge,
     Button,
     DataList,
     DataListAction,
     DataListItemCells,
     DataListCell,
     DataListItemRow,
+    Label,
     Stack,
     StackItem,
     Title,
@@ -183,8 +183,8 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
                             <DataListItemCells
                                 dataListCells={[
                                     <DataListCell key='idp'><Stack><StackItem isFilled>{this.findIcon(account)}</StackItem><StackItem id={`${account.providerAlias}-idp-name`} isFilled><h2><strong>{account.displayName}</strong></h2></StackItem></Stack></DataListCell>,
-                                    <DataListCell key='badge'><Stack><StackItem isFilled/><StackItem id={`${account.providerAlias}-idp-badge`} isFilled>{this.badge(account)}</StackItem></Stack></DataListCell>,
-                                    <DataListCell key='username'><Stack><StackItem isFilled/><StackItem id={`${account.providerAlias}-idp-username`} isFilled>{account.linkedUsername}</StackItem></Stack></DataListCell>,
+                                    <DataListCell key='label'><Stack><StackItem isFilled/><StackItem id={`${account.providerAlias}-idp-label`} isFilled>{this.label(account)}</StackItem></Stack></DataListCell>,
+                                    <DataListCell key='username' width={5}><Stack><StackItem isFilled/><StackItem id={`${account.providerAlias}-idp-username`} isFilled>{account.linkedUsername}</StackItem></Stack></DataListCell>,
                                 ]}/>
                             <DataListAction aria-labelledby='foo' aria-label='foo action' id='setPasswordAction'>
                                 {isLinked && <Button id={`${account.providerAlias}-idp-unlink`} variant='link' onClick={() => this.unLinkAccount(account)}><UnlinkIcon size='sm'/> <Msg msgKey='unLink'/></Button>}
@@ -199,12 +199,12 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
         )
     }
 
-    private badge(account: LinkedAccount): React.ReactNode {
+    private label(account: LinkedAccount): React.ReactNode {
         if (account.social) {
-            return (<Badge><Msg msgKey='socialLogin'/></Badge>);
+            return (<Label color="blue"><Msg msgKey='socialLogin'/></Label>);
         }
 
-        return (<Badge style={{backgroundColor: "green"}} ><Msg msgKey='systemDefined'/></Badge>);
+        return (<Label style={{backgroundColor: "green"}} ><Msg msgKey='systemDefined'/></Label>);
     }
 
     private findIcon(account: LinkedAccount): React.ReactNode {
