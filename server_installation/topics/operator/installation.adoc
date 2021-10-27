@@ -5,6 +5,9 @@
 To install the {project_operator}, you can use:
 
 * xref:_install_by_olm[The Operator Lifecycle Manager (OLM)]
+ifeval::[{project_community}==true]
+* xref:_install_by_command[Command line installation]
+endif::[]
 
 [[_install_by_olm]]
 ==== Installing using the Operator Lifecycle Manager
@@ -88,4 +91,66 @@ image:{project_images}/operator-operatorhub-install.png[]
 
 endif::[]
 
+[[_install_by_command]]
+==== Installing from the command line
+
+You can install the {project_operator} from the command line.
+
+.Prerequisites
+
+* You have cluster-admin permission or an equivalent level of permissions granted by an administrator.
+
+.Procedure
+
+. Obtain the software to install from this location: link:{operatorRepo_link}[Github repo].
+
+. Install all required custom resource definitions:
++
+[source,bash,subs=+attributes]
+----
+$ {create_cmd} -f deploy/crds/
+----
+
+. Create a new namespace (or reuse an existing one) such as the namespace `myproject`:
++
+[source,bash,subs=+attributes]
+----
+$ {create_cmd} namespace myproject
+----
+
+. Deploy a role, role binding, and service account for the Operator:
++
+[source,bash,subs=+attributes]
+----
+$ {create_cmd} -f deploy/role.yaml -n myproject
+$ {create_cmd} -f deploy/role_binding.yaml -n myproject
+$ {create_cmd} -f deploy/service_account.yaml -n myproject
+----
+
+. Deploy the Operator:
++
+[source,bash,subs=+attributes]
+----
+$ {create_cmd} -f deploy/operator.yaml -n myproject
+----
+
+. Confirm that the Operator is running:
++
+[source,bash,subs=+attributes]
+----
+$ {create_cmd_brief} get deployment keycloak-operator
+NAME                READY   UP-TO-DATE   AVAILABLE   AGE
+keycloak-operator   1/1     1            1           41s
+----
+
+.Additional resources
+
+* When the Operator installation completes, you are ready to create your first custom resource. See xref:_keycloak_cr[{project_name} installation using a custom resource].
+ifeval::[{project_community}==true]
+However, if you want to start tracking all Operator activities before creating custom resources, see the xref:_monitoring-operator[Application Monitoring Operator].
+
+* For more information on a Kubernetes installation, see link:https://operatorhub.io/how-to-install-an-operator[How to install an Operator from OperatorHub.io].
+endif::[]
+
+* For more information on OpenShift Operators, see the link:https://docs.openshift.com/container-platform/4.4/operators/olm-what-operators-are.html[OpenShift Operators guide].
 
