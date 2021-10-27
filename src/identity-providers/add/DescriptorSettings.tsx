@@ -420,7 +420,9 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         helperTextInvalid={t("common:required")}
       >
         <TextInput
-          type="text"
+          type="number"
+          min="0"
+          max="2147483"
           id="allowedClockSkew"
           name="config.allowedClockSkew"
           ref={register}
