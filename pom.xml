@@ -92,7 +92,7 @@
         <log4j.version>1.2.17</log4j.version>
         <resteasy.version>3.15.1.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
-        <owasp.html.sanitizer.version>20191001.1</owasp.html.sanitizer.version>
+        <owasp.html.sanitizer.version>20211018.2</owasp.html.sanitizer.version>
         <slf4j-api.version>1.7.30</slf4j-api.version>
         <slf4j.version>1.7.30</slf4j.version>
         <sun.istack.version>3.0.10</sun.istack.version>
