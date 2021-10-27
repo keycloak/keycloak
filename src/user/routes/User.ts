@@ -1,7 +1,7 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { UsersTabs } from "../UsersTabs";
 
 export type UserTab = "settings" | "groups" | "consents" | "attributes";
 
@@ -13,7 +13,7 @@ export type UserParams = {
 
 export const UserRoute: RouteDef = {
   path: "/:realm/users/:id/:tab",
-  component: UsersTabs,
+  component: lazy(() => import("../UsersTabs")),
   breadcrumb: (t) => t("users:userDetails"),
   access: "manage-users",
 };

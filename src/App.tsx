@@ -1,5 +1,5 @@
-import React, { FunctionComponent } from "react";
-import { Page } from "@patternfly/react-core";
+import React, { FunctionComponent, Suspense } from "react";
+import { Page, Spinner } from "@patternfly/react-core";
 import { HashRouter as Router, Route, Switch } from "react-router-dom";
 import { ErrorBoundary } from "react-error-boundary";
 
@@ -60,7 +60,13 @@ const SecuredRoute = ({ route }: SecuredRouteProps) => {
       ? hasAccess(...route.access)
       : hasAccess(route.access);
 
-  if (accessAllowed) return <route.component />;
+  if (accessAllowed) {
+    return (
+      <Suspense fallback={<Spinner />}>
+        <route.component />
+      </Suspense>
+    );
+  }
 
   return <ForbiddenSection />;
 };

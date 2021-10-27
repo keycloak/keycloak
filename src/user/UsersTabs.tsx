@@ -28,7 +28,7 @@ import { toUsers } from "./routes/Users";
 import { UserRoleMapping } from "./UserRoleMapping";
 import { UserAttributes } from "./UserAttributes";
 
-export const UsersTabs = () => {
+const UsersTabs = () => {
   const { t } = useTranslation("users");
   const { addAlert, addError } = useAlerts();
   const history = useHistory();
@@ -225,3 +225,5 @@ export const UsersTabs = () => {
     </>
   );
 };
+
+export default UsersTabs;
