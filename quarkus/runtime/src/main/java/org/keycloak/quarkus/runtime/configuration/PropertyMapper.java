@@ -79,6 +79,12 @@ public class PropertyMapper {
         return MAPPERS.computeIfAbsent(toProperty, s -> new PropertyMapper(fromProperty, s, null, null, null, true, description, false, expectedValues));
     }
 
+    static PropertyMapper createBuildTimeProperty(String fromProperty, String toProperty, String defaultValue,
+            BiFunction<String, ConfigSourceInterceptorContext, String> transformer, String description,
+            Iterable<String> expectedValues) {
+        return MAPPERS.computeIfAbsent(toProperty, s -> new PropertyMapper(fromProperty, s, defaultValue, transformer, null, true, description, false, expectedValues));
+    }
+
     static Map<String, PropertyMapper> MAPPERS = new HashMap<>();
 
     static PropertyMapper IDENTITY = new PropertyMapper(null, null, null, null, null) {

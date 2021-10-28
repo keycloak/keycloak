@@ -31,7 +31,9 @@ import org.keycloak.quarkus.runtime.storage.database.liquibase.KeycloakLogger;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
+import org.keycloak.quarkus.runtime.storage.infinispan.CacheInitializer;
 
+import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.annotations.Recorder;
 import liquibase.logging.LogFactory;
 import liquibase.servicelocator.ServiceLocator;
@@ -97,5 +99,9 @@ public class KeycloakRecorder {
                 return Configuration.getRawValue(feature);
             }
         });
+    }
+
+    public RuntimeValue<CacheInitializer> createCacheInitializer(String config) {
+        return new RuntimeValue<>(new CacheInitializer(config));
     }
 }
