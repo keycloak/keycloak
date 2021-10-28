@@ -14,7 +14,19 @@
  * limitations under the License.
  */
 import * as React from 'react';
-import { ActionGroup, Button, Form, FormGroup, TextInput, Grid, GridItem, ExpandableSection, Card, CardBody} from '@patternfly/react-core';
+import { ActionGroup, 
+         Button, 
+         Form, 
+         FormGroup, 
+         TextInput, 
+         Grid, 
+         GridItem, 
+         ExpandableSection, 
+         Card, 
+         CardBody,
+         HelperText,
+         HelperTextItem
+       } from '@patternfly/react-core';
 
 import { HttpResponse } from '../../account-service/account.service';
 import { AccountServiceContext } from '../../account-service/AccountServiceContext';
