@@ -26,7 +26,7 @@ import {
   DataListItemCells,
   Grid,
   GridItem,
-  Button,
+  Button
 } from '@patternfly/react-core';
 
 import { InfoAltIcon, CheckIcon, BuilderImageIcon, ExternalLinkAltIcon } from '@patternfly/react-icons';
@@ -115,125 +115,125 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
 
   public render(): React.ReactNode {
     return (
-      <ContentPage title={Msg.localize('applicationsPageTitle')}>
-        <DataList id="applications-list" aria-label={Msg.localize('applicationsPageTitle')} isCompact>
-          <DataListItem id="applications-list-header" aria-labelledby="Columns names">
-            <DataListItemRow>
-              // invisible toggle allows headings to line up properly
-              <span style={{ visibility: 'hidden' }}>
-                <DataListToggle
-                  isExpanded={false}
-                  id='applications-list-header-invisible-toggle'
-                  aria-controls="hidden"
-                />
-              </span>
-              <DataListItemCells
-                dataListCells={[
-                  <DataListCell key='applications-list-client-id-header' width={2}>
-                    <strong><Msg msgKey='applicationName' /></strong>
-                  </DataListCell>,
-                  <DataListCell key='applications-list-app-type-header' width={2}>
-                    <strong><Msg msgKey='applicationType' /></strong>
-                  </DataListCell>,
-                  <DataListCell key='applications-list-status' width={2}>
-                    <strong><Msg msgKey='status' /></strong>
-                  </DataListCell>,
-                ]}
-              />
-            </DataListItemRow>
-          </DataListItem>
-          {this.state.applications.map((application: Application, appIndex: number) => {
-            return (
-              <DataListItem id={this.elementId("client-id", application)} key={'application-' + appIndex} aria-labelledby="applications-list" isExpanded={this.state.isRowOpen[appIndex]}>
+        <ContentPage title={Msg.localize('applicationsPageTitle')}>
+            <DataList id="applications-list" aria-label={Msg.localize('applicationsPageTitle')} isCompact>
+              <DataListItem id="applications-list-header" aria-labelledby="Columns names">
                 <DataListItemRow>
-                  <DataListToggle
-                    onClick={() => this.onToggle(appIndex)}
-                    isExpanded={this.state.isRowOpen[appIndex]}
-                    id={this.elementId('toggle', application)}
-                    aria-controls={this.elementId("expandable", application)}
-                  />
+                  // invisible toggle allows headings to line up properly
+                  <span style={{ visibility: 'hidden' }}>
+                    <DataListToggle
+                      isExpanded={false}
+                      id='applications-list-header-invisible-toggle'
+                      aria-controls="hidden"
+                    />
+                  </span>
                   <DataListItemCells
                     dataListCells={[
-                      <DataListCell id={this.elementId('name', application)} width={2} key={'app-' + appIndex}>
-                        <Button component="a" variant="link" onClick={() => window.open(application.effectiveUrl)}>
-                          {application.clientName || application.clientId} <ExternalLinkAltIcon/>
-                        </Button>
+                      <DataListCell key='applications-list-client-id-header' width={2}>
+                        <strong><Msg msgKey='applicationName' /></strong>
                       </DataListCell>,
-                      <DataListCell id={this.elementId('internal', application)} width={2} key={'internal-' + appIndex}>
-                        {application.userConsentRequired ? Msg.localize('thirdPartyApp') : Msg.localize('internalApp')}
-                        {application.offlineAccess ? ', ' + Msg.localize('offlineAccess') : ''}
+                      <DataListCell key='applications-list-app-type-header' width={2}>
+                        <strong><Msg msgKey='applicationType' /></strong>
                       </DataListCell>,
-                      <DataListCell id={this.elementId('status', application)} width={2} key={'status-' + appIndex}>
-                        {application.inUse ? Msg.localize('inUse') : Msg.localize('notInUse')}
-                      </DataListCell>
+                      <DataListCell key='applications-list-status' width={2}>
+                        <strong><Msg msgKey='status' /></strong>
+                      </DataListCell>,
                     ]}
                   />
                 </DataListItemRow>
-                <DataListContent
-                  hasNoPadding={false}
-                  aria-label={Msg.localize('applicationDetails')}
-                  id={this.elementId("expandable", application)}
-                  isHidden={!this.state.isRowOpen[appIndex]}
-                >
-                  <Grid sm={12} md={12} lg={12}>
-                    <div className='pf-c-content'>
-                      <GridItem><strong>{Msg.localize('client') + ': '}</strong> {application.clientId}</GridItem>
-                      {application.description &&
-                        <GridItem><strong>{Msg.localize('description') + ': '}</strong> {application.description}</GridItem>
-                      }
-                      {application.effectiveUrl &&
-                        <GridItem><strong>URL: </strong> <span id={this.elementId('effectiveurl', application)}>{application.effectiveUrl.split('"')}</span></GridItem>
-                      }
-                      {application.consent &&
-                        <React.Fragment>
-                          <GridItem span={12}>
-                            <strong>Has access to:</strong>
-                          </GridItem>
-                          {application.consent.grantedScopes.map((scope: GrantedScope, scopeIndex: number) => {
-                            return (
-                              <React.Fragment key={'scope-' + scopeIndex} >
-                                <GridItem offset={1}><CheckIcon /> {scope.name}</GridItem>
-                              </React.Fragment>
-                            )
-                          })}
-                          <GridItem><strong>{Msg.localize('accessGrantedOn') + ': '}</strong>
-                            {new Intl.DateTimeFormat(locale, {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric',
-                              hour: 'numeric',
-                              minute: 'numeric',
-                              second: 'numeric'
-                            }).format(application.consent.createDate)}
-                          </GridItem>
-                        </React.Fragment>
-                      }
-                    </div>
-                  </Grid>
-                  {(application.consent || application.offlineAccess) &&
-                    <Grid hasGutter>
-                      <hr />
-                      <GridItem>
-                        <React.Fragment>
-                          <ContinueCancelModal
-                            buttonTitle={Msg.localize('removeButton')} // required
-                            buttonVariant='secondary' // defaults to 'primary'
-                            modalTitle={Msg.localize('removeModalTitle')} // required
-                            modalMessage={Msg.localize('removeModalMessage', [application.clientId])}
-                            modalContinueButtonLabel={Msg.localize('confirmButton')} // defaults to 'Continue'
-                            onContinue={() => this.removeConsent(application.clientId)} // required
-                          />
-                        </React.Fragment>
-                      </GridItem>
-                      <GridItem><InfoAltIcon /> {Msg.localize('infoMessage')}</GridItem>
-                    </Grid>
-                  }
-                </DataListContent>
               </DataListItem>
-            )
-          })}
-        </DataList>
-      </ContentPage>
+              {this.state.applications.map((application: Application, appIndex: number) => {
+                return (
+                  <DataListItem id={this.elementId("client-id", application)} key={'application-' + appIndex} aria-labelledby="applications-list" isExpanded={this.state.isRowOpen[appIndex]}>
+                    <DataListItemRow>
+                      <DataListToggle
+                        onClick={() => this.onToggle(appIndex)}
+                        isExpanded={this.state.isRowOpen[appIndex]}
+                        id={this.elementId('toggle', application)}
+                        aria-controls={this.elementId("expandable", application)}
+                      />
+                      <DataListItemCells
+                        dataListCells={[
+                          <DataListCell id={this.elementId('name', application)} width={2} key={'app-' + appIndex}>
+                            <Button component="a" variant="link" onClick={() => window.open(application.effectiveUrl)}>
+                              {application.clientName || application.clientId} <ExternalLinkAltIcon/>
+                            </Button>
+                          </DataListCell>,
+                          <DataListCell id={this.elementId('internal', application)} width={2} key={'internal-' + appIndex}>
+                            {application.userConsentRequired ? Msg.localize('thirdPartyApp') : Msg.localize('internalApp')}
+                            {application.offlineAccess ? ', ' + Msg.localize('offlineAccess') : ''}
+                          </DataListCell>,
+                          <DataListCell id={this.elementId('status', application)} width={2} key={'status-' + appIndex}>
+                            {application.inUse ? Msg.localize('inUse') : Msg.localize('notInUse')}
+                          </DataListCell>
+                        ]}
+                      />
+                    </DataListItemRow>
+                    <DataListContent
+                      hasNoPadding={false}
+                      aria-label={Msg.localize('applicationDetails')}
+                      id={this.elementId("expandable", application)}
+                      isHidden={!this.state.isRowOpen[appIndex]}
+                    >
+                      <Grid sm={12} md={12} lg={12}>
+                        <div className='pf-c-content'>
+                          <GridItem><strong>{Msg.localize('client') + ': '}</strong> {application.clientId}</GridItem>
+                          {application.description &&
+                            <GridItem><strong>{Msg.localize('description') + ': '}</strong> {application.description}</GridItem>
+                          }
+                          {application.effectiveUrl &&
+                            <GridItem><strong>URL: </strong> <span id={this.elementId('effectiveurl', application)}>{application.effectiveUrl.split('"')}</span></GridItem>
+                          }
+                          {application.consent &&
+                            <React.Fragment>
+                              <GridItem span={12}>
+                                <strong>Has access to:</strong>
+                              </GridItem>
+                              {application.consent.grantedScopes.map((scope: GrantedScope, scopeIndex: number) => {
+                                return (
+                                  <React.Fragment key={'scope-' + scopeIndex} >
+                                    <GridItem offset={1}><CheckIcon /> {scope.name}</GridItem>
+                                  </React.Fragment>
+                                )
+                              })}
+                              <GridItem><strong>{Msg.localize('accessGrantedOn') + ': '}</strong>
+                                {new Intl.DateTimeFormat(locale, {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric',
+                                  hour: 'numeric',
+                                  minute: 'numeric',
+                                  second: 'numeric'
+                                }).format(application.consent.createDate)}
+                              </GridItem>
+                            </React.Fragment>
+                          }
+                        </div>
+                      </Grid>
+                      {(application.consent || application.offlineAccess) &&
+                        <Grid hasGutter>
+                          <hr />
+                          <GridItem>
+                            <React.Fragment>
+                              <ContinueCancelModal
+                                buttonTitle={Msg.localize('removeButton')} // required
+                                buttonVariant='secondary' // defaults to 'primary'
+                                modalTitle={Msg.localize('removeModalTitle')} // required
+                                modalMessage={Msg.localize('removeModalMessage', [application.clientId])}
+                                modalContinueButtonLabel={Msg.localize('confirmButton')} // defaults to 'Continue'
+                                onContinue={() => this.removeConsent(application.clientId)} // required
+                              />
+                            </React.Fragment>
+                          </GridItem>
+                          <GridItem><InfoAltIcon /> {Msg.localize('infoMessage')}</GridItem>
+                        </Grid>
+                      }
+                    </DataListContent>
+                  </DataListItem>
+                )
+              })}
+            </DataList>
+        </ContentPage>
     );
   }
 };

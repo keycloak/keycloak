@@ -31,6 +31,8 @@ import {
         Dropdown,
         DropdownPosition,
         KebabToggle,
+        Card,
+        CardTitle
     } from '@patternfly/react-core';
 
 import {AIACommand} from '../../util/AIACommand';
@@ -139,22 +141,24 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
 
     public render(): React.ReactNode {
         return (
-            <ContentPage title="signingIn"
-                     introMessage="signingInSubMessage">
-                <Stack hasGutter>
-                    {this.renderCategories()}
-                </Stack>
-            </ContentPage>
+          <ContentPage title="signingIn"
+                   introMessage="signingInSubMessage">
+              <Stack hasGutter>
+                  {this.renderCategories()}
+              </Stack>
+          </ContentPage>
         );
     }
 
     private renderCategories(): React.ReactNode {
         return (<> {
             Array.from(this.state.credentialContainers.keys()).map(category => (
-                <StackItem key={category} isFilled>
-                    <DataList aria-label='foo'>
-                        {this.renderTypes(category!)}
-                    </DataList>
+                <StackItem key={category}>
+                    <Card>
+                        <DataList aria-label='foo'>
+                            {this.renderTypes(category!)}
+                        </DataList>
+                    </Card>
                 </StackItem>
             ))
 
@@ -267,11 +271,13 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         return (
             <React.Fragment key={'credTypeTitle-' + credContainer.type}>
                 <DataListItem aria-labelledby={'type-datalistitem-' + credContainer.type}>
-                    <DataListItemRow>
+
+                      <CardTitle>
                         <Title id={`${category}-categ-title`} headingLevel="h2" size="2xl">
                             <strong><Msg msgKey={category}/></strong>
                         </Title>
-                    </DataListItemRow>
+                      </CardTitle>
+
                     <DataListItemRow key={'credTitleRow-' + credContainer.type}>
                         <DataListItemCells
                             dataListCells={[

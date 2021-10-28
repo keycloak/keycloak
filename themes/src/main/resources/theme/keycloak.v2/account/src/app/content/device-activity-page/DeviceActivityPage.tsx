@@ -220,9 +220,7 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
     public render(): React.ReactNode {
 
       return (
-        <ContentPage title="device-activity" onRefresh={this.fetchDevices.bind(this)}>
-          <Stack hasGutter={true}>
-            <StackItem isFilled>
+          <ContentPage title="device-activity" onRefresh={this.fetchDevices.bind(this)}>
               <DataList aria-label={Msg.localize('signedInDevices')}>
                   <DataListItem key="SignedInDevicesHeader" aria-labelledby="signedInDevicesTitle" isExpanded={false}>
                       <DataListItemRow>
@@ -311,10 +309,7 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
                   </DataListItemRow>
                 </DataListItem>
               </DataList>
-            </StackItem>
-
-          </Stack>
-        </ContentPage>
+          </ContentPage>
         );
     }
 };
