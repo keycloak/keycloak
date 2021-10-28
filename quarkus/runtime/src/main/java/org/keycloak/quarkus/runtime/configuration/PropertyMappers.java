@@ -146,7 +146,7 @@ public final class PropertyMappers {
     }
 
     private static void configureClustering() {
-        createWithDefault("cluster", "kc.spi.connections-infinispan.quarkus.config-file", "default", (value, context) -> "cluster-" + value + ".xml", "Specifies clustering configuration. The specified value points to the infinispan configuration file prefixed with the 'cluster-` "
+        createBuildTimeProperty("cluster", "kc.spi.connections-infinispan.quarkus.config-file", "default", (value, context) -> "cluster-" + value + ".xml", "Specifies clustering configuration. The specified value points to the infinispan configuration file prefixed with the 'cluster-` "
                 + "inside the distribution configuration directory. Supported values out of the box are 'local' and 'default'. Value 'local' points to the file cluster-local.xml and " +
                 "effectively disables clustering and use infinispan caches in the local mode. Value 'default' points to the file cluster-default.xml, which has clustering enabled for infinispan caches.",
                 Arrays.asList("local", "default"));

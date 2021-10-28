@@ -17,6 +17,7 @@
 
 package org.keycloak.quarkus.deployment;
 
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfigValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
 import static org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX;
 import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
@@ -27,14 +28,19 @@ import static org.keycloak.representations.provider.ScriptProviderDescriptor.POL
 import static org.keycloak.quarkus.runtime.Environment.CLI_ARGS;
 import static org.keycloak.quarkus.runtime.Environment.getProviderFiles;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.persistence.Entity;
 import javax.persistence.spi.PersistenceUnitTransactionType;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -50,8 +56,10 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.stream.Collectors;
 
 import io.quarkus.agroal.spi.JdbcDataSourceBuildItem;
+import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.deployment.IsDevelopment;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
@@ -69,6 +77,7 @@ import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
+import org.infinispan.commons.util.FileLookupFactory;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.DotName;
@@ -108,6 +117,8 @@ import io.quarkus.deployment.annotations.ExecutionTime;
 import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.vertx.http.deployment.FilterBuildItem;
+
+import org.keycloak.quarkus.runtime.storage.infinispan.CacheInitializer;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
 import org.keycloak.representations.provider.ScriptProviderMetadata;
 import org.keycloak.quarkus.runtime.integration.web.NotFoundHandler;
@@ -257,9 +268,6 @@ class KeycloakProcessor {
      * <p>Make the build time configuration available at runtime so that the server can run without having to specify some of
      * the properties again.
      *
-     * <p>This build step also adds a static call to {@link org.keycloak.quarkus.runtime.cli.ShowConfigCommand#run} via the recorder
-     * so that the configuration can be shown when requested.
-     *
      * @param recorder the recorder
      */
     @Record(ExecutionTime.STATIC_INIT)
@@ -293,6 +301,52 @@ class KeycloakProcessor {
             properties.store(fos, " Auto-generated, DO NOT change this file");
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate persisted.properties file", e);
+        }
+    }
+
+    @Record(ExecutionTime.RUNTIME_INIT)
+    @BuildStep
+    void configureInfinispan(KeycloakRecorder recorder, BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItems) {
+        String pathPrefix;
+        String homeDir = Environment.getHomeDir();
+
+        if (homeDir == null) {
+            pathPrefix = "";
+        } else {
+            pathPrefix = homeDir + "/conf/";
+        }
+
+        String configFile = getConfigValue("kc.spi.connections-infinispan.quarkus.config-file").getValue();
+
+        if (configFile != null) {
+            Path configPath = Paths.get(pathPrefix + configFile);
+            String path;
+
+            if (configPath.toFile().exists()) {
+                path = configPath.toFile().getAbsolutePath();
+            } else {
+                path = configPath.getFileName().toString();
+            }
+
+            InputStream url = FileLookupFactory.newInstance().lookupFile(path, KeycloakProcessor.class.getClassLoader());
+
+            if (url == null) {
+                throw new IllegalArgumentException("Could not load cluster configuration file at [" + configPath + "]");
+            }
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(url))) {
+                String config = reader.lines().collect(Collectors.joining("\n"));
+
+                syntheticBeanBuildItems.produce(SyntheticBeanBuildItem.configure(CacheInitializer.class)
+                        .scope(ApplicationScoped.class)
+                        .unremovable()
+                        .setRuntimeInit()
+                        .runtimeValue(recorder.createCacheInitializer(config)).done());
+            } catch (Exception cause) {
+                throw new RuntimeException("Failed to read clustering configuration from [" + url + "]", cause);
+            }
+        } else {
+            throw new IllegalArgumentException("Option 'configFile' needs to be specified");
         }
     }
 
