@@ -40,7 +40,9 @@ export type AttributesFormProps = {
 export const arrayToAttributes = (attributeArray: KeyValueType[]) => {
   const initValue: { [index: string]: string[] } = {};
   return attributeArray.reduce((acc, attribute) => {
-    acc[attribute.key] = [attribute.value];
+    acc[attribute.key] = !acc[attribute.key]
+      ? [attribute.value]
+      : acc[attribute.key].concat(attribute.value);
     return acc;
   }, initValue);
 };
@@ -51,10 +53,17 @@ export const attributesToArray = (attributes?: {
   if (!attributes || Object.keys(attributes).length == 0) {
     return [];
   }
-  return Object.keys(attributes).map((key) => ({
-    key: key,
-    value: attributes[key][0],
-  }));
+  const initValue: KeyValueType[] = [];
+  return Object.keys(attributes).reduce((acc, key) => {
+    return acc.concat(
+      attributes[key].map((value) => {
+        return {
+          key: key,
+          value: value,
+        };
+      })
+    );
+  }, initValue);
 };
 
 export const AttributesForm = ({
@@ -103,7 +112,7 @@ export const AttributesForm = ({
         </Thead>
         <Tbody>
           {fields.map((attribute, rowIndex) => (
-            <Tr key={attribute.id}>
+            <Tr key={attribute.id} data-testid="attribute-row">
               <Td
                 key={`${attribute.id}-key`}
                 id={`text-input-${rowIndex}-key`}
@@ -121,6 +130,7 @@ export const AttributesForm = ({
                   validated={
                     errors.attributes?.[rowIndex] ? "error" : "default"
                   }
+                  data-testid="attribute-key-input"
                 />
               </Td>
               <Td
@@ -137,6 +147,7 @@ export const AttributesForm = ({
                   ref={register()}
                   aria-label="value-input"
                   defaultValue={attribute.value}
+                  data-testid="attribute-value-input"
                 />
               </Td>
               {rowIndex !== fields.length - 1 && fields.length - 1 !== 0 && (
@@ -183,6 +194,7 @@ export const AttributesForm = ({
                 onClick={() => append({ key: "", value: "" })}
                 icon={<PlusCircleIcon />}
                 isDisabled={!watchLast}
+                data-testid="attribute-add-row"
               >
                 {t("roles:addAttributeText")}
               </Button>

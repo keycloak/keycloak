@@ -125,8 +125,35 @@ describe("Users test", () => {
 
       attributesTab
         .goToAttributesTab()
-        .fillAttribute("key", "value")
+        .fillLastRow("key", "value")
         .saveAttribute();
+
+      masthead.checkNotificationMessage("The user has been saved");
+    });
+
+    it("User attributes with multiple values test", () => {
+      listingPage.searchItem(itemId).itemExist(itemId);
+
+      listingPage.goToItemDetails(itemId);
+
+      cy.intercept("PUT", `/auth/admin/realms/master/users/*`).as("save-user");
+
+      const attributeKey = "key-multiple";
+      attributesTab
+        .goToAttributesTab()
+        .fillLastRow(attributeKey, "value")
+        .addRow()
+        .fillLastRow(attributeKey, "other value")
+        .saveAttribute();
+
+      cy.wait("@save-user").should(({ request, response }) => {
+        expect(response?.statusCode).to.equal(204);
+
+        expect(
+          request?.body.attributes[attributeKey],
+          "response body"
+        ).deep.equal(["value", "other value"]);
+      });
 
       masthead.checkNotificationMessage("The user has been saved");
     });

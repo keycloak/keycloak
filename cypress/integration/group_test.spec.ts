@@ -209,7 +209,7 @@ describe("Group test", () => {
       clickGroup(groups[0]);
       attributesTab
         .goToAttributesTab()
-        .fillAttribute("key", "value")
+        .fillLastRow("key", "value")
         .saveAttribute();
 
       masthead.checkNotificationMessage("Group updated");
