@@ -111,7 +111,13 @@ public class DisabledUserSessionPersisterProvider implements UserSessionPersiste
 
     }
 
+    @Override
     public UserSessionModel loadUserSession(RealmModel realm, String userSessionId, boolean offline) {
+        return null;
+    }
+
+    @Override
+    public AuthenticatedClientSessionModel loadClientSessionWithClient(RealmModel realm, ClientModel client, UserSessionModel userSession, boolean offline) {
         return null;
     }
 

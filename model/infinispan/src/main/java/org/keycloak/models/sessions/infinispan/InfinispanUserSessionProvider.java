@@ -377,13 +377,37 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     @Override
     public AuthenticatedClientSessionAdapter getClientSession(UserSessionModel userSession, ClientModel client, String clientSessionId, boolean offline) {
-        return getClientSession(userSession, client, clientSessionId == null ? null : UUID.fromString(clientSessionId), offline);
+        if (clientSessionId == null) {
+            return null;
+        }
+
+        AuthenticatedClientSessionEntity clientSessionEntityFromCache = getClientSessionEntity(UUID.fromString(clientSessionId), offline);
+        if (clientSessionEntityFromCache != null) {
+            return wrap(userSession, client, clientSessionEntityFromCache, offline);
+        }
+
+        if (!offline) {
+            return null;
+        }
+
+        log.debugf("Offline client session is not found in cache, try to load from db, userSession [%s] clientSessionId [%s] clientId [%s]", userSession.getId(), clientSessionId, client.getClientId());
+        return getClientSessionEntityFromPersistenceProvider(userSession, client, offline);
     }
 
-    @Override
-    public AuthenticatedClientSessionAdapter getClientSession(UserSessionModel userSession, ClientModel client, UUID clientSessionId, boolean offline) {
-        AuthenticatedClientSessionEntity entity = getClientSessionEntity(clientSessionId, offline);
-        return wrap(userSession, client, entity, offline);
+    private AuthenticatedClientSessionAdapter getClientSessionEntityFromPersistenceProvider(UserSessionModel userSession, ClientModel client, boolean offline) {
+        if (!(userSession instanceof UserSessionAdapter)) {
+            log.warnf("User session [%s] is not in cache, should load from db firstly. clientId [%s] offline [%s]", userSession.getId(), client.getClientId(), offline);
+            return null;
+        }
+
+        UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
+        AuthenticatedClientSessionModel clientSession = persister.loadClientSessionWithClient(session.getContext().getRealm(), client, userSession, offline);
+
+        if (clientSession == null) {
+            return null;
+        }
+
+        return importClientSession((UserSessionAdapter) userSession, clientSession, getTransaction(offline), getClientSessionTransaction(offline), offline);
     }
 
     private AuthenticatedClientSessionEntity getClientSessionEntity(UUID id, boolean offline) {

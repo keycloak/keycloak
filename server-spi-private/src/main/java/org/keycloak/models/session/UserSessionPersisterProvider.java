@@ -66,6 +66,16 @@ public interface UserSessionPersisterProvider extends Provider {
     UserSessionModel loadUserSession(RealmModel realm, String userSessionId, boolean offline);
 
     /**
+     * Loads the user client session with the given @{@link UserSessionModel} and @{@link ClientModel}.
+     * @param realm
+     * @param client
+     * @param userSession
+     * @param offline
+     * @return
+     */
+    AuthenticatedClientSessionModel loadClientSessionWithClient(RealmModel realm, ClientModel client, UserSessionModel userSession, boolean offline);
+
+    /**
      * Loads the user sessions for the given {@link UserModel} in the given {@link RealmModel} if present.
      * @param realm
      * @param user

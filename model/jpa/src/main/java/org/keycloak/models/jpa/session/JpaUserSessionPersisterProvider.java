@@ -316,6 +316,22 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     }
 
     @Override
+    public AuthenticatedClientSessionModel loadClientSessionWithClient(RealmModel realm, ClientModel client, UserSessionModel userSession, boolean offline) {
+        String offlineStr = offlineToString(offline);
+
+        TypedQuery<PersistentClientSessionEntity> clientSessionQuery = em.createNamedQuery("findClientSessionsByUserSessionWithClient", PersistentClientSessionEntity.class);
+        clientSessionQuery.setParameter("userSessionId", userSession.getId());
+        clientSessionQuery.setParameter("offline", offlineStr);
+        clientSessionQuery.setParameter("clientId", client.getId());
+        clientSessionQuery.setMaxResults(1);
+
+        return closing(clientSessionQuery.getResultStream())
+            .map(entity -> toAdapter(realm, client, userSession, entity))
+            .findFirst()
+            .orElse(null);
+    }
+
+    @Override
     public Stream<UserSessionModel> loadUserSessionsStream(RealmModel realm, ClientModel client, boolean offline, Integer firstResult, Integer maxResults) {
 
         String offlineStr = offlineToString(offline);
@@ -438,10 +454,14 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         }
         ClientModel client = realm.getClientById(clientId);
 
+        return toAdapter(realm, client, userSession, entity);
+    }
+
+    private PersistentAuthenticatedClientSessionAdapter toAdapter(RealmModel realm, ClientModel client, UserSessionModel userSession, PersistentClientSessionEntity entity) {
         PersistentClientSessionModel model = new PersistentClientSessionModel();
-        model.setClientId(clientId);
+        model.setClientId(client.getId());
         model.setUserSessionId(userSession.getId());
-        model.setUserId(userSession.getUserId());
+        model.setUserId(userSession.getUser().getId());
         model.setTimestamp(entity.getTimestamp());
         model.setData(entity.getData());
         return new PersistentAuthenticatedClientSessionAdapter(session, model, realm, client, userSession);
