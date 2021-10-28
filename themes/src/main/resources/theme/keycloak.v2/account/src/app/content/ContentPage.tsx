@@ -15,7 +15,7 @@
  */
 
 import * as React from 'react';
-import {Button, Grid, GridItem, Title, Tooltip} from '@patternfly/react-core';
+import {Button, Grid, GridItem, Title, Tooltip, Card, CardBody, Stack, StackItem} from '@patternfly/react-core';
 import { SyncAltIcon } from '@patternfly/react-icons';
 
 import {Msg} from '../widgets/Msg';
@@ -41,25 +41,32 @@ export class ContentPage extends React.Component<ContentPageProps> {
         return (
             <React.Fragment>
                 <ContentAlert/>
-                <section id="page-heading" className="pf-c-page__main-section pf-m-light">
-                    <Grid>
-                        <GridItem span={11}><Title headingLevel='h1' size='3xl'><strong><Msg msgKey={this.props.title}/></strong></Title></GridItem>
-                        {this.props.onRefresh &&
-                            <GridItem span={1}>
-                                <Tooltip content={<Msg msgKey='refreshPage'/>}>
-                                    <Button aria-describedby="refresh page" id='refresh-page' variant='link' onClick={this.props.onRefresh} icon={<SyncAltIcon />}>
-                                        Refresh
-                                    </Button>
-                                </Tooltip>
-                            </GridItem>
-                        }
-                        {this.props.introMessage && <GridItem span={12}> <Msg msgKey={this.props.introMessage}/></GridItem>}
-                    </Grid>
-                </section>
-
-                <section className="pf-m-no-padding-mobile">
-                    {this.props.children}
-                </section>
+                <Stack hasGutter>
+                    <StackItem>
+                        <Card>
+                            <CardBody>
+                                <Grid>
+                                    <GridItem span={11}><Title headingLevel='h1' size='2xl'><strong><Msg msgKey={this.props.title}/></strong></Title></GridItem>
+                                    {this.props.onRefresh &&
+                                        <GridItem span={1}>
+                                            <Tooltip content={<Msg msgKey='refreshPage'/>}>
+                                                <Button aria-describedby="refresh page" id='refresh-page' variant='link' onClick={this.props.onRefresh} icon={<SyncAltIcon />}>
+                                                    Refresh
+                                                </Button>
+                                            </Tooltip>
+                                        </GridItem>
+                                    }
+                                    {this.props.introMessage && <GridItem span={12}> <Msg msgKey={this.props.introMessage}/></GridItem>}
+                                </Grid>
+                            </CardBody>
+                        </Card>
+                    </StackItem>
+                    <StackItem>
+                        <section className="pf-m-no-padding-mobile">
+                            {this.props.children}
+                        </section>
+                    </StackItem>
+                </Stack>
             </React.Fragment>
         );
     }

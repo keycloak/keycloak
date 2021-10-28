@@ -30,7 +30,7 @@ import {
   DescriptionListDescription,
   Grid,
   GridItem,
-  Button,
+  Button
 } from '@patternfly/react-core';
 
 import { InfoAltIcon, CheckIcon, BuilderImageIcon, ExternalLinkAltIcon } from '@patternfly/react-icons';
