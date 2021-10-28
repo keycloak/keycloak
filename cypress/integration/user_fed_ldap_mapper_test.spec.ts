@@ -153,31 +153,37 @@ describe("User Fed LDAP mapper tests", () => {
     modalUtils.checkModalTitle(mapperDeleteTitle).confirmModal();
     masthead.checkNotificationMessage(mapperDeletedSuccess);
     listingPage.itemExist(creationDateMapper, false);
+    cy.wait(5000);
 
     listingPage.itemExist(emailMapper).deleteItem(emailMapper);
     modalUtils.checkModalTitle(mapperDeleteTitle).confirmModal();
     masthead.checkNotificationMessage(mapperDeletedSuccess);
     listingPage.itemExist(emailMapper, false);
+    cy.wait(5000);
 
     listingPage.itemExist(lastNameMapper).deleteItem(lastNameMapper);
     modalUtils.checkModalTitle(mapperDeleteTitle).confirmModal();
     masthead.checkNotificationMessage(mapperDeletedSuccess);
     listingPage.itemExist(lastNameMapper, false);
+    cy.wait(5000);
 
     listingPage.itemExist(modifyDateMapper).deleteItem(modifyDateMapper);
     modalUtils.checkModalTitle(mapperDeleteTitle).confirmModal();
     masthead.checkNotificationMessage(mapperDeletedSuccess);
     listingPage.itemExist(modifyDateMapper, false);
+    cy.wait(5000);
 
     listingPage.itemExist(usernameMapper).deleteItem(usernameMapper);
     modalUtils.checkModalTitle(mapperDeleteTitle).confirmModal();
     masthead.checkNotificationMessage(mapperDeletedSuccess);
     listingPage.itemExist(usernameMapper, false);
+    cy.wait(5000);
 
     listingPage.itemExist(firstNameMapper).deleteItem(firstNameMapper);
     modalUtils.checkModalTitle(mapperDeleteTitle).confirmModal();
     masthead.checkNotificationMessage(mapperDeletedSuccess);
     listingPage.itemExist(firstNameMapper, false);
+    cy.wait(5000);
 
     listingPage
       .itemExist(MsadAccountControlsMapper)
