@@ -43,6 +43,10 @@ export type IdPMapperRepresentationWithAttributes =
     attributes: KeyValueType[];
   };
 
+type Role = RoleRepresentation & {
+  clientId?: string;
+};
+
 export const AddMapper = () => {
   const { t } = useTranslation("identity-providers");
 
@@ -73,7 +77,11 @@ export const AddMapper = () => {
   const [mapperTypes, setMapperTypes] =
     useState<Record<string, IdentityProviderMapperRepresentation>>();
   const [mapperType, setMapperType] = useState(
-    isSocialIdP ? "attributeImporter" : "hardcodedRole"
+    isSocialIdP
+      ? "attributeImporter"
+      : providerId === "saml"
+      ? "advancedAttributeToRole"
+      : "hardcodedUserSessionAttribute"
   );
 
   const [currentMapper, setCurrentMapper] =
@@ -185,7 +193,7 @@ export const AddMapper = () => {
 
   const targetOptions = ["local", "brokerId", "brokerUsername"];
   const [targetOptionsOpen, setTargetOptionsOpen] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<RoleRepresentation[]>([]);
+  const [selectedRole, setSelectedRole] = useState<Role[]>([]);
 
   const formValues = form.getValues();
 
@@ -205,8 +213,7 @@ export const AddMapper = () => {
     formValues.identityProviderMapper === "oidc-user-attribute-idp-mapper";
 
   const isHardcodedAttribute =
-    form.getValues().identityProviderMapper ===
-    "hardcoded-attribute-idp-mapper";
+    formValues.identityProviderMapper === "hardcoded-attribute-idp-mapper";
 
   const isHardcodedRole =
     formValues.identityProviderMapper === "oidc-hardcoded-role-idp-mapper";
@@ -251,7 +258,9 @@ export const AddMapper = () => {
         divider
       />
       <AssociatedRolesModal
-        onConfirm={(role) => setSelectedRole(role)}
+        onConfirm={(role: Role[]) => {
+          setSelectedRole(role);
+        }}
         allRoles={roles}
         open={rolesModalOpen}
         omitComposites
@@ -338,7 +347,11 @@ export const AddMapper = () => {
                 />
               </FormGroup>
               <FormGroup
-                label={t("regexAttributeValues")}
+                label={
+                  isSAMLAdvancedAttrToRole
+                    ? t("regexAttributeValues")
+                    : t("regexClaimValues")
+                }
                 labelIcon={
                   <HelpItem
                     helpText="identity-providers-help:regexAttributeValues"
@@ -351,13 +364,17 @@ export const AddMapper = () => {
                 fieldId="regexAttributeValues"
               >
                 <Controller
-                  name="config.are-attribute-values-regex"
+                  name={
+                    isOIDCAdvancedClaimToRole
+                      ? "config.are-claim-values-regex"
+                      : "config.are-attribute-values-regex"
+                  }
                   control={control}
                   defaultValue="false"
                   render={({ onChange, value }) => (
                     <Switch
-                      id="regexAttributeValues"
-                      data-testid="regex-attribute-values-switch"
+                      id="regexValues"
+                      data-testid="regex-values-switch"
                       label={t("common:on")}
                       labelOff={t("common:off")}
                       isChecked={value === "true"}
@@ -834,7 +851,12 @@ export const AddMapper = () => {
                 id="kc-role"
                 data-testid="mapper-role-input"
                 name="config.role"
-                value={selectedRole[0]?.name}
+                isDisabled={!!id}
+                value={
+                  selectedRole[0]?.clientRole
+                    ? `${selectedRole[0].clientId}.${selectedRole[0]?.name}`
+                    : selectedRole[0]?.name
+                }
                 validated={
                   errors.config?.role
                     ? ValidatedOptions.error
@@ -844,6 +866,7 @@ export const AddMapper = () => {
               <Button
                 data-testid="select-role-button"
                 onClick={() => toggleModal()}
+                isDisabled={!!id}
               >
                 {t("selectRole")}
               </Button>

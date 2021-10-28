@@ -19,7 +19,7 @@ export default class AddMapperPage {
   private userSessionAttribute = "user-session-attribute";
   private userSessionAttributeValue = "user-session-attribute-value";
   private newMapperSaveButton = "new-mapper-save-button";
-  private regexAttributeValuesSwitch = "regex-attribute-values-switch";
+  private regexAttributeValuesSwitch = "regex-values-switch";
   private syncmodeSelectToggle = "#syncMode";
   private attributesKeyInput = 'input[name="config.attributes[0].key"]';
   private attributesValueInput = 'input[name="config.attributes[0].value"]';

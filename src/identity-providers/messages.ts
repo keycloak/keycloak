@@ -169,6 +169,7 @@ export default {
     syncModeOverride: "Sync mode override",
     mapperType: "Mapper type",
     regexAttributeValues: "Regex Attribute Values",
+    regexClaimValues: "Regex Claim Values",
     selectRole: "Select role",
     mapperCreateSuccess: "Mapper created successfully.",
     mapperCreateError: "Error creating mapper.",

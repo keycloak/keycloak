@@ -91,7 +91,7 @@ export const AddMapperForm = ({
       >
         <Controller
           name="config.syncMode"
-          defaultValue={syncModes[0]}
+          defaultValue={syncModes[0].toUpperCase()}
           control={control}
           render={({ onChange, value }) => (
             <Select
@@ -149,7 +149,7 @@ export const AddMapperForm = ({
               ? `${providerId.toLowerCase()}-user-attribute-mapper`
               : providerId === "saml"
               ? "saml-advanced-role-idp-mapper"
-              : "oidc-advanced-role-idp-mapper"
+              : "hardcoded-user-session-attribute-idp-mapper"
           }
           control={control}
           render={({ onChange, value }) => (
