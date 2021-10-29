@@ -1,6 +1,6 @@
 [id="proc-assigning-role-mappings_{context}"]
 
-= Asssiging role mappings
+= Assigning role mappings
 [role="_abstract"]
 You can assign role mappings to a user through the *Role Mappings* tab for that user.
 
