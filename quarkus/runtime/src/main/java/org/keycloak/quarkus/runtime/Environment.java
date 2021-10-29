@@ -17,7 +17,7 @@
 
 package org.keycloak.quarkus.runtime;
 
-import static org.keycloak.quarkus.runtime.configuration.PropertyMappers.getBuiltTimeProperty;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuiltTimeProperty;
 
 import java.io.File;
 import java.io.FilenameFilter;

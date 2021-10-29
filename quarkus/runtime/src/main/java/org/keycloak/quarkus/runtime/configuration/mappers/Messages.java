@@ -15,11 +15,15 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.configuration;
+package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import org.keycloak.quarkus.runtime.Environment;
 
 public final class Messages {
+
+    private Messages() {
+
+    }
 
     static IllegalArgumentException invalidDatabaseVendor(String db, String... availableOptions) {
         return new IllegalArgumentException("Invalid database vendor [" + db + "]. Possible values are: " + String.join(", ", availableOptions) + ".");

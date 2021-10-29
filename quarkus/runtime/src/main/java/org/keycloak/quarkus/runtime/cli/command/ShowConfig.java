@@ -18,11 +18,11 @@
 package org.keycloak.quarkus.runtime.cli.command;
 
 import static java.lang.Boolean.parseBoolean;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuiltTimeProperty;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfigValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
-import static org.keycloak.quarkus.runtime.configuration.PropertyMappers.canonicalFormat;
-import static org.keycloak.quarkus.runtime.configuration.PropertyMappers.formatValue;
-import static org.keycloak.quarkus.runtime.configuration.PropertyMappers.getBuiltTimeProperty;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.canonicalFormat;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.formatValue;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -34,7 +34,6 @@ import java.util.stream.StreamSupport;
 
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
-import org.keycloak.quarkus.runtime.configuration.PropertyMappers;
 import org.keycloak.quarkus.runtime.Environment;
 
 import io.smallrye.config.ConfigValue;
@@ -43,7 +42,7 @@ import picocli.CommandLine.Parameters;
 
 @Command(name = "show-config",
         description = "Print out the current configuration.",
-        mixinStandardHelpOptions = true,
+        abbreviateSynopsis = true,
         optionListHeading = "%nOptions%n",
         parameterListHeading = "Available Commands%n")
 public final class ShowConfig extends AbstractCommand implements Runnable {
@@ -159,7 +158,7 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
     }
 
     private void printProperty(String property) {
-        String canonicalFormat = PropertyMappers.canonicalFormat(property);
+        String canonicalFormat = canonicalFormat(property);
         ConfigValue configValue = getConfigValue(canonicalFormat);
 
         if (configValue.getValue() == null) {
@@ -182,7 +181,14 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
         if (property.startsWith("%")) {
             return "%";
         }
-        return property.substring(0, property.indexOf('.'));
+
+        int endIndex = property.indexOf('.');
+
+        if (endIndex == -1) {
+            return "";
+        }
+
+        return property.substring(0, endIndex);
     }
 
     private static boolean filterByGroup(String property) {

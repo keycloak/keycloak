@@ -20,6 +20,8 @@ import io.smallrye.config.ConfigSourceInterceptor;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 /**
  * <p>This interceptor is responsible for mapping Keycloak properties to their corresponding properties in Quarkus.

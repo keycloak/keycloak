@@ -20,9 +20,8 @@ package org.keycloak.quarkus.runtime.configuration;
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_KEY_VALUE_SPLIT;
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_SPLIT;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getMappedPropertyName;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS_PREFIX;
-import static org.keycloak.quarkus.runtime.configuration.PropertyMappers.getMappedPropertyName;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -47,8 +46,6 @@ import org.keycloak.quarkus.runtime.cli.Picocli;
 public class ConfigArgsConfigSource extends PropertiesConfigSource {
 
     private static final Logger log = Logger.getLogger(ConfigArgsConfigSource.class);
-
-    private static final Pattern DOT_SPLIT = Pattern.compile("\\.");
 
     ConfigArgsConfigSource() {
         // higher priority over default Quarkus config sources

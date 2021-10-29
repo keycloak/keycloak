@@ -26,8 +26,8 @@ import picocli.CommandLine.Option;
 
 @Command(name = "import",
         description = "Import data from a directory or a file.",
-        mixinStandardHelpOptions = true,
         showDefaultValues = true,
+        abbreviateSynopsis = true,
         optionListHeading = "%nOptions%n",
         parameterListHeading = "Available Commands%n")
 public final class Import extends AbstractExportImportCommand implements Runnable {

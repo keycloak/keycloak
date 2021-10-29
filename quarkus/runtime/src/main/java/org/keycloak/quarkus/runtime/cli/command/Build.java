@@ -52,10 +52,10 @@ import picocli.CommandLine.Command;
                 + "  Enable metrics:%n%n"
                 + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --metrics-enabled=true%n%n"
                 + "You can also use the \"--auto-build\" option when starting the server to avoid running this command every time you change a configuration:%n%n"
-                + "    $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} --auto-build <OPTIONS>%n%n"
+                + "    $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} start --auto-build <OPTIONS>%n%n"
                 + "By doing that you have an additional overhead when the server is starting.%n%n",
-        mixinStandardHelpOptions = true,
-        optionListHeading = "%nConfiguration Options%n%n")
+        abbreviateSynopsis = true,
+        optionListHeading = "%nOptions%n%n")
 public final class Build extends AbstractCommand implements Runnable {
 
     public static final String NAME = "build";

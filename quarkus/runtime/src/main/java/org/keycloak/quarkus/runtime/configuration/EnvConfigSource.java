@@ -17,6 +17,8 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getMappedPropertyName;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -30,7 +32,7 @@ public class EnvConfigSource implements ConfigSource {
         for (Map.Entry<String, String> entry : System.getenv().entrySet()) {
             String key = entry.getKey();
             if (key.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.toUpperCase().replace('.', '_'))) {
-                properties.put(PropertyMappers.getMappedPropertyName(key), entry.getValue());
+                properties.put(getMappedPropertyName(key), entry.getValue());
             }
         }
     }
@@ -53,6 +55,7 @@ public class EnvConfigSource implements ConfigSource {
         return "KcEnvVarConfigSource";
     }
 
+    @Override
     public int getOrdinal() {
         return 350;
     }
