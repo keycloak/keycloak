@@ -303,7 +303,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             resetTimeOffset();
         }
 
-        verificationPage.assertInvalidUserCodePage();
+        verificationPage.assertExpiredUserCodePage();
     }
 
     @Test
@@ -612,6 +612,39 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
 
         Assert.assertEquals(10, rep.getOAuth2DevicePollingInterval().intValue());
         Assert.assertEquals(15, rep.getOAuth2DeviceCodeLifespan().intValue());
+    }
+
+    // KEYCLOAK-19700
+    @Test
+    public void testConsentCancelCannotBeReused() throws Exception {
+        // Device Authorization Request from device
+        oauth.realm(REALM_NAME);
+        oauth.clientId(DEVICE_APP);
+        OAuthClient.DeviceAuthorizationResponse response = oauth.doDeviceAuthorizationRequest(DEVICE_APP, "secret");
+
+        Assert.assertEquals(200, response.getStatusCode());
+        assertNotNull(response.getDeviceCode());
+        assertNotNull(response.getUserCode());
+        assertNotNull(response.getVerificationUri());
+        assertNotNull(response.getVerificationUriComplete());
+        Assert.assertEquals(60, response.getExpiresIn());
+        Assert.assertEquals(5, response.getInterval());
+
+        openVerificationPage(response.getVerificationUriComplete());
+        loginPage.assertCurrent();
+
+        // Do Login
+        oauth.fillLoginForm("device-login", "password");
+
+        // Consent
+        grantPage.assertCurrent();
+        grantPage.cancel();
+
+        verificationPage.assertDeniedPage();
+
+        openVerificationPage(response.getVerificationUriComplete());
+
+        verificationPage.assertInvalidUserCodePage();
     }
 
     private void openVerificationPage(String verificationUri) {
