@@ -226,7 +226,7 @@ export const ProfilesTab = () => {
           columns={[
             {
               name: "name",
-              displayKey: t("clientProfileName"),
+              displayKey: t("common:name"),
               cellRenderer: cellFormatter,
             },
             {

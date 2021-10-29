@@ -38,6 +38,8 @@ import { toClientPolicies } from "./routes/ClientPolicies";
 import { toNewClientPolicyCondition } from "./routes/AddCondition";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import type { EditClientPolicyParams } from "./routes/EditClientPolicy";
+import { AddClientProfileModal } from "./AddClientProfileModal";
+import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
 
 type NewClientPolicyForm = Required<ClientPolicyRepresentation>;
 
@@ -49,6 +51,11 @@ const defaultValues: NewClientPolicyForm = {
   profiles: [],
 };
 
+type PolicyDetailAttributes = {
+  idx: number;
+  name: string;
+};
+
 export const NewClientPolicyForm = () => {
   const { t } = useTranslation("realm-settings");
   const { errors, reset: resetForm } = useForm<NewClientPolicyForm>({
@@ -58,6 +65,10 @@ export const NewClientPolicyForm = () => {
   const { addAlert, addError } = useAlerts();
   const adminClient = useAdminClient();
   const [policies, setPolicies] = useState<ClientPolicyRepresentation[]>([]);
+  const [clientProfiles, setClientProfiles] = useState<
+    ClientProfileRepresentation[]
+  >([]);
+
   const [currentPolicy, setCurrentPolicy] =
     useState<ClientPolicyRepresentation>();
   const [
@@ -66,7 +77,12 @@ export const NewClientPolicyForm = () => {
   ] = useState(false);
 
   const [conditionToDelete, setConditionToDelete] =
-    useState<{ idx: number; name: string }>();
+    useState<PolicyDetailAttributes>();
+
+  const [profilesModalOpen, setProfilesModalOpen] = useState(false);
+
+  const [profileToDelete, setProfileToDelete] =
+    useState<PolicyDetailAttributes>();
 
   const { policyName } = useParams<EditClientPolicyParams>();
 
@@ -78,14 +94,30 @@ export const NewClientPolicyForm = () => {
   const refresh = () => setKey(new Date().getTime());
 
   useFetch(
-    () => adminClient.clientPolicies.listPolicies(),
-    (policies) => {
+    async () => {
+      const [policies, profiles] = await Promise.all([
+        adminClient.clientPolicies.listPolicies(),
+        adminClient.clientPolicies.listProfiles({
+          includeGlobalProfiles: true,
+        }),
+      ]);
+
+      return { policies, profiles };
+    },
+    ({ policies, profiles }) => {
       const currentPolicy = policies.policies?.find(
         (item) => item.name === policyName
       );
+
+      const allClientProfiles = [
+        ...(profiles.globalProfiles ?? []),
+        ...(profiles.profiles ?? []),
+      ];
+
       setPolicies(policies.policies ?? []);
       if (currentPolicy) {
         setupForm(currentPolicy);
+        setClientProfiles(allClientProfiles);
         setCurrentPolicy(currentPolicy);
         setShowAddConditionsAndProfilesForm(true);
       }
@@ -102,6 +134,7 @@ export const NewClientPolicyForm = () => {
 
   const policy = policies.filter((policy) => policy.name === policyName);
   const policyConditions = policy[0]?.conditions || [];
+  const policyProfiles = policy[0]?.profiles || [];
 
   const serverInfo = useServerInfo();
 
@@ -110,8 +143,10 @@ export const NewClientPolicyForm = () => {
       "org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider"
     ];
 
+  const formValues = form.getValues();
+
   const save = async () => {
-    const createdForm = form.getValues();
+    const createdForm = formValues;
     const createdPolicy = {
       ...createdForm,
       profiles: [],
@@ -137,9 +172,7 @@ export const NewClientPolicyForm = () => {
         AlertVariant.success
       );
       history.push(
-        `/${realm}/realm-settings/clientPolicies/${
-          form.getValues().name
-        }/edit-policy`
+        `/${realm}/realm-settings/clientPolicies/${formValues.name}/edit-policy`
       );
       setShowAddConditionsAndProfilesForm(true);
       refresh();
@@ -189,10 +222,9 @@ export const NewClientPolicyForm = () => {
             });
             addAlert(t("deleteConditionSuccess"), AlertVariant.success);
             history.push(
-              `/${realm}/realm-settings/clientPolicies/${
-                form.getValues().name
-              }/edit-policy`
+              `/${realm}/realm-settings/clientPolicies/${formValues.name}/edit-policy`
             );
+            refresh();
           } catch (error) {
             addError(t("deleteConditionError"), error);
           }
@@ -214,15 +246,109 @@ export const NewClientPolicyForm = () => {
       },
     });
 
+  const [toggleDeleteProfileDialog, DeleteProfileConfirm] = useConfirmDialog({
+    titleKey: t("deleteClientPolicyProfileConfirmTitle"),
+    messageKey: t("deleteClientPolicyProfileConfirm", {
+      profileName: profileToDelete?.name,
+      policyName,
+    }),
+    continueButtonLabel: t("delete"),
+    continueButtonVariant: ButtonVariant.danger,
+    onConfirm: async () => {
+      if (profileToDelete?.name) {
+        currentPolicy?.profiles?.splice(profileToDelete.idx!, 1);
+        try {
+          await adminClient.clientPolicies.updatePolicy({
+            policies: policies,
+          });
+          addAlert(t("deleteClientPolicyProfileSuccess"), AlertVariant.success);
+          history.push(
+            `/${realm}/realm-settings/clientPolicies/${formValues.name}/edit-policy`
+          );
+        } catch (error) {
+          addError(t("deleteClientPolicyProfileError"), error);
+        }
+      } else {
+        const updatedPolicies = policies.filter(
+          (policy) => policy.name !== policyName
+        );
+
+        try {
+          await adminClient.clientPolicies.updatePolicy({
+            policies: updatedPolicies,
+          });
+          addAlert(t("deleteClientSuccess"), AlertVariant.success);
+          history.push(toClientPolicies({ realm }));
+        } catch (error) {
+          addError(t("deleteClientError"), error);
+        }
+      }
+    },
+  });
+
   const reset = () => {
     form.setValue("name", currentPolicy?.name);
     form.setValue("description", currentPolicy?.description);
   };
 
+  const toggleModal = () => {
+    setProfilesModalOpen(!profilesModalOpen);
+  };
+
+  const addProfiles = async (profiles: string[]) => {
+    const createdPolicy = {
+      ...currentPolicy,
+      profiles: (currentPolicy?.profiles ?? []).concat(profiles),
+      conditions: currentPolicy?.conditions,
+    };
+
+    const index = policies.findIndex(
+      (policy) => createdPolicy.name === policy.name
+    );
+
+    if (index === -1) {
+      return;
+    }
+
+    const newPolicies = [
+      ...policies.slice(0, index),
+      createdPolicy,
+      ...policies.slice(index + 1),
+    ];
+
+    try {
+      await adminClient.clientPolicies.updatePolicy({
+        policies: newPolicies,
+      });
+      setPolicies(newPolicies);
+      history.push(
+        `/${realm}/realm-settings/clientPolicies/${formValues.name}/edit-policy`
+      );
+      addAlert(
+        t("realm-settings:addClientProfileSuccess"),
+        AlertVariant.success
+      );
+      refresh();
+    } catch (error) {
+      addError("realm-settings:addClientProfileError", error);
+    }
+  };
+
+  console.log("NY", policyConditions);
+
   return (
     <>
       <DeleteConfirm />
       <DeleteConditionConfirm />
+      <DeleteProfileConfirm />
+      <AddClientProfileModal
+        onConfirm={(profiles: ClientProfileRepresentation[]) => {
+          addProfiles(profiles.map((item) => item.name!));
+        }}
+        allProfiles={policyProfiles}
+        open={profilesModalOpen}
+        toggleDialog={toggleModal}
+      />
       <ViewHeader
         titleKey={
           showAddConditionsAndProfilesForm || policyName
@@ -286,6 +412,7 @@ export const NewClientPolicyForm = () => {
               variant="primary"
               type="submit"
               data-testid="saveCreatePolicy"
+              isDisabled={!formValues.name}
             >
               {t("common:save")}
             </Button>
@@ -325,7 +452,7 @@ export const NewClientPolicyForm = () => {
                         {...props}
                         to={toNewClientPolicyCondition({
                           realm,
-                          policyName: form.getValues().name!,
+                          policyName: formValues.name!,
                         })}
                       ></Link>
                     )}
@@ -342,9 +469,10 @@ export const NewClientPolicyForm = () => {
                 <DataList aria-label={t("conditions")} isCompact>
                   {policyConditions.map((condition, idx) => (
                     <DataListItem
-                      aria-labelledby={"conditions-list-item"}
+                      aria-labelledby="conditions-list-item"
                       key={`list-item-${idx}`}
                       id={condition.condition}
+                      data-testid="conditions-list-item"
                     >
                       <DataListItemRow data-testid="conditions-list-row">
                         <DataListItemCells
@@ -435,23 +563,92 @@ export const NewClientPolicyForm = () => {
                 </FlexItem>
                 <FlexItem align={{ default: "alignRight" }}>
                   <Button
-                    id="addExecutor"
+                    id="addClientProfile"
                     variant="link"
                     className="kc-addClientProfile"
                     data-testid="cancelCreateProfile"
                     icon={<PlusCircleIcon />}
+                    onClick={toggleModal}
                   >
                     {t("realm-settings:addClientProfile")}
                   </Button>
                 </FlexItem>
               </Flex>
-              <Divider />
-              <Text
-                className="kc-emptyClientProfiles"
-                component={TextVariants.h6}
-              >
-                {t("realm-settings:emptyProfiles")}
-              </Text>
+              {policyProfiles.length > 0 ? (
+                <DataList aria-label={t("profiles")} isCompact>
+                  {policyProfiles.map((profile, idx) => (
+                    <DataListItem
+                      aria-labelledby={`${profile}-profile-list-item`}
+                      key={profile}
+                      id={`${profile}-profile-list-item`}
+                      data-testid={"profile-list-item"}
+                    >
+                      <DataListItemRow data-testid="profile-list-row">
+                        <DataListItemCells
+                          dataListCells={[
+                            <DataListCell key="name" data-testid="profile-name">
+                              {profile && (
+                                <Link
+                                  key={profile}
+                                  data-testid="profile-name-link"
+                                  to={""}
+                                  className="kc-profile-link"
+                                >
+                                  {profile}
+                                </Link>
+                              )}
+                              {policyProfiles
+                                .filter((type) => type === profile)
+                                .map((type) => (
+                                  <>
+                                    <HelpItem
+                                      helpText={
+                                        clientProfiles.find(
+                                          (profile) => type === profile.name
+                                        )?.description
+                                      }
+                                      forLabel={profile}
+                                      forID={t(`common:helpLabel`, {
+                                        label: profile,
+                                      })}
+                                    />
+                                    <Button
+                                      variant="link"
+                                      isInline
+                                      icon={
+                                        <TrashIcon
+                                          className="kc-conditionType-trash-icon"
+                                          data-testid="deleteClientProfileDropdown"
+                                          onClick={() => {
+                                            toggleDeleteProfileDialog();
+                                            setProfileToDelete({
+                                              idx: idx,
+                                              name: type!,
+                                            });
+                                          }}
+                                        />
+                                      }
+                                    ></Button>
+                                  </>
+                                ))}
+                            </DataListCell>,
+                          ]}
+                        />
+                      </DataListItemRow>
+                    </DataListItem>
+                  ))}
+                </DataList>
+              ) : (
+                <>
+                  <Divider />
+                  <Text
+                    className="kc-emptyClientProfiles"
+                    component={TextVariants.h6}
+                  >
+                    {t("realm-settings:emptyProfiles")}
+                  </Text>
+                </>
+              )}
             </>
           )}
         </FormAccess>

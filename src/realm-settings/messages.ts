@@ -231,7 +231,8 @@ export default {
       jsonEditor: "JSON editor",
     },
     clientProfileSearch: "Search",
-    clientProfileName: "Name",
+    searchProfile: "Search profile",
+    clientProfileName: "Client profile name",
     clientProfileDescription: "Description",
     emptyClientProfiles: "No profiles",
     emptyClientProfilesInstructions:
@@ -241,12 +242,20 @@ export default {
       "This action will permanently delete the profile {{profileName}}. This cannot be undone.",
     deleteClientSuccess: "Client profile deleted",
     deleteClientError: "Could not delete profile: {{error}}",
+    deleteClientPolicyProfileConfirmTitle: "Delete profile?",
+    deleteClientPolicyProfileConfirm:
+      "This action will permanently delete {{profileName}} from the policy {{policyName}}. This cannot be undone.",
+    deleteClientPolicyProfileSuccess:
+      "Profile successfully removed from the policy.",
+    deleteClientPolicyProfileError:
+      "Could not delete profile from the policy: {{error}}",
     createClientProfile: "Create client profile",
     deleteClientProfile: "Delete this client profile",
     createClientProfileSuccess: "New client profile created",
     updateClientProfileSuccess: "Client profile updated successfully",
     createClientProfileError: "Could not create client profile: '{{error}}'",
-    updateClientProfileError: "Could not update client profile: '{{error}}'",
+    addClientProfileSuccess: "New client profile added",
+    addClientProfileError: "Could not create client profile: '{{error}}'",
     createClientProfileNameHelperText:
       "The name must be unique within the realm",
     allClientPolicies: "Client policies",
