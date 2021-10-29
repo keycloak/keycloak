@@ -17,8 +17,6 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
-
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ScopeType;
@@ -37,21 +35,19 @@ import picocli.CommandLine.ScopeType;
                 + "  Building an optimized server runtime:%n%n"
                 + "      $ ${COMMAND-NAME} build <OPTIONS>%n%n"
                 + "  Start the server in production mode:%n%n"
-                + "      $ ${COMMAND-NAME} <OPTIONS>%n%n"
+                + "      $ ${COMMAND-NAME} start <OPTIONS>%n%n"
+                + "  Enable auto-completion to bash/zsh:%n%n"
+                + "      $ source <(${COMMAND-NAME} tools completion)%n%n"
                 + "  Please, take a look at the documentation for more details before deploying in production.%n",
         footer = {
                 "",
                 "Use \"${COMMAND-NAME} start --help\" for the available options when starting the server.",
                 "Use \"${COMMAND-NAME} <command> --help\" for more information about other commands.",
-                "",
-                "by Red Hat" },
-        optionListHeading = "Configuration Options%n%n",
-        commandListHeading = "%nCommands%n%n",
-        version = {
-                "Keycloak ${sys:kc.version}",
-                "JVM: ${java.version} (${java.vendor} ${java.vm.name} ${java.vm.version})",
-                "OS: ${os.name} ${os.version} ${os.arch}"
         },
+        optionListHeading = "Options%n%n",
+        commandListHeading = "%nCommands%n%n",
+        abbreviateSynopsis = true,
+        versionProvider = VersionProvider.class,
         subcommands = {
                 Build.class,
                 Start.class,
@@ -65,7 +61,6 @@ public final class Main {
 
     @Option(names = "-D<key>=<value>",
             description = "Set a Java system property",
-            scope = ScopeType.INHERIT,
             order = 0)
     Boolean sysProps;
 
@@ -84,12 +79,4 @@ public final class Main {
             required = false,
             scope = ScopeType.INHERIT)
     Boolean verbose;
-
-    @Option(names = { "-cf", "--config-file" },
-            arity = "1",
-            description = "Set the path to a configuration file. By default, configuration properties are read from the \"keycloak.properties\" file in the \"conf\" directory.",
-            paramLabel = "<path>")
-    public void setConfigFile(String path) {
-        System.setProperty(KeycloakConfigSourceProvider.KEYCLOAK_CONFIG_FILE_PROP, path);
-    }
 }

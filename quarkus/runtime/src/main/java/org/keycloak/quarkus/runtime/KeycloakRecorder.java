@@ -21,6 +21,7 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuiltT
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
@@ -86,14 +87,14 @@ public class KeycloakRecorder {
                     feature = "kc.features";
                 }
 
-                String value = getBuiltTimeProperty(feature);
+                Optional<String> value = getBuiltTimeProperty(feature);
 
-                if (value == null) {
+                if (value.isEmpty()) {
                     value = getBuiltTimeProperty(feature.replaceAll("\\.features\\.", "\\.features-"));
                 }
                 
-                if (value != null) {
-                    return value;
+                if (value.isPresent()) {
+                    return value.get();
                 }
 
                 return Configuration.getRawValue(feature);

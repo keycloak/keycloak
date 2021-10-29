@@ -21,7 +21,7 @@ import picocli.CommandLine.Command;
 
 @Command(name = "tools",
         description = "Utilities for use and interaction with the server.",
-        mixinStandardHelpOptions = true,
+        abbreviateSynopsis = true,
         optionListHeading = "%nOptions%n",
         parameterListHeading = "Available Commands%n",
         subcommands = {Completion.class})

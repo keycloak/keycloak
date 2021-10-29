@@ -51,9 +51,8 @@ public class KeycloakMain implements QuarkusApplication {
         System.setProperty(Environment.CLI_ARGS, Picocli.parseConfigArgs(cliArgs));
 
         if (cliArgs.isEmpty()) {
-            // no arguments, just start the server without running picocli
-            start(cliArgs, new PrintWriter(System.err));
-            return;
+            // default to show help message
+            cliArgs.add("-h");
         }
 
         // parse arguments and execute any of the configured commands

@@ -36,9 +36,9 @@ import org.jboss.logging.Logger;
 import io.smallrye.config.PropertiesConfigSource;
 
 import static org.keycloak.common.util.StringPropertyReplacer.replaceProperties;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getMappedPropertyName;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS;
-import static org.keycloak.quarkus.runtime.configuration.PropertyMappers.getMappedPropertyName;
 
 /**
  * A configuration source for {@code keycloak.properties}.
@@ -61,7 +61,7 @@ public abstract class KeycloakPropertiesConfigSource extends PropertiesConfigSou
         try (Closeable ignored = is) {
             Properties properties = new Properties();
             properties.load(is);
-            return transform((Map<String, String>) (Map) properties);
+            return transform((Map) properties);
         } catch (IOException e) {
             throw new IOError(e);
         }

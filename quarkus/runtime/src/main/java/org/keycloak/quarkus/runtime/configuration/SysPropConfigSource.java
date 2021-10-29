@@ -58,6 +58,7 @@ public class SysPropConfigSource implements ConfigSource {
         return "KcSysPropConfigSource";
     }
 
+    @Override
     public int getOrdinal() {
         return 400;
     }
