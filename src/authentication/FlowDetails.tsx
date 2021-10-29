@@ -47,7 +47,7 @@ export const providerConditionFilter = (
   value: AuthenticationProviderRepresentation
 ) => value.displayName?.startsWith("Condition ");
 
-export const FlowDetails = () => {
+export default function FlowDetails() {
   const { t } = useTranslation("authentication");
   const adminClient = useAdminClient();
   const { realm } = useRealm();
@@ -466,4 +466,4 @@ export const FlowDetails = () => {
       </PageSection>
     </>
   );
-};
+}

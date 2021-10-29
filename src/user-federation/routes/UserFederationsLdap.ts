@@ -1,13 +1,13 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { UserFederationSection } from "../UserFederationSection";
 
 export type UserFederationsLdapParams = { realm: string };
 
 export const UserFederationsLdapRoute: RouteDef = {
   path: "/:realm/user-federation/ldap",
-  component: UserFederationSection,
+  component: lazy(() => import("../UserFederationSection")),
   access: "view-realm",
 };
 

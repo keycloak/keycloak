@@ -37,7 +37,7 @@ import { ManageOderDialog } from "./ManageOrderDialog";
 import { toIdentityProvider } from "./routes/IdentityProvider";
 import { toIdentityProviderCreate } from "./routes/IdentityProviderCreate";
 
-export const IdentityProvidersSection = () => {
+export default function IdentityProvidersSection() {
   const { t } = useTranslation("identity-providers");
   const identityProviders = _.groupBy(
     useServerInfo().identityProviders,
@@ -269,4 +269,4 @@ export const IdentityProvidersSection = () => {
       </PageSection>
     </>
   );
-};
+}

@@ -1,7 +1,7 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { RSAGeneratedSettings } from "../key-providers/rsa-generated/RSAGeneratedForm";
 import { EditProviderCrumb } from "../RealmSettingsSection";
 
 export type RsaGeneratedSettingsParams = {
@@ -11,7 +11,9 @@ export type RsaGeneratedSettingsParams = {
 
 export const RsaGeneratedSettingsRoute: RouteDef = {
   path: "/:realm/realm-settings/keys/:id/rsa-generated/settings",
-  component: RSAGeneratedSettings,
+  component: lazy(
+    () => import("../key-providers/rsa-generated/RSAGeneratedForm")
+  ),
   breadcrumb: () => EditProviderCrumb,
   access: "view-realm",
 };

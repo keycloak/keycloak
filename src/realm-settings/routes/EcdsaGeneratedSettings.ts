@@ -1,7 +1,7 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { ECDSAGeneratedSettings } from "../key-providers/ecdsa-generated/ECDSAGeneratedForm";
 import { EditProviderCrumb } from "../RealmSettingsSection";
 
 export type EcdsaGeneratedSettingsParams = {
@@ -11,7 +11,9 @@ export type EcdsaGeneratedSettingsParams = {
 
 export const EcdsaGeneratedSettingsRoute: RouteDef = {
   path: "/:realm/realm-settings/keys/:id/ecdsa-generated/settings",
-  component: ECDSAGeneratedSettings,
+  component: lazy(
+    () => import("../key-providers/ecdsa-generated/ECDSAGeneratedForm")
+  ),
   breadcrumb: () => EditProviderCrumb,
   access: "view-realm",
 };

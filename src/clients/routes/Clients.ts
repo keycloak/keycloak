@@ -1,7 +1,7 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { ClientsSection } from "../ClientsSection";
 
 export type ClientsTab = "list" | "initialAccessToken";
 
@@ -12,7 +12,7 @@ export type ClientsParams = {
 
 export const ClientsRoute: RouteDef = {
   path: "/:realm/clients/:tab?",
-  component: ClientsSection,
+  component: lazy(() => import("../ClientsSection")),
   breadcrumb: (t) => t("clients:clientList"),
   access: "query-clients",
 };

@@ -47,7 +47,7 @@ type Role = RoleRepresentation & {
   clientId?: string;
 };
 
-export const AddMapper = () => {
+export default function AddMapper() {
   const { t } = useTranslation("identity-providers");
 
   const form = useForm<IdPMapperRepresentationWithAttributes>();
@@ -901,4 +901,4 @@ export const AddMapper = () => {
       </FormAccess>
     </PageSection>
   );
-};
+}

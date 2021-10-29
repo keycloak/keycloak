@@ -4,7 +4,7 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { RolesList } from "./RolesList";
 
-export const RealmRolesSection = () => {
+export default function RealmRolesSection() {
   const adminClient = useAdminClient();
 
   const loader = (first?: number, max?: number, search?: string) => {
@@ -30,4 +30,4 @@ export const RealmRolesSection = () => {
       </PageSection>
     </>
   );
-};
+}

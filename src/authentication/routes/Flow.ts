@@ -1,7 +1,7 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { FlowDetails } from "../FlowDetails";
 
 export type FlowParams = {
   realm: string;
@@ -12,7 +12,7 @@ export type FlowParams = {
 
 export const FlowRoute: RouteDef = {
   path: "/:realm/authentication/:id/:usedBy/:builtIn?",
-  component: FlowDetails,
+  component: lazy(() => import("../FlowDetails")),
   breadcrumb: (t) => t("authentication:flowDetails"),
   access: "manage-authorization",
 };

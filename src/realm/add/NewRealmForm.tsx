@@ -21,7 +21,7 @@ import { useRealm } from "../../context/realm-context/RealmContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { toDashboard } from "../../dashboard/routes/Dashboard";
 
-export const NewRealmForm = () => {
+export default function NewRealmForm() {
   const { t } = useTranslation("realm");
   const history = useHistory();
   const { refresh } = useWhoAmI();
@@ -111,4 +111,4 @@ export const NewRealmForm = () => {
       </PageSection>
     </>
   );
-};
+}

@@ -1,7 +1,7 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { RealmSettingsSection } from "../RealmSettingsSection";
 
 export type RealmSettingsTab =
   | "general"
@@ -22,7 +22,7 @@ export type RealmSettingsParams = {
 
 export const RealmSettingsRoute: RouteDef = {
   path: "/:realm/realm-settings/:tab?",
-  component: RealmSettingsSection,
+  component: lazy(() => import("../RealmSettingsSection")),
   breadcrumb: (t) => t("realmSettings"),
   access: "view-realm",
 };

@@ -1,13 +1,13 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { ImportForm } from "../import/ImportForm";
 
 export type ImportClientParams = { realm: string };
 
 export const ImportClientRoute: RouteDef = {
   path: "/:realm/clients/import-client",
-  component: ImportForm,
+  component: lazy(() => import("../import/ImportForm")),
   breadcrumb: (t) => t("clients:importClient"),
   access: "manage-clients",
 };

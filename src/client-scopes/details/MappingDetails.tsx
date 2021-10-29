@@ -31,7 +31,7 @@ import { toClientScope } from "../routes/ClientScope";
 
 import "./mapping-details.css";
 
-export const MappingDetails = () => {
+export default function MappingDetails() {
   const { t } = useTranslation("client-scopes");
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
@@ -269,4 +269,4 @@ export const MappingDetails = () => {
       </PageSection>
     </>
   );
-};
+}

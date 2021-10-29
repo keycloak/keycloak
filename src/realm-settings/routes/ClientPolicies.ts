@@ -1,7 +1,7 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { ProfilesTab } from "../ProfilesTab";
 
 export type ClientPoliciesParams = {
   realm: string;
@@ -9,7 +9,7 @@ export type ClientPoliciesParams = {
 
 export const ClientPoliciesRoute: RouteDef = {
   path: "/:realm/realm-settings/clientPolicies",
-  component: ProfilesTab,
+  component: lazy(() => import("../ProfilesTab")),
   breadcrumb: (t) => t("realm-settings:allClientPolicies"),
   access: "view-realm",
 };

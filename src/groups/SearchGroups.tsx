@@ -29,7 +29,7 @@ type SearchGroup = GroupRepresentation & {
   link?: string;
 };
 
-export const SearchGroups = () => {
+export default function SearchGroups() {
   const { t } = useTranslation("groups");
   const adminClient = useAdminClient();
   const { realm } = useRealm();
@@ -185,4 +185,4 @@ export const SearchGroups = () => {
       </PageSection>
     </>
   );
-};
+}

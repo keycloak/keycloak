@@ -1,13 +1,13 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { CreateFlow } from "../form/CreateFlow";
 
 export type CreateFlowParams = { realm: string };
 
 export const CreateFlowRoute: RouteDef = {
   path: "/:realm/authentication/flows/create",
-  component: CreateFlow,
+  component: lazy(() => import("../form/CreateFlow")),
   breadcrumb: (t) => t("authentication:createFlow"),
   access: "manage-authorization",
 };

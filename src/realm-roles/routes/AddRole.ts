@@ -1,13 +1,13 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { RealmRoleTabs } from "../RealmRoleTabs";
 
 export type AddRoleParams = { realm: string };
 
 export const AddRoleRoute: RouteDef = {
   path: "/:realm/roles/add-role",
-  component: RealmRoleTabs,
+  component: lazy(() => import("../RealmRoleTabs")),
   breadcrumb: (t) => t("roles:createRole"),
   access: "manage-realm",
 };

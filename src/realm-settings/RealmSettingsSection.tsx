@@ -87,7 +87,7 @@ const sortByPriority = (components: ComponentRepresentation[]) => {
   return sortedComponents;
 };
 
-export const RealmSettingsSection = () => {
+export default function RealmSettingsSection() {
   const adminClient = useAdminClient();
   const { realm: realmName } = useRealm();
   const [realm, setRealm] = useState<RealmRepresentation>();
@@ -130,4 +130,4 @@ export const RealmSettingsSection = () => {
       realmComponents={realmComponents}
     />
   );
-};
+}

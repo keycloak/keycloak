@@ -101,7 +101,7 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
   );
 };
 
-export const DetailSettings = () => {
+export default function DetailSettings() {
   const { t } = useTranslation("identity-providers");
   const { alias, providerId } = useParams<IdentityProviderParams>();
 
@@ -397,4 +397,4 @@ export const DetailSettings = () => {
       </PageSection>
     </>
   );
-};
+}

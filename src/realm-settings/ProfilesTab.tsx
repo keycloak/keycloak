@@ -24,14 +24,15 @@ import { prettyPrintJSON } from "../util";
 import { Link } from "react-router-dom";
 import { toAddClientProfile } from "./routes/AddClientProfile";
 import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
-import "./RealmSettingsSection.css";
 import { toClientProfile } from "./routes/ClientProfile";
+
+import "./RealmSettingsSection.css";
 
 type ClientProfile = ClientProfileRepresentation & {
   global: boolean;
 };
 
-export const ProfilesTab = () => {
+export default function ProfilesTab() {
   const { t } = useTranslation("realm-settings");
   const adminClient = useAdminClient();
   const { realm } = useRealm();
@@ -281,4 +282,4 @@ export const ProfilesTab = () => {
       )}
     </>
   );
-};
+}

@@ -1,13 +1,13 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { RealmRolesSection } from "../RealmRolesSection";
 
 export type RealmRolesParams = { realm: string };
 
 export const RealmRolesRoute: RouteDef = {
   path: "/:realm/roles",
-  component: RealmRolesSection,
+  component: lazy(() => import("../RealmRolesSection")),
   breadcrumb: (t) => t("roles:roleList"),
   access: "view-realm",
 };

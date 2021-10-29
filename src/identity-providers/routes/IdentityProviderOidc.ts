@@ -1,13 +1,13 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { AddOpenIdConnect } from "../add/AddOpenIdConnect";
 
 export type IdentityProviderOidcParams = { realm: string };
 
 export const IdentityProviderOidcRoute: RouteDef = {
   path: "/:realm/identity-providers/oidc/add",
-  component: AddOpenIdConnect,
+  component: lazy(() => import("../add/AddOpenIdConnect")),
   breadcrumb: (t) => t("identity-providers:addOpenIdProvider"),
   access: "manage-identity-providers",
 };

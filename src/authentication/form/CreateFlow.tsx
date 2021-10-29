@@ -19,7 +19,7 @@ import { NameDescription } from "./NameDescription";
 import { FlowType } from "./FlowType";
 import { toFlow } from "../routes/Flow";
 
-export const CreateFlow = () => {
+export default function CreateFlow() {
   const { t } = useTranslation("authentication");
   const history = useHistory();
   const { realm } = useRealm();
@@ -88,4 +88,4 @@ export const CreateFlow = () => {
       </PageSection>
     </>
   );
-};
+}

@@ -1,7 +1,7 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { RSASettings } from "../key-providers/rsa/RSAForm";
 import { EditProviderCrumb } from "../RealmSettingsSection";
 
 export type RsaSettingsParams = {
@@ -11,7 +11,7 @@ export type RsaSettingsParams = {
 
 export const RsaSettingsRoute: RouteDef = {
   path: "/:realm/realm-settings/keys/:id/rsa/settings",
-  component: RSASettings,
+  component: lazy(() => import("../key-providers/rsa/RSAForm")),
   breadcrumb: () => EditProviderCrumb,
   access: "view-realm",
 };

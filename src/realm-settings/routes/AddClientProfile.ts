@@ -1,7 +1,7 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { ClientProfileForm } from "../ClientProfileForm";
 
 export type AddClientProfileParams = {
   realm: string;
@@ -9,7 +9,7 @@ export type AddClientProfileParams = {
 
 export const AddClientProfileRoute: RouteDef = {
   path: "/:realm/realm-settings/clientPolicies/add-profile",
-  component: ClientProfileForm,
+  component: lazy(() => import("../ClientProfileForm")),
   breadcrumb: (t) => t("realm-settings:newClientProfile"),
   access: "manage-realm",
 };

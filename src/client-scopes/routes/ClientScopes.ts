@@ -1,13 +1,13 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { ClientScopesSection } from "../ClientScopesSection";
 
 export type ClientScopesParams = { realm: string };
 
 export const ClientScopesRoute: RouteDef = {
   path: "/:realm/client-scopes",
-  component: ClientScopesSection,
+  component: lazy(() => import("../ClientScopesSection")),
   breadcrumb: (t) => t("client-scopes:clientScopeList"),
   access: "view-clients",
 };

@@ -1,13 +1,13 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { SessionsSection } from "../SessionsSection";
 
 export type SessionsParams = { realm: string };
 
 export const SessionsRoute: RouteDef = {
   path: "/:realm/sessions",
-  component: SessionsSection,
+  component: lazy(() => import("../SessionsSection")),
   breadcrumb: (t) => t("sessions:title"),
   access: "view-realm",
 };

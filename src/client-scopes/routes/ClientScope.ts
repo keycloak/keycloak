@@ -1,7 +1,7 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { ClientScopeForm } from "../form/ClientScopeForm";
 
 export type ClientScopeTab = "settings" | "mappers" | "scope";
 
@@ -14,7 +14,7 @@ export type ClientScopeParams = {
 
 export const ClientScopeRoute: RouteDef = {
   path: "/:realm/client-scopes/:id/:type/:tab",
-  component: ClientScopeForm,
+  component: lazy(() => import("../form/ClientScopeForm")),
   breadcrumb: (t) => t("client-scopes:clientScopeDetails"),
   access: "view-clients",
 };

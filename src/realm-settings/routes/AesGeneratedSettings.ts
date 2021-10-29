@@ -1,7 +1,7 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { AESGeneratedSettings } from "../key-providers/aes-generated/AESGeneratedForm";
 import { EditProviderCrumb } from "../RealmSettingsSection";
 
 export type AesGeneratedSettingsParams = {
@@ -11,7 +11,9 @@ export type AesGeneratedSettingsParams = {
 
 export const AesGeneratedSettingsRoute: RouteDef = {
   path: "/:realm/realm-settings/keys/:id/aes-generated/settings",
-  component: AESGeneratedSettings,
+  component: lazy(
+    () => import("../key-providers/aes-generated/AESGeneratedForm")
+  ),
   breadcrumb: () => EditProviderCrumb,
   access: "view-realm",
 };

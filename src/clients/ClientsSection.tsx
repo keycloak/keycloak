@@ -32,7 +32,7 @@ import { toClient } from "./routes/Client";
 import { toImportClient } from "./routes/ImportClient";
 import { isRealmClient, getProtocolName } from "./utils";
 
-export const ClientsSection = () => {
+export default function ClientsSection() {
   const { t } = useTranslation("clients");
   const { addAlert, addError } = useAlerts();
 
@@ -213,4 +213,4 @@ export const ClientsSection = () => {
       </PageSection>
     </>
   );
-};
+}

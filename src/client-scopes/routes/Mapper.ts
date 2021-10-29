@@ -1,7 +1,7 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { MappingDetails } from "../details/MappingDetails";
 
 export type MapperParams = {
   realm: string;
@@ -12,7 +12,7 @@ export type MapperParams = {
 
 export const MapperRoute: RouteDef = {
   path: "/:realm/client-scopes/:id/:type/mappers/:mapperId",
-  component: MappingDetails,
+  component: lazy(() => import("../details/MappingDetails")),
   breadcrumb: (t) => t("common:mappingDetails"),
   access: "view-clients",
 };

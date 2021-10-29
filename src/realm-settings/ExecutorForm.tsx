@@ -35,7 +35,7 @@ const defaultValues: ExecutorForm = {
   executor: "",
 };
 
-export const ExecutorForm = () => {
+export default function ExecutorForm() {
   const { t } = useTranslation("realm-settings");
   const history = useHistory();
   const { realm, profileName } = useParams<ClientProfileParams>();
@@ -204,4 +204,4 @@ export const ExecutorForm = () => {
       </PageSection>
     </>
   );
-};
+}

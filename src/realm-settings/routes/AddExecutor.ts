@@ -1,7 +1,7 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { ExecutorForm } from "../ExecutorForm";
 
 export type AddExecutorParams = {
   realm: string;
@@ -10,7 +10,7 @@ export type AddExecutorParams = {
 
 export const AddExecutorRoute: RouteDef = {
   path: "/:realm/realm-settings/clientPolicies/:profileName/add-executor",
-  component: ExecutorForm,
+  component: lazy(() => import("../ExecutorForm")),
   breadcrumb: (t) => t("realm-settings:addExecutor"),
   access: "manage-realm",
 };

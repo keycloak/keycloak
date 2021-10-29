@@ -35,7 +35,7 @@ import {
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toMapper } from "../routes/Mapper";
 
-export const ClientScopeForm = () => {
+export default function ClientScopeForm() {
   const { t } = useTranslation("client-scopes");
   const [clientScope, setClientScope] =
     useState<ClientScopeDefaultOptionalType>();
@@ -307,4 +307,4 @@ export const ClientScopeForm = () => {
       </PageSection>
     </>
   );
-};
+}

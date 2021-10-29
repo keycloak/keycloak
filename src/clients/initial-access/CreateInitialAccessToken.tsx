@@ -22,7 +22,7 @@ import { useAlerts } from "../../components/alert/Alerts";
 import { AccessTokenDialog } from "./AccessTokenDialog";
 import { toClients } from "../routes/Clients";
 
-export const CreateInitialAccessToken = () => {
+export default function CreateInitialAccessToken() {
   const { t } = useTranslation("clients");
   const { handleSubmit, control } = useForm();
 
@@ -144,4 +144,4 @@ export const CreateInitialAccessToken = () => {
       </PageSection>
     </>
   );
-};
+}

@@ -40,7 +40,7 @@ import { SecurityDefences } from "./security-defences/SecurityDefences";
 import { RealmSettingsSessionsTab } from "./SessionsTab";
 import { RealmSettingsThemesTab } from "./ThemesTab";
 import { RealmSettingsTokensTab } from "./TokensTab";
-import { ProfilesTab } from "./ProfilesTab";
+import ProfilesTab from "./ProfilesTab";
 import { PoliciesTab } from "./PoliciesTab";
 import { PartialImportDialog } from "./PartialImport";
 import { PartialExportDialog } from "./PartialExport";

@@ -20,7 +20,7 @@ import { GeneralSettings } from "./GeneralSettings";
 import { toIdentityProvider } from "../routes/IdentityProvider";
 import type { IdentityProviderCreateParams } from "../routes/IdentityProviderCreate";
 
-export const AddIdentityProvider = () => {
+export default function AddIdentityProvider() {
   const { t } = useTranslation("identity-providers");
   const { providerId } = useParams<IdentityProviderCreateParams>();
   const form = useForm<IdentityProviderRepresentation>();
@@ -92,4 +92,4 @@ export const AddIdentityProvider = () => {
       </PageSection>
     </>
   );
-};
+}

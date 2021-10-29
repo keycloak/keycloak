@@ -1,7 +1,7 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { UserFederationKerberosSettings } from "../UserFederationKerberosSettings";
 
 export type UserFederationKerberosParams = {
   realm: string;
@@ -10,7 +10,7 @@ export type UserFederationKerberosParams = {
 
 export const UserFederationKerberosRoute: RouteDef = {
   path: "/:realm/user-federation/kerberos/:id",
-  component: UserFederationKerberosSettings,
+  component: lazy(() => import("../UserFederationKerberosSettings")),
   breadcrumb: (t) => t("common:settings"),
   access: "view-realm",
 };

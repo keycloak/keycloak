@@ -26,7 +26,7 @@ import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/li
 import { useRealm } from "../context/realm-context/RealmContext";
 import type { EditClientPolicyParams } from "./routes/EditClientPolicy";
 
-export const NewClientPolicyCondition = () => {
+export default function NewClientPolicyCondition() {
   const { t } = useTranslation("realm-settings");
   const { addAlert, addError } = useAlerts();
   const history = useHistory();
@@ -194,4 +194,4 @@ export const NewClientPolicyCondition = () => {
       </FormPanel>
     </PageSection>
   );
-};
+}

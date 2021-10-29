@@ -18,7 +18,7 @@ import { SamlConnectSettings } from "./SamlConnectSettings";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useAlerts } from "../../components/alert/Alerts";
 
-export const AddSamlConnect = () => {
+export default function AddSamlConnect() {
   const { t } = useTranslation("identity-providers");
   const history = useHistory();
   const id = "saml";
@@ -89,4 +89,4 @@ export const AddSamlConnect = () => {
       </PageSection>
     </>
   );
-};
+}

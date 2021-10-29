@@ -92,7 +92,7 @@ export const AESGeneratedForm = ({
       if (
         key === "config" &&
         component.config?.secretSize &&
-        component.config?.active
+        component.config.active
       ) {
         form.setValue("config.secretSize", value.secretSize[0]);
 
@@ -338,7 +338,7 @@ export const AESGeneratedForm = ({
   );
 };
 
-export const AESGeneratedSettings = () => {
+export default function AESGeneratedSettings() {
   const { t } = useTranslation("realm-settings");
   const providerId = useRouteMatch<MatchParams>(
     "/:realm/realm-settings/keys/:id?/:providerType?/settings"
@@ -351,4 +351,4 @@ export const AESGeneratedSettings = () => {
       </PageSection>
     </>
   );
-};
+}

@@ -56,7 +56,7 @@ type PolicyDetailAttributes = {
   name: string;
 };
 
-export const NewClientPolicyForm = () => {
+export default function NewClientPolicyForm() {
   const { t } = useTranslation("realm-settings");
   const { errors, reset: resetForm } = useForm<NewClientPolicyForm>({
     defaultValues,
@@ -655,4 +655,4 @@ export const NewClientPolicyForm = () => {
       </PageSection>
     </>
   );
-};
+}

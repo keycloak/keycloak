@@ -1,7 +1,7 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { ClientDetails } from "../ClientDetails";
 
 export type ClientTab =
   | "settings"
@@ -18,7 +18,7 @@ export type ClientParams = {
 
 export const ClientRoute: RouteDef = {
   path: "/:realm/clients/:clientId/:tab",
-  component: ClientDetails,
+  component: lazy(() => import("../ClientDetails")),
   breadcrumb: (t) => t("clients:clientSettings"),
   access: "view-clients",
 };

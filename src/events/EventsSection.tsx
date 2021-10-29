@@ -84,7 +84,7 @@ const DetailCell = (event: EventRepresentation) => (
   </DescriptionList>
 );
 
-export const EventsSection = () => {
+export default function EventsSection() {
   const { t } = useTranslation("events");
   const adminClient = useAdminClient();
   const { realm } = useRealm();
@@ -482,4 +482,4 @@ export const EventsSection = () => {
       </PageSection>
     </>
   );
-};
+}

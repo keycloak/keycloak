@@ -1,7 +1,7 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { UserFederationLdapSettings } from "../UserFederationLdapSettings";
 
 export type UserFederationLdapParams = {
   realm: string;
@@ -11,7 +11,7 @@ export type UserFederationLdapParams = {
 
 export const UserFederationLdapRoute: RouteDef = {
   path: "/:realm/user-federation/ldap/:id/:tab?",
-  component: UserFederationLdapSettings,
+  component: lazy(() => import("../UserFederationLdapSettings")),
   breadcrumb: (t) => t("common:settings"),
   access: "view-realm",
 };

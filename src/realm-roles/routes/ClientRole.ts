@@ -1,7 +1,7 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { RealmRoleTabs } from "../RealmRoleTabs";
 
 export type ClientRoleTab = "details" | "attributes" | "users-in-role";
 
@@ -14,7 +14,7 @@ export type ClientRoleParams = {
 
 export const ClientRoleRoute: RouteDef = {
   path: "/:realm/clients/:clientId/roles/:id/:tab?",
-  component: RealmRoleTabs,
+  component: lazy(() => import("../RealmRoleTabs")),
   breadcrumb: (t) => t("roles:roleDetails"),
   access: "view-realm",
 };

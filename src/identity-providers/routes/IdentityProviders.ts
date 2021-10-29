@@ -1,13 +1,13 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { IdentityProvidersSection } from "../IdentityProvidersSection";
 
 export type IdentityProvidersParams = { realm: string };
 
 export const IdentityProvidersRoute: RouteDef = {
   path: "/:realm/identity-providers",
-  component: IdentityProvidersSection,
+  component: lazy(() => import("../IdentityProvidersSection")),
   breadcrumb: (t) => t("identityProviders"),
   access: "view-identity-providers",
 };

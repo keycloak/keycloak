@@ -26,7 +26,7 @@ import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import "./user-federation.css";
 
-export const UserFederationSection = () => {
+export default function UserFederationSection() {
   const [userFederations, setUserFederations] =
     useState<ComponentRepresentation[]>();
   const { addAlert, addError } = useAlerts();
@@ -205,4 +205,4 @@ export const UserFederationSection = () => {
       </PageSection>
     </>
   );
-};
+}

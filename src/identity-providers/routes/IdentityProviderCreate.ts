@@ -1,7 +1,7 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { AddIdentityProvider } from "../add/AddIdentityProvider";
 
 export type IdentityProviderCreateParams = {
   realm: string;
@@ -10,7 +10,7 @@ export type IdentityProviderCreateParams = {
 
 export const IdentityProviderCreateRoute: RouteDef = {
   path: "/:realm/identity-providers/:providerId/add",
-  component: AddIdentityProvider,
+  component: lazy(() => import("../add/AddIdentityProvider")),
   breadcrumb: (t) => t("identity-providers:addProvider"),
   access: "manage-identity-providers",
 };

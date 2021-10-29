@@ -92,7 +92,7 @@ export const ECDSAGeneratedForm = ({
       if (
         key === "config" &&
         component.config?.ecdsaEllipticCurveKey &&
-        component.config?.active
+        component.config.active
       ) {
         form.setValue("config.secretSize", value.ecdsaEllipticCurveKey[0]);
 
@@ -329,7 +329,7 @@ export const ECDSAGeneratedForm = ({
   );
 };
 
-export const ECDSAGeneratedSettings = () => {
+export default function ECDSAGeneratedSettings() {
   const { t } = useTranslation("realm-settings");
   const providerId = useRouteMatch<MatchParams>(
     "/:realm/realm-settings/keys/:id?/:providerType?/settings"
@@ -342,4 +342,4 @@ export const ECDSAGeneratedSettings = () => {
       </PageSection>
     </>
   );
-};
+}

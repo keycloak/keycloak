@@ -1,7 +1,7 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { EventsSection } from "../EventsSection";
 
 export type EventsTab = "userEvents" | "adminEvents";
 
@@ -12,7 +12,7 @@ export type EventsParams = {
 
 export const EventsRoute: RouteDef = {
   path: "/:realm/events/:tab?",
-  component: EventsSection,
+  component: lazy(() => import("../EventsSection")),
   breadcrumb: (t) => t("events:title"),
   access: "view-events",
 };

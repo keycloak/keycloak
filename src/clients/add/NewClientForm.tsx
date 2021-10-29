@@ -20,7 +20,7 @@ import { toClients } from "../routes/Clients";
 import { CapabilityConfig } from "./CapabilityConfig";
 import { GeneralSettings } from "./GeneralSettings";
 
-export const NewClientForm = () => {
+export default function NewClientForm() {
   const { t } = useTranslation("clients");
   const { realm } = useRealm();
   const adminClient = useAdminClient();
@@ -151,4 +151,4 @@ export const NewClientForm = () => {
       </PageSection>
     </>
   );
-};
+}

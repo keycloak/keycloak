@@ -45,7 +45,7 @@ import {
 } from "./details/SearchFilter";
 import type { Row } from "../clients/scopes/ClientScopes";
 
-export const ClientScopesSection = () => {
+export default function ClientScopesSection() {
   const { realm } = useRealm();
   const { whoAmI } = useWhoAmI();
   const { t } = useTranslation("client-scopes");
@@ -282,4 +282,4 @@ export const ClientScopesSection = () => {
       </PageSection>
     </>
   );
-};
+}
