@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import * as React from 'react';
-import { ActionGroup, Button, Form, FormGroup, TextInput, Grid, GridItem, ExpandableSection, Card, CardBody} from '@patternfly/react-core';
+import { ActionGroup, Button, Form, FormGroup, TextInput, ValidatedOptions, Grid, GridItem, ExpandableSection, Card, CardBody} from '@patternfly/react-core';
 
 import { HttpResponse } from '../../account-service/account.service';
 import { AccountServiceContext } from '../../account-service/AccountServiceContext';
@@ -155,7 +155,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                                 isRequired
                                 fieldId="user-name"
                                 helperTextInvalid={this.state.errors.username}
-                                // isValid={this.state.errors.username === ''}
+                                validated={this.state.errors.username !== '' ? ValidatedOptions.error : ValidatedOptions.default}
                             >
                                 {this.isEditUserNameAllowed && <this.UsernameInput />}
                                 {!this.isEditUserNameAllowed && <this.RestrictedUsernameInput />}
@@ -166,7 +166,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                                 isRequired
                                 fieldId="email-address"
                                 helperTextInvalid={this.state.errors.email}
-                                // isValid={this.state.errors.email === ''}
+                                validated={this.state.errors.email !== '' ? ValidatedOptions.error : ValidatedOptions.default}
                             >
                                 <TextInput
                                     isRequired
@@ -176,7 +176,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                                     maxLength={254}
                                     value={fields.email}
                                     onChange={this.handleChange}
-                                    // isValid={this.state.errors.email === ''}
+                                    validated={this.state.errors.email !== '' ? ValidatedOptions.error : ValidatedOptions.default}
                                 >
                                 </TextInput>
                             </FormGroup>
@@ -185,7 +185,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                                 isRequired
                                 fieldId="first-name"
                                 helperTextInvalid={this.state.errors.firstName}
-                                // isValid={this.state.errors.firstName === ''}
+                                validated={this.state.errors.firstName !== '' ? ValidatedOptions.error : ValidatedOptions.default}
                             >
                                 <TextInput
                                     isRequired
@@ -195,7 +195,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                                     maxLength={254}
                                     value={fields.firstName}
                                     onChange={this.handleChange}
-                                    // isValid={this.state.errors.firstName === ''}
+                                    validated={this.state.errors.firstName !== '' ? ValidatedOptions.error : ValidatedOptions.default}
                                 >
                                 </TextInput>
                             </FormGroup>
@@ -204,7 +204,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                                 isRequired
                                 fieldId="last-name"
                                 helperTextInvalid={this.state.errors.lastName}
-                                // isValid={this.state.errors.lastName === ''}
+                                validated={this.state.errors.lastName !== '' ? ValidatedOptions.error : ValidatedOptions.default}
                             >
                                 <TextInput
                                     isRequired
@@ -214,8 +214,8 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                                     maxLength={254}
                                     value={fields.lastName}
                                     onChange={this.handleChange}
-                                    // isValid={this.state.errors.lastName === ''}
-                                >
+                                    validated={this.state.errors.lastName !== '' ? ValidatedOptions.error : ValidatedOptions.default}
+                                    >
                                 </TextInput>
                             </FormGroup>
                             {features.isInternationalizationEnabled && <FormGroup
@@ -287,9 +287,8 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
             maxLength={254}
             value={this.state.formFields.username}
             onChange={this.handleChange}
-            // isValid={this.state.errors.username === ''}
-            validated="error"
-        >
+            validated={this.state.errors.username !== '' ? ValidatedOptions.error : ValidatedOptions.default}
+            >
         </TextInput>
     );
 
