@@ -43,6 +43,7 @@ import { RealmSettingsTokensTab } from "./TokensTab";
 import { ProfilesTab } from "./ProfilesTab";
 import { PoliciesTab } from "./PoliciesTab";
 import { PartialImportDialog } from "./PartialImport";
+import { PartialExportDialog } from "./PartialExport";
 import { toRealmSettings } from "./routes/RealmSettings";
 import { LocalizationTab } from "./LocalizationTab";
 import { HelpItem } from "../components/help-enabler/HelpItem";
@@ -67,6 +68,7 @@ const RealmSettingsHeader = ({
   const { addAlert, addError } = useAlerts();
   const history = useHistory();
   const [partialImportOpen, setPartialImportOpen] = useState(false);
+  const [partialExportOpen, setPartialExportOpen] = useState(false);
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
     titleKey: "realm-settings:disableConfirmTitle",
@@ -103,6 +105,10 @@ const RealmSettingsHeader = ({
         open={partialImportOpen}
         toggleDialog={() => setPartialImportOpen(!partialImportOpen)}
       />
+      <PartialExportDialog
+        isOpen={partialExportOpen}
+        onClose={() => setPartialExportOpen(false)}
+      />
       <ViewHeader
         titleKey={toUpperCase(realmName)}
         divider={false}
@@ -116,7 +122,13 @@ const RealmSettingsHeader = ({
           >
             {t("partialImport")}
           </DropdownItem>,
-          <DropdownItem key="export">{t("partialExport")}</DropdownItem>,
+          <DropdownItem
+            key="export"
+            data-testid="openPartialExportModal"
+            onClick={() => setPartialExportOpen(true)}
+          >
+            {t("partialExport")}
+          </DropdownItem>,
           <DropdownSeparator key="separator" />,
           <DropdownItem key="delete" onClick={toggleDeleteDialog}>
             {t("common:delete")}
