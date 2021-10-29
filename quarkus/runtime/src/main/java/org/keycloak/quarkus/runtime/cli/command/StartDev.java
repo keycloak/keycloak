@@ -28,7 +28,8 @@ import picocli.CommandLine.Command;
         },
         footerHeading = "%nDo NOT start the server using this command when deploying to production.%n%n",
         optionListHeading = "%nConfiguration Options%n%n",
-        mixinStandardHelpOptions = true)
+        mixinStandardHelpOptions = true,
+        versionProvider = VersionProvider.class)
 public final class StartDev extends AbstractStartCommand implements Runnable {
 
     public static final String NAME = "start-dev";

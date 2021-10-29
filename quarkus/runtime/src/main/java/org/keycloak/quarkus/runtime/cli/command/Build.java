@@ -55,6 +55,7 @@ import picocli.CommandLine.Command;
                 + "    $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} --auto-build <OPTIONS>%n%n"
                 + "By doing that you have an additional overhead when the server is starting.%n%n",
         mixinStandardHelpOptions = true,
+        versionProvider = VersionProvider.class,
         optionListHeading = "%nConfiguration Options%n%n")
 public final class Build extends AbstractCommand implements Runnable {
 

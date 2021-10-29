@@ -47,11 +47,7 @@ import picocli.CommandLine.ScopeType;
                 "by Red Hat" },
         optionListHeading = "Configuration Options%n%n",
         commandListHeading = "%nCommands%n%n",
-        version = {
-                "Keycloak ${sys:kc.version}",
-                "JVM: ${java.version} (${java.vendor} ${java.vm.name} ${java.vm.version})",
-                "OS: ${os.name} ${os.version} ${os.arch}"
-        },
+        versionProvider = VersionProvider.class,
         subcommands = {
                 Build.class,
                 Start.class,

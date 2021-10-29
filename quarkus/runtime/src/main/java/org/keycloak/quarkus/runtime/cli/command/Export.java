@@ -25,6 +25,7 @@ import picocli.CommandLine.Option;
 @Command(name = "export",
         description = "Export data from realms to a file or directory.",
         mixinStandardHelpOptions = true,
+        versionProvider = VersionProvider.class,
         showDefaultValues = true,
         optionListHeading = "%nOptions%n",
         parameterListHeading = "Available Commands%n")
