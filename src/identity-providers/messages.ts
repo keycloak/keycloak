@@ -69,6 +69,7 @@ export default {
     unspecified: "Unspecified",
     principalType: "Principal type",
     principalAttribute: "Principal attribute",
+    allowCreate: "Allow create",
     subjectNameId: "Subject NameID",
     attributeName: "Attribute [Name]",
     attributeFriendlyName: "Attribute [Friendly Name]",

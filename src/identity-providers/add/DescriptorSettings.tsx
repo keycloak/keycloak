@@ -226,23 +226,29 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
             >
               <SelectOption
                 data-testid="subjectNameId-option"
-                value={t("subjectNameId")}
+                value="SUBJECT"
                 isPlaceholder
-              />
+              >
+                {t("subjectNameId")}
+              </SelectOption>
               <SelectOption
                 data-testid="attributeName-option"
-                value={t("attributeName")}
-              />
+                value="ATTRIBUTE"
+              >
+                {t("attributeName")}
+              </SelectOption>
               <SelectOption
                 data-testid="attributeFriendlyName-option"
-                value={t("attributeFriendlyName")}
-              />
+                value="FRIENDLY_ATTRIBUTE"
+              >
+                {t("attributeFriendlyName")}
+              </SelectOption>
             </Select>
           )}
         ></Controller>
       </FormGroup>
 
-      {principalType.includes("Attribute") && (
+      {principalType.includes("ATTRIBUTE") && (
         <FormGroup
           label={t("principalAttribute")}
           labelIcon={
@@ -263,6 +269,12 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           />
         </FormGroup>
       )}
+      <SwitchField
+        field="config.allowCreate"
+        label="allowCreate"
+        isReadOnly={readOnly}
+      />
+
       <SwitchField
         field="config.postBindingResponse"
         label="httpPostBindingResponse"

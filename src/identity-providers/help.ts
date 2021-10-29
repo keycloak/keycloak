@@ -75,6 +75,8 @@ export default {
       "Way to identify and track external users from the assertion. Default is using Subject NameID, alternatively you can set up identifying attribute.",
     principalAttribute:
       "Name or Friendly Name of the attribute used to identify external users.",
+    allowCreate:
+      "Allow the external identity provider to create a new identifier to represent the principal.",
     httpPostBindingResponse:
       "Indicates whether to respond to requests using HTTP-POST binding. If false, HTTP-REDIRECT binding will be used.",
     httpPostBindingAuthnRequest:
