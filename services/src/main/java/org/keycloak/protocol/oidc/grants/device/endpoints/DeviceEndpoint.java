@@ -19,13 +19,9 @@ package org.keycloak.protocol.oidc.grants.device.endpoints;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
-import org.keycloak.common.util.Time;
-import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -39,9 +35,7 @@ import org.keycloak.models.OAuth2DeviceTokenStoreProvider;
 import org.keycloak.models.OAuth2DeviceUserCodeModel;
 import org.keycloak.models.OAuth2DeviceUserCodeProvider;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.protocol.AuthorizationEndpointBase;
-import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
@@ -57,7 +51,6 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resource.RealmResourceProvider;
-import org.keycloak.services.resources.SessionCodeChecks;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -66,7 +59,6 @@ import org.keycloak.util.TokenUtil;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
-import javax.ws.rs.HttpMethod;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -77,10 +69,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
-import static org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint.LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX;
 import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.OAUTH2_DEVICE_USER_CODE;
-import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.OAUTH2_USER_CODE_VERIFY;
-import static org.keycloak.services.resources.LoginActionsService.SESSION_CODE;
 
 /**
  * @author <a href="mailto:h2-wada@nri.co.jp">Hiroyuki Wada</a>
@@ -210,13 +199,20 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
             OAuth2DeviceCodeModel deviceCode = store.getByUserCode(realm, formattedUserCode);
 
             if (deviceCode == null) {
-                event.error(Errors.INVALID_OAUTH2_USER_CODE);
-                return createVerificationPage(Messages.OAUTH2_DEVICE_INVALID_USER_CODE);
+                return invalidUserCodeResponse(Messages.OAUTH2_DEVICE_INVALID_USER_CODE, "device code not found (it may already have been used)");
+            }
+
+            if (!deviceCode.isPending()) {
+                event.detail("device_code_user_session_id", deviceCode.getUserSessionId());
+                return invalidUserCodeResponse(Messages.OAUTH2_DEVICE_INVALID_USER_CODE, "device code already used and not yet deleted");
+            }
+
+            if (deviceCode.isDenied()) {
+                return invalidUserCodeResponse(Messages.OAUTH2_DEVICE_INVALID_USER_CODE, "device code denied");
             }
 
             if (deviceCode.isExpired()) {
-                event.error(Errors.INVALID_OAUTH2_USER_CODE);
-                return createVerificationPage(Messages.OAUTH2_DEVICE_EXPIRED_USER_CODE);
+                return invalidUserCodeResponse(Messages.OAUTH2_DEVICE_EXPIRED_USER_CODE, "device code expired");
             }
 
             return processVerification(deviceCode, formattedUserCode);
@@ -272,6 +268,18 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         }
     }
 
+    /**
+     * @param errorMessage Message code for the verification page
+     * @param reason For event details; not exposed to end user
+     * @return Verification page response with error message
+     */
+    private Response invalidUserCodeResponse(String errorMessage, String reason) {
+        event.error(Errors.INVALID_OAUTH2_USER_CODE);
+        event.detail(Details.REASON, reason);
+        logger.debugf("invalid user code: %s", reason);
+        return createVerificationPage(errorMessage);
+    }
+
     private Response createVerificationPage(String errorMessage) {
         String execution = AuthenticatedClientSessionModel.Action.USER_CODE_VERIFICATION.name();
 
@@ -286,12 +294,6 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
     }
 
     private Response processVerification(OAuth2DeviceCodeModel deviceCode, String userCode) {
-        long expiresIn = deviceCode.getExpiration() - Time.currentTime();
-        if (expiresIn < 0) {
-            event.error(Errors.EXPIRED_OAUTH2_USER_CODE);
-            return createVerificationPage(Messages.OAUTH2_DEVICE_INVALID_USER_CODE);
-        }
-
         ClientModel client = realm.getClientByClientId(deviceCode.getClientId());
         AuthenticationSessionModel authenticationSession = createAuthenticationSession(client);
 
