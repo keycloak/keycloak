@@ -630,9 +630,6 @@ ul#kc-totp-supported-apps {
     box-shadow: var(--pf-global--BoxShadow--lg);
     padding: 0 20px;
     max-width: 500px;
-    border-top: 4px solid;
-    border-color: #0066CC; /* default - IE compatibility */
-    border-color: var(--pf-global--primary-color--100);
 }
 
 /*phone*/
