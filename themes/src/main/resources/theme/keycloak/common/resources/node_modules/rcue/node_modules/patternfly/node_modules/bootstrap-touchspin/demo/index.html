@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Bootstrap TouchSpin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A mobile and touch friendly input spinner component for Bootstrap 3.">
+    <meta name="author" content="István Ujj-Mészáros">
+
+    <meta itemprop="name" content="Bootstrap Touchspin">
+    <meta itemprop="description" content="A mobile and touch friendly input spinner component for Bootstrap 3.">
+
+    <link rel="shortcut icon" href="favicon.ico">
+
+    <link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
+    <link href="//cdnjs.cloudflare.com/ajax/libs/prettify/r298/prettify.css" rel="stylesheet" type="text/css" media="all">
+    <link href="../src/jquery.bootstrap-touchspin.css" rel="stylesheet" type="text/css" media="all">
+    <link href="demo.css" rel="stylesheet" type="text/css" media="all">
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.1.1/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/prettify/r298/prettify.js"></script>
+    <script src="../src/jquery.bootstrap-touchspin.js"></script>
+</head>
+
+<body>
+<div class="container">
+  <div class="hero-unit">
+
+    <h1>Bootstrap TouchSpin</h1>
+
+    <a id="link-ghp" class="btn btn-primary" href="https://github.com/istvan-ujjmeszaros/bootstrap-touchspin"
+       target="_blank"><span class="glyphicon glyphicon-link"></span> Github project page</a>
+    <a id="link-ghdl" href="https://github.com/istvan-ujjmeszaros/bootstrap-touchspin/archive/master.zip"
+       class="btn btn-primary" title="download"><span class="glyphicon glyphicon-download"></span> Download</a>
+
+</div>
+
+<p>
+    A mobile and touch friendly input spinner component for Bootstrap 3.<br>
+    It supports the mousewheel and the up/down keys.
+</p>
+
+<h2>Examples</h2>
+
+<div class="row">
+    <div class="col-md-5">
+        <label for="demo0">Example using data attributes:</label> <input
+            id="demo0"
+            type="text"
+            value="40"
+            name="demo0"
+            data-bts-min="0"
+            data-bts-max="100"
+            data-bts-init-val=""
+            data-bts-step="1"
+            data-bts-decimal="0"
+            data-bts-step-interval="100"
+            data-bts-force-step-divisibility="round"
+            data-bts-step-interval-delay="500"
+            data-bts-prefix=""
+            data-bts-postfix=""
+            data-bts-prefix-extra-class=""
+            data-bts-postfix-extra-class=""
+            data-bts-booster="true"
+            data-bts-boostat="10"
+            data-bts-max-boosted-step="false"
+            data-bts-mousewheel="true"
+            data-bts-button-down-class="btn btn-default"
+            data-bts-button-up-class="btn btn-default"
+            >
+    </div>
+
+    <div class="col-md-7">
+<pre class="prettyprint">
+&lt;input id=&quot;demo0&quot;
+       type=&quot;text&quot;
+       value=&quot;55&quot;
+       name=&quot;demo0&quot;
+       data-bts-min=&quot;0&quot;
+       data-bts-max=&quot;100&quot;
+       data-bts-init-val=&quot;&quot;
+       data-bts-step=&quot;1&quot;
+       data-bts-decimal=&quot;0&quot;
+       data-bts-step-interval=&quot;100&quot;
+       data-bts-force-step-divisibility=&quot;round&quot;
+       data-bts-step-interval-delay=&quot;500&quot;
+       data-bts-prefix=&quot;&quot;
+       data-bts-postfix=&quot;&quot;
+       data-bts-prefix-extra-class=&quot;&quot;
+       data-bts-postfix-extra-class=&quot;&quot;
+       data-bts-booster=&quot;true&quot;
+       data-bts-boostat=&quot;10&quot;
+       data-bts-max-boosted-step=&quot;false&quot;
+       data-bts-mousewheel=&quot;true&quot;
+       data-bts-button-down-class=&quot;btn btn-default&quot;
+       data-bts-button-up-class=&quot;btn btn-default&quot;
+        /&gt;
+&lt;script&gt;
+    $(&quot;input[name='demo0']&quot;).TouchSpin({
+    });
+&lt;/script&gt;
+</pre>
+
+        <script>
+            $("input[name='demo0']").TouchSpin({
+            });
+        </script>
+
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-5">
+        <label for="demo_vertical">Vertical button alignment:</label> <input id="demo3" type="text" value="" name="demo_vertical">
+    </div>
+
+    <div class="col-md-7">
+<pre class="prettyprint">
+&lt;input id=&quot;demo_vertical&quot; type=&quot;text&quot; value=&quot;&quot; name=&quot;demo_vertical&quot;&gt;
+&lt;script&gt;
+    $(&quot;input[name='demo_vertical']&quot;).TouchSpin({
+      verticalbuttons: true
+    });
+&lt;/script&gt;
+</pre>
+
+        <script>
+            $("input[name='demo_vertical']").TouchSpin({
+              verticalbuttons: true
+            });
+        </script>
+
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-5">
+        <label for="demo_vertical2">Vertical buttons with custom icons:</label> <input id="demo3" type="text" value="" name="demo_vertical2">
+    </div>
+
+    <div class="col-md-7">
+<pre class="prettyprint">
+&lt;input id=&quot;demo_vertical2&quot; type=&quot;text&quot; value=&quot;&quot; name=&quot;demo_vertical2&quot;&gt;
+&lt;script&gt;
+    $(&quot;input[name='demo_vertical2']&quot;).TouchSpin({
+      verticalbuttons: true,
+      verticalupclass: 'glyphicon glyphicon-plus',
+      verticaldownclass: 'glyphicon glyphicon-minus'
+    });
+&lt;/script&gt;
+</pre>
+
+        <script>
+            $("input[name='demo_vertical2']").TouchSpin({
+              verticalbuttons: true,
+              verticalupclass: 'glyphicon glyphicon-plus',
+              verticaldownclass: 'glyphicon glyphicon-minus'
+            });
+        </script>
+
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-5">
+        <label for="demo1">Example with postfix (large):</label> <input id="demo1" type="text" value="55" name="demo1">
+    </div>
+
+    <div class="col-md-7">
+<pre class="prettyprint">
+&lt;input id=&quot;demo1&quot; type=&quot;text&quot; value=&quot;55&quot; name=&quot;demo1&quot;&gt;
+&lt;script&gt;
+    $(&quot;input[name='demo1']&quot;).TouchSpin({
+        min: 0,
+        max: 100,
+        step: 0.1,
+        decimals: 2,
+        boostat: 5,
+        maxboostedstep: 10,
+        postfix: '%'
+    });
+&lt;/script&gt;
+</pre>
+
+        <script>
+            $("input[name='demo1']").TouchSpin({
+                min: 0,
+                max: 100,
+                step: 0.1,
+                decimals: 2,
+                boostat: 5,
+                maxboostedstep: 10,
+                postfix: '%'
+            });
+        </script>
+
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-5">
+        <form class="form-horizontal" role="form">
+            <div class="form-group">
+                <label for="demo2" class="col-md-5 control-label">With prefix</label> <input id="demo2" type="text"
+                                                                                             value="0" name="demo2"
+                                                                                             class="col-md-7 form-control">
+            </div>
+        </form>
+    </div>
+
+    <div class="col-md-7">
+<pre class="prettyprint">
+&lt;form class=&quot;form-horizontal&quot; role=&quot;form&quot;&gt;
+    &lt;div class=&quot;form-group&quot;&gt;
+        &lt;label for=&quot;demo2&quot; class=&quot;col-md-5 control-label&quot;&gt;Example:&lt;/label&gt; &lt;input id=&quot;demo2&quot; type=&quot;text&quot; value=&quot;0&quot; name=&quot;demo2&quot; class=&quot;col-md-7 form-control&quot;&gt;
+    &lt;/div&gt;
+&lt;/form&gt;
+
+&lt;script&gt;
+    $(&quot;input[name='demo2']&quot;).TouchSpin({
+        min: -1000000000,
+        max: 1000000000,
+        stepinterval: 50,
+        maxboostedstep: 10000000,
+        prefix: '$'
+    });
+&lt;/script&gt;
+</pre>
+        <script>
+            $("input[name='demo2']").TouchSpin({
+                min: -1000000000,
+                max: 1000000000,
+                stepinterval: 50,
+                maxboostedstep: 10000000,
+                prefix: '$'
+            });
+        </script>
+
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-5">
+        <label for="demo3">Init with empty value:</label> <input id="demo3" type="text" value="" name="demo3">
+    </div>
+
+    <div class="col-md-7">
+<pre class="prettyprint">
+&lt;input id=&quot;demo3&quot; type=&quot;text&quot; value=&quot;&quot; name=&quot;demo3&quot;&gt;
+&lt;script&gt;
+    $(&quot;input[name='demo3']&quot;).TouchSpin();
+&lt;/script&gt;
+</pre>
+
+        <script>
+            $("input[name='demo3']").TouchSpin();
+        </script>
+
+    </div>
+</div>
+
+<div class="row">
+    <p>
+        The <code>initval</code> setting is only applied when no explicit value is set on the input with the
+        <code>value</code> attribute.
+    </p>
+
+    <div class="col-md-5">
+        <label for="demo3_21">Value attribute is not set
+            <small>(applying settings.initval)</small>
+            :</label> <input id="demo3_21" type="text" value="" name="demo3_21">
+        <label for="demo3_22">Value is set explicitly to 33
+            <small>(skipping settings.initval)</small>
+            :</label> <input id="demo3_22" type="text" value="33" name="demo3_22">
+    </div>
+
+    <div class="col-md-7">
+<pre class="prettyprint">
+&lt;input id=&quot;demo3_21&quot; type=&quot;text&quot; value=&quot;&quot; name=&quot;demo3_21&quot;&gt;
+&lt;script&gt;
+    $(&quot;input[name='demo3_21']&quot;).TouchSpin({
+        initval: 40
+    });
+&lt;/script&gt;
+&lt;input id=&quot;demo3_22&quot; type=&quot;text&quot; value=&quot;33&quot; name=&quot;demo3_22&quot;&gt;
+&lt;script&gt;
+    $(&quot;input[name='demo3_22']&quot;).TouchSpin({
+        initval: 40
+    });
+&lt;/script&gt;
+</pre>
+
+        <script>
+            $("input[name='demo3_21']").TouchSpin({
+                initval: 40
+            });
+            $("input[name='demo3_22']").TouchSpin({
+                initval: 40
+            });
+        </script>
+
+    </div>
+</div>
+
+<p>
+    Size of the whole controller can be set with applying <code>input-sm</code> or <code>input-lg</code> class on the
+    input, or by applying the plugin on an input inside an <code>input-group</code> with the proper size class(<code>input-group-sm</code>
+    or <code>input-group-lg</code>).
+</p>
+
+<div class="row">
+    <div class="col-md-5">
+        <label for="demo4">Button postfix (small):</label> <input id="demo4" type="text" value="" name="demo4"
+                                                                  class="input-sm">
+    </div>
+
+    <div class="col-md-7">
+<pre class="prettyprint">
+&lt;input id=&quot;demo4&quot; type=&quot;text&quot; value=&quot;&quot; name=&quot;demo4&quot; class=&quot;input-sm&quot;&gt;
+&lt;script&gt;
+    $(&quot;input[name='demo4']&quot;).TouchSpin({
+        postfix: &quot;a button&quot;,
+        postfix_extraclass: &quot;btn btn-default&quot;
+    });
+&lt;/script&gt;
+</pre>
+
+        <script>
+            $("input[name='demo4']").TouchSpin({
+                postfix: "a button",
+                postfix_extraclass: "btn btn-default"
+            });
+        </script>
+
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-5">
+        <label for="demo4">Button postfix (large):</label>
+
+        <div class="input-group input-group-lg">
+            <input id="demo4_2" type="text" value="" name="demo4_2" class="form-control input-lg">
+        </div>
+    </div>
+
+    <div class="col-md-7">
+<pre class="prettyprint">
+&lt;div class=&quot;input-group input-group-lg&quot;&gt;
+    &lt;input id=&quot;demo4_2&quot; type=&quot;text&quot; value=&quot;&quot; name=&quot;demo4_2&quot; class=&quot;form-control input-lg&quot;&gt;
+&lt;/div&gt;
+&lt;script&gt;
+    $(&quot;input[name='demo4_2']&quot;).TouchSpin({
+        postfix: &quot;a button&quot;,
+        postfix_extraclass: &quot;btn btn-default&quot;
+    });
+&lt;/script&gt;
+</pre>
+
+        <script>
+            $("input[name='demo4_2']").TouchSpin({
+                postfix: "a button",
+                postfix_extraclass: "btn btn-default"
+            });
+        </script>
+
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-5">
+
+        <label for="demo5">Button group:</label>
+
+        <div class="input-group">
+            <input id="demo5" type="text" class="form-control" name="demo5" value="50">
+
+            <div class="input-group-btn">
+                <button type="button" class="btn btn-default">Action</button>
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                    <span class="caret"></span>
+                    <span class="sr-only">Toggle Dropdown</span>
+                </button>
+                <ul class="dropdown-menu pull-right" role="menu">
+                    <li><a href="#">Action</a></li>
+                    <li><a href="#">Another action</a></li>
+                    <li><a href="#">Something else here</a></li>
+                    <li class="divider"></li>
+                    <li><a href="#">Separated link</a></li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="col-md-7">
+<pre class="prettyprint">
+&lt;div class=&quot;input-group&quot;&gt;
+    &lt;input id=&quot;demo5&quot; type=&quot;text&quot; class=&quot;form-control&quot; name=&quot;demo5&quot; value=&quot;50&quot;&gt;
+    &lt;div class=&quot;input-group-btn&quot;&gt;
+        &lt;button type=&quot;button&quot; class=&quot;btn btn-default&quot;&gt;Action&lt;/button&gt;
+        &lt;button type=&quot;button&quot; class=&quot;btn btn-default dropdown-toggle&quot; data-toggle=&quot;dropdown&quot;&gt;
+            &lt;span class=&quot;caret&quot;&gt;&lt;/span&gt;
+            &lt;span class=&quot;sr-only&quot;&gt;Toggle Dropdown&lt;/span&gt;
+        &lt;/button&gt;
+        &lt;ul class=&quot;dropdown-menu pull-right&quot; role=&quot;menu&quot;&gt;
+            &lt;li&gt;&lt;a href=&quot;#&quot;&gt;Action&lt;/a&gt;&lt;/li&gt;
+            &lt;li&gt;&lt;a href=&quot;#&quot;&gt;Another action&lt;/a&gt;&lt;/li&gt;
+            &lt;li&gt;&lt;a href=&quot;#&quot;&gt;Something else here&lt;/a&gt;&lt;/li&gt;
+            &lt;li class=&quot;divider&quot;&gt;&lt;/li&gt;
+            &lt;li&gt;&lt;a href=&quot;#&quot;&gt;Separated link&lt;/a&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
+&lt;script&gt;
+    $(&quot;input[name='demo5']&quot;).TouchSpin({
+        prefix: &quot;pre&quot;,
+        postfix: &quot;post&quot;
+    });
+&lt;/script&gt;
+</pre>
+
+        <script>
+            $("input[name='demo5']").TouchSpin({
+                prefix: "pre",
+                postfix: "post"
+            });
+        </script>
+
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-5">
+        <label for="demo6">Change button class:</label> <input id="demo6" type="text" value="50" name="demo6">
+    </div>
+
+    <div class="col-md-7">
+<pre class="prettyprint">
+$(&quot;input[name='demo6']&quot;).TouchSpin({
+    buttondown_class: &quot;btn btn-link&quot;,
+    buttonup_class: &quot;btn btn-link&quot;
+});
+</pre>
+
+        <script>
+            $("input[name='demo6']").TouchSpin({
+                buttondown_class: "btn btn-link",
+                buttonup_class: "btn btn-link"
+            });
+        </script>
+
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-5">
+        <label for="demo7">Blank/Non-Number replaced:</label> <input id="demo7" type="text" value="50" name="demo7">
+    </div>
+
+    <div class="col-md-7">
+<pre class="prettyprint">
+$(&quot;input[name='demo7']&quot;).TouchSpin({
+    replacementval: 10
+});
+</pre>
+
+        <script>
+            $("input[name='demo7']").TouchSpin({
+                replacementval: 10
+            });
+        </script>
+
+    </div>
+</div>
+
+<h3>Event demo</h3>
+
+<div class="row">
+    <div class="col-md-3">
+        <input id="demo7" type="text" value="50" name="demo7">
+    </div>
+    <div class="col-md-9">
+        <pre id="demo7textarea" style="height:200px;overflow:auto;"></pre>
+    </div>
+
+    <script>
+        var i = $("input[name='demo7']"),
+                demoarea = $("#demo7textarea"),
+                text = "";
+
+        function writeLine(line) {
+            text += line + "\n";
+            demoarea.text(text);
+            demoarea.scrollTop(
+                            demoarea[0].scrollHeight - demoarea.height()
+            );
+        }
+
+        i.TouchSpin({});
+        i.on("touchspin.on.startspin", function () {
+            writeLine("touchspin.on.startspin");
+        });
+        i.on("touchspin.on.startupspin", function () {
+            writeLine("touchspin.on.startupspin");
+        });
+        i.on("touchspin.on.startdownspin", function () {
+            writeLine("touchspin.on.startdownspin");
+        });
+        i.on("touchspin.on.stopspin", function () {
+            writeLine("touchspin.on.stopspin");
+        });
+        i.on("touchspin.on.stopupspin", function () {
+            writeLine("touchspin.on.stopupspin");
+        });
+        i.on("touchspin.on.stopdownspin", function () {
+            writeLine("touchspin.on.stopdownspin");
+        });
+        i.on("touchspin.on.min", function () {
+            writeLine("touchspin.on.min");
+        });
+        i.on("touchspin.on.max", function () {
+            writeLine("touchspin.on.max");
+        });
+    </script>
+
+</div>
+
+<h2>Settings</h2>
+<table class="table table-striped table-bordered docs">
+    <thead>
+    <tr>
+        <th>Option</th>
+        <th>Default</th>
+        <th>Description</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td><code>initval</code></td>
+        <td><code>""</code></td>
+        <td>Applied when no explicit value is set on the input with the <code>value</code> attribute. Empty string means
+            that the value remains empty on initialization.
+        </td>
+    </tr>
+    <tr>
+        <td><code>replacementval</code></td>
+        <td><code>""</code></td>
+        <td>Applied when user leaves the field empty/blank or enters non-number. Empty string means that the value will not be replaced.
+        </td>
+    </tr>
+    <tr>
+        <td><code>min</code></td>
+        <td><code>0</code></td>
+        <td>Minimum value.</td>
+    </tr>
+    <tr>
+        <td><code>max</code></td>
+        <td><code>100</code></td>
+        <td>Maximum value.</td>
+    </tr>
+    <tr>
+        <td><code>step</code></td>
+        <td><code>1</code></td>
+        <td>Incremental/decremental step on up/down change.</td>
+    </tr>
+    <tr>
+        <td><code>forcestepdivisibility</code></td>
+        <td><code>'round'</code></td>
+        <td>How to force the value to be divisible by step value: <code>'none'</code> | <code>'round'</code> | <code>'floor'</code>
+            | <code>'ceil'</code></td>
+    </tr>
+    <tr>
+        <td><code>decimals</code></td>
+        <td><code>0</code></td>
+        <td>Number of decimal points.</td>
+    </tr>
+    <tr>
+        <td><code>stepinterval</code></td>
+        <td><code>100</code></td>
+        <td>Refresh rate of the spinner in milliseconds.</td>
+    </tr>
+    <tr>
+        <td><code>stepintervaldelay</code></td>
+        <td><code>500</code></td>
+        <td>Time in milliseconds before the spinner starts to spin.</td>
+    </tr>
+    <tr>
+        <td><code>verticalbuttons</code></td>
+        <td><code>false</code></td>
+        <td>Enables the traditional up/down buttons.</td>
+    </tr>
+    <tr>
+        <td><code>verticalupclass</code></td>
+        <td><code>'glyphicon glyphicon-chevron-up'</code></td>
+        <td>Class of the up button with vertical buttons mode enabled.</td>
+    </tr>
+    <tr>
+        <td><code>verticaldownclass</code></td>
+        <td><code>'glyphicon glyphicon-chevron-down'</code></td>
+        <td>Class of the down button with vertical buttons mode enabled.</td>
+    </tr>
+    <tr>
+        <td><code>prefix</code></td>
+        <td><code>""</code></td>
+        <td>Text before the input.</td>
+    </tr>
+    <tr>
+        <td><code>postfix</code></td>
+        <td><code>""</code></td>
+        <td>Text after the input.</td>
+    </tr>
+    <tr>
+        <td><code>prefix_extraclass</code></td>
+        <td><code>""</code></td>
+        <td>Extra class(es) for prefix.</td>
+    </tr>
+    <tr>
+        <td><code>postfix_extraclass</code></td>
+        <td><code>""</code></td>
+        <td>Extra class(es) for postfix.</td>
+    </tr>
+    <tr>
+        <td><code>booster</code></td>
+        <td><code>true</code></td>
+        <td>If enabled, the the spinner is continually becoming faster as holding the button.</td>
+    </tr>
+    <tr>
+        <td><code>boostat</code></td>
+        <td><code>10</code></td>
+        <td>Boost at every nth step.</td>
+    </tr>
+    <tr>
+        <td><code>maxboostedstep</code></td>
+        <td><code>false</code></td>
+        <td>Maximum step when boosted.</td>
+    </tr>
+    <tr>
+        <td><code>mousewheel</code></td>
+        <td><code>true</code></td>
+        <td>Enables the mouse wheel to change the value of the input.</td>
+    </tr>
+    <tr>
+        <td><code>buttondown_class</code></td>
+        <td><code>'btn btn-default'</code></td>
+        <td>Class(es) of down button.</td>
+    </tr>
+    <tr>
+        <td><code>buttonup_class</code></td>
+        <td><code>'btn btn-default'</code></td>
+        <td>Class(es) of up button.</td>
+    </tr>
+    <tr>
+        <td><code>buttondown_txt</code></td>
+        <td><code>'-'</code></td>
+        <td>Content inside the down button.</td>
+    </tr>
+    <tr>
+        <td><code>buttonup_txt</code></td>
+        <td><code>'+'</code></td>
+        <td>Content inside the up button.</td>
+    </tr>
+    </tbody>
+</table>
+
+<h2>Events</h2>
+
+<h3>Triggered events</h3>
+
+<p>The following events are triggered on the original input by the plugin and can be listened on.</p>
+
+<table class="table table-striped table-bordered docs">
+    <thead>
+    <tr>
+        <th>Event</th>
+        <th>Description</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td><code>change</code></td>
+        <td>Triggered when the value is changed with one of the buttons (but not triggered when the spinner hits the
+            limit set by <code>settings.min</code> or <code>settings.max</code>.
+        </td>
+    </tr>
+    <tr>
+        <td><code>touchspin.on.startspin</code></td>
+        <td>Triggered when the spinner starts spinning upwards or downwards.</td>
+    </tr>
+    <tr>
+        <td><code>touchspin.on.startupspin</code></td>
+        <td>Triggered when the spinner starts spinning upwards.</td>
+    </tr>
+    <tr>
+        <td><code>touchspin.on.startdownspin</code></td>
+        <td>Triggered when the spinner starts spinning downwards.</td>
+    </tr>
+    <tr>
+        <td><code>touchspin.on.stopspin</code></td>
+        <td>Triggered when the spinner stops spinning.</td>
+    </tr>
+    <tr>
+        <td><code>touchspin.on.stopupspin</code></td>
+        <td>Triggered when the spinner stops upspinning.</td>
+    </tr>
+    <tr>
+        <td><code>touchspin.on.stopdownspin</code></td>
+        <td>Triggered when the spinner stops downspinning.</td>
+    </tr>
+    <tr>
+        <td><code>touchspin.on.min</code></td>
+        <td>Triggered when the spinner hits the limit set by <code>settings.min</code>.</td>
+    </tr>
+    <tr>
+        <td><code>touchspin.on.max</code></td>
+        <td>Triggered when the spinner hits the limit set by <code>settings.max</code>.</td>
+    </tr>
+    </tbody>
+</table>
+
+<h3>Callable events</h3>
+
+<p>The following events can be triggered on the original input.</p>
+
+<p>
+    Example usages:<br>
+    <code class="prettyprint">$("input").trigger("touchspin.uponce");</code><br>
+    <code class="prettyprint">$("input").trigger("touchspin.updatesettings", {max: 1000});</code>
+</p>
+
+<table class="table table-striped table-bordered docs">
+    <thead>
+    <tr>
+        <th>Event</th>
+        <th>Description</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td><code>touchspin.updatesettings</code></td>
+        <td><code>function(newoptions)</code>: Update any setting of an already initialized TouchSpin instance.</td>
+    </tr>
+    <tr>
+        <td><code>touchspin.uponce</code></td>
+        <td>Increase the value by one step.</td>
+    </tr>
+    <tr>
+        <td><code>touchspin.downonce</code></td>
+        <td>Decrease the value by one step.</td>
+    </tr>
+    <tr>
+        <td><code>touchspin.startupspin</code></td>
+        <td>Starts the spinner upwards.</td>
+    </tr>
+    <tr>
+        <td><code>touchspin.startdownspin</code></td>
+        <td>Starts the spinner downwards.</td>
+    </tr>
+    <tr>
+        <td><code>touchspin.stopspin</code></td>
+        <td>Stops the spinner.</td>
+    </tr>
+    </tbody>
+</table>
+
+<h2>Download</h2>
+
+<p><a id="link-ghd" href="https://github.com/istvan-ujjmeszaros/bootstrap-touchspin" target="_blank">Download</a> from
+    github. Please report issues and suggestions to github's issue tracker or contact me on <a id="link-gp"
+                                                                                               href="https://plus.google.com/101242556570448529330/posts"
+                                                                                               target="_blank">g+</a> or
+    <a id="link-tw" href="https://twitter.com/styu007" target="_blank">twitter</a>!</p>
+
+</div>
+
+<script>
+    prettyPrint();
+</script>

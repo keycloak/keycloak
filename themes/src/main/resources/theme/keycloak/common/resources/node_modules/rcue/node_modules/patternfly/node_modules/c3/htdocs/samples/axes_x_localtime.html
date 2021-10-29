@@ -1,0 +1,137 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="/css/c3.css">
+  </head>
+  <body>
+    <div id="chart"></div>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/js/c3.js"></script>
+    <script>
+
+      var data, axis_x_localtime;
+
+      var data1 = {
+          x : 'date',
+          columns: [
+            ['date', '2013-01-01', '2013-01-02', '2013-01-03', '2013-01-04', '2013-01-05'],
+            ['sample', 30, 200, 100, 400, 150],
+            ['sample2', 130, 300, 200, 450, 250]
+          ]
+      };
+
+      var data2 = {
+          x : 'date',
+          columns: [
+            ['date', 1356966000000, 1357052400000, 1357138800000, 1357225200000, 1357311600000],
+            ['sample', 30, 200, 100, 400, 150],
+            ['sample2', 130, 300, 200, 450, 250]
+          ]
+      };
+
+      var data3 = {
+          x : 'date',
+          columns: [
+            ['date', new Date(1356966000000), new Date(1357052400000), new Date(1357138800000), new Date(1357225200000), new Date(1357311600000)],
+            ['sample', 30, 200, 100, 400, 150],
+            ['sample2', 130, 300, 200, 450, 250]
+          ]
+      };
+
+      var data4 = {
+          x : 'date',
+          x_format : '%Y%m%d',
+          columns: [
+            ['date', '20130101', '20130102', '20130103', '20130104', '20130105'],
+            ['sample', 1030, 1200, 1100, 1400, 1150],
+            ['sample2', 130, 300, 200, 450, 250]
+          ]
+      };
+
+      var data5 = {
+          x : 'date',
+          x_format : '%Y%m%d %H:%M:%S',
+          columns: [
+            ['date', '20130101 00:00:00', '20130102 00:00:00', '20130103 00:00:00', '20130104 00:00:00', '20130105 00:00:00'],
+            ['sample', 30, 200, 100, 400, 150],
+            ['sample2', 1130, 1300, 1200, 1450, 1250]
+          ]
+      };
+
+      var generate = function () { return c3.generate({
+        bindto: '#chart',
+        data: data,
+        axis : {
+          x : {
+            type : 'timeseries',
+            tick : {
+              format : "%Y-%m-%d %H:%M:%S" // https://github.com/mbostock/d3/wiki/Time-Formatting#wiki-format
+            },
+            localtime: axis_x_localtime
+          }
+        }
+      }); };
+
+      setTimeout(function () {
+        data = data1;
+        axis_x_localtime = true;
+        chart = generate();
+      }, 1000);
+
+      setTimeout(function () {
+        data = data1;
+        axis_x_localtime = false;
+        chart = generate();
+      }, 2000);
+
+      setTimeout(function () {
+        data = data2;
+        axis_x_localtime = true;
+        chart = generate();
+      }, 3000);
+
+      setTimeout(function () {
+        data = data2;
+        axis_x_localtime = false;
+        chart = generate();
+      }, 4000);
+
+      setTimeout(function () {
+        data = data3;
+        axis_x_localtime = true;
+        chart = generate();
+      }, 5000);
+
+      setTimeout(function () {
+        data = data3;
+        axis_x_localtime = false;
+        chart = generate();
+      }, 6000);
+
+      setTimeout(function () {
+        data = data4;
+        axis_x_localtime = true;
+        chart = generate();
+      }, 7000);
+
+      setTimeout(function () {
+        data = data4;
+        axis_x_localtime = false;
+        chart = generate();
+      }, 8000);
+
+      setTimeout(function () {
+        data = data5;
+        axis_x_localtime = true;
+        chart = generate();
+      }, 9000);
+
+      setTimeout(function () {
+        data = data5;
+        axis_x_localtime = false;
+        chart = generate();
+      }, 10000);
+
+    </script>
+  </body>
+</html>

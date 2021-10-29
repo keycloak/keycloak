@@ -1,0 +1,43 @@
+.pf-t-dark {
+  @extend %pf-t-dark;
+
+  &.pf-m-transparent {
+    background-color: transparent;
+  }
+
+  &.pf-m-transparent-100 {
+    background-color: rgba($pf-color-black-1000, .42);
+  }
+
+  &.pf-m-transparent-200 {
+    background-color: rgba($pf-color-black-1000, .6);
+  }
+
+  &.pf-m-opaque-100 {
+    background-color: $pf-color-black-800;
+  }
+
+  &.pf-m-opaque-200 {
+    background-color: $pf-color-black-900;
+  }
+}
+
+.pf-t-light {
+  @extend %pf-t-light;
+
+  &.pf-m-transparent {
+    background-color: transparent;
+  }
+
+  &.pf-m-opaque-100 {
+    background-color: $pf-color-white;
+  }
+
+  &.pf-m-opaque-200 {
+    background-color: $pf-color-black-100;
+  }
+
+  &.pf-m-opaque-300 {
+    background-color: $pf-color-black-200;
+  }
+}

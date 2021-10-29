@@ -1,0 +1,25 @@
+// Set common reset styles for patternfly components
+[class*="pf-c-"] {
+  &,
+  &::before,
+  &::after {
+    padding: 0;
+    margin: 0;
+    background-color: transparent;
+  }
+}
+
+@if $pf-global--unset-root-font-size {
+  // Since PF3 sets root font size to 10px, we need to unset it.
+  // This doesn't affect PF3.
+  // https://github.com/twbs/bootstrap/blob/v3.4.0/less/scaffolding.less#L23
+  // stylelint-disable
+  html {
+    font-size: unset !important; // the important is needed because we don't know if pf3 will be loaded after pfnext
+  }
+}
+
+.pf-screen-reader {
+  @include pf-u-screen-reader; // for use with assistive technologies
+}
+// stylelint-enable

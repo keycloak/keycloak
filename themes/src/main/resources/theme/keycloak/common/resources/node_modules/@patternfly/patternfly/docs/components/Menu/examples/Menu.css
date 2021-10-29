@@ -1,0 +1,17 @@
+[id^="ws-core-c-menu-with-flyout"] {
+  display: flex;
+  height: 400px;
+}
+
+#ws-core-c-menu-with-flyout-menu-top {
+  align-items: flex-end;
+}
+
+#ws-core-c-menu-with-flyout-menu-left {
+  justify-content: flex-end;
+}
+
+#ws-core-c-menu-with-flyout-menu-left-top {
+  align-items: flex-end;
+  justify-content: flex-end;
+}

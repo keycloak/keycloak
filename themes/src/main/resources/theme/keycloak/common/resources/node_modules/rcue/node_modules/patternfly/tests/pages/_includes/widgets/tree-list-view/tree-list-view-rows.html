@@ -1,0 +1,158 @@
+{% if include.multipleChild %}
+  {% assign isLeaf = false %}
+{% else %}
+  {% assign isLeaf = true %}
+{% endif %}
+<div class="list-group tree-list-view-pf">
+  <div class="list-group-item">
+    <div class="list-group-item-header">
+      {% include widgets/tree-list-view/tree-list-view-child-element.html title="One" %}
+    </div>
+    <div class="list-group-item-container container-fluid hidden">
+      <div class="list-group-item">
+        <div class="list-group-item-header">
+          {% include widgets/tree-list-view/tree-list-view-child-element.html title="1" leaf=isLeaf %}
+        </div>
+        <div class="list-group-item-container container-fluid hidden">
+          {% if include.multipleChild %}
+            <div class="list-group-item">
+              <div class="list-group-item-header">
+                {% include widgets/tree-list-view/tree-list-view-child-element.html title="1.1" %}
+              </div>
+              <div class="list-group-item-container container-fluid hidden">
+                <div class="list-group-item">
+                  <div class="list-group-item-header">
+                    {% include widgets/tree-list-view/tree-list-view-child-element.html title="1.1.1" leaf=true %}
+                  </div>
+                  <div class="list-group-item-container container-fluid hidden"></div>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="list-group-item">
+        <div class="list-group-item-header">
+          {% include widgets/tree-list-view/tree-list-view-child-element.html title="1-1" leaf=true %}
+        </div>
+        <div class="list-group-item-container container-fluid hidden"></div>
+      </div>
+    </div>
+  </div>
+  <div class="list-group-item">
+    <div class="list-group-item-header">
+      {% include widgets/tree-list-view/tree-list-view-child-element.html title="Two" %}
+    </div>
+    <div class="list-group-item-container container-fluid hidden">
+      <div class="list-group-item">
+        <div class="list-group-item-header">
+          {% include widgets/tree-list-view/tree-list-view-child-element.html title="2" leaf=isLeaf %}
+        </div>
+        <div class="list-group-item-container container-fluid hidden">
+          {% if include.multipleChild %}
+            <div class="list-group-item">
+              <div class="list-group-item-header">
+                {% include widgets/tree-list-view/tree-list-view-child-element.html title="2.1" %}
+              </div>
+              <div class="list-group-item-container container-fluid hidden">
+                <div class="list-group-item">
+                  <div class="list-group-item-header">
+                    {% include widgets/tree-list-view/tree-list-view-child-element.html title="2.1.1" leaf=true %}
+                  </div>
+                  <div class="list-group-item-container container-fluid hidden"></div>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="list-group-item">
+        <div class="list-group-item-header">
+          {% include widgets/tree-list-view/tree-list-view-child-element.html title="2-1" leaf=true %}
+        </div>
+        <div class="list-group-item-container container-fluid hidden"></div>
+      </div>
+    </div>
+  </div>
+  <div class="list-group-item">
+    <div class="list-group-item-header">
+      {% include widgets/tree-list-view/tree-list-view-child-element.html title="Three" %}
+    </div>
+    <div class="list-group-item-container container-fluid hidden">
+      <div class="list-group-item">
+        <div class="list-group-item-header">
+          {% include widgets/tree-list-view/tree-list-view-child-element.html title="3" leaf=isLeaf %}
+        </div>
+        <div class="list-group-item-container container-fluid hidden">
+          {% if include.multipleChild %}
+            <div class="list-group-item">
+              <div class="list-group-item-header">
+                {% include widgets/tree-list-view/tree-list-view-child-element.html title="3.1" %}
+              </div>
+              <div class="list-group-item-container container-fluid hidden">
+                <div class="list-group-item">
+                  <div class="list-group-item-header">
+                    {% include widgets/tree-list-view/tree-list-view-child-element.html title="3.1.1" leaf=true %}
+                  </div>
+                  <div class="list-group-item-container container-fluid hidden"></div>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="list-group-item">
+        <div class="list-group-item-header">
+          {% include widgets/tree-list-view/tree-list-view-child-element.html title="3-1" leaf=true %}
+        </div>
+        <div class="list-group-item-container container-fluid hidden"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  $(document).ready(function () {
+
+    // expand all child rows
+    $('#expand-tree').on('click', function() {
+      $('.tree-list-view-pf').find(".list-group-item-container").filter(function () {
+        return $(this).children().length > 0;
+      }).removeClass('hidden');
+    });
+
+    // collapse all child rows
+    $('#collapse-tree').on('click', function() {
+      $('.tree-list-view-pf').find(".list-group-item-container").addClass('hidden');
+    });
+
+    // row checkbox selection
+    $('.tree-list-view-pf').on('change', ':checkbox', function (e) {
+      if ($(this).is(':checked')) {
+        $(this).closest('.list-group-item').addClass('active');
+      } else {
+        $(this).closest('.list-group-item').removeClass('active');
+      }
+    });
+
+    // toggle dropdown menu
+    $('.list-view-pf-actions').on('show.bs.dropdown', function () {
+      var $this = $(this);
+      var $dropdown = $this.find('.dropdown');
+      var space = $(window).height() - $dropdown[0].getBoundingClientRect().top - $this.find('.dropdown-menu').outerHeight(true);
+      $dropdown.toggleClass('dropup', space < 10);
+    });
+
+    // click the list-view heading then expand a row
+    $('.list-group-item-header').click(function (event) {
+      if(!$(event.target).is('button, a, input, .fa-ellipsis-v')) {
+        var $this = $(this);
+        $this.find('.fa-angle-right').toggleClass('fa-angle-down');
+        var $itemContainer = $this.siblings('.list-group-item-container');
+        if ($itemContainer.children().length) {
+          $itemContainer.toggleClass('hidden');
+        }
+      }
+    });
+
+  });
+</script>

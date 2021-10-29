@@ -1,0 +1,9 @@
+#ws-core-c-label-filled .ws-preview-html,
+#ws-core-c-label-overflow .ws-preview-html {
+  margin: -4px;
+}
+
+#ws-core-c-label-filled .pf-c-label,
+#ws-core-c-label-overflow .pf-c-label {
+  margin: 4px;
+}

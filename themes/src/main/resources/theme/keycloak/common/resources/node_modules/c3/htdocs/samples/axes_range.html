@@ -1,0 +1,87 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="/css/c3.css">
+  </head>
+  <body>
+    <div id="chart1"></div>
+    <div id="chart2"></div>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/js/c3.js"></script>
+    <script>
+
+      var chart1 = c3.generate({
+        bindto: '#chart1',
+        data: {
+          columns: [
+            ['sample', 100, 200, 100, 400, 150, 250]
+          ],
+        },
+        axis: {
+          x: {
+              min: -10,
+              max: 10,
+            }
+          },
+      });
+
+      var chart2 = c3.generate({
+        bindto: '#chart2',
+        data: {
+          x: 'x',
+          columns: [
+            ['x', '2013-01-01', '2013-01-02', '2013-01-03', '2013-01-04', '2013-01-05', '2013-01-06'],
+            ['sample', 100, 200, 100, 400, 150, 250]
+          ],
+        },
+        axis: {
+          x: {
+              type: 'timeseries',
+              min: new Date('2012-12-20'),
+              max: '2013-03-01',
+              tick : {
+                format : "%Y-%m-%d %H:%M:%S" // https://github.com/mbostock/d3/wiki/Time-Formatting#wiki-format
+              }
+            }
+          }
+      });
+
+      setTimeout(function () {
+        chart1.axis.max({x: 20});
+      }, 1000);
+
+      setTimeout(function () {
+        chart1.axis.min({x: -5});
+      }, 2000);
+
+      setTimeout(function () {
+        chart1.axis.range({max: {x: 5}, min: {x: 0}});
+      }, 3000);
+
+      setTimeout(function () {
+        chart2.axis.max({x: new Date('2013-02-01')});
+      }, 1000);
+
+      setTimeout(function () {
+        chart2.axis.min({x: new Date('2012-12-01')});
+      }, 2000);
+
+      setTimeout(function () {
+      chart2.axis.range({max: {x: '2013-01-06'}, min: {x: '2013-01-01'}});
+      }, 3000);
+
+      setTimeout(function () {
+        chart2.axis.max({y: 1000});
+      }, 4000);
+
+      setTimeout(function () {
+        chart2.axis.min({y: -1000});
+      }, 5000);
+
+      setTimeout(function () {
+        chart2.axis.range({max: {y: 400}, min: {y: 0}});
+      }, 6000);
+
+    </script>
+  </body>
+</html>

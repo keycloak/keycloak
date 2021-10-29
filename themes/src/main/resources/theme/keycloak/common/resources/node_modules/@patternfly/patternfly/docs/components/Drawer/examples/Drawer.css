@@ -1,0 +1,11 @@
+#ws-core-c-drawer-expanded-panel-on-bottom .ws-preview-html,
+#ws-core-c-drawer-expanded-panel-on-top .ws-preview-html,
+#ws-core-c-drawer-closed-panel-on-bottom .ws-preview-html,
+#ws-core-c-drawer-closed-panel-on-top .ws-preview-html,
+#ws-core-c-drawer-expanded-inline-panel-on-bottom .ws-preview-html,
+#ws-core-c-drawer-expanded-inline-panel-on-top .ws-preview-html,
+#ws-core-c-drawer-static-panel-on-bottom .ws-preview-html,
+#ws-core-c-drawer-static-panel-on-top .ws-preview-html,
+#ws-core-c-drawer-resizable-bottom-panel .ws-preview-html {
+  height: 450px;
+}

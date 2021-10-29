@@ -1,0 +1,5 @@
+@function fa-font-path($path) {
+  @return font-url($path, true);
+}
+
+$fa-sass-asset-helper: true;

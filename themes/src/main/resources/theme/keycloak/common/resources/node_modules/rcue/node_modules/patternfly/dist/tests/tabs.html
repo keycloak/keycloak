@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<!--[if IE 9]><html lang="en-us" class="ie9"><![endif]-->
+<!--[if gt IE 9]><!-->
+<html lang="en-us">
+<!--<![endif]-->
+  <head>
+    <title>Tabs - PatternFly</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="../img/favicon.ico">
+    <!-- iPad retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../img/apple-touch-icon-precomposed-152.png">
+    <!-- iPad retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="../img/apple-touch-icon-precomposed-144.png">
+    <!-- iPad non-retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="76x76" href="../img/apple-touch-icon-precomposed-76.png">
+    <!-- iPad non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="../img/apple-touch-icon-precomposed-72.png">
+    <!-- iPhone 6 Plus icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="120x120" href="../img/apple-touch-icon-precomposed-180.png">
+    <!-- iPhone retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../img/apple-touch-icon-precomposed-114.png">
+    <!-- iPhone non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="57x57" href="../img/apple-touch-icon-precomposed-57.png">
+    <link rel="stylesheet" href="../css/patternfly.min.css" >
+    <link rel="stylesheet" href="../css/patternfly-additions.min.css" >
+      <link href="tests.css" rel="stylesheet" media="screen, print">
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="../js/patternfly.min.js"></script>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="page-header">
+        <h1>Tabs</h1>
+      </div>
+      <div class="alert alert-warning">
+        <span class="pficon pficon-warning-triangle-o"></span>
+        These examples are included for development testing purposes.  For official documentation, see <a href="https://www.patternfly.org" class="alert-link">https://www.patternfly.org</a> and <a href="http://getbootstrap.com" class="alert-link">http://getbootstrap.com</a>.
+      </div>
+      <hr>
+      <ul class="nav nav-tabs">
+        <li class="active"><a href="javascript:void(0);">Home</a></li>
+        <li><a href="javascript:void(0);">Profile</a></li>
+        <li><a href="javascript:void(0);">Messages</a></li>
+      </ul>
+      <br />
+      <ul class="nav nav-tabs">
+        <li><a href="javascript:void(0);">Home</a></li>
+        <li class="active"><a href="javascript:void(0);">Profile</a></li>
+        <li><a href="javascript:void(0);">Messages</a></li>
+      </ul>
+      <br />
+      <ul class="nav nav-tabs">
+        <li><a href="javascript:void(0);">Home</a></li>
+        <li><a href="javascript:void(0);">Profile</a></li>
+        <li class="active"><a href="javascript:void(0);">Messages</a></li>
+      </ul>
+      <h3>Justified</h3>
+      <ul class="nav nav-tabs nav-justified">
+        <li class="active"><a href="javascript:void(0);">Home</a></li>
+        <li><a href="javascript:void(0);">Profile</a></li>
+        <li><a href="javascript:void(0);">Messages</a></li>
+      </ul>
+      <br />
+      <ul class="nav nav-tabs nav-justified">
+        <li><a href="javascript:void(0);">Home</a></li>
+        <li class="active"><a href="javascript:void(0);">Profile</a></li>
+        <li><a href="javascript:void(0);">Messages</a></li>
+      </ul>
+      <br />
+      <ul class="nav nav-tabs nav-justified">
+        <li><a href="javascript:void(0);">Home</a></li>
+        <li><a href="javascript:void(0);">Profile</a></li>
+        <li class="active"><a href="javascript:void(0);">Messages</a></li>
+      </ul>
+      <h3>Tabs with dropdowns</h3>
+      <ul class="nav nav-tabs" id="tabs-with-dropdown">
+        <li class="active"><a href="javascript:void(0);">Home</a></li>
+        <li><a href="javascript:void(0);">Help</a></li>
+        <li class="dropdown">
+          <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+            Dropdown <span class="caret"></span>
+          </a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="javascript:void(0);">Action</a></li>
+            <li><a href="javascript:void(0);">Another action</a></li>
+            <li><a href="javascript:void(0);">Something else here</a></li>
+            <li class="divider"></li>
+            <li><a href="javascript:void(0);">Separated link</a></li>
+          </ul>
+        </li>
+      </ul>
+      <br />
+      <ul class="nav nav-tabs">
+        <li><a href="javascript:void(0);">Home</a></li>
+        <li class="active"><a href="javascript:void(0);">Help</a></li>
+        <li class="dropdown">
+          <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+            Dropdown <span class="caret"></span>
+          </a>
+          <ul class="dropdown-menu pull-right" role="menu">
+            <li><a href="javascript:void(0);">Action</a></li>
+            <li><a href="javascript:void(0);">Another action</a></li>
+            <li><a href="javascript:void(0);">Something else here</a></li>
+            <li class="divider"></li>
+            <li><a href="javascript:void(0);">Separated link</a></li>
+          </ul>
+        </li>
+      </ul>
+      <br />
+      <ul class="nav nav-tabs">
+        <li><a href="javascript:void(0);">Home</a></li>
+        <li><a href="javascript:void(0);">Help</a></li>
+        <li class="active dropdown">
+          <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+            Dropdown <span class="caret"></span>
+          </a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="javascript:void(0);">Action</a></li>
+            <li><a href="javascript:void(0);">Another action</a></li>
+            <li><a href="javascript:void(0);">Something else here</a></li>
+            <li class="divider"></li>
+            <li><a href="javascript:void(0);">Separated link</a></li>
+          </ul>
+        </li>
+      </ul>
+      <h2>PatternFly Examples</h2>
+      <ul class="nav nav-tabs nav-tabs-pf">
+        <li class="active"><a href="javascript:void(0);">Home</a></li>
+        <li><a href="javascript:void(0);">Profile</a></li>
+        <li><a href="javascript:void(0);">Messages</a></li>
+      </ul>
+      <br />
+      <ul class="nav nav-tabs nav-tabs-pf">
+        <li><a href="javascript:void(0);">Home</a></li>
+        <li class="active"><a href="javascript:void(0);">Profile</a></li>
+        <li><a href="javascript:void(0);">Messages</a></li>
+      </ul>
+      <br />
+      <ul class="nav nav-tabs nav-tabs-pf">
+        <li><a href="javascript:void(0);">Home</a></li>
+        <li><a href="javascript:void(0);">Profile</a></li>
+        <li class="active"><a href="javascript:void(0);">Messages</a></li>
+      </ul>
+      <h3>Justified</h3>
+      <ul class="nav nav-tabs nav-tabs-pf nav-justified">
+        <li class="active"><a href="javascript:void(0);">Home</a></li>
+        <li><a href="javascript:void(0);">Profile</a></li>
+        <li><a href="javascript:void(0);">Messages</a></li>
+      </ul>
+      <br />
+      <ul class="nav nav-tabs nav-tabs-pf nav-justified">
+        <li><a href="javascript:void(0);">Home</a></li>
+        <li class="active"><a href="javascript:void(0);">Profile</a></li>
+        <li><a href="javascript:void(0);">Messages</a></li>
+      </ul>
+      <br />
+      <ul class="nav nav-tabs nav-tabs-pf nav-justified">
+        <li><a href="javascript:void(0);">Home</a></li>
+        <li><a href="javascript:void(0);">Profile</a></li>
+        <li class="active"><a href="javascript:void(0);">Messages</a></li>
+      </ul>
+      <h3>Tabs with dropdowns</h3>
+      <ul class="nav nav-tabs nav-tabs-pf" id="tabs-pf-with-dropdown">
+        <li class="active"><a href="javascript:void(0);">Home</a></li>
+        <li><a href="javascript:void(0);">Help</a></li>
+        <li class="dropdown">
+          <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+            Dropdown <span class="caret"></span>
+          </a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="javascript:void(0);">Action</a></li>
+            <li><a href="javascript:void(0);">Another action</a></li>
+            <li><a href="javascript:void(0);">Something else here</a></li>
+            <li class="divider"></li>
+            <li><a href="javascript:void(0);">Separated link</a></li>
+          </ul>
+        </li>
+      </ul>
+      <br />
+      <ul class="nav nav-tabs nav-tabs-pf">
+        <li><a href="javascript:void(0);">Home</a></li>
+        <li class="active"><a href="javascript:void(0);">Help</a></li>
+        <li class="dropdown">
+          <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+            Dropdown <span class="caret"></span>
+          </a>
+          <ul class="dropdown-menu pull-right" role="menu">
+            <li><a href="javascript:void(0);">Action</a></li>
+            <li><a href="javascript:void(0);">Another action</a></li>
+            <li><a href="javascript:void(0);">Something else here</a></li>
+            <li class="divider"></li>
+            <li><a href="javascript:void(0);">Separated link</a></li>
+          </ul>
+        </li>
+      </ul>
+      <br />
+      <ul class="nav nav-tabs nav-tabs-pf">
+        <li><a href="javascript:void(0);">Home</a></li>
+        <li><a href="javascript:void(0);">Help</a></li>
+        <li class="active dropdown">
+          <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+            Dropdown <span class="caret"></span>
+          </a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="javascript:void(0);">Action</a></li>
+            <li><a href="javascript:void(0);">Another action</a></li>
+            <li><a href="javascript:void(0);">Something else here</a></li>
+            <li class="divider"></li>
+            <li><a href="javascript:void(0);">Separated link</a></li>
+          </ul>
+        </li>
+      </ul>
+      <h3>.nav-tabs + .nav-tabs-pf</h3>
+      <p class="text-info">
+        <strong>Note:</strong> the markup semantics used here are sub-optimal in order to easily achieve a responsive layout.
+      </p>
+      <ul class="nav nav-tabs">
+        <li class="active"><a href="javascript:void(0);">Tab One</a></li>
+        <li><a href="javascript:void(0);">Tab Two</a></li>
+        <li><a href="javascript:void(0);">Tab Three</a></li>
+        <li><a href="javascript:void(0);">Tab Four</a></li>
+        <li><a href="javascript:void(0);">Tab Five</a></li>
+        <li><a href="javascript:void(0);">Tab Six</a></li>
+        <li><a href="javascript:void(0);">Tab Seven</a></li>
+      </ul>
+      <ul class="nav nav-tabs nav-tabs-pf">
+        <li class="active"><a href="javascript:void(0);">Secondary Tab One</a></li>
+        <li><a href="javascript:void(0);">Secondary Tab Two</a></li>
+        <li><a href="javascript:void(0);">Secondary Tab Three</a></li>
+        <li><a href="javascript:void(0);">Secondary Tab Four</a></li>
+        <li><a href="javascript:void(0);">Secondary Tab Five</a></li>
+        <li><a href="javascript:void(0);">Secondary Tab Six</a></li>
+        <li><a href="javascript:void(0);">Secondary Tab Seven</a></li>
+      </ul>
+      <br />
+      <ul class="nav nav-tabs">
+        <li class="active"><a href="javascript:void(0);">Tab One</a></li>
+        <li><a href="javascript:void(0);">Tab Two</a></li>
+        <li><a href="javascript:void(0);">Tab Three</a></li>
+        <li><a href="javascript:void(0);">Tab Four</a></li>
+        <li><a href="javascript:void(0);">Tab Five</a></li>
+        <li><a href="javascript:void(0);">Tab Six</a></li>
+        <li><a href="javascript:void(0);">Tab Seven</a></li>
+      </ul>
+      <ul class="nav nav-tabs nav-tabs-pf">
+        <li><a href="javascript:void(0);">Secondary Tab One</a></li>
+        <li class="active"><a href="javascript:void(0);">Secondary Tab Two</a></li>
+        <li><a href="javascript:void(0);">Secondary Tab Three</a></li>
+        <li><a href="javascript:void(0);">Secondary Tab Four</a></li>
+        <li><a href="javascript:void(0);">Secondary Tab Five</a></li>
+        <li><a href="javascript:void(0);">Secondary Tab Six</a></li>
+        <li><a href="javascript:void(0);">Secondary Tab Seven</a></li>
+      </ul>
+      <br />
+      <ul class="nav nav-tabs">
+        <li><a href="javascript:void(0);">Tab One</a></li>
+        <li class="active"><a href="javascript:void(0);">Tab Two</a></li>
+        <li><a href="javascript:void(0);">Tab Three</a></li>
+        <li><a href="javascript:void(0);">Tab Four</a></li>
+        <li><a href="javascript:void(0);">Tab Five</a></li>
+        <li><a href="javascript:void(0);">Tab Six</a></li>
+        <li><a href="javascript:void(0);">Tab Seven</a></li>
+      </ul>
+      <ul class="nav nav-tabs nav-tabs-pf">
+        <li><a href="javascript:void(0);">Secondary Tab One</a></li>
+        <li class="active"><a href="javascript:void(0);">Secondary Tab Two</a></li>
+        <li><a href="javascript:void(0);">Secondary Tab Three</a></li>
+        <li><a href="javascript:void(0);">Secondary Tab Four</a></li>
+        <li><a href="javascript:void(0);">Secondary Tab Five</a></li>
+        <li><a href="javascript:void(0);">Secondary Tab Six</a></li>
+        <li><a href="javascript:void(0);">Secondary Tab Seven</a></li>
+      </ul>
+      <h3>.nav-tabs.nav-tabs-pf-secondary</h3>
+      <ul class="nav nav-tabs">
+        <li class="active"><a href="#tab1" data-toggle="tab">Tab One</a></li>
+        <li><a href="#tab2" data-toggle="tab">Tab Two</a></li>
+        <li><a href="#tab3" data-toggle="tab">Tab Three</a></li>
+      </ul>
+      <div class="tab-content">
+        <div class="tab-pane active" id="tab1">
+          <ul class="nav nav-tabs nav-tabs-pf nav-tabs-pf-secondary">
+            <li class="active"><a href="javascript:void(0);">Secondary Tab A</a></li>
+            <li><a href="javascript:void(0);">Secondary Tab B</a></li>
+            <li><a href="javascript:void(0);">Secondary Tab C</a></li>
+          </ul>
+        </div>
+        <div class="tab-pane" id="tab2">
+          <ul class="nav nav-tabs nav-tabs-pf nav-tabs-pf-secondary">
+            <li class="active"><a href="javascript:void(0);">Secondary Tab D</a></li>
+            <li><a href="javascript:void(0);">Secondary Tab E</a></li>
+            <li><a href="javascript:void(0);">Secondary Tab F</a></li>
+          </ul>
+        </div>
+        <div class="tab-pane" id="tab3">
+          <ul class="nav nav-tabs nav-tabs-pf nav-tabs-pf-secondary">
+            <li class="active"><a href="javascript:void(0);">Secondary Tab G</a></li>
+            <li><a href="javascript:void(0);">Secondary Tab H</a></li>
+            <li><a href="javascript:void(0);">Secondary Tab I</a></li>
+          </ul>
+        </div>
+      </div>
+    </div><!-- /container -->
+  </body>
+</html>

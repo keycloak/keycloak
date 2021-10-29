@@ -1,0 +1,60 @@
+/* =========================================================
+ * patternfly-bootstrap-treeview.css v2.1.0
+ * =========================================================
+ * Copyright 2013 Jonathan Miles
+ * Project URL : http://www.jondmiles.com/bootstrap-treeview
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * ========================================================= */
+
+.treeview .list-group-item {
+	cursor: pointer;
+}
+
+.treeview span.indent {
+	margin-left: 10px;
+	margin-right: 10px;
+}
+
+
+.treeview span.icon {
+  width: 12px;
+  margin-right: 5px;
+}
+
+.treeview .node-disabled {
+  color: silver;
+  cursor: not-allowed;
+}
+
+.treeview .node-hidden {
+  display: none;
+}
+
+.treeview span.image {
+  display: inline-block;
+  width: 12px;
+  height: 1.19em;
+  vertical-align: middle;
+  background-size: contain;
+  background-repeat: no-repeat;
+  margin-right: 5px;
+  line-height: 1em;
+}
+
+.treeview span.icon.node-icon-background {
+  padding: 2px 2px 2px 2px;
+  width: calc(1em + 4px);
+  height: calc(1em + 4px);
+  line-height: 1em;
+}

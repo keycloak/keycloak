@@ -1,0 +1,38 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="/css/c3.css">
+  </head>
+  <body>
+    <div id="chart"></div>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/js/c3.js"></script>
+    <script>
+      var chart = c3.generate({
+        data: {
+          columns: [
+            ['data1', 30, 200, 100, 400, 150, 250],
+            ['data2', 50, 20, 10, 40, 15, 25]
+          ],
+        }
+      });
+
+      setTimeout(function () {
+        chart.tooltip.show({ x: 1 });
+      }, 1000);
+
+      setTimeout(function () {
+        chart.tooltip.show({ index: 3 });
+      }, 2000);
+
+      setTimeout(function () {
+        chart.tooltip.show({ data: {x: 2} });
+      }, 3000);
+
+      setTimeout(function () {
+        chart.tooltip.hide();
+      }, 4000);
+
+    </script>
+  </body>
+</html>

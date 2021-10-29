@@ -1,0 +1,25 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="/css/c3.css">
+  </head>
+  <body>
+    <div id="chart"></div>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/js/c3.js"></script>
+    <script>
+      var chart = c3.generate({
+        bindto: '#chart',
+        data: {
+          columns: [
+            ['sample', 30, 200, 100, 400, 150, 250]
+          ],
+          regions: {
+            sample: [{start:1, end:3}]
+          }
+        },
+        regions: [{start:1, end:3}],
+      });
+    </script>
+  </body>
+</html>

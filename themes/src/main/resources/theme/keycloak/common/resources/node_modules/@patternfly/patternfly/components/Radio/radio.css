@@ -1,0 +1,68 @@
+.pf-c-radio {
+  --pf-c-radio--GridGap: var(--pf-global--spacer--xs) var(--pf-global--spacer--sm);
+  --pf-c-radio__label--disabled--Color: var(--pf-global--disabled-color--100);
+  --pf-c-radio__label--Color: var(--pf-global--Color--100);
+  --pf-c-radio__label--FontWeight: var(--pf-global--FontWeight--normal);
+  --pf-c-radio__label--FontSize: var(--pf-global--FontSize--md);
+  --pf-c-radio__label--LineHeight: var(--pf-global--LineHeight--sm);
+  --pf-c-radio__input--Height: var(--pf-c-radio__label--FontSize);
+  --pf-c-radio__input--MarginTop: calc(((var(--pf-c-radio__label--FontSize) * var(--pf-c-radio__label--LineHeight)) - var(--pf-c-radio__input--Height)) / 2);
+  --pf-c-radio__input--first-child--MarginLeft: 0.0625rem;
+  --pf-c-radio__input--last-child--MarginRight: 0.0625rem;
+  --pf-c-radio__description--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-radio__description--Color: var(--pf-global--Color--200);
+  --pf-c-radio__body--MarginTop: var(--pf-global--spacer--sm);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-gap: var(--pf-c-radio--GridGap);
+  align-items: start;
+  justify-items: start;
+}
+.pf-c-radio.pf-m-standalone {
+  --pf-c-radio--GridGap: 0;
+  --pf-c-radio__input--Height: auto;
+  --pf-c-radio__input--MarginTop: 0;
+  display: inline-grid;
+  line-height: 1;
+}
+
+.pf-c-radio__label {
+  font-size: var(--pf-c-radio__label--FontSize);
+  font-weight: var(--pf-c-radio__label--FontWeight);
+  line-height: var(--pf-c-radio__label--LineHeight);
+  color: var(--pf-c-radio__label--Color);
+}
+
+.pf-c-radio__input {
+  height: var(--pf-c-radio__input--Height);
+  margin-top: var(--pf-c-radio__input--MarginTop);
+}
+.pf-c-radio__input:first-child {
+  margin-left: var(--pf-c-radio__input--first-child--MarginLeft);
+}
+.pf-c-radio__input:last-child {
+  margin-right: var(--pf-c-radio__input--last-child--MarginRight);
+}
+
+.pf-c-radio__description {
+  grid-column: 2;
+  font-size: var(--pf-c-radio__description--FontSize);
+  color: var(--pf-c-radio__description--Color);
+}
+
+.pf-c-radio__body {
+  grid-column: 2;
+  margin-top: var(--pf-c-radio__body--MarginTop);
+}
+
+label.pf-c-radio, .pf-c-radio__label,
+.pf-c-radio__input {
+  cursor: pointer;
+}
+
+.pf-c-radio__label:disabled, .pf-c-radio__label.pf-m-disabled,
+.pf-c-radio__input:disabled,
+.pf-c-radio__input.pf-m-disabled {
+  --pf-c-radio__label--Color: var(--pf-c-radio__label--disabled--Color);
+  cursor: not-allowed;
+}

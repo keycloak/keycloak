@@ -1,0 +1,36 @@
+.pf-c-tab-content {
+  --pf-c-tab-content__body--PaddingTop: 0;
+  --pf-c-tab-content__body--PaddingRight: 0;
+  --pf-c-tab-content__body--PaddingBottom: 0;
+  --pf-c-tab-content__body--PaddingLeft: 0;
+  --pf-c-tab-content__body--m-padding--PaddingTop: var(--pf-global--spacer--md);
+  --pf-c-tab-content__body--m-padding--PaddingRight: var(--pf-global--spacer--md);
+  --pf-c-tab-content__body--m-padding--PaddingBottom: var(--pf-global--spacer--md);
+  --pf-c-tab-content__body--m-padding--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-tab-content__body--m-padding--xl--PaddingTop: var(--pf-global--spacer--lg);
+  --pf-c-tab-content__body--m-padding--xl--PaddingRight: var(--pf-global--spacer--lg);
+  --pf-c-tab-content__body--m-padding--xl--PaddingBottom: var(--pf-global--spacer--lg);
+  --pf-c-tab-content__body--m-padding--xl--PaddingLeft: var(--pf-global--spacer--lg);
+  --pf-c-tab-content--m-light-300: var(--pf-global--BackgroundColor--light-300);
+}
+@media screen and (min-width: 1200px) {
+  .pf-c-tab-content {
+    --pf-c-tab-content__body--m-padding--PaddingTop: var(--pf-c-tab-content__body--m-padding--xl--PaddingTop);
+    --pf-c-tab-content__body--m-padding--PaddingRight: var(--pf-c-tab-content__body--m-padding--xl--PaddingRight);
+    --pf-c-tab-content__body--m-padding--PaddingBottom: var(--pf-c-tab-content__body--m-padding--xl--PaddingBottom);
+    --pf-c-tab-content__body--m-padding--PaddingLeft: var(--pf-c-tab-content__body--m-padding--xl--PaddingLeft);
+  }
+}
+.pf-c-tab-content.pf-m-light-300 {
+  background-color: var(--pf-c-tab-content--m-light-300);
+}
+
+.pf-c-tab-content__body {
+  padding: var(--pf-c-tab-content__body--PaddingTop) var(--pf-c-tab-content__body--PaddingRight) var(--pf-c-tab-content__body--PaddingBottom) var(--pf-c-tab-content__body--PaddingLeft);
+}
+.pf-c-tab-content__body.pf-m-padding {
+  --pf-c-tab-content__body--PaddingTop: var(--pf-c-tab-content__body--m-padding--PaddingTop);
+  --pf-c-tab-content__body--PaddingRight: var(--pf-c-tab-content__body--m-padding--PaddingRight);
+  --pf-c-tab-content__body--PaddingBottom: var(--pf-c-tab-content__body--m-padding--PaddingBottom);
+  --pf-c-tab-content__body--PaddingLeft: var(--pf-c-tab-content__body--m-padding--PaddingLeft);
+}

@@ -1,0 +1,55 @@
+<html>
+  <head>
+    <link href="/css/c3.css" rel="stylesheet" type="text/css">
+  </head>
+  <body>
+    <div id="chart"></div>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/js/c3.js"></script>
+    <script>
+      var chart = c3.generate({
+        data: {
+          columns: [
+            ['data1', 30, 200, 100, 400, 150, 250, 100, 600],
+            ['data2', 50, 20, 10, 40, 15, 25],
+          ]
+        },
+        axis: {
+//          rotated: true,
+          x: {
+            tick: {
+              format: function () { return "hogehogehogehogehoge"; },
+              rotate: 30,
+            },
+            label: {
+              text: 'Hogehoge',
+              position: 'outer-middle'
+            },
+            height: 90,
+          },
+          y: {
+            label: {
+              text: 'Y Label',
+              position: 'outer-center'
+            }
+          }
+        },
+        subchart: {
+          show: true
+        }
+      });
+
+      setTimeout(function () {
+        chart.load({
+          columns: [
+//            ['data1', 30, 200, 100, 400, 150, 250, 100, 400],
+            ['data1', 1030, 2000, 1000, 1400, 1500, 1250, 1100, 140000],
+          ]
+        })
+      }, 1000);
+
+
+    </script>
+  </body>
+</html>

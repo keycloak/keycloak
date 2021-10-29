@@ -1,0 +1,25 @@
+<html>
+  <head>
+    <link href="/css/c3.css" rel="stylesheet" type="text/css">
+  </head>
+  <body>
+    <div id="chart"></div>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/js/c3.js"></script>
+    <script>
+      var chart = c3.generate({
+        data: {
+          columns: [
+            ['data1', 1030, 1200, 1100, 1400, 1150, 1250],
+            ['data2', 2130, 2100, 2140, 2200, 2150, 1850]
+          ],
+          type: 'area',
+        },
+        area: {
+          zerobased: false
+        }
+      });
+    </script>
+  </body>
+</html>

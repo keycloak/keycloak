@@ -5,6 +5,7 @@
   "license": "Apache-2.0",
   "repository": "https://github.com/keycloak/keycloak",
   "dependencies": {
+    "@patternfly/patternfly": "^4.151.4",
     "angular": "1.8.0",
     "angular-cookies": "1.8.0",
     "angular-loader": "1.8.0",

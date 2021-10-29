@@ -1,0 +1,26 @@
+// Tabs
+.pf-c-alert-group {
+  // Alert group variables
+  --pf-c-alert-group__item--MarginTop: var(--pf-global--spacer--sm);
+
+  // Toast variables
+  --pf-c-alert-group--m-toast--Top: var(--pf-global--spacer--2xl);
+  --pf-c-alert-group--m-toast--Right: var(--pf-global--spacer--xl);
+  --pf-c-alert-group--m-toast--MaxWidth: #{pf-size-prem(600px)};
+  --pf-c-alert-group--m-toast--ZIndex: var(--pf-global--ZIndex--2xl);
+
+  // Spacing between alerts
+  > * + * {
+    margin-top: var(--pf-c-alert-group__item--MarginTop);
+  }
+
+  // Toast positioning modifier
+  &.pf-m-toast {
+    position: fixed;
+    top: var(--pf-c-alert-group--m-toast--Top);
+    right: var(--pf-c-alert-group--m-toast--Right);
+    z-index: var(--pf-c-alert-group--m-toast--ZIndex);
+    width: calc(100% - calc(var(--pf-c-alert-group--m-toast--Right) * 2));
+    max-width: var(--pf-c-alert-group--m-toast--MaxWidth);
+  }
+}

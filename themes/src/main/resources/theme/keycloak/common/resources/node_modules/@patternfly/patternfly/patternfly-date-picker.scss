@@ -1,0 +1,181 @@
+// stylelint-disable
+.pf-c-date-picker__calendar {
+  &.flatpickr-calendar {
+    // calendar
+    --pf-c-date-picker__flatpickr__calendar--BackgroundColor: var(--pf-global--BackgroundColor--light-100);
+    --pf-c-date-picker__flatpickr__calendar--PaddingTop: var(--pf-global--spacer--md);
+    --pf-c-date-picker__flatpickr__calendar--PaddingRight: var(--pf-global--spacer--md);
+    --pf-c-date-picker__flatpickr__calendar--PaddingBottom: var(--pf-global--spacer--md);
+    --pf-c-date-picker__flatpickr__calendar--PaddingLeft: var(--pf-global--spacer--md);
+    --pf-c-date-picker__flatpickr__calendar--open--ZIndex: var(--pf-global--ZIndex--sm);
+
+    // month/year section
+    --pf-c-date-picker__flatpickr__months--PaddingBottom: var(--pf-global--spacer--md);
+    --pf-c-date-picker__flatpickr__month--BackgroundColor: var(--pf-global--BackgroundColor--light-100);
+    --pf-c-date-picker__flatpickr__month--PaddingTop: 10px;
+    --pf-c-date-picker__flatpickr__month--FontSize: var(--pf-global--FontSize--md);
+    --pf-c-date-picker__flatpickr__month-select--PaddingRight: var(--pf-global--spacer--lg);
+    --pf-c-date-picker__flatpickr__month-select--FontWeight: var(--pf-global--FontWeight--normal);
+    --pf-c-date-picker__flatpickr__month-select--BackgroundUrl: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 512'%3E%3Cpath fill='%23urrentColor' d='M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z'/%3E%3C/svg%3E");;
+    --pf-c-date-picker__flatpickr__month-select--BackgroundSize: .625em;
+    --pf-c-date-picker__flatpickr__month-select--BackgroundPosition: calc(100% - var(--pf-global--spacer--sm)) center;
+    --pf-c-date-picker__flatpickr__month-select--BackgroundColor: var(--pf-global--BackgroundColor--light-100);
+    --pf-c-date-picker__flatpickr__month-select--hover--BackgroundColor: var(--pf-c-date-picker__flatpickr__month-select--BackgroundColor);
+    --pf-c-date-picker__flatpickr__month-select--year--MarginLeft: var(--pf-global--spacer--sm);
+    --pf-c-date-picker__flatpickr__month-arrow--Color: var(--pf-global--Color--dark-200);
+    --pf-c-date-picker__flatpickr__month-arrow--hover--Color: var(--pf-global--Color--dark-100);
+    --pf-c-date-picker__flatpickr__year--hover--BackgroundColor: var(--pf-global--BackgroundColor--light-100);
+    --pf-c-date-picker__flatpickr__year--FontWeight: var(--pf-global--FontWeight--normal);
+
+    // Weekdays section
+    --pf-c-date-picker__flatpickr__weekdays--BackgroundColor: var(--pf-global--BackgroundColor--light-100);
+    --pf-c-date-picker__flatpickr__weekdays--PaddingBottom: var(--pf-global--spacer--md);
+    --pf-c-date-picker__flatpickr__weekdays--MarginBottom: var(--pf-global--spacer--sm);
+    --pf-c-date-picker__flatpickr__weekdays--BorderBottomWidth: var(--pf-global--BorderWidth--sm);
+    --pf-c-date-picker__flatpickr__weekdays--BorderBottomColor: var(--pf-global--BorderColor--100);
+    --pf-c-date-picker__flatpickr__weekday--BackgroundColor: var(--pf-global--BackgroundColor--light-100);
+
+    // Calendar days
+    --pf-c-date-picker__flatpickr__calendar__day--Color: var(--pf-global--Color--dark-100);
+    --pf-c-date-picker__flatpickr__calendar__day--disabled--Color: var(--pf-global--disabled-color--200);
+    --pf-c-date-picker__flatpickr__calendar__day--hover--BorderColor: var(--pf-global--BackgroundColor--light-300);
+    --pf-c-date-picker__flatpickr__calendar__day--hover--BackgroundColor: var(--pf-global--BackgroundColor--light-300);
+    --pf-c-date-picker__flatpickr__calendar__day--selected--hover--BorderColor: var(--pf-global--primary-color--100);
+    --pf-c-date-picker__flatpickr__calendar__day--selected--hover--Background: var(--pf-global--primary-color--100);
+    --pf-c-date-picker__flatpickr__calendar__day--selected--hover--BorderColor: var(--pf-global--Color--light-100);
+    --pf-c-date-picker__flatpickr__calendar__day--today--BorderColor: var(--pf-global--primary-color--100);
+    --pf-c-date-picker__flatpickr__calendar__day--today--hover--BorderColor: var(--pf-global--primary-color--100);
+    --pf-c-date-picker__flatpickr__calendar__day--today--hover--Background: var(--pf-global--primary-color--100);
+    --pf-c-date-picker__flatpickr__calendar__day--today--hover--Color: var(--pf-global--Color--light-100);
+
+    // flatpickr container
+    width: auto;
+    background: var(--pf-c-date-picker__flatpickr__calendar--BackgroundColor);
+    padding: var(--pf-c-date-picker__flatpickr__calendar--PaddingTop) var(--pf-c-date-picker__flatpickr__calendar--PaddingRight) var(--pf-c-date-picker__flatpickr__calendar--PaddingBottom) var(--pf-c-date-picker__flatpickr__calendar--PaddingLeft);
+
+    &.open {
+      z-index: var(--pf-c-date-picker__flatpickr__calendar--open--ZIndex);
+    }
+  }
+
+  .flatpickr-innerContainer {
+    border: 0;
+  }
+
+  // Month/year section
+  .flatpickr-months {
+    position: relative;
+    padding-bottom: var(--pf-c-date-picker__flatpickr__months--PaddingBottom);
+  }
+
+  .flatpickr-months .flatpickr-month {
+    background: var(--pf-c-date-picker__flatpickr__month--BackgroundColor);
+  }
+
+  .flatpickr-current-month {
+    padding-top: var(--pf-c-date-picker__flatpickr__month--PaddingTop);
+    font-size: var(--pf-c-date-picker__flatpickr__month--FontSize);
+  }
+
+  .flatpickr-current-month .flatpickr-monthDropdown-months {
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    background-image: var(--pf-c-date-picker__flatpickr__month-select--BackgroundUrl);
+    background-position: var(--pf-c-date-picker__flatpickr__month-select--BackgroundPosition);
+    background-size: var(--pf-c-date-picker__flatpickr__month-select--BackgroundSize);
+    background-repeat: no-repeat;
+    background-color: var(--pf-c-date-picker__flatpickr__month-select--BackgroundColor);
+    font-weight: var(--pf-c-date-picker__flatpickr__month-select--FontWeight);
+    padding-right: var(--pf-c-date-picker__flatpickr__month-select--PaddingRight);
+    line-height: var(--pf-c-date-picker__flatpickr__month-select--LineHeight);
+  }
+
+  .flatpickr-current-month .flatpickr-monthDropdown-months:hover {
+    --pf-c-date-picker__flatpickr__month-select--BackgroundColor: var(--pf-c-date-picker__flatpickr__month-select--hover--BackgroundColor);
+  }
+
+  .numInputWrapper:hover {
+    background: var(--pf-c-date-picker__flatpickr__year--hover--BackgroundColor);
+  }
+
+  .flatpickr-months .flatpickr-next-month,
+  .flatpickr-months .flatpickr-prev-month {
+    color: var(--pf-c-date-picker__flatpickr__month-arrow--Color);
+    fill: var(--pf-c-date-picker__flatpickr__month-arrow--Color);
+  }
+
+  .flatpickr-months .flatpickr-next-month:hover,
+  .flatpickr-months .flatpickr-prev-month:hover,
+  .flatpickr-months .flatpickr-next-month:hover svg,
+  .flatpickr-months .flatpickr-prev-month:hover svg {
+    color: var(--pf-c-date-picker__flatpickr__month-arrow--hover--Color);
+    fill: var(--pf-c-date-picker__flatpickr__month-arrow--hover--Color);
+  }
+
+  .flatpickr-monthDropdown-months + .numInputWrapper {
+    margin-left: var(--pf-c-date-picker__flatpickr__month-select--year--MarginLeft);
+  }
+
+  .flatpickr-current-month input.cur-year {
+    font-weight: var(--pf-c-date-picker__flatpickr__year--FontWeight);
+  }
+
+  // Weekdays section
+  .flatpickr-weekdays {
+    background: var(--pf-c-date-picker__flatpickr__weekdays--BackgroundColor);
+  }
+
+  span.flatpickr-weekday {
+    background: var(--pf-c-date-picker__flatpickr__weekday--BackgroundColor);
+  }
+
+  .flatpickr-weekdays {
+    padding-bottom: var(--pf-c-date-picker__flatpickr__weekdays--PaddingBottom);
+    margin-bottom: var(--pf-c-date-picker__flatpickr__weekdays--MarginBottom);
+    border-bottom: var(--pf-c-date-picker__flatpickr__weekdays--BorderBottomWidth) solid var(--pf-c-date-picker__flatpickr__weekdays--BorderBottomColor);
+  }
+
+  // Calendar days
+  .flatpickr-days {
+    border: 0;
+  }
+
+  .flatpickr-day:focus,
+  .flatpickr-day:hover {
+    border-color: var(--pf-c-date-picker__flatpickr__calendar__day--hover--BorderColor);
+    background: var(--pf-c-date-picker__flatpickr__calendar__day--hover--BackgroundColor);
+  }
+
+  .flatpickr-day.selected,
+  .flatpickr-day.selected:focus,
+  .flatpickr-day.selected:hover {
+    border-color: var(--pf-c-date-picker__flatpickr__calendar__day--selected--hover--BorderColor);
+    background: var(--pf-c-date-picker__flatpickr__calendar__day--selected--hover--Background);
+    color: var(--pf-c-date-picker__flatpickr__calendar__day--selected--hover--BorderColor);
+  }
+
+  .flatpickr-day.flatpickr-disabled,
+  .flatpickr-day.flatpickr-disabled:hover,
+  .flatpickr-day.nextMonthDay,
+  .flatpickr-day.notAllowed,
+  .flatpickr-day.notAllowed.nextMonthDay,
+  .flatpickr-day.notAllowed.prevMonthDay,
+  .flatpickr-day.prevMonthDay {
+    color: var(--pf-c-date-picker__flatpickr__calendar__day--disabled--Color);
+  }
+
+  .flatpickr-day {
+    color: var(--pf-c-date-picker__flatpickr__calendar__day--Color);
+  }
+
+  .flatpickr-day.today {
+    border-color: var(--pf-c-date-picker__flatpickr__calendar__day--today--BorderColor);
+  }
+
+  .flatpickr-day.today:focus,
+  .flatpickr-day.today:hover {
+    border-color: var(--pf-c-date-picker__flatpickr__calendar__day--today--hover--BorderColor);
+    background: var(--pf-c-date-picker__flatpickr__calendar__day--today--hover--Background);
+    color: var(--pf-c-date-picker__flatpickr__calendar__day--today--hover--Color);
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "globals": {
+    "title": "Bootstrap Switch",
+    "description": "Turn checkboxes and radio buttons into toggle switches",
+    "version": "3.3.4"
+  }
+}

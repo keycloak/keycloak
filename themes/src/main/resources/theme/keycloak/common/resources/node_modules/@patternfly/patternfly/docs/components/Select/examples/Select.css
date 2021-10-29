@@ -1,0 +1,55 @@
+#ws-core-c-select-single-with-top-expanded,
+#ws-core-c-select-single-expanded,
+#ws-core-c-select-single-expanded-and-selected,
+#ws-core-c-select-single-with-typeahead-expanded-and-selected,
+#ws-core-c-select-plain-toggle-expanded,
+#ws-core-c-select-view-more-menu-item,
+#ws-core-c-select-loading-menu-item,
+#ws-core-c-select-placeholder-expanded,
+#ws-core-c-select-placeholder-item-disabled,
+#ws-core-c-select-placeholder-item-enabled {
+  min-height: 330px;
+}
+
+#ws-core-c-select-single-with-top-expanded {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+}
+
+#ws-core-c-select-single-with-typeahead-expanded,
+#ws-core-c-select-multi-with-typeahead-chip-group-collapsed {
+  min-height: 210px;
+}
+
+#ws-core-c-select-checkbox-expanded,
+#ws-core-c-select-checkbox-expanded-without-badge,
+#ws-core-c-select-checkbox-with-counts {
+  min-height: 270px;
+}
+
+#ws-core-c-select-multi-with-typeahead-chip-group-expanded,
+#ws-core-c-select-menu-footer {
+  min-height: 365px;
+}
+
+#ws-core-c-select-checkbox-expanded-and-selected-with-groups {
+  min-height: 460px;
+}
+
+#ws-core-c-select-checkbox-expanded-and-selected-with-groups-and-filter {
+  min-height: 530px;
+}
+
+#ws-core-c-select-panel-menu {
+  min-height: 120px;
+}
+
+#ws-core-c-select-item-description,
+#ws-core-c-select-checkbox-item-description {
+  min-height: 400px;
+}
+
+#ws-core-c-select-menu-item-favorites {
+  min-height: 650px;
+}

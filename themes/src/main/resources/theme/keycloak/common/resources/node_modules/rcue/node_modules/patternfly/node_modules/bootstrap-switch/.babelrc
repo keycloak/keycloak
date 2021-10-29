@@ -1,0 +1,16 @@
+{
+  "presets": [
+    ["env", {
+      "modules": "umd",
+      "targets": {
+        "browsers": ["last 2 versions"]
+      }
+    }],
+    "stage-2",
+  ],
+  "env": {
+    "production": {
+      "presets": ["babili"]
+    }
+  }
+}

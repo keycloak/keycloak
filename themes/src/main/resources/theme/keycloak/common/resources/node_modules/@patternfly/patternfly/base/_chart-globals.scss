@@ -1,0 +1,285 @@
+@import "../sass-utilities/colors";
+@import "../sass-utilities/scss-variables";
+
+// Chart colors
+
+// blue
+$pf-chart-color-blue-100: #8bc1f7 !default;
+$pf-chart-color-blue-200: #519de9 !default;
+$pf-chart-color-blue-300: $pf-color-blue-400;
+$pf-chart-color-blue-400: #004b95 !default;
+$pf-chart-color-blue-500: #002f5d !default;
+
+// green
+$pf-chart-color-green-100: #bde2b9 !default;
+$pf-chart-color-green-200: #7cc674 !default;
+$pf-chart-color-green-300: #4cb140 !default;
+$pf-chart-color-green-400: #38812f !default;
+$pf-chart-color-green-500: #23511e !default;
+
+// cyan
+$pf-chart-color-cyan-100: $pf-color-cyan-100;
+$pf-chart-color-cyan-200: $pf-color-cyan-200;
+$pf-chart-color-cyan-300: $pf-color-cyan-300;
+$pf-chart-color-cyan-400: $pf-color-cyan-400;
+$pf-chart-color-cyan-500: $pf-color-cyan-500;
+
+// purple
+$pf-chart-color-purple-100: #b2b0ea !default;
+$pf-chart-color-purple-200: #8481dd !default;
+$pf-chart-color-purple-300: #5752d1 !default;
+$pf-chart-color-purple-400: #3c3d99 !default;
+$pf-chart-color-purple-500: #2a265f !default;
+
+// gold
+$pf-chart-color-gold-100: $pf-color-gold-100;
+$pf-chart-color-gold-200: $pf-color-gold-200;
+$pf-chart-color-gold-300: $pf-color-gold-300;
+$pf-chart-color-gold-400: $pf-color-gold-400;
+$pf-chart-color-gold-500: $pf-color-gold-500;
+
+// orange
+$pf-chart-color-orange-100: $pf-color-orange-100;
+$pf-chart-color-orange-200: $pf-color-orange-200;
+$pf-chart-color-orange-300: $pf-color-orange-300;
+$pf-chart-color-orange-400: $pf-color-orange-400;
+$pf-chart-color-orange-500: $pf-color-orange-500;
+
+// red
+$pf-chart-color-red-100: $pf-color-red-100;
+$pf-chart-color-red-200: $pf-color-red-200;
+$pf-chart-color-red-300: $pf-color-red-300;
+$pf-chart-color-red-400: $pf-color-red-400;
+$pf-chart-color-red-500: $pf-color-red-500;
+
+// black
+$pf-chart-color-black-100: $pf-color-black-200;
+$pf-chart-color-black-200: $pf-color-black-300;
+$pf-chart-color-black-300: $pf-color-black-400;
+$pf-chart-color-black-400: $pf-color-black-500;
+$pf-chart-color-black-500: $pf-color-black-600;
+$pf-chart-color-black-600: $pf-color-black-700;
+
+// typography
+$pf-chart-global--FontSize--xs: 12; // Axis Labels
+$pf-chart-global--FontSize--sm: 14;  // Legend
+$pf-chart-global--FontSize--lg: 18; // Small Numbers
+$pf-chart-global--FontSize--2xl: 24; // Large Numbers
+$pf-chart-global--FontFamily: $pf-global--FontFamily--sans-serif;
+$pf-chart-global--letter-spacing: "normal";
+
+// label
+$pf-chart-global--label--Padding: 10;
+$pf-chart-global--label--Margin: 8;
+$pf-chart-global--label--stroke: "transparent";
+$pf-chart-global--label--text-anchor: "middle";
+$pf-chart-global--label--stroke--Width: 0;
+$pf-chart-global--label--Fill: $pf-color-black-900;
+
+// Layout Props
+$pf-chart-global--layout--Padding: 50;
+$pf-chart-global--layout--Height: 300;
+$pf-chart-global--layout--Width: 450;
+
+// Stroke and Border Width
+$pf-chart-global--stroke--Width--xs: 1;
+$pf-chart-global--stroke--Width--sm: 2;
+$pf-chart-global--BorderWidth--xs: 1;
+$pf-chart-global--BorderWidth--sm: 2;
+$pf-chart-global--BorderWidth--lg: 8;
+
+// Stroke
+$pf-chart-global--stroke-line-cap: "round";
+$pf-chart-global--stroke-line-join: "round";
+
+// Fills and Strokes
+$pf-chart-global--danger--Color--100: $pf-global--danger-color--100;
+$pf-chart-global--warning--Color--100: $pf-color-orange-300;
+$pf-chart-global--warning--Color--200: $pf-color-gold-400;
+$pf-chart-global--success--Color--100: $pf-color-blue-400;
+$pf-chart-global--Fill--Color--900: $pf-color-black-900;
+$pf-chart-global--Fill--Color--700: $pf-color-black-700;
+$pf-chart-global--Fill--Color--500: $pf-color-black-500;
+$pf-chart-global--Fill--Color--400: $pf-color-black-400;
+$pf-chart-global--Fill--Color--300: $pf-color-black-300;
+$pf-chart-global--Fill--Color--200: $pf-color-black-200;
+$pf-chart-global--Fill--Color--white: $pf-color-white;
+
+// Individual Charts
+
+// Area Chart
+$pf-chart-area--Opacity: .3;
+$pf-chart-area--stroke--Width: $pf-chart-global--stroke--Width--sm;
+$pf-chart-area--data--Fill: $pf-chart-global--Fill--Color--900;
+
+// Axis Chart
+$pf-chart-axis--axis--stroke--Width: $pf-chart-global--stroke--Width--xs;
+$pf-chart-axis--axis--stroke--Color: $pf-chart-global--Fill--Color--300;
+$pf-chart-axis--axis--Fill: "transparent";
+$pf-chart-axis--axis-label--Padding: 40;
+$pf-chart-axis--axis-label--stroke--Color: "transparent";
+$pf-chart-axis--grid--Fill: "none";
+$pf-chart-axis--grid--stroke--Color: $pf-chart-global--Fill--Color--300;
+$pf-chart-axis--grid--PointerEvents: "painted";
+$pf-chart-axis--tick--Fill: "transparent";
+$pf-chart-axis--tick--Size: 5;
+$pf-chart-axis--tick--Width: 1;
+$pf-chart-axis--tick--stroke--Color: $pf-chart-global--Fill--Color--300;
+$pf-chart-axis--tick-label--Fill: $pf-chart-global--Fill--Color--700;
+
+// Bar Chart
+$pf-chart-bar--Width: 10;
+$pf-chart-bar--data--stroke: none;
+$pf-chart-bar--data--Fill: $pf-chart-global--Fill--Color--900;
+$pf-chart-bar--data--Padding: 8;
+$pf-chart-bar--data-stroke--Width: 0;
+
+// Box Plot Chart
+$pf-chart-boxplot--max--Padding: 8;
+$pf-chart-boxplot--max--stroke--Color: $pf-chart-global--Fill--Color--900;
+$pf-chart-boxplot--max--stroke--Width: $pf-chart-global--stroke--Width--xs;
+$pf-chart-boxplot--median--Padding: 8;
+$pf-chart-boxplot--median--stroke--Color: $pf-chart-global--Fill--Color--900;
+$pf-chart-boxplot--median--stroke--Width: $pf-chart-global--stroke--Width--xs;
+$pf-chart-boxplot--min--Padding: 8;
+$pf-chart-boxplot--min--stroke--Width: $pf-chart-global--stroke--Width--xs;
+$pf-chart-boxplot--min--stroke--Color: $pf-chart-global--Fill--Color--900;
+$pf-chart-boxplot--lower-quartile--Padding: 8;
+$pf-chart-boxplot--lower-quartile--Fill: $pf-chart-global--Fill--Color--500;
+$pf-chart-boxplot--upper-quartile--Padding: 8;
+$pf-chart-boxplot--upper-quartile--Fill: $pf-chart-global--Fill--Color--500;
+$pf-chart-boxplot--box--Width: 20;
+
+// Bullet Chart
+$pf-chart-bullet--axis--tick--count: 5;
+$pf-chart-bullet--comparative-measure--Fill--Color: $pf-chart-global--Fill--Color--700;
+$pf-chart-bullet--comparative-measure--stroke--Color: $pf-chart-global--Fill--Color--700;
+$pf-chart-bullet--comparative-measure--stroke--Width: $pf-chart-global--stroke--Width--xs;
+$pf-chart-bullet--comparative-measure--Width: 30;
+$pf-chart-bullet--comparative-measure--error--Fill--Color: $pf-chart-global--danger--Color--100;
+$pf-chart-bullet--comparative-measure--error--stroke--Color: $pf-chart-global--danger--Color--100;
+$pf-chart-bullet--comparative-measure--error--stroke--Width: $pf-chart-global--stroke--Width--sm;
+$pf-chart-bullet--comparative-measure--error--Width: 30;
+$pf-chart-bullet--comparative-measure--warning--Fill--Color: $pf-chart-global--warning--Color--100;
+$pf-chart-bullet--comparative-measure--warning--stroke--Color: $pf-chart-global--warning--Color--100;
+$pf-chart-bullet--comparative-measure--warning--stroke--Width: $pf-chart-global--stroke--Width--sm;
+$pf-chart-bullet--comparative-measure--warning--Width: 30;
+$pf-chart-bullet--comparative-measure--Fill--Color: $pf-chart-global--Fill--Color--700;
+$pf-chart-bullet--comparative-measure--stroke--Color: $pf-chart-global--Fill--Color--700;
+$pf-chart-bullet--comparative-measure--stroke--Width: $pf-chart-global--stroke--Width--xs;
+$pf-chart-bullet--comparative-measure--Width: 30;
+$pf-chart-bullet--group-title--divider--Fill--Color: $pf-color-black-200;
+$pf-chart-bullet--group-title--divider--stroke--Color: $pf-color-black-200;
+$pf-chart-bullet--group-title--divider--stroke--Width: $pf-chart-global--stroke--Width--sm;
+$pf-chart-bullet--Height: 140;
+$pf-chart-bullet--label--subtitle--Fill: $pf-chart-global--Fill--Color--400;
+$pf-chart-bullet--primary-measure--dot--size: 6;
+$pf-chart-bullet--primary-measure--segmented--Width: 9;
+$pf-chart-bullet--qualitative-range--Width: 30;
+
+// Candlestick
+$pf-chart-candelstick--data--stroke--Width: $pf-chart-global--stroke--Width--xs;
+$pf-chart-candelstick--data--stroke--Color: $pf-chart-global--Fill--Color--900;
+$pf-chart-candelstick--candle--positive--Color: $pf-chart-global--Fill--Color--white;
+$pf-chart-candelstick--candle--negative--Color: $pf-chart-global--Fill--Color--900;
+
+// Simple Donut Chart
+$pf-chart-donut--label--subtitle--Fill: $pf-chart-global--Fill--Color--400;
+$pf-chart-donut--label--subtitle--position: "center";
+$pf-chart-donut--pie--Height: 230;
+$pf-chart-donut--pie--angle--Padding: 1;
+$pf-chart-donut--pie--Padding: 20;
+$pf-chart-donut--pie--Width: 230;
+
+// Donut Threshold Chart
+$pf-chart-donut--threshold--first--Color: $pf-chart-global--Fill--Color--200;
+$pf-chart-donut--threshold--second--Color: $pf-chart-global--Fill--Color--300;
+$pf-chart-donut--threshold--third--Color: $pf-chart-global--Fill--Color--400;
+$pf-chart-donut--threshold--warning--Color: $pf-chart-global--warning--Color--200;
+$pf-chart-donut--threshold--danger--Color: $pf-chart-global--danger--Color--100;
+$pf-chart-donut--threshold--dynamic--pie--Height: 202;
+$pf-chart-donut--threshold--dynamic--pie--Width: 202;
+$pf-chart-donut--threshold--dynamic--pie--Padding: 20;
+$pf-chart-donut--threshold--static--pie--Height: 230;
+$pf-chart-donut--threshold--static--pie--angle--Padding: 1;
+$pf-chart-donut--threshold--static--pie--Padding: 20;
+$pf-chart-donut--threshold--static--pie--Width: 230;
+
+// Donut Utilization Chart
+$pf-chart-donut--utilization--dynamic--pie--Height: 230;
+$pf-chart-donut--utilization--dynamic--pie--angle--Padding: 1;
+$pf-chart-donut--utilization--dynamic--pie--Padding: 20;
+$pf-chart-donut--utilization--dynamic--pie--Width: 230;
+$pf-chart-donut--utilization--static--pie--Padding: 20;
+
+// Error Bar
+$pf-chart-errorbar--BorderWidth: $pf-chart-global--BorderWidth--lg;
+$pf-chart-errorbar--data--Fill: "transparent";
+$pf-chart-errorbar--data--Opacity: 1;
+$pf-chart-errorbar--data-stroke--Width: $pf-chart-global--stroke--Width--sm;
+$pf-chart-errorbar--data-stroke--Color: $pf-chart-global--Fill--Color--900;
+
+// Legend
+$pf-chart-legend--gutter--Width: 20;
+$pf-chart-legend--orientation: "horizontal";
+$pf-chart-legend--position: "right";
+$pf-chart-legend--title--orientation: "top";
+$pf-chart-legend--data--type: "square";
+$pf-chart-legend--title--Padding: 2;
+$pf-chart-legend--Margin: 16;
+
+// Line Chart
+$pf-chart-line--data--Fill: "transparent";
+$pf-chart-line--data--Opacity: 1;
+$pf-chart-line--data--stroke--Width: $pf-chart-global--stroke--Width--sm;
+$pf-chart-line--data--stroke--Color: $pf-chart-global--Fill--Color--900;
+
+// Pie Chart
+$pf-chart-pie--Padding: 20;
+$pf-chart-pie--data--Padding: 8;
+$pf-chart-pie--data--stroke--Width: $pf-chart-global--stroke--Width--xs;
+$pf-chart-pie--data--stroke--Color: "transparent";
+$pf-chart-pie--labels--Padding: 8;
+$pf-chart-pie--Height: 230;
+$pf-chart-pie--Width: 230;
+
+// Scatter Chart
+$pf-chart-scatter--data--stroke--Color: "transparent";
+$pf-chart-scatter--data--stroke--Width: 0;
+$pf-chart-scatter--data--Opacity: 1;
+$pf-chart-scatter--data--Fill: $pf-chart-global--Fill--Color--900;
+$pf-chart-scatter--active--size: 5;
+$pf-chart-scatter--size: 3;
+
+// Scatter Chart
+$pf-chart-stack--data--stroke--Width: $pf-chart-global--stroke--Width--xs;
+
+// Threshold
+$pf-chart-threshold--stroke-dash-array: "4,2";
+$pf-chart-threshold--stroke--Width: 1.5;
+
+// Tooltip
+$pf-chart-tooltip--corner-radius: 0;
+$pf-chart-tooltip--pointer-length: 10;
+$pf-chart-tooltip--Fill: $pf-chart-global--Fill--Color--200;
+$pf-chart-tooltip--flyoutStyle--corner-radius: 0;
+$pf-chart-tooltip--flyoutStyle--stroke--Width: 0;
+$pf-chart-tooltip--flyoutStyle--PointerEvents: "none";
+$pf-chart-tooltip--flyoutStyle--stroke--Color: $pf-chart-global--Fill--Color--900;
+$pf-chart-tooltip--flyoutStyle--Fill: $pf-chart-global--Fill--Color--900;
+$pf-chart-tooltip--pointer--Width: 20;
+$pf-chart-tooltip--Padding: 8;
+$pf-chart-tooltip--PointerEvents: "none";
+
+// Voronoi Chart
+$pf-chart-voronoi--data--Fill: "transparent";
+$pf-chart-voronoi--data--stroke--Color: "transparent";
+$pf-chart-voronoi--data--stroke--Width: 0;
+$pf-chart-voronoi--labels--Fill: $pf-chart-global--Fill--Color--200;
+$pf-chart-voronoi--labels--Padding: 8;
+$pf-chart-voronoi--labels--PointerEvents: "none";
+$pf-chart-voronoi--flyout--stroke--Width: $pf-chart-global--stroke--Width--xs;
+$pf-chart-voronoi--flyout--PointerEvents: "none";
+$pf-chart-voronoi--flyout--stroke--Color: $pf-chart-global--Fill--Color--900;
+$pf-chart-voronoi--flyout--stroke--Fill: $pf-chart-global--Fill--Color--900;
+$pf-chart-voronoi--flyout--PointerEvents: "none";

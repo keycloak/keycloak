@@ -1,0 +1,16 @@
+.pf-c-backdrop {
+  --pf-c-backdrop--Position: fixed;
+  --pf-c-backdrop--ZIndex: var(--pf-global--ZIndex--lg);
+  --pf-c-backdrop--BackgroundColor: var(--pf-global--BackgroundColor--dark-transparent-100);
+  position: var(--pf-c-backdrop--Position);
+  top: 0;
+  left: 0;
+  z-index: var(--pf-c-backdrop--ZIndex);
+  width: 100%;
+  height: 100%;
+  background-color: var(--pf-c-backdrop--BackgroundColor);
+}
+
+.pf-c-backdrop__open {
+  overflow: hidden;
+}

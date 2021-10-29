@@ -1,0 +1,290 @@
+@import "base/chart-globals";
+
+// stylelint-disable
+
+.pf-c-chart {
+  // Color blending mode
+  svg g[clip-path] {
+    mix-blend-mode: multiply;
+  }
+}
+
+:root {
+  // Chart colors
+
+  // blue
+  --pf-chart-color-blue-100: #{$pf-chart-color-blue-100};
+  --pf-chart-color-blue-200: #{$pf-chart-color-blue-200};
+  --pf-chart-color-blue-300: #{$pf-chart-color-blue-300};
+  --pf-chart-color-blue-400: #{$pf-chart-color-blue-400};
+  --pf-chart-color-blue-500: #{$pf-chart-color-blue-500};
+
+  // green
+  --pf-chart-color-green-100: #{$pf-chart-color-green-100};
+  --pf-chart-color-green-200: #{$pf-chart-color-green-200};
+  --pf-chart-color-green-300: #{$pf-chart-color-green-300};
+  --pf-chart-color-green-400: #{$pf-chart-color-green-400};
+  --pf-chart-color-green-500: #{$pf-chart-color-green-500};
+
+  // cyan
+  --pf-chart-color-cyan-100: #{$pf-chart-color-cyan-100};
+  --pf-chart-color-cyan-200: #{$pf-chart-color-cyan-200};
+  --pf-chart-color-cyan-300: #{$pf-chart-color-cyan-300};
+  --pf-chart-color-cyan-400: #{$pf-chart-color-cyan-400};
+  --pf-chart-color-cyan-500: #{$pf-chart-color-cyan-500};
+
+  // purple
+  --pf-chart-color-purple-100: #{$pf-chart-color-purple-100};
+  --pf-chart-color-purple-200: #{$pf-chart-color-purple-200};
+  --pf-chart-color-purple-300: #{$pf-chart-color-purple-300};
+  --pf-chart-color-purple-400: #{$pf-chart-color-purple-400};
+  --pf-chart-color-purple-500: #{$pf-chart-color-purple-500};
+
+  // gold
+  --pf-chart-color-gold-100: #{$pf-chart-color-gold-100};
+  --pf-chart-color-gold-200: #{$pf-chart-color-gold-200};
+  --pf-chart-color-gold-300: #{$pf-chart-color-gold-300};
+  --pf-chart-color-gold-400: #{$pf-chart-color-gold-400};
+  --pf-chart-color-gold-500: #{$pf-chart-color-gold-500};
+
+  // orange
+  --pf-chart-color-orange-100: #{$pf-chart-color-orange-100};
+  --pf-chart-color-orange-200: #{$pf-chart-color-orange-200};
+  --pf-chart-color-orange-300: #{$pf-chart-color-orange-300};
+  --pf-chart-color-orange-400: #{$pf-chart-color-orange-400};
+  --pf-chart-color-orange-500: #{$pf-chart-color-orange-500};
+
+  // red
+  --pf-chart-color-red-100: #{$pf-chart-color-red-100};
+  --pf-chart-color-red-200: #{$pf-chart-color-red-200};
+  --pf-chart-color-red-300: #{$pf-chart-color-red-300};
+  --pf-chart-color-red-400: #{$pf-chart-color-red-400};
+  --pf-chart-color-red-500: #{$pf-chart-color-red-500};
+
+  // black
+  --pf-chart-color-black-100: #{$pf-chart-color-black-100};
+  --pf-chart-color-black-200: #{$pf-chart-color-black-200};
+  --pf-chart-color-black-300: #{$pf-chart-color-black-300};
+  --pf-chart-color-black-400: #{$pf-chart-color-black-400};
+  --pf-chart-color-black-500: #{$pf-chart-color-black-500};
+
+  // typography
+  --pf-chart-global--FontSize--xs: #{$pf-chart-global--FontSize--xs};
+  --pf-chart-global--FontSize--sm: #{$pf-chart-global--FontSize--sm};
+  --pf-chart-global--FontSize--lg: #{$pf-chart-global--FontSize--lg};
+  --pf-chart-global--FontSize--2xl: #{$pf-chart-global--FontSize--2xl};
+  --pf-chart-global--FontFamily: #{$pf-chart-global--FontFamily};
+  --pf-chart-global--letter-spacing: #{$pf-chart-global--letter-spacing};
+
+  // label
+  --pf-chart-global--label--Padding: #{$pf-chart-global--label--Padding};
+  --pf-chart-global--label--Margin: #{$pf-chart-global--label--Margin};
+  --pf-chart-global--label--stroke: #{$pf-chart-global--label--stroke};
+  --pf-chart-global--label--text-anchor: #{$pf-chart-global--label--text-anchor};
+  --pf-chart-global--label--stroke--Width: #{$pf-chart-global--label--stroke--Width};
+  --pf-chart-global--label--Fill: #{$pf-chart-global--label--Fill};
+
+  // Layout Props
+  --pf-chart-global--layout--Padding: #{$pf-chart-global--layout--Padding};
+  --pf-chart-global--layout--Height: #{$pf-chart-global--layout--Height};
+  --pf-chart-global--layout--Width: #{$pf-chart-global--layout--Width};
+
+  // Stroke and Border Width
+  --pf-chart-global--stroke--Width--xs: #{$pf-chart-global--stroke--Width--xs};
+  --pf-chart-global--stroke--Width--sm: #{$pf-chart-global--stroke--Width--sm};
+  --pf-chart-global--BorderWidth--xs: #{$pf-chart-global--BorderWidth--xs};
+  --pf-chart-global--BorderWidth--sm: #{$pf-chart-global--BorderWidth--sm};
+  --pf-chart-global--BorderWidth--lg: #{$pf-chart-global--BorderWidth--lg};
+
+  // Stroke
+  --pf-chart-global--stroke-line-cap: #{$pf-chart-global--stroke-line-cap};
+  --pf-chart-global--stroke-line-join: #{$pf-chart-global--stroke-line-join};
+
+  // Fills and Strokes
+  --pf-chart-global--danger--Color--100: #{$pf-chart-global--danger--Color--100};
+  --pf-chart-global--warning--Color--100: #{$pf-chart-global--warning--Color--100};
+  --pf-chart-global--warning--Color--200: #{$pf-chart-global--warning--Color--200};
+  --pf-chart-global--success--Color--100: #{$pf-chart-global--success--Color--100};
+  --pf-chart-global--Fill--Color--900: #{$pf-chart-global--Fill--Color--900};
+  --pf-chart-global--Fill--Color--700: #{$pf-chart-global--Fill--Color--700};
+  --pf-chart-global--Fill--Color--500: #{$pf-chart-global--Fill--Color--500};
+  --pf-chart-global--Fill--Color--400: #{$pf-chart-global--Fill--Color--400};
+  --pf-chart-global--Fill--Color--300: #{$pf-chart-global--Fill--Color--300};
+  --pf-chart-global--Fill--Color--200: #{$pf-chart-global--Fill--Color--200};
+  --pf-chart-global--Fill--Color--white: #{$pf-chart-global--Fill--Color--white};
+
+  // Individual Charts
+
+  // Area Chart
+  --pf-chart-area--Opacity: #{$pf-chart-area--Opacity};
+  --pf-chart-area--stroke--Width: #{$pf-chart-area--stroke--Width};
+  --pf-chart-area--data--Fill: #{$pf-chart-area--data--Fill};
+
+  // Axis Chart
+  --pf-chart-axis--axis--stroke--Width: #{$pf-chart-axis--axis--stroke--Width};
+  --pf-chart-axis--axis--stroke--Color: #{$pf-chart-axis--axis--stroke--Color};
+  --pf-chart-axis--axis--Fill: #{$pf-chart-axis--axis--Fill};
+  --pf-chart-axis--axis-label--Padding: #{$pf-chart-axis--axis-label--Padding};
+  --pf-chart-axis--axis-label--stroke--Color: #{$pf-chart-axis--axis-label--stroke--Color};
+  --pf-chart-axis--grid--Fill: #{$pf-chart-axis--grid--Fill};
+  --pf-chart-axis--grid--stroke--Color: #{$pf-chart-axis--grid--stroke--Color};
+  --pf-chart-axis--grid--PointerEvents: #{$pf-chart-axis--grid--PointerEvents};
+  --pf-chart-axis--tick--Fill: #{$pf-chart-axis--tick--Fill};
+  --pf-chart-axis--tick--Size: #{$pf-chart-axis--tick--Size};
+  --pf-chart-axis--tick--Width: #{$pf-chart-axis--tick--Width};
+  --pf-chart-axis--tick--stroke--Color: #{$pf-chart-axis--tick--stroke--Color};
+  --pf-chart-axis--tick-label--Fill: #{$pf-chart-axis--tick-label--Fill};
+
+  // Bar Chart
+  --pf-chart-bar--Width: #{$pf-chart-bar--Width};
+  --pf-chart-bar--data--stroke: #{$pf-chart-bar--data--stroke};
+  --pf-chart-bar--data--Fill: #{$pf-chart-bar--data--Fill};
+  --pf-chart-bar--data--Padding: #{$pf-chart-bar--data--Padding};
+  --pf-chart-bar--data-stroke--Width: #{$pf-chart-bar--data-stroke--Width};
+
+  // Box Plot Chart
+  --pf-chart-boxplot--max--Padding: #{$pf-chart-boxplot--max--Padding};
+  --pf-chart-boxplot--max--stroke--Color: #{$pf-chart-boxplot--max--stroke--Color};
+  --pf-chart-boxplot--max--stroke--Width: #{$pf-chart-boxplot--max--stroke--Width};
+  --pf-chart-boxplot--median--Padding: #{$pf-chart-boxplot--median--Padding};
+  --pf-chart-boxplot--median--stroke--Color: #{$pf-chart-boxplot--median--stroke--Color};
+  --pf-chart-boxplot--median--stroke--Width: #{$pf-chart-boxplot--median--stroke--Width};
+  --pf-chart-boxplot--min--Padding: #{$pf-chart-boxplot--min--Padding};
+  --pf-chart-boxplot--min--stroke--Width: #{$pf-chart-boxplot--min--stroke--Width};
+  --pf-chart-boxplot--min--stroke--Color: #{$pf-chart-boxplot--min--stroke--Color};
+  --pf-chart-boxplot--lower-quartile--Padding: #{$pf-chart-boxplot--lower-quartile--Padding};
+  --pf-chart-boxplot--lower-quartile--Fill: #{$pf-chart-boxplot--lower-quartile--Fill};
+  --pf-chart-boxplot--upper-quartile--Padding: #{$pf-chart-boxplot--upper-quartile--Padding};
+  --pf-chart-boxplot--upper-quartile--Fill: #{$pf-chart-boxplot--upper-quartile--Fill};
+  --pf-chart-boxplot--box--Width: #{$pf-chart-boxplot--box--Width};
+
+  // Bullet Chart
+  --pf-chart-bullet--axis--tick--count: #{$pf-chart-bullet--axis--tick--count};
+  --pf-chart-bullet--comparative-measure--Fill--Color: #{$pf-chart-bullet--comparative-measure--Fill--Color};
+  --pf-chart-bullet--comparative-measure--stroke--Color: #{$pf-chart-bullet--comparative-measure--stroke--Color};
+  --pf-chart-bullet--comparative-measure--stroke--Width: #{$pf-chart-bullet--comparative-measure--stroke--Width};
+  --pf-chart-bullet--comparative-measure--error--Fill--Color: #{$pf-chart-bullet--comparative-measure--error--Fill--Color};
+  --pf-chart-bullet--comparative-measure--error--stroke--Color: #{$pf-chart-bullet--comparative-measure--error--stroke--Color};
+  --pf-chart-bullet--comparative-measure--error--stroke--Width: #{$pf-chart-bullet--comparative-measure--error--stroke--Width};
+  --pf-chart-bullet--comparative-measure--error--Width: #{$pf-chart-bullet--comparative-measure--error--Width};
+  --pf-chart-bullet--comparative-measure--warning--Fill--Color: #{$pf-chart-bullet--comparative-measure--warning--Fill--Color};
+  --pf-chart-bullet--comparative-measure--warning--stroke--Color: #{$pf-chart-bullet--comparative-measure--warning--stroke--Color};
+  --pf-chart-bullet--comparative-measure--warning--stroke--Width: #{$pf-chart-bullet--comparative-measure--warning--stroke--Width};
+  --pf-chart-bullet--comparative-measure--warning--Width: #{$pf-chart-bullet--comparative-measure--warning--Width};
+  --pf-chart-bullet--comparative-measure--Width: #{$pf-chart-bullet--comparative-measure--Width};
+  --pf-chart-bullet--group-title--divider--Fill--Color: #{$pf-chart-bullet--group-title--divider--Fill--Color};
+  --pf-chart-bullet--group-title--divider--stroke--Color: #{$pf-chart-bullet--group-title--divider--stroke--Color};
+  --pf-chart-bullet--group-title--divider--stroke--Width: #{$pf-chart-bullet--group-title--divider--stroke--Width};
+  --pf-chart-bullet--Height: #{$pf-chart-bullet--Height};
+  --pf-chart-bullet--label--subtitle--Fill: #{$pf-chart-bullet--label--subtitle--Fill};
+  --pf-chart-bullet--primary-measure--dot--size: #{$pf-chart-bullet--primary-measure--dot--size};
+  --pf-chart-bullet--primary-measure--segmented--Width: #{$pf-chart-bullet--primary-measure--segmented--Width};
+  --pf-chart-bullet--qualitative-range--Width: #{$pf-chart-bullet--qualitative-range--Width};
+
+  // Candlestick
+  --pf-chart-candelstick--data--stroke--Width: #{$pf-chart-candelstick--data--stroke--Width};
+  --pf-chart-candelstick--data--stroke--Color: #{$pf-chart-candelstick--data--stroke--Color};
+  --pf-chart-candelstick--candle--positive--Color: #{$pf-chart-candelstick--candle--positive--Color};
+  --pf-chart-candelstick--candle--negative--Color: #{$pf-chart-candelstick--candle--negative--Color};
+
+  // Simple Donut Chart
+  --pf-chart-donut--label--subtitle--Fill: #{$pf-chart-donut--label--subtitle--Fill};
+  --pf-chart-donut--label--subtitle--position: #{$pf-chart-donut--label--subtitle--position};
+  --pf-chart-donut--pie--Height: #{$pf-chart-donut--pie--Height};
+  --pf-chart-donut--pie--angle--Padding: #{$pf-chart-donut--pie--angle--Padding};
+  --pf-chart-donut--pie--Padding: #{$pf-chart-donut--pie--Padding};
+  --pf-chart-donut--pie--Width: #{$pf-chart-donut--pie--Width};
+
+  // Donut Threshold Chart
+  --pf-chart-donut--threshold--first--Color: #{$pf-chart-donut--threshold--first--Color};
+  --pf-chart-donut--threshold--second--Color: #{$pf-chart-donut--threshold--second--Color};
+  --pf-chart-donut--threshold--third--Color: #{$pf-chart-donut--threshold--third--Color};
+  --pf-chart-donut--threshold--warning--Color: #{$pf-chart-donut--threshold--warning--Color};
+  --pf-chart-donut--threshold--danger--Color: #{$pf-chart-donut--threshold--danger--Color};
+  --pf-chart-donut--threshold--dynamic--pie--Height: #{$pf-chart-donut--threshold--dynamic--pie--Height};
+  --pf-chart-donut--threshold--dynamic--pie--Padding: #{$pf-chart-donut--threshold--dynamic--pie--Padding};
+  --pf-chart-donut--threshold--dynamic--pie--Width: #{$pf-chart-donut--threshold--dynamic--pie--Width};
+  --pf-chart-donut--threshold--static--pie--Height: #{$pf-chart-donut--threshold--static--pie--Height};
+  --pf-chart-donut--threshold--static--pie--angle--Padding: #{$pf-chart-donut--threshold--static--pie--angle--Padding};
+  --pf-chart-donut--threshold--static--pie--Padding: #{$pf-chart-donut--threshold--static--pie--Padding};
+  --pf-chart-donut--threshold--static--pie--Width: #{$pf-chart-donut--threshold--static--pie--Width};
+
+  // Donut Utilization Chart
+  --pf-chart-donut--utilization--dynamic--pie--Height: #{$pf-chart-donut--utilization--dynamic--pie--Height};
+  --pf-chart-donut--utilization--dynamic--pie--angle--Padding: #{$pf-chart-donut--utilization--dynamic--pie--angle--Padding};
+  --pf-chart-donut--utilization--dynamic--pie--Padding: #{$pf-chart-donut--utilization--dynamic--pie--Padding};
+  --pf-chart-donut--utilization--dynamic--pie--Width: #{$pf-chart-donut--utilization--dynamic--pie--Width};
+  --pf-chart-donut--utilization--static--pie--Padding: #{$pf-chart-donut--utilization--static--pie--Padding};
+
+  // Error Bar
+  --pf-chart-errorbar--BorderWidth: #{$pf-chart-errorbar--BorderWidth};
+  --pf-chart-errorbar--data--Fill: #{$pf-chart-errorbar--data--Fill};
+  --pf-chart-errorbar--data--Opacity: #{$pf-chart-errorbar--data--Opacity};
+  --pf-chart-errorbar--data-stroke--Width: #{$pf-chart-errorbar--data-stroke--Width};
+  --pf-chart-errorbar--data-stroke--Color: #{$pf-chart-errorbar--data-stroke--Color};
+
+  // Legend
+  --pf-chart-legend--gutter--Width: #{$pf-chart-legend--gutter--Width};
+  --pf-chart-legend--orientation: #{$pf-chart-legend--orientation};
+  --pf-chart-legend--position: #{$pf-chart-legend--position};
+  --pf-chart-legend--title--orientation: #{$pf-chart-legend--title--orientation};
+  --pf-chart-legend--data--type: #{$pf-chart-legend--data--type};
+  --pf-chart-legend--title--Padding: #{$pf-chart-legend--title--Padding};
+  --pf-chart-legend--Margin: #{$pf-chart-legend--Margin};
+
+  // Line Chart
+  --pf-chart-line--data--Fill: #{$pf-chart-line--data--Fill};
+  --pf-chart-line--data--Opacity: #{$pf-chart-line--data--Opacity};
+  --pf-chart-line--data--stroke--Width: #{$pf-chart-line--data--stroke--Width};
+  --pf-chart-line--data--stroke--Color: #{$pf-chart-line--data--stroke--Color};
+
+  // Pie Chart
+  --pf-chart-pie--Padding: #{$pf-chart-pie--Padding};
+  --pf-chart-pie--data--Padding: #{$pf-chart-pie--data--Padding};
+  --pf-chart-pie--data--stroke--Width: #{$pf-chart-pie--data--stroke--Width};
+  --pf-chart-pie--data--stroke--Color: #{$pf-chart-pie--data--stroke--Color};
+  --pf-chart-pie--labels--Padding: #{$pf-chart-pie--labels--Padding};
+  --pf-chart-pie--Height: #{$pf-chart-pie--Height};
+  --pf-chart-pie--Width: #{$pf-chart-pie--Width};
+
+  // Scatter Chart
+  --pf-chart-scatter--data--stroke--Color: #{$pf-chart-scatter--data--stroke--Color};
+  --pf-chart-scatter--data--stroke--Width: #{$pf-chart-scatter--data--stroke--Width};
+  --pf-chart-scatter--data--Opacity: #{$pf-chart-scatter--data--Opacity};
+  --pf-chart-scatter--data--Fill: #{$pf-chart-scatter--data--Fill};
+  --pf-chart-scatter--active--size: #{$pf-chart-scatter--active--size};
+  --pf-chart-scatter--size: #{$pf-chart-scatter--size};
+
+  // Scatter Chart
+  --pf-chart-stack--data--stroke--Width: #{$pf-chart-stack--data--stroke--Width};
+
+  // Threshold
+  --pf-chart-threshold--stroke-dash-array: #{$pf-chart-threshold--stroke-dash-array};
+  --pf-chart-threshold--stroke--Width: #{$pf-chart-threshold--stroke--Width};
+
+  // Tooltip
+  --pf-chart-tooltip--corner-radius: #{$pf-chart-tooltip--corner-radius};
+  --pf-chart-tooltip--pointer-length: #{$pf-chart-tooltip--pointer-length};
+  --pf-chart-tooltip--Fill: #{$pf-chart-tooltip--Fill};
+  --pf-chart-tooltip--flyoutStyle--corner-radius: #{$pf-chart-tooltip--flyoutStyle--corner-radius};
+  --pf-chart-tooltip--flyoutStyle--stroke--Width: #{$pf-chart-tooltip--flyoutStyle--stroke--Width};
+  --pf-chart-tooltip--flyoutStyle--PointerEvents: #{$pf-chart-tooltip--flyoutStyle--PointerEvents};
+  --pf-chart-tooltip--flyoutStyle--stroke--Color: #{$pf-chart-tooltip--flyoutStyle--stroke--Color};
+  --pf-chart-tooltip--flyoutStyle--Fill: #{$pf-chart-tooltip--flyoutStyle--Fill};
+  --pf-chart-tooltip--pointer--Width: #{$pf-chart-tooltip--pointer--Width};
+  --pf-chart-tooltip--Padding: #{$pf-chart-tooltip--Padding};
+  --pf-chart-tooltip--PointerEvents: #{$pf-chart-tooltip--PointerEvents};
+
+  // Voronoi Chart
+  --pf-chart-voronoi--data--Fill: #{$pf-chart-voronoi--data--Fill};
+  --pf-chart-voronoi--data--stroke--Color: #{$pf-chart-voronoi--data--stroke--Color};
+  --pf-chart-voronoi--data--stroke--Width: #{$pf-chart-voronoi--data--stroke--Width};
+  --pf-chart-voronoi--labels--Padding: #{$pf-chart-voronoi--labels--Padding};
+  --pf-chart-voronoi--labels--Fill: #{$pf-chart-voronoi--labels--Fill};
+  --pf-chart-voronoi--labels--PointerEvents: #{$pf-chart-voronoi--labels--PointerEvents};
+  --pf-chart-voronoi--flyout--stroke--Width: #{$pf-chart-voronoi--flyout--stroke--Width};
+  --pf-chart-voronoi--flyout--PointerEvents: #{$pf-chart-voronoi--flyout--PointerEvents};
+  --pf-chart-voronoi--flyout--stroke--Color: #{$pf-chart-voronoi--flyout--stroke--Color};
+  --pf-chart-voronoi--flyout--stroke--Fill: #{$pf-chart-voronoi--flyout--stroke--Fill};
+  --pf-chart-voronoi--flyout--PointerEvents: #{$pf-chart-voronoi--flyout--PointerEvents};
+}

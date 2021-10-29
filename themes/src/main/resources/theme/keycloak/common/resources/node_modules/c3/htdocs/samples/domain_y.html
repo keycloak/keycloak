@@ -1,0 +1,71 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="/css/c3.css">
+  </head>
+  <body>
+    <button id="btn1">Bar</button>
+    <button id="btn2">Line</button>
+    <button id="btn3">Area</button>
+    <div id="chart1"></div>
+    <div id="chart2"></div>
+    <div id="chart3"></div>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/js/c3.js"></script>
+    <script>
+
+      var normalData = {
+          columns: [
+            ['data1', -1030, -1200, 1000],
+            ['data2', -1150, -220, -1110]
+          ],
+          labels: true,
+      },
+      allPositiveData = {
+          columns: [
+            ['data1', 1030, 1200, 1100],
+            ['data2', 2050, 2020, 2010]
+          ],
+          labels: true,
+      },
+      allNegativeData = {
+          columns: [
+            ['data1', -1030, -2200, -2100],
+            ['data2', -1150, -2010, -1200]
+          ],
+          labels: true,
+      }
+
+      var chart1 = c3.generate({
+        bindto: '#chart1',
+        data: normalData
+      });
+
+      var chart2 = c3.generate({
+        bindto: '#chart2',
+        data: allPositiveData
+      });
+
+      var chart3 = c3.generate({
+        bindto: '#chart3',
+        data: allNegativeData
+      });
+
+      d3.select('#btn1').on('click', function () {
+        chart1.transform('bar');
+        chart2.transform('bar');
+        chart3.transform('bar');
+      });
+      d3.select('#btn2').on('click', function () {
+        chart1.transform('line');
+        chart2.transform('line');
+        chart3.transform('line');
+      });
+      d3.select('#btn3').on('click', function () {
+        chart1.transform('area');
+        chart2.transform('area');
+        chart3.transform('area');
+      });
+    </script>
+  </body>
+</html>

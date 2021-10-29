@@ -1,0 +1,50 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="/css/c3.css">
+  </head>
+  <body>
+    <div id="chart"></div>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/js/c3.js"></script>
+    <script>
+      var chart = c3.generate({
+        bindto: '#chart',
+        data: {
+          columns: [
+            ['sample', 30, 200, 100, 400, 150, 250]
+          ]
+        },
+        axis: {
+//          rotated: true,
+        },
+        grid: {
+          y: {
+//            lines: [{value: 30, text:'Label 30'}, {value: 250, text: 'Label 250'}]
+          }
+        }
+      });
+
+      setTimeout(function () {
+        chart.ygrids([{value: 130, text:'Label 130'}, {value: 50, text: 'Label 50'}]);
+      }, 1000);
+
+      setTimeout(function () {
+        chart.ygrids([{value: 130, text:'Label 130', class: 'hoge'}]);
+      }, 2000);
+
+      setTimeout(function () {
+        chart.ygrids.add([{value: 230, text:'Label 230', class: 'hoge'}]);
+      }, 3000);
+
+      setTimeout(function () {
+        chart.ygrids.remove({value: 230});
+      }, 4000);
+
+      setTimeout(function () {
+        chart.ygrids.remove({class: 'hoge'});
+      }, 5000);
+
+    </script>
+  </body>
+</html>

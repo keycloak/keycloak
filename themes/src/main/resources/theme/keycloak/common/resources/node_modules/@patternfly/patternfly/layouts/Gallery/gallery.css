@@ -1,0 +1,67 @@
+.pf-l-gallery {
+  --pf-l-gallery--m-gutter--GridGap: var(--pf-global--gutter);
+  --pf-l-gallery--GridTemplateColumns--min: 250px;
+  --pf-l-gallery--GridTemplateColumns--minmax--min: var(--pf-l-gallery--GridTemplateColumns--min);
+  --pf-l-gallery--GridTemplateColumns--max: 1fr;
+  --pf-l-gallery--GridTemplateColumns--minmax--max: var(--pf-l-gallery--GridTemplateColumns--max);
+  --pf-l-gallery--GridTemplateColumns: repeat(auto-fill, minmax(var(--pf-l-gallery--GridTemplateColumns--minmax--min), var(--pf-l-gallery--GridTemplateColumns--minmax--max)));
+  --pf-l-gallery--GridTemplateRows: auto;
+  display: grid;
+  grid-template-columns: var(--pf-l-gallery--GridTemplateColumns);
+  grid-template-rows: var(--pf-l-gallery--GridTemplateRows);
+  --pf-l-gallery--GridTemplateColumns--minmax--min: var(--pf-l-gallery--GridTemplateColumns--min);
+  --pf-l-gallery--GridTemplateColumns--minmax--max: var(--pf-l-gallery--GridTemplateColumns--max);
+}
+.pf-l-gallery.pf-m-gutter {
+  grid-gap: var(--pf-l-gallery--m-gutter--GridGap);
+}
+@media (min-width: 576px) {
+  .pf-l-gallery {
+    --pf-l-gallery--GridTemplateColumns--minmax--min: var(--pf-l-gallery--GridTemplateColumns--min-on-sm, var(--pf-l-gallery--GridTemplateColumns--min));
+  }
+}
+@media (min-width: 768px) {
+  .pf-l-gallery {
+    --pf-l-gallery--GridTemplateColumns--minmax--min: var(--pf-l-gallery--GridTemplateColumns--min-on-md, var(--pf-l-gallery--GridTemplateColumns--min-on-sm, var(--pf-l-gallery--GridTemplateColumns--min)));
+  }
+}
+@media (min-width: 992px) {
+  .pf-l-gallery {
+    --pf-l-gallery--GridTemplateColumns--minmax--min: var(--pf-l-gallery--GridTemplateColumns--min-on-lg, var(--pf-l-gallery--GridTemplateColumns--min-on-md, var(--pf-l-gallery--GridTemplateColumns--min-on-sm, var(--pf-l-gallery--GridTemplateColumns--min))));
+  }
+}
+@media (min-width: 1200px) {
+  .pf-l-gallery {
+    --pf-l-gallery--GridTemplateColumns--minmax--min: var(--pf-l-gallery--GridTemplateColumns--min-on-xl, var(--pf-l-gallery--GridTemplateColumns--min-on-lg, var(--pf-l-gallery--GridTemplateColumns--min-on-md, var(--pf-l-gallery--GridTemplateColumns--min-on-sm, var(--pf-l-gallery--GridTemplateColumns--min)))));
+  }
+}
+@media (min-width: 1450px) {
+  .pf-l-gallery {
+    --pf-l-gallery--GridTemplateColumns--minmax--min: var(--pf-l-gallery--GridTemplateColumns--min-on-2xl, var(--pf-l-gallery--GridTemplateColumns--min-on-xl, var(--pf-l-gallery--GridTemplateColumns--min-on-lg, var(--pf-l-gallery--GridTemplateColumns--min-on-md, var(--pf-l-gallery--GridTemplateColumns--min-on-sm, var(--pf-l-gallery--GridTemplateColumns--min))))));
+  }
+}
+@media (min-width: 576px) {
+  .pf-l-gallery {
+    --pf-l-gallery--GridTemplateColumns--minmax--max: var(--pf-l-gallery--GridTemplateColumns--max-on-sm, var(--pf-l-gallery--GridTemplateColumns--max));
+  }
+}
+@media (min-width: 768px) {
+  .pf-l-gallery {
+    --pf-l-gallery--GridTemplateColumns--minmax--max: var(--pf-l-gallery--GridTemplateColumns--max-on-md, var(--pf-l-gallery--GridTemplateColumns--max-on-sm, var(--pf-l-gallery--GridTemplateColumns--max)));
+  }
+}
+@media (min-width: 992px) {
+  .pf-l-gallery {
+    --pf-l-gallery--GridTemplateColumns--minmax--max: var(--pf-l-gallery--GridTemplateColumns--max-on-lg, var(--pf-l-gallery--GridTemplateColumns--max-on-md, var(--pf-l-gallery--GridTemplateColumns--max-on-sm, var(--pf-l-gallery--GridTemplateColumns--max))));
+  }
+}
+@media (min-width: 1200px) {
+  .pf-l-gallery {
+    --pf-l-gallery--GridTemplateColumns--minmax--max: var(--pf-l-gallery--GridTemplateColumns--max-on-xl, var(--pf-l-gallery--GridTemplateColumns--max-on-lg, var(--pf-l-gallery--GridTemplateColumns--max-on-md, var(--pf-l-gallery--GridTemplateColumns--max-on-sm, var(--pf-l-gallery--GridTemplateColumns--max)))));
+  }
+}
+@media (min-width: 1450px) {
+  .pf-l-gallery {
+    --pf-l-gallery--GridTemplateColumns--minmax--max: var(--pf-l-gallery--GridTemplateColumns--max-on-2xl, var(--pf-l-gallery--GridTemplateColumns--max-on-xl, var(--pf-l-gallery--GridTemplateColumns--max-on-lg, var(--pf-l-gallery--GridTemplateColumns--max-on-md, var(--pf-l-gallery--GridTemplateColumns--max-on-sm, var(--pf-l-gallery--GridTemplateColumns--max))))));
+  }
+}

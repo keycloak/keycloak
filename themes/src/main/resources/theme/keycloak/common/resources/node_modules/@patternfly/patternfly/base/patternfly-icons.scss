@@ -1,0 +1,30 @@
+@import "../sass-utilities/all";
+@import "icons";
+
+.pf-svg-size-sm {
+  // Small icon size
+  width: 1em;
+  height: 1em;
+  vertical-align: -.125em;
+}
+
+.pf-svg-size-md {
+  // Medium icon size
+  width: 1.5em;
+  height: 1.5em;
+  vertical-align: -.1875em;
+}
+
+.pf-svg-size-lg {
+  // Large icon size
+  width: 2em;
+  height: 2em;
+  vertical-align: -.25em;
+}
+
+.pf-svg-size-xl {
+  // Extra large icon size
+  width: 3em;
+  height: 3em;
+  vertical-align: -.375em;
+}

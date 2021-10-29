@@ -1,0 +1,18 @@
+// stylelint-disable
+
+// Display options
+$pf-u-display-options: (
+  display-none:           (display none),
+  display-inline-block:   (display inline-block),
+  display-block:          (display block),
+  display-inline:         (display inline),
+  display-table:          (display table),
+  display-table-cell:     (display table-cell),
+  display-table-row:      (display table-row),
+  display-flex:           (display flex),
+  display-inline-flex:    (display inline-flex)
+);
+
+@include pf-utility-builder($pf-u-display-options, $pf-global--breakpoint-list);
+
+// stylelint-enable

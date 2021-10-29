@@ -1,0 +1,32 @@
+<html>
+  <head>
+    <link href="/css/c3.css" rel="stylesheet" type="text/css">
+  </head>
+  <body>
+    <div id="chart"></div>
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/js/c3.js"></script>
+    <script>
+      var chart = c3.generate({
+        data: {
+          columns: [
+            ['padded1', 100],
+            ['padded2', 90],
+            ['padded3', 50],
+            ['padded4', 20]
+          ],
+          type: 'gauge',
+        },
+        color: {
+          pattern: ['#FF0000', '#F97600', '#F6C600', '#60B044'],
+          threshold: {
+            values: [30, 80, 95]
+          }
+        },
+        size: {
+          height: 320,
+        }
+      });
+    </script>
+  </body>
+</html>

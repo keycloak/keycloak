@@ -1,0 +1,30 @@
+.pf-c-avatar {
+  --pf-c-avatar--BorderColor: transparent;
+  --pf-c-avatar--BorderWidth: 0;
+  --pf-c-avatar--BorderRadius: var(--pf-global--BorderRadius--lg);
+  --pf-c-avatar--Width: #{pf-size-prem(36px)};
+  --pf-c-avatar--Height: #{pf-size-prem(36px)};
+
+  // Light
+  --pf-c-avatar--m-light--BorderColor: var(--pf-global--BorderColor--dark-100);
+  --pf-c-avatar--m-light--BorderWidth: var(--pf-global--BorderWidth--sm);
+
+  // Dark
+  --pf-c-avatar--m-dark--BorderColor: var(--pf-global--palette--black-700);
+  --pf-c-avatar--m-dark--BorderWidth: var(--pf-global--BorderWidth--sm);
+
+  width: var(--pf-c-avatar--Width);
+  height: var(--pf-c-avatar--Height);
+  border: var(--pf-c-avatar--BorderWidth) solid var(--pf-c-avatar--BorderColor);
+  border-radius: var(--pf-c-avatar--BorderRadius);
+
+  &.pf-m-light {
+    --pf-c-avatar--BorderColor: var(--pf-c-avatar--m-light--BorderColor);
+    --pf-c-avatar--BorderWidth: var(--pf-c-avatar--m-light--BorderWidth);
+  }
+
+  &.pf-m-dark {
+    --pf-c-avatar--BorderColor: var(--pf-c-avatar--m-dark--BorderColor);
+    --pf-c-avatar--BorderWidth: var(--pf-c-avatar--m-dark--BorderWidth);
+  }
+}

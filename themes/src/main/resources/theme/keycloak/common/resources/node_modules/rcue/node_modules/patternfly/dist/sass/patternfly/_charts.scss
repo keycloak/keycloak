@@ -1,0 +1,388 @@
+//
+// Charts
+// --------------------------------------------------
+
+.bullet-chart-pf {
+  display: flex;
+  flex-direction: column;
+
+  &.bullet-chart-pf-vertical {
+    height: 100%;
+    flex-direction: row;
+  }
+}
+
+.bullet-chart-pf-chart {
+  display: flex;
+  flex: 1;
+  flex-direction: row;
+  width: 100%;
+  .bullet-chart-pf-vertical & {
+    flex: initial;
+    flex-direction: column-reverse;
+    height: 100%;
+    width: initial;
+  }
+}
+
+.bullet-chart-pf-title-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin: 10px 0 25px;
+  padding-right: 10px;
+  text-align: right;
+  .bullet-chart-pf-vertical & {
+    margin-bottom: 0;
+    padding-right: 0;
+    text-align: center;
+  }
+}
+
+.bullet-chart-pf-title {
+  font-size: ($font-size-base + 2);
+}
+
+.bullet-chart-pf-details {
+  color: $gray-light;
+  font-size: $font-size-base;
+  line-height: 9px;
+}
+
+.bullet-chart-pf-container {
+  display: flex;
+  flex-direction: column;
+  flex: 5;
+  .bullet-chart-pf-vertical & {
+    flex-direction: row-reverse;
+    flex: initial;
+    &.show-axis {
+      margin-left: -25px;
+    }
+  }
+}
+
+.bullet-chart-pf-data-container {
+  flex: 1;
+  position: relative;
+  .bullet-chart-pf-vertical & {
+    height: initial;
+  }
+}
+
+.bullet-chart-pf-vertical-data-container {
+  display: flex;
+  flex: 5;
+  flex-direction: row;
+  justify-content: center;
+  .bullet-chart-pf-data-container {
+    flex: initial;
+  }
+}
+
+.bullet-chart-pf-values-container {
+  height: 20px;
+  margin: 20px 0;
+  position: relative;
+  .bullet-chart-pf-vertical & {
+    height: 100%;
+    margin: 0 20px;
+    width: 20px;
+  }
+}
+
+.bullet-chart-pf-value-bar {
+  height: 100%;
+  position: absolute;
+  transition: left 600ms ease;
+  .bullet-chart-pf-vertical & {
+    bottom: 0;
+    height: initial;
+    top: initial;
+    width: 100%;
+  }
+}
+
+.bullet-chart-pf-value-dot {
+  border-radius: 50%;
+  border-style: solid;
+  border-width: 0;
+  height: 20px;
+  transform: translateX(-50%);
+  position: absolute;
+  transition: left 600ms ease;
+  width: 20px;
+  .bullet-chart-pf-vertical & {
+    top: initial;
+    transform: translateY(50%);
+  }
+}
+
+.bullet-chart-pf-threshold-indicator {
+  border: 0 solid $color-pf-black-600;
+  border-left-width: 1px;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  z-index: 400;
+  .bullet-chart-pf-vertical & {
+    border-left-width: 0;
+    border-top-width: 1px;
+    height: 1px;
+    left: 0;
+    top: initial;
+    width: 100%;
+  }
+  &.error {
+    border-color: $alert-danger-border;
+  }
+  &.warning {
+    border-color: $alert-warning-border;
+  }
+}
+
+.bullet-chart-pf-range-bar {
+  height: 100%;
+  left: 0;
+  position: absolute;
+  top: 0;
+  .bullet-chart-pf-vertical & {
+    bottom: 0;
+    height: initial;
+    top: initial;
+    width: 100%;
+  }
+  &.range-1 {
+    background-color: $color-pf-black-150;
+  }
+  &.range-2 {
+    background-color: $color-pf-black-200;
+  }
+  &.range-3 {
+    background-color: #dbdbdb;
+  }
+}
+
+.bullet-chart-pf-axis {
+  border-top: 1px solid $color-pf-black-600;
+  height: 25px;
+  position: relative;
+  .bullet-chart-pf-vertical & {
+    height: initial;
+    width: 25px;
+    border-right: 1px solid $color-pf-black-600;
+    border-top: 0;
+  }
+  .bullet-chart-pf-title-container & {
+    border-top: 0;
+  }
+}
+
+.bullet-chart-pf-axis-tic {
+  padding-top: 5px;
+  position: absolute;
+  text-align: center;
+  width: 30px;
+  .bullet-chart-pf-vertical & {
+    padding-top: 0;
+    padding-right: 5px;
+    width: 100%;
+    text-align: right;
+    line-height: 21px;
+  }
+  &:before {
+    border-left: 1px solid $color-pf-black-600;
+    content: "";
+    height: 3px;
+    left: 50%;
+    position: absolute;
+    top: -1px;
+    .bullet-chart-pf-vertical & {
+      border-left: 0;
+      border-top: 1px solid $color-pf-black-600;
+      height: initial;
+      left: initial;
+      right: -1px;
+      top: calc(50% - 1px);
+      width: 3px;
+    }
+  }
+}
+
+.bullet-chart-pf-overflow {
+  flex: 1;
+}
+
+.bullet-chart-pf-legend {
+  margin-top: 7px;
+  text-align: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+
+  .bullet-chart-pf-vertical & {
+    flex-direction: column;
+    margin-left: 10px;
+    margin-top: 0;
+    text-align: left;
+  }
+}
+
+.bullet-chart-pf-legend-item {
+  display: inline-block;
+  margin-right: 10px;
+
+  .bullet-chart-pf-vertical & {
+    margin-right: 0;
+    margin-top: 10px;
+  }
+}
+
+.bullet-chart-pf-legend-item-box {
+  display: inline-block;
+  height: 13px;
+  margin-right: 3px;
+  width: 13px;
+  &.range-1 {
+    background-color: $color-pf-black-150;
+  }
+  &.range-2 {
+    background-color: $color-pf-black-200;
+  }
+  &.range-3 {
+    background-color: #dbdbdb;
+  }
+}
+
+.bullet-chart-pf-legend-item-text {
+  display: inline-block;
+  line-height: 14px;
+  max-width: 150px;
+  overflow: hidden;
+  position: relative;
+  text-overflow: ellipsis;
+  top: 1px;
+  white-space: nowrap;
+  word-wrap: normal;
+}
+
+.c3 {
+  path {
+    stroke: $table-border-color;
+  }
+  svg {
+    font-family: $font-family-base;
+  }
+}
+
+.c3-axis-x .tick line {
+  stroke: $table-border-color;
+}
+
+.c3-axis-y .tick line {
+  display: none;
+}
+
+.c3-chart-arc path {
+  stroke: $color-pf-white;
+}
+
+.c3-grid line {
+  stroke: $table-border-color;
+}
+
+.c3-line {
+  stroke-width: 2px;
+}
+
+.c3-tooltip {
+  background: $tooltip-bg;
+  @include box-shadow(none);
+  @include opacity($tooltip-opacity);
+
+  td {
+    background: transparent;
+    border: 0;
+    color: $tooltip-color;
+    font-size: $font-size-base;
+    padding: 5px 10px;
+  }
+
+  th {
+    background: transparent;
+    font-size: $font-size-base;
+    padding: 5px 10px 0;
+    border-bottom: solid 2px $color-pf-black;
+  }
+
+  tr {
+    border: 0;
+    + tr > td {
+      padding-top: 0;
+    }
+  }
+}
+
+.c3-tooltip-sparkline,
+.donut-tooltip-pf {
+  background: $tooltip-bg;
+  color: $tooltip-color;
+  @include opacity($tooltip-opacity);
+  padding: 2px 6px;
+}
+
+.c3-xgrid,
+.c3-ygrid {
+  stroke-dasharray: 0 0;
+}
+
+.chart-pf-sparkline {
+  margin-left: -5px;
+  margin-right: -5px;
+}
+
+.donut-title-big-pf {
+  font-size: $donut-font-size-big;
+  font-weight: 300;
+}
+
+.donut-title-small-pf {
+  font-size: $font-size-base;
+  font-weight: 400;
+}
+
+.line-chart-pf {
+  .c3-zoom-rect {
+    opacity: 1 !important;
+    fill: $color-pf-black-100;
+    stroke: $table-border-color;
+    stroke-width: 1px;
+  }
+}
+
+.pct-donut-chart-pf {
+
+  .pct-donut-chart-pf-label {
+    display: block;
+  }
+
+  &.pct-donut-chart-pf-left,
+  &.pct-donut-chart-pf-right,
+  .pct-donut-chart-pf-left,
+  .pct-donut-chart-pf-right {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+  }
+
+  &.pct-donut-chart-pf-left,
+  &.pct-donut-chart-pf-right {
+    display: inline-flex;
+  }
+
+  &.pct-donut-chart-pf-left,
+  .pct-donut-chart-pf-left {
+    flex-direction: row-reverse;
+  }
+}

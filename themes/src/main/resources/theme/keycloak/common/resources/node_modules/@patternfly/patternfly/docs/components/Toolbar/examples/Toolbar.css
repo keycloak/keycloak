@@ -1,0 +1,62 @@
+#ws-core-e-toolbar-toggle-group-on-mobile-filters-collapsed-expandable-content-expanded,
+#ws-core-c-toolbar-toggle-group-on-mobile-filters-collapsed-expandable-content-expanded {
+  min-height: 19rem;
+}
+
+#ws-core-e-toolbar-expanded-elements,
+#ws-core-c-toolbar-expanded-elements {
+  min-height: 18rem;
+}
+
+#ws-core-e-toolbar-stacked-on-mobile-filters-collapsed-expandable-content-expanded,
+#ws-core-c-toolbar-stacked-on-mobile-filters-collapsed-expandable-content-expanded {
+  min-height: 18rem;
+}
+
+#ws-core-e-toolbar-selected-filters-on-mobile-filters-collapsed-expandable-content-expanded,
+#ws-core-c-toolbar-selected-filters-on-mobile-filters-collapsed-expandable-content-expanded {
+  min-height: 28rem;
+}
+
+#ws-core-e-toolbar-simple .pf-c-toolbar,
+#ws-core-e-toolbar-simple .pf-c-toolbar__group,
+#ws-core-e-toolbar-simple .pf-c-toolbar__item,
+#ws-core-e-toolbar-adjusted-spacers .pf-c-toolbar,
+#ws-core-e-toolbar-adjusted-spacers .pf-c-toolbar__item,
+#ws-core-e-toolbar-adjusted-group-spacers .pf-c-toolbar,
+#ws-core-e-toolbar-adjusted-group-spacers .pf-c-toolbar__item,
+#ws-core-c-toolbar-simple .pf-c-toolbar,
+#ws-core-c-toolbar-simple .pf-c-toolbar__group,
+#ws-core-c-toolbar-simple .pf-c-toolbar__item,
+#ws-core-c-toolbar-adjusted-spacers .pf-c-toolbar,
+#ws-core-c-toolbar-adjusted-spacers .pf-c-toolbar__item,
+#ws-core-c-toolbar-adjusted-group-spacers .pf-c-toolbar,
+#ws-core-c-toolbar-adjusted-group-spacers .pf-c-toolbar__item,
+#ws-core-c-toolbar-insets .pf-c-toolbar,
+#ws-core-c-toolbar-insets .pf-c-toolbar__item,
+#ws-core-c-toolbar-page-insets .pf-c-toolbar,
+#ws-core-c-toolbar-page-insets .pf-c-toolbar__item,
+#ws-core-c-toolbar-width-control .pf-c-toolbar,
+#ws-core-c-toolbar-width-control .pf-c-toolbar__item {
+  border: 2px dashed #393f44;
+}
+
+#ws-core-e-toolbar-simple .pf-c-toolbar__group .pf-c-toolbar__item,
+#ws-core-c-toolbar-simple .pf-c-toolbar__group .pf-c-toolbar__item {
+  border: none;
+}
+
+#ws-core-e-toolbar-simple .pf-c-toolbar__item,
+#ws-core-e-toolbar-adjusted-spacers .pf-c-toolbar__item,
+#ws-core-e-toolbar-adjusted-group-spacers .pf-c-toolbar__item,
+#ws-core-c-toolbar-simple .pf-c-toolbar__item,
+#ws-core-c-toolbar-adjusted-spacers .pf-c-toolbar__item,
+#ws-core-c-toolbar-adjusted-group-spacers .pf-c-toolbar__item,
+#ws-core-c-toolbar-insets .pf-c-toolbar,
+#ws-core-c-toolbar-insets .pf-c-toolbar__item,
+#ws-core-c-toolbar-page-insets .pf-c-toolbar,
+#ws-core-c-toolbar-page-insets .pf-c-toolbar__item,
+#ws-core-c-toolbar-width-control .pf-c-toolbar,
+#ws-core-c-toolbar-width-control .pf-c-toolbar__item {
+  padding: .5rem;
+}

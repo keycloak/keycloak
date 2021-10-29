@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  {% if page_description %}<meta name="description" content="{{ page_description }}">{% endif %}
+  {% if site_author %}<meta name="author" content="{{ site_author }}">{% endif %}
+  {% if canonical_url %}<link rel="canonical" href="{{ canonical_url }}">{% endif %}
+  {% if favicon %}<link rel="shortcut icon" href="{{ favicon }}">
+  {% else %}<link rel="shortcut icon" href="{{ base_url }}/img/favicon.ico">{% endif %}
+
+  <title>{% if page_title %}{{ page_title }} - {% endif %}{{ site_name }}</title>
+
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
+  <link href="{{ base_url }}/css/highlight.css" rel="stylesheet">
+  <link href="{{ base_url }}/css/base.css" rel="stylesheet">
+  {%- for path in extra_css %}
+  <link href="{{ path }}" rel="stylesheet">
+  {%- endfor %}
+
+  <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+  <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+  <![endif]-->
+</head>
+
+<body>
+
+{% include "nav.html" %}
+
+{% if current_page and current_page.is_homepage %} 
+<div class="jumbotron bs-docs-header text-center">
+  <div class="container">
+    <h1>bootstrap-select</h1>
+    <p class="lead">Bootstrap-select is a jQuery plugin that utilizes Bootstrap's dropdown.js to style and bring additional functionality to standard select elements.</p>
+    <a class="btn btn-outline-inverse btn-lg" href="//github.com/silviomoreto/bootstrap-select/archive/v{{ config.extra.version }}.zip" role="button">
+      <i class="fa fa-download"></i> Download (v{{ config.extra.version }})
+    </a>
+  </div>
+  <div class="gh-btns">
+    <iframe src="https://ghbtns.com/github-btn.html?user=silviomoreto&repo=bootstrap-select&type=star&count=true&size=large" frameborder="0" scrolling="0" width="160px" height="30px"></iframe>
+    <iframe src="https://ghbtns.com/github-btn.html?user=silviomoreto&repo=bootstrap-select&type=fork&count=true&size=large" frameborder="0" scrolling="0" width="160px" height="30px"></iframe>
+  </div>
+  <div class="carbonad">
+    <div class="carbonad-inner">
+      <script async type="text/javascript" src="//cdn.carbonads.com/carbon.js?zoneid=1673&serve=C6AILKT&placement=silviomoretogithubiobootstrapsel" id="_carbonads_js"></script>
+    </div>
+    <div class="charity">Ad revenue is donated to <a href="http://www.projetocana.org/" target="_blank" rel="nofollow">Projecto Cana</a>.</div>
+  </div>
+</div>
+<div class="container">
+{% include "content.html" %}
+</div>
+{% else %}
+<section class="jumbotron">
+  <div class="container">
+    <h1>{{ page_title }}</h1>
+  </div>
+</section>
+<div class="container">
+  <div class="col-md-3">{% include "toc.html" %}</div>
+  <div class="col-md-9" role="main">{% include "content.html" %}</div>
+</div>
+{% endif %}
+
+  <div class="footer">
+    <div class="container text-center">
+      <p class="text-muted">Bootstrap-select is maintained by <a href="https://github.com/caseyjhol">caseyjhol</a>,
+        <a href="https://github.com/t0xicCode">t0xicCode</a>, and the community.</p>
+    </div>
+  </div>
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+<script src="{{ base_url }}/js/highlight.pack.js"></script>
+<script src="{{ base_url }}/js/base.js"></script>
+{%- for path in extra_javascript %}
+<script src="{{ path }}"></script>
+{%- endfor %}
+
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-35848102-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function () {
+    var ga = document.createElement('script');
+    ga.type = 'text/javascript';
+    ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0];
+    s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+</body>
+</html>

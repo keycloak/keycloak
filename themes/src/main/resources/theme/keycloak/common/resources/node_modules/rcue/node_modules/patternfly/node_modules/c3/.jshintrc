@@ -1,0 +1,25 @@
+{
+    "esversion": 6,
+    "eqeqeq": true,
+    "curly": true,
+    "strict": false,
+    "trailing": true,
+    "white": true,
+    "maxlen": 210,
+    "undef": true,
+    "unused": true,
+    "indent": 4,
+    "eqnull": true,
+    "expr": true,
+    "newcap": false,
+    "loopfunc": true,
+    "bitwise": false,
+
+    "browser": true,
+    "jasmine": true,
+
+    "globals": {
+        "d3": false,
+        "require": false
+    }
+}

@@ -1,0 +1,52 @@
+#ws-core-c-navigation-default,
+#ws-core-c-navigation-basic,
+#ws-core-c-navigation-grouped,
+#ws-core-c-navigation-grouped-nav,
+#ws-core-c-navigation-expanded,
+#ws-core-c-navigation-expanded-with-subnav-titles,
+#ws-core-c-navigation-mixed,
+#ws-core-c-navigation-flyout-with-menu-component,
+#ws-core-c-navigation-horizontal,
+#ws-core-c-navigation-horizontal-overflow,
+#ws-core-c-navigation-horizontal-subnav,
+#ws-core-c-navigation-horizontal-subnav-overflow,
+#ws-core-c-navigation-drilldown,
+#ws-core-c-navigation-level-2-drilldown,
+#ws-core-c-navigation-level-3-drilldown {
+  padding: 0;
+  background-color: var(--pf-global--BackgroundColor--dark-300);
+}
+
+#ws-core-c-navigation-expandable-third-level .pf-c-nav {
+  background-color: var(--pf-global--BackgroundColor--dark-300);
+}
+
+#ws-core-c-navigation-horizontal-in-masthead,
+#ws-core-c-navigation-horizontal-in-masthead-overflow {
+  padding: 0;
+  grid-template-rows: auto;
+}
+
+#ws-core-c-navigation-horizontal-in-masthead .pf-c-page__header,
+#ws-core-c-navigation-horizontal-in-masthead-overflow .pf-c-page__header {
+  min-height: 0;
+}
+
+@media screen and (min-width: 1200px) {
+  #ws-core-c-navigation-horizontal-in-masthead .pf-c-page__header,
+  #ws-core-c-navigation-horizontal-in-masthead-overflow .pf-c-page__header {
+    min-height: var(--pf-c-page__header--MinHeight);
+  }
+}
+
+#ws-core-c-navigation-horizontal-in-masthead .pf-c-page__header-nav,
+#ws-core-c-navigation-horizontal-in-masthead-overflow .pf-c-page__header-nav {
+  grid-row: 1;
+}
+
+#ws-core-c-navigation-flyout-with-menu-component,
+#ws-core-c-navigation-drilldown,
+#ws-core-c-navigation-level-2-drilldown,
+#ws-core-c-navigation-level-3-drilldown {
+  width: 260px;
+}

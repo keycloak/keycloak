@@ -1,0 +1,82 @@
+%pf-t-light {
+  --pf-global--Color--100: var(--pf-global--Color--dark-100);
+  --pf-global--Color--200: var(--pf-global--Color--dark-200);
+  --pf-global--BorderColor--100: var(--pf-global--BorderColor--dark-100);
+  --pf-global--primary-color--100: var(--pf-global--primary-color--dark-100);
+  --pf-global--link--Color: var(--pf-global--link--Color--dark);
+  --pf-global--link--Color--hover: var(--pf-global--link--Color--dark--hover);
+  --pf-global--BackgroundColor--100: var(--pf-global--BackgroundColor--light-100);
+}
+
+%pf-t-dark {
+  --pf-global--Color--100: var(--pf-global--Color--light-100);
+  --pf-global--Color--200: var(--pf-global--Color--light-200);
+  --pf-global--BorderColor--100: var(--pf-global--BorderColor--light-100);
+  --pf-global--primary-color--100: var(--pf-global--primary-color--light-100);
+  --pf-global--link--Color: var(--pf-global--link--Color--light);
+  --pf-global--link--Color--hover: var(--pf-global--link--Color--light);
+  --pf-global--BackgroundColor--100: var(--pf-global--BackgroundColor--dark-100);
+
+  .pf-c-card {
+    --pf-c-card--BackgroundColor: var(--pf-global--BackgroundColor--dark-transparent-200);
+  }
+
+  .pf-c-button {
+    --pf-c-button--m-primary--Color: var(--pf-global--primary-color--dark-100);
+    --pf-c-button--m-primary--hover--Color: var(--pf-global--primary-color--dark-100);
+    --pf-c-button--m-primary--focus--Color: var(--pf-global--primary-color--dark-100);
+    --pf-c-button--m-primary--active--Color: var(--pf-global--primary-color--dark-100);
+    --pf-c-button--m-primary--BackgroundColor: var(--pf-global--BackgroundColor--light-100);
+    --pf-c-button--m-primary--hover--BackgroundColor: var(--pf-global--BackgroundColor--light-300);
+    --pf-c-button--m-primary--focus--BackgroundColor: var(--pf-global--BackgroundColor--light-300);
+    --pf-c-button--m-primary--active--BackgroundColor: var(--pf-global--BackgroundColor--light-300);
+    --pf-c-button--m-secondary--Color: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--hover--Color: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--focus--Color: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--active--Color: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--BorderColor: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--hover--BorderColor: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--focus--BorderColor: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--active--BorderColor: var(--pf-global--Color--light-100);
+  }
+}
+
+// stylelint-disable
+%pf-hidden-visible {
+  // base value for visible display property is set to 'block' by default and passed in to
+  // placeholder via `pf-hidden-visible` mixin
+  --pf-hidden-visible--visible--Visibility: visible;
+
+  // set hidden var values
+  --pf-hidden-visible--hidden--Display: none;
+  --pf-hidden-visible--hidden--Visibility: hidden;
+
+  // set visibile var values
+  --pf-hidden-visible--Display: var(--pf-hidden-visible--visible--Display);
+  --pf-hidden-visible--Visibility: var(--pf-hidden-visible--visible--Visibility);
+
+  // set default state to visible
+  display: var(--pf-hidden-visible--Display);
+  visibility: var(--pf-hidden-visible--Visibility);
+
+  // toggle values based on state
+  &.pf-m-hidden {
+    --pf-hidden-visible--Display: var(--pf-hidden-visible--hidden--Display);
+    --pf-hidden-visible--Visibility: var(--pf-hidden-visible--hidden--Visibility);
+  }
+
+  @each $size, $bp in $pf-global--breakpoint-name-map {
+    @media screen and (min-width: $bp) {
+      &.pf-m-hidden-on-#{$size} {
+        --pf-hidden-visible--Display: var(--pf-hidden-visible--hidden--Display);
+        --pf-hidden-visible--Visibility: var(--pf-hidden-visible--hidden--Visibility);
+      }
+
+      &.pf-m-visible-on-#{$size} {
+        --pf-hidden-visible--Display: var(--pf-hidden-visible--visible--Display);
+        --pf-hidden-visible--Visibility: var(--pf-hidden-visible--visible--Visibility);
+      }
+    }
+  }
+}
+// stylelint-enable
