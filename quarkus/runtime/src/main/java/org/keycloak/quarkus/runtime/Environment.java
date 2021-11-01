@@ -39,6 +39,7 @@ public final class Environment {
     public static final String CLI_ARGS = "kc.config.args";
     public static final String PROFILE ="kc.profile";
     public static final String ENV_PROFILE ="KC_PROFILE";
+    public static final String DATA_PATH = "/data";
 
     private Environment() {}
 
@@ -58,6 +59,10 @@ public final class Environment {
         }
 
         return null;
+    }
+
+    public static String getDataDir() {
+        return getHomeDir() + DATA_PATH;
     }
 
     public static Path getProvidersPath() {

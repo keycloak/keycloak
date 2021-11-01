@@ -148,7 +148,8 @@ public class QuarkusPlatform implements PlatformProvider {
                     throw new RuntimeException("It was not possible to create temporary directory keycloak-quarkus-tmp", ioex);
                 }
             } else {
-                tmpDir = new File(homeDir, "tmp");
+                String dataDir = Environment.getDataDir();
+                tmpDir = new File(dataDir, "tmp");
                 tmpDir.mkdir();
             }
 
