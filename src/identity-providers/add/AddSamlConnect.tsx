@@ -18,12 +18,16 @@ import { SamlConnectSettings } from "./SamlConnectSettings";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useAlerts } from "../../components/alert/Alerts";
 
+type DiscoveryIdentityProvider = IdentityProviderRepresentation & {
+  discoveryEndpoint?: string;
+};
+
 export default function AddSamlConnect() {
   const { t } = useTranslation("identity-providers");
   const history = useHistory();
   const id = "saml";
 
-  const form = useForm<IdentityProviderRepresentation>({
+  const form = useForm<DiscoveryIdentityProvider>({
     defaultValues: { alias: id },
   });
   const {
@@ -35,7 +39,8 @@ export default function AddSamlConnect() {
   const { addAlert } = useAlerts();
   const { realm } = useRealm();
 
-  const save = async (provider: IdentityProviderRepresentation) => {
+  const save = async (provider: DiscoveryIdentityProvider) => {
+    delete provider.discoveryEndpoint;
     try {
       await adminClient.identityProviders.create({
         ...provider,

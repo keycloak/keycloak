@@ -1,167 +1,31 @@
-import React, { useState } from "react";
-import {
-  FormGroup,
-  FileUpload,
-  Modal,
-  ModalVariant,
-  Button,
-  FileUploadProps,
-} from "@patternfly/react-core";
-import { useTranslation } from "react-i18next";
-import { CodeEditor, Language } from "@patternfly/react-code-editor";
+import React from "react";
+import { Language } from "@patternfly/react-code-editor";
 
-type FileUpload = {
-  value: string;
-  filename: string;
-  isLoading: boolean;
-  modal: boolean;
-};
+import { FileUploadForm, FileUploadFormProps } from "./FileUploadForm";
 
-export type JsonFileUploadEvent =
-  | React.DragEvent<HTMLElement> // User dragged/dropped a file
-  | React.ChangeEvent<HTMLTextAreaElement> // User typed in the TextArea
-  | React.MouseEvent<HTMLButtonElement, MouseEvent>; // User clicked Clear button
-
-export type JsonFileUploadProps = Omit<FileUploadProps, "onChange"> & {
-  id: string;
+export type JsonFileUploadProps = Omit<
+  FileUploadFormProps,
+  "onChange" | "language" | "extension"
+> & {
   onChange: (obj: object) => void;
-  helpText?: string;
-  unWrap?: boolean;
 };
 
-export const JsonFileUpload = ({
-  id,
-  onChange,
-  helpText = "common-help:helpFileUpload",
-  unWrap = false,
-  ...rest
-}: JsonFileUploadProps) => {
-  const { t } = useTranslation();
-  const defaultUpload = {
-    value: "",
-    filename: "",
-    isLoading: false,
-    modal: false,
-  };
-  const [fileUpload, setFileUpload] = useState<FileUpload>(defaultUpload);
-  const removeDialog = () => setFileUpload({ ...fileUpload, modal: false });
-  const handleChange = (
-    value: string | File,
-    filename: string,
-    event:
-      | React.DragEvent<HTMLElement>
-      | React.ChangeEvent<HTMLTextAreaElement>
-      | React.MouseEvent<HTMLButtonElement, MouseEvent>
-  ): void => {
-    if (
-      event.nativeEvent instanceof MouseEvent &&
-      !(event.nativeEvent instanceof DragEvent)
-    ) {
-      setFileUpload({ ...fileUpload, modal: true });
-    } else {
-      setFileUpload({
-        ...fileUpload,
-        value: value as string,
-        filename,
-      });
-
-      if (value) {
-        let obj = {};
-        try {
-          obj = JSON.parse(value as string);
-        } catch (error) {
-          console.warn("Invalid json, ignoring value using {}");
-        }
-
-        onChange(obj);
-      }
+export const JsonFileUpload = ({ onChange, ...props }: JsonFileUploadProps) => {
+  const handleChange = (value: string) => {
+    try {
+      onChange(JSON.parse(value));
+    } catch (error) {
+      onChange({});
+      console.warn("Invalid json, ignoring value using {}");
     }
   };
 
   return (
-    <>
-      {fileUpload.modal && (
-        <Modal
-          variant={ModalVariant.small}
-          title={t("clearFile")}
-          isOpen
-          onClose={removeDialog}
-          actions={[
-            <Button
-              key="confirm"
-              variant="primary"
-              onClick={() => {
-                setFileUpload(defaultUpload);
-                onChange({});
-              }}
-            >
-              {t("clear")}
-            </Button>,
-            <Button key="cancel" variant="link" onClick={removeDialog}>
-              {t("cancel")}
-            </Button>,
-          ]}
-        >
-          {t("clearFileExplain")}
-        </Modal>
-      )}
-      {unWrap && (
-        <FileUpload
-          id={id}
-          {...rest}
-          type="text"
-          value={fileUpload.value}
-          filename={fileUpload.filename}
-          onChange={handleChange}
-          onReadStarted={() =>
-            setFileUpload({ ...fileUpload, isLoading: true })
-          }
-          onReadFinished={() =>
-            setFileUpload({ ...fileUpload, isLoading: false })
-          }
-          isLoading={fileUpload.isLoading}
-          dropzoneProps={{
-            accept: ".json",
-          }}
-        />
-      )}
-      {!unWrap && (
-        <FormGroup
-          label={t("resourceFile")}
-          fieldId={id}
-          helperText={t(helpText)}
-        >
-          <FileUpload
-            id={id}
-            {...rest}
-            type="text"
-            value={fileUpload.value}
-            filename={fileUpload.filename}
-            onChange={handleChange}
-            onReadStarted={() =>
-              setFileUpload({ ...fileUpload, isLoading: true })
-            }
-            onReadFinished={() =>
-              setFileUpload({ ...fileUpload, isLoading: false })
-            }
-            isLoading={fileUpload.isLoading}
-            dropzoneProps={{
-              accept: ".json",
-            }}
-            hideDefaultPreview
-          >
-            <CodeEditor
-              isLineNumbersVisible
-              code={fileUpload.value}
-              language={Language.json}
-              height="128px"
-              onChange={(value, event) =>
-                handleChange(value ?? "", fileUpload.filename, event)
-              }
-            />
-          </FileUpload>
-        </FormGroup>
-      )}
-    </>
+    <FileUploadForm
+      {...props}
+      language={Language.json}
+      extension=".json"
+      onChange={handleChange}
+    />
   );
 };

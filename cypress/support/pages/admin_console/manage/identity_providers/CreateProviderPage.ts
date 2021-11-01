@@ -6,7 +6,6 @@ export default class CreateProviderPage {
   private clientSecretField = "clientSecret";
   private discoveryEndpoint = "discoveryEndpoint";
   private authorizationUrl = "authorizationUrl";
-  private useEntityDescriptorSwitch = "useEntityDescriptor";
   private addButton = "createProvider";
   private ssoServiceUrl = "sso-service-url";
 
@@ -94,11 +93,6 @@ export default class CreateProviderPage {
 
   shouldHaveAuthorizationUrl(value: string) {
     cy.findByTestId(this.authorizationUrl).should("have.value", value);
-    return this;
-  }
-
-  toggleEntityDescriptor() {
-    cy.findByTestId(this.useEntityDescriptorSwitch).click({ force: true });
     return this;
   }
 }

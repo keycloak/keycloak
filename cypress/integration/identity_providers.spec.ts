@@ -28,8 +28,8 @@ describe("Identity provider test", () => {
 
   const keycloakServer = Cypress.env("KEYCLOAK_SERVER");
   const discoveryUrl = `${keycloakServer}/auth/realms/master/.well-known/openid-configuration`;
+  const samlDiscoveryUrl = `${keycloakServer}/auth/realms/master/protocol/saml/descriptor`;
   const authorizationUrl = `${keycloakServer}/auth/realms/master/protocol/openid-connect/auth`;
-  const ssoServiceUrl = `${keycloakServer}/auth/realms/sso`;
 
   describe("Identity provider creation", () => {
     const identityProviderName = "github";
@@ -112,8 +112,8 @@ describe("Identity provider test", () => {
       createProviderPage
         .clickCreateDropdown()
         .clickItem(samlProviderName)
-        .toggleEntityDescriptor()
-        .fillSsoServiceUrl(ssoServiceUrl)
+        .fillDiscoveryUrl(samlDiscoveryUrl)
+        .shouldBeSuccessful()
         .clickAdd();
       masthead.checkNotificationMessage(createSuccessMsg);
     });
