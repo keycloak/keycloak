@@ -43,6 +43,10 @@ public final class Configuration {
         String value = KeycloakConfigSourceProvider.PERSISTED_CONFIG_SOURCE.getValue(name);
 
         if (value == null) {
+            value = KeycloakConfigSourceProvider.PERSISTED_CONFIG_SOURCE.getValue(PropertyMappers.getMappedPropertyName(name));
+        }
+
+        if (value == null) {
             String profile = Environment.getProfile();
 
             if (profile == null) {

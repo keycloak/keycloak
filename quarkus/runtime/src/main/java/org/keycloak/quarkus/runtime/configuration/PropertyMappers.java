@@ -16,6 +16,8 @@
  */
 package org.keycloak.quarkus.runtime.configuration;
 
+import static org.keycloak.quarkus.runtime.Environment.getProfileOrDefault;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfig;
 import static org.keycloak.quarkus.runtime.configuration.Messages.invalidDatabaseVendor;
 import static org.keycloak.quarkus.runtime.configuration.PropertyMapper.MAPPERS;
 import static org.keycloak.quarkus.runtime.configuration.PropertyMapper.create;
@@ -26,7 +28,9 @@ import static org.keycloak.quarkus.runtime.integration.QuarkusPlatform.addInitia
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -34,6 +38,7 @@ import java.util.stream.Collectors;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 
+import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.keycloak.quarkus.runtime.storage.database.Database;
 import org.keycloak.quarkus.runtime.Environment;
 
@@ -50,6 +55,7 @@ public final class PropertyMappers {
         configureClustering();
         configureHostnameProviderMappers();
         configureMetrics();
+        configureVault();
     }
 
     private static void configureHttpPropertyMappers() {
@@ -164,9 +170,45 @@ public final class PropertyMappers {
                 Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString()));
     }
 
+    private static void configureVault() {
+        createBuildTimeProperty("vault.file.path", "kc.spi.vault.files-plaintext.dir", "If set, secrets can be obtained by reading the content of files within the given path.");
+        createBuildTimeProperty("vault.hashicorp.", "quarkus.vault.", "If set, secrets can be obtained from Hashicorp Vault.");
+        createBuildTimeProperty("vault.hashicorp.paths", "kc.spi.vault.hashicorp.paths", "A set of one or more paths that should be used when looking up secrets.");
+    }
+
     static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
-        return PropertyMapper.MAPPERS.getOrDefault(name, PropertyMapper.IDENTITY)
+        PropertyMapper mapper = MAPPERS.getOrDefault(name, PropertyMapper.IDENTITY);
+        ConfigValue configValue = mapper
                 .getOrDefault(name, context, context.proceed(name));
+
+        if (configValue == null) {
+            Optional<String> prefixedMapper = getPrefixedMapper(name);
+
+            if (prefixedMapper.isPresent()) {
+                return MAPPERS.get(prefixedMapper.get()).getOrDefault(name, context, configValue);
+            }
+        } else {
+            configValue.withName(mapper.getTo());
+        }
+
+        return configValue;
+    }
+
+    private static Optional<String> getPrefixedMapper(String name) {
+        Optional<String> prefixedMapper = MAPPERS.keySet().stream().filter(new Predicate<String>() {
+            @Override
+            public boolean test(String key) {
+                if (!key.endsWith(".")) {
+                    return false;
+                }
+
+                String prefix = key.substring(0, key.lastIndexOf('.') - 1);
+
+                return name.startsWith(prefix);
+            }
+        }).findAny();
+
+        return prefixedMapper;
     }
 
     public static boolean isBuildTimeProperty(String name) {
@@ -176,8 +218,9 @@ public final class PropertyMappers {
         }
 
         return name.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)
-                && PropertyMapper.MAPPERS.entrySet().stream()
-                    .anyMatch(entry -> entry.getValue().getFrom().equals(name) && entry.getValue().isBuildTime())
+                && PropertyMapper.MAPPERS.values().stream()
+                    .filter(PropertyMapper::isBuildTime)
+                    .anyMatch(mapper -> mapper.getFrom().equals(name) || mapper.getTo().equals(name))
                 && !"kc.version".equals(name)
                 && !Environment.CLI_ARGS.equals(name)
                 && !"kc.home.dir".equals(name)
@@ -215,6 +258,10 @@ public final class PropertyMappers {
                 .filter(entry -> entry.isBuildTime()).collect(Collectors.toList());
     }
 
+    public static Collection<PropertyMapper> getMappers() {
+        return MAPPERS.values();
+    }
+
     public static String canonicalFormat(String name) {
         return name.replaceAll("-", "\\.");
     }
@@ -236,5 +283,59 @@ public final class PropertyMappers {
                 return property.equals(propertyMapper.getFrom()) || property.equals(propertyMapper.getTo());
             }
         }).findFirst().orElse(null);
+    }
+
+    public static String getMappedPropertyName(String key) {
+        for (PropertyMapper mapper : PropertyMappers.getMappers()) {
+            String mappedProperty = mapper.getFrom();
+            List<String> expectedFormats = Arrays.asList(mappedProperty, toCLIFormat(mappedProperty), mappedProperty.toUpperCase().replace('.', '_').replace('-', '_'));
+
+            if (expectedFormats.contains(key)) {
+                // we also need to make sure the target property is available when defined such as when defining alias for provider config (no spi-prefix).
+                return mapper.getTo() == null ? mappedProperty : mapper.getTo();
+            }
+        }
+
+        return key;
+    }
+
+    public static Optional<String> getBuiltTimeProperty(String name) {
+        String value = Configuration.getBuiltTimeProperty(name);
+
+        if (value == null) {
+            return Optional.empty();
+        }
+
+        return Optional.of(value);
+    }
+
+    public static Optional<String> getRuntimeProperty(String name) {
+        for (ConfigSource configSource : getConfig().getConfigSources()) {
+            if (PersistedConfigSource.NAME.equals(configSource.getName())) {
+                continue;
+            }
+
+            String value = getValue(configSource, name);
+
+            if (value == null) {
+                value = getValue(configSource, PropertyMappers.getMappedPropertyName(name));
+            }
+
+            if (value != null) {
+                return Optional.of(value);
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    private static String getValue(ConfigSource configSource, String name) {
+        String value = configSource.getValue(name);
+
+        if (value == null) {
+            value = configSource.getValue("%".concat(getProfileOrDefault("prod").concat(".").concat(name)));
+        }
+
+        return value;
     }
 }

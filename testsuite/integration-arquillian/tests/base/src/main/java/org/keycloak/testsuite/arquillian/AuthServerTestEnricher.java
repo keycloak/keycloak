@@ -568,7 +568,7 @@ public class AuthServerTestEnricher {
                 }
             }
 
-            if (!isAuthServerQuarkus() && event.getTestClass().isAnnotationPresent(EnableVault.class)) {
+            if (event.getTestClass().isAnnotationPresent(EnableVault.class)) {
                 VaultUtils.enableVault(suiteContext, event.getTestClass().getAnnotation(EnableVault.class).providerId());
                 wasUpdated = true;
             }

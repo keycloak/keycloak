@@ -22,6 +22,7 @@ import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_SPLIT;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS_PREFIX;
+import static org.keycloak.quarkus.runtime.configuration.PropertyMappers.getMappedPropertyName;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,6 +33,7 @@ import org.jboss.logging.Logger;
 
 import io.smallrye.config.PropertiesConfigSource;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.cli.Picocli;
 
 /**
  * <p>A configuration source for mapping configuration arguments to their corresponding properties so that they can be recognized
@@ -55,23 +57,13 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
 
     @Override
     public String getValue(String propertyName) {
-        String prefix = null;
-        
-        // we only care about runtime args passed when executing the CLI, no need to check if the property is prefixed with a profile
-        if (propertyName.startsWith(NS_KEYCLOAK_PREFIX)) {
-            prefix = NS_KEYCLOAK_PREFIX;
-        } else if (propertyName.startsWith(NS_QUARKUS_PREFIX)) {
-            prefix = NS_QUARKUS_PREFIX;
-        }
-        
-        // we only recognize properties within keycloak and quarkus namespaces
-        if (prefix == null) {
-            return null;
-        }
-        
-        String[] parts = DOT_SPLIT.split(propertyName.substring(propertyName.indexOf(prefix) + prefix.length()));
+        String value = super.getValue(propertyName.replace('-', '.'));
 
-        return super.getValue(prefix + String.join("-", parts));
+        if (value != null) {
+            return value;
+        }
+
+        return null;
     }
 
     private static Map<String, String> parseArgument() {
@@ -109,10 +101,12 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
             }
             
             key = NS_KEYCLOAK_PREFIX + key.substring(2);
-            
+
             log.tracef("Adding property [%s=%s] from command-line", key, value);
-            
             properties.put(key, value);
+            properties.put(getMappedPropertyName(key), value);
+            // to make lookup easier, we normalize the key
+            properties.put(Picocli.normalizeKey(key), value);
         }
         
         return properties;

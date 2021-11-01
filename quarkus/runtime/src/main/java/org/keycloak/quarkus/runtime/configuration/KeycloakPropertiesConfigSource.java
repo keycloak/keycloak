@@ -38,6 +38,7 @@ import io.smallrye.config.PropertiesConfigSource;
 import static org.keycloak.common.util.StringPropertyReplacer.replaceProperties;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS;
+import static org.keycloak.quarkus.runtime.configuration.PropertyMappers.getMappedPropertyName;
 
 /**
  * A configuration source for {@code keycloak.properties}.
@@ -68,7 +69,7 @@ public abstract class KeycloakPropertiesConfigSource extends PropertiesConfigSou
 
     public static final class InJar extends KeycloakPropertiesConfigSource {
         public InJar() {
-            super(openStream(), 245);
+            super(openStream(), 250);
         }
 
         private static InputStream openStream() {
@@ -93,7 +94,7 @@ public abstract class KeycloakPropertiesConfigSource extends PropertiesConfigSou
     public static final class InFileSystem extends KeycloakPropertiesConfigSource {
 
         public InFileSystem(Path path) {
-            super(openStream(path), 255);
+            super(openStream(path), 250);
         }
 
         private static InputStream openStream(Path path) {
@@ -113,7 +114,13 @@ public abstract class KeycloakPropertiesConfigSource extends PropertiesConfigSou
 
     private static Map<String, String> transform(Map<String, String> properties) {
         Map<String, String> result = new HashMap<>(properties.size());
-        properties.keySet().forEach(k -> result.put(transformKey(k), replaceProperties(properties.get(k))));
+        properties.keySet().forEach(k -> {
+            String key = transformKey(k);
+            String value = replaceProperties(properties.get(k));
+
+            result.put(key, value);
+            result.put(getMappedPropertyName(key), value);
+        });
         return result;
     }
 

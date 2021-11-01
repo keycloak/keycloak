@@ -17,6 +17,8 @@
 
 package org.keycloak.quarkus.runtime;
 
+import static org.keycloak.quarkus.runtime.configuration.PropertyMappers.getBuiltTimeProperty;
+
 import java.io.File;
 import java.io.FilenameFilter;
 import java.nio.file.Path;
@@ -24,14 +26,12 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.configuration.ProfileManager;
 import org.apache.commons.lang3.SystemUtils;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 public final class Environment {
 
@@ -110,16 +110,6 @@ public final class Environment {
         }
         
         return profile;
-    }
-
-    public static Optional<String> getBuiltTimeProperty(String name) {
-        String value = Configuration.getBuiltTimeProperty(name);
-
-        if (value == null) {
-            return Optional.empty();
-        }
-        
-        return Optional.of(value);
     }
 
     public static boolean isDevMode() {

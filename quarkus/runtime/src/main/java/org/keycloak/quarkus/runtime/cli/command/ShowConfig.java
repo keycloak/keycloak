@@ -22,7 +22,7 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfig
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
 import static org.keycloak.quarkus.runtime.configuration.PropertyMappers.canonicalFormat;
 import static org.keycloak.quarkus.runtime.configuration.PropertyMappers.formatValue;
-import static org.keycloak.quarkus.runtime.Environment.getBuiltTimeProperty;
+import static org.keycloak.quarkus.runtime.configuration.PropertyMappers.getBuiltTimeProperty;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -168,6 +168,10 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
 
 
         if (configValue.getValue() == null) {
+            return;
+        }
+
+        if (configValue.getSourceName() == null) {
             return;
         }
 

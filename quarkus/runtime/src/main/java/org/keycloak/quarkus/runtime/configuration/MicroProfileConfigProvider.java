@@ -17,10 +17,15 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.microprofile.config.ConfigProvider;
 
 import org.keycloak.Config;
+import org.keycloak.quarkus.runtime.cli.Picocli;
 
 public class MicroProfileConfigProvider implements Config.ConfigProvider {
 
@@ -107,6 +112,18 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
         @Override
         public Config.Scope scope(String... scope) {
             return new MicroProfileScope(ArrayUtils.addAll(this.scope, scope));
+        }
+
+        @Override
+        public Set<String> getPropertyNames() {
+            return StreamSupport.stream(config.getPropertyNames().spliterator(), false)
+                    .filter(new Predicate<String>() {
+                        @Override
+                        public boolean test(String key) {
+                            return key.startsWith(prefix) || key.startsWith(Picocli.normalizeKey(prefix));
+                        }
+                    })
+                    .collect(Collectors.toSet());
         }
 
         private <T> T getValue(String key, Class<T> clazz, T defaultValue) {

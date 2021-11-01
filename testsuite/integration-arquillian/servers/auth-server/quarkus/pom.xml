@@ -114,6 +114,25 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>copy-vault-secrets</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${auth.server.home}/secrets</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${common.resources}/vault</directory>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                            <overwrite>true</overwrite>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>add-extending-theme</id>
                         <phase>process-resources</phase>
                         <goals>

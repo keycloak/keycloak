@@ -143,6 +143,13 @@ public class PropertyMapper {
     }
 
     ConfigValue getOrDefault(String name, ConfigSourceInterceptorContext context, ConfigValue current) {
+        String from = this.from;
+
+        if (to != null && to.endsWith(".")) {
+            // in case mapping is based on prefixes instead of full property names
+            from = name.replace(to.substring(0, to.lastIndexOf('.')), from.substring(0, from.lastIndexOf('.')));
+        }
+
         // try to obtain the value for the property we want to map
         ConfigValue config = context.proceed(from);
 
