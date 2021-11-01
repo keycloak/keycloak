@@ -21,8 +21,8 @@ import { useRealm } from "../../context/realm-context/RealmContext";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import {
+  AttributeForm,
   AttributesForm,
-  KeyValueType,
 } from "../../components/attribute-form/AttributeForm";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
@@ -39,9 +39,7 @@ import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { groupBy } from "lodash";
 
 export type IdPMapperRepresentationWithAttributes =
-  IdentityProviderMapperRepresentation & {
-    attributes: KeyValueType[];
-  };
+  IdentityProviderMapperRepresentation & AttributeForm;
 
 type Role = RoleRepresentation & {
   clientId?: string;
@@ -86,7 +84,6 @@ export default function AddMapper() {
 
   const [currentMapper, setCurrentMapper] =
     useState<IdentityProviderMapperRepresentation>();
-  const [roles, setRoles] = useState<RoleRepresentation[]>([]);
 
   const [rolesModalOpen, setRolesModalOpen] = useState(false);
 
@@ -144,19 +141,14 @@ export default function AddMapper() {
       Promise.all([
         id ? adminClient.identityProviders.findOneMapper({ alias, id }) : null,
         adminClient.identityProviders.findMapperTypes({ alias }),
-        !id ? adminClient.roles.find() : null,
       ]),
-    ([mapper, mapperTypes, roles]) => {
+    ([mapper, mapperTypes]) => {
       if (mapper) {
         setCurrentMapper(mapper);
         setupForm(mapper);
       }
 
       setMapperTypes(mapperTypes);
-
-      if (roles) {
-        setRoles(roles);
-      }
     },
     []
   );
@@ -257,17 +249,15 @@ export default function AddMapper() {
         }
         divider
       />
-      <AssociatedRolesModal
-        onConfirm={(role: Role[]) => {
-          setSelectedRole(role);
-        }}
-        allRoles={roles}
-        open={rolesModalOpen}
-        omitComposites
-        isRadio
-        isMapperId
-        toggleDialog={toggleModal}
-      />
+      {rolesModalOpen && (
+        <AssociatedRolesModal
+          onConfirm={(role) => setSelectedRole(role)}
+          omitComposites
+          isRadio
+          isMapperId
+          toggleDialog={toggleModal}
+        />
+      )}
       <FormAccess
         role="manage-identity-providers"
         isHorizontal

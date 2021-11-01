@@ -12,15 +12,15 @@ import {
 } from "@patternfly/react-table";
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
 
+import type { AttributeForm } from "../components/attribute-form/AttributeForm";
 import { FormAccess } from "../components/form-access/FormAccess";
-import type { RoleFormType } from "./RealmRoleTabs";
 
 import "./RealmRolesSection.css";
 
 export type KeyValueType = { key: string; value: string };
 
 type RoleAttributesProps = {
-  form: UseFormMethods<RoleFormType>;
+  form: UseFormMethods<AttributeForm>;
   save: () => void;
   reset: () => void;
   array: {

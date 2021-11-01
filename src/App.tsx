@@ -60,13 +60,12 @@ const SecuredRoute = ({ route }: SecuredRouteProps) => {
       ? hasAccess(...route.access)
       : hasAccess(route.access);
 
-  if (accessAllowed) {
+  if (accessAllowed)
     return (
       <Suspense fallback={<Spinner />}>
         <route.component />
       </Suspense>
     );
-  }
 
   return <ForbiddenSection />;
 };

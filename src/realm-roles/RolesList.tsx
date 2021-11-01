@@ -46,7 +46,7 @@ const RoleLink: FunctionComponent<RoleLinkProps> = ({ children, role }) => {
   const clientRouteMatch = useRouteMatch<ClientParams>(ClientRoute.path);
   const to = clientRouteMatch
     ? toClientRole({ ...clientRouteMatch.params, id: role.id!, tab: "details" })
-    : toRealmRole({ realm, id: role.id! });
+    : toRealmRole({ realm, id: role.id!, tab: "details" });
 
   return (
     <Link key={role.id} to={to}>

@@ -19,7 +19,7 @@ import userRoutes from "./user/routes";
 
 export type RouteDef = {
   path: string;
-  component: ComponentType;
+  component: ComponentType | React.LazyExoticComponent<() => JSX.Element>;
   breadcrumb?: (t: TFunction) => string | ComponentType<any>;
   access: AccessType | AccessType[];
   matchOptions?: MatchOptions;

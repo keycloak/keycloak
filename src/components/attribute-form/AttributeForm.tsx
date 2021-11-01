@@ -12,14 +12,15 @@ import {
 } from "@patternfly/react-table";
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
 
+import type { RoleRepresentation } from "../../model/role-model";
 import { FormAccess } from "../form-access/FormAccess";
 
 import "./attribute-form.css";
 
 export type KeyValueType = { key: string; value: string };
 
-export type AttributeForm = {
-  attributes: KeyValueType[];
+export type AttributeForm = Omit<RoleRepresentation, "attributes"> & {
+  attributes?: KeyValueType[];
 };
 
 export type AttributesFormProps = {

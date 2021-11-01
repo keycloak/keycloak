@@ -47,7 +47,7 @@ export const GroupAttributes = () => {
   const save = async (attributeForm: AttributeForm) => {
     try {
       const group = currentGroup();
-      const attributes = arrayToAttributes(attributeForm.attributes);
+      const attributes = arrayToAttributes(attributeForm.attributes!);
       await adminClient.groups.update({ id: id! }, { ...group, attributes });
 
       setSubGroups([
