@@ -527,7 +527,7 @@ public class MapFieldPredicates {
     }
 
     @SuppressWarnings("unchecked")
-    public static <K, V extends AbstractEntity, M> Map<SearchableModelField<M>, UpdatePredicatesFunc<K, V, M>> getPredicates(Class<M> clazz) {
+    public static <K, V extends AbstractEntity, M> Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> getPredicates(Class<M> clazz) {
         return PREDICATES.get(clazz);
     }
 }

@@ -23,17 +23,19 @@ import org.keycloak.storage.SearchableModelField;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
- *
+ * TODO: Introduce separation of parameter values and the structure
  * @author hmlnarik
  */
 public class ModelCriteriaNode<M> extends DefaultTreeNode<ModelCriteriaNode<M>> {
 
     public static enum ExtOperator {
         AND {
-            @Override public <M> ModelCriteriaBuilder<M> apply(ModelCriteriaBuilder<M> mcb, ModelCriteriaNode<M> node) {
+            @Override public <M, C extends ModelCriteriaBuilder<M>> C apply(C mcb, ModelCriteriaNode<M> node) {
                 if (node.getChildren().isEmpty()) {
                     return null;
                 }
@@ -41,14 +43,14 @@ public class ModelCriteriaNode<M> extends DefaultTreeNode<ModelCriteriaNode<M>> 
                   .map(n -> n.flashToModelCriteriaBuilder(mcb))
                   .filter(Objects::nonNull)
                   .toArray(ModelCriteriaBuilder[]::new);
-                return operands.length == 0 ? null : mcb.and(operands);
+                return operands.length == 0 ? null : (C) mcb.and(operands);
             }
             @Override public String toString(ModelCriteriaNode<?> node) {
                 return "(" + node.getChildren().stream().map(ModelCriteriaNode::toString).collect(Collectors.joining(" && ")) + ")";
             }
         },
         OR {
-            @Override public <M> ModelCriteriaBuilder<M> apply(ModelCriteriaBuilder<M> mcb, ModelCriteriaNode<M> node) {
+            @Override public <M, C extends ModelCriteriaBuilder<M>> C apply(C mcb, ModelCriteriaNode<M> node) {
                 if (node.getChildren().isEmpty()) {
                     return null;
                 }
@@ -56,23 +58,23 @@ public class ModelCriteriaNode<M> extends DefaultTreeNode<ModelCriteriaNode<M>> 
                   .map(n -> n.flashToModelCriteriaBuilder(mcb))
                   .filter(Objects::nonNull)
                   .toArray(ModelCriteriaBuilder[]::new);
-                return operands.length == 0 ? null : mcb.or(operands);
+                return operands.length == 0 ? null : (C) mcb.or(operands);
             }
             @Override public String toString(ModelCriteriaNode<?> node) {
                 return "(" + node.getChildren().stream().map(ModelCriteriaNode::toString).collect(Collectors.joining(" || ")) + ")";
             }
         },
         NOT {
-            @Override public <M> ModelCriteriaBuilder<M> apply(ModelCriteriaBuilder<M> mcb, ModelCriteriaNode<M> node) {
-                return mcb.not(node.getChildren().iterator().next().flashToModelCriteriaBuilder(mcb));
+            @Override public <M, C extends ModelCriteriaBuilder<M>> C apply(C mcb, ModelCriteriaNode<M> node) {
+                return (C) mcb.not(node.getChildren().iterator().next().flashToModelCriteriaBuilder(mcb));
             }
             @Override public String toString(ModelCriteriaNode<?> node) {
                 return "! " + node.getChildren().iterator().next().toString();
             }
         },
-        SIMPLE_OPERATOR {
-            @Override public <M> ModelCriteriaBuilder<M> apply(ModelCriteriaBuilder<M> mcb, ModelCriteriaNode<M> node) {
-                return mcb.compare(
+        ATOMIC_FORMULA {
+            @Override public <M, C extends ModelCriteriaBuilder<M>> C apply(C mcb, ModelCriteriaNode<M> node) {
+                return (C) mcb.compare(
                   node.field,
                   node.simpleOperator,
                   node.simpleOperatorArguments
@@ -82,9 +84,25 @@ public class ModelCriteriaNode<M> extends DefaultTreeNode<ModelCriteriaNode<M>> 
                 return node.field.getName() + " " + node.simpleOperator + " " + Arrays.deepToString(node.simpleOperatorArguments);
             }
         },
+        __FALSE__ {
+            @Override public <M, C extends ModelCriteriaBuilder<M>> C apply(C mcb, ModelCriteriaNode<M> node) {
+                return (C) mcb.or();
+            }
+            @Override public String toString(ModelCriteriaNode<?> node) {
+                return "__FALSE__";
+            }
+        },
+        __TRUE__ {
+            @Override public <M, C extends ModelCriteriaBuilder<M>> C apply(C mcb, ModelCriteriaNode<M> node) {
+                return (C) mcb.and();
+            }
+            @Override public String toString(ModelCriteriaNode<?> node) {
+                return "__TRUE__";
+            }
+        }
         ;
 
-        public abstract <M> ModelCriteriaBuilder<M> apply(ModelCriteriaBuilder<M> mcbCreator, ModelCriteriaNode<M> node);
+        public abstract <M, C extends ModelCriteriaBuilder<M>> C apply(C mcbCreator, ModelCriteriaNode<M> node);
         public abstract String toString(ModelCriteriaNode<?> node);
     }
 
@@ -92,16 +110,27 @@ public class ModelCriteriaNode<M> extends DefaultTreeNode<ModelCriteriaNode<M>> 
 
     private final Operator simpleOperator;
 
-    private final SearchableModelField<M> field;
+    private final SearchableModelField<? super M> field;
 
     private final Object[] simpleOperatorArguments;
 
-    public ModelCriteriaNode(SearchableModelField<M> field, Operator simpleOperator, Object... simpleOperatorArguments) {
+    public ModelCriteriaNode(SearchableModelField<? super M> field, Operator simpleOperator, Object[] simpleOperatorArguments) {
         super(Collections.emptyMap());
         this.simpleOperator = simpleOperator;
         this.field = field;
         this.simpleOperatorArguments = simpleOperatorArguments;
-        this.nodeOperator = ExtOperator.SIMPLE_OPERATOR;
+        this.nodeOperator = ExtOperator.ATOMIC_FORMULA;
+
+        if (simpleOperatorArguments != null) {
+            for (int i = 0; i < simpleOperatorArguments.length; i ++) {
+                Object arg = simpleOperatorArguments[i];
+                if (arg instanceof Stream) {
+                    try (Stream<?> sArg = (Stream<?>) arg) {
+                        simpleOperatorArguments[i] = sArg.collect(Collectors.toList());
+                    }
+                }
+            }
+        }
     }
 
     public ModelCriteriaNode(ExtOperator nodeOperator) {
@@ -112,7 +141,7 @@ public class ModelCriteriaNode<M> extends DefaultTreeNode<ModelCriteriaNode<M>> 
         this.simpleOperatorArguments = null;
     }
 
-    private ModelCriteriaNode(ExtOperator nodeOperator, Operator simpleOperator, SearchableModelField<M> field, Object[] simpleOperatorArguments) {
+    private ModelCriteriaNode(ExtOperator nodeOperator, Operator simpleOperator, SearchableModelField<? super M> field, Object[] simpleOperatorArguments) {
         super(Collections.emptyMap());
         this.nodeOperator = nodeOperator;
         this.simpleOperator = simpleOperator;
@@ -125,11 +154,40 @@ public class ModelCriteriaNode<M> extends DefaultTreeNode<ModelCriteriaNode<M>> 
     }
 
     public ModelCriteriaNode<M> cloneTree() {
-        return cloneTree(n -> new ModelCriteriaNode<>(n.nodeOperator, n.simpleOperator, n.field, n.simpleOperatorArguments));
+        return cloneTree(ModelCriteriaNode::new, ModelCriteriaNode::new);
     }
 
-    public ModelCriteriaBuilder<M> flashToModelCriteriaBuilder(ModelCriteriaBuilder<M> mcb) {
-        final ModelCriteriaBuilder<M> res = nodeOperator.apply(mcb, this);
+    @FunctionalInterface
+    public interface AtomicFormulaInstantiator<M> {
+        public ModelCriteriaNode<M> instantiate(SearchableModelField<? super M> field, Operator operator, Object[] operatorArguments);
+    }
+
+    public ModelCriteriaNode<M> cloneTree(AtomicFormulaInstantiator<M> atomicFormulaInstantiator, Function<ExtOperator, ModelCriteriaNode<M>> booleanNodeInstantiator) {
+        return cloneTree(n -> 
+          n.getNodeOperator() == ExtOperator.ATOMIC_FORMULA
+            ? atomicFormulaInstantiator.instantiate(n.field, n.simpleOperator, n.simpleOperatorArguments)
+            : booleanNodeInstantiator.apply(n.nodeOperator)
+        );
+    }
+
+    public boolean isFalseNode() {
+        return getNodeOperator() == ExtOperator.__FALSE__;
+    }
+
+    public boolean isNotFalseNode() {
+        return getNodeOperator() != ExtOperator.__FALSE__;
+    }
+
+    public boolean isTrueNode() {
+        return getNodeOperator() == ExtOperator.__TRUE__;
+    }
+
+    public boolean isNotTrueNode() {
+        return getNodeOperator() != ExtOperator.__TRUE__;
+    }
+
+    public <C extends ModelCriteriaBuilder<M>> C flashToModelCriteriaBuilder(C mcb) {
+        final C res = nodeOperator.apply(mcb, this);
         return res == null ? mcb : res;
     }
 
