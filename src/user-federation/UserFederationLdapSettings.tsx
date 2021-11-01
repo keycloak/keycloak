@@ -299,7 +299,7 @@ export default function UserFederationLdapSettings() {
             t("advancedSettings"),
           ]}
         >
-          <LdapSettingsGeneral form={form} />
+          <LdapSettingsGeneral form={form} vendorEdit={!!id} />
           <LdapSettingsConnection form={form} edit={!!id} />
           <LdapSettingsSearching form={form} />
           <LdapSettingsSynchronization form={form} />

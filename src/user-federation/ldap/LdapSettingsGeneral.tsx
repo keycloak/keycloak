@@ -19,12 +19,14 @@ export type LdapSettingsGeneralProps = {
   form: UseFormMethods;
   showSectionHeading?: boolean;
   showSectionDescription?: boolean;
+  vendorEdit?: boolean;
 };
 
 export const LdapSettingsGeneral = ({
   form,
   showSectionHeading = false,
   showSectionDescription = false,
+  vendorEdit = false,
 }: LdapSettingsGeneralProps) => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
@@ -174,6 +176,7 @@ export const LdapSettingsGeneral = ({
             control={form.control}
             render={({ onChange, value }) => (
               <Select
+                isDisabled={!!vendorEdit}
                 toggleId="kc-vendor"
                 required
                 onToggle={() => setIsVendorDropdownOpen(!isVendorDropdownOpen)}
