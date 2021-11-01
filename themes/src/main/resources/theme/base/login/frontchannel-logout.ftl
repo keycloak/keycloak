@@ -24,7 +24,7 @@
                 }
                 document.addEventListener('readystatechange', readystatechange);
             </script>
-            <a id="continue" class="btn btn-primary" href="${logout.logoutRedirectUri}">${msg("doContinue")}</a>
+            <a id="continue" class="pf-c-button pf-m-primary" href="${logout.logoutRedirectUri}">${msg("doContinue")}</a>
         </#if>
     </#if>
 </@layout.registrationLayout>
