@@ -10,6 +10,8 @@ import {
 
 import { HelpItem } from "../../../components/help-enabler/HelpItem";
 import type { ComponentProps } from "./components";
+import { camelCase } from "lodash";
+import { convertToHyphens } from "../../../util";
 
 export const MultivaluedListComponent = ({
   name,
@@ -18,15 +20,29 @@ export const MultivaluedListComponent = ({
   defaultValue,
   options,
 }: ComponentProps) => {
-  const { t } = useTranslation("client-scopes");
+  const { t } = useTranslation("realm-settings-help");
   const { control } = useFormContext();
   const [open, setOpen] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<string[]>([defaultValue]);
+
+  const convertToString = (s: string) =>
+    camelCase(convertToHyphens(s).replaceAll("-", " "));
 
   return (
     <FormGroup
-      label={t(label!)}
+      label={t(
+        `realm-settings:${convertToString(label!).replace("Label", "")}`
+      )}
       labelIcon={
-        <HelpItem helpText={t(helpText!)} forLabel={t(label!)} forID={name!} />
+        <HelpItem
+          helpText={
+            name === "update-client-source"
+              ? t(helpText!)
+              : t(convertToString(helpText!))
+          }
+          forLabel={t(label!)}
+          forID={name!}
+        />
       }
       fieldId={name!}
     >
@@ -39,27 +55,33 @@ export const MultivaluedListComponent = ({
             toggleId={name}
             data-testid={name}
             chipGroupProps={{
-              numChips: 1,
+              numChips: 3,
               expandedText: t("common:hide"),
               collapsedText: t("common:showRemaining"),
             }}
             variant={SelectVariant.typeaheadMulti}
             typeAheadAriaLabel={t("common:select")}
             onToggle={(isOpen) => setOpen(isOpen)}
-            selections={value}
+            selections={selectedItems}
             onSelect={(_, v) => {
-              const option = v.toString();
+              const option = v as string;
               if (!value) {
+                setSelectedItems([option]);
                 onChange([option]);
-              } else if (value.includes(option)) {
-                onChange(value.filter((item: string) => item !== option));
+              } else if (selectedItems.includes(option)) {
+                setSelectedItems(
+                  selectedItems.filter((item: string) => item !== option)
+                );
+                onChange(selectedItems);
               } else {
-                onChange([...value, option]);
+                setSelectedItems([...selectedItems, option]);
+                onChange([...selectedItems, option]);
               }
             }}
             onClear={(event) => {
               event.stopPropagation();
               onChange([]);
+              setSelectedItems([]);
             }}
             isOpen={open}
             aria-label={t(label!)}

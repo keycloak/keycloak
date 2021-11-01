@@ -12,6 +12,7 @@ import type { ClientQuery } from "@keycloak/keycloak-admin-client/lib/resources/
 import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
 import { HelpItem } from "../../../components/help-enabler/HelpItem";
 import type { ComponentProps } from "./components";
+import { convertToHyphens } from "../../../util";
 
 export const ClientSelectComponent = ({
   name,
@@ -57,7 +58,7 @@ export const ClientSelectComponent = ({
       fieldId={name!}
     >
       <Controller
-        name={`config.${name?.replaceAll(".", "-")}`}
+        name={`config.${convertToHyphens(name!)}`}
         defaultValue={defaultValue || ""}
         control={control}
         render={({ onChange, value }) => (

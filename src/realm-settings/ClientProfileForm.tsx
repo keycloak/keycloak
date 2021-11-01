@@ -160,7 +160,7 @@ export default function ClientProfileForm() {
           });
           addAlert(t("deleteExecutorSuccess"), AlertVariant.success);
           history.push(
-            `/${realm}/realm-settings/clientPolicies/${profileName}`
+            `/${realm}/realm-settings/clientPolicies/${profileName}/edit-profile`
           );
         } catch (error) {
           addError(t("deleteExecutorError"), error);

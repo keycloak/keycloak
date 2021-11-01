@@ -189,6 +189,10 @@ export const interpolateTimespan = (forHumans: string) => {
   }
 };
 
+export const convertToHyphens = (s: string) => {
+  return s.replaceAll(".", "-");
+};
+
 export const KEY_PROVIDER_TYPE = "org.keycloak.keys.KeyProvider";
 
 export const prettyPrintJSON = (value: any) => JSON.stringify(value, null, 2);

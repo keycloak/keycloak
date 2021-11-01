@@ -18,6 +18,7 @@ import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
 import { useRealm } from "../../../context/realm-context/RealmContext";
 import { HelpItem } from "../../../components/help-enabler/HelpItem";
 import type { ComponentProps } from "./components";
+import { convertToHyphens } from "../../../util";
 
 export const RoleComponent = ({ name, label, helpText }: ComponentProps) => {
   const { t } = useTranslation("client-scopes");
@@ -33,7 +34,7 @@ export const RoleComponent = ({ name, label, helpText }: ComponentProps) => {
   const [clientRoles, setClientRoles] = useState<RoleRepresentation[]>([]);
   const [selectedRole, setSelectedRole] = useState<RoleRepresentation>();
 
-  const fieldName = `config.${name?.replaceAll(".", "-")}`;
+  const fieldName = `config.${convertToHyphens(name!)}`;
 
   useFetch(
     async () => {

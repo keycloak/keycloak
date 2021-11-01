@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, FormProvider, useForm } from "react-hook-form";
 import {
   ActionGroup,
   AlertVariant,
@@ -21,10 +21,17 @@ import { camelCase } from "lodash";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 import { useHistory, useParams } from "react-router";
-import type ClientPolicyConditionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyConditionRepresentation";
 import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
 import { useRealm } from "../context/realm-context/RealmContext";
 import type { EditClientPolicyParams } from "./routes/EditClientPolicy";
+import {
+  COMPONENTS,
+  isValidComponentType,
+} from "../client-scopes/add/components/components";
+import type { ConfigPropertyRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigInfoRepresentation";
+import type ClientPolicyConditionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyConditionRepresentation";
+
+export type ItemType = { value: string };
 
 export default function NewClientPolicyCondition() {
   const { t } = useTranslation("realm-settings");
@@ -42,10 +49,14 @@ export default function NewClientPolicyCondition() {
     ClientPolicyConditionRepresentation[]
   >([]);
   const [conditionType, setConditionType] = useState("");
+  const [conditionProperties, setConditionProperties] = useState<
+    ConfigPropertyRepresentation[]
+  >([]);
 
   const { policyName } = useParams<EditClientPolicyParams>();
 
   const serverInfo = useServerInfo();
+  const form = useForm();
 
   const conditionTypes =
     serverInfo.componentTypes?.[
@@ -53,11 +64,6 @@ export default function NewClientPolicyCondition() {
     ];
 
   const adminClient = useAdminClient();
-
-  const currentPolicy = useMemo(
-    () => policies.find(({ name }) => name === policyName),
-    [policies, policyName]
-  );
 
   useFetch(
     () => adminClient.clientPolicies.listPolicies(),
@@ -68,31 +74,54 @@ export default function NewClientPolicyCondition() {
   );
 
   const save = async () => {
-    const createdPolicy = {
-      ...currentPolicy,
-      profiles: [],
-      conditions: currentPolicy?.conditions?.concat(condition),
-    };
+    const updatedPolicies = policies.map((policy) => {
+      if (policy.name !== policyName) {
+        return policy;
+      }
 
-    const index = policies.findIndex(
-      (policy) => createdPolicy.name === policy.name
-    );
+      const formValues = form.getValues();
+      const configValues = formValues.config;
 
-    if (index === -1) {
-      return;
-    }
+      const writeConfig = () => {
+        if (condition[0]?.condition === "any-client") {
+          return {};
+        } else if (condition[0]?.condition === "client-access-type") {
+          return { type: [formValues["client-accesstype"].label] };
+        } else if (condition[0]?.condition === "client-updater-context") {
+          return {
+            "update-client-source": [Object.values(formValues)[0]],
+          };
+        } else if (condition[0]?.condition === "client-scopes") {
+          return {
+            type: Object.values(formValues)[0].type,
+            scopes: (Object.values(formValues)[0].scopes as ItemType[]).map(
+              (item) => (item as ItemType).value
+            ),
+          };
+        } else
+          return {
+            [Object.keys(configValues)[0]]: Object.values(
+              configValues?.[Object.keys(configValues)[0]]
+            ).map((item) => (item as ItemType).value),
+          };
+      };
 
-    const newPolicies = [
-      ...policies.slice(0, index),
-      createdPolicy,
-      ...policies.slice(index + 1),
-    ];
+      const conditions = (policy.conditions ?? []).concat({
+        condition: condition[0].condition,
+        configuration: writeConfig(),
+      });
+
+      return {
+        ...policy,
+        conditions,
+      };
+    });
 
     try {
       await adminClient.clientPolicies.updatePolicy({
-        policies: newPolicies,
+        policies: updatedPolicies,
       });
-      setPolicies(newPolicies);
+      setPolicies(updatedPolicies);
       history.push(
         `/${realm}/realm-settings/clientPolicies/${policyName}/edit-policy`
       );
@@ -121,7 +150,11 @@ export default function NewClientPolicyCondition() {
               <HelpItem
                 helpText={
                   conditionType
-                    ? t(`${camelCase(conditionType.replace(/-/g, " "))}`)
+                    ? t(
+                        `realm-settings-help:${camelCase(
+                          conditionType.replace(/-/g, " ")
+                        )}`
+                      )
                     : t("anyClient")
                 }
                 forLabel={t("conditionType")}
@@ -140,11 +173,13 @@ export default function NewClientPolicyCondition() {
                   onToggle={(toggle) => setOpenConditionType(toggle)}
                   onSelect={(_, value) => {
                     onChange(value);
+                    setConditionProperties(
+                      (value as ComponentTypeRepresentation).properties
+                    );
                     setConditionType((value as ComponentTypeRepresentation).id);
                     setCondition([
                       {
                         condition: (value as ComponentTypeRepresentation).id,
-                        configuration: {},
                       },
                     ]);
                     setOpenConditionType(false);
@@ -158,7 +193,9 @@ export default function NewClientPolicyCondition() {
                     <SelectOption
                       selected={condition.id === value}
                       description={t(
-                        `${camelCase(condition.id.replace(/-/g, " "))}`
+                        `realm-settings-help:${camelCase(
+                          condition.id.replace(/-/g, " ")
+                        )}`
                       )}
                       key={condition.id}
                       value={condition}
@@ -170,6 +207,26 @@ export default function NewClientPolicyCondition() {
               )}
             />
           </FormGroup>
+          <FormProvider {...form}>
+            {conditionProperties.map((option) => {
+              const componentType = option.type!;
+              if (isValidComponentType(componentType)) {
+                const Component = COMPONENTS[componentType];
+                return (
+                  <Component
+                    key={option.name}
+                    {...option}
+                    name={option.name}
+                    label={option.label}
+                  />
+                );
+              } else {
+                console.warn(
+                  `There is no editor registered for ${componentType}`
+                );
+              }
+            })}
+          </FormProvider>
           <ActionGroup>
             <Button
               variant="primary"

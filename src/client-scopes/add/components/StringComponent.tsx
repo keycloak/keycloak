@@ -5,6 +5,7 @@ import { FormGroup, TextInput } from "@patternfly/react-core";
 
 import { HelpItem } from "../../../components/help-enabler/HelpItem";
 import type { ComponentProps } from "./components";
+import { convertToHyphens } from "../../../util";
 
 export const StringComponent = ({
   name,
@@ -28,7 +29,7 @@ export const StringComponent = ({
         data-testid={name}
         ref={register()}
         type="text"
-        name={`config.${name?.replaceAll(".", "-")}`}
+        name={`config.${convertToHyphens(name!)}`}
         defaultValue={defaultValue?.toString()}
       />
     </FormGroup>

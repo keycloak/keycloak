@@ -146,7 +146,7 @@ export default function NewClientPolicyForm() {
   const formValues = form.getValues();
 
   const save = async () => {
-    const createdForm = formValues;
+    const createdForm = form.getValues();
     const createdPolicy = {
       ...createdForm,
       profiles: [],
@@ -172,7 +172,7 @@ export default function NewClientPolicyForm() {
         AlertVariant.success
       );
       history.push(
-        `/${realm}/realm-settings/clientPolicies/${formValues.name}/edit-policy`
+        `/${realm}/realm-settings/clientPolicies/${createdForm.name}/edit-policy`
       );
       setShowAddConditionsAndProfilesForm(true);
       refresh();
@@ -333,8 +333,6 @@ export default function NewClientPolicyForm() {
       addError("realm-settings:addClientProfileError", error);
     }
   };
-
-  console.log("NY", policyConditions);
 
   return (
     <>

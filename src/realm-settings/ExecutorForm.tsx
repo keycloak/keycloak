@@ -94,7 +94,9 @@ export default function ExecutorForm() {
         globalProfiles: globalProfiles,
       });
       addAlert(t("realm-settings:addExecutorSuccess"), AlertVariant.success);
-      history.push(`/${realm}/realm-settings/clientPolicies/${profileName}`);
+      history.push(
+        `/${realm}/realm-settings/clientPolicies/${profileName}/edit-profile`
+      );
     } catch (error) {
       addError("realm-settings:addExecutorError", error);
     }
@@ -192,7 +194,7 @@ export default function ExecutorForm() {
               component={(props) => (
                 <Link
                   {...props}
-                  to={`/${realm}/realm-settings/clientPolicies/${profileName}`}
+                  to={`/${realm}/realm-settings/clientPolicies/${profileName}/edit-profile`}
                 />
               )}
               data-testid="addExecutor-cancelBtn"

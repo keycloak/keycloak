@@ -5,6 +5,7 @@ import { FormGroup, Switch } from "@patternfly/react-core";
 
 import type { ComponentProps } from "./components";
 import { HelpItem } from "../../../components/help-enabler/HelpItem";
+import { convertToHyphens } from "../../../util";
 
 export const BooleanComponent = ({
   name,
@@ -25,7 +26,7 @@ export const BooleanComponent = ({
       }
     >
       <Controller
-        name={`config.${name?.replaceAll(".", "-")}`}
+        name={`config.${convertToHyphens(name!)}`}
         data-testid={name}
         defaultValue={defaultValue}
         control={control}

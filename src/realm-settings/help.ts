@@ -115,5 +115,32 @@ export default {
     conditions:
       "Conditions, which will be evaluated to determine if client policy should be applied during particular action or not.",
     clientProfiles: "Client profiles applied on this policy.",
+    anyClient: "The condition is satisfied by any client on any event.",
+    clientAccessType:
+      "It uses the client's access type (confidential, public, bearer-only) to determine whether the policy is applied. Condition is checked during most of OpenID Connect requests (Authorization requests, token requests, introspection endpoint request, etc.)",
+    clientAccesstypeTooltip:
+      "Access Type of the client, for which the condition will be applied.",
+    clientRoles:
+      "The condition checks whether one of the specified client roles exists on the client to determine whether the policy is applied. This effectively allows client administrator to create client role of specified name on the client to make sure that particular client policy will be applied on requests of this client. Condition is checked during most of OpenID Connect requests (Authorization requests, token requests, introspection endpoint request, etc.)",
+    clientRolesConditionTooltip:
+      "Client roles, which will be checked during this condition evaluation. Condition evaluates to true if client has at least one client role with the name as the client roles specified in the configuration.",
+    clientScopes:
+      "It uses the scopes requested or assigned in advance to the client to determine whether the policy is applied to this client. Condition is evaluated during OpenID Connect authorization request and/or token request.",
+    clientScopesConditionTooltip:
+      "The list of expected client scopes. Condition evaluates to true if specified client request matches some of the client scopes. It depends also whether it should be default or optional client scope based on the 'Scope Type' configured.",
+    clientUpdaterContext:
+      "The condition checks the context how is client created/updated to determine whether the policy is applied. For example it checks if client is created with admin REST API or OIDC dynamic client registration. And for the letter case if it is ANONYMOUS client registration or AUTHENTICATED client registration with Initial access token or Registration access token and so on.",
+    clientUpdaterSourceGroups:
+      "The condition checks the group of the entity who tries to create/update the client to determine whether the policy is applied.",
+    clientUpdaterSourceGroupsTooltip:
+      "Name of groups to check. Condition evaluates to true if the entity, who creates/updates client is member of some of the specified groups. Configured groups are specified by their simple name, which must match to the name of the Keycloak group. No support for group hierarchy is used here.",
+    clientUpdaterSourceHost:
+      "The condition checks the host/domain of the entity who tries to create/update the client to determine whether the policy is applied.",
+    clientUpdaterTrustedHostsTooltip:
+      "List of Hosts, which are trusted. In case that client registration/update request comes from the host/domain specified in this configuration, condition evaluates to true. You can use hostnames or IP addresses. If you use star at the beginning (for example '*.example.com' ) then whole domain example.com will be trusted.",
+    clientUpdaterSourceRoles:
+      "The condition checks the role of the entity who tries to create/update the client to determine whether the policy is applied.",
+    clientUpdaterSourceRolesTooltip:
+      "The condition is checked during client registration/update requests and it evaluates to true if the entity (usually user), who is creating/updating client is member of the specified role. For reference the realm role, you can use the realm role name like 'my_realm_role' . For reference client role, you can use the client_id.role_name for example 'my_client.my_client_role' will refer to client role 'my_client_role' of client 'my_client'. ",
   },
 };
