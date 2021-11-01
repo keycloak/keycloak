@@ -492,6 +492,49 @@ describe("Realm settings tests", () => {
       realmSettingsPage.shouldCompleteAndCreateNewClientProfile();
       realmSettingsPage.shouldNotCreateDuplicateClientProfile();
     });
+
+    it("Should edit client profile", () => {
+      realmSettingsPage.shouldEditClientProfile();
+    });
+
+    it("Should check that edited client profile is now listed", () => {
+      sidebarPage.goToRealmSettings();
+      cy.findByTestId("rs-clientPolicies-tab").click();
+      cy.findByTestId("rs-policies-clientProfiles-tab").click();
+      realmSettingsPage.shouldCheckEditedClientProfileListed();
+    });
+
+    it("Should show error when client profile left blank", () => {
+      realmSettingsPage.shouldShowErrorWhenNameBlank();
+    });
+
+    it("Should revert back to the previous profile name", () => {
+      realmSettingsPage.shouldReloadClientProfileEdits();
+    });
+
+    it("Should not have executors configured by default", () => {
+      realmSettingsPage.shouldNotHaveExecutorsConfigured();
+    });
+
+    it("Should cancel adding a new executor to a client profile", () => {
+      realmSettingsPage.shouldCancelAddingExecutor();
+    });
+
+    it("Should add a new executor to a client profile", () => {
+      realmSettingsPage.shouldAddExecutor();
+    });
+
+    it("Should cancel deleting executor from a client profile", () => {
+      realmSettingsPage.shouldCancelDeletingExecutor();
+    });
+
+    it("Should delete executor from a client profile", () => {
+      realmSettingsPage.shouldDeleteExecutor();
+    });
+
+    it("Should delete edited client profile", () => {
+      realmSettingsPage.shouldDeleteEditedProfile();
+    });
   });
 
   describe.skip("Realm settings client policies tab tests", () => {

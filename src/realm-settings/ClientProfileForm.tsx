@@ -321,7 +321,7 @@ export default function ClientProfileForm() {
                       )}
                       variant="link"
                       className="kc-addExecutor"
-                      data-testid="cancelCreateProfile"
+                      data-testid="addExecutor"
                       icon={<PlusCircleIcon />}
                     >
                       {t("realm-settings:addExecutor")}

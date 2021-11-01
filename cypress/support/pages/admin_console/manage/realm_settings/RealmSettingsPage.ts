@@ -173,6 +173,14 @@ export default class RealmSettingsPage {
   private createClientDrpDwn = ".pf-c-dropdown.pf-m-align-right";
   private searchFld = "[id^=realm-settings][id$=profilesinput]";
   private searchFldPolicies = "[id^=realm-settings][id$=clientPoliciesinput]";
+  private clientProfileOne = 'a[href*="realm-settings/clientPolicies/Test"]';
+  private clientProfileTwo = 'a[href*="realm-settings/clientPolicies/Edit"]';
+  private reloadBtn = "reloadProfile";
+  private addExecutor = "addExecutor";
+  private addExecutorDrpDwn = ".pf-c-select__toggle";
+  private addExecutorDrpDwnOption = "executorType-select";
+  private addExecutorCancelBtn = "addExecutor-cancelBtn";
+  private addExecutorSaveBtn = "addExecutor-saveBtn";
 
   selectLoginThemeType(themeType: string) {
     cy.get(this.selectLoginTheme).click();
@@ -576,6 +584,121 @@ export default class RealmSettingsPage {
       "be.visible",
       "Could not create client profile: 'proposed client profile name duplicated.'"
     );
+  }
+
+  shouldEditClientProfile() {
+    cy.get(this.clientProfileOne).click();
+    cy.findByTestId(this.newClientProfileNameInput)
+      .click()
+      .clear()
+      .type("Edit");
+    cy.findByTestId(this.newClientProfileDescriptionInput)
+      .click()
+      .clear()
+      .type("Edit Description");
+    cy.findByTestId(this.saveNewClientProfileBtn).click();
+    cy.get(this.alertMessage).should(
+      "be.visible",
+      "Client profile updated successfully"
+    );
+  }
+
+  shouldCheckEditedClientProfileListed() {
+    cy.get("table").should("be.visible").contains("td", "Edit");
+    cy.get("table").should("not.have.text", "Test");
+  }
+
+  shouldShowErrorWhenNameBlank() {
+    cy.get(this.clientProfileTwo).click();
+    cy.findByTestId(this.newClientProfileNameInput).click().clear();
+    cy.get("form").should("not.have.text", "Required field");
+  }
+
+  shouldReloadClientProfileEdits() {
+    cy.get(this.clientProfileTwo).click();
+    cy.findByTestId(this.newClientProfileNameInput).type("Reloading");
+    cy.findByTestId(this.reloadBtn).click();
+    cy.findByTestId(this.newClientProfileNameInput).should(
+      "have.value",
+      "Edit"
+    );
+  }
+
+  shouldNotHaveExecutorsConfigured() {
+    cy.get(this.clientProfileTwo).click();
+    cy.get('h6[class*="kc-emptyExecutors"]').should(
+      "have.text",
+      "No executors configured"
+    );
+  }
+
+  shouldCancelAddingExecutor() {
+    cy.get(this.clientProfileTwo).click();
+    cy.findByTestId(this.addExecutor).click();
+    cy.get(this.addExecutorDrpDwn).click();
+    cy.findByTestId(this.addExecutorDrpDwnOption)
+      .contains("confidential-client")
+      .click();
+    cy.findByTestId(this.addExecutorCancelBtn).click();
+    cy.get('h6[class*="kc-emptyExecutors"]').should(
+      "have.text",
+      "No executors configured"
+    );
+  }
+
+  shouldAddExecutor() {
+    cy.get(this.clientProfileTwo).click();
+    cy.findByTestId(this.addExecutor).click();
+    cy.get(this.addExecutorDrpDwn).click();
+    cy.findByTestId(this.addExecutorDrpDwnOption)
+      .contains("confidential-client")
+      .click();
+    cy.findByTestId(this.addExecutorSaveBtn).click();
+    cy.get(this.alertMessage).should(
+      "be.visible",
+      "Success! Executor created successfully"
+    );
+    cy.get('ul[class*="pf-c-data-list"]').should(
+      "have.text",
+      "confidential-client"
+    );
+  }
+
+  shouldCancelDeletingExecutor() {
+    cy.get(this.clientProfileTwo).click();
+    cy.get('svg[class*="kc-executor-trash-icon"]').click();
+    cy.get(this.deleteDialogTitle).contains("Delete executor?");
+    cy.get(this.deleteDialogBodyText).contains(
+      "The action will permanently delete confidential-client. This cannot be undone."
+    );
+    cy.findByTestId("modalConfirm").contains("Delete");
+    cy.get(this.deleteDialogCancelBtn).contains("Cancel").click();
+    cy.get('ul[class*="pf-c-data-list"]').should(
+      "have.text",
+      "confidential-client"
+    );
+  }
+
+  shouldDeleteExecutor() {
+    cy.get(this.clientProfileTwo).click();
+    cy.get('svg[class*="kc-executor-trash-icon"]').click();
+    cy.get(this.deleteDialogTitle).contains("Delete executor?");
+    cy.get(this.deleteDialogBodyText).contains(
+      "The action will permanently delete confidential-client. This cannot be undone."
+    );
+    cy.findByTestId("modalConfirm").contains("Delete").click();
+    cy.get('h6[class*="kc-emptyExecutors"]').should(
+      "have.text",
+      "No executors configured"
+    );
+  }
+
+  shouldDeleteEditedProfile() {
+    cy.get(this.moreDrpDwn).last().click();
+    cy.get(this.moreDrpDwnItems).click();
+    cy.findByTestId("modalConfirm").contains("Delete").click();
+    cy.get(this.alertMessage).should("be.visible", "Client profile deleted");
+    cy.get("table").should("not.have.text", "Edit");
   }
 
   shouldNotCreateDuplicateClientPolicy() {

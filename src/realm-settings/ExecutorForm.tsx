@@ -183,7 +183,7 @@ export default function ExecutorForm() {
             <Button
               variant="primary"
               onClick={save}
-              data-testid="realm-settings-add-executor-save-button"
+              data-testid="addExecutor-saveBtn"
             >
               {t("common:add")}
             </Button>
@@ -195,7 +195,7 @@ export default function ExecutorForm() {
                   to={`/${realm}/realm-settings/clientPolicies/${profileName}`}
                 />
               )}
-              data-testid="realm-settings-add-executor-cancel-button"
+              data-testid="addExecutor-cancelBtn"
             >
               {t("common:cancel")}
             </Button>
