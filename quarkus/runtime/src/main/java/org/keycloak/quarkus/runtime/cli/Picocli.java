@@ -20,8 +20,11 @@ package org.keycloak.quarkus.runtime.cli;
 import static java.util.Arrays.asList;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfig;
+import static org.keycloak.quarkus.runtime.configuration.PropertyMappers.getBuiltTimeProperty;
+import static org.keycloak.quarkus.runtime.configuration.PropertyMappers.getRuntimeProperty;
 import static org.keycloak.quarkus.runtime.configuration.PropertyMappers.isBuildTimeProperty;
 import static org.keycloak.quarkus.runtime.Environment.isDevMode;
+import static org.keycloak.utils.StringUtil.isNotBlank;
 import static picocli.CommandLine.Model.UsageMessageSpec.SECTION_KEY_COMMAND_LIST;
 
 import java.io.File;
@@ -70,6 +73,7 @@ public final class Picocli {
 
     private static final String ARG_SEPARATOR = ";;";
     public static final String ARG_PREFIX = "--";
+    public static final String ARG_PART_SEPARATOR = "-";
     public static final char ARG_KEY_VALUE_SEPARATOR = '=';
     public static final Pattern ARG_SPLIT = Pattern.compile(";;");
     public static final Pattern ARG_KEY_VALUE_SPLIT = Pattern.compile("=");
@@ -206,7 +210,7 @@ public final class Picocli {
 
     private static boolean hasConfigChanges() {
         Optional<String> currentProfile = Optional.ofNullable(Environment.getProfile());
-        Optional<String> persistedProfile = Environment.getBuiltTimeProperty("kc.profile");
+        Optional<String> persistedProfile = getBuiltTimeProperty("kc.profile");
 
         if (!persistedProfile.orElse("").equals(currentProfile.orElse(""))) {
             return true;
@@ -218,16 +222,27 @@ public final class Picocli {
                 continue;
             }
 
+            ConfigValue configValue = getConfig().getConfigValue(propertyName);
+
+            if (configValue == null || configValue.getConfigSourceName() == null) {
+                continue;
+            }
+
             // try to resolve any property set using profiles
             if (propertyName.startsWith("%")) {
                 propertyName = propertyName.substring(propertyName.indexOf('.') + 1);
             }
 
-            String currentValue = Environment.getBuiltTimeProperty(propertyName).orElse(null);
-            String newValue = getConfig().getConfigValue(propertyName).getValue();
+            String persistedValue = getBuiltTimeProperty(propertyName).orElse("");
+            String runtimeValue = getRuntimeProperty(propertyName).orElse(null);
 
-            if (newValue != null && !newValue.equalsIgnoreCase(currentValue)) {
-                // changes to a single property are enough to indicate changes to configuration
+            if (runtimeValue == null && isNotBlank(persistedValue)) {
+                // probably because it was unset
+                return true;
+            }
+
+            // changes to a single property is enough to indicate changes to configuration
+            if (!persistedValue.equals(runtimeValue)) {
                 return true;
             }
         }
@@ -315,7 +330,8 @@ public final class Picocli {
             String name = ARG_PREFIX + PropertyMappers.toCLIFormat(mapper.getFrom()).substring(3);
             String description = mapper.getDescription();
 
-            if (description == null || commandSpec.optionsMap().containsKey(name)) {
+            if (description == null || commandSpec.optionsMap().containsKey(name)
+                || name.endsWith(ARG_PART_SEPARATOR)) {
                 continue;
             }
 
@@ -442,5 +458,9 @@ public final class Picocli {
                 cause.printStackTrace();
             }
         }
+    }
+
+    public static String normalizeKey(String key) {
+        return key.replace('-', '.');
     }
 }

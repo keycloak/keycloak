@@ -42,6 +42,7 @@ import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import io.quarkus.runtime.configuration.ConfigUtils;
 import io.smallrye.config.SmallRyeConfigProviderResolver;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.vault.FilesPlainTextVaultProviderFactory;
 
 public class ConfigurationTest {
 
@@ -174,6 +175,33 @@ public class ConfigurationTest {
         System.setProperty(CLI_ARGS, "--spi-client-registration-openid-connect-static-jwk-url=http://c.jwk.url");
         assertEquals("http://c.jwk.url", initConfig("client-registration", "openid-connect").get("static-jwk-url"));
     }
+
+    @Test
+    public void testPropertyNamesFromConfig() {
+        System.setProperty(CLI_ARGS, "--spi-client-registration-openid-connect-static-jwk-url=http://c.jwk.url");
+        Config.Scope config = initConfig("client-registration", "openid-connect");
+        assertEquals(1, config.getPropertyNames().size());
+        assertEquals("http://c.jwk.url", config.get("static-jwk-url"));
+
+        System.setProperty(CLI_ARGS, "--vault-file-path=secrets");
+        config = initConfig("vault", FilesPlainTextVaultProviderFactory.PROVIDER_ID);
+        assertEquals(1, config.getPropertyNames().size());
+        assertEquals("secrets", config.get("dir"));
+
+        System.getProperties().remove(CLI_ARGS);
+        System.setProperty("kc.spi.client-registration.openid-connect.static-jwk-url", "http://c.jwk.url");
+        config = initConfig("client-registration", "openid-connect");
+        assertEquals(1, config.getPropertyNames().size());
+        assertEquals("http://c.jwk.url", config.get("static-jwk-url"));
+
+        System.getProperties().remove(CLI_ARGS);
+        System.getProperties().remove("kc.spi.client-registration.openid-connect.static-jwk-url");
+        putEnvVar("KC_SPI_CLIENT_REGISTRATION_OPENID_CONNECT_STATIC_JWK_URL", "http://c.jwk.url/from-env");
+        config = initConfig("client-registration", "openid-connect");
+        assertEquals(1, config.getPropertyNames().size());
+        assertEquals("http://c.jwk.url/from-env", config.get("static-jwk-url"));
+    }
+
 
     @Test
     public void testPropertyMapping() {

@@ -58,10 +58,6 @@ public class PersistedConfigSource extends PropertiesConfigSource {
             return value;
         }
 
-        if (propertyName.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
-            return super.getValue(PropertyMappers.toCLIFormat(propertyName));
-        }
-
         return null;
     }
 

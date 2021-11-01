@@ -16,8 +16,8 @@
  */
 package org.keycloak.component;
 
+import java.util.Set;
 import org.keycloak.Config.Scope;
-import org.keycloak.component.ComponentModel;
 
 /**
  *
@@ -112,6 +112,11 @@ public class ComponentModelScope implements Scope {
     @Override
     public Scope scope(String... scope) {
         return new ComponentModelScope(origScope.scope(scope), componentConfig, String.join(".", scope) + ".");
+    }
+
+    @Override
+    public Set<String> getPropertyNames() {
+        throw new UnsupportedOperationException("Not implemented");
     }
 
 }

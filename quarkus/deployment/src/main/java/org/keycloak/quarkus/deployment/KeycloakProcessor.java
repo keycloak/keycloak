@@ -556,7 +556,7 @@ class KeycloakProcessor {
             return false;
         }
         if (factory instanceof EnvironmentDependentProviderFactory) {
-            return ((EnvironmentDependentProviderFactory) factory).isSupported();
+            return ((EnvironmentDependentProviderFactory) factory).isSupported(scope);
         }
         return true;
     }
