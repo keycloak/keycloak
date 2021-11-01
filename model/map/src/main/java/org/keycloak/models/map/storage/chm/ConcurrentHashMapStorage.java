@@ -53,7 +53,7 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
 
     protected final ConcurrentMap<K, V> store = new ConcurrentHashMap<>();
 
-    protected final Map<SearchableModelField<M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates;
+    protected final Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates;
     protected final StringKeyConvertor<K> keyConvertor;
     protected final DeepCloner cloner;
 

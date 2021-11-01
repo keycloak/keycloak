@@ -43,14 +43,14 @@ public class MapModelCriteriaBuilder<K, V extends AbstractEntity, M> implements 
     private static final Predicate<Object> ALWAYS_FALSE = (e) -> false;
     private final Predicate<? super K> keyFilter;
     private final Predicate<? super V> entityFilter;
-    private final Map<SearchableModelField<M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates;
+    private final Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates;
     private final StringKeyConvertor<K> keyConvertor;
 
-    public MapModelCriteriaBuilder(StringKeyConvertor<K> keyConvertor, Map<SearchableModelField<M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates) {
+    public MapModelCriteriaBuilder(StringKeyConvertor<K> keyConvertor, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates) {
         this(keyConvertor, fieldPredicates, ALWAYS_TRUE, ALWAYS_TRUE);
     }
 
-    private MapModelCriteriaBuilder(StringKeyConvertor<K> keyConvertor, Map<SearchableModelField<M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates, Predicate<? super K> indexReadFilter, Predicate<? super V> sequentialReadFilter) {
+    private MapModelCriteriaBuilder(StringKeyConvertor<K> keyConvertor, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates, Predicate<? super K> indexReadFilter, Predicate<? super V> sequentialReadFilter) {
         this.keyConvertor = keyConvertor;
         this.fieldPredicates = fieldPredicates;
         this.keyFilter = indexReadFilter;
@@ -58,7 +58,7 @@ public class MapModelCriteriaBuilder<K, V extends AbstractEntity, M> implements 
     }
 
     @Override
-    public MapModelCriteriaBuilder<K, V, M> compare(SearchableModelField<M> modelField, Operator op, Object... values) {
+    public MapModelCriteriaBuilder<K, V, M> compare(SearchableModelField<? super M> modelField, Operator op, Object... values) {
         UpdatePredicatesFunc<K, V, M> method = fieldPredicates.get(modelField);
         if (method == null) {
             throw new IllegalArgumentException("Filter not implemented for field " + modelField);

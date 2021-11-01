@@ -117,7 +117,7 @@ public interface ModelCriteriaBuilder<M> {
      * @return
      * @throws CriterionNotSupported If the operator is not supported for the given field.
      */
-    ModelCriteriaBuilder<M> compare(SearchableModelField<M> modelField, Operator op, Object... value);
+    ModelCriteriaBuilder<M> compare(SearchableModelField<? super M> modelField, Operator op, Object... value);
 
     /**
      * Creates and returns a new instance of {@code ModelCriteriaBuilder} that
