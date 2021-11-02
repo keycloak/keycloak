@@ -46,6 +46,7 @@ import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import org.keycloak.models.ClientScopeModel;
 import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
+import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import java.util.HashSet;
@@ -55,12 +56,10 @@ public class MapClientProvider implements ClientProvider {
     private static final Logger LOG = Logger.getLogger(MapClientProvider.class);
     private final KeycloakSession session;
     final MapKeycloakTransaction<MapClientEntity, ClientModel> tx;
-    private final MapStorage<MapClientEntity, ClientModel> clientStore;
     private final ConcurrentMap<String, ConcurrentMap<String, Integer>> clientRegisteredNodesStore;
 
     public MapClientProvider(KeycloakSession session, MapStorage<MapClientEntity, ClientModel> clientStore, ConcurrentMap<String, ConcurrentMap<String, Integer>> clientRegisteredNodesStore) {
         this.session = session;
-        this.clientStore = clientStore;
         this.clientRegisteredNodesStore = clientRegisteredNodesStore;
         this.tx = clientStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
@@ -120,8 +119,8 @@ public class MapClientProvider implements ClientProvider {
 
     @Override
     public Stream<ClientModel> getClientsStream(RealmModel realm, Integer firstResult, Integer maxResults) {
-        ModelCriteriaBuilder<ClientModel> mcb = clientStore.createCriteriaBuilder()
-                .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+        ModelCriteriaBuilder<ClientModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         return tx.read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.CLIENT_ID))
             .map(entityToAdapterFunc(realm));
@@ -129,8 +128,8 @@ public class MapClientProvider implements ClientProvider {
 
     @Override
     public Stream<ClientModel> getClientsStream(RealmModel realm) {
-        ModelCriteriaBuilder<ClientModel> mcb = clientStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+        ModelCriteriaBuilder<ClientModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         return tx.read(withCriteria(mcb).orderBy(SearchableFields.CLIENT_ID, ASCENDING))
           .map(entityToAdapterFunc(realm));
@@ -213,8 +212,8 @@ public class MapClientProvider implements ClientProvider {
 
     @Override
     public long getClientsCount(RealmModel realm) {
-        ModelCriteriaBuilder<ClientModel> mcb = clientStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+        ModelCriteriaBuilder<ClientModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         return tx.getCount(withCriteria(mcb));
     }
@@ -240,9 +239,9 @@ public class MapClientProvider implements ClientProvider {
         }
         LOG.tracef("getClientByClientId(%s, %s)%s", realm, clientId, getShortStackTrace());
 
-        ModelCriteriaBuilder<ClientModel> mcb = clientStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.CLIENT_ID, Operator.ILIKE, clientId);
+        ModelCriteriaBuilder<ClientModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+                .compare(SearchableFields.CLIENT_ID, Operator.ILIKE, clientId);
 
         return tx.read(withCriteria(mcb))
           .map(entityToAdapterFunc(realm))
@@ -257,9 +256,9 @@ public class MapClientProvider implements ClientProvider {
             return Stream.empty();
         }
 
-        ModelCriteriaBuilder<ClientModel> mcb = clientStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.CLIENT_ID, Operator.ILIKE, "%" + clientId + "%");
+        ModelCriteriaBuilder<ClientModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+                .compare(SearchableFields.CLIENT_ID, Operator.ILIKE, "%" + clientId + "%");
 
         return tx.read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.CLIENT_ID))
                 .map(entityToAdapterFunc(realm));
@@ -267,8 +266,8 @@ public class MapClientProvider implements ClientProvider {
 
     @Override
     public Stream<ClientModel> searchClientsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
-        ModelCriteriaBuilder<ClientModel> mcb = clientStore.createCriteriaBuilder()
-                .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+        ModelCriteriaBuilder<ClientModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         for (Map.Entry<String, String> entry : attributes.entrySet()) {
             mcb = mcb.compare(SearchableFields.ATTRIBUTE, Operator.EQ, entry.getKey(), entry.getValue());
@@ -332,9 +331,9 @@ public class MapClientProvider implements ClientProvider {
 
     @Override
     public Map<ClientModel, Set<String>> getAllRedirectUrisOfEnabledClients(RealmModel realm) {
-        ModelCriteriaBuilder<ClientModel> mcb = clientStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.ENABLED, Operator.EQ, Boolean.TRUE);
+        ModelCriteriaBuilder<ClientModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+                .compare(SearchableFields.ENABLED, Operator.EQ, Boolean.TRUE);
 
         try (Stream<MapClientEntity> st = tx.read(withCriteria(mcb))) {
             return st
@@ -347,9 +346,10 @@ public class MapClientProvider implements ClientProvider {
     }
 
     public void preRemove(RealmModel realm, RoleModel role) {
-        ModelCriteriaBuilder<ClientModel> mcb = clientStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.SCOPE_MAPPING_ROLE, Operator.EQ, role.getId());
+        ModelCriteriaBuilder<ClientModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+                .compare(SearchableFields.SCOPE_MAPPING_ROLE, Operator.EQ, role.getId());
+
         try (Stream<MapClientEntity> toRemove = tx.read(withCriteria(mcb))) {
             toRemove
                 .map(clientEntity -> session.clients().getClientById(realm, clientEntity.getId()))

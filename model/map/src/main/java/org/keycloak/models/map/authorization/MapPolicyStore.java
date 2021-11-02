@@ -31,6 +31,7 @@ import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 
 import java.util.Arrays;
@@ -42,17 +43,16 @@ import java.util.stream.Collectors;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
+import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 
 public class MapPolicyStore implements PolicyStore {
 
     private static final Logger LOG = Logger.getLogger(MapPolicyStore.class);
     private final AuthorizationProvider authorizationProvider;
     final MapKeycloakTransaction<MapPolicyEntity, Policy> tx;
-    private final MapStorage<MapPolicyEntity, Policy> policyStore;
 
     public MapPolicyStore(KeycloakSession session, MapStorage<MapPolicyEntity, Policy> policyStore, AuthorizationProvider provider) {
         this.authorizationProvider = provider;
-        this.policyStore = policyStore;
         this.tx = policyStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
     }
@@ -64,7 +64,7 @@ public class MapPolicyStore implements PolicyStore {
     }
 
     private ModelCriteriaBuilder<Policy> forResourceServer(String resourceServerId) {
-        ModelCriteriaBuilder<Policy> mcb = policyStore.createCriteriaBuilder();
+        ModelCriteriaBuilder<Policy> mcb = criteria();
 
         return resourceServerId == null
                 ? mcb
@@ -158,19 +158,18 @@ public class MapPolicyStore implements PolicyStore {
         Policy.FilterOption name = entry.getKey();
         String[] value = entry.getValue();
 
+        ModelCriteriaBuilder<Policy> mcb = criteria();
         switch (name) {
             case ID:
             case SCOPE_ID:
             case RESOURCE_ID:
             case OWNER:
-                return policyStore.createCriteriaBuilder()
-                        .compare(name.getSearchableModelField(), Operator.IN, Arrays.asList(value));
+                return mcb.compare(name.getSearchableModelField(), Operator.IN, Arrays.asList(value));
             case PERMISSION: {
-                ModelCriteriaBuilder<Policy> mcb = policyStore.createCriteriaBuilder()
-                        .compare(SearchableFields.TYPE, Operator.IN, Arrays.asList("resource", "scope", "uma"));
+                mcb = mcb.compare(SearchableFields.TYPE, Operator.IN, Arrays.asList("resource", "scope", "uma"));
                 
                 if (!Boolean.parseBoolean(value[0])) {
-                    mcb = policyStore.createCriteriaBuilder().not(mcb); // TODO: create NOT_IN operator
+                    mcb = DefaultModelCriteria.<Policy>criteria().not(mcb); // TODO: create NOT_IN operator
                 }
                 
                 return mcb;
@@ -183,11 +182,10 @@ public class MapPolicyStore implements PolicyStore {
                 }
                 
                 value[1] = "%" + value[1] + "%";
-                return policyStore.createCriteriaBuilder()
-                        .compare(SearchableFields.CONFIG, Operator.LIKE, (Object[]) value);
+                return mcb.compare(SearchableFields.CONFIG, Operator.LIKE, (Object[]) value);
             case TYPE:
             case NAME:
-                return policyStore.createCriteriaBuilder().compare(name.getSearchableModelField(), Operator.ILIKE, "%" + value[0] + "%");
+                return mcb.compare(name.getSearchableModelField(), Operator.ILIKE, "%" + value[0] + "%");
             default:
                 throw new IllegalArgumentException("Unsupported filter [" + name + "]");
 

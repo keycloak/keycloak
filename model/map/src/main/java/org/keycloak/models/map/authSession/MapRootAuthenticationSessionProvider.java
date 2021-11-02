@@ -40,6 +40,7 @@ import java.util.function.Predicate;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
+import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
@@ -49,13 +50,11 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
     private static final Logger LOG = Logger.getLogger(MapRootAuthenticationSessionProvider.class);
     private final KeycloakSession session;
     protected final MapKeycloakTransaction<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> tx;
-    private final MapStorage<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> sessionStore;
 
     private static final String AUTHENTICATION_SESSION_EVENTS = "AUTHENTICATION_SESSION_EVENTS";
 
     public MapRootAuthenticationSessionProvider(KeycloakSession session, MapStorage<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> sessionStore) {
         this.session = session;
-        this.sessionStore = sessionStore;
         this.tx = sessionStore.createTransaction(session);
 
         session.getTransactionManager().enlistAfterCompletion(tx);
@@ -132,8 +131,8 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
 
         int expired = Time.currentTime() - RealmInfoUtil.getDettachedClientSessionLifespan(realm);
 
-        ModelCriteriaBuilder<RootAuthenticationSessionModel> mcb = sessionStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+        ModelCriteriaBuilder<RootAuthenticationSessionModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.TIMESTAMP, Operator.LT, expired);
 
         long deletedCount = tx.delete(withCriteria(mcb));
@@ -144,8 +143,8 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
     @Override
     public void onRealmRemoved(RealmModel realm) {
         Objects.requireNonNull(realm, "The provided realm can't be null!");
-        ModelCriteriaBuilder<RootAuthenticationSessionModel> mcb = sessionStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+        ModelCriteriaBuilder<RootAuthenticationSessionModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         tx.delete(withCriteria(mcb));
     }

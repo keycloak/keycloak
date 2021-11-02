@@ -31,9 +31,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jboss.logging.Logger;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
-import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.QueryParameters;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.utils.StreamsUtil;
 
 public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & UpdatableEntity, M> implements MapKeycloakTransaction<V, M> {
@@ -168,14 +167,15 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
      */
     @Override
     public Stream<V> read(QueryParameters<M> queryParameters) {
+        DefaultModelCriteria<M> mcb = (DefaultModelCriteria<M>) queryParameters.getModelCriteriaBuilder();
+        MapModelCriteriaBuilder<K,V,M> mapMcb = (MapModelCriteriaBuilder<K,V,M>) mcb.flashToModelCriteriaBuilder(map.createCriteriaBuilder());
+
         Predicate<? super V> filterOutAllBulkDeletedObjects = tasks.values().stream()
           .filter(BulkDeleteOperation.class::isInstance)
           .map(BulkDeleteOperation.class::cast)
           .map(BulkDeleteOperation::getFilterForNonDeletedObjects)
           .reduce(Predicate::and)
           .orElse(v -> true);
-
-        ModelCriteriaBuilder<M> mcb = queryParameters.getModelCriteriaBuilder();
 
         Stream<V> updatedAndNotRemovedObjectsStream = this.map.read(queryParameters)
           .filter(filterOutAllBulkDeletedObjects)
@@ -184,7 +184,6 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
           .map(this::registerEntityForChanges);
 
         // In case of created values stored in MapKeycloakTransaction, we need filter those according to the filter
-        MapModelCriteriaBuilder<K, V, M> mapMcb = mcb.unwrap(MapModelCriteriaBuilder.class);
         Stream<V> res = mapMcb == null
           ? updatedAndNotRemovedObjectsStream
           : Stream.concat(
@@ -401,12 +400,8 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
         }
 
         public Predicate<V> getFilterForNonDeletedObjects() {
-            if (! (queryParameters.getModelCriteriaBuilder() instanceof MapModelCriteriaBuilder)) {
-                return t -> true;
-            }
-
-            @SuppressWarnings("unchecked")
-            final MapModelCriteriaBuilder<K, V, M> mmcb = (MapModelCriteriaBuilder<K, V, M>) queryParameters.getModelCriteriaBuilder();
+            DefaultModelCriteria<M> mcb = (DefaultModelCriteria<M>) queryParameters.getModelCriteriaBuilder();
+            MapModelCriteriaBuilder<K,V,M> mmcb = (MapModelCriteriaBuilder<K,V,M>) mcb.flashToModelCriteriaBuilder(map.createCriteriaBuilder());
             
             Predicate<? super V> entityFilter = mmcb.getEntityFilter();
             Predicate<? super K> keyFilter = mmcb.getKeyFilter();

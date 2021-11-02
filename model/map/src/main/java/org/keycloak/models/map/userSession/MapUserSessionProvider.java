@@ -30,6 +30,7 @@ import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -48,6 +49,7 @@ import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.UserSessionModel.CORRESPONDING_SESSION_ID;
 import static org.keycloak.models.UserSessionModel.SessionPersistenceState.TRANSIENT;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
+import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 import static org.keycloak.models.map.userSession.SessionExpiration.setClientSessionExpiration;
 import static org.keycloak.models.map.userSession.SessionExpiration.setUserSessionExpiration;
 
@@ -60,8 +62,6 @@ public class MapUserSessionProvider implements UserSessionProvider {
     private final KeycloakSession session;
     protected final MapKeycloakTransaction<MapUserSessionEntity, UserSessionModel> userSessionTx;
     protected final MapKeycloakTransaction<MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionTx;
-    private final MapStorage<MapUserSessionEntity, UserSessionModel> userSessionStore;
-    private final MapStorage<MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionStore;
 
     /**
      * Storage for transient user sessions which lifespan is limited to one request.
@@ -71,8 +71,6 @@ public class MapUserSessionProvider implements UserSessionProvider {
     public MapUserSessionProvider(KeycloakSession session, MapStorage<MapUserSessionEntity, UserSessionModel> userSessionStore,
                                   MapStorage<MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionStore) {
         this.session = session;
-        this.userSessionStore = userSessionStore;
-        this.clientSessionStore = clientSessionStore;
         userSessionTx = userSessionStore.createTransaction(session);
         clientSessionTx = clientSessionStore.createTransaction(session);
 
@@ -175,8 +173,8 @@ public class MapUserSessionProvider implements UserSessionProvider {
             return null;
         }
 
-        ModelCriteriaBuilder<AuthenticatedClientSessionModel> mcb = clientSessionStore.createCriteriaBuilder()
-                .compare(AuthenticatedClientSessionModel.SearchableFields.ID, ModelCriteriaBuilder.Operator.EQ, clientSessionId)
+        ModelCriteriaBuilder<AuthenticatedClientSessionModel> mcb = criteria();
+        mcb = mcb.compare(AuthenticatedClientSessionModel.SearchableFields.ID, ModelCriteriaBuilder.Operator.EQ, clientSessionId)
                 .compare(AuthenticatedClientSessionModel.SearchableFields.USER_SESSION_ID, ModelCriteriaBuilder.Operator.EQ, userSession.getId())
                 .compare(AuthenticatedClientSessionModel.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.EQ, userSession.getRealm().getId())
                 .compare(AuthenticatedClientSessionModel.SearchableFields.CLIENT_ID, ModelCriteriaBuilder.Operator.EQ, client.getId())
@@ -370,8 +368,8 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void removeUserSessions(RealmModel realm, UserModel user) {
-        ModelCriteriaBuilder<UserSessionModel> mcb = userSessionStore.createCriteriaBuilder()
-                .compare(UserSessionModel.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.EQ, realm.getId())
+        ModelCriteriaBuilder<UserSessionModel> mcb = criteria();
+        mcb = mcb.compare(UserSessionModel.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.EQ, realm.getId())
                 .compare(UserSessionModel.SearchableFields.USER_ID, ModelCriteriaBuilder.Operator.EQ, user.getId());
 
         LOG.tracef("removeUserSessions(%s, %s)%s", realm, user, getShortStackTrace());
@@ -576,8 +574,8 @@ public class MapUserSessionProvider implements UserSessionProvider {
         }
 
         // first get a user entity by ID
-        ModelCriteriaBuilder<UserSessionModel> mcb = userSessionStore.createCriteriaBuilder()
-                .compare(UserSessionModel.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.EQ, realm.getId())
+        ModelCriteriaBuilder<UserSessionModel> mcb = criteria();
+        mcb = mcb.compare(UserSessionModel.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.EQ, realm.getId())
                 .compare(UserSessionModel.SearchableFields.ID, ModelCriteriaBuilder.Operator.EQ, userSessionId);
 
         // check if it's an offline user session
@@ -605,7 +603,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
     }
 
     private ModelCriteriaBuilder<UserSessionModel> realmAndOfflineCriteriaBuilder(RealmModel realm, boolean offline) {
-        return userSessionStore.createCriteriaBuilder()
+        return DefaultModelCriteria.<UserSessionModel>criteria()
                 .compare(UserSessionModel.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.EQ, realm.getId())
                 .compare(UserSessionModel.SearchableFields.IS_OFFLINE, ModelCriteriaBuilder.Operator.EQ, offline);
     }

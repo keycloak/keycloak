@@ -39,17 +39,16 @@ import java.util.stream.Collectors;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
+import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 
 public class MapScopeStore implements ScopeStore {
 
     private static final Logger LOG = Logger.getLogger(MapScopeStore.class);
     private final AuthorizationProvider authorizationProvider;
     final MapKeycloakTransaction<MapScopeEntity, Scope> tx;
-    private final MapStorage<MapScopeEntity, Scope> scopeStore;
 
     public MapScopeStore(KeycloakSession session, MapStorage<MapScopeEntity, Scope> scopeStore, AuthorizationProvider provider) {
         this.authorizationProvider = provider;
-        this.scopeStore = scopeStore;
         this.tx = scopeStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
     }
@@ -61,7 +60,7 @@ public class MapScopeStore implements ScopeStore {
     }
 
     private ModelCriteriaBuilder<Scope> forResourceServer(String resourceServerId) {
-        ModelCriteriaBuilder<Scope> mcb = scopeStore.createCriteriaBuilder();
+        ModelCriteriaBuilder<Scope> mcb = criteria();
 
         return resourceServerId == null
                 ? mcb
