@@ -93,7 +93,9 @@ public enum MembershipType {
             if (ldapConfig.getUsernameLdapAttribute().equals(ldapConfig.getRdnLdapAttribute())) {
                 for (LDAPDn userDn : dns) {
                     String username = userDn.getFirstRdn().getAttrValue(ldapConfig.getRdnLdapAttribute());
-                    usernames.add(username);
+                    if (username != null) {
+                        usernames.add(username);
+                    }
                 }
             } else {
                 LDAPQuery query = LDAPUtils.createQueryForUserSearch(ldapProvider, realm);
