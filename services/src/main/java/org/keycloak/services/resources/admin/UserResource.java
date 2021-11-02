@@ -188,11 +188,10 @@ public class UserResource {
                 session.getProvider(BruteForceProtector.class).cleanUpPermanentLockout(session, realm, user);
             }
 
-            adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
-
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().commit();
             }
+            adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("User exists with same username or email");
