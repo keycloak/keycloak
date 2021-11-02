@@ -21,7 +21,7 @@ import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
 import type { ConfigPropertyRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigInfoRepresentation";
 import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
-import type { ClientProfileParams } from "./routes/ClientProfile";
+import { ClientProfileParams, toClientProfile } from "./routes/ClientProfile";
 import {
   COMPONENTS,
   isValidComponentType,
@@ -94,9 +94,7 @@ export default function ExecutorForm() {
         globalProfiles: globalProfiles,
       });
       addAlert(t("realm-settings:addExecutorSuccess"), AlertVariant.success);
-      history.push(
-        `/${realm}/realm-settings/clientPolicies/${profileName}/edit-profile`
-      );
+      history.push(toClientProfile({ realm, profileName }));
     } catch (error) {
       addError("realm-settings:addExecutorError", error);
     }
@@ -192,10 +190,7 @@ export default function ExecutorForm() {
             <Button
               variant="link"
               component={(props) => (
-                <Link
-                  {...props}
-                  to={`/${realm}/realm-settings/clientPolicies/${profileName}/edit-profile`}
-                />
+                <Link {...props} to={toClientProfile({ realm, profileName })} />
               )}
               data-testid="addExecutor-cancelBtn"
             >

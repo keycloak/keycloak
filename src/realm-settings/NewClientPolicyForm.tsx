@@ -93,6 +93,8 @@ export default function NewClientPolicyForm() {
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
 
+  const formValues = form.getValues();
+
   useFetch(
     async () => {
       const [policies, profiles] = await Promise.all([
@@ -143,8 +145,6 @@ export default function NewClientPolicyForm() {
       "org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider"
     ];
 
-  const formValues = form.getValues();
-
   const save = async () => {
     const createdForm = form.getValues();
     const createdPolicy = {
@@ -153,19 +153,26 @@ export default function NewClientPolicyForm() {
       conditions: [],
     };
 
-    const policyNameExists = policies.find(
-      (policy) => policy.name === createdPolicy.name
-    );
+    const getAllPolicies = () => {
+      const policyNameExists = policies.some(
+        (policy) => policy.name === createdPolicy.name
+      );
 
-    const res = policies.map((policy) =>
-      policy.name === createdPolicy.name ? createdPolicy : policy
-    );
-
-    const allPolicies = policyNameExists ? res : policies.concat(createdForm);
+      if (policyNameExists) {
+        return policies.map((policy) =>
+          policy.name === createdPolicy.name ? createdPolicy : policy
+        );
+      } else if (createdForm.name !== policyName) {
+        return policies
+          .filter((item) => item.name !== policyName)
+          .concat(createdForm);
+      }
+      return policies.concat(createdForm);
+    };
 
     try {
       await adminClient.clientPolicies.updatePolicy({
-        policies: allPolicies,
+        policies: getAllPolicies(),
       });
       addAlert(
         t("realm-settings:createClientPolicySuccess"),
@@ -328,7 +335,6 @@ export default function NewClientPolicyForm() {
         t("realm-settings:addClientProfileSuccess"),
         AlertVariant.success
       );
-      refresh();
     } catch (error) {
       addError("realm-settings:addClientProfileError", error);
     }
@@ -350,7 +356,7 @@ export default function NewClientPolicyForm() {
       <ViewHeader
         titleKey={
           showAddConditionsAndProfilesForm || policyName
-            ? policyName!
+            ? formValues.name!
             : t("createPolicy")
         }
         divider

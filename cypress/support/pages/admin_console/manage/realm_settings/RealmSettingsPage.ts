@@ -171,6 +171,7 @@ export default class RealmSettingsPage {
   private jsonEditorReloadBtn = "jsonEditor-reloadBtn";
   private jsonEditor = ".monaco-scrollable-element.editor-scrollable.vs";
   private createClientDrpDwn = ".pf-c-dropdown.pf-m-align-right";
+  private clientPolicyDrpDwn = "action-dropdown";
   private searchFld = "[id^=realm-settings][id$=profilesinput]";
   private searchFldPolicies = "[id^=realm-settings][id$=clientPoliciesinput]";
   private clientProfileOne = 'a[href*="realm-settings/clientPolicies/Test"]';
@@ -855,7 +856,7 @@ export default class RealmSettingsPage {
     );
     cy.findByTestId(this.saveNewClientPolicyBtn).click();
     cy.get(this.alertMessage).should("be.visible", "New client policy created");
-    cy.get(this.createClientDrpDwn).contains("Action").click();
+    cy.findByTestId(this.clientPolicyDrpDwn).contains("Action").click();
     cy.findByTestId("deleteClientPolicyDropdown").click();
     cy.findByTestId("modalConfirm").contains("Delete").click();
     cy.get(this.alertMessage).should("be.visible", "Client profile deleted");

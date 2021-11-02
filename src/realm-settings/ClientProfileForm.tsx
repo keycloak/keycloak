@@ -35,7 +35,7 @@ import "./RealmSettingsSection.css";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { toAddExecutor } from "./routes/AddExecutor";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import type { ClientProfileParams } from "./routes/ClientProfile";
+import { ClientProfileParams, toClientProfile } from "./routes/ClientProfile";
 
 type ClientProfileForm = Required<ClientProfileRepresentation>;
 
@@ -106,7 +106,7 @@ export default function ClientProfileForm() {
         AlertVariant.success
       );
 
-      history.push(`/${realm}/realm-settings/clientPolicies/${form.name}`);
+      history.push(toClientProfile({ realm, profileName: form.name }));
     } catch (error) {
       addError(
         editMode
@@ -159,9 +159,7 @@ export default function ClientProfileForm() {
             globalProfiles,
           });
           addAlert(t("deleteExecutorSuccess"), AlertVariant.success);
-          history.push(
-            `/${realm}/realm-settings/clientPolicies/${profileName}/edit-profile`
-          );
+          history.push(toClientProfile({ realm, profileName }));
         } catch (error) {
           addError(t("deleteExecutorError"), error);
         }

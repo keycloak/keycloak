@@ -537,7 +537,7 @@ describe("Realm settings tests", () => {
     });
   });
 
-  describe.skip("Realm settings client policies tab tests", () => {
+  describe("Realm settings client policies tab tests", () => {
     beforeEach(() => {
       keycloakBefore();
       loginPage.logIn();
