@@ -625,7 +625,7 @@ ul#kc-totp-supported-apps {
     font-size: var(--pf-global--FontSize--sm);
 }
 
-.card-pf {
+.pf-c-card {
     margin: 0 auto;
     box-shadow: var(--pf-global--BoxShadow--lg);
     padding: 0 20px;
