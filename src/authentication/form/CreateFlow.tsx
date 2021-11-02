@@ -1,5 +1,5 @@
 import React from "react";
-import { useHistory } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { FormProvider, useForm } from "react-hook-form";
 import {
@@ -18,6 +18,7 @@ import { useAlerts } from "../../components/alert/Alerts";
 import { NameDescription } from "./NameDescription";
 import { FlowType } from "./FlowType";
 import { toFlow } from "../routes/Flow";
+import { toAuthentication } from "../routes/Authentication";
 
 export default function CreateFlow() {
   const { t } = useTranslation("authentication");
@@ -78,7 +79,9 @@ export default function CreateFlow() {
               <Button
                 data-testid="cancel"
                 variant="link"
-                onClick={() => history.push(`/${realm}/authentication`)}
+                component={(props) => (
+                  <Link {...props} to={toAuthentication({ realm })}></Link>
+                )}
               >
                 {t("common:cancel")}
               </Button>
