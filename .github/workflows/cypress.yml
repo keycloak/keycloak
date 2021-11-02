@@ -1,9 +1,9 @@
 name: Cypress
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
-    branches: [master]
+    branches: [main]
 jobs:
   cypress-run:
     runs-on: ubuntu-latest
