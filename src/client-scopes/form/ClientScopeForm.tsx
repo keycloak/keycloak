@@ -34,6 +34,7 @@ import {
 } from "../../components/client-scope/ClientScopeTypes";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toMapper } from "../routes/Mapper";
+import { toClientScope } from "../routes/ClientScope";
 
 export default function ClientScopeForm() {
   const { t } = useTranslation("client-scopes");
@@ -130,9 +131,12 @@ export default function ClientScopeForm() {
           clientScopes.type
         );
         history.push(
-          `/${realm}/client-scopes/${scope.id}/${
-            clientScopes.type || "none"
-          }/settings`
+          toClientScope({
+            realm,
+            id: scope.id!,
+            type: clientScopes.type || "none",
+            tab: "settings",
+          })
         );
       }
       addAlert(t((id ? "update" : "create") + "Success"), AlertVariant.success);

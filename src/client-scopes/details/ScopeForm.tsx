@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useHistory, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import {
@@ -28,6 +28,7 @@ import { useLoginProviders } from "../../context/server-info/ServerInfoProvider"
 import { convertToFormValues } from "../../util";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { getProtocolName } from "../../clients/utils";
+import { toClientScopes } from "../routes/ClientScopes";
 
 type ScopeFormProps = {
   clientScope: ClientScopeRepresentation;
@@ -41,7 +42,6 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     useForm<ClientScopeRepresentation>({
       defaultValues: { attributes: { "display-on-consent-screen": "true" } },
     });
-  const history = useHistory();
   const { realm } = useRealm();
 
   const providers = useLoginProviders();
@@ -316,7 +316,9 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         </Button>
         <Button
           variant="link"
-          onClick={() => history.push(`/${realm}/client-scopes`)}
+          component={(props) => (
+            <Link {...props} to={toClientScopes({ realm })}></Link>
+          )}
         >
           {t("common:cancel")}
         </Button>
