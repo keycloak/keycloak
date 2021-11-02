@@ -39,17 +39,16 @@ import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
+import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 
 public class MapRealmProvider implements RealmProvider {
 
     private static final Logger LOG = Logger.getLogger(MapRealmProvider.class);
     private final KeycloakSession session;
     final MapKeycloakTransaction<MapRealmEntity, RealmModel> tx;
-    private final MapStorage<MapRealmEntity, RealmModel> realmStore;
 
     public MapRealmProvider(KeycloakSession session, MapStorage<MapRealmEntity, RealmModel> realmStore) {
         this.session = session;
-        this.realmStore = realmStore;
         this.tx = realmStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
     }
@@ -98,8 +97,8 @@ public class MapRealmProvider implements RealmProvider {
 
         LOG.tracef("getRealmByName(%s)%s", name, getShortStackTrace());
 
-        ModelCriteriaBuilder<RealmModel> mcb = realmStore.createCriteriaBuilder()
-                .compare(SearchableFields.NAME, Operator.EQ, name);
+        ModelCriteriaBuilder<RealmModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.NAME, Operator.EQ, name);
 
         String realmId = tx.read(withCriteria(mcb))
                 .findFirst()
@@ -111,13 +110,13 @@ public class MapRealmProvider implements RealmProvider {
 
     @Override
     public Stream<RealmModel> getRealmsStream() {
-        return getRealmsStream(realmStore.createCriteriaBuilder());
+        return getRealmsStream(criteria());
     }
 
     @Override
     public Stream<RealmModel> getRealmsWithProviderTypeStream(Class<?> type) {
-        ModelCriteriaBuilder<RealmModel> mcb = realmStore.createCriteriaBuilder()
-                .compare(SearchableFields.COMPONENT_PROVIDER_TYPE, Operator.EQ, type.getName());
+        ModelCriteriaBuilder<RealmModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.COMPONENT_PROVIDER_TYPE, Operator.EQ, type.getName());
 
         return getRealmsStream(mcb);
     }
@@ -161,8 +160,8 @@ public class MapRealmProvider implements RealmProvider {
 
     @Override
     public void removeExpiredClientInitialAccess() {
-        ModelCriteriaBuilder<RealmModel> mcb = realmStore.createCriteriaBuilder()
-                .compare(SearchableFields.CLIENT_INITIAL_ACCESS, Operator.EXISTS);
+        ModelCriteriaBuilder<RealmModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.CLIENT_INITIAL_ACCESS, Operator.EXISTS);
 
         tx.read(withCriteria(mcb))
                 .forEach(MapRealmEntity::removeExpiredClientInitialAccesses);

@@ -93,10 +93,7 @@ public class MapModelCriteriaBuilder<K, V extends AbstractEntity, M> implements 
     @SuppressWarnings("unchecked")
     @Override
     public MapModelCriteriaBuilder<K, V, M> not(ModelCriteriaBuilder<M> builder) {
-        MapModelCriteriaBuilder<K, V, M> b = builder.unwrap(MapModelCriteriaBuilder.class);
-        if (b == null) {
-            throw new ClassCastException("Incompatible class: " + builder.getClass());
-        }
+        MapModelCriteriaBuilder<K, V, M> b = (MapModelCriteriaBuilder<K, V, M>) builder;
         Predicate<? super K> resIndexFilter = b.getKeyFilter() == ALWAYS_TRUE ? ALWAYS_TRUE : b.getKeyFilter().negate();
         Predicate<? super V> resEntityFilter = b.getEntityFilter() == ALWAYS_TRUE ? ALWAYS_TRUE : b.getEntityFilter().negate();
 

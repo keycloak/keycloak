@@ -41,16 +41,15 @@ import java.util.stream.Collectors;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
+import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 
 public class MapResourceStore implements ResourceStore {
 
     private static final Logger LOG = Logger.getLogger(MapResourceStore.class);
     private final AuthorizationProvider authorizationProvider;
     final MapKeycloakTransaction<MapResourceEntity, Resource> tx;
-    private final MapStorage<MapResourceEntity, Resource> resourceStore;
 
     public MapResourceStore(KeycloakSession session, MapStorage<MapResourceEntity, Resource> resourceStore, AuthorizationProvider provider) {
-        this.resourceStore = resourceStore;
         this.tx = resourceStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
         authorizationProvider = provider;
@@ -63,7 +62,7 @@ public class MapResourceStore implements ResourceStore {
     }
     
     private ModelCriteriaBuilder<Resource> forResourceServer(String resourceServerId) {
-        ModelCriteriaBuilder<Resource> mcb = resourceStore.createCriteriaBuilder();
+        ModelCriteriaBuilder<Resource> mcb = criteria();
 
         return resourceServerId == null
                 ? mcb
@@ -172,24 +171,21 @@ public class MapResourceStore implements ResourceStore {
         Resource.FilterOption name = entry.getKey();
         String[] value = entry.getValue();
 
+        ModelCriteriaBuilder<Resource> mcb = criteria();
         switch (name) {
             case ID:
             case SCOPE_ID:
             case OWNER:
             case URI:
-                return resourceStore.createCriteriaBuilder()
-                        .compare(name.getSearchableModelField(), Operator.IN, Arrays.asList(value));
+                return mcb.compare(name.getSearchableModelField(), Operator.IN, Arrays.asList(value));
             case URI_NOT_NULL:
-                return resourceStore.createCriteriaBuilder().compare(SearchableFields.URI, Operator.EXISTS);
+                return mcb.compare(SearchableFields.URI, Operator.EXISTS);
             case OWNER_MANAGED_ACCESS:
-                return resourceStore.createCriteriaBuilder()
-                        .compare(SearchableFields.OWNER_MANAGED_ACCESS, Operator.EQ, Boolean.valueOf(value[0]));
+                return mcb.compare(SearchableFields.OWNER_MANAGED_ACCESS, Operator.EQ, Boolean.valueOf(value[0]));
             case EXACT_NAME:
-                return resourceStore.createCriteriaBuilder()
-                        .compare(SearchableFields.NAME, Operator.EQ, value[0]);
+                return mcb.compare(SearchableFields.NAME, Operator.EQ, value[0]);
             case NAME:
-                return  resourceStore.createCriteriaBuilder()
-                        .compare(SearchableFields.NAME, Operator.ILIKE, "%" + value[0] + "%");
+                return mcb.compare(SearchableFields.NAME, Operator.ILIKE, "%" + value[0] + "%");
             default:
                 throw new IllegalArgumentException("Unsupported filter [" + name + "]");
 

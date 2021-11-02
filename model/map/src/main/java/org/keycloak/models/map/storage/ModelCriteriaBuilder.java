@@ -170,18 +170,4 @@ public interface ModelCriteriaBuilder<M> {
      */
     ModelCriteriaBuilder<M> not(ModelCriteriaBuilder<M> builder);
 
-    /**
-     * Returns this object cast to the given class, or {@code null} if the class cannot be cast to that {@code clazz}.
-     * @param <T>
-     * @param clazz
-     * @return
-     */
-    default <T extends ModelCriteriaBuilder> T unwrap(Class<T> clazz) {
-        if (clazz.isInstance(this)) {
-            return clazz.cast(this);
-        } else {
-            return null;
-        }
-    }
-
 }

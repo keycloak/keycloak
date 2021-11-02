@@ -65,16 +65,16 @@ public class DefaultModelCriteria<M> implements ModelCriteriaBuilder<M> {
     @Override
     public DefaultModelCriteria<M> and(ModelCriteriaBuilder<M>... mcbs) {
         if (mcbs.length == 1) {
-            ModelCriteriaNode<M> toBeChild = ((DefaultModelCriteria<M>) mcbs[0].unwrap(DefaultModelCriteria.class)).node;
+            ModelCriteriaNode<M> toBeChild = ((DefaultModelCriteria<M>) mcbs[0]).node;
             if (toBeChild.getNodeOperator() == ExtOperator.AND || toBeChild.getNodeOperator() == ExtOperator.OR) {
-                return ((DefaultModelCriteria<M>) mcbs[0].unwrap(DefaultModelCriteria.class));
+                return (DefaultModelCriteria<M>) mcbs[0];
             }
         }
 
         final ModelCriteriaNode<M> targetNode = new ModelCriteriaNode<>(ExtOperator.AND);
         AtomicBoolean hasFalseNode = new AtomicBoolean(false);
         for (ModelCriteriaBuilder<M> mcb : mcbs) {
-            final ModelCriteriaNode<M> nodeToAdd = ((DefaultModelCriteria<M>) mcb.unwrap(DefaultModelCriteria.class)).node;
+            final ModelCriteriaNode<M> nodeToAdd = ((DefaultModelCriteria<M>) mcb).node;
             getNodesToAddForAndOr(nodeToAdd, ExtOperator.AND)
               .filter(ModelCriteriaNode::isNotTrueNode)
               .peek(n -> { if (n.isFalseNode()) hasFalseNode.lazySet(true); })
@@ -97,16 +97,16 @@ public class DefaultModelCriteria<M> implements ModelCriteriaBuilder<M> {
     @Override
     public DefaultModelCriteria<M> or(ModelCriteriaBuilder<M>... mcbs) {
         if (mcbs.length == 1) {
-            ModelCriteriaNode<M> toBeChild = ((DefaultModelCriteria<M>) mcbs[0].unwrap(DefaultModelCriteria.class)).node;
+            ModelCriteriaNode<M> toBeChild = ((DefaultModelCriteria<M>) mcbs[0]).node;
             if (toBeChild.getNodeOperator() == ExtOperator.AND || toBeChild.getNodeOperator() == ExtOperator.OR) {
-                return ((DefaultModelCriteria<M>) mcbs[0].unwrap(DefaultModelCriteria.class));
+                return ((DefaultModelCriteria<M>) mcbs[0]);
             }
         }
 
         final ModelCriteriaNode<M> targetNode = new ModelCriteriaNode<>(ExtOperator.OR);
         AtomicBoolean hasTrueNode = new AtomicBoolean(false);
         for (ModelCriteriaBuilder<M> mcb : mcbs) {
-            final ModelCriteriaNode<M> nodeToAdd = ((DefaultModelCriteria<M>) mcb.unwrap(DefaultModelCriteria.class)).node;
+            final ModelCriteriaNode<M> nodeToAdd = ((DefaultModelCriteria<M>) mcb).node;
             getNodesToAddForAndOr(nodeToAdd, ExtOperator.OR)
               .filter(ModelCriteriaNode::isNotFalseNode)
               .peek(n -> { if (n.isTrueNode()) hasTrueNode.lazySet(true); })
@@ -129,7 +129,7 @@ public class DefaultModelCriteria<M> implements ModelCriteriaBuilder<M> {
     @Override
     public DefaultModelCriteria<M> not(ModelCriteriaBuilder<M> mcb) {
         final ModelCriteriaNode<M> targetNode = new ModelCriteriaNode<>(ExtOperator.NOT);
-        ModelCriteriaNode<M> toBeChild = ((DefaultModelCriteria<M>) mcb.unwrap(DefaultModelCriteria.class)).node;
+        ModelCriteriaNode<M> toBeChild = ((DefaultModelCriteria<M>) mcb).node;
         if (toBeChild.getNodeOperator() == ExtOperator.NOT) {
             return compare(toBeChild.getChildren().get(0).cloneTree());
         }
@@ -144,6 +144,9 @@ public class DefaultModelCriteria<M> implements ModelCriteriaBuilder<M> {
      * @return Updated {@code ModelCriteriaBuilder}
      */
     public <C extends ModelCriteriaBuilder<M>> C flashToModelCriteriaBuilder(C mcb) {
+        if (isEmpty()) {
+            return mcb;
+        }
         return mcb == null ? null : node.flashToModelCriteriaBuilder(mcb);
     }
 

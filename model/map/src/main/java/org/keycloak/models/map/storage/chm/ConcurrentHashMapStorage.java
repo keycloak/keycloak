@@ -25,6 +25,7 @@ import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.QueryParameters;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.storage.SearchableModelField;
 
 import java.util.Comparator;
@@ -123,11 +124,9 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
      * Deletes objects that match the given criteria.
      * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
      * @return Number of removed objects (might return {@code -1} if not supported)
-     * @throws IllegalStateException If {@code criteria} is not compatible, i.e. has not been originally created
-     *   by the {@link #createCriteriaBuilder()} method of this object.
      */
     public long delete(QueryParameters<M> queryParameters) {
-        ModelCriteriaBuilder<M> criteria = queryParameters.getModelCriteriaBuilder();
+        DefaultModelCriteria<M> criteria = (DefaultModelCriteria<M>) queryParameters.getModelCriteriaBuilder();
 
         if (criteria == null) {
             long res = store.size();
@@ -136,12 +135,9 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
         }
 
         @SuppressWarnings("unchecked")
-        MapModelCriteriaBuilder<K, V, M> b = criteria.unwrap(MapModelCriteriaBuilder.class);
-        if (b == null) {
-            throw new IllegalStateException("Incompatible class: " + criteria.getClass());
-        }
-        Predicate<? super K> keyFilter = b.getKeyFilter();
-        Predicate<? super V> entityFilter = b.getEntityFilter();
+        MapModelCriteriaBuilder<K,V,M> mcb = (MapModelCriteriaBuilder<K,V,M>) criteria.flashToModelCriteriaBuilder(createCriteriaBuilder());
+        Predicate<? super K> keyFilter = mcb.getKeyFilter();
+        Predicate<? super V> entityFilter = mcb.getEntityFilter();
         Stream<Entry<K, V>> storeStream = store.entrySet().stream();
         final AtomicLong res = new AtomicLong(0);
 
@@ -160,15 +156,14 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
     }
 
     @Override
-    public ModelCriteriaBuilder<M> createCriteriaBuilder() {
-        return new MapModelCriteriaBuilder<>(keyConvertor, fieldPredicates);
-    }
-
-    @Override
     @SuppressWarnings("unchecked")
     public MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session) {
         MapKeycloakTransaction<V, M> sessionTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
         return sessionTransaction == null ? new ConcurrentHashMapKeycloakTransaction<>(this, keyConvertor, cloner) : sessionTransaction;
+    }
+
+    public ModelCriteriaBuilder<M> createCriteriaBuilder() {
+        return new MapModelCriteriaBuilder<>(keyConvertor, fieldPredicates);
     }
 
     public StringKeyConvertor<K> getKeyConvertor() {
@@ -181,24 +176,19 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
      *
      * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
      * @return Stream of objects. Never returns {@code null}.
-     * @throws IllegalStateException If {@code criteria} is not compatible, i.e. has not been originally created
-     *   by the {@link #createCriteriaBuilder()} method of this object.
      */
     public Stream<V> read(QueryParameters<M> queryParameters) {
-        ModelCriteriaBuilder<M> criteria = queryParameters.getModelCriteriaBuilder();
+        DefaultModelCriteria<M> criteria = (DefaultModelCriteria<M>) queryParameters.getModelCriteriaBuilder();
 
         if (criteria == null) {
             return Stream.empty();
         }
+
+        MapModelCriteriaBuilder<K,V,M> mcb = (MapModelCriteriaBuilder<K,V,M>) criteria.flashToModelCriteriaBuilder(createCriteriaBuilder());
         Stream<Entry<K, V>> stream = store.entrySet().stream();
 
-        @SuppressWarnings("unchecked")
-        MapModelCriteriaBuilder<K, V, M> b = criteria.unwrap(MapModelCriteriaBuilder.class);
-        if (b == null) {
-            throw new IllegalStateException("Incompatible class: " + criteria.getClass());
-        }
-        Predicate<? super K> keyFilter = b.getKeyFilter();
-        Predicate<? super V> entityFilter = b.getEntityFilter();
+        Predicate<? super K> keyFilter = mcb.getKeyFilter();
+        Predicate<? super V> entityFilter = mcb.getEntityFilter();
         stream = stream.filter(me -> keyFilter.test(me.getKey()) && entityFilter.test(me.getValue()));
 
         return stream.map(Map.Entry::getValue);
@@ -210,8 +200,6 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
      *
      * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
      * @return Number of objects. Never returns {@code null}.
-     * @throws IllegalStateException If {@code criteria} is not compatible, i.e. has not been originally created
-     *   by the {@link #createCriteriaBuilder()} method of this object.
      */
     public long getCount(QueryParameters<M> queryParameters) {
         return read(queryParameters).count();
