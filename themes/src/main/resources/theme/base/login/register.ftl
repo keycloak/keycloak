@@ -6,7 +6,9 @@
         <form id="kc-register-form" class="${properties.kcFormClass!}" action="${url.registrationAction}" method="post">
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="firstName" class="${properties.kcLabelClass!}">${msg("firstName")}</label>
+                    <label for="firstName" class="${properties.kcLabelClass!}">
+                        <span class="pf-c-form__label-text">${msg("firstName")}</span>
+                    </label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
                     <input type="text" id="firstName" class="${properties.kcInputClass!}" name="firstName"
@@ -24,7 +26,9 @@
 
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="lastName" class="${properties.kcLabelClass!}">${msg("lastName")}</label>
+                    <label for="lastName" class="${properties.kcLabelClass!}">
+                        <span class="pf-c-form__label-text">${msg("lastName")}</span>
+                    </label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
                     <input type="text" id="lastName" class="${properties.kcInputClass!}" name="lastName"
@@ -42,7 +46,9 @@
 
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="email" class="${properties.kcLabelClass!}">${msg("email")}</label>
+                    <label for="email" class="${properties.kcLabelClass!}">
+                        <span class="pf-c-form__label-text">${msg("email")}</span>
+                    </label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
                     <input type="text" id="email" class="${properties.kcInputClass!}" name="email"
@@ -61,7 +67,9 @@
             <#if !realm.registrationEmailAsUsername>
                 <div class="${properties.kcFormGroupClass!}">
                     <div class="${properties.kcLabelWrapperClass!}">
-                        <label for="username" class="${properties.kcLabelClass!}">${msg("username")}</label>
+                        <label for="username" class="${properties.kcLabelClass!}">
+                            <span class="pf-c-form__label-text">${msg("username")}</span>
+                        </label>
                     </div>
                     <div class="${properties.kcInputWrapperClass!}">
                         <input type="text" id="username" class="${properties.kcInputClass!}" name="username"
@@ -81,7 +89,9 @@
             <#if passwordRequired??>
                 <div class="${properties.kcFormGroupClass!}">
                     <div class="${properties.kcLabelWrapperClass!}">
-                        <label for="password" class="${properties.kcLabelClass!}">${msg("password")}</label>
+                        <label for="password" class="${properties.kcLabelClass!}">
+                            <span class="pf-c-form__label-text">${msg("password")}</span>
+                        </label>
                     </div>
                     <div class="${properties.kcInputWrapperClass!}">
                         <input type="password" id="password" class="${properties.kcInputClass!}" name="password"
@@ -99,8 +109,9 @@
 
                 <div class="${properties.kcFormGroupClass!}">
                     <div class="${properties.kcLabelWrapperClass!}">
-                        <label for="password-confirm"
-                               class="${properties.kcLabelClass!}">${msg("passwordConfirm")}</label>
+                        <label for="password-confirm" class="${properties.kcLabelClass!}">
+                               <span class="pf-c-form__label-text">${msg("passwordConfirm")}</span>
+                        </label>
                     </div>
                     <div class="${properties.kcInputWrapperClass!}">
                         <input type="password" id="password-confirm" class="${properties.kcInputClass!}"

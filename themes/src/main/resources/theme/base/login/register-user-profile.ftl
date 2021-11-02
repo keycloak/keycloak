@@ -4,7 +4,7 @@
     <#if section = "header">
         ${msg("registerTitle")}
     <#elseif section = "form">
-        <form id="kc-register-form" class="${properties.kcFormClass!}" action="${url.registrationAction}" method="post">
+        <form id="kc-register-form-testing" class="${properties.kcFormClass!}" action="${url.registrationAction}" method="post">
         
             <@userProfileCommons.userProfileFormFields; callback, attribute>
                 <#if callback = "afterField">
@@ -12,7 +12,10 @@
 		            <#if passwordRequired?? && (attribute.name == 'username' || (attribute.name == 'email' && realm.registrationEmailAsUsername))>
 		                <div class="${properties.kcFormGroupClass!}">
 		                    <div class="${properties.kcLabelWrapperClass!}">
-		                        <label for="password" class="${properties.kcLabelClass!}">${msg("password")}</label> *
+		                        <label for="password" class="${properties.kcLabelClass!}">
+															<span class="pf-c-form__label-text">${msg("password")}</span>
+															<span class="pf-c-form__label-required" aria-hidden="true">&#42;</span>
+														</label>
 		                    </div>
 		                    <div class="${properties.kcInputWrapperClass!}">
 		                        <input type="password" id="password" class="${properties.kcInputClass!}" name="password"
@@ -21,17 +24,19 @@
 		                        />
 		
 		                        <#if messagesPerField.existsError('password')>
-		                            <span id="input-error-password" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
+		                            <p id="input-error-password" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
 		                                ${kcSanitize(messagesPerField.get('password'))?no_esc}
-		                            </span>
+		                            </p>
 		                        </#if>
 		                    </div>
 		                </div>
 		
 		                <div class="${properties.kcFormGroupClass!}">
 		                    <div class="${properties.kcLabelWrapperClass!}">
-		                        <label for="password-confirm"
-		                               class="${properties.kcLabelClass!}">${msg("passwordConfirm")}</label> *
+		                        <label for="password-confirm" class="${properties.kcLabelClass!}">
+															<span class="pf-c-form__label-text">${msg("passwordConfirm")}</span>
+															<span class="pf-c-form__label-required" aria-hidden="true">&#42;</span>
+														</label>
 		                    </div>
 		                    <div class="${properties.kcInputWrapperClass!}">
 		                        <input type="password" id="password-confirm" class="${properties.kcInputClass!}"
@@ -40,9 +45,9 @@
 		                        />
 		
 		                        <#if messagesPerField.existsError('password-confirm')>
-		                            <span id="input-error-password-confirm" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
+		                            <p id="input-error-password-confirm" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
 		                                ${kcSanitize(messagesPerField.get('password-confirm'))?no_esc}
-		                            </span>
+		                            </p>
 		                        </#if>
 		                    </div>
 		                </div>

@@ -33,8 +33,12 @@
 		<#nested "beforeField" attribute>
 		<div class="${properties.kcFormGroupClass!}">
 			<div class="${properties.kcLabelWrapperClass!}">
-				<label for="${attribute.name}" class="${properties.kcLabelClass!}">${advancedMsg(attribute.displayName!'')}</label>
-				<#if attribute.required>*</#if>
+				<label for="${attribute.name}" class="${properties.kcLabelClass!}">
+					<span class="pf-c-form__label-text">${advancedMsg(attribute.displayName!'')}</span>
+				</label>
+				<#if attribute.required>
+					<span class="pf-c-form__label-required" aria-hidden="true">*</span>
+				</#if>
 			</div>
 			<div class="${properties.kcInputWrapperClass!}">
 				<#if attribute.annotations.inputHelperTextBefore??>
@@ -42,9 +46,9 @@
 				</#if>
 				<@inputFieldByType attribute=attribute/>
 				<#if messagesPerField.existsError('${attribute.name}')>
-					<span id="input-error-${attribute.name}" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
+					<p id="input-error-${attribute.name}" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
 						${kcSanitize(messagesPerField.get('${attribute.name}'))?no_esc}
-					</span>
+					</p>
 				</#if>
 				<#if attribute.annotations.inputHelperTextAfter??>
 					<div class="${properties.kcInputHelperTextAfterClass!}" id="form-help-text-after-${attribute.name}" aria-live="polite">${kcSanitize(advancedMsg(attribute.annotations.inputHelperTextAfter))?no_esc}</div>

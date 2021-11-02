@@ -151,18 +151,24 @@
                 return excludeCredentials;
             }
         </script>
-
-        <input type="submit"
-               class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-               id="registerWebAuthnAIA" value="${msg("doRegister")}" onclick="registerSecurityKey()"/>
-
+        <div class="pf-c-form__group pf-m-action">
+            <div class="pf-c-form__actions">
+                <input type="submit"
+                    class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
+                    id="registerWebAuthnAIA" value="${msg("doRegister")}" onclick="registerSecurityKey()"/>
+            </div>
+        </div>
         <#if !isSetRetry?has_content && isAppInitiatedAction?has_content>
             <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-webauthn-settings-form"
                   method="post">
-                <button type="submit"
-                        class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-                        id="cancelWebAuthnAIA" name="cancel-aia" value="true"/>${msg("doCancel")}
-                </button>
+                <div class="pf-c-form__group pf-m-action">
+                    <div class="pf-c-form__actions">
+                        <button type="submit"
+                                class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
+                                id="cancelWebAuthnAIA" name="cancel-aia" value="true"/>${msg("doCancel")}
+                        </button>
+                    </div>
+                </div>
             </form>
         </#if>
 
