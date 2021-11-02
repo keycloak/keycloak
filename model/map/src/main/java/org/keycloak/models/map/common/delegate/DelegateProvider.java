@@ -17,7 +17,8 @@
 package org.keycloak.models.map.common.delegate;
 
 /**
- *
+ * Interface for a provider of a delegate of type {@code T}, optionally
+ * providing the flag on the object been updated.
  * @author hmlnarik
  */
 public interface DelegateProvider<T> {
@@ -27,7 +28,7 @@ public interface DelegateProvider<T> {
      * @param field Identification of the field this delegates operates on.
      * @return
      */
-    T getDelegate(boolean isRead, Object field);
+    T getDelegate(boolean isRead, Object field, Object... parameters);
 
     default boolean isUpdated() { return false; }
 }
