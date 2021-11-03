@@ -62,6 +62,9 @@ describe("Users test", () => {
     beforeEach(() => {
       keycloakBefore();
       loginPage.logIn();
+      cy.intercept(
+        "/auth/admin/realms/master/components?type=org.keycloak.storage.UserStorageProvider"
+      ).as("brute-force");
       sidebarPage.goToUsers();
     });
 
@@ -90,8 +93,6 @@ describe("Users test", () => {
 
       const groupsListCopy = groupsList.slice(0, 1);
 
-      console.log(groupsList);
-
       groupsListCopy.forEach((element) => {
         cy.findByTestId(`${element}-check`).click();
       });
@@ -106,6 +107,7 @@ describe("Users test", () => {
     });
 
     it("User details test", () => {
+      cy.wait("@brute-force");
       listingPage.searchItem(itemId).itemExist(itemId);
 
       listingPage.goToItemDetails(itemId);
@@ -115,10 +117,12 @@ describe("Users test", () => {
       masthead.checkNotificationMessage("The user has been saved");
 
       sidebarPage.goToUsers();
+      cy.wait("@brute-force");
       listingPage.searchItem(itemId).itemExist(itemId);
     });
 
     it("User attributes test", () => {
+      cy.wait("@brute-force");
       listingPage.searchItem(itemId).itemExist(itemId);
 
       listingPage.goToItemDetails(itemId);
@@ -132,6 +136,7 @@ describe("Users test", () => {
     });
 
     it("User attributes with multiple values test", () => {
+      cy.wait("@brute-force");
       listingPage.searchItem(itemId).itemExist(itemId);
 
       listingPage.goToItemDetails(itemId);
@@ -159,6 +164,7 @@ describe("Users test", () => {
     });
 
     it("Add user to groups test", () => {
+      cy.wait("@brute-force");
       // Go to user groups
       listingPage.searchItem(itemId).itemExist(itemId);
       listingPage.goToItemDetails(itemId);
@@ -176,15 +182,17 @@ describe("Users test", () => {
     });
 
     it("Leave group test", () => {
+      cy.wait("@brute-force");
       listingPage.searchItem(itemId).itemExist(itemId);
       listingPage.goToItemDetails(itemId);
       // Go to user groups
       userGroupsPage.goToGroupsTab();
-      cy.contains("Leave").click();
+      cy.findByTestId(`leave-${groupsList[0]}`).click();
       cy.findByTestId("modalConfirm").click();
     });
 
     it("Go to user consents test", () => {
+      cy.wait("@brute-force");
       listingPage.searchItem(itemId).itemExist(itemId);
 
       listingPage.goToItemDetails(itemId);

@@ -19,9 +19,12 @@ export default {
     selectGroups: "Select groups to join",
     searchForGroups: "Search for groups",
     leave: "Leave",
-    leaveGroup: "Leave group {{name}}?",
-    leaveGroupConfirmDialog:
+    leaveGroup_one: "Leave group {{name}}?",
+    leaveGroup_other: "Leave groups?",
+    leaveGroupConfirmDialog_one:
       "Are you sure you want to remove {{username}} from the group {{groupname}}?",
+    leaveGroupConfirmDialog_other:
+      "Are you sure you want to remove {{username}} from the {{count}} selected groups?",
     directMembership: "Direct membership",
     groupMembership: "Group membership",
     addedGroupMembership: "Added group membership",
@@ -56,9 +59,9 @@ export default {
     deleteConfirm: "Delete user?",
     deleteConfirmCurrentUser:
       "Are you sure you want to permanently delete this user",
-    deleteConfirmDialog:
+    deleteConfirmDialog_one:
       "Are you sure you want to permanently delete {{count}} selected user",
-    deleteConfirmDialog_plural:
+    deleteConfirmDialog_other:
       "Are you sure you want to permanently delete {{count}} selected users",
     userID: "User ID",
     userCreated: "The user has been created",

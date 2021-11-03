@@ -38,8 +38,8 @@ export default {
     assignRole: "Assign role",
     unAssignRole: "Unassign",
     removeMappingTitle: "Remove mapping?",
-    removeMappingConfirm: "Are you sure you want to remove this mapping?",
-    removeMappingConfirm_plural:
+    removeMappingConfirm_one: "Are you sure you want to remove this mapping?",
+    removeMappingConfirm_other:
       "Are you sure you want to remove {{count}} mappings",
     clientScopeSearch: {
       name: "Name",
