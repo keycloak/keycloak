@@ -29,7 +29,6 @@ import org.keycloak.models.map.authorization.adapter.MapPolicyAdapter;
 import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
@@ -63,8 +62,8 @@ public class MapPolicyStore implements PolicyStore {
         return new MapPolicyAdapter(origEntity, authorizationProvider.getStoreFactory());
     }
 
-    private ModelCriteriaBuilder<Policy> forResourceServer(String resourceServerId) {
-        ModelCriteriaBuilder<Policy> mcb = criteria();
+    private DefaultModelCriteria<Policy> forResourceServer(String resourceServerId) {
+        DefaultModelCriteria<Policy> mcb = criteria();
 
         return resourceServerId == null
                 ? mcb
@@ -77,7 +76,7 @@ public class MapPolicyStore implements PolicyStore {
         LOG.tracef("create(%s, %s, %s)%s", representation.getId(), resourceServer.getId(), resourceServer, getShortStackTrace());
 
         // @UniqueConstraint(columnNames = {"NAME", "RESOURCE_SERVER_ID"})
-        ModelCriteriaBuilder<Policy> mcb = forResourceServer(resourceServer.getId())
+        DefaultModelCriteria<Policy> mcb = forResourceServer(resourceServer.getId())
                 .compare(SearchableFields.NAME, Operator.EQ, representation.getName());
 
         if (tx.getCount(withCriteria(mcb)) > 0) {
@@ -136,11 +135,11 @@ public class MapPolicyStore implements PolicyStore {
     public List<Policy> findByResourceServer(Map<Policy.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
         LOG.tracef("findByResourceServer(%s, %s, %d, %d)%s", attributes, resourceServerId, firstResult, maxResult, getShortStackTrace());
 
-        ModelCriteriaBuilder<Policy> mcb = forResourceServer(resourceServerId).and(
+        DefaultModelCriteria<Policy> mcb = forResourceServer(resourceServerId).and(
                 attributes.entrySet().stream()
-                        .map(this::filterEntryToModelCriteriaBuilder)
+                        .map(this::filterEntryToDefaultModelCriteria)
                         .filter(Objects::nonNull)
-                        .toArray(ModelCriteriaBuilder[]::new)
+                        .toArray(DefaultModelCriteria[]::new)
         );
 
         if (!attributes.containsKey(Policy.FilterOption.OWNER) && !attributes.containsKey(Policy.FilterOption.ANY_OWNER)) {
@@ -154,11 +153,11 @@ public class MapPolicyStore implements PolicyStore {
             .collect(Collectors.toList());
     }
 
-    private ModelCriteriaBuilder<Policy> filterEntryToModelCriteriaBuilder(Map.Entry<Policy.FilterOption, String[]> entry) {
+    private DefaultModelCriteria<Policy> filterEntryToDefaultModelCriteria(Map.Entry<Policy.FilterOption, String[]> entry) {
         Policy.FilterOption name = entry.getKey();
         String[] value = entry.getValue();
 
-        ModelCriteriaBuilder<Policy> mcb = criteria();
+        DefaultModelCriteria<Policy> mcb = criteria();
         switch (name) {
             case ID:
             case SCOPE_ID:
@@ -220,7 +219,7 @@ public class MapPolicyStore implements PolicyStore {
 
     @Override
     public void findByScopeIds(List<String> scopeIds, String resourceId, String resourceServerId, Consumer<Policy> consumer) {
-        ModelCriteriaBuilder<Policy> mcb = forResourceServer(resourceServerId)
+        DefaultModelCriteria<Policy> mcb = forResourceServer(resourceServerId)
                 .compare(SearchableFields.TYPE, Operator.EQ, "scope")
                 .compare(SearchableFields.SCOPE_ID, Operator.IN, scopeIds);
 

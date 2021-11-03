@@ -43,8 +43,8 @@ import org.keycloak.models.UserModel.SearchableFields;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
@@ -154,7 +154,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     public void preRemove(RealmModel realm, IdentityProviderModel provider) {
         String socialProvider = provider.getAlias();
         LOG.tracef("preRemove[RealmModel realm, IdentityProviderModel provider](%s, %s)%s", realm, socialProvider, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = criteria();
+        DefaultModelCriteria<UserModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.IDP_AND_USER, Operator.EQ, socialProvider);
 
@@ -189,7 +189,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public UserModel getUserByFederatedIdentity(RealmModel realm, FederatedIdentityModel socialLink) {
         LOG.tracef("getUserByFederatedIdentity(%s, %s)%s", realm, socialLink, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = criteria();
+        DefaultModelCriteria<UserModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.IDP_AND_USER, Operator.EQ, socialLink.getIdentityProvider(), socialLink.getUserId());
 
@@ -278,7 +278,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public UserModel getServiceAccount(ClientModel client) {
         LOG.tracef("getServiceAccount(%s)%s", client.getId(), getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = criteria();
+        DefaultModelCriteria<UserModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId())
           .compare(SearchableFields.SERVICE_ACCOUNT_CLIENT, Operator.EQ, client.getId());
 
@@ -301,7 +301,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions) {
         LOG.tracef("addUser(%s, %s, %s, %s, %s)%s", realm, id, username, addDefaultRoles, addDefaultRequiredActions, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = criteria();
+        DefaultModelCriteria<UserModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.USERNAME, Operator.EQ, username);
 
@@ -341,7 +341,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public void preRemove(RealmModel realm) {
         LOG.tracef("preRemove[RealmModel](%s)%s", realm, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = criteria();
+        DefaultModelCriteria<UserModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         tx.delete(withCriteria(mcb));
@@ -350,7 +350,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public void removeImportedUsers(RealmModel realm, String storageProviderId) {
         LOG.tracef("removeImportedUsers(%s, %s)%s", realm, storageProviderId, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = criteria();
+        DefaultModelCriteria<UserModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.FEDERATION_LINK, Operator.EQ, storageProviderId);
 
@@ -360,7 +360,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public void unlinkUsers(RealmModel realm, String storageProviderId) {
         LOG.tracef("unlinkUsers(%s, %s)%s", realm, storageProviderId, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = criteria();
+        DefaultModelCriteria<UserModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.FEDERATION_LINK, Operator.EQ, storageProviderId);
 
@@ -373,7 +373,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     public void preRemove(RealmModel realm, RoleModel role) {
         String roleId = role.getId();
         LOG.tracef("preRemove[RoleModel](%s, %s)%s", realm, roleId, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = criteria();
+        DefaultModelCriteria<UserModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ASSIGNED_ROLE, Operator.EQ, roleId);
 
@@ -386,7 +386,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     public void preRemove(RealmModel realm, GroupModel group) {
         String groupId = group.getId();
         LOG.tracef("preRemove[GroupModel](%s, %s)%s", realm, groupId, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = criteria();
+        DefaultModelCriteria<UserModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ASSIGNED_GROUP, Operator.EQ, groupId);
 
@@ -399,7 +399,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     public void preRemove(RealmModel realm, ClientModel client) {
         String clientId = client.getId();
         LOG.tracef("preRemove[ClientModel](%s, %s)%s", realm, clientId, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = criteria();
+        DefaultModelCriteria<UserModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.CONSENT_FOR_CLIENT, Operator.EQ, clientId);
 
@@ -418,7 +418,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         String clientScopeId = clientScope.getId();
         LOG.tracef("preRemove[ClientScopeModel](%s)%s", clientScopeId, getShortStackTrace());
 
-        ModelCriteriaBuilder<UserModel> mcb = criteria();
+        DefaultModelCriteria<UserModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, clientScope.getRealm().getId())
           .compare(SearchableFields.CONSENT_WITH_CLIENT_SCOPE, Operator.EQ, clientScopeId);
 
@@ -436,7 +436,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
             removeImportedUsers(realm, componentId);
         }
         if (component.getProviderType().equals(ClientStorageProvider.class.getName())) {
-            ModelCriteriaBuilder<UserModel> mcb = criteria();
+            DefaultModelCriteria<UserModel> mcb = criteria();
             mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
               .compare(SearchableFields.CONSENT_CLIENT_FEDERATION_LINK, Operator.EQ, componentId);
 
@@ -464,7 +464,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     public void grantToAllUsers(RealmModel realm, RoleModel role) {
         String roleId = role.getId();
         LOG.tracef("grantToAllUsers(%s, %s)%s", realm, roleId, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = criteria();
+        DefaultModelCriteria<UserModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         try (Stream<MapUserEntity> s = tx.read(withCriteria(mcb))) {
@@ -482,7 +482,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     public UserModel getUserByUsername(RealmModel realm, String username) {
         if (username == null) return null;
         LOG.tracef("getUserByUsername(%s, %s)%s", realm, username, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = criteria();
+        DefaultModelCriteria<UserModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.USERNAME, Operator.ILIKE, username);
 
@@ -495,7 +495,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public UserModel getUserByEmail(RealmModel realm, String email) {
         LOG.tracef("getUserByEmail(%s, %s)%s", realm, email, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = criteria();
+        DefaultModelCriteria<UserModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.EMAIL, Operator.EQ, email);
 
@@ -526,7 +526,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public int getUsersCount(RealmModel realm, boolean includeServiceAccount) {
         LOG.tracef("getUsersCount(%s, %s)%s", realm, includeServiceAccount, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = criteria();
+        DefaultModelCriteria<UserModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         if (! includeServiceAccount) {
@@ -539,7 +539,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults, boolean includeServiceAccounts) {
         LOG.tracef("getUsersStream(%s, %d, %d, %s)%s", realm, firstResult, maxResults, includeServiceAccounts, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = criteria();
+        DefaultModelCriteria<UserModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         if (! includeServiceAccounts) {
@@ -569,7 +569,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
         LOG.tracef("searchForUserStream(%s, %s, %d, %d)%s", realm, attributes, firstResult, maxResults, getShortStackTrace());
 
-        ModelCriteriaBuilder<UserModel> mcb = criteria();
+        DefaultModelCriteria<UserModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         if (! session.getAttributeOrDefault(UserModel.INCLUDE_SERVICE_ACCOUNT, true)) {
@@ -675,7 +675,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults) {
         LOG.tracef("getGroupMembersStream(%s, %s, %d, %d)%s", realm, group.getId(), firstResult, maxResults, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = criteria();
+        DefaultModelCriteria<UserModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ASSIGNED_GROUP, Operator.EQ, group.getId());
 
@@ -686,7 +686,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue) {
         LOG.tracef("searchForUserByUserAttributeStream(%s, %s, %s)%s", realm, attrName, attrValue, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = criteria();
+        DefaultModelCriteria<UserModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ATTRIBUTE, Operator.EQ, attrName, attrValue);
 
@@ -714,7 +714,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults) {
         LOG.tracef("getRoleMembersStream(%s, %s, %d, %d)%s", realm, role, firstResult, maxResults, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = criteria();
+        DefaultModelCriteria<UserModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ASSIGNED_ROLE, Operator.EQ, role.getId());
 

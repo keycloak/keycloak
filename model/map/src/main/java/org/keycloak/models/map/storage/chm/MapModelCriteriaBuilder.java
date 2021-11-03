@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  *
  * @author hmlnarik
  */
-public class MapModelCriteriaBuilder<K, V extends AbstractEntity, M> implements ModelCriteriaBuilder<M> {
+public class MapModelCriteriaBuilder<K, V extends AbstractEntity, M> implements ModelCriteriaBuilder<M, MapModelCriteriaBuilder<K, V, M>> {
 
     @FunctionalInterface
     public static interface UpdatePredicatesFunc<K, V extends AbstractEntity, M> {
@@ -70,7 +70,7 @@ public class MapModelCriteriaBuilder<K, V extends AbstractEntity, M> implements 
     @SafeVarargs
     @SuppressWarnings("unchecked")
     @Override
-    public final MapModelCriteriaBuilder<K, V, M> and(ModelCriteriaBuilder<M>... builders) {
+    public final MapModelCriteriaBuilder<K, V, M> and(MapModelCriteriaBuilder<K, V, M>... builders) {
         Predicate<? super K> resIndexFilter = Stream.of(builders).map(MapModelCriteriaBuilder.class::cast).map(MapModelCriteriaBuilder::getKeyFilter).reduce(keyFilter, Predicate::and);
         Predicate<V> resEntityFilter = Stream.of(builders).map(MapModelCriteriaBuilder.class::cast).map(MapModelCriteriaBuilder::getEntityFilter).reduce(entityFilter, Predicate::and);
         return new MapModelCriteriaBuilder<>(keyConvertor, fieldPredicates, resIndexFilter, resEntityFilter);
@@ -79,7 +79,7 @@ public class MapModelCriteriaBuilder<K, V extends AbstractEntity, M> implements 
     @SafeVarargs
     @SuppressWarnings("unchecked")
     @Override
-    public final MapModelCriteriaBuilder<K, V, M> or(ModelCriteriaBuilder<M>... builders) {
+    public final MapModelCriteriaBuilder<K, V, M> or(MapModelCriteriaBuilder<K, V, M>... builders) {
         Predicate<? super K> resIndexFilter = Stream.of(builders).map(MapModelCriteriaBuilder.class::cast).map(MapModelCriteriaBuilder::getKeyFilter).reduce(ALWAYS_FALSE, Predicate::or);
         Predicate<V> resEntityFilter = Stream.of(builders).map(MapModelCriteriaBuilder.class::cast).map(MapModelCriteriaBuilder::getEntityFilter).reduce(ALWAYS_FALSE, Predicate::or);
         return new MapModelCriteriaBuilder<>(
@@ -92,10 +92,10 @@ public class MapModelCriteriaBuilder<K, V extends AbstractEntity, M> implements 
 
     @SuppressWarnings("unchecked")
     @Override
-    public MapModelCriteriaBuilder<K, V, M> not(ModelCriteriaBuilder<M> builder) {
+    public MapModelCriteriaBuilder<K, V, M> not(MapModelCriteriaBuilder<K, V, M> builder) {
         MapModelCriteriaBuilder<K, V, M> b = (MapModelCriteriaBuilder<K, V, M>) builder;
-        Predicate<? super K> resIndexFilter = b.getKeyFilter() == ALWAYS_TRUE ? ALWAYS_TRUE : b.getKeyFilter().negate();
-        Predicate<? super V> resEntityFilter = b.getEntityFilter() == ALWAYS_TRUE ? ALWAYS_TRUE : b.getEntityFilter().negate();
+        Predicate<? super K> resIndexFilter = builder.getKeyFilter() == ALWAYS_TRUE ? ALWAYS_TRUE : builder.getKeyFilter().negate();
+        Predicate<? super V> resEntityFilter = builder.getEntityFilter() == ALWAYS_TRUE ? ALWAYS_TRUE : builder.getEntityFilter().negate();
 
         return new MapModelCriteriaBuilder<>(
           keyConvertor,

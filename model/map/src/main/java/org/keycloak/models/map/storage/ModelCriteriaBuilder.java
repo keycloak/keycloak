@@ -51,7 +51,7 @@ import org.keycloak.storage.SearchableModelField;
  *
  * @author hmlnarik
  */
-public interface ModelCriteriaBuilder<M> {
+public interface ModelCriteriaBuilder<M, Self extends ModelCriteriaBuilder<M, Self>> {
 
     /**
      * The operators are very basic ones for this use case. In the real scenario,
@@ -117,7 +117,7 @@ public interface ModelCriteriaBuilder<M> {
      * @return
      * @throws CriterionNotSupported If the operator is not supported for the given field.
      */
-    ModelCriteriaBuilder<M> compare(SearchableModelField<? super M> modelField, Operator op, Object... value);
+    Self compare(SearchableModelField<? super M> modelField, Operator op, Object... value);
 
     /**
      * Creates and returns a new instance of {@code ModelCriteriaBuilder} that
@@ -136,7 +136,7 @@ public interface ModelCriteriaBuilder<M> {
      *
      * @throws CriterionNotSupported If the operator is not supported for the given field.
      */
-    ModelCriteriaBuilder<M> and(ModelCriteriaBuilder<M>... builders);
+    Self and(Self... builders);
 
     /**
      * Creates and returns a new instance of {@code ModelCriteriaBuilder} that
@@ -155,7 +155,7 @@ public interface ModelCriteriaBuilder<M> {
      *
      * @throws CriterionNotSupported If the operator is not supported for the given field.
      */
-    ModelCriteriaBuilder<M> or(ModelCriteriaBuilder<M>... builders);
+    Self or(Self... builders);
 
     /**
      * Creates and returns a new instance of {@code ModelCriteriaBuilder} that
@@ -168,6 +168,6 @@ public interface ModelCriteriaBuilder<M> {
      * @return
      * @throws CriterionNotSupported If the operator is not supported for the given field.
      */
-    ModelCriteriaBuilder<M> not(ModelCriteriaBuilder<M> builder);
+    Self not(Self builder);
 
 }

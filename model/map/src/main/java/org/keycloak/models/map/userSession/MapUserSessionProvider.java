@@ -29,7 +29,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
+import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 
 import java.util.Arrays;
@@ -173,12 +173,12 @@ public class MapUserSessionProvider implements UserSessionProvider {
             return null;
         }
 
-        ModelCriteriaBuilder<AuthenticatedClientSessionModel> mcb = criteria();
-        mcb = mcb.compare(AuthenticatedClientSessionModel.SearchableFields.ID, ModelCriteriaBuilder.Operator.EQ, clientSessionId)
-                .compare(AuthenticatedClientSessionModel.SearchableFields.USER_SESSION_ID, ModelCriteriaBuilder.Operator.EQ, userSession.getId())
-                .compare(AuthenticatedClientSessionModel.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.EQ, userSession.getRealm().getId())
-                .compare(AuthenticatedClientSessionModel.SearchableFields.CLIENT_ID, ModelCriteriaBuilder.Operator.EQ, client.getId())
-                .compare(AuthenticatedClientSessionModel.SearchableFields.IS_OFFLINE, ModelCriteriaBuilder.Operator.EQ, offline);
+        DefaultModelCriteria<AuthenticatedClientSessionModel> mcb = criteria();
+        mcb = mcb.compare(AuthenticatedClientSessionModel.SearchableFields.ID, Operator.EQ, clientSessionId)
+                .compare(AuthenticatedClientSessionModel.SearchableFields.USER_SESSION_ID, Operator.EQ, userSession.getId())
+                .compare(AuthenticatedClientSessionModel.SearchableFields.REALM_ID, Operator.EQ, userSession.getRealm().getId())
+                .compare(AuthenticatedClientSessionModel.SearchableFields.CLIENT_ID, Operator.EQ, client.getId())
+                .compare(AuthenticatedClientSessionModel.SearchableFields.IS_OFFLINE, Operator.EQ, offline);
 
         return clientSessionTx.read(withCriteria(mcb))
                 .findFirst()
@@ -236,8 +236,8 @@ public class MapUserSessionProvider implements UserSessionProvider {
             return userEntityToAdapterFunc(realm).apply(userSessionEntity);
         }
 
-        ModelCriteriaBuilder<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, false)
-                .compare(UserSessionModel.SearchableFields.ID, ModelCriteriaBuilder.Operator.EQ, id);
+        DefaultModelCriteria<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, false)
+                .compare(UserSessionModel.SearchableFields.ID, Operator.EQ, id);
 
         return userSessionTx.read(withCriteria(mcb))
                 .findFirst()
@@ -247,8 +247,8 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
     @Override
     public Stream<UserSessionModel> getUserSessionsStream(RealmModel realm, UserModel user) {
-        ModelCriteriaBuilder<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, false)
-                .compare(UserSessionModel.SearchableFields.USER_ID, ModelCriteriaBuilder.Operator.EQ, user.getId());
+        DefaultModelCriteria<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, false)
+                .compare(UserSessionModel.SearchableFields.USER_ID, Operator.EQ, user.getId());
 
         LOG.tracef("getUserSessionsStream(%s, %s)%s", realm, user, getShortStackTrace());
 
@@ -259,8 +259,8 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
     @Override
     public Stream<UserSessionModel> getUserSessionsStream(RealmModel realm, ClientModel client) {
-        ModelCriteriaBuilder<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, false)
-                .compare(UserSessionModel.SearchableFields.CLIENT_ID, ModelCriteriaBuilder.Operator.EQ, client.getId());
+        DefaultModelCriteria<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, false)
+                .compare(UserSessionModel.SearchableFields.CLIENT_ID, Operator.EQ, client.getId());
 
         LOG.tracef("getUserSessionsStream(%s, %s)%s", realm, client, getShortStackTrace());
 
@@ -274,8 +274,8 @@ public class MapUserSessionProvider implements UserSessionProvider {
                                                           Integer firstResult, Integer maxResults) {
         LOG.tracef("getUserSessionsStream(%s, %s, %s, %s)%s", realm, client, firstResult, maxResults, getShortStackTrace());
 
-        ModelCriteriaBuilder<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, false)
-                .compare(UserSessionModel.SearchableFields.CLIENT_ID, ModelCriteriaBuilder.Operator.EQ, client.getId());
+        DefaultModelCriteria<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, false)
+                .compare(UserSessionModel.SearchableFields.CLIENT_ID, Operator.EQ, client.getId());
 
 
         return userSessionTx.read(withCriteria(mcb).pagination(firstResult, maxResults,
@@ -286,8 +286,8 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
     @Override
     public Stream<UserSessionModel> getUserSessionByBrokerUserIdStream(RealmModel realm, String brokerUserId) {
-        ModelCriteriaBuilder<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, false)
-                .compare(UserSessionModel.SearchableFields.BROKER_USER_ID, ModelCriteriaBuilder.Operator.EQ, brokerUserId);
+        DefaultModelCriteria<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, false)
+                .compare(UserSessionModel.SearchableFields.BROKER_USER_ID, Operator.EQ, brokerUserId);
 
         LOG.tracef("getUserSessionByBrokerUserIdStream(%s, %s)%s", realm, brokerUserId, getShortStackTrace());
 
@@ -298,8 +298,8 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
     @Override
     public UserSessionModel getUserSessionByBrokerSessionId(RealmModel realm, String brokerSessionId) {
-        ModelCriteriaBuilder<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, false)
-                .compare(UserSessionModel.SearchableFields.BROKER_SESSION_ID, ModelCriteriaBuilder.Operator.EQ, brokerSessionId);
+        DefaultModelCriteria<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, false)
+                .compare(UserSessionModel.SearchableFields.BROKER_SESSION_ID, Operator.EQ, brokerSessionId);
 
         LOG.tracef("getUserSessionByBrokerSessionId(%s, %s)%s", realm, brokerSessionId, getShortStackTrace());
 
@@ -331,8 +331,8 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
     @Override
     public long getActiveUserSessions(RealmModel realm, ClientModel client) {
-        ModelCriteriaBuilder<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, false)
-                .compare(UserSessionModel.SearchableFields.CLIENT_ID, ModelCriteriaBuilder.Operator.EQ, client.getId());
+        DefaultModelCriteria<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, false)
+                .compare(UserSessionModel.SearchableFields.CLIENT_ID, Operator.EQ, client.getId());
 
         LOG.tracef("getActiveUserSessions(%s, %s)%s", realm, client, getShortStackTrace());
 
@@ -341,7 +341,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
     @Override
     public Map<String, Long> getActiveClientSessionStats(RealmModel realm, boolean offline) {
-        ModelCriteriaBuilder<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, offline);
+        DefaultModelCriteria<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, offline);
 
         LOG.tracef("getActiveClientSessionStats(%s, %s)%s", realm, offline, getShortStackTrace());
 
@@ -358,8 +358,8 @@ public class MapUserSessionProvider implements UserSessionProvider {
     public void removeUserSession(RealmModel realm, UserSessionModel session) {
         Objects.requireNonNull(session, "The provided user session can't be null!");
 
-        ModelCriteriaBuilder<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, false)
-                .compare(UserSessionModel.SearchableFields.ID, ModelCriteriaBuilder.Operator.EQ, session.getId());
+        DefaultModelCriteria<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, false)
+                .compare(UserSessionModel.SearchableFields.ID, Operator.EQ, session.getId());
 
         LOG.tracef("removeUserSession(%s, %s)%s", realm, session, getShortStackTrace());
 
@@ -368,9 +368,9 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void removeUserSessions(RealmModel realm, UserModel user) {
-        ModelCriteriaBuilder<UserSessionModel> mcb = criteria();
-        mcb = mcb.compare(UserSessionModel.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.EQ, realm.getId())
-                .compare(UserSessionModel.SearchableFields.USER_ID, ModelCriteriaBuilder.Operator.EQ, user.getId());
+        DefaultModelCriteria<UserSessionModel> mcb = criteria();
+        mcb = mcb.compare(UserSessionModel.SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+                .compare(UserSessionModel.SearchableFields.USER_ID, Operator.EQ, user.getId());
 
         LOG.tracef("removeUserSessions(%s, %s)%s", realm, user, getShortStackTrace());
 
@@ -389,7 +389,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
     @Override
     public void removeUserSessions(RealmModel realm) {
-        ModelCriteriaBuilder<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, false);
+        DefaultModelCriteria<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, false);
 
         LOG.tracef("removeUserSessions(%s)%s", realm, getShortStackTrace());
 
@@ -442,13 +442,13 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
         LOG.tracef("removeOfflineUserSession(%s, %s)%s", realm, userSession, getShortStackTrace());
 
-        ModelCriteriaBuilder<UserSessionModel> mcb;
+        DefaultModelCriteria<UserSessionModel> mcb;
         if (userSession.isOffline()) {
             userSessionTx.delete(userSession.getId());
         } else if (userSession.getNote(CORRESPONDING_SESSION_ID) != null) {
             String uk = userSession.getNote(CORRESPONDING_SESSION_ID);
             mcb = realmAndOfflineCriteriaBuilder(realm, true)
-                    .compare(UserSessionModel.SearchableFields.ID, ModelCriteriaBuilder.Operator.EQ, uk);
+                    .compare(UserSessionModel.SearchableFields.ID, Operator.EQ, uk);
             userSessionTx.delete(withCriteria(mcb));
             userSession.removeNote(CORRESPONDING_SESSION_ID);
         }
@@ -477,8 +477,8 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
     @Override
     public Stream<UserSessionModel> getOfflineUserSessionsStream(RealmModel realm, UserModel user) {
-        ModelCriteriaBuilder<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, true)
-                .compare(UserSessionModel.SearchableFields.USER_ID, ModelCriteriaBuilder.Operator.EQ, user.getId());
+        DefaultModelCriteria<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, true)
+                .compare(UserSessionModel.SearchableFields.USER_ID, Operator.EQ, user.getId());
 
         LOG.tracef("getOfflineUserSessionsStream(%s, %s)%s", realm, user, getShortStackTrace());
 
@@ -489,8 +489,8 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
     @Override
     public UserSessionModel getOfflineUserSessionByBrokerSessionId(RealmModel realm, String brokerSessionId) {
-        ModelCriteriaBuilder<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, true)
-                .compare(UserSessionModel.SearchableFields.BROKER_SESSION_ID, ModelCriteriaBuilder.Operator.EQ, brokerSessionId);
+        DefaultModelCriteria<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, true)
+                .compare(UserSessionModel.SearchableFields.BROKER_SESSION_ID, Operator.EQ, brokerSessionId);
 
         LOG.tracef("getOfflineUserSessionByBrokerSessionId(%s, %s)%s", realm, brokerSessionId, getShortStackTrace());
 
@@ -502,8 +502,8 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
     @Override
     public Stream<UserSessionModel> getOfflineUserSessionByBrokerUserIdStream(RealmModel realm, String brokerUserId) {
-        ModelCriteriaBuilder<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, true)
-                .compare(UserSessionModel.SearchableFields.BROKER_USER_ID, ModelCriteriaBuilder.Operator.EQ, brokerUserId);
+        DefaultModelCriteria<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, true)
+                .compare(UserSessionModel.SearchableFields.BROKER_USER_ID, Operator.EQ, brokerUserId);
 
         LOG.tracef("getOfflineUserSessionByBrokerUserIdStream(%s, %s)%s", realm, brokerUserId, getShortStackTrace());
 
@@ -514,8 +514,8 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
     @Override
     public long getOfflineSessionsCount(RealmModel realm, ClientModel client) {
-        ModelCriteriaBuilder<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, true)
-                .compare(UserSessionModel.SearchableFields.CLIENT_ID, ModelCriteriaBuilder.Operator.EQ, client.getId());
+        DefaultModelCriteria<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, true)
+                .compare(UserSessionModel.SearchableFields.CLIENT_ID, Operator.EQ, client.getId());
 
         LOG.tracef("getOfflineSessionsCount(%s, %s)%s", realm, client, getShortStackTrace());
 
@@ -525,8 +525,8 @@ public class MapUserSessionProvider implements UserSessionProvider {
     @Override
     public Stream<UserSessionModel> getOfflineUserSessionsStream(RealmModel realm, ClientModel client,
                                                                  Integer firstResult, Integer maxResults) {
-        ModelCriteriaBuilder<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, true)
-                .compare(UserSessionModel.SearchableFields.CLIENT_ID, ModelCriteriaBuilder.Operator.EQ, client.getId());
+        DefaultModelCriteria<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, true)
+                .compare(UserSessionModel.SearchableFields.CLIENT_ID, Operator.EQ, client.getId());
 
         LOG.tracef("getOfflineUserSessionsStream(%s, %s, %s, %s)%s", realm, client, firstResult, maxResults, getShortStackTrace());
 
@@ -574,9 +574,9 @@ public class MapUserSessionProvider implements UserSessionProvider {
         }
 
         // first get a user entity by ID
-        ModelCriteriaBuilder<UserSessionModel> mcb = criteria();
-        mcb = mcb.compare(UserSessionModel.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.EQ, realm.getId())
-                .compare(UserSessionModel.SearchableFields.ID, ModelCriteriaBuilder.Operator.EQ, userSessionId);
+        DefaultModelCriteria<UserSessionModel> mcb = criteria();
+        mcb = mcb.compare(UserSessionModel.SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+                .compare(UserSessionModel.SearchableFields.ID, Operator.EQ, userSessionId);
 
         // check if it's an offline user session
         MapUserSessionEntity userSessionEntity = userSessionTx.read(withCriteria(mcb)).findFirst().orElse(null);
@@ -587,7 +587,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
         } else {
             // no session found by the given ID, try to find by corresponding session ID
             mcb = realmAndOfflineCriteriaBuilder(realm, true)
-                    .compare(UserSessionModel.SearchableFields.CORRESPONDING_SESSION_ID, ModelCriteriaBuilder.Operator.EQ, userSessionId);
+                    .compare(UserSessionModel.SearchableFields.CORRESPONDING_SESSION_ID, Operator.EQ, userSessionId);
             return userSessionTx.read(withCriteria(mcb));
         }
 
@@ -595,17 +595,17 @@ public class MapUserSessionProvider implements UserSessionProvider {
         String offlineUserSessionId = userSessionEntity.getNote(CORRESPONDING_SESSION_ID);
         if (offlineUserSessionId != null) {
             mcb = realmAndOfflineCriteriaBuilder(realm, true)
-                    .compare(UserSessionModel.SearchableFields.ID, ModelCriteriaBuilder.Operator.EQ, offlineUserSessionId);
+                    .compare(UserSessionModel.SearchableFields.ID, Operator.EQ, offlineUserSessionId);
             return userSessionTx.read(withCriteria(mcb));
         }
 
         return Stream.empty();
     }
 
-    private ModelCriteriaBuilder<UserSessionModel> realmAndOfflineCriteriaBuilder(RealmModel realm, boolean offline) {
+    private DefaultModelCriteria<UserSessionModel> realmAndOfflineCriteriaBuilder(RealmModel realm, boolean offline) {
         return DefaultModelCriteria.<UserSessionModel>criteria()
-                .compare(UserSessionModel.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.EQ, realm.getId())
-                .compare(UserSessionModel.SearchableFields.IS_OFFLINE, ModelCriteriaBuilder.Operator.EQ, offline);
+                .compare(UserSessionModel.SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+                .compare(UserSessionModel.SearchableFields.IS_OFFLINE, Operator.EQ, offline);
     }
 
     private MapUserSessionEntity getUserSessionById(String id) {

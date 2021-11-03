@@ -29,9 +29,9 @@ import org.keycloak.models.map.authorization.adapter.MapScopeAdapter;
 import org.keycloak.models.map.authorization.entity.MapScopeEntity;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 
+import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -59,8 +59,8 @@ public class MapScopeStore implements ScopeStore {
         return new MapScopeAdapter(origEntity, authorizationProvider.getStoreFactory());
     }
 
-    private ModelCriteriaBuilder<Scope> forResourceServer(String resourceServerId) {
-        ModelCriteriaBuilder<Scope> mcb = criteria();
+    private DefaultModelCriteria<Scope> forResourceServer(String resourceServerId) {
+        DefaultModelCriteria<Scope> mcb = criteria();
 
         return resourceServerId == null
                 ? mcb
@@ -74,7 +74,7 @@ public class MapScopeStore implements ScopeStore {
 
 
         // @UniqueConstraint(columnNames = {"NAME", "RESOURCE_SERVER_ID"})
-        ModelCriteriaBuilder<Scope> mcb = forResourceServer(resourceServer.getId())
+        DefaultModelCriteria<Scope> mcb = forResourceServer(resourceServer.getId())
                 .compare(SearchableFields.NAME, Operator.EQ, name);
 
         if (tx.getCount(withCriteria(mcb)) > 0) {
@@ -130,7 +130,7 @@ public class MapScopeStore implements ScopeStore {
 
     @Override
     public List<Scope> findByResourceServer(Map<Scope.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
-        ModelCriteriaBuilder<Scope> mcb = forResourceServer(resourceServerId);
+        DefaultModelCriteria<Scope> mcb = forResourceServer(resourceServerId);
 
         for (Scope.FilterOption filterOption : attributes.keySet()) {
             String[] value = attributes.get(filterOption);

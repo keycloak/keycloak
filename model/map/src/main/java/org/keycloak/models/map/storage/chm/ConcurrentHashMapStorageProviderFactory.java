@@ -65,12 +65,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jboss.logging.Logger;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity;
 import org.keycloak.models.map.user.MapUserEntity;
 import org.keycloak.models.map.userSession.MapUserSessionEntity;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import java.util.Collections;
 import java.util.HashMap;
@@ -241,7 +241,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
             try {
                 if (storageDirectory != null) {
                     LOG.debugf("Storing contents to %s", f.getCanonicalPath());
-                    final ModelCriteriaBuilder readAllCriteria = criteria();
+                    final DefaultModelCriteria readAllCriteria = criteria();
                     Serialization.MAPPER.writeValue(f, store.read(withCriteria(readAllCriteria)));
                 } else {
                     LOG.debugf("Not storing contents of %s because directory not set", mapName);
