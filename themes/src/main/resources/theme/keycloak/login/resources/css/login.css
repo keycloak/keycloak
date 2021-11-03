@@ -692,3 +692,11 @@ ul#kc-totp-supported-apps {
 #kc-back {
     margin-top: 5px;
 }
+
+.pf-c-login__container {
+    grid-template-areas:
+      "header"
+      "main"
+      "footer ";
+    --pf-c-login__container--xl--GridTemplateColumns: 34rem;
+  }
