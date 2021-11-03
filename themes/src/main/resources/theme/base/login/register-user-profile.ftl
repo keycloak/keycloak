@@ -4,7 +4,7 @@
     <#if section = "header">
         ${msg("registerTitle")}
     <#elseif section = "form">
-        <form id="kc-register-form-testing" class="${properties.kcFormClass!}" action="${url.registrationAction}" method="post">
+        <form id="kc-register-form" class="${properties.kcFormClass!}" action="${url.registrationAction}" method="post">
         
             <@userProfileCommons.userProfileFormFields; callback, attribute>
                 <#if callback = "afterField">

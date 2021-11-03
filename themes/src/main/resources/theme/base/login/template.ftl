@@ -47,29 +47,55 @@
                 <main class="pf-c-login__main">
                     <header class="pf-c-login__main-header">
                         <#if realm.internationalizationEnabled  && locale.supported?size gt 1>
-                            <div class="${properties.kcLocaleMainClass!}" id="kc-locale">
-                                <div id="kc-locale-wrapper" class="${properties.kcLocaleWrapperClass!}">
-                                    <div id="kc-locale-dropdown" class="${properties.kcLocaleDropDownClass!}">
-                                        <a href="#" id="kc-current-locale-link">${locale.current}</a>
-                                        <ul class="${properties.kcLocaleListClass!}">
-                                            <#list locale.supported as l>
-                                                <li class="${properties.kcLocaleListItemClass!}">
-                                                    <a class="${properties.kcLocaleItemClass!}" href="${l.url}">${l.label}</a>
-                                                </li>
-                                            </#list>
-                                        </ul>
-                                    </div>
-                                </div>
+                            <script type="text/javascript">
+                                const toggleIntlMenu = () => {
+                                    const dropdownButton = document.getElementById('kc-current-locale-link');
+                                    if (dropdownButton && dropdownButton.hasAttribute('aria-expanded')) {
+                                        if (dropdownButton.ariaExpanded === 'false') {
+                                            dropdownButton.ariaExpanded = 'true';
+                                        } else {
+                                            dropdownButton.ariaExpanded = 'false';
+                                        }
+                                        const localeList = document.querySelector('.pf-c-dropdown__menu');
+                                        if (localeList) {
+                                            if(localeList.hasAttribute('hidden')) {
+                                                localeList.removeAttribute('hidden');
+                                            } else {
+                                                localeList.setAttribute('hidden', '');
+                                            }
+                                        }
+                                    }
+                                }
+                            </script>
+                            <div class="${properties.kcLocaleMainClass!}">
+                                <button
+                                    class="pf-c-dropdown__toggle"
+                                    id="kc-current-locale-link"
+                                    aria-expanded="false"
+                                    type="button"
+                                    onclick="toggleIntlMenu()"
+                                >
+                                    <span class="pf-c-dropdown__toggle-text">${locale.current}</span>
+                                    <span class="pf-c-dropdown__toggle-icon">
+                                        <i class="fas fa-caret-down" aria-hidden="true"></i>
+                                    </span>
+                                </button>
+                                <ul class="${properties.kcLocaleListClass!}" hidden>
+                                    <#list locale.supported as l>
+                                        <li class="${properties.kcLocaleListItemClass!}">
+                                            <a class="${properties.kcLocaleItemClass!}" href="${l.url}">${l.label}</a>
+                                        </li>
+                                    </#list>
+                                </ul>
                             </div>
+                            
                         </#if>
                         <#if !(auth?has_content && auth.showUsername() && !auth.showResetCredentials())>
                             <#if displayRequiredFields>
                                 <div class="${properties.kcContentWrapperClass!}">
+                                    <h1 id="kc-page-title" class="pf-c-title pf-m-3xl"><#nested "header"></h1>
                                     <div class="${properties.kcLabelWrapperClass!} subtitle">
                                         <span class="subtitle"><span class="required">*</span> ${msg("requiredFields")}</span>
-                                    </div>
-                                    <div class="col-md-10">
-                                        <h1 id="kc-page-title" class="pf-c-title pf-m-3xl"><#nested "header"></h1>
                                     </div>
                                 </div>
                             <#else>
