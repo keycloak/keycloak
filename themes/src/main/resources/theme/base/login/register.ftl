@@ -3,6 +3,7 @@
     <#if section = "header">
         ${msg("registerTitle")}
     <#elseif section = "form">
+    <script type="text/javascript" src="${url.resourcesPath}/js/password.js"></script>
         <form id="kc-register-form" class="${properties.kcFormClass!}" action="${url.registrationAction}" method="post">
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
