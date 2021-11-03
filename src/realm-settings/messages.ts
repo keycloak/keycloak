@@ -336,6 +336,7 @@ export default {
     pairCreatedError: "Error creating localization text.",
     supportedLocales: "Supported locales",
     defaultLocale: "Default locale",
+    selectLocales: "Select locales",
     addMessageBundle: "Add message bundle",
     eventType: "Event saved type",
     searchEventType: "Search saved event type",

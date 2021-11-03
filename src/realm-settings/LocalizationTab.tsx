@@ -59,7 +59,6 @@ export const LocalizationTab = ({
   const [selectMenuLocale, setSelectMenuLocale] = useState(DEFAULT_LOCALE);
 
   const { getValues, control, handleSubmit, formState } = useFormContext();
-  const [valueSelected, setValueSelected] = useState(false);
   const [selectMenuValueSelected, setSelectMenuValueSelected] = useState(false);
 
   const themeTypes = useServerInfo().themes!;
@@ -174,63 +173,54 @@ export const LocalizationTab = ({
         />
       )}
       <PageSection variant="light">
-        <FormPanel
-          className="kc-login-screen"
-          title="Login screen customization"
+        <FormAccess
+          isHorizontal
+          role="manage-realm"
+          className="pf-u-mt-lg"
+          onSubmit={handleSubmit(save)}
         >
-          <FormAccess
-            isHorizontal
-            role="manage-realm"
-            className="pf-u-mt-lg"
-            onSubmit={handleSubmit(save)}
-          >
-            <FormGroup
-              label={t("internationalization")}
-              fieldId="kc-internationalization"
-              labelIcon={
-                <HelpItem
-                  helpText="realm-settings-help:internationalization"
-                  forLabel={t("internationalization")}
-                  forID="kc-internationalization"
-                />
-              }
-            >
-              <Controller
-                name="internationalizationEnabled"
-                control={control}
-                defaultValue={false}
-                render={({ onChange, value }) => (
-                  <Switch
-                    id="kc-l-internationalization"
-                    label={t("common:enabled")}
-                    labelOff={t("common:disabled")}
-                    isChecked={internationalizationEnabled}
-                    data-testid={
-                      value
-                        ? "internationalization-enabled"
-                        : "internationalization-disabled"
-                    }
-                    onChange={onChange}
-                  />
-                )}
+          <FormGroup
+            label={t("internationalization")}
+            fieldId="kc-internationalization"
+            labelIcon={
+              <HelpItem
+                helpText="realm-settings-help:internationalization"
+                forLabel={t("internationalization")}
+                forID="kc-internationalization"
               />
-            </FormGroup>
-            <FormGroup
-              label={t("supportedLocales")}
-              fieldId="kc-l-supported-locales"
-              labelIcon={
-                <HelpItem
-                  helpText="realm-settings-help:supportedLocales"
-                  forLabel={t("supportedLocales")}
-                  forID="kc-l-supported-locales"
+            }
+          >
+            <Controller
+              name="internationalizationEnabled"
+              control={control}
+              defaultValue={false}
+              render={({ onChange, value }) => (
+                <Switch
+                  id="kc-l-internationalization"
+                  label={t("common:enabled")}
+                  labelOff={t("common:disabled")}
+                  isChecked={internationalizationEnabled}
+                  data-testid={
+                    value
+                      ? "internationalization-enabled"
+                      : "internationalization-disabled"
+                  }
+                  onChange={onChange}
                 />
-              }
-            >
-              <Controller
-                name="supportedLocales"
-                control={control}
-                render={({ onChange, value }) => {
-                  return internationalizationEnabled ? (
+              )}
+            />
+          </FormGroup>
+          {internationalizationEnabled && (
+            <>
+              <FormGroup
+                label={t("supportedLocales")}
+                fieldId="kc-l-supported-locales"
+              >
+                <Controller
+                  name="supportedLocales"
+                  control={control}
+                  defaultValue={[DEFAULT_LOCALE]}
+                  render={({ onChange, value }) => (
                     <Select
                       toggleId="kc-l-supported-locales"
                       onToggle={(open) => {
@@ -238,11 +228,12 @@ export const LocalizationTab = ({
                       }}
                       onSelect={(_, v) => {
                         const option = v as string;
-                        if (!value) {
-                          onChange([option]);
-                        } else if (value.includes(option)) {
+                        if (value.includes(option)) {
                           onChange(
-                            value.filter((item: string) => item !== option)
+                            value.filter(
+                              (item: string) =>
+                                item !== option || option === DEFAULT_LOCALE
+                            )
                           );
                         } else {
                           onChange([...value, option]);
@@ -255,12 +246,12 @@ export const LocalizationTab = ({
                       variant={SelectVariant.typeaheadMulti}
                       aria-label={t("supportedLocales")}
                       isOpen={supportedLocalesOpen}
-                      placeholderText={"Select locales"}
+                      placeholderText={t("selectLocales")}
                     >
                       {themeTypes.login![0].locales.map(
                         (locale: string, idx: number) => (
                           <SelectOption
-                            selected={true}
+                            selected={value.includes(locale)}
                             key={`locale-${idx}`}
                             value={locale}
                           >
@@ -269,38 +260,27 @@ export const LocalizationTab = ({
                         )
                       )}
                     </Select>
-                  ) : (
-                    <div />
-                  );
-                }}
-              />
-            </FormGroup>
-            <FormGroup
-              label={t("defaultLocale")}
-              fieldId="kc-l-default-locale"
-              labelIcon={
-                <HelpItem
-                  helpText="realm-settings-help:defaultLocale"
-                  forLabel={t("defaultLocale")}
-                  forID="kc-l-default-locale"
+                  )}
                 />
-              }
-            >
-              <Controller
-                name="defaultLocale"
-                control={control}
-                render={({ onChange, value }) => {
-                  return internationalizationEnabled ? (
+              </FormGroup>
+              <FormGroup
+                label={t("defaultLocale")}
+                fieldId="kc-l-default-locale"
+              >
+                <Controller
+                  name="defaultLocale"
+                  control={control}
+                  defaultValue={DEFAULT_LOCALE}
+                  render={({ onChange, value }) => (
                     <Select
                       toggleId="kc-default-locale"
                       onToggle={() => setDefaultLocaleOpen(!defaultLocaleOpen)}
                       onSelect={(_, value) => {
                         onChange(value as string);
-                        setValueSelected(true);
                         setDefaultLocaleOpen(false);
                       }}
                       selections={
-                        valueSelected
+                        value
                           ? t(`allSupportedLocales.${value}`)
                           : realm.defaultLocale !== ""
                           ? t(
@@ -327,27 +307,25 @@ export const LocalizationTab = ({
                         )
                       )}
                     </Select>
-                  ) : (
-                    <div />
-                  );
-                }}
-              />
-            </FormGroup>
-            <ActionGroup>
-              <Button
-                variant="primary"
-                isDisabled={!formState.isDirty}
-                type="submit"
-                data-testid="localization-tab-save"
-              >
-                {t("common:save")}
-              </Button>
-              <Button variant="link" onClick={reset}>
-                {t("common:revert")}
-              </Button>
-            </ActionGroup>
-          </FormAccess>
-        </FormPanel>
+                  )}
+                />
+              </FormGroup>
+            </>
+          )}
+          <ActionGroup>
+            <Button
+              variant="primary"
+              isDisabled={!formState.isDirty}
+              type="submit"
+              data-testid="localization-tab-save"
+            >
+              {t("common:save")}
+            </Button>
+            <Button variant="link" onClick={reset}>
+              {t("common:revert")}
+            </Button>
+          </ActionGroup>
+        </FormAccess>
 
         <FormPanel className="kc-message-bundles" title="Edit message bundles">
           <TextContent className="messageBundleDescription">

@@ -47,6 +47,7 @@ import { PartialExportDialog } from "./PartialExport";
 import { toRealmSettings } from "./routes/RealmSettings";
 import { LocalizationTab } from "./LocalizationTab";
 import { HelpItem } from "../components/help-enabler/HelpItem";
+import { DEFAULT_LOCALE } from "../i18n";
 
 type RealmSettingsHeaderProps = {
   onChange: (value: boolean) => void;
@@ -168,7 +169,7 @@ export const RealmSettingsTabs = ({
   const kpComponentTypes =
     useServerInfo().componentTypes?.[KEY_PROVIDER_TYPE] ?? [];
 
-  const form = useForm({ mode: "onChange" });
+  const form = useForm({ mode: "onChange", shouldUnregister: false });
   const { control, getValues, setValue, reset: resetForm } = form;
 
   const [activeTab, setActiveTab] = useState(0);
@@ -182,6 +183,8 @@ export const RealmSettingsTabs = ({
     Object.entries(r).map(([key, value]) => {
       if (key === "attributes") {
         convertToFormValues(value, "attributes", setValue);
+      } else if (key === "supportedLocales" && value?.length === 0) {
+        setValue(key, [DEFAULT_LOCALE]);
       } else {
         setValue(key, value);
       }
