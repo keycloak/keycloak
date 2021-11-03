@@ -369,7 +369,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           repository: keycloak/keycloak-quickstarts
-          ref: master # default is "latest"
+          ref: main # default is "latest"
 
       - uses: actions/checkout@v2
         with:
