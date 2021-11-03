@@ -98,7 +98,7 @@ For larger changes all maintainers and contributors should have a chance of revi
 
 For new features we highly recommend always opening a discussion in GitHub Discussions early.
 
-For very large proposals it can be inefficient to capture all the information in the GitHub Discussion. In this cases a separate design proposal can be sent to the [Keycloak Community repository](https://github.com/keycloak/keycloak-community/tree/master/design), and linked to from the GitHub Discussion.
+For very large proposals it can be inefficient to capture all the information in the GitHub Discussion. In this cases a separate design proposal can be sent to the [Keycloak Community repository](https://github.com/keycloak/keycloak-community/tree/main/design), and linked to from the GitHub Discussion.
 
 The contributor can decide to send a pull request prior to discussions. However, the change will not be accepted until it has been discussed through [GitHub Discussions](https://github.com/keycloak/keycloak/discussions/categories/ideas).
 
