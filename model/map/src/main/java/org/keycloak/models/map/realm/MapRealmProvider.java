@@ -34,8 +34,8 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
@@ -97,7 +97,7 @@ public class MapRealmProvider implements RealmProvider {
 
         LOG.tracef("getRealmByName(%s)%s", name, getShortStackTrace());
 
-        ModelCriteriaBuilder<RealmModel> mcb = criteria();
+        DefaultModelCriteria<RealmModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.NAME, Operator.EQ, name);
 
         String realmId = tx.read(withCriteria(mcb))
@@ -115,13 +115,13 @@ public class MapRealmProvider implements RealmProvider {
 
     @Override
     public Stream<RealmModel> getRealmsWithProviderTypeStream(Class<?> type) {
-        ModelCriteriaBuilder<RealmModel> mcb = criteria();
+        DefaultModelCriteria<RealmModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.COMPONENT_PROVIDER_TYPE, Operator.EQ, type.getName());
 
         return getRealmsStream(mcb);
     }
 
-    private Stream<RealmModel> getRealmsStream(ModelCriteriaBuilder<RealmModel> mcb) {
+    private Stream<RealmModel> getRealmsStream(DefaultModelCriteria<RealmModel> mcb) {
         return tx.read(withCriteria(mcb).orderBy(SearchableFields.NAME, ASCENDING))
                 .map(this::entityToAdapter);
     }
@@ -160,7 +160,7 @@ public class MapRealmProvider implements RealmProvider {
 
     @Override
     public void removeExpiredClientInitialAccess() {
-        ModelCriteriaBuilder<RealmModel> mcb = criteria();
+        DefaultModelCriteria<RealmModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.CLIENT_INITIAL_ACCESS, Operator.EXISTS);
 
         tx.read(withCriteria(mcb))

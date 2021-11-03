@@ -20,6 +20,7 @@ import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.tree.DefaultTreeNode;
 import org.keycloak.storage.SearchableModelField;
+import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
@@ -35,45 +36,45 @@ public class ModelCriteriaNode<M> extends DefaultTreeNode<ModelCriteriaNode<M>> 
 
     public static enum ExtOperator {
         AND {
-            @Override public <M, C extends ModelCriteriaBuilder<M>> C apply(C mcb, ModelCriteriaNode<M> node) {
+            @Override public <M, C extends ModelCriteriaBuilder<M, C>> C apply(C mcb, ModelCriteriaNode<M> node) {
                 if (node.getChildren().isEmpty()) {
                     return null;
                 }
-                final ModelCriteriaBuilder[] operands = node.getChildren().stream()
+                final C[] operands = node.getChildren().stream()
                   .map(n -> n.flashToModelCriteriaBuilder(mcb))
                   .filter(Objects::nonNull)
-                  .toArray(ModelCriteriaBuilder[]::new);
-                return operands.length == 0 ? null : (C) mcb.and(operands);
+                  .toArray(n -> (C[]) Array.newInstance(mcb.getClass(), n));
+                return operands.length == 0 ? null : mcb.and(operands);
             }
             @Override public String toString(ModelCriteriaNode<?> node) {
                 return "(" + node.getChildren().stream().map(ModelCriteriaNode::toString).collect(Collectors.joining(" && ")) + ")";
             }
         },
         OR {
-            @Override public <M, C extends ModelCriteriaBuilder<M>> C apply(C mcb, ModelCriteriaNode<M> node) {
+            @Override public <M, C extends ModelCriteriaBuilder<M, C>> C apply(C mcb, ModelCriteriaNode<M> node) {
                 if (node.getChildren().isEmpty()) {
                     return null;
                 }
-                final ModelCriteriaBuilder[] operands = node.getChildren().stream()
+                final C[] operands = node.getChildren().stream()
                   .map(n -> n.flashToModelCriteriaBuilder(mcb))
                   .filter(Objects::nonNull)
-                  .toArray(ModelCriteriaBuilder[]::new);
-                return operands.length == 0 ? null : (C) mcb.or(operands);
+                  .toArray(n -> (C[]) Array.newInstance(mcb.getClass(), n));
+                return operands.length == 0 ? null : mcb.or(operands);
             }
             @Override public String toString(ModelCriteriaNode<?> node) {
                 return "(" + node.getChildren().stream().map(ModelCriteriaNode::toString).collect(Collectors.joining(" || ")) + ")";
             }
         },
         NOT {
-            @Override public <M, C extends ModelCriteriaBuilder<M>> C apply(C mcb, ModelCriteriaNode<M> node) {
-                return (C) mcb.not(node.getChildren().iterator().next().flashToModelCriteriaBuilder(mcb));
+            @Override public <M, C extends ModelCriteriaBuilder<M, C>> C apply(C mcb, ModelCriteriaNode<M> node) {
+                return mcb.not(node.getChildren().iterator().next().flashToModelCriteriaBuilder(mcb));
             }
             @Override public String toString(ModelCriteriaNode<?> node) {
                 return "! " + node.getChildren().iterator().next().toString();
             }
         },
         ATOMIC_FORMULA {
-            @Override public <M, C extends ModelCriteriaBuilder<M>> C apply(C mcb, ModelCriteriaNode<M> node) {
+            @Override public <M, C extends ModelCriteriaBuilder<M, C>> C apply(C mcb, ModelCriteriaNode<M> node) {
                 return (C) mcb.compare(
                   node.field,
                   node.simpleOperator,
@@ -85,16 +86,16 @@ public class ModelCriteriaNode<M> extends DefaultTreeNode<ModelCriteriaNode<M>> 
             }
         },
         __FALSE__ {
-            @Override public <M, C extends ModelCriteriaBuilder<M>> C apply(C mcb, ModelCriteriaNode<M> node) {
-                return (C) mcb.or();
+            @Override public <M, C extends ModelCriteriaBuilder<M, C>> C apply(C mcb, ModelCriteriaNode<M> node) {
+                return mcb.or((C[]) Array.newInstance(mcb.getClass(), 0));
             }
             @Override public String toString(ModelCriteriaNode<?> node) {
                 return "__FALSE__";
             }
         },
         __TRUE__ {
-            @Override public <M, C extends ModelCriteriaBuilder<M>> C apply(C mcb, ModelCriteriaNode<M> node) {
-                return (C) mcb.and();
+            @Override public <M, C extends ModelCriteriaBuilder<M, C>> C apply(C mcb, ModelCriteriaNode<M> node) {
+                return mcb.and((C[]) Array.newInstance(mcb.getClass(), 0));
             }
             @Override public String toString(ModelCriteriaNode<?> node) {
                 return "__TRUE__";
@@ -102,7 +103,7 @@ public class ModelCriteriaNode<M> extends DefaultTreeNode<ModelCriteriaNode<M>> 
         }
         ;
 
-        public abstract <M, C extends ModelCriteriaBuilder<M>> C apply(C mcbCreator, ModelCriteriaNode<M> node);
+        public abstract <M, C extends ModelCriteriaBuilder<M, C>> C apply(C mcbCreator, ModelCriteriaNode<M> node);
         public abstract String toString(ModelCriteriaNode<?> node);
     }
 
@@ -186,7 +187,7 @@ public class ModelCriteriaNode<M> extends DefaultTreeNode<ModelCriteriaNode<M>> 
         return getNodeOperator() != ExtOperator.__TRUE__;
     }
 
-    public <C extends ModelCriteriaBuilder<M>> C flashToModelCriteriaBuilder(C mcb) {
+    public <C extends ModelCriteriaBuilder<M, C>> C flashToModelCriteriaBuilder(C mcb) {
         final C res = nodeOperator.apply(mcb, this);
         return res == null ? mcb : res;
     }

@@ -45,7 +45,7 @@ public class DefaultModelCriteriaTest {
         assertThat(v.and(), hasToString("__TRUE__"));
         assertThat(v.and(v.or()), hasToString("__FALSE__"));
 
-        assertThat(v.and(v.compare(CLIENT_ID, Operator.EQ, 3)), hasToString("(clientId EQ [3])"));
+        assertThat(v.and(v.compare(CLIENT_ID, Operator.EQ, 3)), hasToString("clientId EQ [3]"));
         assertThat(v.and(v.compare(CLIENT_ID, Operator.EQ, 3), v.or()), hasToString("__FALSE__"));
         assertThat(v.and(v.compare(CLIENT_ID, Operator.EQ, 4).compare(ID, Operator.EQ, 5)), hasToString("(clientId EQ [4] && id EQ [5])"));
         assertThat(v.and(v.compare(CLIENT_ID, Operator.EQ, 4), v.compare(ID, Operator.EQ, 5)), hasToString("(clientId EQ [4] && id EQ [5])"));
@@ -57,7 +57,7 @@ public class DefaultModelCriteriaTest {
         assertThat(v.or(), hasToString("__FALSE__"));
         assertThat(v.or(v.and()), hasToString("__TRUE__"));
 
-        assertThat(v.or(v.compare(CLIENT_ID, Operator.EQ, 3)), hasToString("(clientId EQ [3])"));
+        assertThat(v.or(v.compare(CLIENT_ID, Operator.EQ, 3)), hasToString("clientId EQ [3]"));
         assertThat(v.or(v.compare(CLIENT_ID, Operator.EQ, 3), v.and()), hasToString("__TRUE__"));
         assertThat(v.or(v.compare(CLIENT_ID, Operator.EQ, 4).compare(ID, Operator.EQ, 5)), hasToString("(clientId EQ [4] && id EQ [5])"));
         assertThat(v.or(v.compare(CLIENT_ID, Operator.EQ, 4), v.compare(ID, Operator.EQ, 5)), hasToString("(clientId EQ [4] || id EQ [5])"));

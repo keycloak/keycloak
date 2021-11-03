@@ -38,8 +38,8 @@ import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.crit
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel.SearchableFields;
 import org.keycloak.models.RoleProvider;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 
 public class MapRoleProvider implements RoleProvider {
 
@@ -78,7 +78,7 @@ public class MapRoleProvider implements RoleProvider {
 
     @Override
     public Stream<RoleModel> getRealmRolesStream(RealmModel realm, Integer first, Integer max) {
-        ModelCriteriaBuilder<RoleModel> mcb = criteria();
+        DefaultModelCriteria<RoleModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
                 .compare(SearchableFields.IS_CLIENT_ROLE, Operator.NE, true);
 
@@ -91,7 +91,7 @@ public class MapRoleProvider implements RoleProvider {
         LOG.tracef("getRolesStream(%s, %s, %s, %d, %d)%s", realm, ids, search, first, max, getShortStackTrace());
         if (ids == null) return Stream.empty();
 
-        ModelCriteriaBuilder<RoleModel> mcb = criteria();
+        DefaultModelCriteria<RoleModel> mcb = criteria();
         mcb = mcb.compare(RoleModel.SearchableFields.ID, Operator.IN, ids)
                 .compare(RoleModel.SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
@@ -105,7 +105,7 @@ public class MapRoleProvider implements RoleProvider {
 
     @Override
     public Stream<RoleModel> getRealmRolesStream(RealmModel realm) {
-        ModelCriteriaBuilder<RoleModel> mcb = criteria();
+        DefaultModelCriteria<RoleModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.IS_CLIENT_ROLE, Operator.NE, true);
         
@@ -134,7 +134,7 @@ public class MapRoleProvider implements RoleProvider {
 
     @Override
     public Stream<RoleModel> getClientRolesStream(ClientModel client, Integer first, Integer max) {
-        ModelCriteriaBuilder<RoleModel> mcb = criteria();
+        DefaultModelCriteria<RoleModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId())
                 .compare(SearchableFields.CLIENT_ID, Operator.EQ, client.getId());
 
@@ -144,7 +144,7 @@ public class MapRoleProvider implements RoleProvider {
 
     @Override
     public Stream<RoleModel> getClientRolesStream(ClientModel client) {
-        ModelCriteriaBuilder<RoleModel> mcb = criteria();
+        DefaultModelCriteria<RoleModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId())
           .compare(SearchableFields.CLIENT_ID, Operator.EQ, client.getId());
 
@@ -195,7 +195,7 @@ public class MapRoleProvider implements RoleProvider {
         }
         LOG.tracef("getRealmRole(%s, %s)%s", realm, name, getShortStackTrace());
 
-        ModelCriteriaBuilder<RoleModel> mcb = criteria();
+        DefaultModelCriteria<RoleModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.NAME, Operator.ILIKE, name);
 
@@ -215,7 +215,7 @@ public class MapRoleProvider implements RoleProvider {
         }
         LOG.tracef("getClientRole(%s, %s)%s", client, name, getShortStackTrace());
 
-        ModelCriteriaBuilder<RoleModel> mcb = criteria();
+        DefaultModelCriteria<RoleModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId())
           .compare(SearchableFields.CLIENT_ID, Operator.EQ, client.getId())
           .compare(SearchableFields.NAME, Operator.ILIKE, name);
@@ -249,7 +249,7 @@ public class MapRoleProvider implements RoleProvider {
         if (search == null) {
             return Stream.empty();
         }
-        ModelCriteriaBuilder<RoleModel> mcb = criteria();
+        DefaultModelCriteria<RoleModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
                 .or(
                         mcb.compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%"),
@@ -265,7 +265,7 @@ public class MapRoleProvider implements RoleProvider {
         if (search == null) {
             return Stream.empty();
         }
-        ModelCriteriaBuilder<RoleModel> mcb = criteria();
+        DefaultModelCriteria<RoleModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId())
                 .compare(SearchableFields.CLIENT_ID, Operator.EQ, client.getId())
                 .or(

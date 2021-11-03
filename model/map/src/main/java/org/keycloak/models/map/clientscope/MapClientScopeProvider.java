@@ -32,8 +32,8 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
@@ -68,7 +68,7 @@ public class MapClientScopeProvider implements ClientScopeProvider {
 
     @Override
     public Stream<ClientScopeModel> getClientScopesStream(RealmModel realm) {
-        ModelCriteriaBuilder<ClientScopeModel> mcb = criteria();
+        DefaultModelCriteria<ClientScopeModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         return tx.read(withCriteria(mcb).orderBy(SearchableFields.NAME, ASCENDING))
@@ -78,7 +78,7 @@ public class MapClientScopeProvider implements ClientScopeProvider {
     @Override
     public ClientScopeModel addClientScope(RealmModel realm, String id, String name) {
         // Check Db constraint: @UniqueConstraint(columnNames = {"REALM_ID", "NAME"})
-        ModelCriteriaBuilder<ClientScopeModel> mcb = criteria();
+        DefaultModelCriteria<ClientScopeModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
             .compare(SearchableFields.NAME, Operator.EQ, name);
 

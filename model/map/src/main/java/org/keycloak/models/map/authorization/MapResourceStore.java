@@ -29,9 +29,9 @@ import org.keycloak.models.map.authorization.adapter.MapResourceAdapter;
 import org.keycloak.models.map.authorization.entity.MapResourceEntity;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 
+import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -61,8 +61,8 @@ public class MapResourceStore implements ResourceStore {
         return new MapResourceAdapter(origEntity, authorizationProvider.getStoreFactory());
     }
     
-    private ModelCriteriaBuilder<Resource> forResourceServer(String resourceServerId) {
-        ModelCriteriaBuilder<Resource> mcb = criteria();
+    private DefaultModelCriteria<Resource> forResourceServer(String resourceServerId) {
+        DefaultModelCriteria<Resource> mcb = criteria();
 
         return resourceServerId == null
                 ? mcb
@@ -74,7 +74,7 @@ public class MapResourceStore implements ResourceStore {
     public Resource create(String id, String name, ResourceServer resourceServer, String owner) {
         LOG.tracef("create(%s, %s, %s, %s)%s", id, name, resourceServer, owner, getShortStackTrace());
         // @UniqueConstraint(columnNames = {"NAME", "RESOURCE_SERVER_ID", "OWNER"})
-        ModelCriteriaBuilder<Resource> mcb = forResourceServer(resourceServer.getId())
+        DefaultModelCriteria<Resource> mcb = forResourceServer(resourceServer.getId())
                 .compare(SearchableFields.NAME, Operator.EQ, name)
                 .compare(SearchableFields.OWNER, Operator.EQ, owner);
 
@@ -156,10 +156,10 @@ public class MapResourceStore implements ResourceStore {
     @Override
     public List<Resource> findByResourceServer(Map<Resource.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
         LOG.tracef("findByResourceServer(%s, %s, %d, %d)%s", attributes, resourceServerId, firstResult, maxResult, getShortStackTrace());
-        ModelCriteriaBuilder<Resource> mcb = forResourceServer(resourceServerId).and(
+        DefaultModelCriteria<Resource> mcb = forResourceServer(resourceServerId).and(
                 attributes.entrySet().stream()
-                        .map(this::filterEntryToModelCriteriaBuilder)
-                        .toArray(ModelCriteriaBuilder[]::new)
+                        .map(this::filterEntryToDefaultModelCriteria)
+                        .toArray(DefaultModelCriteria[]::new)
         );
 
         return tx.read(withCriteria(mcb).pagination(firstResult, maxResult, SearchableFields.NAME))
@@ -167,11 +167,11 @@ public class MapResourceStore implements ResourceStore {
                 .collect(Collectors.toList());
     }
 
-    private ModelCriteriaBuilder<Resource> filterEntryToModelCriteriaBuilder(Map.Entry<Resource.FilterOption, String[]> entry) {
+    private DefaultModelCriteria<Resource> filterEntryToDefaultModelCriteria(Map.Entry<Resource.FilterOption, String[]> entry) {
         Resource.FilterOption name = entry.getKey();
         String[] value = entry.getValue();
 
-        ModelCriteriaBuilder<Resource> mcb = criteria();
+        DefaultModelCriteria<Resource> mcb = criteria();
         switch (name) {
             case ID:
             case SCOPE_ID:
@@ -231,7 +231,7 @@ public class MapResourceStore implements ResourceStore {
     public void findByType(String type, String owner, String resourceServerId, Consumer<Resource> consumer) {
         LOG.tracef("findByType(%s, %s, %s, %s)%s", type, owner, resourceServerId, consumer, getShortStackTrace());
 
-        ModelCriteriaBuilder<Resource> mcb = forResourceServer(resourceServerId)
+        DefaultModelCriteria<Resource> mcb = forResourceServer(resourceServerId)
                 .compare(SearchableFields.TYPE, Operator.EQ, type);
 
         if (owner != null) {

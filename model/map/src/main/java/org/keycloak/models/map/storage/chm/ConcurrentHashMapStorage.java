@@ -23,7 +23,6 @@ import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.storage.SearchableModelField;
@@ -126,7 +125,7 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
      * @return Number of removed objects (might return {@code -1} if not supported)
      */
     public long delete(QueryParameters<M> queryParameters) {
-        DefaultModelCriteria<M> criteria = (DefaultModelCriteria<M>) queryParameters.getModelCriteriaBuilder();
+        DefaultModelCriteria<M> criteria = queryParameters.getModelCriteriaBuilder();
 
         if (criteria == null) {
             long res = store.size();
@@ -135,7 +134,7 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
         }
 
         @SuppressWarnings("unchecked")
-        MapModelCriteriaBuilder<K,V,M> mcb = (MapModelCriteriaBuilder<K,V,M>) criteria.flashToModelCriteriaBuilder(createCriteriaBuilder());
+        MapModelCriteriaBuilder<K,V,M> mcb = criteria.flashToModelCriteriaBuilder(createCriteriaBuilder());
         Predicate<? super K> keyFilter = mcb.getKeyFilter();
         Predicate<? super V> entityFilter = mcb.getEntityFilter();
         Stream<Entry<K, V>> storeStream = store.entrySet().stream();
@@ -162,7 +161,7 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
         return sessionTransaction == null ? new ConcurrentHashMapKeycloakTransaction<>(this, keyConvertor, cloner) : sessionTransaction;
     }
 
-    public ModelCriteriaBuilder<M> createCriteriaBuilder() {
+    public MapModelCriteriaBuilder<K, V, M> createCriteriaBuilder() {
         return new MapModelCriteriaBuilder<>(keyConvertor, fieldPredicates);
     }
 
@@ -178,13 +177,13 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
      * @return Stream of objects. Never returns {@code null}.
      */
     public Stream<V> read(QueryParameters<M> queryParameters) {
-        DefaultModelCriteria<M> criteria = (DefaultModelCriteria<M>) queryParameters.getModelCriteriaBuilder();
+        DefaultModelCriteria<M> criteria = queryParameters.getModelCriteriaBuilder();
 
         if (criteria == null) {
             return Stream.empty();
         }
 
-        MapModelCriteriaBuilder<K,V,M> mcb = (MapModelCriteriaBuilder<K,V,M>) criteria.flashToModelCriteriaBuilder(createCriteriaBuilder());
+        MapModelCriteriaBuilder<K,V,M> mcb = criteria.flashToModelCriteriaBuilder(createCriteriaBuilder());
         Stream<Entry<K, V>> stream = store.entrySet().stream();
 
         Predicate<? super K> keyFilter = mcb.getKeyFilter();

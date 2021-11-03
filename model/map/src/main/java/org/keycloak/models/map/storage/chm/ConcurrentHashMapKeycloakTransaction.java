@@ -167,8 +167,8 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
      */
     @Override
     public Stream<V> read(QueryParameters<M> queryParameters) {
-        DefaultModelCriteria<M> mcb = (DefaultModelCriteria<M>) queryParameters.getModelCriteriaBuilder();
-        MapModelCriteriaBuilder<K,V,M> mapMcb = (MapModelCriteriaBuilder<K,V,M>) mcb.flashToModelCriteriaBuilder(map.createCriteriaBuilder());
+        DefaultModelCriteria<M> mcb = queryParameters.getModelCriteriaBuilder();
+        MapModelCriteriaBuilder<K,V,M> mapMcb = mcb.flashToModelCriteriaBuilder(map.createCriteriaBuilder());
 
         Predicate<? super V> filterOutAllBulkDeletedObjects = tasks.values().stream()
           .filter(BulkDeleteOperation.class::isInstance)
@@ -400,8 +400,8 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
         }
 
         public Predicate<V> getFilterForNonDeletedObjects() {
-            DefaultModelCriteria<M> mcb = (DefaultModelCriteria<M>) queryParameters.getModelCriteriaBuilder();
-            MapModelCriteriaBuilder<K,V,M> mmcb = (MapModelCriteriaBuilder<K,V,M>) mcb.flashToModelCriteriaBuilder(map.createCriteriaBuilder());
+            DefaultModelCriteria<M> mcb = queryParameters.getModelCriteriaBuilder();
+            MapModelCriteriaBuilder<K,V,M> mmcb = mcb.flashToModelCriteriaBuilder(map.createCriteriaBuilder());
             
             Predicate<? super V> entityFilter = mmcb.getEntityFilter();
             Predicate<? super K> keyFilter = mmcb.getKeyFilter();

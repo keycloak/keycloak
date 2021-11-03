@@ -26,7 +26,7 @@ import java.util.stream.Stream;
  * Descriptive model criteria implementation which in other words represents a Boolean formula on searchable fields.
  * @author hmlnarik
  */
-public class DefaultModelCriteria<M> implements ModelCriteriaBuilder<M> {
+public class DefaultModelCriteria<M> implements ModelCriteriaBuilder<M, DefaultModelCriteria<M>> {
 
     private static final DefaultModelCriteria<?> INSTANCE = new DefaultModelCriteria<>(null);
 
@@ -63,18 +63,15 @@ public class DefaultModelCriteria<M> implements ModelCriteriaBuilder<M> {
     }
 
     @Override
-    public DefaultModelCriteria<M> and(ModelCriteriaBuilder<M>... mcbs) {
+    public DefaultModelCriteria<M> and(DefaultModelCriteria<M>... mcbs) {
         if (mcbs.length == 1) {
-            ModelCriteriaNode<M> toBeChild = ((DefaultModelCriteria<M>) mcbs[0]).node;
-            if (toBeChild.getNodeOperator() == ExtOperator.AND || toBeChild.getNodeOperator() == ExtOperator.OR) {
-                return (DefaultModelCriteria<M>) mcbs[0];
-            }
+            return compare(mcbs[0].node);
         }
 
         final ModelCriteriaNode<M> targetNode = new ModelCriteriaNode<>(ExtOperator.AND);
         AtomicBoolean hasFalseNode = new AtomicBoolean(false);
-        for (ModelCriteriaBuilder<M> mcb : mcbs) {
-            final ModelCriteriaNode<M> nodeToAdd = ((DefaultModelCriteria<M>) mcb).node;
+        for (DefaultModelCriteria<M> mcb : mcbs) {
+            final ModelCriteriaNode<M> nodeToAdd = mcb.node;
             getNodesToAddForAndOr(nodeToAdd, ExtOperator.AND)
               .filter(ModelCriteriaNode::isNotTrueNode)
               .peek(n -> { if (n.isFalseNode()) hasFalseNode.lazySet(true); })
@@ -95,18 +92,15 @@ public class DefaultModelCriteria<M> implements ModelCriteriaBuilder<M> {
     }
 
     @Override
-    public DefaultModelCriteria<M> or(ModelCriteriaBuilder<M>... mcbs) {
+    public DefaultModelCriteria<M> or(DefaultModelCriteria<M>... mcbs) {
         if (mcbs.length == 1) {
-            ModelCriteriaNode<M> toBeChild = ((DefaultModelCriteria<M>) mcbs[0]).node;
-            if (toBeChild.getNodeOperator() == ExtOperator.AND || toBeChild.getNodeOperator() == ExtOperator.OR) {
-                return ((DefaultModelCriteria<M>) mcbs[0]);
-            }
+            return compare(mcbs[0].node);
         }
 
         final ModelCriteriaNode<M> targetNode = new ModelCriteriaNode<>(ExtOperator.OR);
         AtomicBoolean hasTrueNode = new AtomicBoolean(false);
-        for (ModelCriteriaBuilder<M> mcb : mcbs) {
-            final ModelCriteriaNode<M> nodeToAdd = ((DefaultModelCriteria<M>) mcb).node;
+        for (DefaultModelCriteria<M> mcb : mcbs) {
+            final ModelCriteriaNode<M> nodeToAdd = mcb.node;
             getNodesToAddForAndOr(nodeToAdd, ExtOperator.OR)
               .filter(ModelCriteriaNode::isNotFalseNode)
               .peek(n -> { if (n.isTrueNode()) hasTrueNode.lazySet(true); })
@@ -127,12 +121,13 @@ public class DefaultModelCriteria<M> implements ModelCriteriaBuilder<M> {
     }
 
     @Override
-    public DefaultModelCriteria<M> not(ModelCriteriaBuilder<M> mcb) {
-        final ModelCriteriaNode<M> targetNode = new ModelCriteriaNode<>(ExtOperator.NOT);
-        ModelCriteriaNode<M> toBeChild = ((DefaultModelCriteria<M>) mcb).node;
+    public DefaultModelCriteria<M> not(DefaultModelCriteria<M> mcb) {
+        ModelCriteriaNode<M> toBeChild = mcb.node;
         if (toBeChild.getNodeOperator() == ExtOperator.NOT) {
             return compare(toBeChild.getChildren().get(0).cloneTree());
         }
+
+        final ModelCriteriaNode<M> targetNode = new ModelCriteriaNode<>(ExtOperator.NOT);
         targetNode.addChild(toBeChild.cloneTree());
         return compare(targetNode);
     }
@@ -143,7 +138,7 @@ public class DefaultModelCriteria<M> implements ModelCriteriaBuilder<M> {
      * @param mcb {@code ModelCriteriaBuilder} to copy the contents onto
      * @return Updated {@code ModelCriteriaBuilder}
      */
-    public <C extends ModelCriteriaBuilder<M>> C flashToModelCriteriaBuilder(C mcb) {
+    public <C extends ModelCriteriaBuilder<M, C>> C flashToModelCriteriaBuilder(C mcb) {
         if (isEmpty()) {
             return mcb;
         }

@@ -40,10 +40,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.keycloak.models.map.storage.MapStorage;
 
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
@@ -119,7 +119,7 @@ public class MapClientProvider implements ClientProvider {
 
     @Override
     public Stream<ClientModel> getClientsStream(RealmModel realm, Integer firstResult, Integer maxResults) {
-        ModelCriteriaBuilder<ClientModel> mcb = criteria();
+        DefaultModelCriteria<ClientModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         return tx.read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.CLIENT_ID))
@@ -128,7 +128,7 @@ public class MapClientProvider implements ClientProvider {
 
     @Override
     public Stream<ClientModel> getClientsStream(RealmModel realm) {
-        ModelCriteriaBuilder<ClientModel> mcb = criteria();
+        DefaultModelCriteria<ClientModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         return tx.read(withCriteria(mcb).orderBy(SearchableFields.CLIENT_ID, ASCENDING))
@@ -212,7 +212,7 @@ public class MapClientProvider implements ClientProvider {
 
     @Override
     public long getClientsCount(RealmModel realm) {
-        ModelCriteriaBuilder<ClientModel> mcb = criteria();
+        DefaultModelCriteria<ClientModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         return tx.getCount(withCriteria(mcb));
@@ -239,7 +239,7 @@ public class MapClientProvider implements ClientProvider {
         }
         LOG.tracef("getClientByClientId(%s, %s)%s", realm, clientId, getShortStackTrace());
 
-        ModelCriteriaBuilder<ClientModel> mcb = criteria();
+        DefaultModelCriteria<ClientModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
                 .compare(SearchableFields.CLIENT_ID, Operator.EQ, clientId);
 
@@ -256,7 +256,7 @@ public class MapClientProvider implements ClientProvider {
             return Stream.empty();
         }
 
-        ModelCriteriaBuilder<ClientModel> mcb = criteria();
+        DefaultModelCriteria<ClientModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
                 .compare(SearchableFields.CLIENT_ID, Operator.ILIKE, "%" + clientId + "%");
 
@@ -266,7 +266,7 @@ public class MapClientProvider implements ClientProvider {
 
     @Override
     public Stream<ClientModel> searchClientsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
-        ModelCriteriaBuilder<ClientModel> mcb = criteria();
+        DefaultModelCriteria<ClientModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         for (Map.Entry<String, String> entry : attributes.entrySet()) {
@@ -331,7 +331,7 @@ public class MapClientProvider implements ClientProvider {
 
     @Override
     public Map<ClientModel, Set<String>> getAllRedirectUrisOfEnabledClients(RealmModel realm) {
-        ModelCriteriaBuilder<ClientModel> mcb = criteria();
+        DefaultModelCriteria<ClientModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
                 .compare(SearchableFields.ENABLED, Operator.EQ, Boolean.TRUE);
 
@@ -346,7 +346,7 @@ public class MapClientProvider implements ClientProvider {
     }
 
     public void preRemove(RealmModel realm, RoleModel role) {
-        ModelCriteriaBuilder<ClientModel> mcb = criteria();
+        DefaultModelCriteria<ClientModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
                 .compare(SearchableFields.SCOPE_MAPPING_ROLE, Operator.EQ, role.getId());
 

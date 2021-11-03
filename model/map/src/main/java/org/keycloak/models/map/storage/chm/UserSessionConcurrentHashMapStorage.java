@@ -23,7 +23,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
@@ -56,7 +55,7 @@ public class UserSessionConcurrentHashMapStorage<K> extends ConcurrentHashMapSto
         @Override
         public long delete(QueryParameters<UserSessionModel> queryParameters) {
             Set<String> ids = read(queryParameters).map(AbstractEntity::getId).collect(Collectors.toSet());
-            ModelCriteriaBuilder<AuthenticatedClientSessionModel> csMcb = DefaultModelCriteria.<AuthenticatedClientSessionModel>criteria()
+            DefaultModelCriteria<AuthenticatedClientSessionModel> csMcb = DefaultModelCriteria.<AuthenticatedClientSessionModel>criteria()
                     .compare(AuthenticatedClientSessionModel.SearchableFields.USER_SESSION_ID, Operator.IN, ids);
             clientSessionTr.delete(withCriteria(csMcb));
             return super.delete(queryParameters);
@@ -64,7 +63,7 @@ public class UserSessionConcurrentHashMapStorage<K> extends ConcurrentHashMapSto
 
         @Override
         public boolean delete(String key) {
-            ModelCriteriaBuilder<AuthenticatedClientSessionModel> csMcb = DefaultModelCriteria.<AuthenticatedClientSessionModel>criteria()
+            DefaultModelCriteria<AuthenticatedClientSessionModel> csMcb = DefaultModelCriteria.<AuthenticatedClientSessionModel>criteria()
                     .compare(AuthenticatedClientSessionModel.SearchableFields.USER_SESSION_ID, Operator.EQ, key);
             clientSessionTr.delete(withCriteria(csMcb));
             return super.delete(key);

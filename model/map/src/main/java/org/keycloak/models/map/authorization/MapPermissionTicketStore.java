@@ -31,9 +31,9 @@ import org.keycloak.models.map.authorization.adapter.MapPermissionTicketAdapter;
 import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntity;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 
+import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
@@ -67,8 +67,8 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
         return new MapPermissionTicketAdapter(origEntity, authorizationProvider.getStoreFactory());
     }
 
-    private ModelCriteriaBuilder<PermissionTicket> forResourceServer(String resourceServerId) {
-        ModelCriteriaBuilder<PermissionTicket> mcb = criteria();
+    private DefaultModelCriteria<PermissionTicket> forResourceServer(String resourceServerId) {
+        DefaultModelCriteria<PermissionTicket> mcb = criteria();
 
         return resourceServerId == null
                 ? mcb
@@ -78,10 +78,10 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
     
     @Override
     public long count(Map<PermissionTicket.FilterOption, String> attributes, String resourceServerId) {
-        ModelCriteriaBuilder<PermissionTicket> mcb = forResourceServer(resourceServerId).and(
+        DefaultModelCriteria<PermissionTicket> mcb = forResourceServer(resourceServerId).and(
                 attributes.entrySet().stream()
-                        .map(this::filterEntryToModelCriteriaBuilder)
-                        .toArray(ModelCriteriaBuilder[]::new)
+                        .map(this::filterEntryToDefaultModelCriteria)
+                        .toArray(DefaultModelCriteria[]::new)
         );
 
         return tx.getCount(withCriteria(mcb));
@@ -94,7 +94,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
         String owner = authorizationProvider.getStoreFactory().getResourceStore().findById(resourceId, resourceServer.getId()).getOwner();
 
         // @UniqueConstraint(columnNames = {"OWNER", "REQUESTER", "RESOURCE_SERVER_ID", "RESOURCE_ID", "SCOPE_ID"})
-        ModelCriteriaBuilder<PermissionTicket> mcb = forResourceServer(resourceServer.getId())
+        DefaultModelCriteria<PermissionTicket> mcb = forResourceServer(resourceServer.getId())
                 .compare(SearchableFields.OWNER, Operator.EQ, owner)
                 .compare(SearchableFields.RESOURCE_ID, Operator.EQ, resourceId)
                 .compare(SearchableFields.REQUESTER, Operator.EQ, requester);
@@ -183,7 +183,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
 
     @Override
     public List<PermissionTicket> find(Map<PermissionTicket.FilterOption, String> attributes, String resourceServerId, int firstResult, int maxResult) {
-        ModelCriteriaBuilder<PermissionTicket> mcb = forResourceServer(resourceServerId);
+        DefaultModelCriteria<PermissionTicket> mcb = forResourceServer(resourceServerId);
 
         if (attributes.containsKey(PermissionTicket.FilterOption.RESOURCE_NAME)) {
             String expectedResourceName = attributes.remove(PermissionTicket.FilterOption.RESOURCE_NAME);
@@ -201,8 +201,8 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
         
         mcb = mcb.and(
                 attributes.entrySet().stream()
-                    .map(this::filterEntryToModelCriteriaBuilder)
-                    .toArray(ModelCriteriaBuilder[]::new)
+                    .map(this::filterEntryToDefaultModelCriteria)
+                    .toArray(DefaultModelCriteria[]::new)
         );
 
         return tx.read(withCriteria(mcb).pagination(firstResult, maxResult, SearchableFields.ID))
@@ -210,11 +210,11 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
                 .collect(Collectors.toList());
     }
     
-    private ModelCriteriaBuilder<PermissionTicket> filterEntryToModelCriteriaBuilder(Map.Entry<PermissionTicket.FilterOption, String> entry) {
+    private DefaultModelCriteria<PermissionTicket> filterEntryToDefaultModelCriteria(Map.Entry<PermissionTicket.FilterOption, String> entry) {
         PermissionTicket.FilterOption name = entry.getKey();
         String value = entry.getValue();
 
-        ModelCriteriaBuilder<PermissionTicket> mcb = criteria();
+        DefaultModelCriteria<PermissionTicket> mcb = criteria();
         switch (name) {
             case ID:
             case SCOPE_ID:
@@ -263,7 +263,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
 
     @Override
     public List<Resource> findGrantedResources(String requester, String name, int first, int max) {
-        ModelCriteriaBuilder<PermissionTicket> mcb = criteria();
+        DefaultModelCriteria<PermissionTicket> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REQUESTER, Operator.EQ, requester)
                 .compare(SearchableFields.GRANTED_TIMESTAMP, Operator.EXISTS);
 
@@ -295,7 +295,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
 
     @Override
     public List<Resource> findGrantedOwnerResources(String owner, int first, int max) {
-        ModelCriteriaBuilder<PermissionTicket> mcb = criteria();
+        DefaultModelCriteria<PermissionTicket> mcb = criteria();
         mcb = mcb.compare(SearchableFields.OWNER, Operator.EQ, owner);
 
         return paginatedStream(tx.read(withCriteria(mcb).orderBy(SearchableFields.RESOURCE_ID, ASCENDING))

@@ -23,8 +23,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 
+import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import java.util.function.Function;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
@@ -54,9 +55,9 @@ public class MapUserLoginFailureProvider implements UserLoginFailureProvider {
 
     @Override
     public UserLoginFailureModel getUserLoginFailure(RealmModel realm, String userId) {
-        ModelCriteriaBuilder<UserLoginFailureModel> mcb = criteria();
-        mcb = mcb.compare(UserLoginFailureModel.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.EQ, realm.getId())
-                .compare(UserLoginFailureModel.SearchableFields.USER_ID, ModelCriteriaBuilder.Operator.EQ, userId);
+        DefaultModelCriteria<UserLoginFailureModel> mcb = criteria();
+        mcb = mcb.compare(UserLoginFailureModel.SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+                .compare(UserLoginFailureModel.SearchableFields.USER_ID, Operator.EQ, userId);
 
         LOG.tracef("getUserLoginFailure(%s, %s)%s", realm, userId, getShortStackTrace());
 
@@ -68,9 +69,9 @@ public class MapUserLoginFailureProvider implements UserLoginFailureProvider {
 
     @Override
     public UserLoginFailureModel addUserLoginFailure(RealmModel realm, String userId) {
-        ModelCriteriaBuilder<UserLoginFailureModel> mcb = criteria();
-        mcb = mcb.compare(UserLoginFailureModel.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.EQ, realm.getId())
-                .compare(UserLoginFailureModel.SearchableFields.USER_ID, ModelCriteriaBuilder.Operator.EQ, userId);
+        DefaultModelCriteria<UserLoginFailureModel> mcb = criteria();
+        mcb = mcb.compare(UserLoginFailureModel.SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+                .compare(UserLoginFailureModel.SearchableFields.USER_ID, Operator.EQ, userId);
 
         LOG.tracef("addUserLoginFailure(%s, %s)%s", realm, userId, getShortStackTrace());
 
@@ -87,9 +88,9 @@ public class MapUserLoginFailureProvider implements UserLoginFailureProvider {
 
     @Override
     public void removeUserLoginFailure(RealmModel realm, String userId) {
-        ModelCriteriaBuilder<UserLoginFailureModel> mcb = criteria();
-        mcb = mcb.compare(UserLoginFailureModel.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.EQ, realm.getId())
-                .compare(UserLoginFailureModel.SearchableFields.USER_ID, ModelCriteriaBuilder.Operator.EQ, userId);
+        DefaultModelCriteria<UserLoginFailureModel> mcb = criteria();
+        mcb = mcb.compare(UserLoginFailureModel.SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+                .compare(UserLoginFailureModel.SearchableFields.USER_ID, Operator.EQ, userId);
 
         LOG.tracef("removeUserLoginFailure(%s, %s)%s", realm, userId, getShortStackTrace());
 
@@ -98,8 +99,8 @@ public class MapUserLoginFailureProvider implements UserLoginFailureProvider {
 
     @Override
     public void removeAllUserLoginFailures(RealmModel realm) {
-        ModelCriteriaBuilder<UserLoginFailureModel> mcb = criteria();
-        mcb = mcb.compare(UserLoginFailureModel.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.EQ, realm.getId());
+        DefaultModelCriteria<UserLoginFailureModel> mcb = criteria();
+        mcb = mcb.compare(UserLoginFailureModel.SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         LOG.tracef("removeAllUserLoginFailures(%s)%s", realm, getShortStackTrace());
 
