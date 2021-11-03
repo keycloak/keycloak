@@ -115,6 +115,15 @@
                         </#if>
                     </div>
                 </div>
+
+                <div class="${properties.kcFormGroupClass!}">
+                    <div class="${properties.kcLabelWrapperClass!}">
+                        <label for="password-toggle" class="${properties.kcLabelClass!}">${msg("passwordToggle")}</label>
+                    </div>
+                    <div class="${properties.kcInputWrapperClass!}">
+                        <input type="checkbox" id="password-toggle" class="${properties.kcInputClass!}" name="password-toggle" onclick="togglePasswords(['password', 'password-confirm'])" />
+                    </div>
+                </div>
             </#if>
 
             <#if recaptchaRequired??>
