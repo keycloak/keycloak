@@ -46,7 +46,7 @@ import org.keycloak.testsuite.arquillian.SuiteContext;
 public class KeycloakQuarkusServerDeployableContainer implements DeployableContainer<KeycloakQuarkusConfiguration> {
 
     private static final Logger log = Logger.getLogger(KeycloakQuarkusServerDeployableContainer.class);
-    public static final String CONF_PERSISTED_PROPERTIES_FILENAME = "conf/persisted.properties";
+    public static final String CONF_PERSISTED_PROPERTIES_FILENAME = "data/generated/persisted.properties";
     public static final String SPI_PROVIDER_PROPERTY_PREFIX = "kc.spi-";
     public static final String SPI_PROVIDER_PROPERTY_SUFFIX = "-provider";
 
