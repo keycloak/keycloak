@@ -27,7 +27,7 @@ When enforcing the requirements of the FAPI CIBA specification, there is a need 
 
 ==== Open Banking Brasil Financial-grade API Security Profile
 
-{project_name} is compliant with the https://openbanking-brasil.github.io/specs-seguranca/open-banking-brasil-financial-api-1_ID2.html[Open Banking Brasil Financial-grade API Security Profile 1.0 Implementers Draft 2].
+{project_name} is compliant with the https://openbanking-brasil.github.io/specs-seguranca/open-banking-brasil-dynamic-client-registration-1_ID2-ptbr.html[Open Banking Brasil Financial-grade API Security Profile 1.0 Implementers Draft 2].
 This one is more strict in some requirements than the <<_fapi-support,FAPI 1 Advanced>> specification and hence it may be needed to configure link:{adminguide_link}#_client_policies[Client Policies]
 in the more strict way to enforce some of the requirements. Especially:
 

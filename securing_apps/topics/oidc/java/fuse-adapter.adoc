@@ -15,7 +15,7 @@ Security for the following items is supported for Fuse:
 
 * Classic WAR applications deployed on Fuse with Pax Web War Extender
 * Servlets deployed on Fuse as OSGI services with Pax Web Whiteboard Extender
-* https://camel.apache.org/[Apache Camel] Jetty endpoints running with the https://camel.apache.org/components/latest/jetty-component.html[Camel Jetty] component
+* https://camel.apache.org/[Apache Camel] Jetty endpoints running with the https://camel.apache.org/components/next/jetty-component.html[Camel Jetty] component
 * https://cxf.apache.org/[Apache CXF] endpoints running on their own separate https://cxf.apache.org/docs/jetty-configuration.html[Jetty engine]
 * https://cxf.apache.org/[Apache CXF] endpoints running on the default engine provided by the CXF servlet
 * SSH and JMX admin access

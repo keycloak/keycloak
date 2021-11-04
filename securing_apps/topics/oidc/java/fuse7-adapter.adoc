@@ -20,7 +20,7 @@ Security for the following items is supported for Fuse:
 * Classic WAR applications deployed on Fuse with Pax Web War Extender
 * Servlets deployed on Fuse as OSGI services with Pax Web Whiteboard Extender and additionally servlets registered through
   org.osgi.service.http.HttpService#registerServlet() which is standard OSGi Enterprise HTTP Service
-* https://camel.apache.org/[Apache Camel] Undertow endpoints running with the https://camel.apache.org/components/latest/undertow-component.html[Camel Undertow] component
+* https://camel.apache.org/[Apache Camel] Undertow endpoints running with the https://camel.apache.org/components/next/undertow-component.html[Camel Undertow] component
 * https://cxf.apache.org/[Apache CXF] endpoints running on their own separate Undertow engine
 * https://cxf.apache.org/[Apache CXF] endpoints running on the default engine provided by the CXF servlet
 * SSH and JMX admin access
