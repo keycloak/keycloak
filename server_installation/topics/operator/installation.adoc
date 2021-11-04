@@ -89,7 +89,6 @@ image:{project_images}/operator-operatorhub-install.png[]
 
 * For more information on a Kubernetes installation, see link:https://operatorhub.io/how-to-install-an-operator[How to install an Operator from OperatorHub.io].
 
-endif::[]
 
 [[_install_by_command]]
 ==== Installing from the command line
@@ -142,7 +141,7 @@ $ {create_cmd_brief} get deployment keycloak-operator
 NAME                READY   UP-TO-DATE   AVAILABLE   AGE
 keycloak-operator   1/1     1            1           41s
 ----
-
+endif::[]
 .Additional resources
 
 * When the Operator installation completes, you are ready to create your first custom resource. See xref:_keycloak_cr[{project_name} installation using a custom resource].
