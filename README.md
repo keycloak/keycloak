@@ -7,7 +7,7 @@ For more information about Keycloak visit the [Keycloak homepage](http://keycloa
 
 
 Contributing to Keycloak Documentation
---------------------------------------
+----------------------------------------
 
 See our [Contributor's Guide](internal_resources/contributing.adoc). The directory also includes a set of templates and other resources to help you get started.
 
