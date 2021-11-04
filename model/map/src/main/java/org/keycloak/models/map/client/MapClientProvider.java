@@ -241,7 +241,7 @@ public class MapClientProvider implements ClientProvider {
 
         ModelCriteriaBuilder<ClientModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-                .compare(SearchableFields.CLIENT_ID, Operator.ILIKE, clientId);
+                .compare(SearchableFields.CLIENT_ID, Operator.EQ, clientId);
 
         return tx.read(withCriteria(mcb))
           .map(entityToAdapterFunc(realm))
