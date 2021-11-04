@@ -1,5 +1,5 @@
 import React from "react";
-import { useHistory, useRouteMatch } from "react-router-dom";
+import { Link, useHistory, useRouteMatch } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { FormProvider, useForm } from "react-hook-form";
 import {
@@ -18,6 +18,8 @@ import { OpenIdConnectSettings } from "./OpenIdConnectSettings";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { OIDCAuthentication } from "./OIDCAuthentication";
 import { useAlerts } from "../../components/alert/Alerts";
+import { toIdentityProvider } from "../routes/IdentityProvider";
+import { toIdentityProviders } from "../routes/IdentityProviders";
 
 type DiscoveryIdentity = IdentityProviderRepresentation & {
   discoveryEndpoint?: string;
@@ -51,7 +53,12 @@ export default function AddOpenIdConnect() {
       });
       addAlert(t("createSuccess"), AlertVariant.success);
       history.push(
-        `/${realm}/identity-providers/${id}/${provider.alias}/settings`
+        toIdentityProvider({
+          realm,
+          providerId: id,
+          alias: provider.alias!,
+          tab: "settings",
+        })
       );
     } catch (error) {
       addError("identity-providers:createError", error);
@@ -87,7 +94,9 @@ export default function AddOpenIdConnect() {
               <Button
                 variant="link"
                 data-testid="cancel"
-                onClick={() => history.push(`/${realm}/identity-providers`)}
+                component={(props) => (
+                  <Link {...props} to={toIdentityProviders({ realm })} />
+                )}
               >
                 {t("common:cancel")}
               </Button>

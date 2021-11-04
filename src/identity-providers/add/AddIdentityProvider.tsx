@@ -1,5 +1,5 @@
 import React from "react";
-import { useHistory, useParams } from "react-router-dom";
+import { Link, useHistory, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { FormProvider, useForm } from "react-hook-form";
 import {
@@ -19,6 +19,7 @@ import { useAlerts } from "../../components/alert/Alerts";
 import { GeneralSettings } from "./GeneralSettings";
 import { toIdentityProvider } from "../routes/IdentityProvider";
 import type { IdentityProviderCreateParams } from "../routes/IdentityProviderCreate";
+import { toIdentityProviders } from "../routes/IdentityProviders";
 
 export default function AddIdentityProvider() {
   const { t } = useTranslation("identity-providers");
@@ -83,7 +84,9 @@ export default function AddIdentityProvider() {
             <Button
               variant="link"
               data-testid="cancel"
-              onClick={() => history.push(`/${realm}/identity-providers`)}
+              component={(props) => (
+                <Link {...props} to={toIdentityProviders({ realm })} />
+              )}
             >
               {t("common:cancel")}
             </Button>

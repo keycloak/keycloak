@@ -40,6 +40,7 @@ import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState
 import type IdentityProviderMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperRepresentation";
 import { toIdentityProviderAddMapper } from "../routes/AddMapper";
 import { toIdentityProviderEditMapper } from "../routes/EditMapper";
+import { toIdentityProviders } from "../routes/IdentityProviders";
 
 import { toUpperCase } from "../../util";
 import {
@@ -166,7 +167,7 @@ export default function DetailSettings() {
       try {
         await adminClient.identityProviders.del({ alias: alias });
         addAlert(t("deletedSuccess"), AlertVariant.success);
-        history.push(`/${realm}/identity-providers`);
+        history.push(toIdentityProviders({ realm }));
       } catch (error) {
         addError("identity-providers:deleteErrorError", error);
       }
