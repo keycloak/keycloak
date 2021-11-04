@@ -25,10 +25,6 @@ To build the module and produce the artifacts to run a server:
 
     mvn -f ../pom.xml clean install -DskipTestsuite -DskipExamples -DskipTests
 
-If you already built Keycloak artifacts using JDK 8, you should be able to skip the previous step and just build this module as follows:
-
-    mvn clean install
-
 ### Building the Distribution
     
 To build the module as well as the distribution packages:

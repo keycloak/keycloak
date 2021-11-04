@@ -44,10 +44,14 @@ import picocli.CommandLine.ScopeType;
                 "Use \"${COMMAND-NAME} start --help\" for the available options when starting the server.",
                 "Use \"${COMMAND-NAME} <command> --help\" for more information about other commands.",
         },
+        version = {
+            "Keycloak ${sys:kc.version}",
+            "JVM: ${java.version} (${java.vendor} ${java.vm.name} ${java.vm.version})",
+            "OS: ${os.name} ${os.version} ${os.arch}"
+        },
         optionListHeading = "Options%n%n",
         commandListHeading = "%nCommands%n%n",
         abbreviateSynopsis = true,
-        versionProvider = VersionProvider.class,
         subcommands = {
                 Build.class,
                 Start.class,

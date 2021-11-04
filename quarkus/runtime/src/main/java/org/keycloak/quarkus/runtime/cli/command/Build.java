@@ -17,6 +17,7 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
+import static org.keycloak.quarkus.runtime.Environment.getHomePath;
 import static org.keycloak.quarkus.runtime.cli.Picocli.error;
 import static org.keycloak.quarkus.runtime.cli.Picocli.println;
 
@@ -25,6 +26,7 @@ import org.keycloak.quarkus.runtime.Environment;
 import io.quarkus.bootstrap.runner.QuarkusEntryPoint;
 import io.quarkus.bootstrap.runner.RunnerClassLoader;
 
+import io.quarkus.runtime.configuration.ProfileManager;
 import picocli.CommandLine.Command;
 
 @Command(name = Build.NAME,
@@ -72,6 +74,8 @@ public final class Build extends AbstractCommand implements Runnable {
             println(spec.commandLine(), "\t" + Environment.getCommand() + " show-config\n");
         } catch (Throwable throwable) {
             error(spec.commandLine(), "Failed to update server configuration.", throwable);
+        } finally {
+            cleanTempResources();
         }
     }
 
@@ -86,6 +90,13 @@ public final class Build extends AbstractCommand implements Runnable {
             if (classLoader instanceof RunnerClassLoader) {
                 ((RunnerClassLoader) classLoader).resetInternalCaches();
             }
+        }
+    }
+
+    private void cleanTempResources() {
+        if (!ProfileManager.getLaunchMode().isDevOrTest()) {
+            // only needed for dev/testing purposes
+            getHomePath().resolve("quarkus-artifact.properties").toFile().delete();
         }
     }
 }

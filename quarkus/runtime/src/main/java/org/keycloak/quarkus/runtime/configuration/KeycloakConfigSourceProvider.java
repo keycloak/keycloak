@@ -108,7 +108,11 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider {
             return Paths.get(System.getProperty("java.io.tmpdir"), PersistedConfigSource.KEYCLOAK_PROPERTIES);
         }
 
-        return Paths.get(homeDir, "conf", PersistedConfigSource.KEYCLOAK_PROPERTIES);
+        Path generatedPath = Paths.get(homeDir, "data", "generated");
+
+        generatedPath.toFile().mkdirs();
+
+        return generatedPath.resolve(PersistedConfigSource.KEYCLOAK_PROPERTIES);
     }
 
     @Override
