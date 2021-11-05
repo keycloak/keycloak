@@ -124,6 +124,7 @@ import org.keycloak.representations.provider.ScriptProviderMetadata;
 import org.keycloak.quarkus.runtime.integration.web.NotFoundHandler;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.quarkus.runtime.services.health.KeycloakMetricsHandler;
+import org.keycloak.theme.FolderThemeProviderFactory;
 import org.keycloak.transaction.JBossJtaTransactionManagerLookup;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.util.JsonSerialization;
@@ -141,6 +142,7 @@ class KeycloakProcessor {
             JBossJtaTransactionManagerLookup.class,
             DefaultJpaConnectionProviderFactory.class,
             DefaultLiquibaseConnectionProvider.class,
+            FolderThemeProviderFactory.class,
             LiquibaseJpaUpdaterProviderFactory.class);
 
     static {
