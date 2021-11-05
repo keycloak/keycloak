@@ -67,7 +67,7 @@ public abstract class AbstractDocsTest {
     @Test
     public void checkVariables() {
         Set<String> missingVariables = utils.findMissingVariables(body, config.getIgnoredVariables());
-        checkFailures("Variables not found", missingVariables);
+        checkFailures("Variables not found ", missingVariables);
     }
 
     @Test

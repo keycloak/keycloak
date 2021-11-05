@@ -38,6 +38,7 @@
 :authorizationguide_link: {project_doc_base_url}/authorization_services_guide/
 :adapterguide_name: Securing Applications and Services Guide
 :adapterguide_link: {project_doc_base_url}/securing_applications_and_services_guide/
+:adapterguide_link_latest: {project_doc_base_url_latest}/securing_apps/
 :adapterguide_link_js_adapter: {adapterguide_link}#_javascript_adapter
 :adapterguide_logout_link: {adapterguide_link}#_java_adapter_logout
 :adminguide_name: Server Administration Guide
@@ -149,7 +150,7 @@
 :jdgserver_name: RHDG
 :jdgserver_version: 7.3
 :jdgserver_version_latest: 8.1
-:jdgserver_crossdcdocs_link: https://access.redhat.com/documentation/en-us/red_hat_data_grid/8.1/html/data_grid_guide_to_cross-site_replication/
+:jdgserver_crossdcdocs_link: https://access.redhat.com/documentation/en-us/red_hat_data_grid/8.1/html/data_grid_guide_to_cross-site_replication/index/
 
 :fuseVersion: JBoss Fuse 6.3.0 Rollup 12
 :fuseHawtioEAPVersion: JBoss EAP 6.4
