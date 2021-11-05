@@ -17,6 +17,7 @@
 :project_templates_base_url: https://raw.githubusercontent.com/jboss-container-images/redhat-sso-7-openshift-image/sso75-cpaas-dev/templates
 :project_latest_image_tag: {project_versionDoc}
 :project_doc_base_url: https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/{project_versionDoc}/html-single
+:project_doc_base_url_latest: https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/{project_versionDoc}/html-single
 :maven_repository: https://maven.repository.redhat.com/ga/
 
 :project_openshift_product_name: {project_name} for OpenShift
@@ -38,7 +39,7 @@
 :authorizationguide_link: {project_doc_base_url}/authorization_services_guide/
 :adapterguide_name: Securing Applications and Services Guide
 :adapterguide_link: {project_doc_base_url}/securing_applications_and_services_guide/
-:adapterguide_link_latest: {project_doc_base_url_latest}/securing_apps/
+:adapterguide_link_latest: {project_doc_base_url_latest}/securing_applications_and_services_guide/
 :adapterguide_link_js_adapter: {adapterguide_link}#_javascript_adapter
 :adapterguide_logout_link: {adapterguide_link}#_java_adapter_logout
 :adminguide_name: Server Administration Guide
