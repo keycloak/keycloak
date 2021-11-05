@@ -94,7 +94,7 @@
                        id="saveTOTPBtn" value="${msg("doSubmit")}"
                 />
                 <button type="submit"
-                        class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!} ${properties.kcButtonLargeClass!}"
+                        class="${properties.kcButtonClass!} ${properties.kcButtonLargeClass!}"
                         id="cancelTOTPBtn" name="cancel-aia" value="true" />${msg("doCancel")}
                 </button>
             <#else>
