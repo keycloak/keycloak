@@ -132,17 +132,20 @@ public class EmailTest extends AbstractI18NTest {
         
         String link = MailUtils.getPasswordResetEmailLink(greenMail.getLastReceivedMessage());
 
-        // Make sure kc_locale added to link doesn't set locale
+        // Make sure kc_locale added to link sets locale
         link += "&kc_locale=de";
         
         DroneUtils.getCurrentDriver().navigate().to(link);
         WaitUtils.waitForPageToLoad();
         
         Assert.assertTrue("Expected to be on InfoPage, but it was on " + DroneUtils.getCurrentDriver().getTitle(), infoPage.isCurrent());
-        Assert.assertThat(infoPage.getLanguageDropdownText(), is(equalTo("English")));
+        Assert.assertThat(infoPage.getLanguageDropdownText(), is(equalTo("Deutsch")));
+        
+        // Make sure changing locale back and forth works
+        infoPage.openLanguage("English");
+        Assert.assertThat(DroneUtils.getCurrentDriver().getPageSource(), containsString("Update Password"));
         
         infoPage.openLanguage("Deutsch");
-
         Assert.assertThat(DroneUtils.getCurrentDriver().getPageSource(), containsString("Passwort aktualisieren"));
         
         infoPage.clickToContinueDe();

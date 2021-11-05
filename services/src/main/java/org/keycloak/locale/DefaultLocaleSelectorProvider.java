@@ -18,6 +18,7 @@ package org.keycloak.locale;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -32,7 +33,7 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
 
     private static final Logger logger = Logger.getLogger(LocaleSelectorProvider.class);
 
-    private KeycloakSession session;
+    protected KeycloakSession session;
 
     public DefaultLocaleSelectorProvider(KeycloakSession session) {
         this.session = session;
@@ -41,13 +42,14 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
     @Override
     public Locale resolveLocale(RealmModel realm, UserModel user) {
         HttpHeaders requestHeaders = session.getContext().getRequestHeaders();
+        KeycloakUriInfo kcURIInfo = session.getContext().getUri();
         AuthenticationSessionModel session = this.session.getContext().getAuthenticationSession();
 
         if (!realm.isInternationalizationEnabled()) {
             return Locale.ENGLISH;
         }
 
-        Locale userLocale = getUserLocale(realm, session, user, requestHeaders);
+        Locale userLocale = getUserLocale(realm, session, user, kcURIInfo, requestHeaders);
         if (userLocale != null) {
             return userLocale;
         }
@@ -60,7 +62,7 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
         return Locale.ENGLISH;
     }
 
-    private Locale getUserLocale(RealmModel realm, AuthenticationSessionModel session, UserModel user, HttpHeaders requestHeaders) {
+    protected Locale getUserLocale(RealmModel realm, AuthenticationSessionModel session, UserModel user, KeycloakUriInfo kcURIInfo, HttpHeaders requestHeaders) {
         Locale locale;
 
         locale = getUserSelectedLocale(realm, session);
@@ -83,6 +85,11 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
             return locale;
         }
 
+        locale = getLocaleKCLocaleParameter(realm, kcURIInfo);
+        if (locale != null) {
+            return locale;
+        }
+
         locale = getAcceptLanguageHeaderLocale(realm, requestHeaders);
         if (locale != null) {
             return locale;
@@ -91,7 +98,7 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
         return null;
     }
 
-    private Locale getUserSelectedLocale(RealmModel realm, AuthenticationSessionModel session) {
+    protected Locale getUserSelectedLocale(RealmModel realm, AuthenticationSessionModel session) {
         if (session == null) {
             return null;
         }
@@ -104,7 +111,7 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
         return findLocale(realm, locale);
     }
 
-    private Locale getUserProfileSelection(RealmModel realm, UserModel user) {
+    protected Locale getUserProfileSelection(RealmModel realm, UserModel user) {
         if (user == null) {
             return null;
         }
@@ -117,7 +124,7 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
         return findLocale(realm, locale);
     }
 
-    private Locale getClientSelectedLocale(RealmModel realm, AuthenticationSessionModel session) {
+    protected Locale getClientSelectedLocale(RealmModel realm, AuthenticationSessionModel session) {
         if (session == null) {
             return null;
         }
@@ -130,7 +137,7 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
         return findLocale(realm, locale.split(" "));
     }
 
-    private Locale getLocaleCookieSelection(RealmModel realm, HttpHeaders httpHeaders) {
+    protected Locale getLocaleCookieSelection(RealmModel realm, HttpHeaders httpHeaders) {
         if (httpHeaders == null) {
             return null;
         }
@@ -143,7 +150,20 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
         return findLocale(realm, localeCookie.getValue());
     }
 
-    private Locale getAcceptLanguageHeaderLocale(RealmModel realm, HttpHeaders httpHeaders) {
+    protected Locale getLocaleKCLocaleParameter(RealmModel realm, KeycloakUriInfo kcURIInfo) {
+        if (kcURIInfo == null) {
+            return null;
+        }
+
+        String kcLocale = kcURIInfo.getQueryParameters().getFirst(KC_LOCALE_PARAM);
+        if (kcLocale == null) {
+            return null;
+        }
+
+        return findLocale(realm, kcLocale);
+    }
+
+    protected Locale getAcceptLanguageHeaderLocale(RealmModel realm, HttpHeaders httpHeaders) {
         if (httpHeaders == null) {
             return null;
         }
@@ -163,7 +183,7 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
         return null;
     }
 
-    private Locale findLocale(RealmModel realm, String... localeStrings) {
+    protected Locale findLocale(RealmModel realm, String... localeStrings) {
         List<Locale> supportedLocales = realm.getSupportedLocalesStream()
                 .map(Locale::forLanguageTag).collect(Collectors.toList());
         for (String localeString : localeStrings) {
