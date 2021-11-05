@@ -86,19 +86,31 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     private CrossDCLastSessionRefreshStore offlineLastSessionRefreshStore;
     private PersisterLastSessionRefreshStore persisterLastSessionRefreshStore;
     private InfinispanKeyGenerator keyGenerator;
+    private InfinispanUserSessionListener userSessionListener;
 
     @Override
     public InfinispanUserSessionProvider create(KeycloakSession session) {
         InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
         Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = connections.getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
+        Cache<String, Set<String>> sessionIdsCache = connections.getCache(InfinispanConnectionProvider.USER_SESSION_IDS_CACHE_NAME);
         Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineSessionsCache = connections.getCache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME);
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = connections.getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME);
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> offlineClientSessionsCache = connections.getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME);
 
         boolean loadOfflineSessionsStatsFromDatabase = !isPreloadingOfflineSessionsFromDatabaseEnabled();
 
+        if (userSessionListener == null) {
+            synchronized (this) {
+                if (userSessionListener == null) {
+                    userSessionListener = new InfinispanUserSessionListener(sessionIdsCache);
+                    cache.addListener(userSessionListener);
+                }
+            }
+        }
+
         return new InfinispanUserSessionProvider(session, remoteCacheInvoker, lastSessionRefreshStore, offlineLastSessionRefreshStore,
-                persisterLastSessionRefreshStore, keyGenerator, cache, offlineSessionsCache, clientSessionCache, offlineClientSessionsCache, loadOfflineSessionsStatsFromDatabase);
+                persisterLastSessionRefreshStore, keyGenerator, cache, sessionIdsCache, offlineSessionsCache, clientSessionCache,
+                offlineClientSessionsCache, loadOfflineSessionsStatsFromDatabase);
     }
 
     @Override

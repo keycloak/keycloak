@@ -20,6 +20,9 @@
                 <param name="local-cache" value="sessions"/>
             </feature>
             <feature spec="subsystem.infinispan.cache-container.local-cache">
+                <param name="local-cache" value="sessionIds"/>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.local-cache">
                 <param name="local-cache" value="authenticationSessions"/>
             </feature>
             <feature spec="subsystem.infinispan.cache-container.local-cache">

@@ -7,6 +7,7 @@ embed-server --server-config=standalone-ha.xml
 /subsystem=infinispan/cache-container=keycloak/local-cache=users:add()
 /subsystem=infinispan/cache-container=keycloak/local-cache=users/memory=object:add(size=10000)
 /subsystem=infinispan/cache-container=keycloak/distributed-cache=sessions:add(owners="1")
+/subsystem=infinispan/cache-container=keycloak/distributed-cache=sessionIds:add(owners="1")
 /subsystem=infinispan/cache-container=keycloak/distributed-cache=authenticationSessions:add(owners="1")
 /subsystem=infinispan/cache-container=keycloak/distributed-cache=offlineSessions:add(owners="1")
 /subsystem=infinispan/cache-container=keycloak/distributed-cache=clientSessions:add(owners="1")

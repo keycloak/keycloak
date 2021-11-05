@@ -266,6 +266,14 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         if (jdgEnabled) {
             sessionConfigBuilder = createCacheConfigurationBuilder();
             sessionConfigBuilder.read(sessionCacheConfigurationBase);
+            configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.USER_SESSION_IDS_CACHE_NAME);
+        }
+        sessionCacheConfiguration = sessionConfigBuilder.build();
+        cacheManager.defineConfiguration(InfinispanConnectionProvider.USER_SESSION_IDS_CACHE_NAME, sessionCacheConfiguration);
+
+        if (jdgEnabled) {
+            sessionConfigBuilder = createCacheConfigurationBuilder();
+            sessionConfigBuilder.read(sessionCacheConfigurationBase);
             configureRemoteCacheStore(sessionConfigBuilder, async, InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME);
         }
         sessionCacheConfiguration = sessionConfigBuilder.build();
@@ -299,6 +307,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         // Retrieve caches to enforce rebalance
         cacheManager.getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME, true);
+        cacheManager.getCache(InfinispanConnectionProvider.USER_SESSION_IDS_CACHE_NAME, true);
         cacheManager.getCache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME, true);
         cacheManager.getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME, true);
         cacheManager.getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME, true);

@@ -9,6 +9,7 @@ cd /subsystem=infinispan/cache-container=keycloak
 
 ./replicated-cache=work/store=remote:add(cache=work,                                    fetch-state=false, passivation=false, preload=false, purge=false, remote-servers=["remote-cache"], shared=true, properties={rawValues=true, marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory, protocolVersion=${env.HOTROD_VERSION:2.8}})
 ./distributed-cache=sessions/store=remote:add(cache=sessions,                           fetch-state=false, passivation=false, preload=false, purge=false, remote-servers=["remote-cache"], shared=true, properties={rawValues=true, marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory, protocolVersion=${env.HOTROD_VERSION:2.8}})
+./distributed-cache=sessionIds/store=remote:add(cache=sessionIds                        fetch-state=false, passivation=false, preload=false, purge=false, remote-servers=["remote-cache"], shared=true, properties={rawValues=true, marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory, protocolVersion=${env.HOTROD_VERSION:2.8}})
 ./distributed-cache=offlineSessions/store=remote:add(cache=offlineSessions,             fetch-state=false, passivation=false, preload=false, purge=false, remote-servers=["remote-cache"], shared=true, properties={rawValues=true, marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory, protocolVersion=${env.HOTROD_VERSION:2.8}})
 ./distributed-cache=clientSessions/store=remote:add(cache=clientSessions,               fetch-state=false, passivation=false, preload=false, purge=false, remote-servers=["remote-cache"], shared=true, properties={rawValues=true, marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory, protocolVersion=${env.HOTROD_VERSION:2.8}})
 ./distributed-cache=offlineClientSessions/store=remote:add(cache=offlineClientSessions, fetch-state=false, passivation=false, preload=false, purge=false, remote-servers=["remote-cache"], shared=true, properties={rawValues=true, marshaller=org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory, protocolVersion=${env.HOTROD_VERSION:2.8}})
@@ -18,6 +19,7 @@ cd /subsystem=infinispan/cache-container=keycloak
 
 ./replicated-cache=work:write-attribute                     (name=statistics-enabled, value=${env.CACHE_STATISTICS:true})
 ./distributed-cache=sessions:write-attribute                (name=statistics-enabled, value=${env.CACHE_STATISTICS:true})
+./distributed-cache=sessionIds:write-attribute              (name=statistics-enabled, value=${env.CACHE_STATISTICS:true})
 ./distributed-cache=offlineSessions:write-attribute         (name=statistics-enabled, value=${env.CACHE_STATISTICS:true})
 ./distributed-cache=clientSessions:write-attribute          (name=statistics-enabled, value=${env.CACHE_STATISTICS:true})
 ./distributed-cache=offlineClientSessions:write-attribute   (name=statistics-enabled, value=${env.CACHE_STATISTICS:true})

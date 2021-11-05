@@ -24,6 +24,7 @@ cd replicated-cache-configuration=sessions-cfg
 cd /subsystem=datagrid-infinispan/cache-container=clustered
 ./replicated-cache=work:add(configuration=sessions-cfg)
 ./replicated-cache=sessions:add(configuration=sessions-cfg)
+./replicated-cache=sessionsIds:add(configuration=sessions-cfg)
 ./replicated-cache=clientSessions:add(configuration=sessions-cfg)
 ./replicated-cache=offlineSessions:add(configuration=sessions-cfg)
 ./replicated-cache=offlineClientSessions:add(configuration=sessions-cfg)

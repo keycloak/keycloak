@@ -27,6 +27,13 @@
                 </feature>
             </feature>
             <feature spec="subsystem.infinispan.cache-container.distributed-cache">
+                <param name="distributed-cache" value="sessionIds"/>
+                <param name="owners" value="1"/>
+                <feature spec="subsystem.infinispan.cache-container.distributed-cache.component.expiration">
+                    <param name="lifespan" value="900000000000000000"/>
+                </feature>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.distributed-cache">
                 <param name="distributed-cache" value="authenticationSessions"/>
                 <param name="owners" value="1"/>
                 <feature spec="subsystem.infinispan.cache-container.distributed-cache.component.expiration">

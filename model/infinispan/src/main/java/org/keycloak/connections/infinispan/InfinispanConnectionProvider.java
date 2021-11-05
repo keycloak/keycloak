@@ -35,6 +35,7 @@ public interface InfinispanConnectionProvider extends Provider {
     int USER_REVISIONS_CACHE_DEFAULT_MAX = 100000;
 
     String USER_SESSION_CACHE_NAME = "sessions";
+    String USER_SESSION_IDS_CACHE_NAME = "sessionIds";
     String CLIENT_SESSION_CACHE_NAME = "clientSessions";
     String OFFLINE_USER_SESSION_CACHE_NAME = "offlineSessions";
     String OFFLINE_CLIENT_SESSION_CACHE_NAME = "offlineClientSessions";

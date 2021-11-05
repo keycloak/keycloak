@@ -90,6 +90,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     protected final KeycloakSession session;
 
     protected final Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionCache;
+    protected final Cache<String, Set<String>> sessionIdsCache;
     protected final Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineSessionCache;
     protected final Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache;
     protected final Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> offlineClientSessionCache;
@@ -117,6 +118,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                                          PersisterLastSessionRefreshStore persisterLastSessionRefreshStore,
                                          InfinispanKeyGenerator keyGenerator,
                                          Cache<String, SessionEntityWrapper<UserSessionEntity>> sessionCache,
+                                         Cache<String, Set<String>> sessionIdsCache,
                                          Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineSessionCache,
                                          Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache,
                                          Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> offlineClientSessionCache,
@@ -124,6 +126,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         this.session = session;
 
         this.sessionCache = sessionCache;
+        this.sessionIdsCache = sessionIdsCache;
         this.clientSessionCache = clientSessionCache;
         this.offlineSessionCache = offlineSessionCache;
         this.offlineClientSessionCache = offlineClientSessionCache;
@@ -365,8 +368,16 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         }
 
-        Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
-        cache = CacheDecorators.skipCacheLoaders(cache);
+        final Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = CacheDecorators.skipCacheLoaders(getCache(offline));
+
+        if (predicate.getUserId() != null && !offline) {
+            // return a stream via session ids cache for faster user session retrieval
+            final Set<String> sessionIds = sessionIdsCache.getOrDefault(predicate.getUserId(), Collections.emptySet());
+            return sessionIds.stream().map(id -> cache.get(id)).filter(Objects::nonNull)
+                    .map(wrapper -> Map.entry(wrapper.getEntity().getId(), wrapper)).filter(predicate)
+                    .map(Mappers.userSessionEntity())
+                    .map(entity -> this.wrap(realm, entity, false));
+        }
 
         // return a stream that 'wraps' the infinispan cache stream so that the cache stream's elements are read one by one
         // and then mapped locally to avoid serialization issues when trying to manipulate the cache stream directly.
