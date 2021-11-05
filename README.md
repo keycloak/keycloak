@@ -15,7 +15,7 @@ If you want to file a bug report or tell us about any other issue with this docu
 
 
 Building Keycloak Documentation
--------------------------------
+---------------------------------
 
 Ensure that you have [Maven installed](https://maven.apache.org/).
 
