@@ -8,8 +8,10 @@
                 <form id="kc-form-login" onsubmit="login.disabled = true; return true;" action="${url.loginAction}"
                       method="post">
                     <div class="${properties.kcFormGroupClass!} no-bottom-margin">
-                        <hr/>
-                        <label for="password" class="${properties.kcLabelClass!}">${msg("password")}</label>
+                        <hr class="pf-c-divider" />
+                        <label for="password" class="${properties.kcLabelClass!}">
+                            <span class="pf-c-form__label-text">${msg("password")}</span>
+                        </label>
                         <input tabindex="2" id="password" class="${properties.kcInputClass!}" name="password"
                                type="password" autocomplete="on"
                                aria-invalid="<#if messagesPerField.existsError('password')>true</#if>"
