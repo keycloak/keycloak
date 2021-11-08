@@ -22,11 +22,8 @@ import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/li
 import type { ConfigPropertyRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigInfoRepresentation";
 import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
 import { ClientProfileParams, toClientProfile } from "./routes/ClientProfile";
-import {
-  COMPONENTS,
-  isValidComponentType,
-} from "../client-scopes/add/components/components";
 import type ClientPolicyExecutorRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyExecutorRepresentation";
+import { DynamicComponents } from "../components/dynamic/DynamicComponents";
 
 type ExecutorForm = Required<ClientPolicyExecutorRepresentation>;
 
@@ -67,9 +64,6 @@ export default function ExecutorForm() {
     },
     []
   );
-
-  const fldNameFormatter = (name: string) =>
-    name.toLowerCase().trim().split(/\s+/).join("-");
 
   const save = async () => {
     const formValues = form.getValues();
@@ -160,24 +154,7 @@ export default function ExecutorForm() {
             />
           </FormGroup>
           <FormProvider {...form}>
-            {executorProperties.map((option) => {
-              const componentType = option.type!;
-              if (isValidComponentType(componentType)) {
-                const Component = COMPONENTS[componentType];
-                return (
-                  <Component
-                    key={option.name}
-                    {...option}
-                    name={fldNameFormatter(option.label!)}
-                    label={option.label}
-                  />
-                );
-              } else {
-                console.warn(
-                  `There is no editor registered for ${componentType}`
-                );
-              }
-            })}
+            <DynamicComponents properties={executorProperties} />
           </FormProvider>
           <ActionGroup>
             <Button

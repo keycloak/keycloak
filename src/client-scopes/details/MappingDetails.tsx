@@ -25,9 +25,9 @@ import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { COMPONENTS, isValidComponentType } from "../add/components/components";
 import { MapperParams, MapperRoute } from "../routes/Mapper";
 import { toClientScope } from "../routes/ClientScope";
+import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 
 import "./mapping-details.css";
 
@@ -242,17 +242,7 @@ export default function MappingDetails() {
             />
           </FormGroup>
           <FormProvider {...form}>
-            {mapping?.properties.map((property) => {
-              const componentType = property.type!;
-              if (isValidComponentType(componentType)) {
-                const Component = COMPONENTS[componentType];
-                return <Component key={property.name} {...property} />;
-              } else {
-                console.warn(
-                  `There is no editor registered for ${componentType}`
-                );
-              }
-            })}
+            <DynamicComponents properties={mapping?.properties || []} />
           </FormProvider>
           <ActionGroup>
             <Button variant="primary" type="submit">

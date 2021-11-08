@@ -54,13 +54,17 @@ export const exportClient = (client: ClientRepresentation): void => {
 export const toUpperCase = <T extends string>(name: T) =>
   (name.charAt(0).toUpperCase() + name.slice(1)) as Capitalize<T>;
 
+export const convertToHyphens = (s: string) => {
+  return s.replaceAll(".", "-");
+};
+
 export const convertToFormValues = (
   obj: any,
   prefix: string,
   setValue: (name: string, value: any) => void
 ) => {
   return Object.keys(obj).map((key) => {
-    const newKey = key.replace(/\./g, "-");
+    const newKey = convertToHyphens(key);
     setValue(prefix + "." + newKey, obj[key]);
   });
 };
@@ -187,10 +191,6 @@ export const interpolateTimespan = (forHumans: string) => {
       convertedToSeconds: forHumans,
     });
   }
-};
-
-export const convertToHyphens = (s: string) => {
-  return s.replaceAll(".", "-");
 };
 
 export const KEY_PROVIDER_TYPE = "org.keycloak.keys.KeyProvider";

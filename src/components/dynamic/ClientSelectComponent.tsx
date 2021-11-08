@@ -9,10 +9,10 @@ import {
 } from "@patternfly/react-core";
 
 import type { ClientQuery } from "@keycloak/keycloak-admin-client/lib/resources/clients";
-import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
-import { HelpItem } from "../../../components/help-enabler/HelpItem";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { HelpItem } from "../help-enabler/HelpItem";
 import type { ComponentProps } from "./components";
-import { convertToHyphens } from "../../../util";
+import { convertToHyphens } from "../../util";
 
 export const ClientSelectComponent = ({
   name,
@@ -20,7 +20,7 @@ export const ClientSelectComponent = ({
   helpText,
   defaultValue,
 }: ComponentProps) => {
-  const { t } = useTranslation("client-scopes");
+  const { t } = useTranslation("dynamic");
   const { control } = useFormContext();
 
   const [open, setOpen] = useState(false);

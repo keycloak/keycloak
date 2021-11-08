@@ -1,14 +1,13 @@
 import React from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { FormGroup } from "@patternfly/react-core";
-import { CodeEditor, Language } from "@patternfly/react-code-editor";
+import { FormGroup, Switch } from "@patternfly/react-core";
 
-import { HelpItem } from "../../../components/help-enabler/HelpItem";
 import type { ComponentProps } from "./components";
-import { convertToHyphens } from "../../../util";
+import { HelpItem } from "../help-enabler/HelpItem";
+import { convertToHyphens } from "../../util";
 
-export const ScriptComponent = ({
+export const BooleanComponent = ({
   name,
   label,
   helpText,
@@ -19,29 +18,25 @@ export const ScriptComponent = ({
 
   return (
     <FormGroup
+      hasNoPaddingTop
       label={t(label!)}
-      labelIcon={
-        <HelpItem
-          helpText={<span style={{ whiteSpace: "pre-wrap" }}>{helpText}</span>}
-          forLabel={t(label!)}
-          forID={name!}
-        />
-      }
       fieldId={name!}
+      labelIcon={
+        <HelpItem helpText={t(helpText!)} forLabel={t(label!)} forID={name!} />
+      }
     >
       <Controller
         name={`config.${convertToHyphens(name!)}`}
+        data-testid={name}
         defaultValue={defaultValue}
         control={control}
         render={({ onChange, value }) => (
-          <CodeEditor
+          <Switch
             id={name!}
-            data-testid={name}
-            type="text"
-            onChange={onChange}
-            code={value}
-            height="600px"
-            language={Language.javascript}
+            label={t("common:on")}
+            labelOff={t("common:off")}
+            isChecked={value === "true" || value === true}
+            onChange={(value) => onChange("" + value)}
           />
         )}
       />

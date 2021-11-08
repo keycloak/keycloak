@@ -14,14 +14,14 @@ import {
 
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
-import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
-import { useRealm } from "../../../context/realm-context/RealmContext";
-import { HelpItem } from "../../../components/help-enabler/HelpItem";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useRealm } from "../../context/realm-context/RealmContext";
+import { HelpItem } from "../help-enabler/HelpItem";
 import type { ComponentProps } from "./components";
-import { convertToHyphens } from "../../../util";
+import { convertToHyphens } from "../../util";
 
 export const RoleComponent = ({ name, label, helpText }: ComponentProps) => {
-  const { t } = useTranslation("client-scopes");
+  const { t } = useTranslation("dynamic");
 
   const adminClient = useAdminClient();
   const { realm } = useRealm();
@@ -122,7 +122,7 @@ export const RoleComponent = ({ name, label, helpText }: ComponentProps) => {
 
   return (
     <FormGroup
-      label={label!}
+      label={t(label!)}
       labelIcon={
         <HelpItem helpText={t(helpText!)} forLabel={name!} forID={name!} />
       }

@@ -8,7 +8,7 @@ import { RoleComponent } from "./RoleComponent";
 import { ScriptComponent } from "./ScriptComponent";
 import { ClientSelectComponent } from "./ClientSelectComponent";
 import { MultiValuedStringComponent } from "./MultivaluedStringComponent";
-import { MultivaluedListComponent } from "./MultivaluedListComponent";
+import { MultiValuedListComponent } from "./MultivaluedListComponent";
 
 export type ComponentProps = Omit<ConfigPropertyRepresentation, "type">;
 const ComponentTypes = [
@@ -32,8 +32,8 @@ export const COMPONENTS: {
   List: ListComponent,
   Role: RoleComponent,
   Script: ScriptComponent,
-  MultivaluedList: MultivaluedListComponent,
   ClientList: ClientSelectComponent,
+  MultivaluedList: MultiValuedListComponent,
   MultivaluedString: MultiValuedStringComponent,
 } as const;
 

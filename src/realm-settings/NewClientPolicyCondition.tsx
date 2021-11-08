@@ -24,12 +24,9 @@ import { useHistory, useParams } from "react-router";
 import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
 import { useRealm } from "../context/realm-context/RealmContext";
 import type { EditClientPolicyParams } from "./routes/EditClientPolicy";
-import {
-  COMPONENTS,
-  isValidComponentType,
-} from "../client-scopes/add/components/components";
 import type { ConfigPropertyRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigInfoRepresentation";
 import type ClientPolicyConditionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyConditionRepresentation";
+import { DynamicComponents } from "../components/dynamic/DynamicComponents";
 
 export type ItemType = { value: string };
 
@@ -208,24 +205,7 @@ export default function NewClientPolicyCondition() {
             />
           </FormGroup>
           <FormProvider {...form}>
-            {conditionProperties.map((option) => {
-              const componentType = option.type!;
-              if (isValidComponentType(componentType)) {
-                const Component = COMPONENTS[componentType];
-                return (
-                  <Component
-                    key={option.name}
-                    {...option}
-                    name={option.name}
-                    label={option.label}
-                  />
-                );
-              } else {
-                console.warn(
-                  `There is no editor registered for ${componentType}`
-                );
-              }
-            })}
+            <DynamicComponents properties={conditionProperties} />
           </FormProvider>
           <ActionGroup>
             <Button

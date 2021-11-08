@@ -322,7 +322,6 @@ export default {
     clientProfilesHelpItem: "Client profiles help item",
     addClientProfile: "Add client profile",
     emptyProfiles: "No client profiles configured",
-    addMultivaluedLabel: "Add {{fieldLabel}}",
     tokens: "Tokens",
     key: "Key",
     value: "Value",

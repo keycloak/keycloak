@@ -25,6 +25,8 @@ import userFederationHelp from "./user-federation/help";
 import identityProviders from "./identity-providers/messages";
 import identityProvidersHelp from "./identity-providers/help";
 
+import dynamicLabels from "./components/dynamic/labels";
+
 export const DEFAULT_LOCALE = "en";
 
 const initOptions = {
@@ -55,6 +57,7 @@ const initOptions = {
       ...identityProvidersHelp,
       ...userFederation,
       ...userFederationHelp,
+      ...dynamicLabels,
     },
   },
   lng: DEFAULT_LOCALE,
