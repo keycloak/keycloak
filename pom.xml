@@ -238,7 +238,7 @@
 
     <issueManagement>
         <system>JIRA</system>
-        <url>http://jira.jboss.com/jira/browse/KEYCLOAK</url>
+        <url>https://github.com/keycloak/keycloak/issues</url>
     </issueManagement>
 
     <developers>
