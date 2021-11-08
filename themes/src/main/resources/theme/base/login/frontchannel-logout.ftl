@@ -7,13 +7,13 @@
         ${msg("frontchannel-logout.title")}
     <#elseif section = "form">
         <p>${msg("frontchannel-logout.message")}</p>
-        <ul>
-        <#list logout.clients as client>
-            <li>
-                ${client.name}
-                <iframe src="${client.frontChannelLogoutUrl}" style="display:none;"></iframe>
-            </li>
-        </#list>
+        <ul class="pf-c-list">
+            <#list logout.clients as client>
+                <li>
+                    ${client.name}
+                    <iframe src="${client.frontChannelLogoutUrl}" style="display:none;"></iframe>
+                </li>
+            </#list>
         </ul>
         <#if logout.logoutRedirectUri?has_content>
             <script>
