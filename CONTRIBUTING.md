@@ -34,8 +34,8 @@ not be able to respond to your PR immediately. The best place to ping us is on t
 ### Finding something to work on
 
 If you would like to contribute to Keycloak, but are not sure exactly what to work on, you can find a number of open
-issues that are awaiting contributions in the 
-[Keycloak JIRA](https://issues.jboss.org/projects/KEYCLOAK/versions/12340167).
+issues that are awaiting contributions in  
+[issues](https://github.com/keycloak/keycloak/issues).
 
 ### Open a discussion on a proposed change
 
