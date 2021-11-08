@@ -121,7 +121,7 @@
 :apidocs_javadocs_name: JavaDocs Documentation
 :apidocs_javadocs_link: https://access.redhat.com/webassets/avalon/d/red-hat-single-sign-on/version-{project_versionDoc}/javadocs/
 :apidocs_adminrest_name: Administration REST API
-:apidocs_adminrest_link: https://access.redhat.com/webassets/avalon/d/red-hat-single-sign-on/version-{project_versionDoc}/restapi/
+:apidocs_adminrest_link: https://access.redhat.com/webassets/avalon/d/red-hat-single-sign-on/version-{project_versionDoc}/rest-api/
 
 :appserver_name: JBoss EAP
 :appserver_dirref: EAP_HOME
