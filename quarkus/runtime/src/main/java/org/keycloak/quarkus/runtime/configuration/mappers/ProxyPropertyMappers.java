@@ -22,6 +22,7 @@ final class ProxyPropertyMappers {
                         .expectedValues(Arrays.asList(possibleProxyValues))
                         .description("The proxy address forwarding mode if the server is behind a reverse proxy. " +
                                 "Possible values are: " + String.join(",",possibleProxyValues))
+                        .paramLabel("mode")
                         .category(ConfigCategory.PROXY)
                         .build()
         };

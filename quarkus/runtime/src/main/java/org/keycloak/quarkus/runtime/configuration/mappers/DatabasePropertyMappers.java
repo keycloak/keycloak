@@ -31,6 +31,7 @@ final class DatabasePropertyMappers {
                         .isBuildTimeProperty(true)
                         .transformer(getSupportedDbValue())
                         .description("The database vendor. Possible values are: " + String.join(",", supportedDatabaseVendors))
+                        .paramLabel("vendor")
                         .expectedValues(Arrays.asList(supportedDatabaseVendors))
                         .build(),
                 builder().from("db")
@@ -45,32 +46,39 @@ final class DatabasePropertyMappers {
                                 "For instance, if using 'postgres', the JDBC URL would be 'jdbc:postgresql://localhost/keycloak'. " +
                                 "The host, database and properties can be overridden by setting the following system properties," +
                                 " respectively: -Dkc.db.url.host, -Dkc.db.url.database, -Dkc.db.url.properties.")
+                        .paramLabel("jdbc-url")
                         .build(),
                 builder().from("db.username")
                         .to("quarkus.datasource.username")
                         .description("The username of the database user.")
+                        .paramLabel("username")
                         .build(),
                 builder().from("db.password")
                         .to("quarkus.datasource.password")
                         .description("The password of the database user.")
+                        .paramLabel("password")
                         .isMasked(true)
                         .build(),
                 builder().from("db.schema")
                         .to("quarkus.datasource.schema")
                         .description("The database schema to be used.")
+                        .paramLabel("schema")
                         .build(),
                 builder().from("db.pool.initial-size")
                         .to("quarkus.datasource.jdbc.initial-size")
                         .description("The initial size of the connection pool.")
+                        .paramLabel("size")
                         .build(),
                 builder().from("db.pool.min-size")
                         .to("quarkus.datasource.jdbc.min-size")
                         .description("The minimal size of the connection pool.")
+                        .paramLabel("size")
                         .build(),
                 builder().from("db.pool.max-size")
                         .to("quarkus.datasource.jdbc.max-size")
                         .defaultValue(String.valueOf(100))
                         .description("The maximum size of the connection pool.")
+                        .paramLabel("size")
                         .build()
         };
     }

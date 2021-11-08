@@ -17,6 +17,8 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
+import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
+
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ScopeType;
@@ -25,12 +27,11 @@ import picocli.CommandLine.ScopeType;
         header = {
                 "Keycloak - Open Source Identity and Access Management",
                 "",
-                "Find more information at: https://www.keycloak.org/docs/latest",
-                ""
+                "Find more information at: https://www.keycloak.org/docs/latest"
         },
-        description = "%nUse this command-line tool to manage your Keycloak cluster.%n",
-        footerHeading = "%nExamples:%n%n"
-                + "  Start the server in development mode for local development or testing:%n%n"
+        description = "%nUse this command-line tool to manage your Keycloak cluster.",
+        footerHeading = "Examples:",
+        footer = { "  Start the server in development mode for local development or testing:%n%n"
                 + "      $ ${COMMAND-NAME} start-dev%n%n"
                 + "  Building an optimized server runtime:%n%n"
                 + "      $ ${COMMAND-NAME} build <OPTIONS>%n%n"
@@ -38,19 +39,18 @@ import picocli.CommandLine.ScopeType;
                 + "      $ ${COMMAND-NAME} start <OPTIONS>%n%n"
                 + "  Enable auto-completion to bash/zsh:%n%n"
                 + "      $ source <(${COMMAND-NAME} tools completion)%n%n"
-                + "  Please, take a look at the documentation for more details before deploying in production.%n",
-        footer = {
+                + "  Please, take a look at the documentation for more details before deploying in production.",
                 "",
                 "Use \"${COMMAND-NAME} start --help\" for the available options when starting the server.",
-                "Use \"${COMMAND-NAME} <command> --help\" for more information about other commands.",
+                "Use \"${COMMAND-NAME} <command> --help\" for more information about other commands."
         },
         version = {
             "Keycloak ${sys:kc.version}",
             "JVM: ${java.version} (${java.vendor} ${java.vm.name} ${java.vm.version})",
             "OS: ${os.name} ${os.version} ${os.arch}"
         },
-        optionListHeading = "Options%n%n",
-        commandListHeading = "%nCommands%n%n",
+        optionListHeading = "Options:",
+        commandListHeading = "Commands:",
         abbreviateSynopsis = true,
         subcommands = {
                 Build.class,
@@ -79,8 +79,8 @@ public final class Main {
     boolean version;
 
     @Option(names = { "-v", "--verbose" },
-            description = "Print out more details when running this command. Useful for troubleshooting if some unexpected error occurs.",
-            required = false,
+            description = "Print out error details when running this command.",
+            paramLabel = NO_PARAM_LABEL,
             scope = ScopeType.INHERIT)
     Boolean verbose;
 }

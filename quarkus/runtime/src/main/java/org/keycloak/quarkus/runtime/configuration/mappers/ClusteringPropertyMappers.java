@@ -17,6 +17,7 @@ final class ClusteringPropertyMappers {
                                 "configuration file prefixed with the 'cluster-` inside the distribution configuration directory. " +
                                 "Value 'local' effectively disables clustering and use infinispan caches in the local mode. " +
                                 "Value 'default' enables clustering for infinispan caches.")
+                        .paramLabel("mode")
                         .isBuildTimeProperty(true)
                         .expectedValues(Arrays.asList("local", "default"))
                         .build(),
@@ -24,6 +25,7 @@ final class ClusteringPropertyMappers {
                         .to("kc.spi.connections-infinispan.quarkus.stack")
                         .description("Define the default stack to use for cluster communication and node discovery.")
                         .defaultValue("udp")
+                        .paramLabel("stack")
                         .isBuildTimeProperty(true)
                         .expectedValues(Arrays.asList("tcp", "udp", "kubernetes", "ec2", "azure", "google"))
                         .build()

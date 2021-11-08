@@ -25,11 +25,12 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
 @Command(name = "import",
-        description = "Import data from a directory or a file.",
+        header = "Import data from a directory or a file.",
+        description = "%nImport data from a directory or a file.",
         showDefaultValues = true,
         abbreviateSynopsis = true,
-        optionListHeading = "%nOptions%n",
-        parameterListHeading = "Available Commands%n")
+        optionListHeading = "Options:",
+        commandListHeading = "Commands:")
 public final class Import extends AbstractExportImportCommand implements Runnable {
 
     @Option(names = "--override",

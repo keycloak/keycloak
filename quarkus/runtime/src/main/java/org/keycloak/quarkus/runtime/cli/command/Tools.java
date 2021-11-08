@@ -17,13 +17,19 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
+import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
 @Command(name = "tools",
-        description = "Utilities for use and interaction with the server.",
+        description = "%nUtilities for use and interaction with the server.",
         abbreviateSynopsis = true,
-        optionListHeading = "%nOptions%n",
-        parameterListHeading = "Available Commands%n",
+        commandListHeading = "Commands:",
+        optionListHeading = "Options:",
         subcommands = {Completion.class})
 public class Tools {
+
+    @CommandLine.Option(names = { "-h", "--help" },
+            description = "This help message.",
+            usageHelp = true)
+    boolean help;
 }
