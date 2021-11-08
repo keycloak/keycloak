@@ -41,10 +41,10 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
 @Command(name = "show-config",
-        description = "Print out the current configuration.",
+        header = "Print out the current configuration.",
+        description = "%nPrint out the current configuration.",
         abbreviateSynopsis = true,
-        optionListHeading = "%nOptions%n",
-        parameterListHeading = "Available Commands%n")
+        optionListHeading = "Options:")
 public final class ShowConfig extends AbstractCommand implements Runnable {
 
     @Parameters(

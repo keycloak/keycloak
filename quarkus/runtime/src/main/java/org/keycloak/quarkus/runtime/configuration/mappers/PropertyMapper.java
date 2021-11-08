@@ -25,7 +25,8 @@ import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 public class PropertyMapper {
 
-    static PropertyMapper IDENTITY = new PropertyMapper(null, null, null, null, null,false,null,false,Collections.emptyList(),null) {
+    static PropertyMapper IDENTITY = new PropertyMapper(null, null, null, null, null,
+            false,null, null, false,Collections.emptyList(),null) {
         @Override
         public ConfigValue getOrDefault(String name, ConfigSourceInterceptorContext context, ConfigValue current) {
             return current;
@@ -42,9 +43,10 @@ public class PropertyMapper {
     private final boolean mask;
     private final Iterable<String> expectedValues;
     private final ConfigCategory category;
+    private final String paramLabel;
 
     PropertyMapper(String from, String to, String defaultValue, BiFunction<String, ConfigSourceInterceptorContext, String> mapper,
-            String mapFrom, boolean buildTime, String description, boolean mask, Iterable<String> expectedValues, ConfigCategory category) {
+            String mapFrom, boolean buildTime, String description, String paramLabel, boolean mask, Iterable<String> expectedValues, ConfigCategory category) {
         this.from = MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + from;
         this.to = to;
         this.defaultValue = defaultValue;
@@ -52,6 +54,7 @@ public class PropertyMapper {
         this.mapFrom = mapFrom;
         this.buildTime = buildTime;
         this.description = description;
+        this.paramLabel = paramLabel;
         this.mask = mask;
         this.expectedValues = expectedValues == null ? Collections.emptyList() : expectedValues;
         this.category = category != null ? category : ConfigCategory.GENERAL;
@@ -174,6 +177,10 @@ public class PropertyMapper {
         return to;
     }
 
+    public String getParamLabel() {
+        return paramLabel;
+    }
+
     public static class Builder {
 
         private String from;
@@ -186,6 +193,7 @@ public class PropertyMapper {
         private boolean isBuildTimeProperty = false;
         private boolean isMasked = false;
         private ConfigCategory category = ConfigCategory.GENERAL;
+        private String paramLabel;
 
         public Builder(ConfigCategory category) {
             this.category = category;
@@ -222,6 +230,11 @@ public class PropertyMapper {
             return this;
         }
 
+        public Builder paramLabel(String label) {
+            this.paramLabel = label;
+            return this;
+        }
+
         public Builder mapFrom(String mapFrom) {
             this.mapFrom = mapFrom;
             return this;
@@ -248,7 +261,7 @@ public class PropertyMapper {
         }
 
         public PropertyMapper build() {
-            return new PropertyMapper(from, to, defaultValue, mapper, mapFrom, isBuildTimeProperty, description, isMasked, expectedValues, category);
+            return new PropertyMapper(from, to, defaultValue, mapper, mapFrom, isBuildTimeProperty, description, paramLabel, isMasked, expectedValues, category);
         }
     }
 }

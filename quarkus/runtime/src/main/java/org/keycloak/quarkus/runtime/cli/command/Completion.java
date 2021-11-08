@@ -22,16 +22,14 @@ import picocli.CommandLine.Command;
 
 @Command(name = "completion",
         header = "Generate bash/zsh completion script for ${ROOT-COMMAND-NAME:-the root command of this command}.",
-        headerHeading = "%n",
-        commandListHeading = "%nCommands:%n",
-        synopsisHeading = "%nUsage: ",
-        optionListHeading = "Options:%n",
+        optionListHeading = "Options:",
+        commandListHeading = "Commands:",
         description = {
+                "",
                 "Generate bash/zsh completion script for ${ROOT-COMMAND-NAME:-the root command of this command}.%n" +
                 "Run the following command to give `${ROOT-COMMAND-NAME:-$PARENTCOMMAND}` TAB completion in the current shell:",
                 "",
-                "  source <(${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME})",
-                ""},
+                "  source <(${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME})"},
         abbreviateSynopsis = true)
 public class Completion extends AutoComplete.GenerateCompletion {
 }

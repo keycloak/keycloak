@@ -44,7 +44,7 @@ public abstract class AbstractCommand {
     @Option(names = { "-cf", "--config-file" },
             arity = "1",
             description = "Set the path to a configuration file. By default, configuration properties are read from the \"keycloak.properties\" file in the \"conf\" directory.",
-            paramLabel = "<config-file>",
+            paramLabel = "file",
             scope = CommandLine.ScopeType.INHERIT)
     public void setConfigFile(String path) {
         System.setProperty(KeycloakConfigSourceProvider.KEYCLOAK_CONFIG_FILE_PROP, path);

@@ -27,8 +27,9 @@ import picocli.CommandLine.Command;
         description = {
             "%nUse this command if you want to run the server locally for development or testing purposes.",
         },
-        footerHeading = "%nDo NOT start the server using this command when deploying to production.%n%n",
-        optionListHeading = "%nOptions%n%n",
+        footer = "%nDo NOT start the server using this command when deploying to production.",
+        optionListHeading = "Options:",
+        commandListHeading = "Commands:",
         abbreviateSynopsis = true)
 public final class StartDev extends AbstractStartCommand implements Runnable {
 

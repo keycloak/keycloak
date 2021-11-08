@@ -42,8 +42,8 @@ import picocli.CommandLine.Command;
             "",
             "Consider running this command before running the server in production for an optimal runtime."
         },
-        footerHeading = "%nExamples:%n%n"
-                + "  Optimize the server based on a profile configuration:%n%n"
+        footerHeading = "Examples:",
+        footer = "  Optimize the server based on a profile configuration:%n%n"
                 + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --profile=prod%n%n"
                 + "  Change database settings:%n%n"
                 + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --db=postgres [--db-url][--db-username][--db-password]%n%n"
@@ -55,9 +55,10 @@ import picocli.CommandLine.Command;
                 + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --metrics-enabled=true%n%n"
                 + "You can also use the \"--auto-build\" option when starting the server to avoid running this command every time you change a configuration:%n%n"
                 + "    $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} start --auto-build <OPTIONS>%n%n"
-                + "By doing that you have an additional overhead when the server is starting.%n%n",
+                + "By doing that you have an additional overhead when the server is starting.",
         abbreviateSynopsis = true,
-        optionListHeading = "%nOptions%n%n")
+        optionListHeading = "Options:",
+        commandListHeading = "Commands:")
 public final class Build extends AbstractCommand implements Runnable {
 
     public static final String NAME = "build";

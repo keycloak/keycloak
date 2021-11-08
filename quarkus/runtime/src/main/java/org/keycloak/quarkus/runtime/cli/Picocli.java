@@ -71,6 +71,7 @@ public final class Picocli {
     public static final char ARG_KEY_VALUE_SEPARATOR = '=';
     public static final Pattern ARG_SPLIT = Pattern.compile(";;");
     public static final Pattern ARG_KEY_VALUE_SPLIT = Pattern.compile("=");
+    public static final String NO_PARAM_LABEL = "none";
 
     private Picocli() {
     }
@@ -256,12 +257,11 @@ public final class Picocli {
     private static CommandLine createCommandLine(List<String> cliArgs) {
         CommandSpec spec = CommandSpec.forAnnotatedObject(new Main())
                 .name(Environment.getCommand());
+
         boolean isStartCommand = cliArgs.size() == 1 && cliArgs.contains(Start.NAME);
 
         // avoid unnecessary processing when starting the server
         if (!isStartCommand) {
-            spec.usageMessage().width(100);
-
             addOption(spec, Start.NAME, hasAutoBuildOption(cliArgs));
             addOption(spec, StartDev.NAME, true);
             addOption(spec, Build.NAME, true);
@@ -272,6 +272,7 @@ public final class Picocli {
         cmd.setExecutionExceptionHandler(new ExecutionExceptionHandler());
 
         if (!isStartCommand) {
+            cmd.setHelpFactory(Help::new);
             cmd.getHelpSectionMap().put(SECTION_KEY_COMMAND_LIST, new SubCommandListRenderer());
         }
 
@@ -339,17 +340,19 @@ public final class Picocli {
 
         featureGroupBuilder.addArg(OptionSpec.builder(new String[] {"-ft", "--features"})
                 .description("Enables a group of features. Possible values are: " + String.join(",", featuresExpectedValues))
-                .paramLabel("<feature>")
+                .paramLabel("feature")
                 .completionCandidates(featuresExpectedValues)
                 .type(String.class)
                 .build());
 
+        List<String> expectedValues = asList("enabled", "disabled");
+
         for (Profile.Feature feature : Profile.Feature.values()) {
             featureGroupBuilder.addArg(OptionSpec.builder("--features-" + feature.name().toLowerCase())
                     .description("Enables the " + feature.name() + " feature.")
-                    .paramLabel("[enabled|disabled]")
+                    .paramLabel(String.join("|", expectedValues))
                     .type(String.class)
-                    .completionCandidates(Arrays.asList("enabled", "disabled"))
+                    .completionCandidates(expectedValues)
                     .build());
         }
 
@@ -386,7 +389,7 @@ public final class Picocli {
                 argGroupBuilder.addArg(OptionSpec.builder(name)
                         .defaultValue(defaultValue)
                         .description(description + (defaultValue == null ? "" : " Default: ${DEFAULT-VALUE}."))
-                        .paramLabel("<" + name.substring(2) + ">")
+                        .paramLabel(mapper.getParamLabel())
                         .completionCandidates(mapper.getExpectedValues())
                         .type(String.class)
                         .build());
