@@ -10,7 +10,9 @@
 
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="password-new" class="${properties.kcLabelClass!}">${msg("passwordNew")}</label>
+                    <label for="password-new" class="${properties.kcLabelClass!}">
+                        <span class="pf-c-form__label-text">${msg("passwordNew")}</span>
+                    </label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
                     <input type="password" id="password-new" name="password-new" class="${properties.kcInputClass!}"
@@ -28,7 +30,9 @@
 
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="password-confirm" class="${properties.kcLabelClass!}">${msg("passwordConfirm")}</label>
+                    <label for="password-confirm" class="${properties.kcLabelClass!}">
+                        <span class="pf-c-form__label-text">${msg("passwordConfirm")}</span>
+                    </label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
                     <input type="password" id="password-confirm" name="password-confirm"
@@ -46,25 +50,21 @@
                 </div>
             </div>
 
-            <div class="${properties.kcFormGroupClass!}">
-                <div id="kc-form-options" class="${properties.kcFormOptionsClass!}">
-                    <div class="${properties.kcFormOptionsWrapperClass!}">
-                        <#if isAppInitiatedAction??>
-                            <div class="checkbox">
-                                <label><input type="checkbox" id="logout-sessions" name="logout-sessions" value="on" checked> ${msg("logoutOtherSessions")}</label>
-                            </div>
-                        </#if>
+            <#if isAppInitiatedAction??>
+                <div class="${properties.kcFormGroupClass!}">
+                    <div class="pf-c-check">
+                        <input class="pf-c-check__input" type="checkbox" id="logout-sessions" name="logout-sessions" value="on" checked />
+                        <label class="pf-c-check__label" for="logout-sessions">${msg("logoutOtherSessions")}</label>
                     </div>
                 </div>
-
-                <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                    <#if isAppInitiatedAction??>
-                        <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}" />
-                        <button class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!}" type="submit" name="cancel-aia" value="true" />${msg("doCancel")}</button>
-                    <#else>
-                        <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}" />
-                    </#if>
-                </div>
+            </#if>
+            <div class="${properties.kcFormGroupClass!}">
+                <#if isAppInitiatedAction??>
+                    <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}" />
+                    <button class="${properties.kcButtonClass!} pf-m-link" type="submit" name="cancel-aia" value="true" />${msg("doCancel")}</button>
+                <#else>
+                    <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!} ${properties.kcButtonBlockClass!}" type="submit" value="${msg("doSubmit")}" />
+                </#if>
             </div>
         </form>
     </#if>
