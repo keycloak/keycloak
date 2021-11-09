@@ -26,8 +26,6 @@ import org.keycloak.Config;
 
 public class CacheInitializer {
 
-    private static final Logger log = Logger.getLogger(CacheInitializer.class);
-
     private final String config;
 
     public CacheInitializer(String config) {

@@ -67,6 +67,7 @@ public final class Picocli {
 
     private static final String ARG_SEPARATOR = ";;";
     public static final String ARG_PREFIX = "--";
+    public static final String ARG_SHORT_PREFIX = "-";
     public static final String ARG_PART_SEPARATOR = "-";
     public static final char ARG_KEY_VALUE_SEPARATOR = '=';
     public static final Pattern ARG_SPLIT = Pattern.compile(";;");
@@ -342,6 +343,7 @@ public final class Picocli {
                 .description("Enables a group of features. Possible values are: " + String.join(",", featuresExpectedValues))
                 .paramLabel("feature")
                 .completionCandidates(featuresExpectedValues)
+                .parameterConsumer(PropertyMapperParameterConsumer.INSTANCE)
                 .type(String.class)
                 .build());
 
@@ -352,6 +354,7 @@ public final class Picocli {
                     .description("Enables the " + feature.name() + " feature.")
                     .paramLabel(String.join("|", expectedValues))
                     .type(String.class)
+                    .parameterConsumer(PropertyMapperParameterConsumer.INSTANCE)
                     .completionCandidates(expectedValues)
                     .build());
         }
@@ -385,12 +388,14 @@ public final class Picocli {
                 }
 
                 String defaultValue = mapper.getDefaultValue();
+                Iterable<String> expectedValues = mapper.getExpectedValues();
 
                 argGroupBuilder.addArg(OptionSpec.builder(name)
                         .defaultValue(defaultValue)
-                        .description(description + (defaultValue == null ? "" : " Default: ${DEFAULT-VALUE}."))
+                        .description(description)
                         .paramLabel(mapper.getParamLabel())
-                        .completionCandidates(mapper.getExpectedValues())
+                        .completionCandidates(expectedValues)
+                        .parameterConsumer(PropertyMapperParameterConsumer.INSTANCE)
                         .type(String.class)
                         .build());
             }

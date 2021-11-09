@@ -26,7 +26,6 @@ import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvi
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import org.jboss.logging.Logger;
 

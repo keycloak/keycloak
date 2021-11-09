@@ -46,7 +46,7 @@ public class QuarkusRequestFilter extends AbstractRequestFilter implements Handl
         context.vertx().executeBlocking(promise -> {
             ClientConnection connection = createClientConnection(context.request());
 
-            filter(connection, (session) -> {
+            filter(connection, session -> {
                 try {
                     configureContextualData(context, connection, session);
 

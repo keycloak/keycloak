@@ -19,8 +19,6 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
 
-import org.keycloak.quarkus.runtime.cli.Picocli;
-
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 

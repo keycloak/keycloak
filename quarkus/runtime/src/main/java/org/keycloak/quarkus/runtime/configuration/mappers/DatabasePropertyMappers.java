@@ -3,15 +3,14 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import org.keycloak.quarkus.runtime.storage.database.Database;
 
-import java.util.Arrays;
+import java.util.Optional;
 import java.util.function.BiFunction;
 
+import static java.util.Arrays.asList;
 import static org.keycloak.quarkus.runtime.configuration.mappers.Messages.invalidDatabaseVendor;
 import static org.keycloak.quarkus.runtime.integration.QuarkusPlatform.addInitializationException;
 
 final class DatabasePropertyMappers {
-
-    private static final String[] supportedDatabaseVendors = {"h2-file", "h2-mem", "mariadb", "mysql", "postgres", "postgres-95", "postgres-10"};
 
     private DatabasePropertyMappers(){}
 
@@ -29,10 +28,10 @@ final class DatabasePropertyMappers {
                 builder().from("db").
                         to("quarkus.datasource.db-kind")
                         .isBuildTimeProperty(true)
-                        .transformer(getSupportedDbValue())
-                        .description("The database vendor. Possible values are: " + String.join(",", supportedDatabaseVendors))
+                        .transformer(toDatabaseKind())
+                        .description("The database vendor. Possible values are: " + String.join(", ", Database.getAliases()))
                         .paramLabel("vendor")
-                        .expectedValues(Arrays.asList(supportedDatabaseVendors))
+                        .expectedValues(asList(Database.getAliases()))
                         .build(),
                 builder().from("db")
                         .to("quarkus.datasource.jdbc.transactions")
@@ -83,13 +82,17 @@ final class DatabasePropertyMappers {
         };
     }
 
-    private static BiFunction<String, ConfigSourceInterceptorContext, String> getSupportedDbValue() {
+    private static BiFunction<String, ConfigSourceInterceptorContext, String> toDatabaseKind() {
         return (db, context) -> {
-            if (Database.isSupported(db)) {
-                return Database.getDatabaseKind(db).orElse(db);
+            Optional<String> databaseKind = Database.getDatabaseKind(db);
+
+            if (databaseKind.isPresent()) {
+                return databaseKind.get();
             }
-            addInitializationException(invalidDatabaseVendor(db, "h2-file", "h2-mem", "mariadb", "mysql", "postgres", "postgres-95", "postgres-10"));
-            return "h2";
+
+            addInitializationException(invalidDatabaseVendor(db, Database.getAliases()));
+
+            return null;
         };
     }
 

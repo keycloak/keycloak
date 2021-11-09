@@ -45,7 +45,6 @@ import javax.transaction.Transaction;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.quarkus.runtime.Quarkus;
 
-import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.internal.SessionFactoryImpl;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
@@ -117,7 +116,6 @@ public final class QuarkusJpaConnectionProviderFactory implements JpaConnectionP
     }
 
     private void addSpecificNamedQueries(KeycloakSession session, Connection connection) {
-        SessionFactoryImplementor sfi = emf.unwrap(SessionFactoryImplementor.class);
         EntityManager em = createEntityManager(session);
 
         try {

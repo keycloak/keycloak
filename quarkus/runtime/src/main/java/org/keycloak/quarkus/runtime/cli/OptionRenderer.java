@@ -52,7 +52,7 @@ public class OptionRenderer implements CommandLine.Help.IOptionRenderer {
             throw new CommandLine.PicocliException("Option[" + option + "] description should have a single line.");
         }
 
-        Text description = scheme.text(descriptions[0]);
+        Text description = formatDescription(descriptions, option, scheme);
 
         if (EMPTY_TEXT.equals(shortName)) {
             result[0] = new Text[] { longName, description };
@@ -61,6 +61,17 @@ public class OptionRenderer implements CommandLine.Help.IOptionRenderer {
         }
 
         return result;
+    }
+
+    private Text formatDescription(String[] descriptions, OptionSpec option, ColorScheme scheme) {
+        String description = descriptions[0];
+        String defaultValue = option.defaultValue();
+
+        if (defaultValue != null) {
+            description = description + " Default: " + defaultValue + ".";
+        }
+
+        return scheme.text(description);
     }
 
     private Text createLongName(OptionSpec option, ColorScheme scheme) {

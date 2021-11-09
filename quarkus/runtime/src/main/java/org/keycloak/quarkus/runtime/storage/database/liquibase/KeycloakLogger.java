@@ -24,7 +24,7 @@ import liquibase.logging.Logger;
 
 public class KeycloakLogger implements Logger {
 
-    private static final org.jboss.logging.Logger logger = org.jboss.logging.Logger.getLogger(QuarkusLiquibaseConnectionProvider.class);
+    private static final org.jboss.logging.Logger logger = org.jboss.logging.Logger.getLogger(KeycloakLogger.class);
     
     @Override
     public void setName(String name) {

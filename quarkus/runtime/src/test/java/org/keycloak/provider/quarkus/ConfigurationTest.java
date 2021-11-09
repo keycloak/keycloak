@@ -235,7 +235,7 @@ public class ConfigurationTest {
 
     @Test
     public void testDatabaseKindProperties() {
-        System.setProperty(CLI_ARGS, "--db=postgres-10" + ARG_SEPARATOR + "--db-url=jdbc:postgresql://localhost/keycloak");
+        System.setProperty(CLI_ARGS, "--db=postgres" + ARG_SEPARATOR + "--db-url=jdbc:postgresql://localhost/keycloak");
         SmallRyeConfig config = createConfig();
         assertEquals("io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL10Dialect",
             config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
