@@ -9,3 +9,5 @@ updates:
   ignore:
     - dependency-name: react-hook-form
       update-types: ["version-update:semver-major"]
+    - dependency-name: react-router-dom
+      update-types: ["version-update:semver-major"]
