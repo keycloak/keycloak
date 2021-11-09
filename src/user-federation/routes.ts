@@ -11,8 +11,8 @@ import { UserFederationsLdapRoute } from "./routes/UserFederationsLdap";
 const routes: RouteDef[] = [
   UserFederationRoute,
   UserFederationsKerberosRoute,
-  UserFederationKerberosRoute,
   NewKerberosUserFederationRoute,
+  UserFederationKerberosRoute,
   UserFederationsLdapRoute,
   NewLdapUserFederationRoute,
   UserFederationLdapRoute,

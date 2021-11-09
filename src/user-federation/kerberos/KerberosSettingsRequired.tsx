@@ -237,14 +237,13 @@ export const KerberosSettingsRequired = ({
             render={({ onChange, value }) => (
               <Switch
                 id={"kc-debug"}
-                isDisabled={false}
                 onChange={(value) => onChange([`${value}`])}
-                isChecked={value[0] === "true"}
+                isChecked={value?.[0] === "true"}
                 label={t("common:on")}
                 labelOff={t("common:off")}
               />
             )}
-          ></Controller>
+          />
         </FormGroup>
 
         <FormGroup
@@ -266,14 +265,13 @@ export const KerberosSettingsRequired = ({
             render={({ onChange, value }) => (
               <Switch
                 id={"kc-allow-password-authentication"}
-                isDisabled={false}
                 onChange={(value) => onChange([`${value}`])}
-                isChecked={value[0] === "true"}
+                isChecked={value?.[0] === "true"}
                 label={t("common:on")}
                 labelOff={t("common:off")}
               />
             )}
-          ></Controller>
+          />
         </FormGroup>
 
         {_.isEqual(allowPassAuth, ["true"]) ? (
@@ -337,14 +335,13 @@ export const KerberosSettingsRequired = ({
             render={({ onChange, value }) => (
               <Switch
                 id={"kc-update-first-login"}
-                isDisabled={false}
                 onChange={(value) => onChange([`${value}`])}
-                isChecked={value[0] === "true"}
+                isChecked={value?.[0] === "true"}
                 label={t("common:on")}
                 labelOff={t("common:off")}
               />
             )}
-          ></Controller>
+          />
         </FormGroup>
       </FormAccess>
     </>

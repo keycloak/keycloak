@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import {
   ActionGroup,
   AlertVariant,
@@ -17,7 +17,7 @@ import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/de
 
 import { Controller, useForm } from "react-hook-form";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { useAdminClient } from "../context/auth/AdminClient";
+import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 import { useTranslation } from "react-i18next";
 import { ViewHeader } from "../components/view-header/ViewHeader";
@@ -37,7 +37,7 @@ const KerberosSettingsHeader = ({
   toggleDeleteDialog,
 }: KerberosSettingsHeaderProps) => {
   const { t } = useTranslation("user-federation");
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams<{ id?: string }>();
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
     titleKey: "user-federation:userFedDisableConfirmTitle",
     messageKey: "user-federation:userFedDisableConfirm",
@@ -50,7 +50,7 @@ const KerberosSettingsHeader = ({
   return (
     <>
       <DisableConfirm />
-      {id === "new" ? (
+      {!id ? (
         <ViewHeader titleKey="Kerberos" />
       ) : (
         <ViewHeader
@@ -69,7 +69,7 @@ const KerberosSettingsHeader = ({
             if (!value) {
               toggleDisableDialog();
             } else {
-              onChange("" + value);
+              onChange(value.toString());
               save();
             }
           }}
@@ -86,25 +86,27 @@ export default function UserFederationKerberosSettings() {
   const adminClient = useAdminClient();
   const { realm } = useRealm();
 
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams<{ id?: string }>();
 
   const { addAlert, addError } = useAlerts();
 
-  useEffect(() => {
-    (async () => {
-      if (id !== "new") {
-        const fetchedComponent = await adminClient.components.findOne({ id });
-        if (fetchedComponent) {
-          setupForm(fetchedComponent);
-        } else {
-          throw new Error(t("common:notFound"));
-        }
+  useFetch(
+    async () => {
+      if (id) {
+        return adminClient.components.findOne({ id });
       }
-    })();
-  }, []);
+    },
+    (fetchedComponent) => {
+      if (fetchedComponent) {
+        setupForm(fetchedComponent);
+      } else if (id) {
+        throw new Error(t("common:notFound"));
+      }
+    },
+    []
+  );
 
   const setupForm = (component: ComponentRepresentation) => {
-    form.reset();
     Object.entries(component).map((entry) => {
       form.setValue(
         "config.allowPasswordAuthentication",
@@ -119,24 +121,16 @@ export default function UserFederationKerberosSettings() {
 
   const save = async (component: ComponentRepresentation) => {
     try {
-      if (id) {
-        if (id === "new") {
-          await adminClient.components.create(component);
-          history.push(`/${realm}/user-federation`);
-        } else {
-          await adminClient.components.update({ id }, component);
-        }
+      if (!id) {
+        await adminClient.components.create(component);
+        history.push(`/${realm}/user-federation`);
+      } else {
+        await adminClient.components.update({ id }, component);
       }
       setupForm(component as ComponentRepresentation);
-      addAlert(
-        t(id === "new" ? "createSuccess" : "saveSuccess"),
-        AlertVariant.success
-      );
+      addAlert(t(!id ? "createSuccess" : "saveSuccess"), AlertVariant.success);
     } catch (error) {
-      addError(
-        `user-federation:${id === "new" ? "createError" : "saveError"}`,
-        error
-      );
+      addError(`user-federation:${!id ? "createError" : "saveError"}`, error);
     }
   };
 
@@ -147,7 +141,7 @@ export default function UserFederationKerberosSettings() {
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
-        await adminClient.components.del({ id });
+        await adminClient.components.del({ id: id! });
         addAlert(t("userFedDeletedSuccess"), AlertVariant.success);
         history.replace(`/${realm}/user-federation`);
       } catch (error: any) {
