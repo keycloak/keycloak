@@ -200,6 +200,7 @@ export default {
     createClientPolicySuccess: "New policy created",
     createClientConditionSuccess: "Condition created successfully.",
     createClientConditionError: "Error creating condition: {{error}}",
+    updateClientConditionSuccess: "Condition updated successfully.",
     deleteClientConditionSuccess: "Condition deleted successfully.",
     deleteClientConditionError: "Error creating condition: {{error}}",
     clientPolicySearch: "Search client policy",
@@ -312,6 +313,7 @@ export default {
     clientUpdaterSourceRoles: "Updating entity role",
     conditionsHelpItem: "Conditions help item",
     addCondition: "Add condition",
+    editCondition: "Edit condition",
     emptyConditions: "No conditions configured",
     updateClientPoliciesSuccess:
       "The client policies configuration was updated",

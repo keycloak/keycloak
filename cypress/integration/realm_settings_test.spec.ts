@@ -566,6 +566,30 @@ describe("Realm settings tests", () => {
       realmSettingsPage.shouldSearchClientPolicy();
     });
 
+    it("Should not have conditions configured by default", () => {
+      realmSettingsPage.shouldNotHaveConditionsConfigured();
+    });
+
+    it("Should cancel adding a new condition to a client profile", () => {
+      realmSettingsPage.shouldCancelAddingCondition();
+    });
+
+    it("Should add a new condition to a client profile", () => {
+      realmSettingsPage.shouldAddCondition();
+    });
+
+    it("Should edit the condition of a client profile", () => {
+      realmSettingsPage.shouldEditCondition();
+    });
+
+    it("Should cancel deleting condition from a client profile", () => {
+      realmSettingsPage.shouldCancelDeletingCondition();
+    });
+
+    it("Should delete condition from a client profile", () => {
+      realmSettingsPage.shouldDeleteCondition();
+    });
+
     it("Check cancelling the client policy deletion", () => {
       realmSettingsPage.shouldDisplayDeleteClientPolicyDialog();
     });

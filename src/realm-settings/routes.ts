@@ -13,6 +13,7 @@ import { AddExecutorRoute } from "./routes/AddExecutor";
 import { AddClientPolicyRoute } from "./routes/AddClientPolicy";
 import { EditClientPolicyRoute } from "./routes/EditClientPolicy";
 import { NewClientPolicyConditionRoute } from "./routes/AddCondition";
+import { EditClientPolicyConditionRoute } from "./routes/EditCondition";
 
 const routes: RouteDef[] = [
   RealmSettingsRoute,
@@ -29,6 +30,7 @@ const routes: RouteDef[] = [
   AddClientPolicyRoute,
   EditClientPolicyRoute,
   NewClientPolicyConditionRoute,
+  EditClientPolicyConditionRoute,
 ];
 
 export default routes;

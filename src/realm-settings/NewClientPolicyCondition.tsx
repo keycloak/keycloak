@@ -23,10 +23,15 @@ import { useAlerts } from "../components/alert/Alerts";
 import { useHistory, useParams } from "react-router";
 import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
 import { useRealm } from "../context/realm-context/RealmContext";
-import type { EditClientPolicyParams } from "./routes/EditClientPolicy";
 import type { ConfigPropertyRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigInfoRepresentation";
 import type ClientPolicyConditionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyConditionRepresentation";
 import { DynamicComponents } from "../components/dynamic/DynamicComponents";
+import {
+  EditClientPolicyParams,
+  toEditClientPolicy,
+} from "./routes/EditClientPolicy";
+import type { EditClientPolicyConditionParams } from "./routes/EditCondition";
+import { convertToMultiline } from "../components/multi-line-input/MultiLineInput";
 
 export type ItemType = { value: string };
 
@@ -45,12 +50,17 @@ export default function NewClientPolicyCondition() {
   const [condition, setCondition] = useState<
     ClientPolicyConditionRepresentation[]
   >([]);
+  const [conditionData, setConditionData] =
+    useState<ClientPolicyConditionRepresentation>();
   const [conditionType, setConditionType] = useState("");
   const [conditionProperties, setConditionProperties] = useState<
     ConfigPropertyRepresentation[]
   >([]);
 
+  const [selectedVals, setSelectedVals] = useState<any>();
+
   const { policyName } = useParams<EditClientPolicyParams>();
+  const { conditionName } = useParams<EditClientPolicyConditionParams>();
 
   const serverInfo = useServerInfo();
   const form = useForm();
@@ -62,48 +72,139 @@ export default function NewClientPolicyCondition() {
 
   const adminClient = useAdminClient();
 
+  const setupForm = (condition: ClientPolicyConditionRepresentation) => {
+    form.reset();
+
+    Object.entries(condition).map(([key, value]) => {
+      if (key === "configuration") {
+        if (
+          conditionName === "client-roles" ||
+          conditionName === "client-updater-source-roles"
+        ) {
+          form.setValue("config.roles", convertToMultiline(value["roles"]));
+        } else if (conditionName === "client-scopes") {
+          form.setValue("config.scopes", convertToMultiline(value["scopes"]));
+          form.setValue("config.type", value["type"]);
+        } else if (conditionName === "client-updater-source-groups") {
+          form.setValue("config.groups", convertToMultiline(value["groups"]));
+        } else if (conditionName === "client-updater-source-host") {
+          form.setValue(
+            "config.trusted-hosts",
+            convertToMultiline(value["trusted-hosts"])
+          );
+        } else if (conditionName === "client-updater-context") {
+          form.setValue(
+            "config.update-client-source",
+            value["update-client-source"][0]["update-client-source"]
+          );
+        } else if (conditionName === "client-access-type") {
+          form.setValue("config.type", value.type[0]);
+        }
+      }
+      form.setValue(key, value);
+    });
+  };
+
   useFetch(
     () => adminClient.clientPolicies.listPolicies(),
     (policies) => {
       setPolicies(policies.policies ?? []);
+      if (conditionName) {
+        const currentPolicy = policies.policies?.find(
+          (item) => item.name === policyName
+        );
+
+        const typeAndConfigData = currentPolicy?.conditions?.find(
+          (item) => item.condition === conditionName
+        );
+
+        const currentCondition = conditionTypes?.find(
+          (condition) => condition.id === conditionName
+        );
+
+        setConditionData(typeAndConfigData!);
+        setSelectedVals(Object.values(typeAndConfigData?.configuration!)[0][0]);
+        setConditionProperties(currentCondition?.properties!);
+        setupForm(typeAndConfigData!);
+      }
     },
     []
   );
 
   const save = async () => {
+    const formValues = form.getValues();
+    const configValues = formValues.config;
+
+    const writeConfig = () => {
+      if (
+        condition[0]?.condition === "any-client" ||
+        conditionName === "any-client"
+      ) {
+        return {};
+      } else if (
+        condition[0]?.condition === "client-access-type" ||
+        conditionName === "client-access-type"
+      ) {
+        return { type: [formValues.config.type] };
+      } else if (
+        condition[0]?.condition === "client-updater-context" ||
+        conditionName === "client-updater-context"
+      ) {
+        return {
+          "update-client-source": [Object.values(formValues)[0]],
+        };
+      } else if (
+        condition[0]?.condition === "client-scopes" ||
+        conditionName === "client-scopes"
+      ) {
+        return {
+          type: Object.values(formValues)[0].type,
+          scopes: (Object.values(formValues)[0].scopes as ItemType[]).map(
+            (item) => (item as ItemType).value
+          ),
+        };
+      } else
+        return {
+          [Object.keys(configValues)[0]]: Object.values(
+            configValues?.[Object.keys(configValues)[0]]
+          ).map((item) => (item as ItemType).value),
+        };
+    };
+
     const updatedPolicies = policies.map((policy) => {
       if (policy.name !== policyName) {
         return policy;
       }
 
-      const formValues = form.getValues();
-      const configValues = formValues.config;
+      let conditions = policy.conditions ?? [];
 
-      const writeConfig = () => {
-        if (condition[0]?.condition === "any-client") {
-          return {};
-        } else if (condition[0]?.condition === "client-access-type") {
-          return { type: [formValues["client-accesstype"].label] };
-        } else if (condition[0]?.condition === "client-updater-context") {
-          return {
-            "update-client-source": [Object.values(formValues)[0]],
-          };
-        } else if (condition[0]?.condition === "client-scopes") {
-          return {
-            type: Object.values(formValues)[0].type,
-            scopes: (Object.values(formValues)[0].scopes as ItemType[]).map(
-              (item) => (item as ItemType).value
-            ),
-          };
-        } else
-          return {
-            [Object.keys(configValues)[0]]: Object.values(
-              configValues?.[Object.keys(configValues)[0]]
-            ).map((item) => (item as ItemType).value),
-          };
-      };
+      if (conditionName) {
+        const createdCondition = {
+          condition: conditionData?.condition,
+          configuration: writeConfig(),
+        };
 
-      const conditions = (policy.conditions ?? []).concat({
+        const index = conditions.findIndex(
+          (condition) => conditionName === condition.condition
+        );
+
+        if (index === -1) {
+          return;
+        }
+
+        const newConditions = [
+          ...conditions.slice(0, index),
+          createdCondition,
+          ...conditions.slice(index + 1),
+        ];
+
+        return {
+          ...policy,
+          conditions: newConditions,
+        };
+      }
+
+      conditions = conditions.concat({
         condition: condition[0].condition,
         configuration: writeConfig(),
       });
@@ -112,7 +213,7 @@ export default function NewClientPolicyCondition() {
         ...policy,
         conditions,
       };
-    });
+    }) as ClientPolicyRepresentation[];
 
     try {
       await adminClient.clientPolicies.updatePolicy({
@@ -123,7 +224,9 @@ export default function NewClientPolicyCondition() {
         `/${realm}/realm-settings/clientPolicies/${policyName}/edit-policy`
       );
       addAlert(
-        t("realm-settings:createClientConditionSuccess"),
+        conditionName
+          ? t("realm-settings:updateClientConditionSuccess")
+          : t("realm-settings:createClientConditionSuccess"),
         AlertVariant.success
       );
     } catch (error) {
@@ -131,9 +234,16 @@ export default function NewClientPolicyCondition() {
     }
   };
 
+  const handleCallback = (childData: any) => {
+    setSelectedVals(childData);
+  };
+
   return (
     <PageSection variant="light">
-      <FormPanel className="kc-login-screen" title={t("addCondition")}>
+      <FormPanel
+        className="kc-login-screen"
+        title={conditionName ? t("editCondition") : t("addCondition")}
+      >
         <FormAccess
           isHorizontal
           role="manage-realm"
@@ -166,7 +276,9 @@ export default function NewClientPolicyCondition() {
               render={({ onChange, value }) => (
                 <Select
                   placeholderText={t("selectACondition")}
+                  data-testid="conditionType-select"
                   toggleId="provider"
+                  isDisabled={!!conditionName}
                   onToggle={(toggle) => setOpenConditionType(toggle)}
                   onSelect={(_, value) => {
                     onChange(value);
@@ -181,7 +293,7 @@ export default function NewClientPolicyCondition() {
                     ]);
                     setOpenConditionType(false);
                   }}
-                  selections={conditionType}
+                  selections={conditionName ? conditionName : conditionType}
                   variant={SelectVariant.single}
                   aria-label={t("conditionType")}
                   isOpen={openConditionType}
@@ -205,23 +317,32 @@ export default function NewClientPolicyCondition() {
             />
           </FormGroup>
           <FormProvider {...form}>
-            <DynamicComponents properties={conditionProperties} />
+            <DynamicComponents
+              properties={conditionProperties}
+              selectedValues={
+                conditionName === "client-access-type"
+                  ? selectedVals
+                  : conditionName === "client-updater-context"
+                  ? selectedVals?.["update-client-source"]
+                  : []
+              }
+              parentCallback={handleCallback}
+            />
           </FormProvider>
           <ActionGroup>
             <Button
               variant="primary"
               type="submit"
-              data-testid="edit-policy-tab-save"
-              isDisabled={conditionType === ""}
+              data-testid="addCondition-saveBtn"
+              isDisabled={conditionType === "" && !conditionName}
             >
-              {t("common:add")}
+              {conditionName ? t("common:save") : t("common:add")}
             </Button>
             <Button
               variant="link"
+              data-testid="addCondition-cancelBtn"
               onClick={() =>
-                history.push(
-                  `/${realm}/realm-settings/clientPolicies/${policyName}/edit-policy`
-                )
+                history.push(toEditClientPolicy({ realm, policyName }))
               }
             >
               {t("common:cancel")}

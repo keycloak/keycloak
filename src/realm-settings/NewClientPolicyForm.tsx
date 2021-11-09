@@ -37,6 +37,7 @@ import type ClientPolicyRepresentation from "@keycloak/keycloak-admin-client/lib
 import { toClientPolicies } from "./routes/ClientPolicies";
 import { toNewClientPolicyCondition } from "./routes/AddCondition";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import { toEditClientPolicyCondition } from "./routes/EditCondition";
 import type { EditClientPolicyParams } from "./routes/EditClientPolicy";
 import { AddClientProfileModal } from "./AddClientProfileModal";
 import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
@@ -462,7 +463,7 @@ export default function NewClientPolicyForm() {
                     )}
                     variant="link"
                     className="kc-addCondition"
-                    data-testid="cancelCreateProfile"
+                    data-testid="addCondition"
                     icon={<PlusCircleIcon />}
                   >
                     {t("realm-settings:addCondition")}
@@ -490,7 +491,11 @@ export default function NewClientPolicyForm() {
                                 <Link
                                   key={condition.condition}
                                   data-testid="condition-type-link"
-                                  to={""}
+                                  to={toEditClientPolicyCondition({
+                                    realm,
+                                    conditionName: condition.condition!,
+                                    policyName: policyName,
+                                  })}
                                   className="kc-condition-link"
                                 >
                                   {condition.condition}
@@ -570,7 +575,7 @@ export default function NewClientPolicyForm() {
                     id="addClientProfile"
                     variant="link"
                     className="kc-addClientProfile"
-                    data-testid="cancelCreateProfile"
+                    data-testid="addClientProfile"
                     icon={<PlusCircleIcon />}
                     onClick={toggleModal}
                   >

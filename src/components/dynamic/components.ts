@@ -10,7 +10,10 @@ import { ClientSelectComponent } from "./ClientSelectComponent";
 import { MultiValuedStringComponent } from "./MultivaluedStringComponent";
 import { MultiValuedListComponent } from "./MultivaluedListComponent";
 
-export type ComponentProps = Omit<ConfigPropertyRepresentation, "type">;
+export type ComponentProps = Omit<ConfigPropertyRepresentation, "type"> & {
+  selectedValues?: string[];
+  parentCallback?: (data: any) => void;
+};
 const ComponentTypes = [
   "String",
   "boolean",

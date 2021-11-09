@@ -176,8 +176,12 @@ export default class RealmSettingsPage {
   private clientPolicyDrpDwn = "action-dropdown";
   private searchFld = "[id^=realm-settings][id$=profilesinput]";
   private searchFldPolicies = "[id^=realm-settings][id$=clientPoliciesinput]";
-  private clientProfileOne = 'a[href*="realm-settings/clientPolicies/Test"]';
-  private clientProfileTwo = 'a[href*="realm-settings/clientPolicies/Edit"]';
+  private clientProfileOne =
+    'a[href*="realm-settings/clientPolicies/Test/edit-profile"]';
+  private clientProfileTwo =
+    'a[href*="realm-settings/clientPolicies/Edit/edit-profile"]';
+  private clientPolicy =
+    'a[href*="realm-settings/clientPolicies/Test/edit-policy"]';
   private reloadBtn = "reloadProfile";
   private addExecutor = "addExecutor";
   private addExecutorDrpDwn = ".pf-c-select__toggle";
@@ -185,6 +189,13 @@ export default class RealmSettingsPage {
   private addExecutorCancelBtn = "addExecutor-cancelBtn";
   private addExecutorSaveBtn = "addExecutor-saveBtn";
   private listingPage = new ListingPage();
+  private addCondition = "addCondition";
+  private addConditionDrpDwn = ".pf-c-select__toggle";
+  private addConditionDrpDwnOption = "conditionType-select";
+  private addConditionCancelBtn = "addCondition-cancelBtn";
+  private addConditionSaveBtn = "addCondition-saveBtn";
+  private conditionTypeLink = "condition-type-link";
+  private addValue = "addValue";
 
   selectLoginThemeType(themeType: string) {
     cy.get(this.selectLoginTheme).click();
@@ -841,6 +852,87 @@ export default class RealmSettingsPage {
     cy.findByTestId("modalConfirm").contains("Delete");
     cy.get(this.deleteDialogCancelBtn).contains("Cancel").click();
     cy.get("table").should("be.visible").contains("td", "Test");
+  }
+
+  shouldNotHaveConditionsConfigured() {
+    cy.get(this.clientPolicy).click();
+    cy.get('h6[class*="kc-emptyConditions"]').should(
+      "have.text",
+      "No conditions configured"
+    );
+  }
+
+  shouldCancelAddingCondition() {
+    cy.get(this.clientPolicy).click();
+    cy.findByTestId(this.addCondition).click();
+    cy.get(this.addConditionDrpDwn).click();
+    cy.findByTestId(this.addConditionDrpDwnOption)
+      .contains("any-client")
+      .click();
+    cy.findByTestId(this.addConditionCancelBtn).click();
+    cy.get('h6[class*="kc-emptyConditions"]').should(
+      "have.text",
+      "No conditions configured"
+    );
+  }
+
+  shouldAddCondition() {
+    cy.get(this.clientPolicy).click();
+    cy.findByTestId(this.addCondition).click();
+    cy.get(this.addConditionDrpDwn).click();
+    cy.findByTestId(this.addConditionDrpDwnOption)
+      .contains("client-roles")
+      .click();
+    cy.get('input[name="config.roles[0].value"]').click().type("role 1");
+
+    cy.findByTestId(this.addConditionSaveBtn).click();
+    cy.get(this.alertMessage).should(
+      "be.visible",
+      "Success! Condition created successfully"
+    );
+    cy.get('ul[class*="pf-c-data-list"]').should("have.text", "client-roles");
+  }
+
+  shouldEditCondition() {
+    cy.get(this.clientPolicy).click();
+
+    cy.findByTestId(this.conditionTypeLink).contains("client-roles").click();
+
+    cy.findByTestId(this.addValue).click();
+
+    cy.get('input[name="config.roles[1].value"]').click().type("role 2");
+
+    cy.findByTestId(this.addConditionSaveBtn).click();
+    cy.get(this.alertMessage).should(
+      "be.visible",
+      "Success! Condition updated successfully"
+    );
+  }
+
+  shouldCancelDeletingCondition() {
+    cy.get(this.clientPolicy).click();
+    cy.get('svg[class*="kc-conditionType-trash-icon"]').click();
+    cy.get(this.deleteDialogTitle).contains("Delete condition?");
+    cy.get(this.deleteDialogBodyText).contains(
+      "This action will permanently delete client-roles. This cannot be undone."
+    );
+    cy.findByTestId("modalConfirm").contains("Delete");
+    cy.get(this.deleteDialogCancelBtn).contains("Cancel").click();
+    cy.get('ul[class*="pf-c-data-list"]').should("have.text", "client-roles");
+  }
+
+  shouldDeleteCondition() {
+    cy.get(this.clientPolicy).click();
+    cy.get('svg[class*="kc-conditionType-trash-icon"]').click();
+    cy.get(this.deleteDialogTitle).contains("Delete condition?");
+    cy.get(this.deleteDialogBodyText).contains(
+      "This action will permanently delete client-roles. This cannot be undone."
+    );
+    cy.findByTestId("modalConfirm").contains("Delete").click();
+    cy.get('h6[class*="kc-emptyConditions"]').should(
+      "have.text",
+      "No conditions configured"
+    );
   }
 
   shouldDeleteClientPolicyDialog() {
