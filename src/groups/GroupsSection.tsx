@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useHistory, useLocation } from "react-router-dom";
+import { Link, useHistory, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   DropdownItem,
@@ -23,6 +23,8 @@ import { getId, getLastId } from "./groupIdUtils";
 import { Members } from "./Members";
 import { GroupAttributes } from "./GroupAttributes";
 import { GroupsModal } from "./GroupsModal";
+import { toGroups } from "./routes/Groups";
+import { toGroupsSearch } from "./routes/GroupsSearch";
 
 import "./GroupsSection.css";
 
@@ -80,12 +82,13 @@ export default function GroupsSection() {
 
   const SearchDropdown = (
     <DropdownItem
-      data-testid="searchGroup"
       key="searchGroup"
-      onClick={() => history.push(`/${realm}/groups/search`)}
-    >
-      {t("searchGroup")}
-    </DropdownItem>
+      component={
+        <Link data-testid="searchGroup" to={toGroupsSearch({ realm })}>
+          {t("searchGroup")}
+        </Link>
+      }
+    />
   );
 
   return (
@@ -120,12 +123,7 @@ export default function GroupsSection() {
                   key="deleteGroup"
                   onClick={() => {
                     deleteGroup({ id });
-                    history.push(
-                      location.pathname.substr(
-                        0,
-                        location.pathname.lastIndexOf("/")
-                      )
-                    );
+                    history.push(toGroups({ realm }));
                   }}
                 >
                   {t("deleteGroup")}

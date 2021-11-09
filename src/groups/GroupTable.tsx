@@ -23,6 +23,7 @@ import { getLastId } from "./groupIdUtils";
 import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
 import { useSubGroups } from "./SubGroupsContext";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { toGroups } from "./routes/Groups";
 
 export const GroupTable = () => {
   const { t } = useTranslation("groups");
@@ -60,7 +61,7 @@ export const GroupTable = () => {
     }
 
     if (!groupsData) {
-      history.push(`/${realm}/groups`);
+      history.push(toGroups({ realm }));
     }
 
     return groupsData || [];

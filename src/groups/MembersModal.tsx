@@ -15,6 +15,7 @@ import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { emptyFormatter } from "../util";
+import { toAddUser } from "../user/routes/AddUser";
 import _ from "lodash";
 
 type MemberModalProps = {
@@ -30,7 +31,7 @@ export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
 
   const history = useHistory();
   const { realm } = useRealm();
-  const goToCreate = () => history.push(`/${realm}/users/add-user`);
+  const goToCreate = () => history.push(toAddUser({ realm }));
 
   const loader = async (first?: number, max?: number, search?: string) => {
     const members = await adminClient.groups.listMembers({ id: groupId });
