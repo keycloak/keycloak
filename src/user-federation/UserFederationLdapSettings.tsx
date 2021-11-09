@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   ActionGroup,
   AlertVariant,
@@ -46,6 +46,7 @@ type ldapComponentRepresentation = ComponentRepresentation & {
 type LdapSettingsHeaderProps = {
   onChange: (value: string) => void;
   value: string;
+  editMode?: string | string[];
   save: () => void;
   toggleDeleteDialog: () => void;
   toggleRemoveUsersDialog: () => void;
@@ -54,6 +55,7 @@ type LdapSettingsHeaderProps = {
 const LdapSettingsHeader = ({
   onChange,
   value,
+  editMode,
   save,
   toggleDeleteDialog,
   toggleRemoveUsersDialog,
@@ -70,6 +72,13 @@ const LdapSettingsHeader = ({
       onChange("false");
       save();
     },
+  });
+
+  const [toggleUnlinkUsersDialog, UnlinkUsersDialog] = useConfirmDialog({
+    titleKey: "user-federation:userFedUnlinkUsersConfirmTitle",
+    messageKey: "user-federation:userFedUnlinkUsersConfirm",
+    continueButtonLabel: "user-federation:unlinkUsers",
+    onConfirm: () => unlinkUsers(),
   });
 
   const syncChangedUsers = async () => {
@@ -130,6 +139,7 @@ const LdapSettingsHeader = ({
   return (
     <>
       <DisableConfirm />
+      <UnlinkUsersDialog />
       {!id ? (
         <ViewHeader titleKey={t("addOneLdap")} />
       ) : (
@@ -142,7 +152,11 @@ const LdapSettingsHeader = ({
             <DropdownItem key="syncall" onClick={syncAllUsers}>
               {t("syncAllUsers")}
             </DropdownItem>,
-            <DropdownItem key="unlink" onClick={unlinkUsers}>
+            <DropdownItem
+              key="unlink"
+              isDisabled={editMode ? !editMode.includes("UNSYNCED") : false}
+              onClick={toggleUnlinkUsersDialog}
+            >
               {t("unlinkUsers")}
             </DropdownItem>,
             <DropdownItem key="remove" onClick={toggleRemoveUsersDialog}>
@@ -181,6 +195,11 @@ export default function UserFederationLdapSettings() {
 
   const { id } = useParams<{ id: string }>();
   const { addAlert, addError } = useAlerts();
+  const [component, setComponent] = useState<ComponentRepresentation>();
+  const [refreshCount, setRefreshCount] = useState(0);
+
+  const editMode = component?.config?.editMode;
+  const refresh = () => setRefreshCount((count) => count + 1);
 
   useFetch(
     async () => {
@@ -192,11 +211,12 @@ export default function UserFederationLdapSettings() {
     (fetchedComponent) => {
       if (fetchedComponent) {
         setupForm(fetchedComponent);
+        setComponent(fetchedComponent);
       } else if (id) {
         throw new Error(t("common:notFound"));
       }
     },
-    []
+    [refreshCount]
   );
 
   const setupForm = (component: ComponentRepresentation) => {
@@ -250,6 +270,7 @@ export default function UserFederationLdapSettings() {
         await adminClient.components.update({ id }, component);
       }
       addAlert(t(id ? "saveSuccess" : "createSuccess"), AlertVariant.success);
+      refresh();
     } catch (error) {
       addError(`user-federation:${id ? "saveError" : "createError"}`, error);
     }
@@ -340,6 +361,7 @@ export default function UserFederationLdapSettings() {
         control={form.control}
         render={({ onChange, value }) => (
           <LdapSettingsHeader
+            editMode={editMode}
             value={value}
             save={() => save(form.getValues())}
             onChange={onChange}

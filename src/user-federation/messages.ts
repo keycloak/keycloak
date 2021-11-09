@@ -107,6 +107,10 @@ export default {
     userFedDisableConfirm:
       "If you disable this user federation provider, it will not be considered for queries and imported users will be disabled and read-only until the provider is enabled again.",
 
+    userFedUnlinkUsersConfirmTitle: "Unlink all users?",
+    userFedUnlinkUsersConfirm:
+      "Do you want to unlink all the users? Any users without a password in the database will not be able to authenticate anymore.",
+
     removeImportedUsers: "Remove imported users?",
     removeImportedUsersMessage:
       "Do you really want to remove all imported users?",
