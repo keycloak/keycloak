@@ -602,10 +602,10 @@ describe("Realm settings tests", () => {
       realmSettingsPage.shouldNavigateBetweenFormAndJSONViewPolicies();
     });
 
-    /*       it("Check saving changed JSON policies", () => {
-        realmSettingsPage.shouldSaveChangedJSONPolicies();
-        realmSettingsPage.shouldDeleteClientPolicyDialog();
-      }); */
+    /*     it("Check saving changed JSON policies", () => {
+      realmSettingsPage.shouldSaveChangedJSONPolicies();
+      realmSettingsPage.shouldDeleteClientPolicyDialog();
+    }); */
 
     it("Should not create duplicate client profile", () => {
       realmSettingsPage.shouldCompleteAndCreateNewClientPolicyFromEmptyState();
@@ -615,7 +615,7 @@ describe("Realm settings tests", () => {
       cy.findByTestId("rs-policies-clientPolicies-tab").click();
       realmSettingsPage.shouldCompleteAndCreateNewClientPolicy();
       realmSettingsPage.shouldNotCreateDuplicateClientPolicy();
-
+      cy.wait(200);
       sidebarPage.goToRealmSettings();
       cy.findByTestId("rs-clientPolicies-tab").click();
       cy.findByTestId("rs-policies-clientPolicies-tab").click();

@@ -951,6 +951,7 @@ export default class RealmSettingsPage {
     );
     cy.findByTestId(this.saveNewClientPolicyBtn).click();
     cy.get(this.alertMessage).should("be.visible", "New client policy created");
+    cy.wait(200);
     cy.findByTestId(this.clientPolicyDrpDwn).contains("Action").click();
     cy.findByTestId("deleteClientPolicyDropdown").click();
     cy.findByTestId("modalConfirm").contains("Delete").click();
