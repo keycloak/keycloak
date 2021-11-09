@@ -32,8 +32,6 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 
 public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionFactory {
 
-    private static final Logger logger = Logger.getLogger(QuarkusKeycloakSessionFactory.class);
-
     public static QuarkusKeycloakSessionFactory getInstance() {
         if (INSTANCE == null) {
             INSTANCE = new QuarkusKeycloakSessionFactory();

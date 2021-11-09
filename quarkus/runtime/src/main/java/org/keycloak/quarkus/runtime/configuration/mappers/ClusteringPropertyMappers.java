@@ -19,7 +19,6 @@ final class ClusteringPropertyMappers {
                                 "Value 'default' enables clustering for infinispan caches.")
                         .paramLabel("mode")
                         .isBuildTimeProperty(true)
-                        .expectedValues(Arrays.asList("local", "default"))
                         .build(),
                 builder().from("cluster-stack")
                         .to("kc.spi.connections-infinispan.quarkus.stack")

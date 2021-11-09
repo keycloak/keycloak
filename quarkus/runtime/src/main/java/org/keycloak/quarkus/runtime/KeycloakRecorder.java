@@ -42,8 +42,6 @@ import liquibase.servicelocator.ServiceLocator;
 @Recorder
 public class KeycloakRecorder {
 
-    private static final Logger LOGGER = Logger.getLogger(KeycloakRecorder.class);
-
     public void configureLiquibase(Map<String, List<String>> services) {
         LogFactory.setInstance(new LogFactory() {
             final KeycloakLogger logger = new KeycloakLogger();
