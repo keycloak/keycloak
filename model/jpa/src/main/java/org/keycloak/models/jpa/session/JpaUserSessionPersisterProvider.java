@@ -413,7 +413,12 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
             return false;
         }
 
-        userSession.getAuthenticatedClientSessions().put(clientSessionEntity.getClientId(), clientSessAdapter);
+        String clientId = clientSessionEntity.getClientId();
+        if (isExternalClient(clientSessionEntity)) {
+            clientId = getExternalClientId(clientSessionEntity);
+        }
+
+        userSession.getAuthenticatedClientSessions().put(clientId, clientSessAdapter);
         return true;
     }
 
@@ -439,8 +444,8 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
     private PersistentAuthenticatedClientSessionAdapter toAdapter(RealmModel realm, PersistentUserSessionAdapter userSession, PersistentClientSessionEntity entity) {
         String clientId = entity.getClientId();
-        if (!entity.getExternalClientId().equals("local")) {
-            clientId = new StorageId(entity.getClientStorageProvider(), entity.getExternalClientId()).getId();
+        if (isExternalClient(entity)) {
+            clientId = getExternalClientId(entity);
         }
         ClientModel client = realm.getClientById(clientId);
 
@@ -496,5 +501,13 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
     private boolean offlineFromString(String offlineStr) {
         return "1".equals(offlineStr);
+    }
+
+    private boolean isExternalClient(PersistentClientSessionEntity entity) {
+        return !entity.getExternalClientId().equals(PersistentClientSessionEntity.LOCAL);
+    }
+
+    private String getExternalClientId(PersistentClientSessionEntity entity) {
+        return new StorageId(entity.getClientStorageProvider(), entity.getExternalClientId()).getId();
     }
 }
