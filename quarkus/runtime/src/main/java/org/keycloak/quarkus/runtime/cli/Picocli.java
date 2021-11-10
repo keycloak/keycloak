@@ -132,12 +132,13 @@ public final class Picocli {
     private static boolean requiresReAugmentation(CommandLine cmd) {
         if (hasConfigChanges()) {
             cmd.getOut().println("Changes detected in configuration. Updating the server image.");
-            cmd.getOut().printf("For an optional runtime and bypass this step, please run the '%s' command prior to starting the server:%n%n\t%s %s %s%n",
-                    Build.NAME,
-                    Environment.getCommand(),
-                    Build.NAME,
-                    String.join(" ", asList(ARG_SPLIT.split(Environment.getConfigArgs()))) + "\n");
-
+            if(!isDevMode()) {
+                cmd.getOut().printf("For an optional runtime and bypass this step, please run the '%s' command prior to starting the server:%n%n\t%s %s %s%n",
+                        Build.NAME,
+                        Environment.getCommand(),
+                        Build.NAME,
+                        String.join(" ", asList(ARG_SPLIT.split(Environment.getConfigArgs()))) + "\n");
+            }
             return true;
         }
 
@@ -152,6 +153,8 @@ public final class Picocli {
                 // force the server image to be set with the dev profile
                 Environment.forceDevProfile();
             }
+
+            Environment.setUserInvokedCliArgs(cliArgs);
         }
 
         List<String> configArgsList = new ArrayList<>(cliArgs);
@@ -166,7 +169,9 @@ public final class Picocli {
 
         cmd.execute(configArgsList.toArray(new String[0]));
 
-        cmd.getOut().printf("Next time you run the server, just run:%n%n\t%s %s%n%n", Environment.getCommand(), Start.NAME);
+        if(!isDevMode()) {
+            cmd.getOut().printf("Next time you run the server, just run:%n%n\t%s %s%n%n", Environment.getCommand(), Start.NAME);
+        }
     }
 
     private static boolean hasProviderChanges() {

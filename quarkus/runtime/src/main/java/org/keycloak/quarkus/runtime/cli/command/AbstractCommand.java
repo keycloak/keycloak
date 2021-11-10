@@ -25,6 +25,8 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
 import picocli.CommandLine.Option;
 
+import static org.keycloak.quarkus.runtime.cli.Picocli.error;
+
 public abstract class AbstractCommand {
 
     @Spec
@@ -48,5 +50,9 @@ public abstract class AbstractCommand {
             scope = CommandLine.ScopeType.INHERIT)
     public void setConfigFile(String path) {
         System.setProperty(KeycloakConfigSourceProvider.KEYCLOAK_CONFIG_FILE_PROP, path);
+    }
+
+    protected void showDevNotAllowedErrorAndExit(String cmd) {
+        error(spec.commandLine(), String.format("You can not '%s' the server using the 'dev' configuration profile. Please re-build the server first, using './kc.sh build' for the default production profile, or using '/.kc.sh build --profile=<profile>' with a profile more suitable for production.%n", cmd));
     }
 }

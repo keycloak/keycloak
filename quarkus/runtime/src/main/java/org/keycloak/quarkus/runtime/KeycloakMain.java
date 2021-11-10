@@ -17,10 +17,10 @@
 
 package org.keycloak.quarkus.runtime;
 
-import static org.keycloak.quarkus.runtime.Environment.isDevMode;
+import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
+import static org.keycloak.quarkus.runtime.Environment.getProfileOrDefault;
 import static org.keycloak.quarkus.runtime.cli.Picocli.error;
 import static org.keycloak.quarkus.runtime.cli.Picocli.parseAndRun;
-import static org.keycloak.quarkus.runtime.Environment.getProfileOrDefault;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -80,7 +80,7 @@ public class KeycloakMain implements QuarkusApplication {
      */
     @Override
     public int run(String... args) throws Exception {
-        if (isDevMode()) {
+        if (isDevProfile()) {
             LOGGER.warnf("Running the server in dev mode. DO NOT use this configuration in production.");
         }
         Quarkus.waitForExit();
