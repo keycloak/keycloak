@@ -1,7 +1,7 @@
 [[_read_only_user_attributes]]
 === Read-only user attributes
 
-Typical users who are stored in {project_name} have various attributes related to their user profiles. Such attributes include email, firstName or lastname.
+Typical users who are stored in {project_name} have various attributes related to their user profiles. Such attributes include email, firstName or lastName.
 However users may also have attributes, which are not typical profile data, but rather metadata. The metadata attributes usually should be read-only for the users
 and the typical users never should have a way to update those attributes from the {project_name} user interface or Account REST API. Some of the attributes should
 be even read-only for the administrators when creating or updating user with the Admin REST API.
