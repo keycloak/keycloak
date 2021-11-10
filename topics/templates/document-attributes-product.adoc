@@ -39,7 +39,7 @@
 :authorizationguide_link: {project_doc_base_url}/authorization_services_guide/
 :adapterguide_name: Securing Applications and Services Guide
 :adapterguide_link: {project_doc_base_url}/securing_applications_and_services_guide/
-:adapterguide_link_latest: {project_doc_base_url_latest}/securing_applications_and_services_guide/
+:adapterguide_link_latest: {adapterguide_link}
 :adapterguide_link_js_adapter: {adapterguide_link}#_javascript_adapter
 :adapterguide_logout_link: {adapterguide_link}#_java_adapter_logout
 :adminguide_name: Server Administration Guide
