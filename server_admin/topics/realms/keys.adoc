@@ -76,6 +76,8 @@ the priority to make sure the new keypair becomes the active keypair.
 To add a keypair and certificate stored in a Java Keystore file on the host select `Providers` and choose `java-keystore`
 from the dropdown. You can change the priority to make sure the new keypair becomes the active keypair.
 
+For the associated certificate chain to be loaded it must be imported to the Java Keystore file with the same `Key Alias` used to load the keypair.
+
 .Procedure
 . Select the realm in the Admin Console.
 . Click *Realm settings*.
