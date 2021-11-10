@@ -35,7 +35,10 @@ RH-SSO offers the possibility to add conditions at specific places of the authen
 
 Adding conditional authenticators allowed us to remove the OPTIONAL requirement for the authentication executions. Conditional authenticators are more flexible and allow for support of everything that was previously allowed with the OPTIONAL authentication execution requirement. If you use the OPTIONAL authentication execution, your authentication flows are migrated automatically.
 
-See the link:{upgradingguide_link}[{upgradingguide_name}] for more details.
+[role="_additional-resources"]
+.Additional resources
+
+* link:{upgradingguide_link}[{upgradingguide_name}]
 
 === Credentials management
 
@@ -47,7 +50,9 @@ Administrators can see all credentials of a particular user and some public meta
 
 Users can see all their credentials in the Account Console and add or delete credentials. See the section on the New Account Console, which is a Technology Preview feature. The currently supported account console, the User Account Service, does not support this feature. It supports OTP in a similar way to the previous RH-SSO version.
 
-See link:{adminguide_authentication_flow_link}[{adminguide_authentication_flow_name}] in the link:{adminguide_link}[{adminguide_name}] for more details.
+[role="_additional-resources"]
+.Additional resources
+* link:{adminguide_authentication_flow_link}[Server Administration Guide]
 
 == Vaults for secrets
 
@@ -71,7 +76,10 @@ RH-SSO includes a new built-in vault provider that reads secrets from a keystore
 
 A vault SPI has been introduced to enable development of extensions to access secrets from custom vaults.
 
-See the link:{adminguide_link}[{adminguide_name}] and the link:{developerguide_link}[{developerguide_name}] for more details.
+[role="_additional-resources"]
+.Additional resources
+* link:{adminguide_link}[{adminguide_name}]
+* link:{developerguide_link}[{developerguide_name}]
 
 == WebAuthn (Preview)
 
@@ -100,9 +108,16 @@ standalone -Dkeycloak.profile.feature.account_api=enabled -Dkeycloak.profile.fea
 
 When you go to Manage Account, you will see the new Account Console.  Here is a sample screen:
 
-image:{project_images}/device-activity.png[]
+.Device activity
+image:{project_images}/device-activity.png[Device activity]
 
-This new console is based on link:https://reactjs.org/[React] and link:https://www.patternfly.org/v4/[PatternFly 4].  It allows you to use link:https://www.patternfly.org/v4/developer-resources/global-css-variables/#global-variables[PatternFly CSS variables] for easy styling.  It also allows you to remove pages and add your own pages.  Full documentation will be provided at a future release.
+This new console is based on React and PatternFly 4.  It allows you to use PatternFly CSS variables for easy styling.  It also allows you to remove pages and add your own pages.  Full documentation will be provided at a future release.
+
+.Additional resources
+[role="_additional-resources"]
+* link:https://reactjs.org/[React]
+* link:https://www.patternfly.org/v4/[PatternFly 4]
+* link:https://www.patternfly.org/v4/developer-resources/global-css-variables/#global-variables[PatternFly CSS variables]
 
 == New default hostname provider
 

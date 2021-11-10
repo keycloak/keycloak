@@ -45,7 +45,7 @@
 :adminguide_name: Server Administration Guide
 :adminguide_link: {project_doc_base_url}/server_administration_guide/
 :adminguide_authentication_flow_name: authentication flow
-:adminguide_authentication_flow_link: {adminguide_link}#_authentication-flows
+:adminguide_authentication_flow_link: {adminguide_link}#authentication-flows
 :adminguide_bruteforce_name: Password guess: brute force attacks
 :adminguide_bruteforce_link: {adminguide_link}#password-guess-brute-force-attacks
 :adminguide_disabling_automatic_user_creation_name: disabling automatic user creation
