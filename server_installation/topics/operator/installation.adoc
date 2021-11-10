@@ -114,7 +114,7 @@ $ {create_cmd} -f deploy/crds/
 +
 [source,bash,subs=+attributes]
 ----
-$ {create_cmd} namespace myproject
+$ {create_cmd_brief} create namespace myproject
 ----
 
 . Deploy a role, role binding, and service account for the Operator:
@@ -137,7 +137,7 @@ $ {create_cmd} -f deploy/operator.yaml -n myproject
 +
 [source,bash,subs=+attributes]
 ----
-$ {create_cmd_brief} get deployment keycloak-operator
+$ {create_cmd_brief} get deployment keycloak-operator -n myproject
 NAME                READY   UP-TO-DATE   AVAILABLE   AGE
 keycloak-operator   1/1     1            1           41s
 ----
