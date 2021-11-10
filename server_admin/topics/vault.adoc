@@ -59,6 +59,7 @@ Here is the equivalent configuration using CLI commands:
 ----
 /subsystem=keycloak-server/spi=vault/:add
 /subsystem=keycloak-server/spi=vault/provider=files-plaintext/:add(enabled=true,properties={dir => "${jboss.home.dir}/standalone/configuration/vault"})
+/subsystem=keycloak-server/spi=vault:write-attribute(name=default-provider,value=files-plaintext)
 ----
 
 === Elytron credential store vault provider
