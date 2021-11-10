@@ -219,12 +219,20 @@ image:images/user-profile-validation.png[]
 
 *error-message*: the key of the error message in i18n bundle. If not set a generic message is used.
 
+|options
+|Check if the value is from the defined set of allowed values. Useful to validate values entered through select and multiselect fields.
+|
+
+*options*: array of strings containing allowed values.
+
 |===
 
 ==== Managing annotations
 
 In order to pass additional information to frontends, attributes can be decorated with
-annotations to dictate how attributes are rendered. This capability is mainly useful when extending {project_name} themes to render pages dynamically based on the annotations associated with attributes.
+annotations to dictate how attributes are rendered. This capability is mainly useful when extending {project_name} themes 
+to render pages dynamically based on the annotations associated with attributes. 
+This mechanism is used for example to link:#_configurin_form_input_field_for_attribute[configure Form input filed for attribute].
 
 .Attribute Annotation
 image:images/user-profile-annotation.png[]
@@ -420,12 +428,16 @@ That said, you shouldn't need to customize templates at all if the default rende
 | base/login/idp-review-user-profile.ftl
 | The template that renders the page to review/update the user profile when federating users through brokering.
 
+| base/login/user-profile-commons.ftl
+| The template that renders input fields in forms based on attributes configuration. Used from all three page templates described above. New input types can be implemented here.
+
 |===
 
 The default rendering mechanism provides the following capabilities:
 
 * Dynamically display fields based on the permissions set to attributes.
 * Dynamically render markers for required fields based on the constraints set to the attributes.
+* Dynamically render field input type (text, date, number, select, multiselect) set to an attribute.
 * Dynamically render read-only fields depending on the permissions set to an attribute.
 * Dynamically order fields depending on the order set to the attributes.
 * Dynamically group fields that belong to a same attribute group.
@@ -450,6 +462,250 @@ image:images/user-profile-update-profile.png[]
 ====
 When attributes are linked to an attribute group, the attribute order is also important to make sure attributes within the same group are close together, within a same group header. Otherwise, if attributes within a group do not have a sequential order you might have the same group header rendered multiple times in the dynamic form.
 ====
+
+[[_configurin_form_input_field_for_attribute]]
+=== Configuring Form input filed for Attributes
+
+{project_name} provides built-in annotations to configure which input type will be used for the attribute in dynamic forms and other aspects of it's visualization.
+
+Available annotations are:
+[cols="2*", options="header"]
+|===
+|Name
+|Description
+
+|inputType
+|Type of the form input field. Available types are described in a table below.
+
+|inputHelperTextBefore
+|Helper text rendered before (above) the input field. Direct text or internationalization pattern (like `${i18n.key}`) can be used here. 
+Text is NOT html escaped when rendered into the page, so you can use html tags here to format the text, but you also have to correctly escape html control characters.  
+
+|inputHelperTextAfter
+|Helper text rendered after (under) the input field. Direct text or internationalization pattern (like `${i18n.key}`) can be used here. 
+Text is NOT html escaped when rendered into the page, so you can use html tags here to format the text, but you also have to correctly escape html control characters.
+
+|inputOptionsFromValidation
+|Annotation for select and multiselect types. Optional name of custom attribute validation to get input options from. See link:#_managing_options_for_select_fields[detailed description] below.
+
+|inputOptionLabelsI18nPrefix
+|Annotation for select and multiselect types. Internationalization key prefix to render options in UI. See link:#_managing_options_for_select_fields[detailed description] below.
+
+|inputOptionLabels
+|Annotation for select and multiselect types. Optional map to define UI labels for options (directly or using internationalization). See link:#_managing_options_for_select_fields[detailed description] below.
+
+|inputTypePlaceholder
+|HTML input `placeholder` attribute applied to the field - specifies a short hint that describes the expected value of an input field (e.g. a sample value 
+or a short description of the expected format). The short hint is displayed in the input field before the user enters a value.
+
+|inputTypeSize
+|HTML input `size` attribute applied to the field - specifies the width, in characters, of an single line input field. For fields based on HTML `select` type 
+it specifies number of rows with options shown. May not work, depending on css in used theme!
+
+|inputTypeCols
+|HTML input `cols` attribute applied to the field - specifies the width, in characters, for `textarea` type. May not work, depending on css in used theme!
+
+|inputTypeRows
+|HTML input `rows` attribute applied to the field - specifies the height, in characters, for `textarea` type. For select fields it specifies number 
+of rows with options shown. May not work, depending on css in used theme!
+
+|inputTypePattern
+|HTML input `pattern` attribute applied to the field providing client side validation - specifies a regular expression that an input field's value 
+is checked against. Useful for single line inputs.
+
+|inputTypeMaxLength
+|HTML input `maxlength` attribute applied to the field providing client side validation - maximal length of the text which can be entered into the input 
+field. Useful for text fields.
+
+|inputTypeMinLength
+|HTML input `minlength` attribute applied to the field providing client side validation - minimal length of the text which can be entered into the input 
+field. Useful for text fields.
+
+|inputTypeMax
+|HTML input `max` attribute applied to the field providing client side validation - maximal value which can be entered into the input field. 
+Useful for numeric fields.
+
+|inputTypeMin
+|HTML input `min` attribute applied to the field providing client side validation - minimal value which can be entered into the input field. 
+Useful for numeric fields.
+
+|inputTypeStep
+|HTML input `step` attribute applied to the field - Specifies the interval between legal numbers in an input field. Useful for numeric fields.
+
+|===
+
+[NOTE]
+====
+Field types use HTML form field tags and attributes applied to them - they behave based on the HTML specifications and browser support for them. 
+
+Visual rendering also depends on css styles applied in the used theme.  
+====
+
+Available `inputType` annotation values:
+[cols="3*", options="header"]
+|===
+|Name
+|Description
+|HTML tag used
+
+|text
+|Single line text input.
+|input
+
+|textarea
+|Multiple line text input.
+|textarea
+
+|select
+|Common single select input. See link:#_managing_options_for_select_fields[description how to configure options] below.
+|select
+
+|select-radiobuttons
+|Single select input through group of radio buttons. See link:#_managing_options_for_select_fields[description how to configure options] below.
+|group of input
+
+|multiselect
+|Common multiselect input. See link:#_managing_options_for_select_fields[description how to configure options] below.
+|select
+
+|multiselect-checkboxes
+|Multiselect input through group of checkboxes. See link:#_managing_options_for_select_fields[description how to configure options] below.
+|group of input
+
+|html5-email
+|Single line text input for email address based on HTML 5 spec.
+|input
+
+|html5-tel
+|Single line text input for phone number based on HTML 5 spec.
+|input
+
+|html5-url
+|Single line text input for URL based on HTML 5 spec.
+|input
+
+|html5-number
+|Single line input for number (integer or float depending on `step`) based on HTML 5 spec.
+|input
+
+|html5-range
+|Slider for number entering based on HTML 5 spec.
+|input
+
+|html5-datetime-local
+|Date Time input based on HTML 5 spec.
+|input
+
+|html5-date
+|Date input based on HTML 5 spec.
+|input
+
+|html5-month
+|Month input based on HTML 5 spec.
+|input
+
+|html5-week
+|Week input based on HTML 5 spec.
+|input
+
+|html5-time
+|Time input based on HTML 5 spec.
+|input
+
+|===
+
+[[_managing_options_for_select_fields]]
+==== Defining options for select and multiselect fields
+
+Options for select and multiselect fields are taken from validation applied to the attribute to be 
+sure validation and field options presented in UI are always consistent. By default, options are taken from built-in `options` validation.
+
+You can use various ways to provide nice human readable labels for select and multiselect options. The simplest 
+case is when attribute values are same as UI labels. No any extra configuration is necessary in this case.
+
+.Option values same as UI labels 
+image:images/user-profile-select-options-simple.png[]
+
+When attribute value is kind of ID not suitable for UI, you can use simple internationalization support provided 
+by `inputOptionLabelsI18nPrefix` annotation. It defines prefix for internationalization keys, option value is dot appended to this prefix.
+
+.Simple internationalization for UI labels using i18n key prefix 
+image:images/user-profile-select-options-simple-i18n.png[]
+
+Localized UI label texts for option value have to be provided by `userprofile.jobtitle.sweng` and `userprofile.jobtitle.swarch` 
+keys then, using common localization mechanism.
+
+You can also use `inputOptionLabels` annotation to provide labels for individual options. It contains map of labels for option - key in the map is 
+option value (defined in validation), and value in the map is UI label text itself or its internationalization pattern (like `${i18n.key}`) for that option. 
+
+[NOTE]
+====
+You have to use User Profile `JSON Editor` to enter map as `inputOptionLabels` annotation value.  
+====
+
+
+Example of directly entered labels for individual options without internationalization:
+[source:json]
+----
+"attributes": [
+...
+{
+  "name": "jobTitle",
+  "validations": {
+    "options": { 
+      "options":[
+        "sweng",
+        "swarch"
+      ]
+    }
+  },
+  "annotations": {
+    "inputType": "select",
+    "inputOptionLabels": {
+      "sweng": "Software Engineer",
+      "swarch": "Software Architect"
+    }
+  }
+}
+...
+]
+----
+
+Example of the internationalized labels for individual options:
+[source:json]
+----
+"attributes": [
+...
+{
+  "name": "jobTitle",
+  "validations": {
+    "options": { 
+      "options":[
+        "sweng",
+        "swarch"
+      ]
+    }
+  },
+  "annotations": {
+    "inputType": "select-radiobuttons",
+    "inputOptionLabels": {
+      "sweng": "${jobtitle.swengineer}",
+      "swarch": "${jobtitle.swarchitect}"
+    }
+  }
+}
+...
+]
+----
+Localized texts have to be provided by `jobtitle.swengineer` and `jobtitle.swarchitect` keys then, using common localization mechanism.
+
+Custom validator can be used to provide options thanks to `inputOptionsFromValidation` attribute annotation. 
+This validation have to have `options` config providing array of options. Internationalization works the same way as for options 
+provided by built-in `options` validation.
+
+.Options provided by custom validator
+image:images/user-profile-select-options-custom-validator.png[]
+
 
 == Forcing User Profile compliance
 
