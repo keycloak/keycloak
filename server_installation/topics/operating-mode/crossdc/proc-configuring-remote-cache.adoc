@@ -50,12 +50,7 @@ After you set up remote {jdgserver_name} clusters, you configure the Infinispan 
         <property name="infinispan.client.hotrod.auth_password">qwer1234!</property>
         <property name="infinispan.client.hotrod.auth_realm">default</property>
         <property name="infinispan.client.hotrod.auth_server_name">infinispan</property>
-ifeval::[{project_product}==true]
-        <property name="infinispan.client.hotrod.sasl_mechanism">DIGEST-MD5</property>
-endif::[]
-ifeval::[{project_community}==true]
         <property name="infinispan.client.hotrod.sasl_mechanism">SCRAM-SHA-512</property>
-endif::[]
         <property name="infinispan.client.hotrod.trust_store_file_name">/path/to/truststore.jks</property>
         <property name="infinispan.client.hotrod.trust_store_type">JKS</property>
         <property name="infinispan.client.hotrod.trust_store_password">password</property>
@@ -106,12 +101,7 @@ For example, add a cache named `sessions` with the following configuration:
         <property name="infinispan.client.hotrod.auth_password">qwer1234!</property>
         <property name="infinispan.client.hotrod.auth_realm">default</property>
         <property name="infinispan.client.hotrod.auth_server_name">infinispan</property>
-ifeval::[{project_product}==true]
-        <property name="infinispan.client.hotrod.sasl_mechanism">DIGEST-MD5</property>
-endif::[]
-ifeval::[{project_community}==true]
         <property name="infinispan.client.hotrod.sasl_mechanism">SCRAM-SHA-512</property>
-endif::[]
         <property name="infinispan.client.hotrod.trust_store_file_name">/path/to/truststore.jks</property>
         <property name="infinispan.client.hotrod.trust_store_type">JKS</property>
         <property name="infinispan.client.hotrod.trust_store_password">password</property>
@@ -206,8 +196,7 @@ NOTE: The channel name in the log might be different.
 .. Open a second browser and go to any of nodes `http://node12:8080/auth/admin` or `http://node21:8080/auth/admin` or `http://node22:8080/auth/admin`. After login, you should be able to see
 the same sessions in tab `Sessions` of particular user, client or realm on all 4 servers.
 
-.. After making a change in the {project_name} Admin Console, such as modifying a user or a relam, that change 
-should be immediately visible on any of the four nodes. Caches should be properly invalidated everywhere.
+.. After making a change in the {project_name} Admin Console, such as modifying a user or a realm, that change should be immediately visible on any of the four nodes. Caches should be properly invalidated everywhere.
 
 .. Check server.logs if needed. After login or logout, the message like this should be on all the nodes `NODEXY/standalone/log/server.log` :
 +

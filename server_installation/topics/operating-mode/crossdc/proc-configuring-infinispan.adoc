@@ -80,19 +80,14 @@ By default, {jdgserver_name} Server uses `server/conf/infinispan.xml` for static
 <endpoints socket-binding="default">
    <hotrod-connector name="hotrod">
       <authentication>
-ifeval::[{project_product}==true]
-         <sasl mechanisms="DIGEST-MD5" <1>
-endif::[]
-ifeval::[{project_community}==true]
          <sasl mechanisms="SCRAM-SHA-512" <1>
-endif::[]
                server-name="infinispan" /> <2>
       </authentication>
    </hotrod-connector>
    <rest-connector name="rest"/>
 </endpoints>
 ----
-<1> Configures the SASL authentication mechanism for the Hot Rod endpoint.  SCRAM-SHA-512 is the default SASL mechanism for Hot Rod. However you can use whatever is appropriate for your environment, such as DIGEST-MD5 or GSSAPI.
+<1> Configures the SASL authentication mechanism for the Hot Rod endpoint.  SCRAM-SHA-512 is the default SASL mechanism for Hot Rod. However you can use whatever is appropriate for your environment, such as GSSAPI.
 <2> Defines the name that {jdgserver_name} servers present to clients. You specify this name in the Hot Rod client configuration when you set up {project_name}.
 +
 . Create a cache template.
