@@ -28,7 +28,10 @@ The Keycloak custom resource is a YAML file that defines the parameters for inst
 ifeval::[{project_community}==true]
  or an Ingress for Kubernetes
 endif::[]
- for the {project_name} cluster.
+ for the {project_name} cluster. You can set `host` to override the automatically chosen host name for Route
+ifeval::[{project_community}==true]
+ or default value `keycloak.local` set for Ingress.
+endif::[]
 * `externalDatabase` - in order to connect to an externally hosted database. That topic is covered in the xref:_external_database[external database] section of this guide. Setting it to false should be used only for testing purposes and will install an embedded PostgreSQL database. Be aware that externalDatabase:false is *NOT* supported in production environments.
 
 .Example YAML file for a Keycloak custom resource
