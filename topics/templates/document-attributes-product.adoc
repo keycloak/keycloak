@@ -12,7 +12,7 @@
 :project_name_full: Red Hat Single Sign-On
 :project_version_base: 7.5
 :project_version: 7.5.0
-:keycloak_upgrade_version: 15.0.x
+:keycloak_upgrade_version: 15.0.2
 :project_versionDoc: 7.5
 :project_templates_base_url: https://raw.githubusercontent.com/jboss-container-images/redhat-sso-7-openshift-image/sso75-cpaas-dev/templates
 :project_latest_image_tag: {project_versionDoc}

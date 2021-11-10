@@ -53,13 +53,13 @@ Ensure the keytab file `/tmp/http.keytab` is accessible on the host where {proje
 
 [[_server_setup]]
 
-Install a Kerberos client on your machine. 
+Install a Kerberos client on your machine.
 
 .Procedure
 . Install a Kerberos client. If your machine runs Fedora, Ubuntu, or RHEL, install the link:https://www.freeipa.org/page/Downloads[freeipa-client] package, containing a Kerberos client and other utilities.
-. Configure the Kerberos client (on Linux, the configuration settings are in the link:https://web.mit.edu/kerberos/krb5-1.12/doc/admin/conf_files/krb5_conf.html[/etc/krb5.conf] file ). 
+. Configure the Kerberos client (on Linux, the configuration settings are in the link:https://web.mit.edu/kerberos/krb5-1.12/doc/admin/conf_files/krb5_conf.html[/etc/krb5.conf] file ).
 +
-Add your Kerberos realm to the configuration and configure the HTTP domains your server runs on. 
+Add your Kerberos realm to the configuration and configure the HTTP domains your server runs on.
 +
 For example, for the MYDOMAIN.ORG realm, you can configure the `domain_realm` section like this:
 +
@@ -95,7 +95,7 @@ To authenticate with Kerberos backed by an LDAP server, configure the <<_ldap, L
 .Ldap kerberos integration
 image:{project_images}/ldap-kerberos.png[LDAP Kerberos Integration]
 +
-. Toggle *Allow Kerberos authentication* to *ON* 
+. Toggle *Allow Kerberos authentication* to *ON*
 
 *Allow Kerberos authentication* makes {project_name} use the Kerberos principal access user information so information can import into the {project_name} environment.
 
@@ -128,7 +128,8 @@ When you install https://www.docker.com/[docker], run a docker image with the Fr
 
 ===== ApacheDS testing Kerberos server
 
-For quick testing and unit tests, use a simple http://directory.apache.org/apacheds/[ApacheDS] Kerberos server. You must build {project_name} from the source and then run the Kerberos server with the maven-exec-plugin from our test suite. See details https://github.com/keycloak/keycloak/blob/main/docs/tests.md#kerberos-server[here].
+For quick testing and unit tests, use a simple http://directory.apache.org/apacheds/[ApacheDS] Kerberos server. You must build {project_name} from the source and then run the Kerberos server with the maven-exec-plugin from our test suite. See details
+https://github.com/keycloak/keycloak/blob/main/docs/tests.md#kerberos-server[here].
 endif::[]
 
 ==== Credential delegation
@@ -156,7 +157,7 @@ GSSContext context = gssManager.createContext(serviceName, krb5Oid,
 ----
 
 ifeval::[{project_community}==true]
-Examples of this code exist in `examples/kerberos` in the {project_name} example distribution or demo distribution download. You can also check the example sources directly https://github.com/keycloak/keycloak/tree/master/examples/kerberos[here].
+Examples of this code exist in `examples/kerberos` in the {project_name} example distribution or demo distribution download. You can also check the example sources directly https://github.com/keycloak/keycloak/tree/main/examples/kerberos[here].
 endif::[]
 
 [NOTE]
@@ -171,7 +172,7 @@ Credential delegation has security implications, so use it only if necessary and
 
 ==== Cross-realm trust
 
-In the Kerberos protocol, the `realm` is a set of Kerberos principals. The definition of these principals exists in the Kerberos database, which is typically an LDAP server. 
+In the Kerberos protocol, the `realm` is a set of Kerberos principals. The definition of these principals exists in the Kerberos database, which is typically an LDAP server.
 
 The Kerberos protocol allows cross-realm trust. For example, if 2 Kerberos realms, A and B, exist, then cross-realm trust will allow the users from realm A to access realm B's resources. Realm B trusts realm A.
 
@@ -189,7 +190,7 @@ The cross-realm trust is unidirectional by default. You must add the principal `
 
 * Configure {project_name} server
 
-** When using an LDAP storage provider with Kerberos support, configure the server principal for realm B, as in this example: `HTTP/mydomain.com@B`. The LDAP server must find the users from realm A if users from realm A are to successfully authenticate to {project_name}, because {project_name} must perform the SPNEGO flow and then find the users. 
+** When using an LDAP storage provider with Kerberos support, configure the server principal for realm B, as in this example: `HTTP/mydomain.com@B`. The LDAP server must find the users from realm A if users from realm A are to successfully authenticate to {project_name}, because {project_name} must perform the SPNEGO flow and then find the users.
 
 For example, Kerberos principal user `john@A` must be available in the LDAP under an LDAP DN such as `uid=john,ou=People,dc=example,dc=com`. If you want users from realm A and B to authenticate, ensure that LDAP can find users from both realms A and B.
 

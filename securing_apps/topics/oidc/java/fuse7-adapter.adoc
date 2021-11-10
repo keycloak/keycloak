@@ -4,7 +4,7 @@
 
 {project_name} supports securing your web applications running inside https://developers.redhat.com/products/fuse/overview[JBoss Fuse 7].
 
-JBoss Fuse 7 leverages Undertow adapter which is essentially the same as 
+JBoss Fuse 7 leverages Undertow adapter which is essentially the same as
 ifeval::[{project_community}==true]
 <<_jboss_adapter,EAP 7 / WildFly Adapter>>
 endif::[]
