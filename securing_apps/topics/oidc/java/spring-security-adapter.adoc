@@ -6,7 +6,7 @@ You then have to provide some extra beans in your Spring Security configuration 
 
 Unlike the other Keycloak Adapters, you should not configure your security in web.xml.
 However, keycloak.json is still required.
-In order for Single Sign Out work properly you have to define a session listener.
+In order for Single Sign Out to work properly you have to define a session listener.
 
 .The session listener can be defined:
 * in web.xml (for pure Spring Security environments):
