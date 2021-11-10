@@ -3,7 +3,7 @@
 
 Database schema in {project_name} only accounts for Unicode strings in the following special fields:
 
-* Realms: display name, HTML display name
+* Realms: display name, HTML display name, localization texts (keys and values)
 * Federation Providers: display name
 * Users: username, given name, last name, attribute names and values
 * Groups: name, attribute names and values
