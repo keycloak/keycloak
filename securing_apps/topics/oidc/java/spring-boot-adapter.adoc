@@ -4,6 +4,14 @@
 To be able to secure Spring Boot apps you must add the Keycloak Spring Boot adapter JAR to your app.
 You then have to provide some extra configuration via normal Spring Boot configuration (`application.properties`).  Let's go over these steps.
 
+ifeval::[{project_product}==true]
+====
+[NOTE]
+The Spring Boot Adapter is deprecated and will not be included in the 8.0 and higher versions of RH-SSO. This adapter will be maintained during the lifecycle of RH-SSO 7.x. Users are urged to migrate to Spring Security to integrate their Spring Boot applications with RH-SSO.
+====
+endif::[]
+
+
 [[_spring_boot_adapter_installation]]
 ===== Adapter Installation
 

@@ -151,7 +151,7 @@
 :jdgserver_name: RHDG
 :jdgserver_version: 7.3
 :jdgserver_version_latest: 8.1
-:jdgserver_crossdcdocs_link: https://access.redhat.com/documentation/en-us/red_hat_data_grid/8.1/html/data_grid_guide_to_cross-site_replication/index/
+:jdgserver_crossdcdocs_link: https://access.redhat.com/documentation/en-us/red_hat_data_grid/8.1/html/data_grid_guide_to_cross-site_replication/index
 
 :fuseVersion: JBoss Fuse 6.3.0 Rollup 12
 :fuseHawtioEAPVersion: JBoss EAP 6.4
