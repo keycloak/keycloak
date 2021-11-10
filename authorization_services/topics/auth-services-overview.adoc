@@ -13,7 +13,7 @@ mechanisms such as:
 * **Rule-based access control**
     ** Using JavaScript
 * **Time-based access control**
-* **Support for custom access control mechanisms (ACMs) through a Policy Provider Service Provider Interface (SPI)**
+* **Support for custom access control mechanisms (ACMs) through a Service Provider Interface (SPI)**
 
 {project_name} is based on a set of administrative UIs and a RESTful API, and provides the necessary means to create permissions
 for your protected resources and scopes, associate those permissions with authorization policies, and enforce authorization decisions in your applications and services.
