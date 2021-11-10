@@ -649,7 +649,7 @@ The config values can be defined within the admin console if you set up config d
 [source,java]
 ----
 @Override
-    public CredentialTypeMetadata getCredentialTypeMetadata() {
+    public CredentialTypeMetadata getCredentialTypeMetadata(CredentialTypeMetadataContext metadataContext) {
         return CredentialTypeMetadata.builder()
                 .type(getType())
                 .category(CredentialTypeMetadata.Category.TWO_FACTOR)
@@ -661,8 +661,7 @@ The config values can be defined within the admin console if you set up config d
     }
 ----
 
-Last method in SecretQuestionCredentialProvider class is getCredentialTypeMetadata(), which is an abstract method of CredentialProvider
-interface. Each Credential provider has to provide and implement this method. The method returns an instance of CredentialTypeMetadata,
+The last method to implement in the SecretQuestionCredentialProvider class is getCredentialTypeMetadata(CredentialTypeMetadataContext metadataContext), which is an abstract method of the CredentialProvider interface. Each Credential provider has to provide and implement this method. The method returns an instance of CredentialTypeMetadata,
 which should at least include type and category of authenticator, displayName and removable item. In this example, the builder
 takes type of authenticator from method getType(), category is Two Factor (the authenticator can be used as second factor of authentication)
 and removable, which is set up to false (user can't remove some previously registered credentials).
