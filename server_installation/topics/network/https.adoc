@@ -135,7 +135,7 @@ If using domain mode, the commands should be executed in every host using the `/
 
 [source]
 ----
-$ /host=<host_name>/core-service=management/security-realm=UndertowRealm/server-identity=ssl:add(keystore-path=keycloak.jks, keystore-relative-to=jboss.server.config.dir, keystore-password=secret)
+$ /host=<host_name>/core-service=management/security-realm=UndertowRealm/server-identity=ssl:add(keystore-path=keycloak.jks, keystore-relative-to=jboss.domain.config.dir, keystore-password=secret)
 ----
 
 In the standalone or host configuration file, the `security-realms` element should look like this:
