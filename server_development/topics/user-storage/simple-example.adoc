@@ -101,12 +101,12 @@ Next let's look at the method implementations for `CredentialInputValidator`.
     @Override
     public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
         String password = properties.getProperty(user.getUsername());
-        return credentialType.equals(CredentialModel.PASSWORD) && password != null;
+        return credentialType.equals(PasswordCredentialModel.TYPE) && password != null;
     }
 
     @Override
     public boolean supportsCredentialType(String credentialType) {
-        return credentialType.equals(CredentialModel.PASSWORD);
+        return credentialType.equals(PasswordCredentialModel.TYPE);
     }
 
     @Override
@@ -133,7 +133,7 @@ As noted before, the only reason we implement the `CredentialInputUpdater` inter
 ----
     @Override
     public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
-        if (input.getType().equals(CredentialModel.PASSWORD)) throw new ReadOnlyException("user is read only for this update");
+        if (input.getType().equals(PasswordCredentialModel.TYPE)) throw new ReadOnlyException("user is read only for this update");
 
         return false;
     }
