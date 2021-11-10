@@ -2,7 +2,7 @@
 [[_monitoring-operator]]
 === The {application_monitoring_operator}
 
-Before using the Operator to install {project_name} or create components, we recommend that you install the {application_monitoring_operator}, which that tracks Operator activity. To view metrics for the Operator, you can use the Grafana Dashboard and Prometheus Alerts from the {application_monitoring_operator}. For example, you can view metrics such as the number of controller runtime reconciliation loops, the reconcile loop time, and errors.
+Before using the Operator to install {project_name} or create components, we recommend that you install the {application_monitoring_operator}, which tracks Operator activity. To view metrics for the Operator, you can use the Grafana Dashboard and Prometheus Alerts from the {application_monitoring_operator}. For example, you can view metrics such as the number of controller runtime reconciliation loops, the reconcile loop time, and errors.
 
 The {project_operator} integration with the {application_monitoring_operator} requires no action. You only need to install the {application_monitoring_operator} in the cluster.
 
