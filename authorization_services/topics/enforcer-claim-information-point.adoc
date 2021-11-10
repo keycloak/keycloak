@@ -149,7 +149,7 @@ public class MyClaimInformationPointProvider implements ClaimInformationPointPro
 
     private final Map<String, Object> config;
 
-    public ClaimsInformationPointProvider(Map<String, Object> config) {
+    public MyClaimInformationPointProvider(Map<String, Object> config) {
         this.config = config;
     }
 
