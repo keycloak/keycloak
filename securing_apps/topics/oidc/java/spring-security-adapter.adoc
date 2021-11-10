@@ -72,7 +72,12 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter
     @Bean
     @Override
     protected SessionAuthenticationStrategy sessionAuthenticationStrategy() {
-        return new RegisterSessionAuthenticationStrategy(new SessionRegistryImpl());
+        return new RegisterSessionAuthenticationStrategy(buildSessionRegistry());
+    }
+
+    @Bean
+    protected SessionRegistry buildSessionRegistry() {
+        return new SessionRegistryImpl();
     }
 
     @Override
