@@ -259,9 +259,9 @@ For example to disable the Infinispan user cache provider add:
 </spi>
 ----
 
-=== Leveraging Java EE
+=== Leveraging Jakarta EE
 
-The service providers can be packaged within any Java EE component so long as you set up the `META-INF/services`
+The service providers can be packaged within any Jakarta EE component so long as you set up the `META-INF/services`
 file correctly to point to your providers.  For example, if your provider needs to use third party libraries, you
 can package up your provider within an ear and store these third party libraries in the ear's `lib/` directory.
 Also note that provider jars can make use of the `jboss-deployment-structure.xml` file that EJBs, WARS, and EARs

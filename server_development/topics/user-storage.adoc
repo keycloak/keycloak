@@ -7,7 +7,7 @@ When the {project_name} runtime needs to look up a user, such as when a user is 
 
 User Storage SPI provider implementations can also perform complex criteria queries, perform CRUD operations on users, validate and manage credentials, or perform bulk updates of many users at once. It depends on the capabilities of the external store.
 
-User Storage SPI provider implementations are packaged and deployed similarly to (and often are) Java EE components. They are not enabled by default, but instead must be enabled and configured per realm under the `User Federation` tab in the administration console.
+User Storage SPI provider implementations are packaged and deployed similarly to (and often are) Jakarta EE components. They are not enabled by default, but instead must be enabled and configured per realm under the `User Federation` tab in the administration console.
 
 WARNING: If your user provider implementation is using some user attributes as the metadata attributes for linking/establishing the user identity,
 then please make sure that users are not able to edit the attributes and the corresponding attributes are read-only. The example is the `LDAP_ID` attribute, which the built-in {project_name}

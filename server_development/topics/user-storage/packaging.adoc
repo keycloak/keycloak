@@ -10,5 +10,5 @@ org.keycloak.examples.federation.properties.ClasspathPropertiesStorageFactory
 org.keycloak.examples.federation.properties.FilePropertiesStorageFactory
 ----
 
-{project_name} supports hot deployment of these provider JARs. You'll also see later in this chapter that you can package it within and as Java EE components.
+{project_name} supports hot deployment of these provider JARs. You'll also see later in this chapter that you can package it within and as Jakarta EE components.
 

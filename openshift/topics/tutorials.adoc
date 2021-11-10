@@ -1055,7 +1055,7 @@ $ oc new-build --binary=true \
 
     {appserver_name} {appserver_version}
     -------------
-    Platform for building and running JavaEE applications on {appserver_name} {appserver_version}
+    Platform for building and running Jakarta EE applications on {appserver_name} {appserver_version}
 
     Tags: builder, javaee, eap, eap7
 
@@ -1102,7 +1102,7 @@ $ oc new-app eap-app
 
     eap-app-demo/eap-app-1:aa2574d9
     -------------------------------
-    Platform for building and running JavaEE applications on {appserver_name} {appserver_version}
+    Platform for building and running Jakarta EE applications on {appserver_name} {appserver_version}
 
     Tags: builder, javaee, eap, eap7
 

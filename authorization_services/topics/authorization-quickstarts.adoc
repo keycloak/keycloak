@@ -18,10 +18,10 @@ table provides a brief description of the available authorization quickstarts:
 |Name |Description
 
 | https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-authz-jee-servlet[app-authz-jee-servlet]
-| Demonstrates how to enable fine-grained authorization to a Java EE application in order to protect specific resources and build a dynamic menu based on the permissions obtained from a Keycloak Server.
+| Demonstrates how to enable fine-grained authorization to a Jakarta EE application in order to protect specific resources and build a dynamic menu based on the permissions obtained from a Keycloak Server.
 
 | https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-authz-jee-vanilla[app-authz-jee-vanilla]
-| Demonstrates how to enable fine-grained authorization to a Java EE application and use the default authorization settings to protect all resources in the application.
+| Demonstrates how to enable fine-grained authorization to a Jakarta EE application and use the default authorization settings to protect all resources in the application.
 
 | https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-authz-rest-springboot[app-authz-rest-springboot]
 | Demonstrates how to protect a SpringBoot REST service using Keycloak Authorization Services.

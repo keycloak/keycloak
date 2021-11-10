@@ -73,7 +73,7 @@ You can disable the Keycloak Spring Boot Adapter (for example in tests) by setti
 
 To configure a Policy Enforcer, unlike keycloak.json, `policy-enforcer-config` must be used instead of just `policy-enforcer`.
 
-You also need to specify the Java EE security config that would normally go in the `web.xml`.
+You also need to specify the Jakarta EE security config that would normally go in the `web.xml`.
 The Spring Boot Adapter will set the `login-method` to `KEYCLOAK` and configure the `security-constraints` at startup time.
 Here's an example configuration:
 

@@ -4,7 +4,7 @@
 
 The final procedure is to make this application secure by installing some sample code from the {quickstartRepo_link} repository. The quickstarts work with the most recent {project_name} release.
 
-The sample code is the *app-profile-jee-vanilla* quickstart. It demonstrates how to change a JavaEE application that is secured with basic authentication without changing the WAR. The {project_name} client adapter subsystem changes the authentication method and injects the configuration. 
+The sample code is the *app-profile-jee-vanilla* quickstart. It demonstrates how to change a Jakarta EE application that is secured with basic authentication without changing the WAR. The {project_name} client adapter subsystem changes the authentication method and injects the configuration. 
 
 .Prerequisites
 
