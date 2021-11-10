@@ -2,7 +2,7 @@
 [[_external_database]]
 === Connecting to an external database
 
-You can use the Operator to connect to an external PostgreSQL database by modifying the Keycloak custom resource and creating a `keycloak-db-secret` YAML file. Note that values are Base64 encoded.
+You can use the Operator to connect to an external PostgreSQL database by creating a `keycloak-db-secret` YAML file and setting Keycloak CR externalDatabase property to enabled. Note that values are Base64 encoded.
 
 .Example YAML file for `keycloak-db-secret`
 ```yaml

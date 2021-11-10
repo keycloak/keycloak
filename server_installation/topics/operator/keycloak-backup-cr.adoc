@@ -2,6 +2,11 @@
 [[_backup-cr]]
 === Scheduling database backups
 
+[WARNING]
+====
+Backup CR is *deprecated* and could be removed in future releases.
+====
+
 You can use the Operator to schedule automatic backups of the database as defined by custom resources. The custom resource triggers a backup job
 ifeval::[{project_community}==true]
 (or a `CronJob` in the case of Periodic Backups)

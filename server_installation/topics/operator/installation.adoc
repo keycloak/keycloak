@@ -153,3 +153,10 @@ endif::[]
 
 * For more information on OpenShift Operators, see the link:https://docs.openshift.com/container-platform/4.4/operators/olm-what-operators-are.html[OpenShift Operators guide].
 
+[[_operator_production_usage]]
+=== Using the {project_operator} in production environment
+
+* The usage of embedded DB is not supported in a production environment.
+* Backup CRD is deprecated and not supported in a production environment.
+* We fully support using the rest of the CRDs in production, despite the `v1alpha1` version. We do not plan to make any breaking changes in this CRDs version.
+

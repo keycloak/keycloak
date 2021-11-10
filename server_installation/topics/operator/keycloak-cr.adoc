@@ -29,7 +29,7 @@ ifeval::[{project_community}==true]
  or an Ingress for Kubernetes
 endif::[]
  for the {project_name} cluster.
-* `externalDatabase` - applies only if you want to connect an externally hosted database. That topic is covered in the xref:_external_database[external database] section of this guide.
+* `externalDatabase` - in order to connect to an externally hosted database. That topic is covered in the xref:_external_database[external database] section of this guide. Setting it to false should be used only for testing purposes and will install an embedded PostgreSQL database. Be aware that externalDatabase:false is *NOT* supported in production environments.
 
 .Example YAML file for a Keycloak custom resource
 ```yaml
@@ -243,4 +243,4 @@ Events:
 
 * Once the installation of {project_name} completes, you are ready to xref:_realm-cr[create a realm custom resource].
 
-* If you have an external database, you can modify the Keycloak custom resource to support it. See xref:_external_database[Connecting to an external database].
+* An external database is the supported option and needs to be enabled in the Keycloak custom resource. You can disable this option only for testing and enable it when you switch to a production environment. See xref:_external_database[Connecting to an external database].
