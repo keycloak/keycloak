@@ -19,13 +19,6 @@ import { toRealmRole } from "./routes/RealmRole";
 
 import "./RealmRolesSection.css";
 
-type myRealmRepresentation = RealmRepresentation & {
-  defaultRole?: {
-    id: string;
-    name: string;
-  };
-};
-
 type RolesListProps = {
   paginated?: boolean;
   parentRoleId?: string;
@@ -67,7 +60,7 @@ export const RolesList = ({
   const { addAlert, addError } = useAlerts();
   const { url } = useRouteMatch();
   const { realm: realmName } = useRealm();
-  const [realm, setRealm] = useState<myRealmRepresentation>();
+  const [realm, setRealm] = useState<RealmRepresentation>();
 
   const [selectedRole, setSelectedRole] = useState<RoleRepresentation>();
 
@@ -137,9 +130,10 @@ export const RolesList = ({
           {
             title: t("common:delete"),
             onRowClick: (role) => {
-              setSelectedRole(role as RoleRepresentation);
+              setSelectedRole(role);
               if (
-                (role as RoleRepresentation).name === realm!.defaultRole!.name
+                role.name ===
+                (realm!.defaultRole! as unknown as RoleRepresentation).name
               ) {
                 addAlert(t("defaultRoleDeleteError"), AlertVariant.danger);
               } else toggleDeleteDialog();

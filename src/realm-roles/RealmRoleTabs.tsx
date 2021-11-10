@@ -5,6 +5,7 @@ import {
   ButtonVariant,
   DropdownItem,
   PageSection,
+  Spinner,
   Tab,
   TabTitleText,
 } from "@patternfly/react-core";
@@ -30,13 +31,6 @@ import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 import { AssociatedRolesTab } from "./AssociatedRolesTab";
 import { UsersInRoleTab } from "./UsersInRoleTab";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-
-type myRealmRepresentation = RealmRepresentation & {
-  defaultRole?: {
-    id: string;
-    name: string;
-  };
-};
 
 export default function RealmRoleTabs() {
   const { t } = useTranslation("roles");
@@ -72,7 +66,7 @@ export default function RealmRoleTabs() {
     };
   };
 
-  const [realm, setRealm] = useState<myRealmRepresentation>();
+  const [realm, setRealm] = useState<RealmRepresentation>();
 
   useFetch(
     async () => {
@@ -287,17 +281,24 @@ export default function RealmRoleTabs() {
     refresh();
   };
 
+  const isDefaultRole = (name: string) =>
+    (realm?.defaultRole! as unknown as RoleRepresentation).name === name;
+
+  if (!realm || !role) {
+    return <Spinner />;
+  }
+
   return (
     <>
       <DeleteConfirm />
       <DeleteAllAssociatedRolesConfirm />
       {open && <AssociatedRolesModal toggleDialog={toggleModal} />}
       <ViewHeader
-        titleKey={role?.name || t("createRole")}
+        titleKey={role.name || t("createRole")}
         badges={[
           {
             id: "composite-role-badge",
-            text: role?.composite ? t("composite") : "",
+            text: role.composite ? t("composite") : "",
             readonly: true,
           },
         ]}
@@ -320,7 +321,7 @@ export default function RealmRoleTabs() {
                 editMode={true}
               />
             </Tab>
-            {role?.composite && (
+            {role.composite && (
               <Tab
                 eventKey="AssociatedRoles"
                 title={<TabTitleText>{t("associatedRolesText")}</TabTitleText>}
@@ -328,7 +329,7 @@ export default function RealmRoleTabs() {
                 <AssociatedRolesTab parentRole={role} refresh={refresh} />
               </Tab>
             )}
-            {role?.name !== realm?.defaultRole?.name && (
+            {!isDefaultRole(role.name!) && (
               <Tab
                 eventKey="attributes"
                 className="kc-attributes-tab"
@@ -342,7 +343,7 @@ export default function RealmRoleTabs() {
                 />
               </Tab>
             )}
-            {role?.name !== realm?.defaultRole?.name && (
+            {!isDefaultRole(role.name!) && (
               <Tab
                 eventKey="users-in-role"
                 title={<TabTitleText>{t("usersInRole")}</TabTitleText>}
