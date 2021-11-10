@@ -35,7 +35,7 @@ public final class Messages {
 
     public static IllegalStateException httpsConfigurationNotSet() {
         StringBuilder builder = new StringBuilder("Key material not provided to setup HTTPS. Please configure your keys/certificates");
-        if (!"dev".equals(Environment.getProfile())) {
+        if (!Environment.DEV_PROFILE_VALUE.equals(Environment.getProfile())) {
             builder.append(" or start the server in development mode");
         }
         builder.append(".");
