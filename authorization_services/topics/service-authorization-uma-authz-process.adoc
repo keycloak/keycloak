@@ -4,7 +4,7 @@
 In UMA, the authorization process starts when a client tries to access a UMA protected resource server.
 
 A UMA protected resource server expects a bearer token in the request where the token is an RPT. When a client requests
-a resource at the resource server without a permission ticket:
+a resource at the resource server without a RPT:
 
 .Client requests a protected resource without sending an RPT
 ```bash
