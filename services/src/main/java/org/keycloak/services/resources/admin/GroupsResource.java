@@ -164,6 +164,7 @@ public class GroupsResource {
 
                 rep.setId(child.getId());
                 adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), child.getId());
+                builder.entity(child);
             }
         } catch (ModelDuplicateException mde) {
             return ErrorResponse.exists("Top level group named '" + groupName + "' already exists.");
