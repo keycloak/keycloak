@@ -93,8 +93,8 @@ You must provide a session authentication strategy bean which should be of type 
 Spring Security's `SessionFixationProtectionStrategy` is currently not supported because it changes the session identifier after login via Keycloak.
 If the session identifier changes, universal log out will not work because Keycloak is unaware of the new session identifier.
 
-TIP: The `@KeycloakConfiguration` annotation is a metadata annotion that defines all annotations that are needed to integrate
-{project_name} in Spring Security. If you have a complexe Spring Security setup you can simply have a look ath the annotations of
+TIP: The `@KeycloakConfiguration` annotation is a metadata annotation that defines all annotations that are needed to integrate
+{project_name} in Spring Security. If you have a complex Spring Security setup you can simply have a look at the annotations of
 the `@KeycloakConfiguration` annotation and create your own custom meta annotation or just use specific Spring annotations
 for the {project_name} adapter.
 
