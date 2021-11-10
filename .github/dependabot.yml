@@ -11,3 +11,5 @@ updates:
       update-types: ["version-update:semver-major"]
     - dependency-name: react-router-dom
       update-types: ["version-update:semver-major"]
+    - dependency-name: use-react-router-breadcrumbs
+      update-types: ["version-update:semver-major"]
