@@ -1,5 +1,5 @@
 
-=== Unicode Considerations for Databases
+=== Unicode considerations for databases
 
 Database schema in {project_name} only accounts for Unicode strings in the following special fields:
 
@@ -23,7 +23,7 @@ character set for `VARCHAR` and `CHAR` fields. If yes, there is a high chance th
 the expense of field length. If it only supports Unicode in `NVARCHAR` and `NCHAR` fields, Unicode support for all text
 fields is unlikely as Keycloak schema uses `VARCHAR` and `CHAR` fields extensively.
 
-==== Oracle Database
+==== Oracle database
 
 Unicode characters are properly handled provided the database was created with Unicode support in `VARCHAR` and `CHAR`
 fields (e.g. by using `AL32UTF8` character set as the database character set). No special settings is needed for JDBC
@@ -35,12 +35,12 @@ strictly necessary, to also set the `oracle.jdbc.convertNcharLiterals` connectio
 can be set either as system properties or as connection properties. Please note that setting `oracle.jdbc.defaultNChar`
 may have negative impact on performance. For details, please refer to Oracle JDBC driver configuration documentation.
 
-==== Microsoft SQL Server Database
+==== Microsoft SQL Server database
 
 Unicode characters are properly handled only for the special fields. No special settings of JDBC driver or database is
 necessary.
 
-==== MySQL Database
+==== MySQL database
 
 Unicode characters are properly handled provided the database was created with Unicode support in `VARCHAR` and `CHAR`
 fields in the `CREATE DATABASE` command (e.g. by using `utf8` character set as the default database character set in
@@ -53,7 +53,7 @@ Unicode values.
 At the side of JDBC driver settings, it is necessary to add a connection property `characterEncoding=UTF-8` to the JDBC
 connection settings.
 
-==== PostgreSQL Database
+==== PostgreSQL database
 
 Unicode is supported when the database character set is `UTF8`. In that case, Unicode characters can be used in any
 field, there is no reduction of field length for non-special fields. No special settings of JDBC driver is necessary.

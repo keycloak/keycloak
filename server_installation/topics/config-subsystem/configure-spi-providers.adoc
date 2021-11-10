@@ -1,6 +1,6 @@
 [[_config_spi_providers]]
 
-=== Configure SPI Providers
+=== Configure SPI providers
 
 The specifics of each configuration setting is discussed elsewhere in 
 context with that setting.  However, it is useful to understand the format used

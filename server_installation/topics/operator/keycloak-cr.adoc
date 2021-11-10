@@ -1,6 +1,6 @@
 
 [[_keycloak_cr]]
-=== {project_name} installation using a custom resource 
+=== Installing {project_name} using a custom resource 
 
 You can use the Operator to automate the installation of {project_name} by creating a Keycloak custom resource. When you use a custom resource to install {project_name}, you create the components and services that are described here and illustrated in the graphic that follows.
 

@@ -1,6 +1,6 @@
 
 [[_replication]]
-=== Replication and Failover
+=== Replication and failover
 
 There are caches like `sessions`, `authenticationSessions`, `offlineSessions`, `loginFailures` and a few others (See <<_eviction>> for more details),
 which are configured as distributed caches when using a clustered setup. Entries are

@@ -1,9 +1,9 @@
 [id="assembly-setting-up-crossdc"]
 :context: xsite
-= Setting Up Cross DC with {jdgserver_name} {jdgserver_version_latest}
+= Setting up cross-site with {jdgserver_name} {jdgserver_version_latest}
 
 [role="_abstract"]
-Use the following procedures for {jdgserver_name} {jdgserver_version_latest} to perform a basic setup of Cross-Datacenter replication.
+Use the following procedures for {jdgserver_name} {jdgserver_version_latest} to perform a basic setup of cross-site replication.
 
 This example for {jdgserver_name} {jdgserver_version_latest} involves two data centers, `site1` and `site2`. Each data center consists of 1 {jdgserver_name} server and 2 {project_name} servers. We will end up with 2 {jdgserver_name} servers and 4 {project_name} servers in total.
 

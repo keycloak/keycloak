@@ -1,6 +1,6 @@
 [[_start_cli]]
 
-=== Start the {appserver_name} CLI
+=== Starting the {appserver_name} CLI
 Besides editing the configuration by hand, you also have the option of changing
 the configuration by issuing commands via the _jboss-cli_ tool.  CLI allows
 you to configure servers locally or remotely.  And it is especially useful when
@@ -44,7 +44,7 @@ as your running standalone server or domain controller and your account has appr
 to setup or enter in an admin username and password.  See the link:{appserver_admindoc_link}[_{appserver_admindoc_name}_]
 for more details on how to make things more secure if you are uncomfortable with that setup.
 
-=== CLI Embedded Mode
+=== CLI embedded mode
 
 If you do happen to be on the same machine as your standalone server and you want to
 issue commands while the server is not active, you can embed the server into CLI and make
@@ -58,7 +58,7 @@ execute the `embed-server` command with the config file you wish to change.
 [standalone@embedded /]
 ----
 
-=== CLI GUI Mode
+=== Using CLI GUI mode
 
 The CLI can also run in GUI mode.  GUI mode launches a Swing application that
 allows you to graphically view and edit the entire management model of a _running_ server.
@@ -66,22 +66,28 @@ GUI mode is especially useful when you need help formatting your CLI commands an
 about the options available.  The GUI can also retrieve server logs from a local or
 remote server.
 
-.Start in GUI mode
+.Procedure
+
+. Start the CLI in GUI mode
++
 [source]
 ----
 $ .../bin/jboss-cli.sh --gui
 ----
-_Note: to connect to a remote server, you pass the `--connect` option as well.
-Use the --help option for more details._
++
+Note: to connect to a remote server, you pass the `--connect` option as well.
+Use the --help option for more details.
 
-After launching GUI mode, you will probably want to scroll down to find the node,
-`subsystem=keycloak-server`.  If you right-click on the node and click
-`Explore subsystem=keycloak-server`, you will get a new tab that shows only
-the keycloak-server subsystem.
+. Scroll down to find the node `subsystem=keycloak-server`.
 
-image:images/cli-gui.png[]
+. Right-click the node and select `Explore subsystem=keycloak-server`.
++
+A new tab displays only the keycloak-server subsystem.
++
+.keycloak-server subsystem
+image:images/cli-gui.png[keycloak-server subsystem]
 
-=== CLI Scripting
+=== CLI scripting
 
 The CLI has extensive scripting capabilities.  A script is just a text
 file with CLI commands in it.  Consider a simple script that turns off theme
@@ -93,7 +99,7 @@ and template caching.
 /subsystem=keycloak-server/theme=defaults/:write-attribute(name=cacheThemes,value=false)
 /subsystem=keycloak-server/theme=defaults/:write-attribute(name=cacheTemplates,value=false)
 ----
-To execute the script, I can follow the `Scripts` menu in CLI GUI, or execute the
+To execute the script, you can follow the `Scripts` menu in CLI GUI, or execute the
 script from the command line as follows:
 [source]
 ----

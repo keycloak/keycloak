@@ -1,20 +1,28 @@
 
-=== Installing Distribution Files
+=== Installing the Keycloak server
 
 The Keycloak Server has two downloadable distributions:
 
-* 'keycloak-{project_version}.[zip|tar.gz]'
-* 'keycloak-overlay-{project_version}.[zip|tar.gz]'
+* `keycloak-{project_version}.[zip|tar.gz]`
++
+This file is the server only distribution.  It contains nothing other than the scripts and binaries
+to run the Keycloak Server. 
 
-The 'keycloak-{project_version}.[zip|tar.gz]' file is the server only distribution.  It contains nothing other than the scripts and binaries
-to run the Keycloak Server.  To unpack this file just run your operating system's `unzip` or `gunzip` and `tar` utilities.
+* `keycloak-overlay-{project_version}.[zip|tar.gz]`
++
+This file is a WildFly add-on that you can use to install the Keycloak Server on top of an existing
+WildFly distribution.  We do not support users who want to run their applications and Keycloak on the same server instance.
 
-The 'keycloak-overlay-{project_version}.[zip|tar.gz]' file is a WildFly add-on that allows you to install Keycloak Server on top of an existing
-WildFly distribution.  We do not support users that want to run their applications and Keycloak on the same server instance.  To install the Keycloak Service Pack, just unzip it in the root directory
-of your WildFly distribution, open the bin directory in a shell and run `./jboss-cli.[sh|bat] --file=keycloak-install.cli`.
+.Procedure
 
-To unpack of these files run the `unzip` or `gunzip` and `tar` utilities.
+. To install the Keycloak server, run your operating system's `unzip` or `gunzip` and `tar` utilities on the `keycloak-{project_version}.[zip|tar.gz]` file.
 
+. To install the Keycloak Service Pack, it must be installed on a different server instance.
+
+ .. Change to the root directory of your WildFly distribution.
+ .. Unzip the `keycloak-overlay-{project_version}.[zip|tar.gz]` file. 
+ .. Open the bin directory in a shell.
+ .. Run `./jboss-cli.[sh|bat] --file=keycloak-install.cli`.
 
 
 

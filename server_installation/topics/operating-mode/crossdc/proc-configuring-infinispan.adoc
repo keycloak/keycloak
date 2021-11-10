@@ -24,7 +24,7 @@ By default, {jdgserver_name} Server uses `server/conf/infinispan.xml` for static
 ----
 <1> Lists the host names for `server1` and `server2`.
 +
-. Configure the {jdgserver_name} cluster transport to perform Cross-Datacenter replication.
+. Configure the {jdgserver_name} cluster transport to perform cross-site replication.
 .. Add the RELAY2 protocol to a JGroups stack.
 +
 [source,xml,options="nowrap",subs=attributes+]

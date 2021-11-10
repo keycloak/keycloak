@@ -3,7 +3,7 @@
 There are multiple ways you can logout from a web application.
 For Jakarta EE servlet containers, you can call `HttpServletRequest.logout()`. For any other browser application, you can point
 the browser at any url of your web application that has a security constraint and pass in a query parameter GLO, i.e. `$$http://myapp?GLO=true$$`.
-This will log you out if you have an SSO session with your browser. 
+This will log you out if you have an SSO session with your browser.
 
 [[_saml_logout_in_cluster]]
 ===== Logout in Clustered Environment
@@ -49,9 +49,9 @@ Using distributed cache may lead to results where the SAML logout request would 
 to SAML session index to HTTP session mapping which would lead to unsuccessful logout.
 
 [[_saml_logout_in_cross_dc]]
-===== Logout in Cross DC Scenario
+===== Logout in cross-site scenario
 
-The cross DC scenario only applies to WildFly 10 and higher, and EAP 7 and higher.
+The cross-site scenario only applies to WildFly 10 and higher, and EAP 7 and higher.
 
 Special handling is needed for handling sessions that span multiple data centers. Imagine the following scenario:
 

@@ -19,7 +19,7 @@ all requests::
 
 The SSL mode for each realm can be configured in the {project_name} admin console.
 
-==== Enabling SSL/HTTPS for the {project_name} Server
+==== Enabling SSL/HTTPS for the {project_name} server
 
 If you are not using a reverse proxy or load balancer to handle HTTPS traffic for you, you'll need to enable HTTPS
 for the {project_name} server.  This involves
@@ -29,7 +29,7 @@ for the {project_name} server.  This involves
 
 ===== Creating the Certificate and Java Keystore
 
-In order to allow HTTPS connections, you need to obtain a self signed or third-party signed certificate and import it into a Java keystore before you can enable HTTPS in the web container you are deploying the {project_name} Server to.
+In order to allow HTTPS connections, you need to obtain a self signed or third-party signed certificate and import it into a Java keystore before you can enable HTTPS in the web container where you are deploying the {project_name} Server.
 
 ====== Self Signed Certificate
 
@@ -59,27 +59,25 @@ $ keytool -genkey -alias localhost -keyalg RSA -keystore keycloak.jks -validity 
     [no]:  yes
 ----
 
-You should answer `What is your first and last name ?` question with the DNS name of the machine you're installing the server on.
-For testing purposes, `localhost` should be used.
+When you see the question `What is your first and last name ?`, supply the DNS name of the machine where you are installing the server. For testing purposes, `localhost` should be used.
 After executing this command, the `keycloak.jks` file will be generated in the same directory as you executed the `keytool` command in.
 
-If you want a third-party signed certificate, but don't have one, you can obtain one for free at http://www.cacert.org[cacert.org].
-You'll have to do a little set up first before doing this though.
+If you want a third-party signed certificate, but don't have one, you can obtain one for free at http://www.cacert.org[cacert.org].  However, you first need to use the following procedure.
 
-The first thing to do is generate a Certificate Request:
+.Procedure
 
+. Generate a Certificate Request:
++
 [source]
 ----
-
 $ keytool -certreq -alias yourdomain -keystore keycloak.jks > keycloak.careq
 ----
-
-Where `yourdomain` is a DNS name for which this certificate is generated for.
++
+Where `yourdomain` is a DNS name for which this certificate is generated.
 Keytool generates the request:
-
++
 [source]
 ----
-
 -----BEGIN NEW CERTIFICATE REQUEST-----
 MIIC2jCCAcICAQAwZTELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAk1BMREwDwYDVQQHEwhXZXN0Zm9y
 ZDEQMA4GA1UEChMHUmVkIEhhdDEQMA4GA1UECxMHUmVkIEhhdDESMBAGA1UEAxMJbG9jYWxob3N0
@@ -97,52 +95,58 @@ vqIFQeuLL3BaHwpl3t7j2lMWcK1p80laAxEASib/fAwrRHpLHBXRcq6uALUOZl4Alt8=
 -----END NEW CERTIFICATE REQUEST-----
 ----
 
-Send this ca request to your CA.
+. Send this CA request to your Certificate Authority (CA).
++
 The CA will issue you a signed certificate and send it to you.
-Before you import your new cert, you must obtain and import the root certificate of the CA.
-You can download the cert from CA (ie.: root.crt) and import as follows:
 
+. Obtain and import the root certificate of the CA.
++
+You can download the cert from CA (in other words: root.crt) and import as follows:
++
 [source]
 ----
-
 $ keytool -import -keystore keycloak.jks -file root.crt -alias root
 ----
 
-Last step is to import your new CA generated certificate to your keystore:
-
+. Import your new CA generated certificate to your keystore:
++
 [source]
 ----
-
 $ keytool -import -alias yourdomain -keystore keycloak.jks -file your-certificate.cer
 ----
 
 ===== Configure {project_name} to Use the Keystore
 
 Now that you have a Java keystore with the appropriate certificates, you need to configure your {project_name} installation to use it.
-First, you must edit the _standalone.xml_, _standalone-ha.xml_, or _host.xml_ file to use the keystore and enable HTTPS. You may then either move the keystore file to the _configuration/_ directory of your deployment or the file in a location you choose and provide an absolute path to it. If you are using absolute paths, remove the optional `relative-to` parameter from your configuration (See <<_operating-mode, operating mode>>).
 
-Add the new `security-realm` element using the CLI:
+.Procedure
 
+. Edit the _standalone.xml_, _standalone-ha.xml_, or _host.xml_ file to use the keystore and enable HTTPS.
+
+. Either move the keystore file to the _configuration/_ directory of your deployment or the file in a location you choose and provide an absolute path to it.
++
+If you are using absolute paths, remove the optional `relative-to` parameter from your configuration (See <<_operating-mode, operating mode>>).
+
+. Add the new `security-realm` element using the CLI:
++
 [source]
-
 ----
 $ /core-service=management/security-realm=UndertowRealm:add()
 
 $ /core-service=management/security-realm=UndertowRealm/server-identity=ssl:add(keystore-path=keycloak.jks, keystore-relative-to=jboss.server.config.dir, keystore-password=secret)
 ----
-
-If using domain mode, the commands should be executed in every host using the `/host=<host_name>/` prefix (in order to create the `security-realm` in all of them), like this, which you would repeat for each host:
-
++
+If using domain mode, the commands should be executed in every host using the `/host=<host_name>/` prefix (in order to create the `security-realm` in all of them). Here is an example, which you would repeat for each host:
++
 [source]
 ----
 $ /host=<host_name>/core-service=management/security-realm=UndertowRealm/server-identity=ssl:add(keystore-path=keycloak.jks, keystore-relative-to=jboss.domain.config.dir, keystore-password=secret)
 ----
-
++
 In the standalone or host configuration file, the `security-realms` element should look like this:
-
++
 [source,xml]
 ----
-
 <security-realm name="UndertowRealm">
     <server-identities>
         <ssl>
@@ -152,17 +156,19 @@ In the standalone or host configuration file, the `security-realms` element shou
 </security-realm>
 ----
 
-Next, in the standalone or each domain configuration file, search for any instances of `security-realm`. Modify the `https-listener` to use the created realm:
+. In the standalone or each domain configuration file, search for any instances of `security-realm`.
 
+. Modify the `https-listener` to use the created realm:
++
 [source]
 ----
 $ /subsystem=undertow/server=default-server/https-listener=https:write-attribute(name=security-realm, value=UndertowRealm)
 ----
-
++
 If using domain mode, prefix the command with the profile that is being used with: `/profile=<profile_name>/`.
-
++
 The resulting element, `server name="default-server"`, which is a child element of `subsystem xmlns="{subsystem_undertow_xml_urn}"`, should contain the following stanza:
-
++
 [source,xml,subs="attributes+"]
 ----
 <subsystem xmlns="{subsystem_undertow_xml_urn}">

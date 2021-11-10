@@ -1,15 +1,15 @@
 
 [[_standalone-mode]]
-=== Standalone Mode
+=== Using standalone mode
 
 Standalone operating mode is only useful when you want to run one, and only one {project_name} server instance.
 It is not usable for clustered deployments and all caches are non-distributed and local-only.  It is not recommended that
 you use standalone mode in production as you will have a single point of failure.  If your standalone mode server goes down,
 users will not be able to log in.  This mode is really only useful to test drive and play with the features of {project_name}
 
-==== Standalone Boot Script
+==== Booting in standalone mode
 
-When running the server in standalone mode, there is a specific script you need to run to boot the server depending on your
+When running the server in standalone mode, there is a specific script you need to boot the server depending on your
 operating system.  These scripts live in the _bin/_ directory of the server distribution.
 
 .Standalone Boot Scripts
@@ -29,7 +29,7 @@ $ .../bin/standalone.sh
 > ...\bin\standalone.bat
 ----
 
-==== Standalone Configuration
+==== Standalone configuration
 
 The bulk of this guide walks you through how to configure infrastructure level aspects of {project_name}.  These
 aspects are configured in a configuration file that is specific to the application server that {project_name} is a

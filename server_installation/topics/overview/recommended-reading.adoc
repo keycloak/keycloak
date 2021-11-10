@@ -1,5 +1,5 @@
 
-=== Recommended Additional External Documentation
+=== Recommended additional external documentation
 
 {project_name} is built on top of the {appserver_name} application server and its sub-projects like Infinispan (for caching) and Hibernate (for persistence).
 This guide only covers basics for infrastructure-level configuration.  It is highly recommended that you peruse the documentation

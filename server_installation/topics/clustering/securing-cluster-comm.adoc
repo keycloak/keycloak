@@ -1,5 +1,5 @@
 
-=== Securing Cluster Communication
+=== Secure cluster communication
 
 When cluster nodes are isolated on a private network it requires access to the private network to be able to join a cluster or to view communication in the cluster. In addition you can also enable authentication and encryption for cluster communication. As long as your private network is secure it is not necessary to enable authentication and encryption. {project_name} does not send very sensitive information on the cluster in either case.
 

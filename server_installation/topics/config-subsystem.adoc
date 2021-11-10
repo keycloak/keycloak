@@ -1,6 +1,6 @@
 [[_manage_config]]
 
-== Manage Subsystem Configuration
+== Managing the subsystem configuration
 
 Low-level configuration of {project_name} is done by editing the
  `standalone.xml`, `standalone-ha.xml`, or `domain.xml` file 

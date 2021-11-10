@@ -1,6 +1,6 @@
 [[_database]]
 
-== Relational Database Setup
+== Setting up the relational database
 {project_name} comes with its own embedded Java-based relational database called H2.
 This is the default database that {project_name} will use to persist data and really only exists so that you can run the authentication
 server out of the box.  We highly recommend that you replace it with a more production ready external database.  The H2 database

@@ -1,5 +1,5 @@
 
-== Installation
+== Installing the software
 ifeval::[{project_community}==true]
 Installing {project_name} is as simple as downloading it and unzipping it. This chapter reviews system requirements
 as well as the directory structure of the distribution.

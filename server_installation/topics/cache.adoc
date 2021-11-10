@@ -1,6 +1,6 @@
 
 [[cache-configuration]]
-== Server Cache Configuration
+== Server cache configuration
 
 {project_name} has two types of caches.  One type of cache sits in front of the database to decrease load on the DB
 and to decrease overall response times by keeping data in memory.  Realm, client, role, and user metadata is kept in this type of cache.

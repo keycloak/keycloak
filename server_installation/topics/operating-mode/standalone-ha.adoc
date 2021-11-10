@@ -1,14 +1,14 @@
 
 [[_standalone-ha-mode]]
 
-=== Standalone Clustered Mode
+=== Using standalone clustered mode
 
-Standalone clustered operation mode is for when you want to run {project_name} within a cluster.  This mode
-requires that you have a copy of the {project_name} distribution on each machine you want to run a server instance.
-This mode can be very easy to deploy initially, but can become quite cumbersome. To make a configuration change
-you'll have to modify each distribution on each machine.  For a large cluster this can become time consuming and error prone.
+Standalone clustered operation mode applies when you want to run {project_name} within a cluster.  This mode
+requires that you have a copy of the {project_name} distribution on each machine where you want to run a server instance.
+This mode can be very easy to deploy initially, but can become quite cumbersome. To make a configuration change, 
+you modify each distribution on each machine.  For a large cluster, this mode can become time consuming and error prone.
 
-==== Standalone Clustered Configuration
+==== Standalone clustered configuration
 
 The distribution has a mostly pre-configured app server configuration file for running within a cluster.  It has all the specific
 infrastructure settings for networking, databases, caches, and discovery.  This file resides
@@ -24,7 +24,7 @@ WARNING: Any changes you make to this file while the server is running will not 
       by the server.  Instead use the command line scripting or the web console of {appserver_name}.  See
       the link:{appserver_admindoc_link}[_{appserver_admindoc_name}_] for more information.
 
-==== Standalone Clustered Boot Script
+==== Booting in standalone clustered mode
 
 You use the same boot scripts to start {project_name} as you do in standalone mode.  The difference is that
 you pass in an additional flag to point to the HA config file.

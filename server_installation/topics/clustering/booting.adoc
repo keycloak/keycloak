@@ -1,5 +1,5 @@
 
-=== Booting the Cluster
+=== Booting the cluster
 
 Booting {project_name} in a cluster depends on your <<_operating-mode, operating mode>>
 

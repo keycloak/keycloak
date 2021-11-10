@@ -1,6 +1,6 @@
 
 [[_eviction]]
-=== Eviction and Expiration
+=== Eviction and expiration
 
 There are multiple different caches configured for {project_name}.
 There is a realm cache that holds information about secured applications, general security data, and configuration options.

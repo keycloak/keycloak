@@ -1,5 +1,5 @@
 [[_setting-up-a-load-balancer-or-proxy]]
-=== Setting Up a Load Balancer or Proxy
+=== Setting Up a load balancer or proxy
 
 This section discusses a number of things you need to configure before you can put a reverse proxy or load balancer
 in front of your clustered {project_name} deployment.  It also covers configuring the built-in load balancer that
@@ -11,7 +11,7 @@ The following diagram illustrates the use of a load balancer. In this example, t
 .Example Load Balancer Diagram
 image:{project_images}/load_balancer.png[]
 
-==== Identifying Client IP Addresses
+==== Identifying client IP addresses
 
 A few features in {project_name} rely on the fact that the remote
 address of the HTTP client connecting to the authentication server is the real IP address of the client machine. Examples include:
@@ -87,9 +87,9 @@ pull this information from the AJP packets.
  </subsystem>
 ----
 
-==== Enable HTTPS/SSL with a Reverse Proxy
+==== Enabling HTTPS/SSL with a reverse proxy
 
-Assuming that your reverse proxy doesn't use port 8443 for SSL you also need to configure what port HTTPS traffic is redirected to.
+Assuming that your reverse proxy doesn't use port 8443 for SSL you also need to configure to what port the HTTPS traffic is redirected.
 [source,xml,subs="attributes+"]
 ----
 <subsystem xmlns="{subsystem_undertow_xml_urn}">
@@ -100,14 +100,15 @@ Assuming that your reverse proxy doesn't use port 8443 for SSL you also need to 
 </subsystem>
 ----
 
-Add the `redirect-socket` attribute to the `http-listener` element.  The value should be `proxy-https` which points to a
+.Procedure
+
+. Add the `redirect-socket` attribute to the `http-listener` element.  The value should be `proxy-https` which points to a
 socket binding you also need to define.
 
-Then add a new `socket-binding` element to the `socket-binding-group` element:
-
+. Add a new `socket-binding` element to the `socket-binding-group` element:
++
 [source,xml]
 ----
-
 <socket-binding-group name="standard-sockets" default-interface="public"
     port-offset="${jboss.socket.binding.port-offset:0}">
     ...
@@ -116,27 +117,36 @@ Then add a new `socket-binding` element to the `socket-binding-group` element:
 </socket-binding-group>
 ----
 
-==== Verify Configuration
+==== Verifying the configuration
 
-You can verify the reverse proxy or load balancer configuration by opening the path `/auth/realms/master/.well-known/openid-configuration`
-through the reverse proxy. For example if the reverse proxy address is `\https://acme.com/` then open the URL
+You can verify the reverse proxy or load balancer configuration
+
+.Procedure
+
+. Open the path `/auth/realms/master/.well-known/openid-configuration`
+through the reverse proxy.
++
+For example if the reverse proxy address is `\https://acme.com/` then open the URL
 `\https://acme.com/auth/realms/master/.well-known/openid-configuration`. This will show a JSON document listing a number
-of endpoints for {project_name}. Make sure the endpoints starts with the address (scheme, domain and port) of your
+of endpoints for {project_name}.
+
+. Make sure the endpoints starts with the address (scheme, domain and port) of your
 reverse proxy or load balancer. By doing this you make sure that {project_name} is using the correct endpoint.
 
-You should also verify that {project_name} sees the correct source IP address for requests. To check this, you can
-try to login to the admin console with an invalid username and/or password. This should show a warning in the server log
+. Verify that {project_name} sees the correct source IP address for requests.
++
+To check this, you can
+try to login to the Admin Console with an invalid username and/or password. This should show a warning in the server log
 something like this:
-
++
 [source]
 ----
 08:14:21,287 WARN  XNIO-1 task-45 [org.keycloak.events] type=LOGIN_ERROR, realmId=master, clientId=security-admin-console, userId=8f20d7ba-4974-4811-a695-242c8fbd1bf8, ipAddress=X.X.X.X, error=invalid_user_credentials, auth_method=openid-connect, auth_type=code, redirect_uri=http://localhost:8080/auth/admin/master/console/?redirect_fragment=%2Frealms%2Fmaster%2Fevents-settings, code_id=a3d48b67-a439-4546-b992-e93311d6493e, username=admin
 ----
 
-Check that the value of `ipAddress` is the IP address of the machine you tried to login with and not the IP address
- of the reverse proxy or load balancer.
+. Check that the value of `ipAddress` is the IP address of the machine you tried to login with and not the IP address  of the reverse proxy or load balancer.
 
-==== Using the Built-In Load Balancer
+==== Using the built-in load balancer
 
 This section covers configuring the built-in load balancer that is discussed in the
 <<_clustered-domain-example, Clustered Domain Example>>.
@@ -149,14 +159,12 @@ on one machine.  To bring up a slave on another host, you'll need to
   the _standalone/_ directory.
 . Edit the _host-slave.xml_ file to change the bind addresses used or override them on the command line
 
+.Procedure
 
+. Open  _domain.xml_ so you can registering the new host slave with the load balancer configuration.
 
-===== Register a New Host With Load Balancer
-
-Let's look first at registering the new host slave with the load balancer configuration in _domain.xml_.  Open this
-file and go to the undertow configuration in the `load-balancer` profile.  Add a new `host` definition called
-`remote-host3` within the `reverse-proxy` XML block.
-
+. Go to the undertow configuration in the `load-balancer` profile.  Add a new `host` definition called `remote-host3` within the `reverse-proxy` XML block.
++
 .domain.xml reverse-proxy config
 [source,xml,subs="attributes+"]
 ----
@@ -172,14 +180,15 @@ file and go to the undertow configuration in the `load-balancer` profile.  Add a
   ...
 </subsystem>
 ----
-
++
 The `output-socket-binding` is a logical name pointing to a `socket-binding` configured later in the _domain.xml_ file.
 The `instance-id` attribute must also be unique to the new host as this value is used by a cookie to enable sticky
 sessions when load balancing.
 
-Next go down to the `load-balancer-sockets` `socket-binding-group` and add the `outbound-socket-binding` for `remote-host3`.  This new
-binding needs to point to the host and port of the new host.
-
+. Go down to the `load-balancer-sockets` `socket-binding-group` and add the `outbound-socket-binding` for `remote-host3`.
++
+This new binding needs to point to the host and port of the new host.
++
 .domain.xml outbound-socket-binding
 [source,xml]
 ----
@@ -197,7 +206,7 @@ binding needs to point to the host and port of the new host.
 </socket-binding-group>
 ----
 
-===== Master Bind Addresses
+===== Master bind addresses
 
 Next thing you'll have to do is to change the `public` and `management` bind addresses for the master host.  Either
 edit the _domain.xml_ file as discussed in the <<_bind-address, Bind Addresses>> chapter
@@ -208,7 +217,7 @@ or specify these bind addresses on the command line as follows:
 $ domain.sh --host-config=host-master.xml -Djboss.bind.address=192.168.0.2 -Djboss.bind.address.management=192.168.0.2
 ----
 
-===== Host Slave Bind Addresses
+===== Host slave bind addresses
 
 Next you'll have to change the `public`, `management`, and domain controller bind addresses (`jboss.domain.master-address`).  Either edit the
 _host-slave.xml_ file or specify them on the command line as follows:
@@ -224,6 +233,8 @@ $ domain.sh --host-config=host-slave.xml
 The values of `jboss.bind.address` and `jboss.bind.address.management` pertain to the host slave's IP address.
 The value of `jboss.domain.master.address` needs to be the IP address of the domain controller, which is the management address of the master host.
 
-==== Configuring Other Load Balancers
+[role="_additional-resources"]
+.Additional resources
 
-See link:{appserver_loadbalancer_link}[the load balancing] section in the _{appserver_loadbalancer_name}_ for information how to use other software-based load balancers.
+* See link:{appserver_loadbalancer_link}[the load balancing] section in the _{appserver_loadbalancer_name}_ for information how to use other software-based load balancers.
+

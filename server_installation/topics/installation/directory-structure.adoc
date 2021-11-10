@@ -1,9 +1,7 @@
 
-=== Distribution Directory Structure
+=== Important directories
 
-This chapter walks you through the directory structure of the server distribution.
-
-Let's examine the purpose of some of the directories:
+The following are some important directories in the server distribution.
 
 _bin/_::
   This contains various scripts to either boot the server or perform some other management action on the server.

@@ -1,5 +1,5 @@
 
-=== Installing RH-SSO from a ZIP File
+=== Installing RH-SSO from a ZIP file
 
 The {project_name} server download ZIP file contains the scripts and binaries to run the {project_name} server. You install the {project_version_base} server first, then the {project_version} server patch.
 

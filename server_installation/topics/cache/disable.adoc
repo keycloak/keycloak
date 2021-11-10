@@ -1,12 +1,15 @@
 
-=== Disabling Caching
+=== Disabling caching
 
-To disable the realm or user cache, you must edit the `standalone.xml`, `standalone-ha.xml`,
- or `domain.xml` file in your distribution.  The location of this file 
-depends on your <<_operating-mode, operating mode>>.  
-Here's what the config looks like initially.
+You can disable the realm or user cache.
 
+.Procedure
 
+. Edit the `standalone.xml`, `standalone-ha.xml`,  or `domain.xml` file in your distribution.
++
+The location of this file depends on your <<_operating-mode, operating mode>>.  
+Here is a sample config file.
++
 [source,xml]
 ----
 
@@ -20,7 +23,8 @@ Here's what the config looks like initially.
 
 ----
 
-To disable the cache set the `enabled` attribute to false for the cache you want to disable.  You must reboot your
-server for this change to take effect.
+. Set the `enabled` attribute to false for the cache you want to disable.
+
+. Reboot your server for this change to take effect.
 
 

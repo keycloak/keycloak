@@ -1,6 +1,6 @@
 
 [[_clustering_db_lock]]
-=== Serialized Cluster Startup
+=== Serialized cluster startup
 
 {project_name} cluster nodes are allowed to boot concurrently.
 When {project_name} server instance boots up it may do some database migration, importing, or first time initializations.

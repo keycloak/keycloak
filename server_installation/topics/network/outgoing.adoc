@@ -1,5 +1,5 @@
 
-=== Outgoing HTTP Requests
+=== Outgoing HTTP requests
 
 The {project_name} server often needs to make non-browser HTTP requests to the applications and services it secures.
 The auth server manages these outgoing connections by maintaining an HTTP client connection pool.  There are some things
@@ -66,7 +66,7 @@ disable-trust-manager::
   The default value is `false`.
 
 [[_proxymappings]]
-==== Proxy Mappings for Outgoing HTTP Requests
+==== Proxy mappings for outgoing HTTP requests
 
 Outgoing HTTP requests sent by {project_name} can optionally use a proxy server based on a comma delimited list of proxy-mappings.
 A proxy-mapping denotes the combination of a regex based hostname pattern and a proxy-uri in the form of `hostnamePattern;proxyUri`,
@@ -176,7 +176,7 @@ environment variable defined. To do so, you can specify a generic no proxy route
 ----
 
 [[_truststore]]
-==== Outgoing HTTPS Request Truststore
+==== Outgoing HTTPS request truststore
 
 When {project_name} invokes on remote HTTPS endpoints, it has to validate the remote server's certificate in order to ensure it is connecting to a trusted server.
 This is necessary in order to prevent man-in-the-middle attacks.  The certificates of these remote server's or the CA that signed these

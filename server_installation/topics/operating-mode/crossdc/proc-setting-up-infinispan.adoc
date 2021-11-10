@@ -1,6 +1,6 @@
 [id='setting-up-infinispan-{context}']
 = Setting Up {jdgserver_name} Servers
-For Cross-Datacenter replication, you start by creating remote {jdgserver_name} clusters that can back up {project_name} data.
+For cross-site replication, you start by creating remote {jdgserver_name} clusters that can back up {project_name} data.
 
 .Prerequisites
 

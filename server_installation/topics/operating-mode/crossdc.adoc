@@ -1,14 +1,14 @@
 
 [[crossdc-mode]]
-=== Cross-Datacenter Replication Mode
+=== Using cross-site replication mode
 
-:tech_feature_name: Cross-Datacenter Replication Mode
+:tech_feature_name: cross-site replication mode
 :tech_feature_disabled: false
 include::../templates/techpreview.adoc[]
 
-Cross-Datacenter Replication mode lets you run {project_name} in a cluster across multiple data centers, most typically using data center sites that are in different geographic regions. When using this mode, each data center will have its own cluster of {project_name} servers.
+Use cross-site replication mode to run {project_name} in a cluster across multiple data centers. Typically you use data center sites that are in different geographic regions. When using this mode, each data center will have its own cluster of {project_name} servers.
 
-This documentation will refer to the following example architecture diagram to illustrate and describe a simple Cross-Datacenter Replication use case.
+This documentation will refer to the following example architecture diagram to illustrate and describe a simple cross-site replication use case.
 
 [[archdiagram]]
 .Example Architecture Diagram
@@ -21,10 +21,10 @@ image:{project_images}/cross-dc-architecture.png[]
 As this is an advanced topic, we recommend you first read the following, which provide valuable background knowledge:
 
 * link:{installguide_clustering_link}[Clustering with {project_name}]
-When setting up for Cross-Datacenter Replication, you will use more independent {project_name} clusters, so you must understand how a cluster works and the basic concepts and requirements such as load balancing, shared databases, and multicasting.
+When setting up for cross-site replication, you will use more independent {project_name} clusters, so you must understand how a cluster works and the basic concepts and requirements such as load balancing, shared databases, and multicasting.
 
 ifeval::[{project_product}==true]
-* link:{jdgserver_crossdcdocs_link}[Red Hat Data Grid Cross-Datacenter Replication]
+* link:{jdgserver_crossdcdocs_link}[Red Hat Data Grid Cross-Site Replication]
 {project_name} uses Red Hat Data Grid (RHDG) for the replication of data between the data centers.
 endif::[]
 
@@ -36,7 +36,7 @@ endif::[]
 [[technicaldetails]]
 ==== Technical details
 
-This section provides an introduction to the concepts and details of how {project_name} Cross-Datacenter Replication is accomplished.
+This section provides an introduction to the concepts and details of how {project_name} cross-site replication is accomplished.
 
 .Data
 
@@ -46,7 +46,7 @@ This section provides an introduction to the concepts and details of how {projec
 * An Infinispan cache is used to cache persistent data from the database and also to save some short-lived and frequently-changing metadata, such as for user sessions.
 Infinispan is usually much faster than a database, however the data saved using Infinispan are not permanent and is not expected to persist across cluster restarts.
 
-In our example architecture, there are two data centers called `site1` and `site2`. For Cross-Datacenter Replication, we must make sure that both sources of data work reliably and that {project_name}
+In our example architecture, there are two data centers called `site1` and `site2`. For cross-site replication, we must make sure that both sources of data work reliably and that {project_name}
 servers from `site1` are eventually able to read the data saved by {project_name} servers on `site2` .
 
 Based on the environment, you have the option to decide if you prefer:
@@ -72,7 +72,7 @@ These are not seen by an end user's browser and therefore can not be part of a s
 [[modes]]
 ==== Modes
 
-According your requirements, there are two basic operating modes for Cross-Datacenter Replication:
+According your requirements, there are two basic operating modes for cross-site replication:
 
 * Active/Passive - Here the users and client applications send the requests just to the {project_name} nodes in just a single data center.
 The second data center is used just as a `backup` for saving the data. In case of the failure in the main data center, the data can be usually restored from the second data center.
@@ -86,7 +86,7 @@ The active/passive mode is better for performance. For more information about ho
 [[database]]
 ==== Database
 
-{project_name} uses a relational database management system (RDBMS) to persist some metadata about realms, clients, users, and so on. See link:{installguide_database_link}[this chapter] of the server installation guide for more details. In a Cross-Datacenter Replication setup, we assume that either both data centers talk to the same database or that every data center has its own database node and both database nodes are synchronously replicated across the data centers. In both cases, it is required that when a {project_name} server on `site1` persists some data and commits the transaction, those data are immediately visible by subsequent DB transactions on `site2`.
+{project_name} uses a relational database management system (RDBMS) to persist some metadata about realms, clients, users, and so on. See link:{installguide_database_link}[this chapter] of the server installation guide for more details. In a cross-site replication setup, we assume that either both data centers talk to the same database or that every data center has its own database node and both database nodes are synchronously replicated across the data centers. In both cases, it is required that when a {project_name} server on `site1` persists some data and commits the transaction, those data are immediately visible by subsequent DB transactions on `site2`.
 
 Details of DB setup are out-of-scope for {project_name}, however many RDBMS vendors like MariaDB and Oracle offer replicated databases and synchronous replication. We test {project_name} with these vendors:
 
@@ -148,7 +148,7 @@ See the <<archdiagram>> for more details.
 include::crossdc/assembly-setting-up-crossdc.adoc[leveloffset=3]
 
 [[setup]]
-==== Setting up Cross DC with {jdgserver_name} {jdgserver_version}
+==== Setting up cross-site replication with {jdgserver_name} {jdgserver_version}
 
 This example for {jdgserver_name} {jdgserver_version} involves two data centers, `site1` and `site2`. Each data center consists of 1 {jdgserver_name} server and 2 {project_name} servers. We will end up with 2 {jdgserver_name} servers and 4 {project_name} servers in total.
 
@@ -634,10 +634,10 @@ Event 'CLIENT_CACHE_ENTRY_REMOVED', key '193489e7-e2bc-4069-afe8-f1dfa73084ea', 
 ```
 
 [[administration]]
-==== Administration of Cross DC deployment
+==== Administration of cross-site deployment
 
 
-This section contains some tips and options related to Cross-Datacenter Replication.
+This section contains some tips and options related to cross-site replication.
 
 * When you run the {project_name} server inside a data center, it is required that the database referenced in `KeycloakDS` datasource is already running and available in that data center. It is also necessary that the {jdgserver_name} server referenced by the `outbound-socket-binding`, which is referenced from the Infinispan cache `remote-store` element, is already running. Otherwise the {project_name} server will fail to start.
 
@@ -771,7 +771,7 @@ The only (non-functional) problem is the exception in the {jdgserver_name} serve
 [[backups]]
 ==== SYNC or ASYNC backups
 
-An important part of the `backup` element is the `strategy` attribute. You must decide whether it needs to be `SYNC` or `ASYNC`. We have 7 caches which might be Cross-Datacenter Replication aware, and these can be configured in 3 different modes regarding cross-dc:
+An important part of the `backup` element is the `strategy` attribute. You must decide whether it needs to be `SYNC` or `ASYNC`. We have 7 caches which might be cross-site replication aware, and these can be configured in 3 different modes regarding cross-site:
 
 . SYNC backup
 . ASYNC backup

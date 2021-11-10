@@ -1,7 +1,7 @@
 [[_rdbms-setup-checklist]]
-=== RDBMS Setup Checklist
+=== Database setup checklist
 
-These are the steps you will need to perform to get an RDBMS configured for {project_name}.
+Following are the steps you perform to get an RDBMS configured for {project_name}.
 
 . Locate and download a JDBC driver for your database
 . Package the driver JAR into a module and install this module into the server

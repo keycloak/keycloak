@@ -1,11 +1,14 @@
 
-=== Multicast Network Setup
+=== Setting up multicast networking
 
-Out of the box clustering support needs IP Multicast. Multicast is a network broadcast protocol. This protocol is used at boot time to discover and join the cluster. It is also used to broadcast messages for the replication and invalidation of distributed caches used by {project_name}.
+The default clustering support needs IP Multicast. Multicast is a network broadcast protocol. This protocol is used at boot time to discover and join the cluster. It is also used to broadcast messages for the replication and invalidation of distributed caches used by {project_name}.
 
 The clustering subsystem for {project_name} runs on the JGroups stack. Out of the box, the bind addresses for clustering are bound to a private network interface with 127.0.0.1 as default IP address.
-You have to edit your the _standalone-ha.xml_ or _domain.xml_ sections discussed in the <<_bind-address,Bind Address>> chapter.
 
+.Procedure
+
+. Edit your the _standalone-ha.xml_ or _domain.xml_ sections discussed in the <<_bind-address,Bind Address>> chapter.
++
 .private network config
 [source,xml]
 ----
@@ -27,7 +30,7 @@ You have to edit your the _standalone-ha.xml_ or _domain.xml_ sections discussed
     </socket-binding-group>
 ----
 
-Things you'll want to configure are the `jboss.bind.address.private` and `jboss.default.multicast.address` as well as the ports of the services on the clustering stack.
-
+. Configure the `jboss.bind.address.private` and `jboss.default.multicast.address` as well as the ports of the services on the clustering stack.
++
 NOTE: It is possible to cluster {project_name} without IP Multicast, but this topic is beyond the scope of this guide. For more information, see link:{appserver_jgroups_link}[JGroups] in the _{appserver_jgroups_name}_.
 

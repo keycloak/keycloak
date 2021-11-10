@@ -1,17 +1,14 @@
 
 [[_clustering]]
-== Clustering
+== Configuring {project_name} to run in a cluster
 
-This section covers configuring {project_name} to run in a cluster.  There's a number
-of things you have to do when setting up a cluster, specifically:
+To configure {project_name} to run in a cluster, you perform these actions:
 
 * <<_operating-mode,Pick an operation mode>>
 * <<_database,Configure a shared external database>>
 * Set up a load balancer
 * Supplying a private network that supports IP multicast
 
-Picking an operation mode and configuring a shared database have been discussed earlier in this guide.  In this chapter
-we'll discuss setting up a load balancer and supplying a private network.  We'll also discuss some issues that you need
-to be aware of when booting up a host in the cluster.
+Picking an operation mode and configuring a shared database have been discussed earlier in this guide.  This chapter describes setting up a load balancer and supplying a private network as well as booting up a host in the cluster.
 
 NOTE:  It is possible to cluster {project_name} without IP Multicast, but this topic is beyond the scope of this guide.  For more information, see link:{appserver_jgroups_link}[JGroups] chapter of the _{appserver_jgroups_name}_.

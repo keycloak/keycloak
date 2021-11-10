@@ -1,7 +1,7 @@
 
-=== Modify the {project_name} Datasource
+=== Modifying the {project_name} datasource
 
-After declaring your JDBC driver, you  have to modify the existing datasource configuration that {project_name} uses
+You modify the existing datasource configuration that {project_name} uses
 to connect it to your new external database.  You'll do
 this within the same configuration file and XML block that you registered your JDBC driver in.  Here's an example
 that sets up the connection to your new database:
@@ -28,18 +28,26 @@ that sets up the connection to your new database:
   </subsystem>
 ----
 
-Search for the `datasource` definition for `KeycloakDS`.  You'll first need to modify the `connection-url`.  The
+.Prerequisites
+
+* You have already declared your JDBC driver.
+
+.Procedure
+
+. Search for the `datasource` definition for `KeycloakDS`.
++
+You'll first need to modify the `connection-url`.  The
 documentation for your vendor's JDBC implementation should specify the format for this connection URL value.
 
-Next define the `driver` you will use.  This is the logical name of the JDBC driver you declared in the previous section of this
+. Define the `driver` you will use.
++
+This is the logical name of the JDBC driver you declared in the previous section of this
 chapter.
-
++
 It is expensive to open a new connection to a database every time you want to perform a transaction.  To compensate, the datasource
 implementation maintains a pool of open connections.  The `max-pool-size` specifies the maximum number of connections it will pool.
 You may want to change the value of this depending on the load of your system.
 
-Finally, with PostgreSQL at least, you need to define the database username and password that is needed to connect to the database.  You
-may be worried that this is in clear text in the example.  There are methods to obfuscate this, but this is beyond the
-scope of this guide.
+. Define the database username and password that is needed to connect to the database.  This step is necessary for at least PostgreSQL. You may be concerned that these credentials are in clear text in the example. Methods exist to obfuscate these credentials, but these methods are beyond the scope of this guide.
 
 NOTE:  For more information about datasource features, see link:{appserver_datasource_link}[the datasource configuration chapter] in the _{appserver_admindoc_name}_.

@@ -1,7 +1,16 @@
 
-=== Clearing Caches at Runtime
+=== Clearing cache at runtime
 
-To clear the realm or user cache, go to the {project_name} admin console Realm Settings->Cache Config page.
-On this page you can clear the realm cache, the user cache or cache of external public keys.
+You can clear the realm cache, user cache, or the external public keys.
+
+.Procedure
+
+. Log into the Admin Console.
+
+. Click *Realm Settings*.
+
+. Click the *Cache* tab.
+
+. Clear the realm cache, the user cache or cache of external public keys.
 
 NOTE: The cache will be cleared for all realms!

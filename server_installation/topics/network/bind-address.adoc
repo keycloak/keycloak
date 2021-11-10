@@ -1,7 +1,7 @@
 
 [[_bind-address]]
 
-=== Bind Addresses
+=== Bind addresses
 
 By default {project_name} binds to the localhost loopback address `127.0.0.1`.  That's not a very useful default if
 you want the authentication server available on your network.  Generally, what we recommend is that you deploy a reverse proxy

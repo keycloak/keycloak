@@ -1,6 +1,6 @@
 
 [[_hostname]]
-== Hostname
+== Use of the public hostname
 
 {project_name} uses the public hostname for a number of things. For example, in the token issuer fields and URLs sent in
 password reset emails.

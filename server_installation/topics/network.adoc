@@ -1,9 +1,9 @@
 
 [[_network]]
 
-== Network Setup
+== Setting up the network
 
-{project_name} can run out of the box with some networking limitations.  For one, all network endpoints bind to `localhost`
+The default installation of {project_name} can run with some networking limitations.  For one, all network endpoints bind to `localhost`
 so the auth server is really only usable on one local machine.  For HTTP based connections, it does not use default ports
 like 80 and 443.  HTTPS/SSL is not configured out of the box and without it, {project_name} has many security
 vulnerabilities.

@@ -1,7 +1,7 @@
 
 [[_ports]]
 
-=== Socket Port Bindings
+=== Socket port bindings
 
 The ports opened for each socket have a pre-defined default that can be overridden at the command line or within configuration.
 To illustrate this configuration, let's pretend you are running in <<_standalone-mode,standalone mode>> and
