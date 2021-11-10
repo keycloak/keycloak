@@ -22,27 +22,27 @@ This is what one might look like:
   "enable-basic-auth" : false,
   "expose-token" : true,
   "verify-token-audience" : true,
-   "credentials" : {
-      "secret" : "234234-234234-234234"
-   },
+  "credentials" : {
+    "secret" : "234234-234234-234234"
+  },
 
-   "connection-pool-size" : 20,
-   "socket-timeout-millis": 5000,
-   "connection-timeout-millis": 6000,
-   "connection-ttl-millis": 500,
-   "disable-trust-manager": false,
-   "allow-any-hostname" : false,
-   "truststore" : "path/to/truststore.jks",
-   "truststore-password" : "secret",
-   "client-keystore" : "path/to/client-keystore.jks",
-   "client-keystore-password" : "secret",
-   "client-key-password" : "secret",
-   "token-minimum-time-to-live" : 10,
-   "min-time-between-jwks-requests" : 10,
-   "public-key-cache-ttl": 86400,
-   "redirect-rewrite-rules" : {
-   "^/wsmaster/api/(.*)$" : "/api/$1"
-   }
+  "connection-pool-size" : 20,
+  "socket-timeout-millis" : 5000,
+  "connection-timeout-millis" : 6000,
+  "connection-ttl-millis" : 500,
+  "disable-trust-manager" : false,
+  "allow-any-hostname" : false,
+  "truststore" : "path/to/truststore.jks",
+  "truststore-password" : "geheim",
+  "client-keystore" : "path/to/client-keystore.jks",
+  "client-keystore-password" : "geheim",
+  "client-key-password" : "geheim",
+  "token-minimum-time-to-live" : 10,
+  "min-time-between-jwks-requests" : 10,
+  "public-key-cache-ttl" : 86400,
+  "redirect-rewrite-rules" : {
+    "^/wsmaster/api/(.*)$" : "/api/$1"
+  }
 }
 ----
 
