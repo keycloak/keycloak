@@ -445,9 +445,9 @@ Returns a promise that resolves when initialization completes.
 
 ====== login(options)
 
-Redirects to login form on (options is an optional object with redirectUri and/or prompt fields).
+Redirects to login form.
 
-Options is an Object, where:
+Options is an optional Object, where:
 
 * redirectUri - Specifies the uri to redirect to after login.
 * prompt - This parameter allows to slightly customize the login flow on the {project_name} server side.
@@ -467,9 +467,9 @@ provider instead. More info in the link:{adminguide_link}#_client_suggested_idp[
 
 ====== createLoginUrl(options)
 
-Returns the URL to login form on (options is an optional object with redirectUri and/or prompt fields).
+Returns the URL to login form.
 
-Options is an Object, which supports same options like the function `login` .
+Options is an optional Object, which supports same options as the function `login` .
 
 ====== logout(options)
 
