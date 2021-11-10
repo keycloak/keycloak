@@ -65,7 +65,7 @@ resource::
 realm-public-key::
   PEM format of the realm public key. You can obtain this from the administration console.
   This is _OPTIONAL_ and it's not recommended to set it. If not set, the adapter will download this from {project_name} and
-  it will always re-download it when needed (eg. {project_name} rotate it's keys). However if realm-public-key is set, then adapter
+  it will always re-download it when needed (eg. {project_name} rotates its keys). However if realm-public-key is set, then adapter
   will never download new keys from {project_name}, so when {project_name} rotate it's keys, adapter will break.
 
 auth-server-url::
