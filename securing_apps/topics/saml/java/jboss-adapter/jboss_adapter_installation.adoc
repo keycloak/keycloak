@@ -69,7 +69,7 @@ $ ./bin/jboss-cli.sh -c --file=bin/adapter-elytron-install-saml.cli
 ----
 
 $ cd $JBOSS_HOME
-$ /bin/boss-cli.sh -c --file=bin/adapter-install-saml.cli
+$ ./bin/jboss-cli.sh -c --file=bin/adapter-install-saml.cli
 ----
 
 NOTE: It is possible to use the legacy non-Elytron adapter on WildFly 11 or newer as well, meaning you can use `adapter-install-saml.cli`
@@ -90,7 +90,7 @@ $ ./bin/jboss-cli.sh -c --file=bin/adapter-elytron-install-saml.cli
 ----
 
 $ cd $JBOSS_HOME
-$ ./bin/boss-cli.sh -c --file=bin/adapter-install-saml.cli
+$ ./bin/jboss-cli.sh -c --file=bin/adapter-install-saml.cli
 ----
 
 NOTE: It is possible to use the legacy non-Elytron adapter on JBoss EAP 7.1 or newer as well, meaning you can use `adapter-install-saml.cli`
