@@ -49,7 +49,7 @@ export const ListComponent = ({
             aria-label={t(label!)}
             isOpen={open}
           >
-            {options!.map((option) => (
+            {options?.map((option) => (
               <SelectOption
                 selected={option === value}
                 key={option}

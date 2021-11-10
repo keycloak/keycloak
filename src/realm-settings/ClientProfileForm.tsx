@@ -36,6 +36,7 @@ import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { toAddExecutor } from "./routes/AddExecutor";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { ClientProfileParams, toClientProfile } from "./routes/ClientProfile";
+import { toExecutor } from "./routes/Executor";
 
 type ClientProfileForm = Required<ClientProfileRepresentation>;
 
@@ -315,7 +316,7 @@ export default function ClientProfileForm() {
                             realm,
                             profileName,
                           })}
-                        ></Link>
+                        />
                       )}
                       variant="link"
                       className="kc-addExecutor"
@@ -342,16 +343,27 @@ export default function ClientProfileForm() {
                               key="executor"
                               data-testid="executor-type"
                             >
-                              {Object.keys(executor).length !== 0 ? (
-                                <Link
-                                  data-testid="executor-type-link"
-                                  to={""}
-                                  className="kc-executor-link"
+                              {executor.configuration ? (
+                                <Button
+                                  component={(props) => (
+                                    <Link
+                                      {...props}
+                                      to={toExecutor({
+                                        realm,
+                                        profileName,
+                                        executorName: executor.executor!,
+                                      })}
+                                    />
+                                  )}
+                                  variant="link"
+                                  data-testid="editExecutor"
                                 >
                                   {executor.executor}
-                                </Link>
+                                </Button>
                               ) : (
-                                executor.executor
+                                <span className="kc-unclickable-executor">
+                                  {executor.executor}
+                                </span>
                               )}
                               {executorTypes
                                 ?.filter(
@@ -411,16 +423,28 @@ export default function ClientProfileForm() {
                                 key="executor"
                                 data-testid="global-executor-type"
                               >
-                                {Object.keys(executor).length !== 0 ? (
-                                  <Link
-                                    data-testid="global-executor-type-link"
-                                    to={""}
-                                    className="kc-global-executor-link"
+                                {Object.keys(executor.configuration!).length !==
+                                0 ? (
+                                  <Button
+                                    component={(props) => (
+                                      <Link
+                                        {...props}
+                                        to={toExecutor({
+                                          realm,
+                                          profileName,
+                                          executorName: executor.executor!,
+                                        })}
+                                      />
+                                    )}
+                                    variant="link"
+                                    data-testid="editExecutor"
                                   >
                                     {executor.executor}
-                                  </Link>
+                                  </Button>
                                 ) : (
-                                  executor.executor
+                                  <span className="kc-unclickable-executor">
+                                    {executor.executor}
+                                  </span>
                                 )}
                                 {executorTypes
                                   ?.filter(

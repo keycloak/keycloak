@@ -22,13 +22,17 @@ import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/li
 import type { ConfigPropertyRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigInfoRepresentation";
 import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
 import { ClientProfileParams, toClientProfile } from "./routes/ClientProfile";
-import type ClientPolicyExecutorRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyExecutorRepresentation";
 import { DynamicComponents } from "../components/dynamic/DynamicComponents";
+import type { ExecutorParams } from "./routes/Executor";
+import { convertToFormValues } from "../util";
 
-type ExecutorForm = Required<ClientPolicyExecutorRepresentation>;
+type ExecutorForm = {
+  config: object;
+  executor: string;
+};
 
 const defaultValues: ExecutorForm = {
-  configuration: {},
+  config: {},
   executor: "",
 };
 
@@ -36,6 +40,7 @@ export default function ExecutorForm() {
   const { t } = useTranslation("realm-settings");
   const history = useHistory();
   const { realm, profileName } = useParams<ClientProfileParams>();
+  const { executorName } = useParams<ExecutorParams>();
   const { addAlert, addError } = useAlerts();
   const [selectExecutorTypeOpen, setSelectExecutorTypeOpen] = useState(false);
   const serverInfo = useServerInfo();
@@ -52,8 +57,9 @@ export default function ExecutorForm() {
     ClientProfileRepresentation[]
   >([]);
   const [profiles, setProfiles] = useState<ClientProfileRepresentation[]>([]);
-  const form = useForm<ExecutorForm>({ defaultValues });
-  const { control } = form;
+  const form = useForm({ defaultValues });
+  const { control, setValue, handleSubmit } = form;
+  const editMode = !!executorName;
 
   useFetch(
     () =>
@@ -61,6 +67,23 @@ export default function ExecutorForm() {
     (profiles) => {
       setGlobalProfiles(profiles.globalProfiles ?? []);
       setProfiles(profiles.profiles ?? []);
+
+      const profile = profiles.profiles!.find(
+        (profile) => profile.name === profileName
+      );
+
+      const profileExecutor = profile?.executors!.find(
+        (executor) => executor.executor === executorName
+      );
+
+      if (profileExecutor) {
+        Object.entries(profileExecutor).map(([key, value]) => {
+          if (key === "configuration") {
+            convertToFormValues(value, "config", setValue);
+          }
+          setValue(key, value);
+        });
+      }
     },
     []
   );
@@ -72,11 +95,25 @@ export default function ExecutorForm() {
         return profile;
       }
 
+      const profileExecutor = profile.executors!.find(
+        (executor) => executor.executor === executorName
+      );
+
       const executors = (profile.executors ?? []).concat({
         executor: formValues.executor,
-        configuration: formValues.configuration,
+        configuration: formValues.config,
       });
 
+      if (editMode) {
+        profileExecutor!.configuration = {
+          ...profileExecutor!.configuration,
+          ...formValues.config,
+        };
+      }
+
+      if (editMode) {
+        return profile;
+      }
       return {
         ...profile,
         executors,
@@ -87,16 +124,49 @@ export default function ExecutorForm() {
         profiles: updatedProfiles,
         globalProfiles: globalProfiles,
       });
-      addAlert(t("realm-settings:addExecutorSuccess"), AlertVariant.success);
+      addAlert(
+        editMode
+          ? t("realm-settings:updateExecutorSuccess")
+          : t("realm-settings:addExecutorSuccess"),
+        AlertVariant.success
+      );
+
       history.push(toClientProfile({ realm, profileName }));
     } catch (error) {
-      addError("realm-settings:addExecutorError", error);
+      addError(
+        editMode
+          ? "realm-settings:updateExecutorError"
+          : "realm-settings:addExecutorError",
+        error
+      );
     }
   };
 
+  const globalProfile = globalProfiles.find(
+    (globalProfile) => globalProfile.name === profileName
+  );
+
+  const profileExecutorType = executorTypes?.find(
+    (executor) => executor.id === executorName
+  );
+
+  const editedProfileExecutors =
+    profileExecutorType?.properties.map<ConfigPropertyRepresentation>(
+      (property) => {
+        const globalDefaultValues = editMode ? property.defaultValue : "";
+        return {
+          ...property,
+          defaultValue: globalDefaultValues,
+        };
+      }
+    );
+
   return (
     <>
-      <ViewHeader titleKey={t("addExecutor")} divider />
+      <ViewHeader
+        titleKey={editMode ? executorName : t("addExecutor")}
+        divider
+      />
       <PageSection variant="light">
         <FormAccess isHorizontal role="manage-realm" className="pf-u-mt-lg">
           <FormGroup
@@ -106,6 +176,14 @@ export default function ExecutorForm() {
               executors.length > 0 && executors[0].helpText! !== "" ? (
                 <HelpItem
                   helpText={executors[0].helpText}
+                  forLabel={t("executorTypeHelpText")}
+                  forID={t(`common:helpLabel`, {
+                    label: t("executorTypeHelpText"),
+                  })}
+                />
+              ) : editMode ? (
+                <HelpItem
+                  helpText={profileExecutorType?.helpText}
                   forLabel={t("executorTypeHelpText")}
                   forID={t(`common:helpLabel`, {
                     label: t("executorTypeHelpText"),
@@ -134,12 +212,13 @@ export default function ExecutorForm() {
                     );
                     setSelectExecutorTypeOpen(false);
                   }}
-                  selections={value}
+                  selections={editMode ? executorName : value}
                   variant={SelectVariant.single}
                   data-testid="executorType-select"
                   aria-label={t("executorType")}
                   isOpen={selectExecutorTypeOpen}
                   maxHeight={580}
+                  isDisabled={editMode}
                 >
                   {executorTypes?.map((option) => (
                     <SelectOption
@@ -155,26 +234,49 @@ export default function ExecutorForm() {
           </FormGroup>
           <FormProvider {...form}>
             <DynamicComponents properties={executorProperties} />
+            {editMode && (
+              <DynamicComponents properties={editedProfileExecutors!} />
+            )}
           </FormProvider>
-          <ActionGroup>
-            <Button
-              variant="primary"
-              onClick={save}
-              data-testid="addExecutor-saveBtn"
-            >
-              {t("common:add")}
-            </Button>
-            <Button
-              variant="link"
-              component={(props) => (
-                <Link {...props} to={toClientProfile({ realm, profileName })} />
-              )}
-              data-testid="addExecutor-cancelBtn"
-            >
-              {t("common:cancel")}
-            </Button>
-          </ActionGroup>
+          {!globalProfile && (
+            <ActionGroup>
+              <Button
+                variant="primary"
+                onClick={() => handleSubmit(save)()}
+                data-testid="addExecutor-saveBtn"
+              >
+                {editMode ? t("common:save") : t("common:add")}
+              </Button>
+              <Button
+                variant="link"
+                component={(props) => (
+                  <Link
+                    {...props}
+                    to={toClientProfile({ realm, profileName })}
+                  />
+                )}
+                data-testid="addExecutor-cancelBtn"
+              >
+                {t("common:cancel")}
+              </Button>
+            </ActionGroup>
+          )}
         </FormAccess>
+        {editMode && globalProfile && (
+          <div className="kc-backToProfile">
+            <Button
+              component={(props) => (
+                <Link
+                  {...props}
+                  to={toClientProfile({ realm, profileName })}
+                ></Link>
+              )}
+              variant="primary"
+            >
+              {t("realm-settings:back")}
+            </Button>
+          </div>
+        )}
       </PageSection>
     </>
   );

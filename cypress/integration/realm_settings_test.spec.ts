@@ -528,6 +528,14 @@ describe("Realm settings tests", () => {
       realmSettingsPage.shouldCancelDeletingExecutor();
     });
 
+    it("Should cancel editing executor", () => {
+      realmSettingsPage.shouldCancelEditingExecutor();
+    });
+
+    it("Should edit executor", () => {
+      realmSettingsPage.shouldEditExecutor();
+    });
+
     it("Should delete executor from a client profile", () => {
       realmSettingsPage.shouldDeleteExecutor();
     });
@@ -537,7 +545,7 @@ describe("Realm settings tests", () => {
     });
   });
 
-  describe("Realm settings client policies tab tests", () => {
+  describe.skip("Realm settings client policies tab tests", () => {
     beforeEach(() => {
       keycloakBefore();
       loginPage.logIn();

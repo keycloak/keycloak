@@ -267,6 +267,7 @@ export default {
     newClientProfile: "Create client profile",
     newClientProfileName: "Client profile name",
     clientProfile: "Client profile details",
+    executorDetails: "Executor details",
     back: "Back",
     delete: "delete",
     save: "Save",
@@ -291,6 +292,8 @@ export default {
     emptyExecutors: "No executors configured",
     addExecutorSuccess: "Success! Executor created successfully",
     addExecutorError: "Executor not created",
+    updateExecutorSuccess: "Executor updated successfully",
+    updateExecutorError: "Executor not updated",
     deleteExecutorProfileConfirmTitle: "Delete executor?",
     deleteExecutorProfileConfirm:
       "The action will permanently delete {{executorName}}. This cannot be undone.",

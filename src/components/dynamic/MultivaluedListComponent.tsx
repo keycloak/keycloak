@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Controller, useFormContext } from "react-hook-form";
 import {
@@ -18,20 +18,10 @@ export const MultiValuedListComponent = ({
   helpText,
   defaultValue,
   options,
-  selectedValues,
-  parentCallback,
 }: ComponentProps) => {
   const { t } = useTranslation("dynamic");
   const { control } = useFormContext();
   const [open, setOpen] = useState(false);
-  const [selectedItems, setSelectedItems] = useState<string[]>([defaultValue]);
-
-  useEffect(() => {
-    if (selectedValues) {
-      parentCallback!(selectedValues);
-      setSelectedItems(selectedValues!);
-    }
-  }, []);
 
   return (
     <FormGroup
@@ -43,8 +33,8 @@ export const MultiValuedListComponent = ({
     >
       <Controller
         name={`config.${convertToHyphens(name!)}`}
-        defaultValue={defaultValue ? [defaultValue] : []}
         control={control}
+        defaultValue={defaultValue ? [defaultValue] : []}
         render={({ onChange, value }) => (
           <Select
             toggleId={name}
@@ -55,27 +45,15 @@ export const MultiValuedListComponent = ({
               collapsedText: t("common:showRemaining"),
             }}
             variant={SelectVariant.typeaheadMulti}
-            typeAheadAriaLabel={t("common:select")}
+            typeAheadAriaLabel="Select"
             onToggle={(isOpen) => setOpen(isOpen)}
             selections={value}
-            onSelect={(_, v) => {
-              const option = v.toString();
-              if (!value) {
-                onChange([option]);
-                parentCallback!([option]);
-                setSelectedItems([option]);
-              } else if (value.includes(option)) {
-                const updatedItems = selectedItems.filter(
-                  (item: string) => item !== option
-                );
-                setSelectedItems(updatedItems);
-                onChange(updatedItems);
-                parentCallback!(updatedItems);
-              } else {
-                onChange([...value, option]);
-                parentCallback!([...value, option]);
-                setSelectedItems([...selectedItems, option]);
-              }
+            onSelect={(_, selectedValue) => {
+              const option = selectedValue.toString();
+              const changedValue = value.includes(option)
+                ? value.filter((item: string) => item !== option)
+                : [...value, option];
+              onChange(changedValue);
             }}
             onClear={(event) => {
               event.stopPropagation();

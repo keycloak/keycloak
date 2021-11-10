@@ -176,10 +176,8 @@ export default class RealmSettingsPage {
   private clientPolicyDrpDwn = "action-dropdown";
   private searchFld = "[id^=realm-settings][id$=profilesinput]";
   private searchFldPolicies = "[id^=realm-settings][id$=clientPoliciesinput]";
-  private clientProfileOne =
-    'a[href*="realm-settings/clientPolicies/Test/edit-profile"]';
-  private clientProfileTwo =
-    'a[href*="realm-settings/clientPolicies/Edit/edit-profile"]';
+  private clientProfileOne = 'a[href*="realm-settings/clientPolicies/Test"]';
+  private clientProfileTwo = 'a[href*="realm-settings/clientPolicies/Edit"]';
   private clientPolicy =
     'a[href*="realm-settings/clientPolicies/Test/edit-policy"]';
   private reloadBtn = "reloadProfile";
@@ -188,6 +186,8 @@ export default class RealmSettingsPage {
   private addExecutorDrpDwnOption = "executorType-select";
   private addExecutorCancelBtn = "addExecutor-cancelBtn";
   private addExecutorSaveBtn = "addExecutor-saveBtn";
+  private availablePeriodExecutorFld = "available-period";
+  private editExecutor = "editExecutor";
   private listingPage = new ListingPage();
   private addCondition = "addCondition";
   private addConditionDrpDwn = ".pf-c-select__toggle";
@@ -652,7 +652,7 @@ export default class RealmSettingsPage {
     cy.findByTestId(this.addExecutor).click();
     cy.get(this.addExecutorDrpDwn).click();
     cy.findByTestId(this.addExecutorDrpDwnOption)
-      .contains("confidential-client")
+      .contains("secure-ciba-signed-authn-req")
       .click();
     cy.findByTestId(this.addExecutorCancelBtn).click();
     cy.get('h6[class*="kc-emptyExecutors"]').should(
@@ -666,7 +666,7 @@ export default class RealmSettingsPage {
     cy.findByTestId(this.addExecutor).click();
     cy.get(this.addExecutorDrpDwn).click();
     cy.findByTestId(this.addExecutorDrpDwnOption)
-      .contains("confidential-client")
+      .contains("secure-ciba-signed-authn-req")
       .click();
     cy.findByTestId(this.addExecutorSaveBtn).click();
     cy.get(this.alertMessage).should(
@@ -675,7 +675,7 @@ export default class RealmSettingsPage {
     );
     cy.get('ul[class*="pf-c-data-list"]').should(
       "have.text",
-      "confidential-client"
+      "secure-ciba-signed-authn-req"
     );
   }
 
@@ -684,13 +684,39 @@ export default class RealmSettingsPage {
     cy.get('svg[class*="kc-executor-trash-icon"]').click();
     cy.get(this.deleteDialogTitle).contains("Delete executor?");
     cy.get(this.deleteDialogBodyText).contains(
-      "The action will permanently delete confidential-client. This cannot be undone."
+      "The action will permanently delete secure-ciba-signed-authn-req. This cannot be undone."
     );
     cy.findByTestId("modalConfirm").contains("Delete");
     cy.get(this.deleteDialogCancelBtn).contains("Cancel").click();
     cy.get('ul[class*="pf-c-data-list"]').should(
       "have.text",
-      "confidential-client"
+      "secure-ciba-signed-authn-req"
+    );
+  }
+
+  shouldCancelEditingExecutor() {
+    cy.get(this.clientProfileTwo).click();
+    cy.findByTestId(this.editExecutor).first().click();
+    cy.get('a[data-testid="addExecutor-cancelBtn"]').click();
+    cy.get('ul[class*="pf-c-data-list"]').should(
+      "have.text",
+      "secure-ciba-signed-authn-req"
+    );
+    cy.findByTestId(this.editExecutor).first().click();
+    cy.findByTestId(this.availablePeriodExecutorFld).should(
+      "have.value",
+      "3600"
+    );
+  }
+
+  shouldEditExecutor() {
+    cy.get(this.clientProfileTwo).click();
+    cy.findByTestId(this.editExecutor).first().click();
+    cy.findByTestId(this.availablePeriodExecutorFld).clear().type("4000");
+    cy.findByTestId(this.addExecutorSaveBtn).click();
+    cy.get(this.alertMessage).should(
+      "be.visible",
+      "Executor updated successfully"
     );
   }
 
@@ -699,7 +725,7 @@ export default class RealmSettingsPage {
     cy.get('svg[class*="kc-executor-trash-icon"]').click();
     cy.get(this.deleteDialogTitle).contains("Delete executor?");
     cy.get(this.deleteDialogBodyText).contains(
-      "The action will permanently delete confidential-client. This cannot be undone."
+      "The action will permanently delete secure-ciba-signed-authn-req. This cannot be undone."
     );
     cy.findByTestId("modalConfirm").contains("Delete").click();
     cy.get('h6[class*="kc-emptyExecutors"]').should(

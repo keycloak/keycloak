@@ -214,8 +214,17 @@ article.pf-c-card.pf-m-flat.kc-login-settings-template
   margin-right: 0.625rem;
 }
 
-.kc-backToPolicies {
+.kc-unclickable-executor {
+  font-size: var(--pf-global--FontSize--md);
+  padding: 0 var(--pf-global--spacer--md) 0 var(--pf-global--spacer--md);
+}
+
+.kc-backToPolicies, .kc-backToPolicies {
   width: 5rem;
+}
+
+.kc-backToPolicies {
+  float: left;
 }
 
 .kc-executor-trash-icon {
@@ -238,8 +247,4 @@ article.pf-c-card.pf-m-flat.kc-login-settings-template
 
 .kc-conditionType-trash-icon:hover {
   filter: brightness(55%);
-}
-
-.kc-backToPolicies {
-  width: 5rem;
 }
