@@ -17,46 +17,34 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
+import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getMappedPropertyName;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import org.eclipse.microprofile.config.spi.ConfigSource;
 
-public class EnvConfigSource implements ConfigSource {
+import io.smallrye.config.EnvConfigSource;
 
-    private final Map<String, String> properties = new TreeMap<>();
+public class KcEnvConfigSource extends EnvConfigSource {
 
-    public EnvConfigSource() {
+    private static Map<String, String> buildProperties() {
+        Map<String, String> properties = new HashMap<>();
+
         for (Map.Entry<String, String> entry : System.getenv().entrySet()) {
             String key = entry.getKey();
-            if (key.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.toUpperCase().replace('.', '_'))) {
+            if (key.startsWith(replaceNonAlphanumericByUnderscores(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.toUpperCase()))) {
                 properties.put(getMappedPropertyName(key), entry.getValue());
             }
         }
-    }
 
-    @Override
-    public Map<String, String> getProperties() {
         return properties;
     }
 
-    @Override
-    public Set<String> getPropertyNames() {
-        return properties.keySet();
-    }
-
-    public String getValue(final String propertyName) {
-        return System.getProperty(propertyName);
+    public KcEnvConfigSource() {
+        super(buildProperties(), 350);
     }
 
     public String getName() {
         return "KcEnvVarConfigSource";
-    }
-
-    @Override
-    public int getOrdinal() {
-        return 350;
     }
 }

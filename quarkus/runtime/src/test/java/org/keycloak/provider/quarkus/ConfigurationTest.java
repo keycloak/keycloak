@@ -18,6 +18,7 @@
 package org.keycloak.provider.quarkus;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.quarkus.runtime.Environment.CLI_ARGS;
 
 import java.io.File;
@@ -115,6 +116,15 @@ public class ConfigurationTest {
     public void testEnvVarPriorityOverPropertiesFile() {
         putEnvVar("KC_SPI_HOSTNAME_DEFAULT_FRONTEND_URL", "http://envvar.unittest");
         assertEquals("http://envvar.unittest", initConfig("hostname", "default").get("frontendUrl"));
+    }
+
+    @Test
+    public void testEnvVarAvailableFromPropertyNames() {
+        putEnvVar("KC_VAULT_FILE_PATH", "/foo/bar");
+        Config.Scope config = initConfig("vault", FilesPlainTextVaultProviderFactory.PROVIDER_ID);
+        assertEquals("/foo/bar", config.get("dir"));
+        assertTrue(config.getPropertyNames()
+                .contains("kc.spi.vault.".concat(FilesPlainTextVaultProviderFactory.PROVIDER_ID).concat(".dir")));
     }
 
     @Test

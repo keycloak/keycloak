@@ -154,6 +154,12 @@ public final class Database {
                 "jdbc:sqlserver://${kc.db.url.host:localhost}:1433;databaseName=${kc.db.url.database:keycloak}${kc.db.url.properties:}",
                 asList("org.keycloak.quarkus.runtime.storage.database.liquibase.database.CustomMSSQLDatabase"),
                 "mssql", "mssql-2012"
+        ),
+        ORACLE("oracle",
+                "oracle.jdbc.xa.client.OracleXADataSource",
+                "org.hibernate.dialect.Oracle12cDialect",
+                "jdbc:oracle:thin:@//${kc.db.url.host:localhost}:1521/${kc.db.url.database:keycloak}",
+                asList("liquibase.database.core.OracleDatabase")
         );
 
         final String databaseKind;
