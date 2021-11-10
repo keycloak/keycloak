@@ -7,6 +7,8 @@ The library can be retrieved directly from the {project_name} server at `/auth/j
 
 A best practice is to load the JavaScript adapter directly from {project_name} Server as it will automatically be updated when you upgrade the server. If you copy the adapter to your web application instead, make sure you upgrade the adapter only after you have upgraded the server.
 
+NOTE: You can also download package from npm: https://www.npmjs.com/package/keycloak-js
+
 One important thing to note about using client-side applications is that the client has to be a public client as there is no secure way to store client
 credentials in a client-side application. This makes it very important to make sure the redirect URIs you have configured for the client are correct and as specific as possible.
 
