@@ -47,4 +47,3 @@ cipher-suite-filter="TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AE
 
 The references to `kcKeyManager` and `kcTrustManager` refers to the corresponding Keystore and Truststore. See the documentation of Wildfly Elytron subsystem for more details and also
 other parts of {project_name} documentation such as link:{installguide_link}#_network[Network Setup Section] or link:{adminguide_link}#_x509[X.509 Authentication Section].
-
