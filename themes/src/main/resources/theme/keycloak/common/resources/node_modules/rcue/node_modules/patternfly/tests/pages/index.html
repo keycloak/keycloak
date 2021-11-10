@@ -1,0 +1,23 @@
+---
+layout: page
+---
+      {% strip %}<div class="row">
+        {% for cat in site.category-list %}
+        <div class="col-sm-6">
+          <h2>{{ cat }}</h2>
+          <ul>
+            {% for page in site.pages %}
+            {% if page.resource == true %}
+            {% for pc in page.categories %}
+            {% if pc == cat %}
+            <li>
+              <a href="{{ page.url | remove_first:'/' }}">{{ page.title }}</a>
+            </li>
+            {% endif %}
+            {% endfor %}
+            {% endif %}
+            {% endfor %}
+          </ul>
+        </div>
+        {% endfor %}
+      </div>{% endstrip %}
