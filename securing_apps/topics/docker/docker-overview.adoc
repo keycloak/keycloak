@@ -21,7 +21,7 @@ For users with more advanced Docker registry configurations, it is generally rec
 
 This output can then be copied into any existing registry config file.  See the link:https://docs.docker.com/registry/configuration/[registry config file specification] for more information on how the file should be set up, or start with link:https://github.com/distribution/distribution/blob/main/cmd/registry/config-example.yml[a basic example].
 
-WARNING: Don't forget to configure the `rootcertbundle` field with the location of the {project_name} realm's public certificate.  The auth configuration will not work without this argument.
+WARNING: Don't forget to configure the `rootcertbundle` field with the location of the {project_name} realm's public key.  The auth configuration will not work without this argument.
 
 
 === Docker Registry Environment Variable Override Installation
@@ -32,7 +32,7 @@ Often times it is appropriate to use a simple environment variable override for 
     REGISTRY_AUTH_TOKEN_SERVICE: docker-test
     REGISTRY_AUTH_TOKEN_ISSUER: http://localhost:8080/auth/realms/master
 
-WARNING: Don't forget to configure the `REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE` override with the location of the {project_name} realm's public certificate.  The auth configuration will not work without this argument.
+WARNING: Don't forget to configure the `REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE` override with the location of the {project_name} realm's public key.  The auth configuration will not work without this argument.
 
 
 === Docker Compose YAML File
