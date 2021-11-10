@@ -4,7 +4,7 @@
 These are the requirements to run the {project_name} authentication server:
 
 * Can run on any operating system that runs Java
-* Java 8 JDK
+* Java 8 JRE or Java 11 JRE
 * zip or gzip and tar
 * At least 512M of RAM
 * At least 1G of diskspace
