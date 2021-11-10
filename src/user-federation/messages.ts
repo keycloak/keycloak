@@ -188,6 +188,7 @@ export default {
     readOnly: "Read only",
     alwaysReadValueFromLdap: "Always read value from LDAP",
     isMandatoryInLdap: "Is mandatory in LDAP",
+    attributeDefaultValue: "Attribute default value",
     isBinaryAttribute: "Is binary attribute",
     derFormatted: "DER formatted",
 

@@ -147,6 +147,8 @@ export default {
       "If on, then during reading of the LDAP attribute value will always used instead of the value from Keycloak DB.",
     isMandatoryInLdapHelp:
       "If true, attribute is mandatory in LDAP. Hence if there is no value in Keycloak DB, the empty value will be set to be propagated to LDAP.",
+    attributeDefaultValueHelp:
+      "If there is no value in Keycloak DB and attribute is mandatory in LDAP, this value will be propagated to LDAP.",
     isBinaryAttributeHelp: "Should be true for binary LDAP attributes.",
 
     derFormattedHelp:

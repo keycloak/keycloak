@@ -74,7 +74,7 @@ export const LdapMapperUserAttribute = ({
       >
         <Controller
           name="config.read-only"
-          defaultValue={["false"]}
+          defaultValue={["true"]}
           control={form.control}
           render={({ onChange, value }) => (
             <Switch
@@ -143,6 +143,25 @@ export const LdapMapperUserAttribute = ({
             />
           )}
         ></Controller>
+      </FormGroup>
+      <FormGroup
+        label={t("attributeDefaultValue")}
+        labelIcon={
+          <HelpItem
+            helpText={helpText("attributeDefaultValueHelp")}
+            forLabel={t("attributeDefaultValue")}
+            forID="kc-attribute-default-value"
+          />
+        }
+        fieldId="kc-attribute-default-value"
+      >
+        <TextInput
+          type="text"
+          id="kc-attribute-default-value"
+          data-testid="mapper-attributeDefaultValue-fld"
+          name="config.attribute-default-value[0]"
+          ref={form.register}
+        />
       </FormGroup>
       <FormGroup
         label={t("isBinaryAttribute")}
