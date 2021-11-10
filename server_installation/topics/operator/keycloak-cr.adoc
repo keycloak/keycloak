@@ -169,7 +169,7 @@ image:images/login-empty.png[]
 +
 [source,bash,subs=+attributes]
 ----
-$ {create_cmd_brief} get secret credentials-<CR-Name> -o go-template='{{range $k,$v := .data}}{{printf "%s: " $k}}{{if not $v}}{{$v}}{{else}}{{$v | base64decode}}{{end}}{{"\n"}}{{end}}'
+$ {create_cmd_brief} get secret credential-<CR-Name> -o go-template='{{range $k,$v := .data}}{{printf "%s: " $k}}{{if not $v}}{{$v}}{{else}}{{$v | base64decode}}{{end}}{{"\n"}}{{end}}'
 ----
 
 . Enter the username and password in the admin console login screen.
