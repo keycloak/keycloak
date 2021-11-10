@@ -169,7 +169,6 @@ You can add your truststore configuration by using the following template:
             <property name="file" value="path to your .jks file containing public certificates"/>
             <property name="password" value="password"/>
             <property name="hostname-verification-policy" value="WILDCARD"/>
-            <property name="enabled" value="true"/>
         </properties>
     </provider>
 </spi>
@@ -184,19 +183,15 @@ file::
   This is what the trustore does.
   The keystore contains one or more trusted host certificates or certificate authorities.
   This truststore file should only contain public certificates of your secured hosts.
-  This is _REQUIRED_ if `enabled` is true.
+  This is _REQUIRED_ if any of these properties are defined.
 
 password::
-  Password for the truststore.
-  This is _REQUIRED_ if `enabled` is true.
+  Password of the keystore.
+  This is _REQUIRED_ if any of these properties are defined.
 
 hostname-verification-policy::
   `WILDCARD` by default.
   For HTTPS requests, this verifies the hostname of the server's certificate.
    `ANY` means that the hostname is not verified. `WILDCARD` Allows wildcards in subdomain names i.e.
   *.foo.com. `STRICT` CN must match hostname exactly.
-
-enabled::
-  If false (default value), truststore configuration will be ignored, and certificate checking will fall back to JSSE configuration as described.
-  If set to true, you must configure `file`, and `password` for the truststore.
 
