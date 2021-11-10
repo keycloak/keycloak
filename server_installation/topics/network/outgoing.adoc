@@ -135,6 +135,46 @@ Note that one needs to encode `"` characters with `\&quot;`.
 </spi>
 ----
 
+[[_proxy_env_vars]]
+==== Using standard environment variables
+
+Alternatively, it is possible to use standard environment variables to configure the proxy mappings, that is `HTTP_PROXY`, `HTTPS_PROXY`
+and `NO_PROXY` variables.
+
+The `HTTP_PROXY` and `HTTPS_PROXY` variables represent the proxy server that should be used for all outgoing HTTP requests.
+{project_name} does not differ between the two. If both are specified, `HTTPS_PROXY` takes the precedence regardless of
+the actual scheme the proxy server uses.
+
+The `NO_PROXY` variable is used to define a comma separated list of hostnames that should not use the proxy.
+If a hostname is specified, all its prefixes (subdomains) are also excluded from using proxy.
+
+Take the following example:
+[source]
+----
+HTTPS_PROXY=https://www-proxy.acme.com:8080
+NO_PROXY=google.com,login.facebook.com
+----
+In this example, all outgoing HTTP requests will use `\https://www-proxy.acme.com:8080` proxy server except for requests
+to for example `login.google.com`, `google.com`, `auth.login.facebook.com`. However, for example `groups.facebook.com` will be routed
+through the proxy.
+
+NOTE:  The environment variables can be lowercase or uppercase. Lowercase takes precedence. For example if both `HTTP_PROXY` and
+       `http_proxy` are defined, `http_proxy` will be used.
+
+If proxy mappings are defined using the subsystem configuration (as described above), the environment variables are not
+considered by {project_name}. This scenario applies in case no proxy server should be used despite having for example `HTTP_PROXY`
+environment variable defined. To do so, you can specify a generic no proxy route as follows:
+[source,xml]
+----
+<spi name="connectionsHttpClient">
+    <provider name="default" enabled="true">
+        <properties>
+            <property name="proxy-mappings" value=".*;NO_PROXY"/>
+        </properties>
+    </provider>
+</spi>
+----
+
 [[_truststore]]
 ==== Outgoing HTTPS Request Truststore
 

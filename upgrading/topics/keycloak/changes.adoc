@@ -1,5 +1,16 @@
 == Migration Changes
 
+=== Migrating to 16.0.0
+
+==== Proxy environment variables
+
+{project_name} now respects the standard `HTTP_PROXY`, `HTTPS_PROXY` and `NO_PROXY` environment variables for outgoing
+HTTP requests. This change could lead to unexpected use of a proxy server if you have for example the `HTTP_PROXY` variable defined but have no
+explicit proxy mappings specified in your SPI configuration. To prevent {project_name} from using those environment variables,
+you can explicitly create a no proxy route for all requests as `.*;NO_PROXY`.
+
+For more details, see the link:{installguide_link}#_proxy_env_vars[related chapter in the {installguide_name}].
+
 === Migrating to 14.0.0
 
 ==== Client Policies Migration
