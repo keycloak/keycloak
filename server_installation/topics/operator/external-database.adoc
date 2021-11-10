@@ -15,8 +15,6 @@ stringData:
     POSTGRES_DATABASE: <Database Name>
     POSTGRES_EXTERNAL_ADDRESS: <External Database IP or URL (resolvable by K8s)>
     POSTGRES_EXTERNAL_PORT: <External Database Port>
-    # Strongly recommended to use <'Keycloak CR-Name'-postgresql>
-    POSTGRES_HOST: <Database Service Name>
     POSTGRES_PASSWORD: <Database Password>
     # Required for AWS Backup functionality
     POSTGRES_SUPERUSER: true
@@ -35,10 +33,11 @@ endif::[]
 The other properties work in the same way for a hosted or external database. Set them as follows:
 
 * `POSTGRES_DATABASE` - Database name to be used.
-* `POSTGRES_HOST` - The name of the `Service` used to communicate with a database. Typically `keycloak-postgresql`.
 * `POSTGRES_USERNAME` - Database username
 * `POSTGRES_PASSWORD` - Database password
 * `POSTGRES_SUPERUSER` - Indicates, whether backups should run as super user. Typically `true`.
+
+The Operator will create a Service named `keycloak-postgresql`. This Service is configured by the Operator to expose the external database based on the content of `POSTGRES_EXTERNAL_ADDRESS`. {project_name} uses this Service to connect to the Database, which means it does not connect to the Database directly but rather through this Service.
 
 The Keycloak custom resource requires updates to enable external database support. 
 
