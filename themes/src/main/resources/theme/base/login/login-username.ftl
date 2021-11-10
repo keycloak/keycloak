@@ -6,11 +6,20 @@
         <div id="kc-form">
             <div id="kc-form-wrapper">
                 <#if realm.password>
-                    <form id="kc-form-login" onsubmit="login.disabled = true; return true;" action="${url.loginAction}"
+                    <form id="kc-form-login" class="${properties.kcFormClass!}" onsubmit="login.disabled = true; return true;" action="${url.loginAction}"
                           method="post">
                         <div class="${properties.kcFormGroupClass!}">
-                            <label for="username"
-                                   class="${properties.kcLabelClass!}"><#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if></label>
+                            <label for="username" class="${properties.kcLabelClass!}">
+                                <span class="pf-c-form__label-text">
+                                    <#if !realm.loginWithEmailAllowed>
+                                        ${msg("username")}
+                                    <#elseif !realm.registrationEmailAsUsername>
+                                        ${msg("usernameOrEmail")}
+                                    <#else>
+                                        ${msg("email")}
+                                    </#if>
+                                </span>
+                            </label>
 
                             <#if usernameEditDisabled??>
                                 <input tabindex="1" id="username"
@@ -32,26 +41,24 @@
                                 </span>
                             </#if>
                         </div>
-
-                        <div class="${properties.kcFormGroupClass!} ${properties.kcFormSettingClass!}">
-                            <div id="kc-form-options">
-                                <#if realm.rememberMe && !usernameEditDisabled??>
-                                    <div class="checkbox">
-                                        <label>
+                        <#if realm.rememberMe && !usernameEditDisabled??>
+                            <div class="${properties.kcFormGroupClass!} ${properties.kcFormSettingClass!}">
+                                <div id="kc-form-options">
+                                        <div class="pf-c-check">
                                             <#if login.rememberMe??>
-                                                <input tabindex="3" id="rememberMe" name="rememberMe" type="checkbox"
-                                                       checked> ${msg("rememberMe")}
+                                                <input class="pf-c-check__input" tabindex="3" id="rememberMe" name="rememberMe" type="checkbox"
+                                                    checked> ${msg("rememberMe")}
                                             <#else>
-                                                <input tabindex="3" id="rememberMe" name="rememberMe"
-                                                       type="checkbox"> ${msg("rememberMe")}
+                                                <input class="pf-c-check__input" tabindex="3" id="rememberMe" name="rememberMe"
+                                                    type="checkbox"> 
                                             </#if>
-                                        </label>
-                                    </div>
-                                </#if>
+                                            <label class="pf-c-check__label" for="rememberMe">${msg("rememberMe")}</label>
+                                        </div>
+                                </div>
                             </div>
-                        </div>
+                        </#if>
 
-                        <div id="kc-form-buttons" class="${properties.kcFormGroupClass!}">
+                        <div class="${properties.kcFormGroupClass!}">
                             <input tabindex="4"
                                    class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
                                    name="login" id="kc-login" type="submit" value="${msg("doLogIn")}"/>

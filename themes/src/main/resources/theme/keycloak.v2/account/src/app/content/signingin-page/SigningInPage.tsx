@@ -327,7 +327,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
                             aria-labelledby='create'
                             aria-label='create action'
                             id={'setUpAction-' + credContainer.type}
-                            visibility={{ default: 'visible', lg: 'hidden' }}
+                            visibility={{ default: 'visible', sm: 'hidden', lg: 'visible' }}
                         >
                             <button id={`${credContainer.type}-set-up`} className="pf-c-button pf-m-link" type="button" onClick={()=> setupAction.execute()}>
                                 <span className="pf-c-button__icon">
