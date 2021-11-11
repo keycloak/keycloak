@@ -17,6 +17,7 @@
 
 package org.keycloak.quarkus.runtime.cli;
 
+import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 import static java.util.Arrays.asList;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_SHORT;
@@ -509,6 +510,6 @@ public final class Picocli {
     }
 
     public static String normalizeKey(String key) {
-        return key.replace('-', '.');
+        return replaceNonAlphanumericByUnderscores(key).replace('_', '.');
     }
 }

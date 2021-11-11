@@ -53,6 +53,8 @@ import picocli.CommandLine.Command;
                 + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --features=preview%n%n"
                 + "  Enable metrics:%n%n"
                 + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --metrics-enabled=true%n%n"
+                + "  Change the relative path:%n%n"
+                + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --http-relative-path=/auth%n%n"
                 + "You can also use the \"--auto-build\" option when starting the server to avoid running this command every time you change a configuration:%n%n"
                 + "    $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} start --auto-build <OPTIONS>%n%n"
                 + "By doing that you have an additional overhead when the server is starting.",

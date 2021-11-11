@@ -39,7 +39,7 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
     public ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
         ConfigValue value = PropertyMappers.getValue(context, name);
         
-        if (value == null) {
+        if (value == null || value.getValue() == null) {
             return null;
         }
 

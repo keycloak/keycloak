@@ -16,6 +16,7 @@
  */
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.function.BiFunction;
 
@@ -48,7 +49,7 @@ public class PropertyMapper {
     PropertyMapper(String from, String to, String defaultValue, BiFunction<String, ConfigSourceInterceptorContext, String> mapper,
             String mapFrom, boolean buildTime, String description, String paramLabel, boolean mask, Iterable<String> expectedValues, ConfigCategory category) {
         this.from = MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + from;
-        this.to = to;
+        this.to = to == null ? this.from : to;
         this.defaultValue = defaultValue;
         this.mapper = mapper == null ? PropertyMapper::defaultTransformer : mapper;
         this.mapFrom = mapFrom;
@@ -105,6 +106,10 @@ public class PropertyMapper {
             // if not defined, return the current value from the property as a default if the property is not explicitly set
             if (defaultValue == null
                     || (current != null && !current.getConfigSourceName().equalsIgnoreCase("default values"))) {
+                if (defaultValue == null && mapper != null) {
+                    String value = current == null ? null : current.getValue();
+                    return ConfigValue.builder().withName(to).withValue(mapper.apply(value, context)).build();
+                }
                 return current;
             }
 
@@ -245,6 +250,11 @@ public class PropertyMapper {
             return this;
         }
 
+        public Builder expectedValues(String... expectedValues) {
+            this.expectedValues = Arrays.asList(expectedValues);
+            return this;
+        }
+
         public Builder isBuildTimeProperty(boolean isBuildTime) {
             this.isBuildTimeProperty = isBuildTime;
             return this;
@@ -257,6 +267,13 @@ public class PropertyMapper {
 
         public Builder category(ConfigCategory category) {
             this.category = category;
+            return this;
+        }
+
+        public Builder type(Class<Boolean> type) {
+            if (Boolean.class.equals(type)) {
+                expectedValues(Boolean.TRUE.toString(), Boolean.FALSE.toString());
+            }
             return this;
         }
 
