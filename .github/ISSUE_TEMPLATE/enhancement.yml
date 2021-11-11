@@ -1,6 +1,6 @@
 name: Enhancement Request
 description: Request an enhancement to an existing feature
-labels: ["kind/enhancement"]
+labels: ["kind/enhancement", "status/triage"]
 body:
   - type: textarea
     attributes:
