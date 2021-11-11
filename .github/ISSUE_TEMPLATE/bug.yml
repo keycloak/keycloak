@@ -1,6 +1,6 @@
 name: Bug Report
 description: Report a non-security sensitive bug in Keycloak
-labels: ["kind/bug", "status/needs-triage"]
+labels: ["kind/bug", "status/triage"]
 body:
   - type: textarea
     attributes:
