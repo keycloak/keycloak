@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import { useHistory } from "react-router-dom";
 
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { useRealms } from "../../context/RealmsContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { toDashboard } from "../../dashboard/routes/Dashboard";
 import { toAddRealm } from "../../realm/routes/AddRealm";
@@ -25,7 +26,8 @@ import { RecentUsed } from "./recent-used";
 import "./realm-selector.css";
 
 export const RealmSelector = () => {
-  const { realm, realms } = useRealm();
+  const { realm } = useRealm();
+  const { realms } = useRealms();
   const { whoAmI } = useWhoAmI();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");

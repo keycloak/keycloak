@@ -47,13 +47,7 @@ export const MockAdminClient: FunctionComponent<{ mock?: object }> = (
           }
         >
           <WhoAmIContextProvider>
-            <RealmContext.Provider
-              value={{
-                realm: "master",
-                realms: [],
-                refresh: () => Promise.resolve(),
-              }}
-            >
+            <RealmContext.Provider value={{ realm: "master" }}>
               <AccessContextProvider>{props.children}</AccessContextProvider>
             </RealmContext.Provider>
           </WhoAmIContextProvider>

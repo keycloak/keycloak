@@ -15,6 +15,7 @@ import { routes, RouteDef } from "./route-config";
 import { PageBreadCrumbs } from "./components/bread-crumb/PageBreadCrumbs";
 import { ForbiddenSection } from "./ForbiddenSection";
 import { SubGroups } from "./groups/SubGroupsContext";
+import { RealmsProvider } from "./context/RealmsContext";
 import { RealmContextProvider } from "./context/realm-context/RealmContext";
 import { ErrorRenderer } from "./components/error/ErrorRenderer";
 import { AdminClient } from "./context/auth/AdminClient";
@@ -34,17 +35,19 @@ const AppContexts: FunctionComponent<AdminClientProps> = ({
   <Router>
     <AdminClient.Provider value={adminClient}>
       <WhoAmIContextProvider>
-        <RealmContextProvider>
-          <AccessContextProvider>
-            <Help>
-              <AlertProvider>
-                <ServerInfoProvider>
-                  <SubGroups>{children}</SubGroups>
-                </ServerInfoProvider>
-              </AlertProvider>
-            </Help>
-          </AccessContextProvider>
-        </RealmContextProvider>
+        <RealmsProvider>
+          <RealmContextProvider>
+            <AccessContextProvider>
+              <Help>
+                <AlertProvider>
+                  <ServerInfoProvider>
+                    <SubGroups>{children}</SubGroups>
+                  </ServerInfoProvider>
+                </AlertProvider>
+              </Help>
+            </AccessContextProvider>
+          </RealmContextProvider>
+        </RealmsProvider>
       </WhoAmIContextProvider>
     </AdminClient.Provider>
   </Router>
