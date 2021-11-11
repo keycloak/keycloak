@@ -159,9 +159,6 @@ textarea.pf-c-form-control {
     border-color: rgba(230, 230, 230, 0.5);
 }
 /*End of IE compatibility*/
-h1#kc-page-title {
-    margin-top: 10px;
-}
 
 #kc-locale ul {
     background-color: #FFF;
@@ -698,4 +695,5 @@ ul#kc-totp-supported-apps {
       "main"
       "footer ";
     --pf-c-login__container--xl--GridTemplateColumns: 34rem;
+    align-self: flex-start;
   }
