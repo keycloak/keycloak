@@ -32,6 +32,12 @@ export default {
     login: "Login",
     themes: "Themes",
     events: "Events",
+    eventListeners: "Event listeners",
+    eventListenersHelpText:
+      "Configure what listeners receive events for the realm.",
+    saveEventListeners: "Save Event Listeners",
+    saveEventListenersSuccess: "Event listener has been updated.",
+    saveEventListenersError: "Error saving event listener: {{error}}",
     userEventsConfig: "User events configuration",
     userEventsSettings: "User events settings",
     adminEventsConfig: "Admin events configuration",

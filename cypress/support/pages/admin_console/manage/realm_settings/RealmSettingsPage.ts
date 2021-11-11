@@ -196,6 +196,16 @@ export default class RealmSettingsPage {
   private addConditionSaveBtn = "addCondition-saveBtn";
   private conditionTypeLink = "condition-type-link";
   private addValue = "addValue";
+  private eventListenersFormLabel = ".pf-c-form__label-text";
+  private eventListenersDrpDwn = ".pf-c-select.kc_eventListeners_select";
+  private eventListenersSaveBtn = "saveEventListenerBtn";
+  private eventListenersRevertBtn = "revertEventListenerBtn";
+  private eventListenersInputFld =
+    ".pf-c-form-control.pf-c-select__toggle-typeahead";
+  private eventListenersDrpDwnOption = ".pf-c-select__menu-item";
+  private eventListenersDrwDwnSelect =
+    ".pf-c-button.pf-c-select__toggle-button.pf-m-plain";
+  private eventListenerRemove = '[data-ouia-component-id="Remove"]';
 
   selectLoginThemeType(themeType: string) {
     cy.get(this.selectLoginTheme).click();
@@ -503,6 +513,58 @@ export default class RealmSettingsPage {
   clickAdd() {
     cy.findByTestId("addEventTypeConfirm").click();
     return this;
+  }
+
+  shouldDisplayEventListenersForm() {
+    cy.get(this.eventListenersFormLabel)
+      .should("be.visible")
+      .contains("Event listeners");
+    cy.get(this.eventListenersDrpDwn).should("exist");
+    cy.findByTestId(this.eventListenersSaveBtn).should("exist");
+    cy.findAllByTestId(this.eventListenersRevertBtn).should("exist");
+  }
+
+  shouldRevertSavingEventListener() {
+    cy.get(this.eventListenersInputFld).click().type("email");
+    cy.get(this.eventListenersDrpDwnOption).click();
+    cy.get(this.eventListenersDrwDwnSelect).click();
+    cy.findByTestId(this.eventListenersRevertBtn).click();
+    cy.get(this.eventListenersDrpDwn).should("not.have.text", "email");
+  }
+
+  shouldSaveEventListener() {
+    cy.get(this.eventListenersInputFld).click().type("email");
+    cy.get(this.eventListenersDrpDwnOption).click();
+    cy.get(this.eventListenersDrwDwnSelect).click();
+    cy.findByTestId(this.eventListenersSaveBtn).click();
+    cy.get(this.alertMessage).should(
+      "be.visible",
+      "Event listener has been updated."
+    );
+  }
+
+  shouldRemoveEventFromEventListener() {
+    cy.get(this.eventListenerRemove).first().click();
+    cy.findByTestId(this.eventListenersSaveBtn).click();
+    cy.get(this.alertMessage).should(
+      "be.visible",
+      "Event listener has been updated."
+    );
+    cy.get(this.eventListenersDrpDwn).should("not.have.text", "jboss-logging");
+  }
+
+  shouldRemoveAllEventListeners() {
+    cy.get(".pf-c-button.pf-m-plain.pf-c-select__toggle-clear").click();
+    cy.findByTestId(this.eventListenersSaveBtn).click();
+    cy.get(this.eventListenersDrpDwn).should("not.have.text", "jboss-logging");
+    cy.get(this.eventListenersDrpDwn).should("not.have.text", "email");
+  }
+
+  shouldReSaveEventListener() {
+    cy.get(this.eventListenersInputFld).click().type("jboss-logging");
+    cy.get(this.eventListenersDrpDwnOption).click();
+    cy.get(this.eventListenersDrwDwnSelect).click();
+    cy.findByTestId(this.eventListenersSaveBtn).click();
   }
 
   shouldDisplayProfilesTab() {

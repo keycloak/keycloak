@@ -248,3 +248,7 @@ article.pf-c-card.pf-m-flat.kc-login-settings-template
 .kc-conditionType-trash-icon:hover {
   filter: brightness(55%);
 }
+
+.kc_eventListeners_select {
+  width: 35rem;
+}

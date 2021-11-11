@@ -40,14 +40,14 @@ export default class UserEventsTab {
 
   shouldDoSearchAndRemoveChips() {
     cy.findByTestId(this.searchEventDrpDwnBtn).click();
-    cy.get(this.eventTypeInputFld).type("LOGIN");
-    cy.get(this.eventTypeOption).contains("LOGIN").click();
+    cy.get(this.eventTypeInputFld).type("LOGOUT");
+    cy.get(this.eventTypeOption).contains("LOGOUT").click();
 
     cy.intercept("/auth/admin/realms/master/events*").as("eventsFetch");
     cy.findByTestId(this.searchEventsBtn).click();
     cy.wait("@eventsFetch");
 
-    cy.get("table").contains("td", "LOGIN");
+    cy.get("table").contains("td", "LOGOUT");
     cy.get("table").should("not.have.text", "CODE_TO_TOKEN");
     cy.get("table").should("not.have.text", "CODE_TO_TOKEN_ERROR");
     cy.get("table").should("not.have.text", "LOGIN_ERROR");
@@ -55,7 +55,7 @@ export default class UserEventsTab {
 
     cy.get("[id^=remove_group]").click();
     cy.wait("@eventsFetch");
-    cy.get("table").should("be.visible").contains("td", "LOGIN");
+    cy.get("table").should("be.visible").contains("td", "LOGOUT");
   }
 
   shouldHaveSearchBtnEnabled() {
