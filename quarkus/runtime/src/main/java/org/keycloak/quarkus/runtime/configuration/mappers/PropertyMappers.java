@@ -63,7 +63,13 @@ public final class PropertyMappers {
         }
 
         boolean isBuildTimeProperty = MAPPERS.entrySet().stream()
-                .anyMatch(entry -> entry.getValue().getFrom().equals(name) && entry.getValue().isBuildTime());
+                .anyMatch(new Predicate<Map.Entry<String, PropertyMapper>>() {
+                    @Override
+                    public boolean test(Map.Entry<String, PropertyMapper> entry) {
+                        PropertyMapper mapper = entry.getValue();
+                        return (mapper.getFrom().equals(name) || mapper.getTo().equals(name)) && mapper.isBuildTime();
+                    }
+                });
 
         if (!isBuildTimeProperty) {
             Optional<String> prefixedMapper = PropertyMappers.getPrefixedMapper(name);
@@ -126,6 +132,12 @@ public final class PropertyMappers {
     }
 
     public static PropertyMapper getMapper(String property) {
+        PropertyMapper mapper = MAPPERS.get(property);
+
+        if (mapper != null) {
+            return mapper;
+        }
+
         return MAPPERS.values().stream().filter(new Predicate<PropertyMapper>() {
             @Override
             public boolean test(PropertyMapper propertyMapper) {

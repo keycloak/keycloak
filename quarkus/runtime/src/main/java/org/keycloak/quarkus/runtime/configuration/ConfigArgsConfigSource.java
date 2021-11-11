@@ -32,6 +32,8 @@ import org.jboss.logging.Logger;
 import io.smallrye.config.PropertiesConfigSource;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 /**
  * <p>A configuration source for mapping configuration arguments to their corresponding properties so that they can be recognized
@@ -100,7 +102,17 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
 
             log.tracef("Adding property [%s=%s] from command-line", key, value);
             properties.put(key, value);
-            properties.put(getMappedPropertyName(key), value);
+
+            String mappedPropertyName = getMappedPropertyName(key);
+
+            properties.put(mappedPropertyName, value);
+
+            PropertyMapper mapper = PropertyMappers.getMapper(mappedPropertyName);
+
+            if (mapper != null) {
+                properties.put(mapper.getFrom(), value);
+            }
+
             // to make lookup easier, we normalize the key
             properties.put(Picocli.normalizeKey(key), value);
         }
