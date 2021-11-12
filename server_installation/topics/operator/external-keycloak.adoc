@@ -1,0 +1,72 @@
+
+[[_external_keycloak]]
+=== Connecting to an external {project_name}
+
+This operator can also be used to partially manage an external {project_name} instance.
+In it's current state, it will only be able to create clients.
+
+To do this, you'll need to create unmanaged versions of the `Keycloak` and `KeycloakRealm` CRDs to use for targeting and configuration.
+
+.Example YAML file for `external-keycloak`
+```yaml
+apiVersion: keycloak.org/v1alpha1
+kind: Keycloak
+metadata:
+  name: external-ref
+  labels:
+ifeval::[{project_community}==true]
+    app: external-keycloak
+endif::[]
+ifeval::[{project_product}==true]
+    app: external-sso
+endif::[]
+spec:
+  unmanaged: true
+  external:
+    enabled: true
+    url: https://some.external.url
+```
+
+In order to authenticate against this keycloak, the operator infers the secret name from the CRD by prefixing the CRD name with `credential-`.
+
+.Example YAML file for `credential-external-ref`
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: credential-external-ref
+type: Opaque
+data:
+  ADMIN_USERNAME: YWRtaW4=
+  ADMIN_PASSWORD: cGFzcw==
+```
+
+.Example YAML file for `external-realm`
+```yaml
+apiVersion: keycloak.org/v1alpha1
+kind: KeycloakRealm
+metadata:
+  name: external-realm
+  labels:
+ifeval::[{project_community}==true]
+    app: external-keycloak
+endif::[]
+ifeval::[{project_product}==true]
+    app: external-sso
+endif::[]
+spec:
+  unmanaged: true
+  realm:
+    id: "basic"
+    realm: "basic"
+  instanceSelector:
+    matchLabels:
+ifeval::[{project_community}==true]
+      app: external-keycloak
+endif::[]
+ifeval::[{project_product}==true]
+      app: external-sso
+endif::[]
+```
+
+You can now use the realm reference in your client as usual, and it will create the client on the external {project_name} instance.
