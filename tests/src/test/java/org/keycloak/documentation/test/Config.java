@@ -18,6 +18,8 @@ public class Config {
 
     private static final Logger log = LogManager.getLogger(Config.class);
 
+    protected static final Config instance = new Config();
+
     private File docsRootDir;
 
     private List<String> ignoredLinkRedirects;
@@ -34,7 +36,11 @@ public class Config {
     private Map<String, String> guideDirToFragment;
     private Map<String, String> guideFragmentToDir;
 
-    public Config() {
+    public static Config getInstance() {
+        return instance;
+    }
+
+    private Config() {
         docsRootDir = findDocsRoot();
         ignoredLinkRedirects = loadConfig("/ignored-link-redirects");
         ignoredVariables = loadConfig("/ignored-variables");
@@ -171,7 +177,7 @@ public class Config {
 
     private List<String> loadConfig(String resource) {
         try {
-            return IOUtils.readLines(AbstractDocsTest.class.getResourceAsStream(resource), "utf-8");
+            return IOUtils.readLines(Config.class.getResourceAsStream(resource), "utf-8");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -179,7 +185,7 @@ public class Config {
 
     private Map<String, String> loadConfigMap(String resource) {
         try {
-            List<String> lines = IOUtils.readLines(AbstractDocsTest.class.getResourceAsStream(resource), "utf-8");
+            List<String> lines = IOUtils.readLines(Config.class.getResourceAsStream(resource), "utf-8");
             Map<String, String> m = new HashMap<>();
             for (String l : lines) {
                 String[] s = l.split("=");

@@ -4,6 +4,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.keycloak.documentation.test.Config;
+import org.keycloak.documentation.test.Guide;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -18,16 +19,18 @@ public class LinkUtils {
 
     private static final Logger logger = LogManager.getLogger(LinkUtils.class);
 
+    private static final LinkUtils instance = new LinkUtils();
+
     private HttpUtils http = new HttpUtils();
-    private Config config;
     private File verifiedLinksCacheFile;
-    private boolean verbose;
     private Map<String, Long> verifiedLinks;
 
-    public LinkUtils(Config config, boolean verbose) {
-        this.config = config;
-        this.verifiedLinksCacheFile = config.getVerifiedLinksCache();
-        this.verbose = verbose;
+    public static LinkUtils getInstance() {
+        return instance;
+    }
+
+    private LinkUtils() {
+        this.verifiedLinksCacheFile = Config.getInstance().getVerifiedLinksCache();
         this.verifiedLinks = loadCheckedLinksCache();
     }
 
@@ -35,15 +38,15 @@ public class LinkUtils {
         saveCheckedLinksCache();
     }
 
-    public Set<String> findInvalidInternalAnchors(String body) {
+    public Set<String> findInvalidInternalAnchors(Guide guide) {
         Set<String> invalidInternalAnchors = new HashSet<>();
         Pattern p = Pattern.compile("<a href=\"([^ \"]*)[^>]*\">");
-        Matcher m = p.matcher(body);
+        Matcher m = p.matcher(guide.getBody());
         while (m.find()) {
             String link = m.group(1);
 
             if (link.startsWith("#")) {
-                if (!body.contains("id=\"" + link.substring(1) + "\"")) {
+                if (!guide.getBody().contains("id=\"" + link.substring(1) + "\"")) {
                     invalidInternalAnchors.add(link.substring(1));
                 }
             }
@@ -51,14 +54,14 @@ public class LinkUtils {
         return invalidInternalAnchors;
     }
 
-    public List<InvalidLink> findInvalidLinks(String body, List<String> ignoredLinks, List<String> ignoredLinkRedirects) throws IOException {
+    public List<InvalidLink> findInvalidLinks(Guide guide) throws IOException {
         List<InvalidLink> invalidLinks = new LinkedList<>();
         Pattern p = Pattern.compile("<a href=\"([^ \"]*)[^>]*\">");
-        Matcher m = p.matcher(body);
+        Matcher m = p.matcher(guide.getBody());
         while (m.find()) {
             String link = m.group(1);
 
-            if (verifyLink(link, ignoredLinks, invalidLinks)) {
+            if (verifyLink(link, Config.getInstance().getIgnoredLinks(), invalidLinks)) {
                 if (link.startsWith("http")) {
                     String anchor = link.contains("#") ? link.split("#")[1] : null;
                     String error = null;
@@ -66,7 +69,7 @@ public class LinkUtils {
                     HttpUtils.Response response = anchor != null ? http.load(link) : http.isValid(link);
 
                     if (response.getRedirectLocation() != null) {
-                        if (!validRedirect(response.getRedirectLocation(), ignoredLinkRedirects)) {
+                        if (!validRedirect(response.getRedirectLocation(), Config.getInstance().getIgnoredLinkRedirects())) {
                             error = "invalid redirect to " + response.getRedirectLocation();
                         }
                     } else if (response.isSuccess() && anchor != null) {
@@ -79,16 +82,8 @@ public class LinkUtils {
 
                     if (error == null) {
                         verifiedLinks.put(link, System.currentTimeMillis());
-
-                        if (verbose) {
-                            System.out.println("[OK]  " + link);
-                        }
                     } else {
                         invalidLinks.add(new InvalidLink(link, error));
-
-                        if (verbose) {
-                            System.out.println("[BAD] " + link);
-                        }
                     }
                 } else if (link.startsWith("file")) {
                     File f = new File(new URL(link).getFile());
@@ -110,36 +105,28 @@ public class LinkUtils {
         return invalidLinks;
     }
 
-    public Set<String> findInvalidImages(String body, File guideDir, String guideUrl) {
+    public Set<String> findInvalidImages(Guide guide) {
         Set<String> missingImages = new HashSet<>();
         Pattern p = Pattern.compile("<img src=\"([^ \"]*)[^>]*\"");
-        Matcher m = p.matcher(body);
+        Matcher m = p.matcher(guide.getBody());
         while (m.find()) {
             String image = m.group(1);
-            if (config.isLoadFromFiles()) {
-                File f = new File(guideDir, image);
+            if (Config.getInstance().isLoadFromFiles()) {
+                File f = new File(guide.getDir(), image);
                 if (!f.isFile()) {
                     missingImages.add(image);
                 }
             } else {
                 if (image.startsWith("./")) {
-                    image = guideUrl + image;
+                    image = guide.getUrl() + image;
                 }
 
                 if (!verifiedLinks.containsKey(image)) {
                     boolean valid = http.isValid(image).isSuccess();
                     if (valid) {
                         verifiedLinks.put(image, System.currentTimeMillis());
-
-                        if (verbose) {
-                            System.out.println("[OK]  " + image);
-                        }
                     } else {
                         missingImages.add(image);
-
-                        if (verbose) {
-                            System.out.println("[BAD]  " + image);
-                        }
                     }
                 }
             }

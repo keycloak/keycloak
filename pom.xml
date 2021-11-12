@@ -21,6 +21,7 @@
         <version.compiler.plugin>3.6.1</version.compiler.plugin>
         <version.jar.plugin>3.0.2</version.jar.plugin>
         <version.install.plugin>2.5.2</version.install.plugin>
+        <version.surefire.plugin>2.22.2</version.surefire.plugin>
 
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -128,6 +129,11 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
                     <version>${version.plugin.dependency}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${version.surefire.plugin}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.keycloak.documentation</groupId>

@@ -2,6 +2,8 @@ package org.keycloak.documentation.test.utils;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.keycloak.documentation.test.Config;
+import org.keycloak.documentation.test.Guide;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,7 +18,7 @@ import java.util.regex.Pattern;
 
 public class DocUtils {
 
-    public String readBody(File htmlFile) throws IOException {
+    public static String readBody(File htmlFile) throws IOException {
         String s = FileUtils.readFileToString(htmlFile, "utf-8");
 
         Pattern p = Pattern.compile("<body.*?>(.*?)</body>.*?",Pattern.DOTALL);
@@ -26,7 +28,7 @@ public class DocUtils {
         return m.group(1);
     }
 
-    public String readBody(URL url) throws IOException {
+    public static String readBody(URL url) throws IOException {
         HttpURLConnection connection = null;
 
         try {
@@ -60,10 +62,11 @@ public class DocUtils {
         }
     }
 
-    public Set<String> findMissingVariables(String body, List<String> ignoredVariables) {
+    public static Set<String> findMissingVariables(Guide guide) {
+        List<String> ignoredVariables = Config.getInstance().getIgnoredVariables();
         Set<String> missingVariables = new HashSet<>();
         Pattern p = Pattern.compile("[^$/=\n]\\{([^ }\"]*)}");
-        Matcher m = p.matcher(body);
+        Matcher m = p.matcher(guide.getBody());
         while (m.find()) {
             String key = m.group(1);
             if (!key.isEmpty() && !ignoredVariables.contains(key)) {
@@ -73,10 +76,10 @@ public class DocUtils {
         return missingVariables;
     }
 
-    public Set<String> findMissingIncludes(String body) {
+    public static Set<String> findMissingIncludes(Guide guide) {
         Set<String> missingIncludes = new HashSet<>();
         Pattern p = Pattern.compile("Unresolved directive.*");
-        Matcher m = p.matcher(body);
+        Matcher m = p.matcher(guide.getBody());
         if (m.find()) {
             missingIncludes.add(m.group());
         }

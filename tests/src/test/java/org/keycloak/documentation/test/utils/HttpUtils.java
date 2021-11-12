@@ -8,8 +8,6 @@ import org.apache.hc.client5.http.impl.DefaultHttpRequestRetryStrategy;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
-import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
-import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
 import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.HttpStatus;
@@ -19,11 +17,6 @@ import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.util.TimeValue;
 
 import java.io.IOException;
-import java.security.cert.X509Certificate;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.X509TrustManager;
 
 public class HttpUtils {
 
@@ -86,7 +79,6 @@ public class HttpUtils {
         try {
             client.execute(method, responseHandler);
         } catch (Exception e) {
-            e.printStackTrace();
             response.setError("exception " + e.getMessage());
             response.setSuccess(false);
         }
@@ -104,48 +96,9 @@ public class HttpUtils {
             .disableRedirectHandling()
             .setConnectionManager(
                 PoolingHttpClientConnectionManagerBuilder.create()
-                    .setSSLSocketFactory(new NoopSSLConnectionSocketFactory())
                     .build()
             )
             .build();
-    }
-
-    private static class NoopSSLConnectionSocketFactory extends SSLConnectionSocketFactory {
-        private static SSLContext sslContext;
-
-        static {
-            try {
-                sslContext = SSLContext.getInstance("TLS");
-                sslContext.init(
-                    null,
-                    new X509TrustManager[] {
-                        new X509TrustManager() {
-                            public X509Certificate[] getAcceptedIssuers() {
-                                return null;
-                            }
-
-                            public void checkClientTrusted(X509Certificate[] certs, String authType) {
-                            }
-
-                            public void checkServerTrusted(X509Certificate[] certs, String authType) {
-                            }
-                        }
-                    },
-                    null
-                );
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        public NoopSSLConnectionSocketFactory() {
-            super(sslContext, new NoopHostnameVerifier());
-        }
-
-        @Override
-        protected void verifySession(String hostname, SSLSession sslSession) throws SSLException {
-            // no-op
-        }
     }
 
     public static class Response {
