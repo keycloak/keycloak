@@ -41,10 +41,14 @@
                 </div>
 
                 <div class="${properties.kcFormButtonsClass!}">
-                    <div class="${properties.kcFormButtonsWrapperClass!}">
-                        <button  id="kc-login" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" type="submit" name="login">${msg("doContinue")}</button>
+                    <div class="${properties.kcFormButtonsWrapperClass!} ${properties.kcActionListClass!}">
+                        <div class="${properties.kcActionListItemClass!}">
+                            <button  id="kc-login" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" type="submit" name="login">${msg("doContinue")}</button>
+                        </div>
                         <#if x509.formData.isUserEnabled??>
-                            <button  id="kc-cancel" class="${properties.kcButtonClass!} ${properties.kcButtonSecondaryClass!}" type="submit" name="cancel">${msg("doIgnore")}</button>
+                            <div class="${properties.kcActionListItemClass!}">
+                                <button  id="kc-cancel" class="${properties.kcButtonClass!} ${properties.kcButtonSecondaryClass!}" type="submit" name="cancel">${msg("doIgnore")}</button>
+                            </div>
                         </#if>
                     </div>
                 </div>
