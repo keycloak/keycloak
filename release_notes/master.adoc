@@ -11,9 +11,9 @@ include::topics/templates/document-attributes-product.adoc[]
 
 include::topics/templates/making-open-source-more-inclusive.adoc[]
 
-== {project_name_full} 7.4.0.GA
+== {project_name_full} 7.5.0.GA
 
-include::topics/product/7_4_final.adoc[leveloffset=2]
+include::topics/product/7_5.adoc[leveloffset=2]
 
 ifeval::[{project_product}==true]
 

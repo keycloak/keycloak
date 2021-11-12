@@ -172,9 +172,7 @@ These features have a change in status:
 * The Spring Boot Adapter is deprecated and will not be included in the 8.0 and higher versions of RH-SSO. This adapter will be maintained during the lifecycle of RH-SSO 7.x. Users are urged to migrate to Spring Security to integrate their Spring Boot applications with RH-SSO.
 
 * Installation from an RPM is deprecated. Red Hat Single Sign-On will continue to deliver RPMs for the life of the 7.x product, but will not deliver RPMs with the next major version. The product will continue to support installation from a ZIP file and installation on OpenShift.
-
-* Authorization Services Drools Policy has been removed
-
+* Authorization Services Drools Policy has been removed.
 * Upload of scripts through admin rest endpoints/console is deprecated. It will be removed at a future release.
 
 = Fixed Issues
@@ -199,4 +197,4 @@ The set of supported features and configurations for RH-SSO Server 7.4 is availa
 
 = Component versions
 
-The list of supported component versions for RH-SSO 7.4 is available on the link:https://access.redhat.com/articles/2342881[Customer Portal]. 
+The list of supported component versions for RH-SSO 7.4 is available on the link:https://access.redhat.com/articles/2342881[Customer Portal].
