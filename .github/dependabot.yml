@@ -1,15 +1,17 @@
 version: 2
 updates:
-- package-ecosystem: npm
-  directory: "/"
-  open-pull-requests-limit: 999
-  rebase-strategy: disabled
-  schedule:
-    interval: weekly
-  ignore:
-    - dependency-name: react-hook-form
-      update-types: ["version-update:semver-major"]
-    - dependency-name: react-router-dom
-      update-types: ["version-update:semver-major"]
-    - dependency-name: use-react-router-breadcrumbs
-      update-types: ["version-update:semver-major"]
+  - package-ecosystem: npm
+    directory: /
+    open-pull-requests-limit: 999
+    rebase-strategy: disabled
+    schedule:
+      interval: weekly
+    labels:
+      - area/dependencies
+    ignore:
+      - dependency-name: react-hook-form
+        update-types: ["version-update:semver-major"]
+      - dependency-name: react-router-dom
+        update-types: ["version-update:semver-major"]
+      - dependency-name: use-react-router-breadcrumbs
+        update-types: ["version-update:semver-major"]
