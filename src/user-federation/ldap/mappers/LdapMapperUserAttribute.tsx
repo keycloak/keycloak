@@ -74,7 +74,9 @@ export const LdapMapperUserAttribute = ({
       >
         <Controller
           name="config.read-only"
-          defaultValue={["true"]}
+          defaultValue={
+            mapperType === "user-attribute-ldap-mapper" ? ["true"] : ["false"]
+          }
           control={form.control}
           render={({ onChange, value }) => (
             <Switch
