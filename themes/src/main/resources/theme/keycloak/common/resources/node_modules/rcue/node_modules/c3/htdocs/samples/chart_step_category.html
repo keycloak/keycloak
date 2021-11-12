@@ -1,0 +1,50 @@
+<html>
+  <head>
+    <link href="/css/c3.css" rel="stylesheet" type="text/css">
+  </head>
+  <body>
+    <div id="chart"></div>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/js/c3.js"></script>
+    <script>
+      var chart = c3.generate({
+        data: {
+          x: 'x',
+          columns: [
+            ['x', 'hogehoge', 'aaa', 'aaaaaa', 'a', 'b'],
+            ['data1', 300, 350, 300, 0, 0, 0],
+//            ['data2', 130, 100, 140, 200, 150, 50]
+          ],
+          types: {
+            data1: 'step',
+            data2: 'area-step'
+          },
+          empty: {
+            abort: false,
+            label: {
+              text: 'hoge'
+            }
+          }
+        },
+        axis: {
+          x: {
+            type: 'categorized'
+          }
+        },
+        subchart: {
+          show: true
+        },
+      });
+
+      setTimeout(function () {
+        chart.load({
+          columns: [
+            ['data2', 130, 100, 140, 200, 150, 50]
+          ]
+        });
+      }, 1000);
+
+    </script>
+  </body>
+</html>

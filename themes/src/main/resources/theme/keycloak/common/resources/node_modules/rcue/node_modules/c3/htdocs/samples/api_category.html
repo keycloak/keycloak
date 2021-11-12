@@ -1,0 +1,48 @@
+<html>
+  <head>
+    <link href="/css/c3.css" rel="stylesheet" type="text/css">
+  </head>
+  <body>
+    <div id="chart"></div>
+    <div id="message"></div>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/js/c3.js"></script>
+    <script>
+
+      var chart = c3.generate({
+        data: {
+          x: 'x',
+          columns: [
+            ['x', '1e-3', '1e-2', '1'],
+            ['data1', 30, 200, 100, 400, 150, 250, 50, 100, 250]
+          ]
+        },
+        axis: {
+          x: {
+            type: 'categorized'
+          }
+        }
+      });
+
+      setTimeout(function () {
+        d3.select('#message').node().innerHTML = "chart.categories() =>" + chart.categories();
+      }, 1000);
+
+      setTimeout(function () {
+        chart.categories(['updated 1', 'updated 2', 'updated 3', 'updated 4']);
+        d3.select('#message').node().innerHTML = "";
+      }, 2000);
+
+      setTimeout(function () {
+        d3.select('#message').node().innerHTML = "chart.category(1) =>" + chart.category(1);
+      }, 3000);
+
+      setTimeout(function () {
+        chart.category(1, 'UPDATED 1');
+        d3.select('#message').node().innerHTML = "";
+      }, 4000);
+
+    </script>
+  </body>
+</html>

@@ -1,0 +1,52 @@
+<header class="navbar navbar-expand-md navbar-light fixed-top bg-light" role="navigation">
+  <!-- Main title -->
+  <a class="navbar-brand" href="{{ nav.homepage.url }}">{{ config.site_name }}</a>
+
+  <!-- Collapsed navigation -->
+  {% if nav|length>1 or (page.next_page or page.previous_page) or config.repo_url %}
+  <!-- Expander button -->
+  <button type="button" class="navbar-toggler" data-toggle="collapse" data-target=".navbar-collapse" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  {% endif %}
+
+  <!-- Expanded navigation -->
+  <div class="navbar-collapse collapse">
+    {% if nav|length>1 %}
+    <!-- Main navigation -->
+    <ul class="navbar-nav mr-auto">
+      {% for nav_item in nav %}
+      {% if nav_item.children %}
+      <li class="dropdown{% if nav_item.active %} active{% endif %}">
+        <a href="#" class="dropdown-toggle" data-toggle="dropdown">{{ nav_item.title }} <b class="caret"></b></a>
+        <ul class="dropdown-menu">
+          {% for nav_item in nav_item.children %}
+          {% include "nav-sub.html" %}
+          {% endfor %}
+        </ul>
+      </li>
+      {% else %}
+      <li class="nav-item{% if nav_item.active %} active{% endif %}">
+        <a class="nav-link" href="{{ nav_item.url }}">{{ nav_item.title }}</a>
+      </li>
+      {% endif %}
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    <ul class="navbar-nav ml-auto">
+      {% if config.repo_url %}
+      <li class="nav-item">
+        <a class="nav-link" href="{{ config.repo_url }}">
+          {% if config.repo_name == 'GitHub' %}
+          <i class="fa fa-github"></i>
+          {% elif config.repo_name == 'Bitbucket' %}
+          <i class="fa fa-bitbucket"></i>
+          {% endif %}
+          {{ config.repo_name }}
+        </a>
+      </li>
+      {% endif %}
+    </ul>
+  </div>
+</header>

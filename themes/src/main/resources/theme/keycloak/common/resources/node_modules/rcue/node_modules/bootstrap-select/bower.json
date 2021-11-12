@@ -1,0 +1,52 @@
+{
+  "name": "bootstrap-select",
+  "description": "The jQuery plugin that brings select elements into the 21st century with intuitive multiselection, searching, and much more.",
+  "main": [
+    "less/bootstrap-select.less",
+    "dist/css/bootstrap-select.css",
+    "dist/js/bootstrap-select.js"
+  ],
+  "homepage": "https://developer.snapappointments.com/bootstrap-select",
+  "authors": [
+    {
+      "name": "Casey Holzer",
+      "homepage": "https://github.com/caseyjhol"
+    },
+    {
+      "name": "Silvio Moreto",
+      "homepage": "https://github.com/silviomoreto"
+    },
+    {
+      "name": "SnapAppointments, LLC",
+      "homepage": "https://snapappointments.com"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/snapappointments/bootstrap-select.git"
+  },
+  "keywords": [
+    "javascript",
+    "jquery",
+    "form",
+    "bootstrap",
+    "dropdown",
+    "select",
+    "replacement"
+  ],
+  "dependencies": {
+    "jquery": "1.9.1 - 3",
+    "bootstrap": ">=3.0.0"
+  },
+  "license": "MIT",
+  "ignore": [
+    ".gitignore",
+    "CONTRIBUTING.md",
+    "Gruntfile.js",
+    "README.md",
+    "composer.json",
+    "package.json",
+    "test.html",
+    "docs"
+  ]
+}

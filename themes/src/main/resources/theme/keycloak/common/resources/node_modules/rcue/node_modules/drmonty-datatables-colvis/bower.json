@@ -1,0 +1,15 @@
+{
+    "name": "drmonty-datatables-colvis",
+    "description": "End user column visibility options plug-in for DataTables",
+    "homepage": "http://datatables.net",
+    "version": "1.1.2",
+    "dependencies": {
+        "jquery": ">=1.7.0"
+    },
+    "main": "js/dataTables.colVis.js",
+    "ignore": [
+        "component.json",
+        "package.json",
+        "composer.json"
+    ]
+}

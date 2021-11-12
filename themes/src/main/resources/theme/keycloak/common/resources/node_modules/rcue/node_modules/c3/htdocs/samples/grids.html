@@ -1,0 +1,111 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="/css/c3.css">
+  </head>
+  <body>
+    <div id="chart1"></div>
+    <div id="chart2"></div>
+    <div id="chart3"></div>
+    <div id="chart4"></div>
+    <div id="chart5"></div>
+    <div id="chart6"></div>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/js/c3.js"></script>
+    <script>
+
+      var smallData = [['sample', 30, 200, 100, 400, 150, 250]],
+          bigData = [['sample', 30, 200, 100, 400, 150, 250, 30, 200, 100, 400, 150, 250]];
+
+      var chart1 = c3.generate({
+        bindto: '#chart1',
+        data: {
+          columns: smallData
+        },
+        grid: {
+          x: {
+            show: true
+          },
+        }
+      });
+
+      c3.generate({
+        bindto: '#chart2',
+        data: {
+          columns: smallData
+        },
+        grid: {
+          y: {
+            show: true
+          }
+        }
+      });
+
+      c3.generate({
+        bindto: '#chart3',
+        data: {
+          columns: smallData
+        },
+        axis: {
+          rotated: true,
+        },
+        grid: {
+          x: {
+            show: true
+          },
+        }
+      });
+
+      c3.generate({
+        bindto: '#chart4',
+        data: {
+          columns: smallData
+        },
+        axis: {
+          rotated: true,
+        },
+        grid: {
+          y: {
+            show: true
+          }
+        }
+      });
+
+      c3.generate({
+        bindto: '#chart5',
+        data: {
+          columns: bigData
+        },
+        grid: {
+          x: {
+            show: true
+          },
+          y: {
+            show: true
+          }
+        }
+      });
+
+      c3.generate({
+        bindto: '#chart6',
+        data: {
+          columns: bigData
+        },
+        axis: {
+          x: {
+            type: 'category'
+          }
+        },
+        grid: {
+          x: {
+            show: true
+          },
+          y: {
+            show: true
+          }
+        }
+      });
+
+    </script>
+  </body>
+</html>

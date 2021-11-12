@@ -1,0 +1,100 @@
+body {
+    padding-top: 56px;
+}
+
+h1[id]:before, h2[id]:before, h3[id]:before, h4[id]:before, h5[id]:before, h6[id]:before {
+    content: "";
+    display: block;
+    margin-top: -75px;
+    height: 75px;
+}
+
+h2 code, h3 code, h4 code {
+    background-color: inherit;
+}
+
+ul.nav li.main {
+    font-weight: bold;
+    width: 100%;
+}
+
+.container > .row > .col-lg-3 {
+    padding-left: 0;
+}
+
+.container > .row > .col-lg-9 {
+    padding-bottom: 100px;
+}
+
+div.source-links {
+    float: right;
+}
+
+/*
+ * Side navigation
+ *
+ * Scrollspy and affixed enhanced navigation to highlight sections and secondary
+ * sections of docs content.
+ */
+
+/* By default it's not affixed in mobile views, so undo that */
+.bs-sidebar {
+    position: static;
+}
+
+.bs-sidebar.well {
+    padding: 0;
+}
+
+/* First level of nav */
+.bs-sidenav {
+    margin-top: 30px;
+    margin-bottom: 30px;
+    padding-top:    10px;
+    padding-bottom: 10px;
+    border-radius: 5px;
+}
+
+/* All levels of nav */
+.bs-sidebar .nav > li > a {
+    display: block;
+    padding: 5px 20px;
+    z-index: 1;
+}
+.bs-sidebar .nav > li > a:hover,
+.bs-sidebar .nav > li > a:focus {
+    text-decoration: none;
+    border-right: 1px solid;
+}
+.bs-sidebar .nav .nav-link.active,
+.bs-sidebar .nav .nav-link.active:hover,
+.bs-sidebar .nav .nav-link.active:focus {
+    font-weight: bold;
+    background-color: transparent;
+    border-right: 1px solid;
+}
+
+/* Nav: second level (shown on .active) */
+.bs-sidebar .nav .nav {
+    display: none; /* Hide by default, but at >768px, show it */
+    margin-bottom: 8px;
+}
+.bs-sidebar .nav .nav > li > a {
+    padding-top:    3px;
+    padding-bottom: 3px;
+    padding-left: 30px;
+    font-size: 90%;
+}
+
+/* Show and affix the side nav when space allows it */
+@media (min-width: 992px) {
+    .bs-sidebar .nav-link.active + .nav {
+        display: block;
+    }
+    /* Widen the fixed sidebar */
+    .bs-sidebar {
+        position: sticky; /* Undo the static from mobile first approach */
+        top: 80px;
+    }
+
+}

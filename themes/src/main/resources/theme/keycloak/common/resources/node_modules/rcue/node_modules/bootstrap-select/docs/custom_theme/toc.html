@@ -1,0 +1,16 @@
+<div class="bs-sidebar hidden-print" role="complementary" id="sidebar">
+    <ul class="nav bs-sidenav">
+    {% if page %}  
+    {% for toc_item in page.toc %}
+        <li class="nav-item main">
+        	<a class="nav-link {% if toc_item.active %}active{% endif %}" href="{{ toc_item.url }}">{{ toc_item.title }}</a>
+        	<ul class="nav">
+	        {% for toc_item in toc_item.children %}
+	            <li class="nav-item"><a class="nav-link" href="{{ toc_item.url }}">{{ toc_item.title }}</a></li>
+	        {% endfor %}
+	    	</ul>
+        </li>
+    {% endfor %}
+    {% endif %}
+    </ul>
+</div>

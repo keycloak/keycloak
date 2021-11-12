@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        {%- block site_meta %}
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        {% if config.site_description %}<meta name="description" content="{{ config.site_description }}">{% endif %}
+        {% if config.site_author %}<meta name="author" content="{{ config.site_author }}">{% endif %}
+        {% if page.canonical_url %}<link rel="canonical" href="{{ page.canonical_url }}">{% endif %}
+        <link rel="shortcut icon" href="{{ base_url }}/img/favicon.ico">
+        {%- endblock %}
+
+        {%- block htmltitle %}
+        <title>{% if page and page.title %}{{ page.title }} - {% endif %}{{ config.site_name }}</title>
+        {%- endblock %}
+
+        {%- block styles %}
+        <link href="{{ base_url }}/css/bootstrap-3.3.7.min.css" rel="stylesheet">
+        <link href="{{ base_url }}/css/font-awesome-4.0.3.css" rel="stylesheet">
+        <link rel="stylesheet" href="{{ base_url }}/css/highlight.css">
+        <link href="{{ base_url }}/css/base.css" rel="stylesheet">
+        {%- for path in extra_css %}
+        <link href="{{ path }}" rel="stylesheet">
+        {%- endfor %}
+        {%- endblock %}
+
+        {%- block libs %}
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.3/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+
+        <script src="{{ base_url }}/js/jquery-1.10.2.min.js"></script>
+        <script src="{{ base_url }}/js/bootstrap-3.3.7.min.js"></script>
+        <script src="{{ base_url }}/js/highlight.pack.js"></script>
+        {%- endblock %}
+
+        {%- block analytics %}
+        {% if config.google_analytics %}
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+            ga('create', '{{ config.google_analytics[0] }}', '{{ config.google_analytics[1] }}');
+            ga('send', 'pageview');
+        </script>
+        {% endif %}
+        {%- endblock %}
+
+        {%- block extrahead %} {% endblock %}
+    </head>
+
+    <body>
+
+        {% include "nav.html" %}
+
+        <div class="container">
+            {%- block content %}
+                <div class="col-md-3">{% include "toc.html" %}</div>
+                <div class="col-md-9" role="main">{% include "content.html" %}</div>
+            {%- endblock %}
+        </div>
+
+    <footer class="col-md-12">
+        {%- block footer %}
+        <hr>
+        {% if config.copyright %}
+        <center>{{ config.copyright }}</center>
+        {% endif %}
+        <center>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</center>
+        {%- endblock %}
+    </footer>
+
+        {%- block scripts %}
+        <script src="{{ base_url }}/js/base.js"></script>
+        {%- for path in extra_javascript %}
+        <script src="{{ path }}"></script>
+        {%- endfor %}
+        {%- endblock %}
+    </body>
+</html>

@@ -1,0 +1,9 @@
+{% if page and page.meta and page.meta.source %}
+<div class="source-links">
+{% for filename in page.meta.source %}
+    <span class="label label-primary">{{ filename }}</span>
+{% endfor %}
+</div>
+{% endif %}
+
+{% if page and page.content %}{{ page.content }}{% endif %}

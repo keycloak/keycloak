@@ -1,0 +1,35 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="/css/c3.css">
+  </head>
+  <body>
+    <div id="chart"></div>
+
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/js/c3.js"></script>
+    <script>
+      var chart = c3.generate({
+        data: {
+          x: 'x',
+          columns: [
+            ['x', '2013-10-31', '2013-11-30', '2013-12-31', '2014-01-31', '2014-02-28'],
+//            ['x', 30, 70, 150, 200, 350],
+            ['sample', 30, 200, 100, 400, 150],
+            ['sample2', 130, 300, 200, 500, 250]
+          ]
+        },
+        axis : {
+          x : {
+            type : 'timeseries',
+            tick: {
+              fit: true
+            }
+          }
+        },
+        subchart: {
+//          show: true
+        }
+      });
+    </script>
+  </body>
+</html>

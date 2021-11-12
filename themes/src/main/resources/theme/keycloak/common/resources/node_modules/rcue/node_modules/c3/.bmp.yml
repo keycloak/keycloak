@@ -1,0 +1,7 @@
+---
+version: 0.4.23
+commit: 'chore(version): bump to v%.%.%'
+files:
+  src/core.js: 'version: "%.%.%"'
+  package.json: '"version": "%.%.%"'
+  component.json: '"version": "%.%.%"'

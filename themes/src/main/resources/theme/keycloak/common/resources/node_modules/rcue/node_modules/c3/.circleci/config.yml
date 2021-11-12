@@ -1,0 +1,26 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/working_directory
+    docker:
+      - image: circleci/node:6-browsers
+        env:
+          - DISPLAY=:99
+          - CHROME_BIN=/usr/bin/google-chrome
+    steps:
+      - checkout
+      - run:
+          name: System information
+          command: |
+            echo "node $(node -v)"
+            echo "npm v$(npm --version)"
+            echo "$(google-chrome --version)"
+      - restore_cache:
+          key: v1-npm-dependencies-{{ .Branch }}-{{ checksum "package.json" }}
+      - run: npm install
+      - save_cache:
+          key: v1-npm-dependencies-{{ .Branch }}-{{ checksum "package.json" }}
+          paths:
+            - ./node_modules
+      - run: npm test
+      - run: npm run codecov

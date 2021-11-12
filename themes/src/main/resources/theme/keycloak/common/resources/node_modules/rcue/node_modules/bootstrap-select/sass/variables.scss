@@ -1,0 +1,17 @@
+$color-red-error: rgb(185, 74, 72) !default;
+$color-green-success: #28a745;
+$color-grey-arrow: rgba(204, 204, 204, 0.2) !default;
+
+$width-default: 220px !default; // 3 960px-grid columns
+
+$zindex-select-dropdown: 1060 !default; // must be higher than a modal background (1050)
+
+//** Placeholder text color
+$input-color-placeholder: #999 !default;
+$input-alt-color-placeholder: rgba(255, 255, 255, 0.5) !default;
+
+$input-padding-y-sm: .25rem !default;
+$input-padding-x-sm: .5rem !default;
+
+$input-padding-y-lg: 0.5rem !default;
+$input-padding-x-lg: 1rem !default;

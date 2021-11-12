@@ -1,0 +1,33 @@
+{
+  "name": "snapappointments/bootstrap-select",
+  "description": "The jQuery plugin that brings select elements into the 21st century with intuitive multiselection, searching, and much more. Now with Bootstrap 4 support.",
+  "keywords": [
+    "javascript",
+    "jquery",
+    "form",
+    "bootstrap",
+    "dropdown",
+    "select",
+    "replacement"
+  ],
+  "homepage": "https://developer.snapappointments.com/bootstrap-select",
+  "authors": [
+    {
+      "name": "Casey Holzer",
+      "homepage": "https://github.com/caseyjhol"
+    },
+    {
+      "name": "Silvio Moreto",
+      "homepage": "https://github.com/silviomoreto"
+    },
+    {
+      "name": "SnapAppointments, LLC",
+      "homepage": "https://snapappointments.com"
+    }
+  ],
+  "license": "MIT",
+  "suggest": {
+    "components/jquery": "1.9.1 - 3",
+    "twbs/bootstrap": ">=3.0.0"
+  }
+}

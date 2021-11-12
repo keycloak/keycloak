@@ -1,0 +1,67 @@
+doctype html
+html(lang='en')
+  head
+    meta(charset='utf-8')
+    meta(http-equiv='x-ua-Compatible' content='ie=edge')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    meta(name='description', content=description)
+    meta(name='author', content='Mattia Larentis, Emanuele Marchi and Peter Stein')
+    title #{title} · #{description}
+    link(href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css' rel='stylesheet')
+    link(href='css/highlight.css' rel='stylesheet')
+    link(href="https://unpkg.com/bootstrap-switch/dist/css/bootstrap3/bootstrap-switch.css" rel='stylesheet')
+    link(href='https://getbootstrap.com/assets/css/docs.min.css' rel='stylesheet')
+    link(href='css/main.css' rel='stylesheet')
+  body
+    a(href='https://github.com/Bttstrp/bootstrap-switch', id='github')
+      img(src='https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png', alt='Fork me on GitHub')
+
+    header.navbar.navbar-static-top.bs-docs-nav(role='banner')
+      .container
+        .navbar-header
+          button.navbar-toggle(type='button', data-toggle='collapse', data-target='#collapse')
+            span.sr-only Toggle navigation
+            span.icon-bar
+            span.icon-bar
+            span.icon-bar
+          a.navbar-brand(href='../')= title
+        nav#collapse.collapse.navbar-collapse.bs-navbar-collapse(role='navigation')
+          ul.nav.navbar-nav
+            li: a(href='https://github.com/Bttstrp/bootstrap-switch/archive/master.zip', data-toggle='dropdown') Download
+            li: a(href='examples.html') Examples
+            li.dropdown
+              a(href='#', data-toggle='dropdown')
+                | Documentation
+                = ' '
+                span.caret
+              ul.dropdown-menu
+                li: a(href='/options.html') Options
+                li: a(href='/methods.html') Methods
+                li: a(href='/events.html') Events
+                li.divider(role='presentation')
+                li: a(href='/documentation-2.html') Documentation (v2.0.1)
+            li: a(href='https://github.com/Bttstrp/bootstrap-switch/issues') Bug reports
+
+    main#content(role='main')
+      != yield
+
+    footer.bs-docs-footer
+      .container
+        p
+          | Code licensed under
+          = ' '
+          a(href='https://www.apache.org/licenses/LICENSE-2.0', target='_blank') Apache License, Version 2.0
+          br
+          | Created by
+          = ' '
+          a(href='https://github.com/nostalgiaz', target='_blank') Mattia Larentis
+          br
+          | Mantained by
+          = ' '
+          a(href='https://github.com/lostcrew', target='_blank') Emanuele Marchi
+
+    script(src='https://code.jquery.com/jquery-3.1.1.min.js')
+    script(src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js')
+    script(src='js/highlight.js')
+    script(src="https://unpkg.com/bootstrap-switch")
+    script(src='js/main.js')
