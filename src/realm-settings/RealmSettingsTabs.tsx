@@ -51,6 +51,7 @@ import { HelpItem } from "../components/help-enabler/HelpItem";
 import { DEFAULT_LOCALE } from "../i18n";
 import { toDashboard } from "../dashboard/routes/Dashboard";
 import environment from "../environment";
+import { UserProfileTab } from "./UserProfileTab";
 
 type RealmSettingsHeaderProps = {
   onChange: (value: boolean) => void;
@@ -437,6 +438,15 @@ export const RealmSettingsTabs = ({
                   <PoliciesTab />
                 </Tab>
               </Tabs>
+            </Tab>
+            <Tab
+              eventKey="userProfile"
+              data-testid="rs-user-profile-tab"
+              title={
+                <TabTitleText>{t("realm-settings:userProfile")}</TabTitleText>
+              }
+            >
+              <UserProfileTab />
             </Tab>
           </KeycloakTabs>
         </FormProvider>
