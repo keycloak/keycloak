@@ -42,9 +42,9 @@
 
                 <div class="${properties.kcFormButtonsClass!}">
                     <div class="${properties.kcFormButtonsWrapperClass!}">
-                        <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" name="login" id="kc-login" type="submit" value="${msg("doContinue")}"/>
+                        <button  id="kc-login" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" type="submit" name="login">${msg("doContinue")}</button>
                         <#if x509.formData.isUserEnabled??>
-                            <input class="${properties.kcButtonClass!} ${properties.kcButtonLinkClass!} ${properties.kcButtonLargeClass!}" name="cancel" id="kc-cancel" type="submit" value="${msg("doIgnore")}"/>
+                            <button  id="kc-cancel" class="${properties.kcButtonClass!} ${properties.kcButtonSecondaryClass!}" type="submit" name="cancel">${msg("doIgnore")}</button>
                         </#if>
                     </div>
                 </div>
