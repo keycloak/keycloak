@@ -40,11 +40,13 @@ import org.springframework.context.annotation.Configuration;
  *
  * @author <a href="mailto:jimmidyson@gmail.com">Jimmi Dyson</a>
  * @version $Revision: 1 $
+ * @deprecated Please upgrade to Spring Boot 2.x
  */
 @Configuration
 @ConditionalOnWebApplication
 @EnableConfigurationProperties(KeycloakSpringBootProperties.class)
 @ConditionalOnProperty(value = "keycloak.enabled", matchIfMissing = true)
+@Deprecated
 public class KeycloakAutoConfiguration extends KeycloakBaseSpringBootConfiguration  {
 
     @Bean

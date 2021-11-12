@@ -31,8 +31,8 @@
   <description/>
 
   <properties>
-    <spring-boot.version>2.0.5.RELEASE</spring-boot.version>
-    <spring.version>5.0.2.RELEASE</spring.version>
+    <spring-boot.version>2.4.13</spring-boot.version>
+    <spring.version>5.3.13</spring.version>
     <mockito.version>1.9.5</mockito.version>
   </properties>
 
@@ -77,7 +77,7 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-core</artifactId>
-      <version>5.0.2.RELEASE</version>
+      <version>${spring.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>

@@ -18,7 +18,9 @@ import java.security.Principal;
  *
  * @author <a href="mailto:jmcshan1@gmail.com">James McShane</a>
  * @version $Revision: 1 $
+ * @deprecated Please upgrade to Spring Boot 2.x
  */
+@Deprecated
 public class KeycloakSecurityContextClientRequestInterceptor implements ClientHttpRequestInterceptor {
 
     private static final String AUTHORIZATION_HEADER = "Authorization";

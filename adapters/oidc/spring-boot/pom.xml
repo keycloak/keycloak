@@ -28,7 +28,7 @@
 
   <artifactId>keycloak-spring-boot-adapter</artifactId>
   <name>Keycloak Spring Boot Integration</name>
-  <description/>
+  <description>Warning: We do not support Spring Boot 1.x anymore. Please upgrade to Spring Boot 2.x</description>
 
   <properties>
     <maven.compiler.target>1.7</maven.compiler.target>

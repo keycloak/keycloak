@@ -39,6 +39,8 @@ import org.keycloak.util.TokenUtil;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.is;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
@@ -221,7 +223,7 @@ public class AssertEvents implements TestRule {
                 .user(defaultUserId())
                 .ipAddress(
                         System.getProperty("auth.server.host", "localhost").contains("localhost")
-                        ? CoreMatchers.anyOf(is(DEFAULT_IP_ADDRESS), is(DEFAULT_IP_ADDRESS_V6), is(DEFAULT_IP_ADDRESS_V6_SHORT))
+                        ? anyOf(is(DEFAULT_IP_ADDRESS), is(DEFAULT_IP_ADDRESS_V6), is(DEFAULT_IP_ADDRESS_V6_SHORT))
                         : Matchers.any(String.class))
                 .session((String) null)
                 .event(event);
