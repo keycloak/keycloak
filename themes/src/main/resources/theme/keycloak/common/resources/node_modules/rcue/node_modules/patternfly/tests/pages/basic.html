@@ -1,0 +1,30 @@
+---
+categories: [Layouts]
+css-extra: false
+layout: layout
+title: Basic
+resource: true
+full-page: true
+url-js-extra: [ '//cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js',
+                '//cdn.datatables.net/select/1.2.0/js/dataTables.select.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/js/bootstrap-select.min.js',
+                '../../dist/js/patternfly.dataTables.pfEmpty.js',
+                '../../dist/js/patternfly.dataTables.pfFilter.js',
+                '../../dist/js/patternfly.dataTables.pfResize.js',
+                '../../dist/js/patternfly.dataTables.pfSelect.js' ]
+weight: 1
+---
+{% include widgets/layouts/navbar-primary.html %}
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-md-12">
+          <ol class="breadcrumb">
+            <li><a href="#">Home</a></li>
+            <li>{{ page.title }}</li>
+          </ol>
+          <h1>{{ page.title }}</h1>
+{% include widgets/table-view/table-view.html %}
+          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum eget eros tincidunt, semper ante nec, dapibus ante.</p>
+        </div><!-- /col -->
+      </div><!-- /row -->
+    </div><!-- /container -->

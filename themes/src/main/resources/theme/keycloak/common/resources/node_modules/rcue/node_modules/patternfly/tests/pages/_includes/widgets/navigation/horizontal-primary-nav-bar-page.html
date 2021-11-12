@@ -1,0 +1,20 @@
+{% if page.notification-drawer %}
+  {% include widgets/layouts/nav-horizontal-notification-drawer.html %}
+{% else %}
+  {% include widgets/navigation/horizontal-primary-nav-bar.html %}
+{% endif %}
+<div class="container-fluid container-cards-pf" id="main">
+{% include widgets/layouts/cards-alt.html %}
+</div>
+<script>
+  $(document).ready(function() {
+    // matchHeight the contents of each .card-pf and then the .card-pf itself
+    $(".row-cards-pf > [class*='col'] > .card-pf .card-pf-title").matchHeight();
+    $(".row-cards-pf > [class*='col'] > .card-pf > .card-pf-body").matchHeight();
+    $(".row-cards-pf > [class*='col'] > .card-pf > .card-pf-footer").matchHeight();
+    $(".row-cards-pf > [class*='col'] > .card-pf").matchHeight();
+
+    // initialize tooltips
+    $('[data-toggle="tooltip"]').tooltip();
+  });
+</script>

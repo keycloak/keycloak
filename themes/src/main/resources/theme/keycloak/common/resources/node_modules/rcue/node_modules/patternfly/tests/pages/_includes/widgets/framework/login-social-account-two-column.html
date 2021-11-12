@@ -1,0 +1,82 @@
+<div class="login-pf-page login-pf-page-accounts">
+          <header class="login-pf-page-header">
+            <img class="login-pf-brand" src="{{site.assets-base}}/{{site.brand-horizontal}}" alt="{{ site.company }} logo" />
+          </header>
+          <div class="card-pf login-pf-accounts">
+              <header class="login-pf-header">
+                <select class="selectpicker">
+                  <option>English</option>
+                  <option>French</option>
+                  <option>Italian</option>
+                </select>
+                <h1>Log In to Your Account</h1>
+              </header>
+                    <section class="login-pf-social-section" role="contentinfo" aria-label="Log in to your patternfly account">
+                    <form>
+                      <div class="form-group">
+                        <label class="sr-only" for="exampleInputEmail1">Email address</label>
+                        <input type="email" class="form-control  input-lg" id="exampleInputEmail1" placeholder="Email address">
+                      </div>
+                      <div class="form-group">
+                        <label class="sr-only"  for="exampleInputPassword1">Password
+                        </label>
+                        <input type="password" class="form-control input-lg" id="exampleInputPassword1" placeholder="Password">
+                      </div>
+                      <div class="login-pf-settings">
+                            <label class="checkbox-label">
+                              <input type="checkbox"> Keep me logged in for 30 days
+                            </label>
+                            <a href="#">Forgot password?</a>
+                      </div>
+                      <button type="submit" class="btn btn-primary btn-block btn-lg">Log In</button>
+                    </form>
+                </section><!--login-pf-section-->
+                <section class="login-pf-social-section" role="contentinfo" aria-label="Log in with third party account">
+                  <ul class="login-pf-social login-pf-social-double-col list-unstyled">
+                    <li class="login-pf-social-link"><a href="#"><img src="{{site.assets-base}}/img/google-logo.svg" alt="Google account login">Google</a></li>
+                    <li class="login-pf-social-link"><a href="#"><img src="{{site.assets-base}}/img/github-logo.svg" alt="github account login">Github</a></li>
+                    <li class="login-pf-social-link"><a href="#"><img src="{{site.assets-base}}/img/facebook-logo.svg" alt="Facebook account login">Facebook</a></li>
+                    <li class="login-pf-social-link"><a href="#"><img src="{{site.assets-base}}/img/twitter-logo.svg" alt="Twitter account login">Twitter</a></li>
+                    <li class="login-pf-social-link"><a href="#"><img src="{{site.assets-base}}/img/linkedin-logo.svg" alt="LinkIn account login">LinkIn</a></li>
+                    <li class="login-pf-social-link"><a href="#"><img src="{{site.assets-base}}/img/stack-exchange-logo.svg" alt="Stack Exchange logo">Stack Exchange</a></li>
+                    <li class="login-pf-social-link"><a href="#"><img src="{{site.assets-base}}/img/open-id-logo.svg" alt="Open ID account login">Open ID</a></li>
+                    <li class="login-pf-social-link"><a href="#"><img src="{{site.assets-base}}/img/instagram-logo.png" alt="Instagram account login">Instagram</a></li>
+                    <li class="login-pf-social-link login-pf-social-link-more"><a href="#"><img src="{{site.assets-base}}/img/git-logo.svg" alt="Git account login">Git</a></li>
+                    <li class="login-pf-social-link login-pf-social-link-more"><a href="#"><img src="{{site.assets-base}}/img/dropbox-logo.svg" alt="dropbox account login">Dropbox</a></li>
+                    <li class="login-pf-social-link login-pf-social-link-more"><a href="#"><img src="{{site.assets-base}}/img/fedora-logo.png" alt="fedora account login">Fedora</a></li>
+                    <li class="login-pf-social-link login-pf-social-link-more"><a href="#"><img src="{{site.assets-base}}/img/skype-logo.svg" alt="skype account logingit ">Skype</a></li>
+                  </ul>
+                  <button type="button" id="socialAccountsToggle" class="btn btn-link login-pf-social-toggle">More<span class="caret"></span></button>
+              </section><!--login-pf-section-->
+                <p class="login-pf-signup">Need an account?<a href="#">Sign up</a></p>
+        </div><!-- card -->
+        <div class="row">
+          <div class="col-md-6 col-md-offset-3">
+            <footer class="login-pf-page-footer">
+              <ul class="login-pf-page-footer-links list-unstyled">
+                <li><a class="login-pf-page-footer-link" href="#">Terms of Use</a></li>
+                <li><a class="login-pf-page-footer-link" href="#">Help</a></li>
+                <li><a class="login-pf-page-footer-link" href="#">Privacy Policy</a></li>
+              </ul>
+            </footer>
+          </div>
+        </div>
+
+</div><!-- login-pf-page -->
+<script>
+  $("#socialAccountsToggle").on("click", function(e) {
+    var $toggle = $(e.target);
+    var text = $toggle.contents().first()[0];
+    var socialContainer = $('.login-pf-social-section > .login-pf-social');
+
+    if ($toggle.hasClass('login-pf-social-toggle-active')) {
+      $toggle.removeClass('login-pf-social-toggle-active');
+      text.textContent = 'More';
+      socialContainer.removeClass('login-pf-social-all');
+    } else {
+      $toggle.addClass('login-pf-social-toggle-active');
+      text.textContent = 'Less';
+      socialContainer.addClass('login-pf-social-all');
+    }
+  });
+</script>

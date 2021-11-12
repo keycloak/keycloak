@@ -1,0 +1,33 @@
+<div id="{{include.id}}"></div>
+<script>
+  var c3ChartDefaults = $().c3ChartDefaults();
+
+  var chartUrls = [
+    'https://www.gogole.com',
+    'https://www.yahoo.com',
+    'https://www.bing.com/',
+    'https://duckduckgo.com/'
+  ];
+  var categories = ['Q1', 'Q2', 'Q3', 'Q4'];
+  var columnsData = [
+    ['data1', 400, 360, 320, 175]
+  ];
+
+  var verticalBarChartConfig = $().c3ChartDefaults().getDefaultBarConfig(categories);
+  verticalBarChartConfig.bindto = '#{{include.id}}';
+  verticalBarChartConfig.axis = {
+    x: {
+      categories: categories,
+      type: 'category'
+    }
+  };
+  verticalBarChartConfig.data = {
+    type: 'bar',
+    columns: columnsData,
+    // optional drilldown behavior
+    onclick: function (d, element) {
+      window.location = chartUrls[d.index];
+    }
+  };
+  var verticalBarChart = c3.generate(verticalBarChartConfig);
+</script>

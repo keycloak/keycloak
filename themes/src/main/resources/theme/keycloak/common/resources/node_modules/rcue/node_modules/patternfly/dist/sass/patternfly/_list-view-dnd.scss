@@ -1,0 +1,53 @@
+//
+// List View Drag and Drop
+// See: https://github.com/marceljuenemann/angular-drag-and-drop-lists
+// --------------------------------------------------
+
+.list-view-pf-dnd {
+  // Override dnd styles
+  .dndDragging {
+    &.drag-original {
+      display: none;
+      // Show when dragging original list items
+      .list-view-pf-dnd-original-items {
+        display: block;
+      }
+    }
+    // Show dragable list items during move operation
+    .list-view-pf-dnd-drag-items {
+      display: inline-block;
+    }
+    // Hide original list items during dnd move operation
+    .list-view-pf-dnd-original-items {
+      display: none;
+    }
+  }
+  // Override dnd placeholder element for dragging list items to
+  .dndPlaceholder {
+    background-color: $color-pf-black-200;
+    padding: 20px 0;
+  }
+  // A handle decoration shown to left of each list items row
+  .list-group-item-header {
+    margin-left: -10px;
+    &:before {
+      background-image: linear-gradient(to bottom, $color-pf-blue-400 60%, $color-pf-white 0%);
+      background-position: left;
+      background-repeat: repeat-y;
+      background-size: 2px 5px;
+      border: 4px solid $color-pf-blue-400;
+      border-color: $color-pf-blue-500;
+      content: "";
+      height: 55px;
+      left: 4px;
+      position: absolute;
+      top: 5px;
+      width: 10px;
+    }
+  }
+}
+
+// Always hide dragable list items until shown during dnd move operation
+.list-view-pf-dnd-drag-items {
+  display: none;
+}

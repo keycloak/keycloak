@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<!--[if IE 9]><html lang="en-us" class="ie9"><![endif]-->
+<!--[if gt IE 9]><!-->
+<html lang="en-us">
+<!--<![endif]-->
+  <head>
+    <title>Search - PatternFly</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="../img/favicon.ico">
+    <!-- iPad retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../img/apple-touch-icon-precomposed-152.png">
+    <!-- iPad retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="../img/apple-touch-icon-precomposed-144.png">
+    <!-- iPad non-retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="76x76" href="../img/apple-touch-icon-precomposed-76.png">
+    <!-- iPad non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="../img/apple-touch-icon-precomposed-72.png">
+    <!-- iPhone 6 Plus icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="120x120" href="../img/apple-touch-icon-precomposed-180.png">
+    <!-- iPhone retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../img/apple-touch-icon-precomposed-114.png">
+    <!-- iPhone non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="57x57" href="../img/apple-touch-icon-precomposed-57.png">
+    <link rel="stylesheet" href="../css/patternfly.min.css" >
+    <link rel="stylesheet" href="../css/patternfly-additions.min.css" >
+      <link href="tests.css" rel="stylesheet" media="screen, print">
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="../js/patternfly.min.js"></script>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="page-header">
+        <h1>Search</h1>
+      </div>
+      <div class="alert alert-warning">
+        <span class="pficon pficon-warning-triangle-o"></span>
+        These examples are included for development testing purposes.  For official documentation, see <a href="https://www.patternfly.org" class="alert-link">https://www.patternfly.org</a> and <a href="http://getbootstrap.com" class="alert-link">http://getbootstrap.com</a>.
+      </div>
+      <hr>
+      <form role="form" class="search-pf has-button">
+        <div class="form-group has-clear">
+          <div class="search-pf-input-group">
+            <label for="search1" class="sr-only">Search</label>
+            <input id="search1" type="search" class="form-control" placeholder="Search">
+            <button type="button" class="clear" aria-hidden="true"><span class="pficon pficon-close"></span></button>
+          </div>
+        </div>
+        <div class="form-group">
+          <button class="btn btn-default" type="submit"><span class="fa fa-search"></span></button>
+        </div>
+      </form>
+      <h2>Pre-populated</h2>
+      <form role="form" class="search-pf has-button">
+        <div class="form-group has-clear">
+          <div class="search-pf-input-group">
+            <label for="search2" class="sr-only">Search</label>
+            <input id="search2" type="search" class="form-control" placeholder="Search" value="Search term">
+            <button type="button" class="clear" aria-hidden="true"><span class="pficon pficon-close"></span></button>
+          </div>
+        </div>
+        <div class="form-group">
+          <button class="btn btn-default" type="submit"><span class="fa fa-search"></span></button>
+        </div>
+      </form>
+      <h2>Without Button</h2>
+      <form role="form" class="search-pf">
+        <div class="form-group has-clear">
+          <div class="search-pf-input-group">
+            <label for="search3" class="sr-only">Search</label>
+            <input id="search3" type="search" class="form-control" placeholder="Search">
+            <button type="button" class="clear" aria-hidden="true"><span class="pficon pficon-close"></span></button>
+          </div>
+        </div>
+      </form>
+      <h2>Without Clear</h2>
+      <form role="form" class="search-pf has-button">
+        <div class="form-group">
+          <div class="search-pf-input-group">
+            <label for="search4" class="sr-only">Search</label>
+            <input id="search4" type="search" class="form-control" placeholder="Search">
+          </div>
+        </div>
+        <div class="form-group">
+          <button class="btn btn-default" type="submit"><span class="fa fa-search"></span></button>
+        </div>
+      </form>
+      <h2>Sizes</h2>
+      <form role="form" class="search-pf has-button">
+        <div class="form-group has-clear">
+          <div class="search-pf-input-group">
+            <label for="search-lg" class="sr-only">Search</label>
+            <input id="search-lg" type="search" class="form-control input-lg" placeholder="Search">
+            <button type="button" class="clear" aria-hidden="true"><span class="pficon pficon-close"></span></button>
+          </div>
+        </div>
+        <div class="form-group">
+          <button class="btn btn-default btn-lg" type="submit"><span class="fa fa-search"></span></button>
+        </div>
+      </form>
+      <br />
+      <form role="form" class="search-pf has-button">
+        <div class="form-group has-clear">
+          <div class="search-pf-input-group">
+            <label for="search5" class="sr-only">Search</label>
+            <input id="search5" type="search" class="form-control" placeholder="Search">
+            <button type="button" class="clear" aria-hidden="true"><span class="pficon pficon-close"></span></button>
+          </div>
+        </div>
+        <div class="form-group">
+          <button class="btn btn-default" type="submit"><span class="fa fa-search"></span></button>
+        </div>
+      </form>
+      <br />
+      <form role="form" class="search-pf has-button">
+        <div class="form-group has-clear">
+          <div class="search-pf-input-group">
+            <label for="search-sm" class="sr-only">Search</label>
+            <input id="search-sm" type="search" class="form-control input-sm" placeholder="Search">
+            <button type="button" class="clear" aria-hidden="true"><span class="pficon pficon-close"></span></button>
+          </div>
+        </div>
+        <div class="form-group">
+          <button class="btn btn-default btn-sm" type="submit"><span class="fa fa-search"></span></button>
+        </div>
+      </form>
+      <h2>Within the grid</h2>
+      <div class="row">
+        <div class="col-md-6">
+          <form role="form" class="search-pf has-button">
+            <div class="form-group has-clear">
+              <div class="search-pf-input-group">
+                <label for="search6" class="sr-only">Search</label>
+                <input id="search6" type="search" class="form-control" placeholder="Search">
+                <button type="button" class="clear" aria-hidden="true"><span class="pficon pficon-close"></span></button>
+              </div>
+            </div>
+            <div class="form-group">
+              <button class="btn btn-default" type="submit"><span class="fa fa-search"></span></button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <script>
+        (function($) {
+          $(document).ready(function() {
+            // Hide the clear button if the search input is empty
+            $(".search-pf .has-clear .clear").each(function() {
+              if (!$(this).prev('.form-control').val()) {
+                $(this).hide();
+              }
+            });
+            // Show the clear button upon entering text in the search input
+            $(".search-pf .has-clear .form-control").keyup(function () {
+              var t = $(this);
+              t.next('button').toggle(Boolean(t.val()));
+            });
+            // Upon clicking the clear button, empty the entered text and hide the clear button
+            $(".search-pf .has-clear .clear").click(function () {
+              $(this).prev('.form-control').val('').focus();
+              $(this).hide();
+            });
+          });
+        })(jQuery);
+      </script>
+    </div><!-- /container -->
+  </body>
+</html>
