@@ -61,6 +61,7 @@ public class KeycloakDeployment {
     protected String registerNodeUrl;
     protected String unregisterNodeUrl;
     protected String jwksUrl;
+    protected String tokenIntrospectionUrl;
     protected String principalAttribute = "sub";
 
     protected String resourceName;
@@ -86,6 +87,8 @@ public class KeycloakDeployment {
     protected String corsExposedHeaders;
     protected boolean exposeToken;
     protected boolean alwaysRefreshToken;
+    // https://tools.ietf.org/html/rfc7662
+    protected boolean onlineTokenIntrospection;
     protected boolean registerNodeAtStartup;
     protected int registerNodePeriod;
     protected boolean turnOffChangeSessionIdOnLogin;
@@ -150,6 +153,7 @@ public class KeycloakDeployment {
         registerNodeUrl = null;
         unregisterNodeUrl = null;
         jwksUrl = null;
+        tokenIntrospectionUrl = null;
 
         URI authServerUri = URI.create(authServerBaseUrl);
 
@@ -195,6 +199,7 @@ public class KeycloakDeployment {
                             .path(ServiceUrlConstants.CLIENTS_MANAGEMENT_UNREGISTER_NODE_PATH)
                             .build(getRealm()).toString();
                         jwksUrl = config.getJwksUri();
+                        tokenIntrospectionUrl = config.getIntrospectionEndpoint();
 
                         log.infov("Loaded URLs from {0}", discoveryUrl);
                     } catch (Exception e) {
@@ -220,6 +225,7 @@ public class KeycloakDeployment {
         registerNodeUrl = authUrlBuilder.clone().path(ServiceUrlConstants.CLIENTS_MANAGEMENT_REGISTER_NODE_PATH).build(getRealm()).toString();
         unregisterNodeUrl = authUrlBuilder.clone().path(ServiceUrlConstants.CLIENTS_MANAGEMENT_UNREGISTER_NODE_PATH).build(getRealm()).toString();
         jwksUrl = authUrlBuilder.clone().path(ServiceUrlConstants.JWKS_URL).build(getRealm()).toString();
+        tokenIntrospectionUrl = authUrlBuilder.clone().path(ServiceUrlConstants.TOKEN_INTROSPECT_PATH).build(getRealm()).toString();
     }
 
     protected OIDCConfigurationRepresentation getOidcConfiguration(String discoveryUrl) throws Exception {
@@ -280,6 +286,11 @@ public class KeycloakDeployment {
     public String getJwksUrl() {
         resolveUrls();
         return jwksUrl;
+    }
+
+    public String getTokenIntrospectionUrl() {
+        resolveUrls();
+        return tokenIntrospectionUrl;
     }
 
     public void setResourceName(String resourceName) {
@@ -481,6 +492,14 @@ public class KeycloakDeployment {
 
     public void setAlwaysRefreshToken(boolean alwaysRefreshToken) {
         this.alwaysRefreshToken = alwaysRefreshToken;
+    }
+
+    public boolean isOnlineTokenIntrospection() {
+        return onlineTokenIntrospection;
+    }
+
+    public void setOnlineTokenIntrospection(boolean onlineTokenIntrospection) {
+        this.onlineTokenIntrospection = onlineTokenIntrospection;
     }
 
     public boolean isRegisterNodeAtStartup() {

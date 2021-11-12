@@ -19,7 +19,7 @@ package org.keycloak.authorization.client.resource;
 
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.representation.ServerConfiguration;
-import org.keycloak.authorization.client.representation.TokenIntrospectionResponse;
+import org.keycloak.representations.TokenIntrospectionResponse;
 import org.keycloak.authorization.client.util.Http;
 import org.keycloak.authorization.client.util.TokenCallable;
 

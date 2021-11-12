@@ -36,7 +36,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
         "connection-pool-size", "socket-timeout-millis", "connection-ttl-millis", "connection-timeout-millis",
         "allow-any-hostname", "disable-trust-manager", "truststore", "truststore-password",
         "client-keystore", "client-keystore-password", "client-key-password",
-        "always-refresh-token",
+        "always-refresh-token","online-token-introspection",
         "register-node-at-startup", "register-node-period", "token-store", "adapter-state-cookie-path", "principal-attribute",
         "proxy-url", "turn-off-change-session-id-on-login", "token-minimum-time-to-live",
         "min-time-between-jwks-requests", "public-key-cache-ttl",
@@ -62,6 +62,8 @@ public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClien
     protected int connectionPoolSize = 20;
     @JsonProperty("always-refresh-token")
     protected boolean alwaysRefreshToken = false;
+    @JsonProperty("online-token-introspection")
+    protected boolean onlineTokenIntrospection = false;
     @JsonProperty("register-node-at-startup")
     protected boolean registerNodeAtStartup = false;
     @JsonProperty("register-node-period")
@@ -180,6 +182,14 @@ public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClien
 
     public void setAlwaysRefreshToken(boolean alwaysRefreshToken) {
         this.alwaysRefreshToken = alwaysRefreshToken;
+    }
+
+    public boolean isOnlineTokenIntrospection() {
+        return onlineTokenIntrospection;
+    }
+
+    public void setOnlineTokenIntrospection(boolean onlineTokenIntrospection) {
+        this.onlineTokenIntrospection = onlineTokenIntrospection;
     }
 
     public boolean isRegisterNodeAtStartup() {

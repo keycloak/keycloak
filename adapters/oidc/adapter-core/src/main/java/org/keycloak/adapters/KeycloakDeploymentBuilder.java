@@ -120,6 +120,7 @@ public class KeycloakDeploymentBuilder {
         deployment.setAutodetectBearerOnly(adapterConfig.isAutodetectBearerOnly());
         deployment.setEnableBasicAuth(adapterConfig.isEnableBasicAuth());
         deployment.setAlwaysRefreshToken(adapterConfig.isAlwaysRefreshToken());
+        deployment.setOnlineTokenIntrospection(adapterConfig.isOnlineTokenIntrospection());
         deployment.setRegisterNodeAtStartup(adapterConfig.isRegisterNodeAtStartup());
         deployment.setRegisterNodePeriod(adapterConfig.getRegisterNodePeriod());
         deployment.setTokenMinimumTimeToLive(adapterConfig.getTokenMinimumTimeToLive());

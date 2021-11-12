@@ -26,6 +26,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
+import org.keycloak.representations.TokenIntrospectionResponse;
 
 import java.io.IOException;
 
@@ -189,6 +190,45 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
 
         return true;
     }
+
+    /**
+     * @return true if refresh or access token could be successfully validated using token introspect endpoint
+     * from https://tools.ietf.org/html/rfc7662
+     */
+    public boolean introspectRelyingPartyToken() {
+
+        if (this.deployment == null || refreshToken == null) return false; // Might be serialized in HttpSession?
+
+        if (!this.getRealm().equals(this.deployment.getRealm())) {
+            // this should not happen, but let's check it anyway
+            return false;
+        }
+
+        if (log.isTraceEnabled()) {
+            log.trace("Introspect RPT");
+        }
+
+        TokenIntrospectionResponse response;
+        try {
+            if (refreshToken != null) {
+                response = ServerRequest.invokeTokenIntrospection(deployment, refreshToken);
+            } else {
+                response = ServerRequest.invokeTokenIntrospection(deployment, tokenString);
+            }
+        } catch (IOException e) {
+            log.error("Introspect token failure", e);
+            return false;
+        } catch (ServerRequest.HttpFailure httpFailure) {
+            log.error("Refresh token failure status: " + httpFailure.getStatus() + " " + httpFailure.getError());
+            return false;
+        }
+        if (log.isTraceEnabled()) {
+            log.trace("received token introspection response");
+        }
+
+        return response.getActive();
+    }
+
 
     public void setAuthorizationContext(AuthorizationContext authorizationContext) {
         this.authorizationContext = authorizationContext;

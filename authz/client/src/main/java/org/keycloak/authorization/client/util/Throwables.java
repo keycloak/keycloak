@@ -19,7 +19,7 @@ package org.keycloak.authorization.client.util;
 import java.util.concurrent.Callable;
 
 import org.keycloak.authorization.client.AuthorizationDeniedException;
-import org.keycloak.authorization.client.representation.TokenIntrospectionResponse;
+import org.keycloak.representations.TokenIntrospectionResponse;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

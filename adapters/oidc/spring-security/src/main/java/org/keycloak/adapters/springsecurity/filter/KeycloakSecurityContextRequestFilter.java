@@ -86,6 +86,14 @@ public class KeycloakSecurityContextRequestFilter extends GenericFilterBean impl
                 }
             }
 
+            if (deployment.isOnlineTokenIntrospection()) {
+                if (refreshableSecurityContext.introspectRelyingPartyToken()) {
+                    request.setAttribute(KeycloakSecurityContext.class.getName(), refreshableSecurityContext);
+                } else {
+                    clearAuthenticationContext();
+                }
+            }
+
             request.setAttribute(KeycloakSecurityContext.class.getName(), keycloakSecurityContext);
         }
 
@@ -101,6 +109,7 @@ public class KeycloakSecurityContextRequestFilter extends GenericFilterBean impl
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
+
 
     private KeycloakSecurityContext getKeycloakSecurityContext() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

@@ -15,7 +15,7 @@
  *  limitations under the License.
  *
  */
-package org.keycloak.authorization.client.representation;
+package org.keycloak.representations;
 
 import java.util.List;
 

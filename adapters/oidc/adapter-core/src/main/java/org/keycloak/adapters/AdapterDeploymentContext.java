@@ -169,6 +169,11 @@ public class AdapterDeploymentContext {
         }
 
         @Override
+        public String getTokenIntrospectionUrl() {
+            return (this.tokenIntrospectionUrl != null) ? this.tokenIntrospectionUrl : delegate.getTokenIntrospectionUrl();
+        }
+
+        @Override
         public String getResourceName() {
             return delegate.getResourceName();
         }
@@ -413,6 +418,17 @@ public class AdapterDeploymentContext {
         public void setAlwaysRefreshToken(boolean alwaysRefreshToken) {
             delegate.setAlwaysRefreshToken(alwaysRefreshToken);
         }
+
+        @Override
+        public boolean isOnlineTokenIntrospection() {
+            return delegate.isOnlineTokenIntrospection();
+        }
+
+        @Override
+        public void setOnlineTokenIntrospection(boolean onlineTokenIntrospection) {
+            delegate.setOnlineTokenIntrospection(onlineTokenIntrospection);
+        }
+
 
         @Override
         public int getRegisterNodePeriod() {

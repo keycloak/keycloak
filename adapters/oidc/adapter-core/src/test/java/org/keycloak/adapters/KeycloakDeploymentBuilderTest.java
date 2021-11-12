@@ -72,6 +72,7 @@ public class KeycloakDeploymentBuilderTest {
         assertEquals(20, ((ThreadSafeClientConnManager) deployment.getClient().getConnectionManager()).getMaxTotal());
         assertEquals(RelativeUrlsUsed.NEVER, deployment.getRelativeUrls());
         assertTrue(deployment.isAlwaysRefreshToken());
+        assertTrue(deployment.isOnlineTokenIntrospection());
         assertTrue(deployment.isRegisterNodeAtStartup());
         assertEquals(1000, deployment.getRegisterNodePeriod());
         assertEquals(TokenStore.COOKIE, deployment.getTokenStore());

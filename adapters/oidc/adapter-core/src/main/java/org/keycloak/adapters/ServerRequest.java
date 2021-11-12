@@ -31,6 +31,7 @@ import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.TokenIntrospectionResponse;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;
@@ -237,6 +238,53 @@ public class ServerRequest {
             }
         }
     }
+
+    public static TokenIntrospectionResponse invokeTokenIntrospection(KeycloakDeployment deployment, String rpt) throws IOException, HttpFailure {
+        List<NameValuePair> formparams = new ArrayList<NameValuePair>();
+        formparams.add(new BasicNameValuePair(OAuth2Constants.TOKEN_TYPE_HINT, OAuth2Constants.REQUESTING_PARTY_TOKEN));
+        formparams.add(new BasicNameValuePair(OAuth2Constants.TOKEN, rpt));
+
+        HttpPost post = new HttpPost(deployment.getTokenIntrospectionUrl());
+        ClientCredentialsProviderUtils.setClientCredentials(deployment, post, formparams);
+
+        UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
+        post.setEntity(form);
+        HttpResponse response = deployment.getClient().execute(post);
+        int status = response.getStatusLine().getStatusCode();
+        HttpEntity entity = response.getEntity();
+        if (status != 200) {
+            error(status, entity);
+        }
+        if (entity == null) {
+            throw new HttpFailure(status, null);
+        }
+        InputStream is = entity.getContent();
+        try {
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            int c;
+            while ((c = is.read()) != -1) {
+                os.write(c);
+            }
+            byte[] bytes = os.toByteArray();
+            String json = new String(bytes);
+            try {
+                return JsonSerialization.readValue(json, TokenIntrospectionResponse.class);
+            } catch (IOException e) {
+                throw new IOException(json, e);
+            }
+        } finally {
+            try {
+                is.close();
+            } catch (IOException ignored) {
+
+            }
+        }
+    }
+
+
+
+
+
 
     public static void invokeRegisterNode(KeycloakDeployment deployment, String host) throws HttpFailure, IOException {
         String registerNodeUrl = deployment.getRegisterNodeUrl();

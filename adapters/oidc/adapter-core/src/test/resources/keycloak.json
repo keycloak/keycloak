@@ -26,6 +26,7 @@
     "client-keystore-password": "storepass",
     "client-key-password": "keypass",
     "always-refresh-token": true,
+    "online-token-introspection": true,
     "register-node-at-startup": true,
     "register-node-period": 1000,
     "token-store": "cookie",

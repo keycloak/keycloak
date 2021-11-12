@@ -50,6 +50,8 @@ public interface OAuth2Constants {
 
     String TOKEN_TYPE = "token_type";
 
+    String TOKEN_TYPE_HINT = "token_type_hint";
+
     String EXPIRES_IN = "expires_in";
 
     String ID_TOKEN = "id_token";
@@ -57,6 +59,8 @@ public interface OAuth2Constants {
     String REFRESH_TOKEN = "refresh_token";
 
     String LOGOUT_TOKEN = "logout_token";
+
+    String REQUESTING_PARTY_TOKEN = "requesting_party_token";
 
     String AUTHORIZATION_CODE = "authorization_code";
 
