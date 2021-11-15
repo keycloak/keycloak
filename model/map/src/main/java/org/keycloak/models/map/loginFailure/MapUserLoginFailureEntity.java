@@ -24,26 +24,17 @@ import java.util.Objects;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapUserLoginFailureEntity implements AbstractEntity, UpdatableEntity {
+public class MapUserLoginFailureEntity extends UpdatableEntity.Impl implements AbstractEntity {
     private String id;
     private String realmId;
     private String userId;
-
-    /**
-     * Flag signalizing that any of the setters has been meaningfully used.
-     */
-    protected boolean updated;
 
     private int failedLoginNotBefore;
     private int numFailures;
     private long lastFailure;
     private String lastIPFailure;
 
-    public MapUserLoginFailureEntity() {
-        this.id = null;
-        this.realmId = null;
-        this.userId = null;
-    }
+    public MapUserLoginFailureEntity() {}
 
     public MapUserLoginFailureEntity(String id, String realmId, String userId) {
         this.id = id;
@@ -57,8 +48,10 @@ public class MapUserLoginFailureEntity implements AbstractEntity, UpdatableEntit
     }
 
     @Override
-    public boolean isUpdated() {
-        return this.updated;
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     public String getRealmId() {

@@ -1,0 +1,11 @@
+#
+# GitLeaks Repo Specific Configuration
+#
+# This allowlist is used to help Red Hat ignore false positives during its code
+# scans.
+
+[allowlist]
+  paths = [
+    '''saml-core/src/test/java/org/keycloak/saml/processing/core/saml/v2/util/AssertionUtilTest.java''',
+    '''testsuite/performance/tests/pom.xml''',
+  ]

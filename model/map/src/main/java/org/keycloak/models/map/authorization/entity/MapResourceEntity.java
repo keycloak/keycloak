@@ -27,9 +27,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-public class MapResourceEntity implements AbstractEntity, UpdatableEntity {
+public class MapResourceEntity extends UpdatableEntity.Impl implements AbstractEntity {
     
-    private final String id;
+    private String id;
     private String name;
     private String displayName;
     private final Set<String> uris = new HashSet<>();
@@ -41,19 +41,23 @@ public class MapResourceEntity implements AbstractEntity, UpdatableEntity {
     private final Set<String> scopeIds = new HashSet<>();
     private final Set<String> policyIds = new HashSet<>();
     private final Map<String, List<String>> attributes = new HashMap<>();
-    private boolean updated = false;
 
     public MapResourceEntity(String id) {
         this.id = id;
     }
 
-    public MapResourceEntity() {
-        this.id = null;
-    }
+    public MapResourceEntity() {}
 
     @Override
     public String getId() {
         return id;
+    }
+
+    @Override
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     public String getName() {
@@ -171,11 +175,6 @@ public class MapResourceEntity implements AbstractEntity, UpdatableEntity {
 
     public void removeAttribute(String name) {
         this.updated |= this.attributes.remove(name) != null;
-    }
-
-    @Override
-    public boolean isUpdated() {
-        return updated;
     }
 
     @Override

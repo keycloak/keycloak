@@ -8,17 +8,21 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -32,6 +36,7 @@ import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.Archive;
+import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.descriptor.api.Descriptor;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 
@@ -40,8 +45,11 @@ import org.keycloak.testsuite.arquillian.SuiteContext;
  */
 public class KeycloakQuarkusServerDeployableContainer implements DeployableContainer<KeycloakQuarkusConfiguration> {
 
-    protected static final Logger log = Logger.getLogger(KeycloakQuarkusServerDeployableContainer.class);
-    
+    private static final Logger log = Logger.getLogger(KeycloakQuarkusServerDeployableContainer.class);
+    public static final String CONF_PERSISTED_PROPERTIES_FILENAME = "data/generated/persisted.properties";
+    public static final String SPI_PROVIDER_PROPERTY_PREFIX = "kc.spi-";
+    public static final String SPI_PROVIDER_PROPERTY_SUFFIX = "-provider";
+
     private KeycloakQuarkusConfiguration configuration;
     private Process container;
     private static AtomicBoolean restart = new AtomicBoolean();
@@ -49,8 +57,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
     @Inject
     private Instance<SuiteContext> suiteContext;
 
-    private boolean forceReaugmentation;
-    private List<String> additionalArgs = Collections.emptyList();
+    private List<String> additionalBuildArgs = Collections.emptyList();
 
     @Override
     public Class<KeycloakQuarkusConfiguration> getConfigurationClass() {
@@ -89,12 +96,27 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
 
     @Override
     public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
-        return null;
+        log.infof("Trying to deploy: " + archive.getName());
+
+        try {
+            deployArchiveToServer(archive);
+            restartServer();
+        } catch (Exception e) {
+            throw new DeploymentException(e.getMessage(),e);
+        }
+
+        return new ProtocolMetaData();
     }
 
     @Override
     public void undeploy(Archive<?> archive) throws DeploymentException {
-
+        File wrkDir = configuration.getProvidersPath().resolve("providers").toFile();
+        try {
+            Files.deleteIfExists(wrkDir.toPath().resolve(archive.getName()));
+            restartServer();
+        } catch (Exception e) {
+            throw new DeploymentException(e.getMessage(),e);
+        }
     }
 
     @Override
@@ -105,6 +127,23 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
     @Override
     public void undeploy(Descriptor descriptor) throws DeploymentException {
 
+    }
+
+    /**
+     * Get the currently configured default provider for the passed spi.
+     * 
+     * @param spi the spi to get the current default provider for (dash-cased)
+     * @return the current configured provider or null if not configured
+     */
+    public String getCurrentlyConfiguredSpiProviderFor(String spi) {
+        try {
+            File persistedPropertiesFile = configuration.getProvidersPath().resolve(CONF_PERSISTED_PROPERTIES_FILENAME).toFile();
+            Properties props = new Properties();
+            props.load(new FileInputStream(persistedPropertiesFile));
+            return props.get(SPI_PROVIDER_PROPERTY_PREFIX + spi + SPI_PROVIDER_PROPERTY_SUFFIX).toString().trim();
+        } catch (IOException e) {
+            return null;
+        }
     }
 
     private Process startContainer() throws IOException {
@@ -120,44 +159,27 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
 
         builder.environment().put("KEYCLOAK_ADMIN", "admin");
         builder.environment().put("KEYCLOAK_ADMIN_PASSWORD", "admin");
-        
+
         if (restart.compareAndSet(false, true)) {
             FileUtils.deleteDirectory(configuration.getProvidersPath().resolve("data").toFile());
         }
 
-        if (isReaugmentBeforeStart()) {
-            List<String> commands = new ArrayList<>(Arrays.asList("./kc.sh", "config", "-Dquarkus.http.root-path=/auth"));
-
-            addAdditionalCommands(commands);
-
-            ProcessBuilder reaugment = new ProcessBuilder(commands);
-
-            reaugment.directory(wrkDir).inheritIO();
-
-            try {
-                log.infof("Re-building the server with the new configuration");
-                reaugment.start().waitFor(10, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                throw new RuntimeException("Timeout while waiting for re-augmentation", e);
-            }
-        }
-
         return builder.start();
-    }
-
-    private boolean isReaugmentBeforeStart() {
-        return configuration.isReaugmentBeforeStart() || forceReaugmentation;
     }
 
     private String[] getProcessCommands() {
         List<String> commands = new ArrayList<>();
 
         commands.add("./kc.sh");
+        commands.add("start");
+        commands.add("-Dquarkus.http.root-path=/auth");
+        commands.add("--auto-build");
+        commands.add("--http-enabled=true");
 
         if (configuration.getDebugPort() > 0) {
             commands.add("--debug");
             commands.add(Integer.toString(configuration.getDebugPort()));
-        } else if (Boolean.valueOf(System.getProperty("auth.server.debug", "false"))) {
+        } else if (Boolean.parseBoolean(System.getProperty("auth.server.debug", "false"))) {
             commands.add("--debug");
             commands.add(System.getProperty("auth.server.debug.port", "5005"));
         }
@@ -170,14 +192,18 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         }
 
         commands.add("--cluster=" + System.getProperty("auth.server.quarkus.cluster.config", "local"));
+        commands.addAll(getAdditionalBuildArgs());
 
-        addAdditionalCommands(commands);
+        if (!containsUserProfileSpiConfiguration(commands)) {
+            // ensure that at least one user profile provider is configured
+            commands.add("--spi-user-profile-provider=declarative-user-profile");
+        }
 
-        return commands.toArray(new String[commands.size()]);
+        return commands.toArray(new String[0]);
     }
 
-    private void addAdditionalCommands(List<String> commands) {
-        commands.addAll(additionalArgs);
+    private boolean containsUserProfileSpiConfiguration(List<String> commands) {
+        return commands.stream().anyMatch(s -> s.startsWith("--spi-user-profile-provider="));
     }
 
     private void waitForReadiness() throws MalformedURLException, LifecycleException {
@@ -272,13 +298,26 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         return TimeUnit.SECONDS.toMillis(configuration.getStartupTimeoutInSeconds());
     }
 
-    public void forceReAugmentation(String... args) {
-        forceReaugmentation = true;
-        additionalArgs = Arrays.asList(args);
+    public void resetConfiguration() {
+        additionalBuildArgs = Collections.emptyList();
     }
 
-    public void resetConfiguration() {
-        additionalArgs = Collections.emptyList();
-        forceReAugmentation();
+    private void deployArchiveToServer(Archive<?> archive) throws IOException {
+        File providersDir = configuration.getProvidersPath().resolve("providers").toFile();
+        InputStream zipStream = archive.as(ZipExporter.class).exportAsInputStream();
+        Files.copy(zipStream, providersDir.toPath().resolve(archive.getName()), StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    public void restartServer() throws Exception {
+        stop();
+        start();
+    }
+
+    public List<String> getAdditionalBuildArgs() {
+        return additionalBuildArgs;
+    }
+
+    public void setAdditionalBuildArgs(List<String> newArgs) {
+        additionalBuildArgs = newArgs;
     }
 }

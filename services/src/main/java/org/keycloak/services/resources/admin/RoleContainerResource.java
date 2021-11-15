@@ -28,7 +28,10 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -52,11 +55,15 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.keycloak.services.ErrorResponseException;
 
 /**
  * @resource Roles
@@ -147,6 +154,46 @@ public class RoleContainerResource extends RoleResource {
                 adminEvent.resource(ResourceType.REALM_ROLE);
             }
 
+            // Handling of nested composite roles for KEYCLOAK-12754
+            if (rep.isComposite() && rep.getComposites() != null) {
+                RoleRepresentation.Composites composites = rep.getComposites();
+
+                Set<String> compositeRealmRoles = composites.getRealm();
+                if (compositeRealmRoles != null && !compositeRealmRoles.isEmpty()) {
+                    Set<RoleModel> realmRoles = new LinkedHashSet<>();
+                    for (String roleName : compositeRealmRoles) {
+                        RoleModel realmRole = realm.getRole(roleName);
+                        if (realmRole == null) {
+                            return ErrorResponse.error("Realm Role with name " + roleName + " does not exist", Response.Status.NOT_FOUND);
+                        }
+                        realmRoles.add(realmRole);
+                    }
+                    RoleUtils.expandCompositeRoles(realmRoles).forEach(role::addCompositeRole);
+                }
+
+                Map<String, List<String>> compositeClientRoles = composites.getClient();
+                if (compositeClientRoles != null && !compositeClientRoles.isEmpty()) {
+                    Set<Map.Entry<String, List<String>>> entries = compositeClientRoles.entrySet();
+                    for (Map.Entry<String, List<String>> clientIdWithClientRoleNames : entries) {
+                        String clientId = clientIdWithClientRoleNames.getKey();
+                        List<String> clientRoleNames = clientIdWithClientRoleNames.getValue();
+                        ClientModel client = realm.getClientByClientId(clientId);
+                        if (client == null) {
+                            continue;
+                        }
+                        Set<RoleModel> clientRoles = new LinkedHashSet<>();
+                        for (String roleName : clientRoleNames) {
+                            RoleModel clientRole = client.getRole(roleName);
+                            if (clientRole == null) {
+                                return ErrorResponse.error("Client Role with name " + roleName + " does not exist", Response.Status.NOT_FOUND);
+                            }
+                            clientRoles.add(clientRole);
+                        }
+                        RoleUtils.expandCompositeRoles(clientRoles).forEach(role::addCompositeRole);
+                    }
+                }
+            }
+
             adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, role.getName()).representation(rep).success();
 
             return Response.created(uriInfo.getAbsolutePathBuilder().path(role.getName()).build()).build();
@@ -189,6 +236,9 @@ public class RoleContainerResource extends RoleResource {
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
             throw new NotFoundException("Could not find role");
+        } else if (realm.getDefaultRole().getId().equals(role.getId())) {
+            throw new ErrorResponseException(ErrorResponse.error(roleName + " is default role of the realm and cannot be removed.", 
+                    Response.Status.BAD_REQUEST));
         }
         deleteRole(role);
 

@@ -79,7 +79,7 @@ public class MapGroupProviderFactory extends AbstractMapProviderFactory<GroupPro
             } else {
                 return;
             }
-            create(e.getKeycloakSession()).preRemove(realm, role);
+            ((MapGroupProvider) e.getKeycloakSession().getProvider(GroupProvider.class)).preRemove(realm, role);
         }
     }
 }

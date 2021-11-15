@@ -20,6 +20,10 @@
     padding: var(--pf-c-form-control--PaddingTop) var(--pf-c-form-control--PaddingRight) var(--pf-c-form-control--PaddingBottom) var(--pf-c-form-control--PaddingLeft);
 }
 
+textarea.pf-c-form-control {
+	height: auto;
+}
+
 .pf-c-form-control:hover, .pf-c-form-control:focus {
     border-bottom-color: #0066CC;
     border-bottom-color: var(--pf-global--primary-color--100);
@@ -32,6 +36,11 @@
     border-bottom-color: var(--pf-global--danger-color--100);
     border-bottom-width: 2px;
     border-bottom-width: var(--pf-global--BorderWidth--md);
+}
+
+.pf-c-check__label, .pf-c-radio__label {
+	font-size: 14px;
+	font-size: var(--pf-global--FontSize--sm);
 }
 
 .pf-c-alert.pf-m-inline {

@@ -32,6 +32,7 @@ import org.keycloak.forms.login.freemarker.model.CodeBean;
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
 import org.keycloak.forms.login.freemarker.model.IdpReviewProfileBean;
 import org.keycloak.forms.login.freemarker.model.LoginBean;
+import org.keycloak.forms.login.freemarker.model.FrontChannelLogoutBean;
 import org.keycloak.forms.login.freemarker.model.OAuthGrantBean;
 import org.keycloak.forms.login.freemarker.model.ProfileBean;
 import org.keycloak.forms.login.freemarker.model.RealmBean;
@@ -187,7 +188,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     @SuppressWarnings("incomplete-switch")
     protected Response createResponse(LoginFormsPages page) {
-        
+
         Theme theme;
         try {
             theme = getTheme();
@@ -265,6 +266,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 UpdateProfileContext idpCtx = (UpdateProfileContext) attributes.get(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR);
                 attributes.put("profile", new IdpReviewProfileBean(idpCtx, formData, session));
                 break;
+            case FRONTCHANNEL_LOGOUT:
+                attributes.put("logout", new FrontChannelLogoutBean(session));
+                break;
         }
 
         return processTemplate(theme, Templates.getTemplate(page), locale);
@@ -273,7 +277,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     private boolean isDynamicUserProfile() {
         return session.getProvider(UserProfileProvider.class).getConfiguration() != null;
     }
-    
+
     @Override
     public Response createForm(String form) {
         Theme theme;
@@ -565,7 +569,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             if(userCtx != null && userCtx.getUserProfileContext() == UserProfileContext.IDP_REVIEW)
                 return createResponse(LoginFormsPages.IDP_REVIEW_USER_PROFILE);
             else
-                return createResponse(LoginFormsPages.UPDATE_USER_PROFILE); 
+                return createResponse(LoginFormsPages.UPDATE_USER_PROFILE);
         } else {
             return createResponse(LoginFormsPages.LOGIN_UPDATE_PROFILE);
         }
@@ -634,6 +638,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     @Override
     public Response createSamlPostForm() {
         return createResponse(LoginFormsPages.SAML_POST_FORM);
+    }
+
+    @Override
+    public Response createFrontChannelLogoutPage() {
+        return createResponse(LoginFormsPages.FRONTCHANNEL_LOGOUT);
     }
 
     protected void setMessage(MessageType type, String message, Object... parameters) {

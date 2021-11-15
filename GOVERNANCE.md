@@ -62,7 +62,7 @@ To become a maintainer, you need to demonstrate the following:
 * Ability to collaborate with the team
 * Helping the community
 
-A new maintainer must be proposed by sending an email to the [developer mailing list](https://groups.google.com/forum/#!forum/keycloak-dev).
+A new maintainer must be proposed by sending an email to keycloak-maintainers(at)googlegroups.com.
 The email should include evidence of the above list.
 
 The existing maintainers will then discuss the proposal. If anyone objects or wants more information, the maintainers 
@@ -94,16 +94,13 @@ If the change has a bigger impact it has to follow the process for larger change
 
 ### Larger Changes
 
-For larger changes all maintainers and contributors should have a chance of reviewing the change. This is done by
-sending an email to the [developer mailing list](https://groups.google.com/forum/#!forum/keycloak-dev) to start a
-discussion around the change.
+For larger changes all maintainers and contributors should have a chance of reviewing the change. This is done through [GitHub Discussions](https://github.com/keycloak/keycloak/discussions/categories/ideas).
 
-For new features we highly recommend creating a design proposal. There is no strict requirement of the content or layout,
-but it should at least cover motivation, use cases and how the feature will be used. A design proposal is created by
-sending a PR to [design proposals repository](https://github.com/keycloak/keycloak-community/tree/master/design).
+For new features we highly recommend always opening a discussion in GitHub Discussions early.
 
-The contributor can decide to send a pull request prior to discussion on the mailing list, and the creation of a design
-proposal. However, the change will not be accepted until it has been discussed on the mailing list.
+For very large proposals it can be inefficient to capture all the information in the GitHub Discussion. In this cases a separate design proposal can be sent to the [Keycloak Community repository](https://github.com/keycloak/keycloak-community/tree/main/design), and linked to from the GitHub Discussion.
 
-If there are any objections to the change they can in most cases be resolved through discussions on the mailing list or
-on the pull request. If a resolution can not be made it can be accepted if at least 2/3 of maintainers approve the change. 
+The contributor can decide to send a pull request prior to discussions. However, the change will not be accepted until it has been discussed through [GitHub Discussions](https://github.com/keycloak/keycloak/discussions/categories/ideas).
+
+If there are any objections to the change they can in most cases be resolved through discussions in [GitHub Discussions](https://github.com/keycloak/keycloak/discussions/categories/ideas), or
+in the pull request. If a resolution can not be made it can be accepted if at least 2/3 of maintainers approve the change.

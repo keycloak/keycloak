@@ -32,23 +32,22 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
+import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 
 public class MapClientScopeProvider implements ClientScopeProvider {
 
     private static final Logger LOG = Logger.getLogger(MapClientScopeProvider.class);
     private final KeycloakSession session;
     private final MapKeycloakTransaction<MapClientScopeEntity, ClientScopeModel> tx;
-    private final MapStorage<MapClientScopeEntity, ClientScopeModel> clientScopeStore;
 
     public MapClientScopeProvider(KeycloakSession session, MapStorage<MapClientScopeEntity, ClientScopeModel> clientScopeStore) {
         this.session = session;
-        this.clientScopeStore = clientScopeStore;
         this.tx = clientScopeStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
     }
@@ -69,8 +68,8 @@ public class MapClientScopeProvider implements ClientScopeProvider {
 
     @Override
     public Stream<ClientScopeModel> getClientScopesStream(RealmModel realm) {
-        ModelCriteriaBuilder<ClientScopeModel> mcb = clientScopeStore.createCriteriaBuilder()
-            .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+        DefaultModelCriteria<ClientScopeModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         return tx.read(withCriteria(mcb).orderBy(SearchableFields.NAME, ASCENDING))
           .map(entityToAdapterFunc(realm));
@@ -79,8 +78,8 @@ public class MapClientScopeProvider implements ClientScopeProvider {
     @Override
     public ClientScopeModel addClientScope(RealmModel realm, String id, String name) {
         // Check Db constraint: @UniqueConstraint(columnNames = {"REALM_ID", "NAME"})
-        ModelCriteriaBuilder<ClientScopeModel> mcb = clientScopeStore.createCriteriaBuilder()
-            .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+        DefaultModelCriteria<ClientScopeModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
             .compare(SearchableFields.NAME, Operator.EQ, name);
 
         if (tx.getCount(withCriteria(mcb)) > 0) {

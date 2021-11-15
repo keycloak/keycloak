@@ -47,7 +47,6 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -62,6 +61,8 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.page.LoginPasswordUpdatePage;
@@ -102,6 +103,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -110,15 +114,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.Assert.assertNames;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
-
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -596,6 +595,12 @@ public class UserTest extends AbstractAdminTest {
             user.setFirstName("First" + i);
             user.setLastName("Last" + i);
 
+            HashMap<String, List<String>> attributes = new HashMap<>();
+            attributes.put("test", Collections.singletonList("test" + i));
+            attributes.put("test" + i, Collections.singletonList("test" + i));
+            attributes.put("attr", Collections.singletonList("common"));
+            user.setAttributes(attributes);
+
             ids.add(createUser(user));
         }
 
@@ -624,15 +629,64 @@ public class UserTest extends AbstractAdminTest {
         assertEquals(9, users.size());
     }
 
+    private String mapToSearchQuery(Map<String, String> search) {
+        return search.entrySet()
+                .stream()
+                .map(e -> String.format("%s:%s", e.getKey(), e.getValue()))
+                .collect(Collectors.joining(" "));
+    }
+
+    @Test
+    public void searchByAttribute() {
+        createUsers();
+
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put("test", "test1");
+        List<UserRepresentation> users = realm.users().searchByAttributes(mapToSearchQuery(attributes));
+        assertEquals(1, users.size());
+
+        attributes.clear();
+        attributes.put("attr", "common");
+
+        users = realm.users().searchByAttributes(mapToSearchQuery(attributes));
+        assertEquals(9, users.size());
+    }
+
+    @Test
+    public void searchByMultipleAttributes() {
+        createUsers();
+
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put("test", "test1");
+        attributes.put("attr", "common");
+        attributes.put("test1", "test1");
+
+        List<UserRepresentation> users = realm.users().searchByAttributes(mapToSearchQuery(attributes));
+        assertEquals(1, users.size());
+    }
+
+    @Test
+    public void searchByAttributesWithPagination() {
+        createUsers();
+
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put("attr", "common");
+        for (int i = 1; i < 10; i++) {
+            List<UserRepresentation> users = realm.users().searchByAttributes(i - 1, 1, null, false, mapToSearchQuery(attributes));
+            assertEquals(1, users.size());
+            assertTrue(users.get(0).getAttributes().keySet().stream().anyMatch(attributes::containsKey));
+        }
+    }
+
     @Test
     public void searchByUsernameExactMatch() {
         createUsers();
 
         UserRepresentation user = new UserRepresentation();
         user.setUsername("username11");
-        
+
         createUser(user);
-        
+
         List<UserRepresentation> users = realm.users().search("username1", true);
         assertEquals(1, users.size());
 
@@ -1104,7 +1158,7 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    @AuthServerContainerExclude({REMOTE, QUARKUS}) // TODO: Enable for quarkus and remote
+    @AuthServerContainerExclude({REMOTE}) // TODO: Enable for remote
     public void updateUserWithReadOnlyAttributes() {
         // Admin is able to update "usercertificate" attribute
         UserRepresentation user1 = new UserRepresentation();
@@ -2023,14 +2077,14 @@ public class UserTest extends AbstractAdminTest {
         realm.flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString(), updatePasswordReqAction);
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(UserModel.RequiredAction.UPDATE_PASSWORD.toString()), updatePasswordReqAction, ResourceType.REQUIRED_ACTION);
     }
-    
+
     private RoleRepresentation getRoleByName(String name, List<RoleRepresentation> roles) {
         for(RoleRepresentation role : roles) {
             if(role.getName().equalsIgnoreCase(name)) {
                 return role;
             }
         }
-        
+
         return null;
     }
 
@@ -2043,7 +2097,7 @@ public class UserTest extends AbstractAdminTest {
         realm.update(realmRep);
 
         RoleRepresentation realmCompositeRole = RoleBuilder.create().name("realm-composite").singleAttribute("attribute1", "value1").build();
-        
+
         realm.roles().create(RoleBuilder.create().name("realm-role").build());
         realm.roles().create(realmCompositeRole);
         realm.roles().create(RoleBuilder.create().name("realm-child").build());
@@ -2055,8 +2109,8 @@ public class UserTest extends AbstractAdminTest {
         response.close();
 
         RoleRepresentation clientCompositeRole = RoleBuilder.create().name("client-composite").singleAttribute("attribute1", "value1").build();
-        
-        
+
+
         realm.clients().get(clientUuid).roles().create(RoleBuilder.create().name("client-role").build());
         realm.clients().get(clientUuid).roles().create(RoleBuilder.create().name("client-role2").build());
         realm.clients().get(clientUuid).roles().create(clientCompositeRole);
@@ -2092,7 +2146,7 @@ public class UserTest extends AbstractAdminTest {
 
         // List realm roles
         assertNames(roles.realmLevel().listAll(), "realm-role", "realm-composite", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
-        assertNames(roles.realmLevel().listAvailable(), "admin", "customer-user-premium", "realm-composite-role", "sample-realm-role", "attribute-role");
+        assertNames(roles.realmLevel().listAvailable(), "realm-child", "admin", "customer-user-premium", "realm-composite-role", "sample-realm-role", "attribute-role", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
         assertNames(roles.realmLevel().listEffective(), "realm-role", "realm-composite", "realm-child", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
 
         // List realm effective role with full representation
@@ -2100,12 +2154,12 @@ public class UserTest extends AbstractAdminTest {
         RoleRepresentation realmCompositeRoleFromList = getRoleByName("realm-composite", realmRolesFullRepresentations);
         assertNotNull(realmCompositeRoleFromList);
         assertTrue(realmCompositeRoleFromList.getAttributes().containsKey("attribute1"));
-        
+
         // List client roles
         assertNames(roles.clientLevel(clientUuid).listAll(), "client-role", "client-composite");
-        assertNames(roles.clientLevel(clientUuid).listAvailable(), "client-role2");
+        assertNames(roles.clientLevel(clientUuid).listAvailable(), "client-role2", "client-child");
         assertNames(roles.clientLevel(clientUuid).listEffective(), "client-role", "client-composite", "client-child");
-        
+
         // List client effective role with full representation
         List<RoleRepresentation> rolesFullRepresentations = roles.clientLevel(clientUuid).listEffective(false);
         RoleRepresentation clientCompositeRoleFromList = getRoleByName("client-composite", rolesFullRepresentations);
@@ -2131,6 +2185,103 @@ public class UserTest extends AbstractAdminTest {
         assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.userClientRoleMappingsPath(userId, clientUuid), Collections.singletonList(clientRoleRep), ResourceType.CLIENT_ROLE_MAPPING);
 
         assertNames(roles.clientLevel(clientUuid).listAll(), "client-composite");
+    }
+
+    /**
+     * Test for KEYCLOAK-10603.
+     */
+    @Test
+    public void rolesCanBeAssignedEvenWhenTheyAreAlreadyIndirectlyAssigned() {
+        RealmResource realm = adminClient.realms().realm("test");
+
+        RoleRepresentation realmCompositeRole = RoleBuilder.create().name("realm-composite").build();
+        realm.roles().create(realmCompositeRole);
+        realm.roles().create(RoleBuilder.create().name("realm-child").build());
+        realm.roles().get("realm-composite")
+                .addComposites(Collections.singletonList(realm.roles().get("realm-child").toRepresentation()));
+        realm.roles().create(RoleBuilder.create().name("realm-role-in-group").build());
+
+        Response response = realm.clients().create(ClientBuilder.create().clientId("myclient").build());
+        String clientUuid = ApiUtil.getCreatedId(response);
+        response.close();
+
+        RoleRepresentation clientCompositeRole = RoleBuilder.create().name("client-composite").build();
+        realm.clients().get(clientUuid).roles().create(clientCompositeRole);
+        realm.clients().get(clientUuid).roles().create(RoleBuilder.create().name("client-child").build());
+        realm.clients().get(clientUuid).roles().get("client-composite").addComposites(Collections
+                .singletonList(realm.clients().get(clientUuid).roles().get("client-child").toRepresentation()));
+        realm.clients().get(clientUuid).roles().create(RoleBuilder.create().name("client-role-in-group").build());
+
+        GroupRepresentation group = GroupBuilder.create().name("mygroup").build();
+        response = realm.groups().add(group);
+        String groupId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        response = realm.users().create(UserBuilder.create().username("myuser").build());
+        String userId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        // Make indirect assignments
+        // .. add roles to the group and add it to the user
+        realm.groups().group(groupId).roles().realmLevel()
+                .add(Collections.singletonList(realm.roles().get("realm-role-in-group").toRepresentation()));
+        realm.groups().group(groupId).roles().clientLevel(clientUuid).add(Collections
+                .singletonList(realm.clients().get(clientUuid).roles().get("client-role-in-group").toRepresentation()));
+        realm.users().get(userId).joinGroup(groupId);
+        // .. assign composite roles
+        RoleMappingResource userRoles = realm.users().get(userId).roles();
+        userRoles.realmLevel().add(Collections.singletonList(realm.roles().get("realm-composite").toRepresentation()));
+        userRoles.clientLevel(clientUuid).add(Collections
+                .singletonList(realm.clients().get(clientUuid).roles().get("client-composite").toRepresentation()));
+
+        // check state before making the direct assignments
+        assertNames(userRoles.realmLevel().listAll(), "realm-composite", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
+        assertNames(userRoles.realmLevel().listAvailable(), "realm-child", "realm-role-in-group",
+                "admin", "customer-user-premium", "realm-composite-role",
+                "sample-realm-role",
+                "attribute-role", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
+        assertNames(userRoles.realmLevel().listEffective(), "realm-composite", "realm-child", "realm-role-in-group",
+                "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION,
+                Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
+
+        assertNames(userRoles.clientLevel(clientUuid).listAll(), "client-composite");
+        assertNames(userRoles.clientLevel(clientUuid).listAvailable(), "client-child",
+                "client-role-in-group");
+        assertNames(userRoles.clientLevel(clientUuid).listEffective(), "client-composite", "client-child",
+                "client-role-in-group");
+
+        // Make direct assignments for roles which are already indirectly assigned
+        userRoles.realmLevel().add(Collections.singletonList(realm.roles().get("realm-child").toRepresentation()));
+        userRoles.realmLevel()
+                .add(Collections.singletonList(realm.roles().get("realm-role-in-group").toRepresentation()));
+        userRoles.clientLevel(clientUuid).add(Collections
+                .singletonList(realm.clients().get(clientUuid).roles().get("client-child").toRepresentation()));
+        userRoles.clientLevel(clientUuid).add(Collections
+                .singletonList(realm.clients().get(clientUuid).roles().get("client-role-in-group").toRepresentation()));
+
+        // List realm roles
+        assertNames(userRoles.realmLevel().listAll(), "realm-composite",
+                "realm-child", "realm-role-in-group", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
+        assertNames(userRoles.realmLevel().listAvailable(), "admin", "customer-user-premium", "realm-composite-role",
+                "sample-realm-role", "attribute-role", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
+        assertNames(userRoles.realmLevel().listEffective(), "realm-composite", "realm-child", "realm-role-in-group",
+                "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION,
+                Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
+
+        // List client roles
+        assertNames(userRoles.clientLevel(clientUuid).listAll(), "client-composite", "client-child",
+                "client-role-in-group");
+        assertNames(userRoles.clientLevel(clientUuid).listAvailable());
+        assertNames(userRoles.clientLevel(clientUuid).listEffective(), "client-composite", "client-child",
+                "client-role-in-group");
+
+        // Get mapping representation
+        MappingsRepresentation all = userRoles.getAll();
+        assertNames(all.getRealmMappings(), "realm-composite",
+                "realm-child", "realm-role-in-group", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
+        assertEquals(1, all.getClientMappings().size());
+        assertNames(all.getClientMappings().get("myclient").getMappings(), "client-composite", "client-child",
+                "client-role-in-group");
     }
 
     @Test
@@ -2359,11 +2510,11 @@ public class UserTest extends AbstractAdminTest {
         Assert.assertTrue(ObjectUtil.isEqualOrBothNull(otpCredential.getUserLabel(), otpCredentialLoaded.getUserLabel()));
         Assert.assertTrue(ObjectUtil.isEqualOrBothNull(otpCredential.getPriority(), otpCredentialLoaded.getPriority()));
     }
-    
+
     @Test
     public void testGetGroupsForUserFullRepresentation() {
         RealmResource realm = adminClient.realms().realm("test");
-        
+
         String userName = "averagejoe";
         String groupName = "groupWithAttribute";
         Map<String, List<String>> attributes = new HashMap<String, List<String>>();
@@ -2373,16 +2524,16 @@ public class UserTest extends AbstractAdminTest {
                 .edit(createUserRepresentation(userName, "joe@average.com", "average", "joe", true))
                 .addPassword("password")
                 .build();
-        
+
         try (Creator<UserResource> u = Creator.create(realm, userRepresentation);
              Creator<GroupResource> g = Creator.create(realm, GroupBuilder.create().name(groupName).attributes(attributes).build())) {
-            
+
             String groupId = g.id();
             UserResource user = u.resource();
             user.joinGroup(groupId);
-            
+
             List<GroupRepresentation> userGroups = user.groups(0, 100, false);
-            
+
             assertFalse(userGroups.isEmpty());
             assertTrue(userGroups.get(0).getAttributes().containsKey("attribute1"));
         }

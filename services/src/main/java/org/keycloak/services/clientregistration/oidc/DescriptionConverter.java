@@ -22,7 +22,7 @@ import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
-import org.keycloak.crypto.ClientSignatureVerifierProvider;
+import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
@@ -47,10 +47,12 @@ import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientregistration.ClientRegistrationException;
 import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.util.JWKSUtils;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
 import com.google.common.collect.Streams;
 
+import java.io.IOException;
 import java.net.URI;
 import java.security.PublicKey;
 import java.util.ArrayList;
@@ -64,7 +66,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.keycloak.models.CibaConfig.CIBA_POLL_MODE;
 import static org.keycloak.models.OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED;
 import static org.keycloak.models.CibaConfig.OIDC_CIBA_GRANT_ENABLED;
 
@@ -150,6 +151,9 @@ public class DescriptionConverter {
 
         if (clientOIDC.getTlsClientAuthSubjectDn() != null) {
             configWrapper.setTlsClientAuthSubjectDn(clientOIDC.getTlsClientAuthSubjectDn());
+
+            // According to specification, attribute tls_client_auth_subject_dn has subject DN in the exact expected format. There is no reason for support regex comparisons
+            configWrapper.setAllowRegexPatternComparison(false);
         }
 
         if (clientOIDC.getIdTokenSignedResponseAlg() != null) {
@@ -216,6 +220,8 @@ public class DescriptionConverter {
             client.setAttributes(attr);
         }
 
+        configWrapper.setFrontChannelLogoutUrl(Optional.ofNullable(clientOIDC.getFrontChannelLogoutUri()).orElse(null));
+
         return client;
     }
 
@@ -237,40 +243,45 @@ public class DescriptionConverter {
     }
 
     private static boolean setPublicKey(OIDCClientRepresentation clientOIDC, ClientRepresentation clientRep) {
-        if (clientOIDC.getJwksUri() == null && clientOIDC.getJwks() == null) {
-            return false;
-        }
-
-        if (clientOIDC.getJwksUri() != null && clientOIDC.getJwks() != null) {
-            throw new ClientRegistrationException("Illegal to use both jwks_uri and jwks");
-        }
-
         OIDCAdvancedConfigWrapper configWrapper = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
 
         if (clientOIDC.getJwks() != null) {
+            if (clientOIDC.getJwksUri() != null) {
+                throw new ClientRegistrationException("Illegal to use both jwks_uri and jwks");
+            }
+
             JSONWebKeySet keySet = clientOIDC.getJwks();
             JWK publicKeyJWk = JWKSUtils.getKeyForUse(keySet, JWK.Use.SIG);
+
+            try {
+                configWrapper.setJwksString(JsonSerialization.writeValueAsPrettyString(clientOIDC.getJwks()));
+            } catch (IOException e) {
+                throw new ClientRegistrationException("Illegal jwks format");
+            }
+            configWrapper.setUseJwksString(true);
+            configWrapper.setUseJwksUrl(false);
+
             if (publicKeyJWk == null) {
                 return false;
-            } else {
-                PublicKey publicKey = JWKParser.create(publicKeyJWk).toPublicKey();
-                String publicKeyPem = KeycloakModelUtils.getPemFromKey(publicKey);
-                CertificateRepresentation rep = new CertificateRepresentation();
-                rep.setPublicKey(publicKeyPem);
-                rep.setKid(publicKeyJWk.getKeyId());
-                CertificateInfoHelper.updateClientRepresentationCertificateInfo(clientRep, rep, JWTClientAuthenticator.ATTR_PREFIX);
-
-                configWrapper.setUseJwksUrl(false);
-
-                return true;
             }
-        } else {
+            PublicKey publicKey = JWKParser.create(publicKeyJWk).toPublicKey();
+            String publicKeyPem = KeycloakModelUtils.getPemFromKey(publicKey);
+            CertificateRepresentation rep = new CertificateRepresentation();
+            rep.setPublicKey(publicKeyPem);
+            rep.setKid(publicKeyJWk.getKeyId());
+            CertificateInfoHelper.updateClientRepresentationCertificateInfo(clientRep, rep, JWTClientAuthenticator.ATTR_PREFIX);
+
+            return true;
+        } else if (clientOIDC.getJwksUri() != null) {
             configWrapper.setUseJwksUrl(true);
             configWrapper.setJwksUrl(clientOIDC.getJwksUri());
+            configWrapper.setUseJwksString(false);
             return true;
         }
-    }
 
+        return false;
+
+    }
 
     public static OIDCClientRepresentation toExternalResponse(KeycloakSession session, ClientRepresentation client, URI uri) {
         OIDCClientRepresentation response = new OIDCClientRepresentation();
@@ -317,6 +328,13 @@ public class DescriptionConverter {
         }
         if (config.isUseJwksUrl()) {
             response.setJwksUri(config.getJwksUrl());
+        }
+        if (config.isUseJwksString()) {
+            try {
+                response.setJwks(JsonSerialization.readValue(config.getJwksString(), JSONWebKeySet.class));
+            } catch (IOException e) {
+                throw new ClientRegistrationException("Illegal jwks format");
+            }
         }
         // KEYCLOAK-6771 Certificate Bound Token
         // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.5
@@ -381,6 +399,8 @@ public class DescriptionConverter {
             String sectorIdentifierUri = PairwiseSubMapperHelper.getSectorIdentifierUri(foundPairwiseMappers.get(0));
             response.setSectorIdentifierUri(sectorIdentifierUri);
         }
+
+        response.setFrontChannelLogoutUri(config.getFrontChannelLogoutUrl());
 
         return response;
     }

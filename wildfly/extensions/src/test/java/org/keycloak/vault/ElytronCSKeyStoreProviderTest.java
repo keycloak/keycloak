@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.Security;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -347,6 +348,11 @@ public class ElytronCSKeyStoreProviderTest {
 
         @Override
         public Config.Scope scope(String... scope) {
+            throw new UnsupportedOperationException("not implemented");
+        }
+
+        @Override
+        public Set<String> getPropertyNames() {
             throw new UnsupportedOperationException("not implemented");
         }
     }

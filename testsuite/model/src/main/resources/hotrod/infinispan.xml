@@ -1,0 +1,9 @@
+<infinispan>
+    <cache-container>
+        <transport stack="udp"/>
+
+        <distributed-cache name="clients" mode="SYNC">
+            <encoding media-type="application/x-protostream"/>
+        </distributed-cache>
+    </cache-container>
+</infinispan>

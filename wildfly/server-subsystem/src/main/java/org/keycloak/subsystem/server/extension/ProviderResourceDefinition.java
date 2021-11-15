@@ -39,7 +39,7 @@ public class ProviderResourceDefinition extends SimpleResourceDefinition {
             new SimpleAttributeDefinitionBuilder("enabled", ModelType.BOOLEAN, true)
                     .setAllowExpression(true)
                     .setDefaultValue(new ModelNode(true))
-                    .setAllowNull(false)
+                    .setRequired(true)
                     .setRestartAllServices()
                     .build();
     

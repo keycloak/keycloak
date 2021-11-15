@@ -1,5 +1,6 @@
 package org.keycloak.models.map.storage;
 
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.storage.SearchableModelField;
 
 import java.util.LinkedList;
@@ -19,12 +20,12 @@ public class QueryParameters<M> {
     private Integer offset;
     private Integer limit;
     private final List<OrderBy<M>> orderBy = new LinkedList<>();
-    private ModelCriteriaBuilder<M> mcb;
+    private DefaultModelCriteria<M> mcb;
 
     public QueryParameters() {
     }
 
-    public QueryParameters(ModelCriteriaBuilder<M> mcb) {
+    public QueryParameters(DefaultModelCriteria<M> mcb) {
         this.mcb = mcb;
     }
 
@@ -35,7 +36,7 @@ public class QueryParameters<M> {
      * @param <M> model type
      * @return a new {@code QueryParameters} instance
      */
-    public static <M> QueryParameters<M> withCriteria(ModelCriteriaBuilder<M> mcb) {
+    public static <M> QueryParameters<M> withCriteria(DefaultModelCriteria<M> mcb) {
         return new QueryParameters<>(mcb);
     }
 
@@ -98,7 +99,7 @@ public class QueryParameters<M> {
         return limit;
     }
 
-    public ModelCriteriaBuilder<M> getModelCriteriaBuilder() {
+    public DefaultModelCriteria<M> getModelCriteriaBuilder() {
         return mcb;
     }
 

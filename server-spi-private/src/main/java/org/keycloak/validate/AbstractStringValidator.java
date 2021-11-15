@@ -16,8 +16,6 @@
  */
 package org.keycloak.validate;
 
-import org.keycloak.utils.StringUtil;
-
 /**
  * Base class for String value format validators. Functionality covered in this base class:
  * <ul>
@@ -45,7 +43,7 @@ public abstract class AbstractStringValidator extends AbstractSimpleValidator {
     @Override
     protected boolean skipValidation(Object value, ValidatorConfig config) {
         if (isIgnoreEmptyValuesConfigured(config) && (value == null || value instanceof String)) {
-            return  value == null || StringUtil.isBlank(value.toString());
+            return  value == null || "".equals(value.toString());
         }
         return false;
     }

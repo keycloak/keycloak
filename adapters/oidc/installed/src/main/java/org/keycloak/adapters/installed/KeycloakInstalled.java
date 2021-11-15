@@ -30,7 +30,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.security.SecureRandom;
 import java.util.Deque;
 import java.util.Locale;
 import java.util.Map;
@@ -57,7 +56,7 @@ import org.keycloak.adapters.rotation.AdapterTokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.common.util.RandomString;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
@@ -770,7 +769,7 @@ public class KeycloakInstalled {
 
         public static Pkce generatePkce() {
             try {
-                String codeVerifier = new RandomString(PKCE_CODE_VERIFIER_MAX_LENGTH, new SecureRandom()).nextString();
+                String codeVerifier = SecretGenerator.getInstance().randomString(PKCE_CODE_VERIFIER_MAX_LENGTH);
                 String codeChallenge = generateS256CodeChallenge(codeVerifier);
                 return new Pkce(codeVerifier, codeChallenge);
             } catch (Exception ex){

@@ -1,16 +1,33 @@
 package org.keycloak.saml.processing.core.saml.v2.util;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
+import java.security.KeyPair;
+import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.Scanner;
 
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.util.Arrays;
 import org.junit.Test;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.DerUtils;
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.assertion.SubjectType.STSubType;
+import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
+import org.keycloak.saml.processing.core.parsers.saml.SAMLParserTest;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -25,34 +42,84 @@ public class AssertionUtilTest {
 
     @Test
     public void testSaml20Signed() throws Exception {
-        
+
         X509Certificate decodeCertificate = DerUtils.decodeCertificate(new ByteArrayInputStream(Base64.decode(PUBLIC_CERT)));
-        
+
         try (InputStream st = AssertionUtilTest.class.getResourceAsStream("saml20-signed-response.xml")) {
             Document document = DocumentUtil.getDocument(st);
-            
+
             Element assertion = DocumentUtil.getDirectChildElement(document.getDocumentElement(), "urn:oasis:names:tc:SAML:2.0:assertion", "Assertion");
-            
+
             assertTrue(AssertionUtil.isSignatureValid(assertion, decodeCertificate.getPublicKey()));
-            
+
             // test manipulation of signature
             Element signatureElement = AssertionUtil.getSignature(assertion);
             byte[] validSignature = Base64.decode(signatureElement.getTextContent());
-            
+
             // change the signature value slightly
             byte[] invalidSignature = Arrays.clone(validSignature);
             invalidSignature[0] ^= invalidSignature[0];
             signatureElement.setTextContent(Base64.encodeBytes(invalidSignature));
-            
+
             // check that signature now is invalid
             assertFalse(AssertionUtil.isSignatureValid(document.getDocumentElement(), decodeCertificate.getPublicKey()));
-            
+
             // restore valid signature, but remove Signature element, check that still invalid
             signatureElement.setTextContent(Base64.encodeBytes(validSignature));
 
             assertion.removeChild(signatureElement);
             assertFalse(AssertionUtil.isSignatureValid(document.getDocumentElement(), decodeCertificate.getPublicKey()));
         }
+    }
+
+    @Test
+    public void testSaml20DecryptId() throws Exception {
+        try (InputStream st = getEncryptedIdTestFileInputStream()) {
+            ResponseType responseType = (ResponseType) SAMLParser.getInstance().parse(st);
+
+            STSubType subType = responseType.getAssertions().get(0).getAssertion().getSubject().getSubType();
+
+            assertNotNull(subType.getEncryptedID());
+            assertNull(subType.getBaseID());
+
+            AssertionUtil.decryptId(responseType, extractPrivateKey());
+
+            assertNull(subType.getEncryptedID());
+            assertNotNull(subType.getBaseID());
+            assertTrue(subType.getBaseID() instanceof NameIDType);
+            assertEquals("myTestId",
+                    ((NameIDType) subType.getBaseID()).getValue());
+        }
+
+    }
+
+    private InputStream getEncryptedIdTestFileInputStream() {
+        return SAMLParserTest.class.getResourceAsStream("saml20-encrypted-id-response.xml");
+    }
+
+    private PrivateKey extractPrivateKey() throws IOException {
+        StringBuilder sb = new StringBuilder();
+        try (Scanner sc = new Scanner(getEncryptedIdTestFileInputStream())) {
+            while (sc.hasNextLine()) {
+                if (sc.nextLine().contains("BEGIN RSA PRIVATE KEY")) {
+                    sb.append("-----BEGIN RSA PRIVATE KEY-----").append("\n");
+                    while (sc.hasNextLine()) {
+                        String line = sc.nextLine();
+                        if (line.contains("END RSA PRIVATE KEY")) {
+                            sb.append("-----END RSA PRIVATE KEY-----");
+                            break;
+                        }
+                        sb.append(line).append("\n");
+                    }
+                }
+            }
+        }
+        assertNotEquals("PEM certificate not found in test data", 0, sb.length());
+        PEMParser pp = new PEMParser(new StringReader(sb.toString()));
+        PEMKeyPair pemKeyPair = (PEMKeyPair) pp.readObject();
+        KeyPair kp = new JcaPEMKeyConverter().getKeyPair(pemKeyPair);
+        pp.close();
+        return kp.getPrivate();
     }
 
 }

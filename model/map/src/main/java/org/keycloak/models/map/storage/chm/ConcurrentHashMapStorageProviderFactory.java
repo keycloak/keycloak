@@ -44,8 +44,11 @@ import org.keycloak.models.map.authorization.entity.MapResourceServerEntity;
 import org.keycloak.models.map.authorization.entity.MapScopeEntity;
 import org.keycloak.models.map.client.MapClientEntity;
 import org.keycloak.models.map.client.MapClientEntityImpl;
+import org.keycloak.models.map.client.MapProtocolMapperEntity;
+import org.keycloak.models.map.client.MapProtocolMapperEntityImpl;
 import org.keycloak.models.map.clientscope.MapClientScopeEntity;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.group.MapGroupEntity;
@@ -62,18 +65,20 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jboss.logging.Logger;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity;
 import org.keycloak.models.map.user.MapUserEntity;
 import org.keycloak.models.map.userSession.MapUserSessionEntity;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
+import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 
 /**
  *
@@ -94,6 +99,12 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
     private String suffix;
 
     private StringKeyConvertor defaultKeyConvertor;
+
+    private final static DeepCloner CLONER = new DeepCloner.Builder()
+      .genericCloner(Serialization::from)
+      .constructorDC(MapClientEntityImpl.class,         MapClientEntityImpl::new)
+      .constructor(MapProtocolMapperEntity.class,       MapProtocolMapperEntityImpl::new)
+      .build();
 
     public static final Map<Class<?>, String> MODEL_TO_NAME = new HashMap<>();
     static {
@@ -223,14 +234,14 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
         storages.forEach(this::storeMap);
     }
 
+    @SuppressWarnings("unchecked")
     private void storeMap(String mapName, ConcurrentHashMapStorage<?, ?, ?> store) {
         if (mapName != null) {
             File f = getFile(mapName);
             try {
                 if (storageDirectory != null) {
                     LOG.debugf("Storing contents to %s", f.getCanonicalPath());
-                    @SuppressWarnings("unchecked")
-                    final ModelCriteriaBuilder readAllCriteria = store.createCriteriaBuilder();
+                    final DefaultModelCriteria readAllCriteria = criteria();
                     Serialization.MAPPER.writeValue(f, store.read(withCriteria(readAllCriteria)));
                 } else {
                     LOG.debugf("Not storing contents of %s because directory not set", mapName);
@@ -241,24 +252,24 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
         }
     }
 
+    @SuppressWarnings("unchecked")
     private <K, V extends AbstractEntity & UpdatableEntity, M> ConcurrentHashMapStorage<K, V, M> loadMap(String mapName,
       Class<M> modelType, EnumSet<Flag> flags) {
         final StringKeyConvertor kc = keyConvertors.getOrDefault(mapName, defaultKeyConvertor);
         Class<?> valueType = MODEL_TO_VALUE_TYPE.get(modelType);
         LOG.debugf("Initializing new map storage: %s", mapName);
 
-        @SuppressWarnings("unchecked")
         ConcurrentHashMapStorage<K, V, M> store;
         if (modelType == UserSessionModel.class) {
             ConcurrentHashMapStorage clientSessionStore = getStorage(AuthenticatedClientSessionModel.class);
-            store = new UserSessionConcurrentHashMapStorage(clientSessionStore, kc) {
+            store = new UserSessionConcurrentHashMapStorage(clientSessionStore, kc, CLONER) {
                 @Override
                 public String toString() {
                     return "ConcurrentHashMapStorage(" + mapName + suffix + ")";
                 }
             };
         } else {
-            store = new ConcurrentHashMapStorage(modelType, kc) {
+            store = new ConcurrentHashMapStorage(modelType, kc, CLONER) {
                 @Override
                 public String toString() {
                     return "ConcurrentHashMapStorage(" + mapName + suffix + ")";
@@ -272,7 +283,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
                 try {
                     LOG.debugf("Restoring contents from %s", f.getCanonicalPath());
                     Class<?> valueImplType = INTERFACE_TO_IMPL.getOrDefault(valueType, valueType);
-                    JavaType type = Serialization.MAPPER.getTypeFactory().constructCollectionType(List.class, valueImplType);
+                    JavaType type = Serialization.MAPPER.getTypeFactory().constructCollectionType(LinkedList.class, valueImplType);
 
                     List<V> values = Serialization.MAPPER.readValue(f, type);
                     values.forEach((V mce) -> store.create(mce));

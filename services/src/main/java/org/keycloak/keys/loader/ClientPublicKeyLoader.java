@@ -37,6 +37,7 @@ import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.util.JWKSUtils;
+import org.keycloak.util.JsonSerialization;
 
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
@@ -73,6 +74,9 @@ public class ClientPublicKeyLoader implements PublicKeyLoader {
             String jwksUrl = config.getJwksUrl();
             jwksUrl = ResolveRelative.resolveRelativeUri(session, client.getRootUrl(), jwksUrl);
             JSONWebKeySet jwks = JWKSHttpUtils.sendJwksRequest(session, jwksUrl);
+            return JWKSUtils.getKeyWrappersForUse(jwks, keyUse);
+        } else if (config.isUseJwksString()) {
+            JSONWebKeySet jwks = JsonSerialization.readValue(config.getJwksString(), JSONWebKeySet.class);
             return JWKSUtils.getKeyWrappersForUse(jwks, keyUse);
         } else if (keyUse == JWK.Use.SIG) {
             try {

@@ -17,7 +17,10 @@
 package org.keycloak.testsuite.model;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+
 import org.junit.Test;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientProvider;
@@ -49,6 +52,42 @@ public class ClientModelTest extends KeycloakModelTest {
     @Override
     public void cleanEnvironment(KeycloakSession s) {
         s.realms().removeRealm(realmId);
+    }
+
+    @Test
+    public void testClientsBasics() {
+        // Create client
+        ClientModel originalModel = withRealm(realmId, (session, realm) -> session.clients().addClient(realm, "myClientId"));
+        assertThat(originalModel.getId(), notNullValue());
+
+        // Find by id
+        {
+            ClientModel model = withRealm(realmId, (session, realm) -> session.clients().getClientById(realm, originalModel.getId()));
+            assertThat(model, notNullValue());
+            assertThat(model.getId(), is(equalTo(model.getId())));
+            assertThat(model.getClientId(), is(equalTo("myClientId")));
+        }
+
+        // Find by clientId
+        {
+            ClientModel model = withRealm(realmId, (session, realm) -> session.clients().getClientByClientId(realm, "myClientId"));
+            assertThat(model, notNullValue());
+            assertThat(model.getId(), is(equalTo(originalModel.getId())));
+            assertThat(model.getClientId(), is(equalTo("myClientId")));
+        }
+
+        // Test storing flow binding override
+        {
+            // Add some override
+            withRealm(realmId, (session, realm) -> {
+                ClientModel clientById = session.clients().getClientById(realm, originalModel.getId());
+                clientById.setAuthenticationFlowBindingOverride("browser", "customFlowId");
+                return clientById;
+            });
+
+            String browser = withRealm(realmId, (session, realm) -> session.clients().getClientById(realm, originalModel.getId()).getAuthenticationFlowBindingOverride("browser"));
+            assertThat(browser, is(equalTo("customFlowId")));
+        }
     }
 
     @Test

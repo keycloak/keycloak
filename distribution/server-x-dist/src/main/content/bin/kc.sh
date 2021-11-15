@@ -23,20 +23,19 @@ fi
 GREP="grep"
 DIRNAME=`dirname "$RESOLVED_NAME"`
 
-SERVER_OPTS="-Dkc.home.dir=$DIRNAME/../ -Djboss.server.config.dir=$DIRNAME/../conf -Dkeycloak.theme.dir=$DIRNAME/../themes -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+SERVER_OPTS="-Dkc.home.dir=$DIRNAME/../ -Djboss.server.config.dir=$DIRNAME/../conf -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
 
 DEBUG_MODE="${DEBUG:-false}"
 DEBUG_PORT="${DEBUG_PORT:-8787}"
 
 CONFIG_ARGS=${CONFIG_ARGS:-""}
-IS_CONFIGURE="false"
 
 while [ "$#" -gt 0 ]
 do
     case "$1" in
       --debug)
           DEBUG_MODE=true
-          if [ -n "$2" ] && [ "$2" = `echo "$2" | sed 's/-//'` ]; then
+          if [ -n "$2" ] && [[ "$2" =~ ^[0-9]+$ ]]; then
               DEBUG_PORT=$2
               shift
           fi
@@ -46,8 +45,11 @@ do
           break
           ;;
       *)
-          if [[ $1 = --* || ! $1 =~ ^-.* ]]; then
+          if [[ $1 = --* || ! $1 =~ ^-D.* ]]; then
             CONFIG_ARGS="$CONFIG_ARGS $1"
+            if [[ "$1" = "start-dev" ]]; then
+              CONFIG_ARGS="$CONFIG_ARGS --profile=dev --auto-build"
+            fi
           else
             SERVER_OPTS="$SERVER_OPTS $1"
           fi
@@ -60,7 +62,7 @@ done
 # Specify options to pass to the Java VM.
 #
 if [ "x$JAVA_OPTS" = "x" ]; then
-   JAVA_OPTS="-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Djava.net.preferIPv4Stack=true"
+   JAVA_OPTS="-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Djava.net.preferIPv4Stack=true -Dquarkus-log-max-startup-records=10000"
 else
    echo "JAVA_OPTS already set in environment; overriding default settings with values: $JAVA_OPTS"
 fi
@@ -77,4 +79,14 @@ fi
 
 CLASSPATH_OPTS="$DIRNAME/../lib/quarkus-run.jar"
 
-exec java $JAVA_OPTS $SERVER_OPTS -cp $CLASSPATH_OPTS io.quarkus.bootstrap.runner.QuarkusEntryPoint ${CONFIG_ARGS#?}
+JAVA_RUN_OPTS="$JAVA_OPTS $SERVER_OPTS -cp $CLASSPATH_OPTS io.quarkus.bootstrap.runner.QuarkusEntryPoint ${CONFIG_ARGS#?}"
+
+if [[ $CONFIG_ARGS = *"--auto-build"* ]]; then
+    eval java -Dkc.config.rebuild-and-exit=true $JAVA_RUN_OPTS
+    EXIT_CODE=$?
+    if [ $EXIT_CODE != 0 ]; then
+      exit $EXIT_CODE
+    fi
+fi
+
+eval exec java ${JAVA_RUN_OPTS}

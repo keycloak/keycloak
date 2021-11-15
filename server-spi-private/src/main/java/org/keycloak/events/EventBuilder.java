@@ -26,12 +26,14 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -145,6 +147,35 @@ public class EventBuilder {
         event.getDetails().put(key, value);
         return this;
     }
+    
+    /**
+     * Add event detail where strings from the input Collection are filtered not to contain <code>null</code> and then joined using <code>::</code> character. 
+     * 
+     * @param key of the detail
+     * @param value, can be null
+     * @return builder for chaining
+     */
+    public EventBuilder detail(String key, Collection<String> values) {
+        if (values == null || values.isEmpty()) {
+            return this;
+        }
+        return detail(key, values.stream().filter(Objects::nonNull).collect(Collectors.joining("::")));
+    }
+    
+    /**
+     * Add event detail where strings from the input Stream are filtered not to contain <code>null</code> and then joined using <code>::</code> character. 
+     * 
+     * @param key of the detail
+     * @param value, can be null
+     * @return builder for chaining
+     */
+    public EventBuilder detail(String key, Stream<String> values) {
+        if (values == null) {
+            return this;
+        }
+        return detail(key, values.filter(Objects::nonNull).collect(Collectors.joining("::")));
+    }
+    
 
     public EventBuilder removeDetail(String key) {
         if (event.getDetails() != null) {

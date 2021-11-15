@@ -1,0 +1,12 @@
+<!-- Configuration is used to start embedded Infinispan server in DefaultHotRodConnectionProviderFactory if
+ the embedded property is set tu true.-->
+<infinispan>
+    <cache-container>
+        <transport stack="udp"/>
+
+        <!-- Specify all remote caches that should be created on the embedded Infinispan server. -->
+        <distributed-cache name="clients" mode="SYNC">
+            <encoding media-type="application/x-protostream"/>
+        </distributed-cache>
+    </cache-container>
+</infinispan>

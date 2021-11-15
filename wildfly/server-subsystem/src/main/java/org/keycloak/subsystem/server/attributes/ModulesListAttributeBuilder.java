@@ -27,6 +27,6 @@ public class ModulesListAttributeBuilder extends StringListAttributeDefinition.B
     public ModulesListAttributeBuilder() {
         super("modules");
         setAllowExpression(true);
-        setAllowNull(true);
+        setRequired(false);
     }
 }

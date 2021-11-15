@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapAuthenticatedClientSessionEntity implements AbstractEntity, UpdatableEntity {
+public class MapAuthenticatedClientSessionEntity extends UpdatableEntity.Impl implements AbstractEntity {
 
     private String id;
     private String userSessionId;
@@ -37,7 +37,6 @@ public class MapAuthenticatedClientSessionEntity implements AbstractEntity, Upda
     /**
      * Flag signalizing that any of the setters has been meaningfully used.
      */
-    protected boolean updated;
 
     private String authMethod;
     private String redirectUri;
@@ -52,16 +51,9 @@ public class MapAuthenticatedClientSessionEntity implements AbstractEntity, Upda
 
     private boolean offline;
 
-    public MapAuthenticatedClientSessionEntity() {
-        this.id = null;
-        this.realmId = null;
-    }
+    public MapAuthenticatedClientSessionEntity() {}
 
     public MapAuthenticatedClientSessionEntity(String id, String userSessionId, String realmId, String clientId, boolean offline) {
-        Objects.requireNonNull(userSessionId, "userSessionId");
-        Objects.requireNonNull(realmId, "realmId");
-        Objects.requireNonNull(clientId, "clientId");
-
         this.id = id;
         this.userSessionId = userSessionId;
         this.realmId = realmId;
@@ -76,8 +68,10 @@ public class MapAuthenticatedClientSessionEntity implements AbstractEntity, Upda
     }
 
     @Override
-    public boolean isUpdated() {
-        return this.updated;
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     public String getRealmId() {

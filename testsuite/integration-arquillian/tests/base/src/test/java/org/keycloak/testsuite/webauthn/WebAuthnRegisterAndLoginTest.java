@@ -25,7 +25,7 @@ import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.common.Profile;
-import org.keycloak.common.util.RandomString;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
@@ -133,7 +133,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractTestRealmKeycloakTest 
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
-            String authenticatorLabel = RandomString.randomCode(24);
+            String authenticatorLabel = SecretGenerator.getInstance().randomString(24);
             registerPage.register("firstName", "lastName", email, username, password, password);
 
             // User was registered. Now he needs to register WebAuthn credential

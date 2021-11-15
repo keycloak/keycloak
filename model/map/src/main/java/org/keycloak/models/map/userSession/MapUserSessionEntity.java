@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapUserSessionEntity implements AbstractEntity, UpdatableEntity {
+public class MapUserSessionEntity extends UpdatableEntity.Impl implements AbstractEntity {
     private String id;
 
     private String realmId;
@@ -38,7 +38,6 @@ public class MapUserSessionEntity implements AbstractEntity, UpdatableEntity {
     /**
      * Flag signalizing that any of the setters has been meaningfully used.
      */
-    protected boolean updated;
 
     private String userId;
 
@@ -69,14 +68,9 @@ public class MapUserSessionEntity implements AbstractEntity, UpdatableEntity {
 
     private boolean offline;
 
-    public MapUserSessionEntity() {
-        this.id = null;
-        this.realmId = null;
-    }
+    public MapUserSessionEntity() {}
 
     public MapUserSessionEntity(String id, String realmId) {
-        Objects.requireNonNull(realmId, "realmId");
-
         this.id = id;
         this.realmId = realmId;
     }
@@ -104,8 +98,10 @@ public class MapUserSessionEntity implements AbstractEntity, UpdatableEntity {
     }
 
     @Override
-    public boolean isUpdated() {
-        return this.updated;
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     public String getRealmId() {

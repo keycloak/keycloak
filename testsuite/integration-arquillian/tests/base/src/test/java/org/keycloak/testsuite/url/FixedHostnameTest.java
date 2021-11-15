@@ -60,10 +60,9 @@ import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SCHEME;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
-@AuthServerContainerExclude({REMOTE, QUARKUS})
+@AuthServerContainerExclude({REMOTE})
 public class FixedHostnameTest extends AbstractHostnameTest {
 
     public static final String SAML_CLIENT_ID = "http://whatever.hostname:8280/app/";

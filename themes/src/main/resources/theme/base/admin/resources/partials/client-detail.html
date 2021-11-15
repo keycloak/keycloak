@@ -271,12 +271,19 @@
                 </div>
                 <kc-tooltip>{{:: 'force-post-binding.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+            <div class="form-group clearfix block" data-ng-show="protocol == 'saml' || protocol == 'openid-connect'">
                 <label class="col-md-2 control-label" for="frontchannelLogout">{{:: 'front-channel-logout' | translate}}</label>
                 <div class="col-sm-6">
                     <input ng-model="clientEdit.frontchannelLogout" name="frontchannelLogout" id="frontchannelLogout" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
                 <kc-tooltip>{{:: 'front-channel-logout.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="protocol == 'openid-connect' && clientEdit.frontchannelLogout">
+                <label class="col-md-2 control-label" for="frontchannelLogoutUrl">{{:: 'front-channel-logout-url' | translate}}</label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" name="frontchannelLogoutUrl" id="frontchannelLogoutUrl" data-ng-model="clientEdit.attributes['frontchannel.logout.url']">
+                </div>
+                <kc-tooltip>{{:: 'front-channel-logout-url.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
                 <label class="col-md-2 control-label" for="samlForceNameIdFormat">{{:: 'force-name-id-format' | translate}}</label>

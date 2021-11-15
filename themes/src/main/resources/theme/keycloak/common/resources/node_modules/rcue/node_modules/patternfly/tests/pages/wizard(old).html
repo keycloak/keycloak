@@ -1,0 +1,162 @@
+---
+categories: [Widgets]
+layout: page
+title: Wizard (old)
+resource: true
+---
+<h2>Complete Wizard</h2>
+{% include widgets/communication/wizard.html id="complete" %}
+
+<h2>Initializing</h2>
+<button class="btn btn-default" data-toggle="modal" data-target="#initializing">Launch wizard showing initialization
+  state
+</button>
+<div class="modal" id="initializing" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg wizard-pf">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true" aria-label="Close">
+          <span class="pficon pficon-close"></span>
+        </button>
+        <h4 class="modal-title">Wizard Title</h4>
+      </div>
+      <div class="modal-body wizard-pf-body clearfix">
+        <div class="wizard-pf-steps hidden">
+          <ul class="wizard-pf-steps-indicator">
+            <li>
+              <a><span class="wizard-pf-step-number">1</span><span class="wizard-pf-step-title">First Step</span></a>
+            </li>
+            <li>
+              <a><span class="wizard-pf-step-number">2</span><span class="wizard-pf-step-title">Second Step</span></a>
+            </li>
+            <li>
+              <a><span class="wizard-pf-step-number">3</span><span class="wizard-pf-step-title">Review</span></a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="wizard-pf-sidebar hidden">
+          <ul class="list-group">
+            <li class="list-group-item active">
+              <a>
+                <span class="wizard-pf-substep-number">1A.</span>
+                <span class="wizard-pf-substep-title">General</span>
+              </a>
+            </li>
+            <li class="list-group-item">
+              <a>
+                <span class="wizard-pf-substep-number">1B.</span>
+                <span class="wizard-pf-substep-title">Masters &amp; Nodes</span>
+              </a>
+            </li>
+            <li class="list-group-item">
+              <a>
+                <span class="wizard-pf-substep-number">1C.</span>
+                <span class="wizard-pf-substep-title">CDN Channel</span>
+              </a>
+            </li>
+          </ul>
+        </div><!-- /.wizard-pf-sidebar -->
+
+        <div class="wizard-pf-main" style="margin-left: 0px">
+          <div class="blank-slate-pf">
+            <div class="spinner spinner-lg blank-slate-pf-icon"></div>
+            <h3 class="blank-slate-pf-main-action">Loading Wizard</h3>
+            <p class="blank-slate-pf-secondary-action">Lorem ipsum dolor sit amet, porta at suspendisse ac, ut wisi
+              vivamus, lorem sociosqu eget nunc amet. </p>
+          </div>
+
+        </div>
+
+      </div><!-- /.wizard-pf-body -->
+
+      <!-- TODO: disable buttons -->
+      <div class="modal-footer wizard-pf-footer">
+        <button type="button" class="btn btn-default btn-cancel" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-default disabled" data-dismiss="modal">
+          <span class="i fa fa-angle-left"></span>
+          Back
+        </button>
+        <button type="button" class="btn btn-primary disabled" data-dismiss="modal">
+          Next
+          <span class="i fa fa-angle-right"></span>
+        </button>
+      </div><!-- /.wizard-pf-footer -->
+
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+<h2>Last Step</h2>
+<button class="btn btn-default" data-toggle="modal" data-target="#done">Launch wizard showing finalizing
+state
+</button>
+<div class="modal" id="done" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg wizard-pf">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true" aria-label="Close">
+          <span class="pficon pficon-close"></span>
+        </button>
+        <h4 class="modal-title">Wizard Title</h4>
+      </div>
+      <div class="modal-body wizard-pf-body clearfix">
+        <div class="wizard-pf-steps">
+          <ul class="wizard-pf-steps-indicator">
+            <li class="viewed-pf">
+              <a><span class="wizard-pf-step-number">1</span><span class="wizard-pf-step-title">First Step</span></a>
+            </li>
+            <li class="viewed-pf">
+              <a><span class="wizard-pf-step-number">2</span><span class="wizard-pf-step-title">Second Step</span></a>
+            </li>
+            <li class="active">
+              <a><span class="wizard-pf-step-number">3</span><span class="wizard-pf-step-title">Review</span></a>
+            </li>
+          </ul>
+        </div>
+        <div class="wizard-pf-row">
+          <div class="wizard-pf-sidebar">
+            <ul class="list-group">
+              <li class="list-group-item">
+                <a>
+                  <span class="wizard-pf-substep-number">3A.</span>
+                  <span class="wizard-pf-substep-title">Summary</span>
+                </a>
+              </li>
+              <li class="list-group-item active">
+                <a>
+                  <span class="wizard-pf-substep-number">3B.</span>
+                  <span class="wizard-pf-substep-title">Progress</span>
+                </a>
+              </li>
+            </ul>
+          </div><!-- /.wizard-pf-sidebar -->
+
+          <div class="wizard-pf-main">
+            <div class="blank-slate-pf">
+              <div class="spinner spinner-lg blank-slate-pf-icon"></div>
+              <h3 class="blank-slate-pf-main-action">Deployment in progress</h3>
+              <p class="blank-slate-pf-secondary-action">Lorem ipsum dolor sit amet, porta at suspendisse ac, ut wisi
+                vivamus, lorem sociosqu eget nunc amet. </p>
+            </div>
+
+          </div>
+        </div>
+      </div><!-- /.wizard-pf-body -->
+
+      <!-- TODO: disable buttons -->
+      <div class="modal-footer wizard-pf-footer">
+        <button type="button" class="btn btn-default btn-cancel" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-default disabled" data-dismiss="modal">
+          <span class="i fa fa-angle-left"></span>
+          Back
+        </button>
+        <button type="button" class="btn btn-primary disabled" data-dismiss="modal">
+          Deploy
+          <span class="i fa fa-angle-right"></span>
+        </button>
+      </div><!-- /.wizard-pf-footer -->
+
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->

@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests</artifactId>
-        <version>15.0.3</version>
+        <version>16.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -142,6 +142,11 @@
             <artifactId>system-rules</artifactId>
             <version>${systemrules.version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-server-hotrod</artifactId>
+            <version>${infinispan.version}</version>
         </dependency>
     </dependencies>
     
@@ -423,8 +428,8 @@
                                                 <include>client.crt</include>
                                                 <include>client.key</include>
                                                 <include>*.crl</include>
-                                                <!-- KEYCLOAK-6771 Certificate Bound Token -->
                                                 <include>other_client.jks</include>
+                                                <include>test-user-obb.jks</include>
                                             </includes>
                                         </resource>
                                         <resource>

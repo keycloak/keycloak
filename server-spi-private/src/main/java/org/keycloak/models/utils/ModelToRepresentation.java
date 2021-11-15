@@ -38,6 +38,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.*;
 import org.keycloak.representations.idm.authorization.*;
 import org.keycloak.storage.StorageId;
+import org.keycloak.utils.StringUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -144,7 +145,7 @@ public class ModelToRepresentation {
 
     public static Stream<GroupRepresentation> searchForGroupByName(RealmModel realm, boolean full, String search, Integer first, Integer max) {
         return realm.searchForGroupByNameStream(search, first, max)
-                .map(g -> toGroupHierarchy(g, full));
+                .map(g -> toGroupHierarchy(g, full, search));
     }
 
     public static Stream<GroupRepresentation> searchForGroupByName(UserModel user, boolean full, String search, Integer first, Integer max) {
@@ -178,9 +179,14 @@ public class ModelToRepresentation {
     }
 
     public static GroupRepresentation toGroupHierarchy(GroupModel group, boolean full) {
+        return toGroupHierarchy(group, full, null);
+    }
+
+    public static GroupRepresentation toGroupHierarchy(GroupModel group, boolean full, String search) {
         GroupRepresentation rep = toRepresentation(group, full);
         List<GroupRepresentation> subGroups = group.getSubGroupsStream()
-                .map(subGroup -> toGroupHierarchy(subGroup, full)).collect(Collectors.toList());
+                .filter(g -> groupMatchesSearchOrIsPathElement(g, search))
+                .map(subGroup -> toGroupHierarchy(subGroup, full, search)).collect(Collectors.toList());
         rep.setSubGroups(subGroups);
         return rep;
     }
@@ -193,6 +199,15 @@ public class ModelToRepresentation {
     public static Stream<GroupRepresentation> toSubGroupHierarchy(GroupModel group, boolean full) {
         return group.getSubGroupsStream()
                 .map(g -> toRepresentation(g, full));
+                
+    private static boolean groupMatchesSearchOrIsPathElement(GroupModel group, String search) {
+        if (StringUtil.isBlank(search)) {
+            return true;
+        }
+        if (group.getName().contains(search)) {
+            return true;
+        }
+        return group.getSubGroupsStream().findAny().isPresent();
     }
 
     public static UserRepresentation toRepresentation(KeycloakSession session, RealmModel realm, UserModel user) {
@@ -308,6 +323,16 @@ public class ModelToRepresentation {
         rep.setComposite(role.isComposite());
         rep.setClientRole(role.isClientRole());
         rep.setContainerId(role.getContainerId());
+        return rep;
+    }
+
+    public static RealmRepresentation toBriefRepresentation(RealmModel realm) {
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setId(realm.getId());
+        rep.setRealm(realm.getName());
+        rep.setDisplayName(realm.getDisplayName());
+        rep.setDisplayNameHtml(realm.getDisplayNameHtml());
+        rep.setEnabled(realm.isEnabled());
         return rep;
     }
 
@@ -473,7 +498,8 @@ public class ModelToRepresentation {
 
         session.clientPolicy().updateRealmRepresentationFromModel(realm, rep);
 
-        rep.setAttributes(stripRealmAttributesIncludedAsFields(realm.getAttributes()));
+        // Append realm attributes to representation
+        rep.getAttributes().putAll(stripRealmAttributesIncludedAsFields(realm.getAttributes()));
 
         if (!internal) {
             rep = StripSecretsUtils.strip(rep);

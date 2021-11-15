@@ -24,13 +24,12 @@ import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-public class MapAuthenticatorConfigEntity implements UpdatableEntity {
+public class MapAuthenticatorConfigEntity extends UpdatableEntity.Impl {
 
     private String id;
     private String alias;
     private Map<String, String> config = new HashMap<>();
 
-    private boolean updated;
 
     private MapAuthenticatorConfigEntity() {}
 
@@ -51,11 +50,6 @@ public class MapAuthenticatorConfigEntity implements UpdatableEntity {
         model.setAlias(entity.getAlias());
         model.setConfig(entity.getConfig() == null ? null : new HashMap<>(entity.getConfig()));
         return model;
-    }
-
-    @Override
-    public boolean isUpdated() {
-        return updated;
     }
 
     public String getId() {

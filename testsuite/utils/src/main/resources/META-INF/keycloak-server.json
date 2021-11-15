@@ -124,6 +124,14 @@
         }
     },
 
+    "connectionsHotRod": {
+        "default": {
+            "embedded": "${keycloak.connectionsHotRod.embedded:true}",
+            "embeddedPort": "${keycloak.connectionsHotRod.embeddedPort:11444}",
+            "enableSecurity": "${keycloak.connectionsHotRod.enableSecurity:false}"
+        }
+    },
+
     "scripting": {
     },
 
@@ -141,7 +149,7 @@
     },
 
     "userProfile": {
-        "provider": "${keycloak.userProfile.provider:}",
+        "provider": "${keycloak.userProfile.provider:declarative-user-profile}",
         "declarative-user-profile": {
             "read-only-attributes": [ "deniedFoo", "deniedBar*", "deniedSome/thing", "deniedsome*thing" ],
             "admin-read-only-attributes": [ "deniedSomeAdmin" ]

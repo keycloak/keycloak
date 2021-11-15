@@ -31,10 +31,10 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.UpdatableEntity;
 
-public class MapClientScopeEntity implements AbstractEntity, UpdatableEntity {
+public class MapClientScopeEntity extends UpdatableEntity.Impl implements AbstractEntity {
 
-    private final String id;
-    private final String realmId;
+    private String id;
+    private String realmId;
 
     private String name;
     private String protocol;
@@ -47,16 +47,10 @@ public class MapClientScopeEntity implements AbstractEntity, UpdatableEntity {
     /**
      * Flag signalizing that any of the setters has been meaningfully used.
      */
-    protected boolean updated;
 
-    protected MapClientScopeEntity() {
-        this.id = null;
-        this.realmId = null;
-    }
+    public MapClientScopeEntity() {}
 
     public MapClientScopeEntity(String id, String realmId) {
-        Objects.requireNonNull(realmId, "realmId");
-
         this.id = id;
         this.realmId = realmId;
     }
@@ -67,8 +61,10 @@ public class MapClientScopeEntity implements AbstractEntity, UpdatableEntity {
     }
 
     @Override
-    public boolean isUpdated() {
-        return this.updated;
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     public String getName() {
@@ -146,6 +142,11 @@ public class MapClientScopeEntity implements AbstractEntity, UpdatableEntity {
 
     public String getRealmId() {
         return this.realmId;
+    }
+
+    public void setRealmId(String realmId) {
+        this.updated |= !Objects.equals(this.realmId, realmId);
+        this.realmId = realmId;
     }
 
     public Stream<String> getScopeMappings() {

@@ -21,14 +21,13 @@ import java.util.Objects;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.map.common.UpdatableEntity;
 
-public class MapRequiredCredentialEntity implements UpdatableEntity {
+public class MapRequiredCredentialEntity extends UpdatableEntity.Impl {
 
     private String type;
     private String formLabel;
     private Boolean input = false;
     private Boolean secret = false;
 
-    private boolean updated;
 
     private MapRequiredCredentialEntity() {}
 
@@ -50,11 +49,6 @@ public class MapRequiredCredentialEntity implements UpdatableEntity {
         model.setSecret(entity.isSecret());
         model.setInput(entity.isInput());
         return model;
-    }
-
-    @Override
-    public boolean isUpdated() {
-        return updated;
     }
 
     public String getType() {

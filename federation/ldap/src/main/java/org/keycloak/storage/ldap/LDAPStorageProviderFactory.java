@@ -281,6 +281,18 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             throw new ComponentValidationException("ldapErrorCantEnableStartTlsAndConnectionPooling");
         }
 
+        // editMode is mandatory
+        if (config.get(LDAPConstants.EDIT_MODE) == null) {
+            throw new ComponentValidationException("ldapErrorEditModeMandatory");
+        }
+
+        // validatePasswordPolicy applicable only for WRITABLE mode
+        if (cfg.getEditMode() != UserStorageProvider.EditMode.WRITABLE) {
+            if (cfg.isValidatePasswordPolicy()) {
+                throw new ComponentValidationException("ldapErrorValidatePasswordPolicyAvailableForWritableOnly");
+            }
+        }
+
         if (!userStorageModel.isImportEnabled() && cfg.getEditMode() == UserStorageProvider.EditMode.UNSYNCED) {
             throw new ComponentValidationException("ldapErrorCantEnableUnsyncedAndImportOff");
         }

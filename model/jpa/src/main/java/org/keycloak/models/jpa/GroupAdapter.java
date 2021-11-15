@@ -226,7 +226,7 @@ public class GroupAdapter implements GroupModel.Streams , JpaModel<GroupEntity> 
 
     @Override
     public void grantRole(RoleModel role) {
-        if (hasRole(role)) return;
+        if (hasDirectRole(role)) return;
         GroupRoleMappingEntity entity = new GroupRoleMappingEntity();
         entity.setGroup(getEntity());
         entity.setRoleId(role.getId());

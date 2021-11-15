@@ -31,7 +31,7 @@
     </description>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-parent</artifactId>
-    <version>15.0.3</version>
+    <version>16.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <properties>
@@ -78,6 +78,7 @@
         <hibernate.core.version>5.3.20.Final</hibernate.core.version>
         <hibernate.c3p0.version>5.3.20.Final</hibernate.c3p0.version>
         <infinispan.version>11.0.9.Final</infinispan.version>
+        <infinispan.protostream.processor.version>4.3.4.Final</infinispan.protostream.processor.version>
         <jackson.version>2.12.1</jackson.version>
         <jackson.databind.version>${jackson.version}</jackson.databind.version>
         <jackson.annotations.version>${jackson.databind.version}</jackson.annotations.version>
@@ -92,7 +93,7 @@
         <log4j.version>1.2.17</log4j.version>
         <resteasy.version>3.15.1.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
-        <owasp.html.sanitizer.version>20191001.1</owasp.html.sanitizer.version>
+        <owasp.html.sanitizer.version>20211018.2</owasp.html.sanitizer.version>
         <slf4j-api.version>1.7.30</slf4j-api.version>
         <slf4j.version>1.7.30</slf4j.version>
         <sun.istack.version>3.0.10</sun.istack.version>
@@ -237,7 +238,7 @@
 
     <issueManagement>
         <system>JIRA</system>
-        <url>http://jira.jboss.com/jira/browse/KEYCLOAK</url>
+        <url>https://github.com/keycloak/keycloak/issues</url>
     </issueManagement>
 
     <developers>
@@ -909,6 +910,68 @@
                 <version>${infinispan.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-client-hotrod</artifactId>
+                <version>${infinispan.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-query-dsl</artifactId>
+                <version>${infinispan.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-remote-query-client</artifactId>
+                <version>${infinispan.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-server-core</artifactId>
+                <version>${infinispan.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-server-router</artifactId>
+                <version>${infinispan.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-server-runtime</artifactId>
+                <version>${infinispan.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-server-rest</artifactId>
+                <version>${infinispan.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-client-hotrod</artifactId>
+                <version>${infinispan.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-query-dsl</artifactId>
+                <version>${infinispan.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-remote-query-client</artifactId>
+                <version>${infinispan.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan.protostream</groupId>
+                <artifactId>protostream-processor</artifactId>
+                <scope>provided</scope>
+                <version>${infinispan.protostream.processor.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.jboss.marshalling</groupId>
                 <artifactId>jboss-marshalling</artifactId>
                 <version>${jboss.marshalling.version}</version>
@@ -1245,6 +1308,11 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-model-map-hot-rod</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>launcher</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1342,6 +1410,11 @@
                 <artifactId>keycloak-quarkus-server-app</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-admin-ui</artifactId>
+                <version>16.0.0-SNAPSHOT</version>
+            </dependency>
 
             <!-- Openshift -->
             <dependency>
@@ -1430,12 +1503,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-api-docs-dist</artifactId>
-                <version>${project.version}</version>
-                <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-examples-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>
@@ -1743,9 +1810,11 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.0.0-M5</version>
                     <configuration>
+                        <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                         <forkMode>once</forkMode>
-                        <argLine>-Djava.awt.headless=true ${surefire.memory.settings}</argLine>
+                        <argLine>-Djava.awt.headless=true ${surefire.memory.settings} -Duser.language=en -Duser.region=US</argLine>
                         <runOrder>alphabetical</runOrder>
                     </configuration>
                 </plugin>
@@ -1897,6 +1966,16 @@
                 <ee.maven.version>${wildfly.version}</ee.maven.version>
                 <product.filename.version>${project.version}</product.filename.version>
             </properties>
+        </profile>
+
+        <profile>
+            <id>quarkus</id>
+            <activation>
+                <jdk>[11,)</jdk>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
             <modules>
                 <module>quarkus</module>
             </modules>

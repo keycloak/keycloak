@@ -23,7 +23,7 @@ import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-public class MapClientInitialAccessEntity implements UpdatableEntity {
+public class MapClientInitialAccessEntity extends UpdatableEntity.Impl {
 
     private String id;
     private Integer timestamp = 0;
@@ -31,7 +31,6 @@ public class MapClientInitialAccessEntity implements UpdatableEntity {
     private Integer count = 0;
     private Integer remainingCount = 0;
 
-    private boolean updated;
 
     private MapClientInitialAccessEntity() {}
 
@@ -56,11 +55,6 @@ public class MapClientInitialAccessEntity implements UpdatableEntity {
         model.setCount(entity.getCount());
         model.setRemainingCount(entity.getRemainingCount());
         return model;
-    }
-
-    @Override
-    public boolean isUpdated() {
-        return updated;
     }
 
     public String getId() {

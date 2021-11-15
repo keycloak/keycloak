@@ -417,7 +417,7 @@ public class SAMLEndpoint {
 
                 KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
                 if (! isSuccessfulSamlResponse(responseType)) {
-                    String statusMessage = responseType.getStatus() == null ? Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR : responseType.getStatus().getStatusMessage();
+                    String statusMessage = responseType.getStatus() == null || responseType.getStatus().getStatusMessage() == null ? Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR : responseType.getStatus().getStatusMessage();
                     return callback.error(statusMessage);
                 }
                 if (responseType.getAssertions() == null || responseType.getAssertions().isEmpty()) {
@@ -445,7 +445,7 @@ public class SAMLEndpoint {
                 }
 
                 // Validate InResponseTo attribute: must match the generated request ID
-                String expectedRequestId = authSession.getClientNote(SamlProtocol.SAML_REQUEST_ID);
+                String expectedRequestId = authSession.getClientNote(SamlProtocol.SAML_REQUEST_ID_BROKER);
                 final boolean inResponseToValidationSuccess = validateInResponseToAttribute(responseType, expectedRequestId);
                 if (!inResponseToValidationSuccess)
                 {
@@ -466,6 +466,10 @@ public class SAMLEndpoint {
                     return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
                 }
 
+                if(AssertionUtil.isIdEncrypted(responseType)) {
+                    // This methods writes the parsed and decrypted id back on the responseType parameter:
+                    AssertionUtil.decryptId(responseType, keys.getPrivateKey());
+                }
                 AssertionType assertion = responseType.getAssertions().get(0).getAssertion();
                 NameIDType subjectNameID = getSubjectNameID(assertion);
                 String principal = getPrincipal(assertion);

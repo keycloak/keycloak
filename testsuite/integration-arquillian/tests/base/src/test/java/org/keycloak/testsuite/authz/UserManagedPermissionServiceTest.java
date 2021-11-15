@@ -109,6 +109,9 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
                 .client(ClientBuilder.create().clientId("client-a")
                         .redirectUris("http://localhost/resource-server-test")
                         .publicClient())
+                .client(ClientBuilder.create().clientId("client-remove")
+                        .redirectUris("http://localhost/resource-server-test")
+                        .publicClient())
                 .build());
     }
 
@@ -989,6 +992,60 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
 
         policies = provider.getStoreFactory().getPolicyStore()
                 .findByResourceServer(filters, client.getId(), -1, -1);
+        assertTrue(policies.isEmpty());
+    }
+
+    @Test
+    public void testRemovePoliciesOnClientDelete() {
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName("Resource A");
+        resource.setOwnerManagedAccess(true);
+        resource.setOwner("marta");
+        resource.addScope("Scope A", "Scope B", "Scope C");
+
+        resource = getAuthzClient().protection().resource().create(resource);
+
+        UmaPermissionRepresentation newPermission = new UmaPermissionRepresentation();
+
+        newPermission.setName("Custom User-Managed Permission");
+        newPermission.addClient("client-remove");
+
+        ProtectionResource protection = getAuthzClient().protection("marta", "password");
+
+        protection.policy(resource.getId()).create(newPermission);
+
+        getTestingClient().server().run((RunOnServer) UserManagedPermissionServiceTest::testRemovePoliciesOnClientDelete);
+    }
+
+    private static void testRemovePoliciesOnClientDelete(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName("authz-test");
+        ClientModel client = realm.getClientByClientId("resource-server-test");
+        AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
+        UserModel user = session.users().getUserByUsername(realm, "marta");
+        Map<Policy.FilterOption, String[]> filters = new HashMap<>();
+
+        filters.put(Policy.FilterOption.TYPE, new String[] {"uma"});
+        filters.put(OWNER, new String[] {user.getId()});
+
+        List<Policy> policies = provider.getStoreFactory().getPolicyStore()
+            .findByResourceServer(filters, client.getId(), -1, -1);
+        assertEquals(1, policies.size());
+
+        Policy policy = policies.get(0);
+        assertFalse(policy.getResources().isEmpty());
+
+        Resource resource = policy.getResources().iterator().next();
+        assertEquals("Resource A", resource.getName());
+
+        realm.removeClient(realm.getClientByClientId("client-remove").getId());
+
+        filters = new HashMap<>();
+
+        filters.put(OWNER, new String[] {user.getId()});
+
+        policies = provider.getStoreFactory().getPolicyStore()
+            .findByResourceServer(filters, client.getId(), -1, -1);
         assertTrue(policies.isEmpty());
     }
 

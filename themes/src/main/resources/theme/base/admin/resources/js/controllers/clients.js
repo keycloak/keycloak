@@ -198,7 +198,29 @@ module.controller('ClientX509Ctrl', function($scope, $location, Client, Notifica
         }
     }, true);
 
+    function updateProperties() {
+       if ($scope.client.attributes["x509.allow.regex.pattern.comparison"]) {
+           if ($scope.client.attributes["x509.allow.regex.pattern.comparison"] == "true") {
+               $scope.allowRegexPatternComparison = true;
+           } else {
+               $scope.allowRegexPatternComparison = false;
+           }
+       }
+    }
+
+    updateProperties();
+
+    $scope.switchChange = function() {
+        $scope.changed = true;
+    }
+
     $scope.save = function() {
+        if ($scope.allowRegexPatternComparison == true) {
+            $scope.client.attributes["x509.allow.regex.pattern.comparison"] = "true";
+        } else {
+            $scope.client.attributes["x509.allow.regex.pattern.comparison"] = "false";
+        }
+
         if (!$scope.client.attributes["x509.subjectdn"]) {
             Notifications.error("The SubjectDN must not be empty.");
         } else {
@@ -224,6 +246,8 @@ module.controller('ClientX509Ctrl', function($scope, $location, Client, Notifica
 
     $scope.reset = function() {
         $scope.client.attributes["x509.subjectdn"] = $scope.clientCopy.attributes["x509.subjectdn"];
+        $scope.client.attributes["x509.allow.regex.pattern.comparison"] = $scope.clientCopy.attributes["x509.allow.regex.pattern.comparison"];
+        updateProperties();
         $location.url("/realms/" + $scope.realm.realm + "/clients/" + $scope.client.id + "/credentials");
     };
 });
@@ -619,8 +643,26 @@ module.controller('ClientOidcKeyCtrl', function($scope, $location, realm, client
         }
     }
 
-    $scope.switchChange = function() {
+    if ($scope.client.attributes["use.jwks.string"]) {
+        if ($scope.client.attributes["use.jwks.string"] == "true") {
+            $scope.useJwksString = true;
+        } else {
+            $scope.useJwksString = false;
+        }
+    }
+
+    $scope.jwksUrlSwitchChange = function() {
         $scope.changed = true;
+        if ($scope.useJwksUrl == false) {
+            $scope.useJwksString = false;
+        }
+    }
+
+    $scope.jwksStringSwitchChange = function() {
+        $scope.changed = true;
+        if ($scope.useJwksString == false) {
+            $scope.useJwksUrl = false;
+        }
     }
 
     $scope.save = function() {
@@ -629,6 +671,12 @@ module.controller('ClientOidcKeyCtrl', function($scope, $location, realm, client
             $scope.client.attributes["use.jwks.url"] = "true";
         } else {
             $scope.client.attributes["use.jwks.url"] = "false";
+        }
+
+        if ($scope.useJwksString == true) {
+            $scope.client.attributes["use.jwks.string"] = "true";
+        } else {
+            $scope.client.attributes["use.jwks.string"] = "false";
         }
 
         Client.update({
@@ -1752,6 +1800,9 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             $scope.clientEdit.attributes["request.uris"] = $scope.clientEdit.requestUris.join("##");
         } else {
             $scope.clientEdit.attributes["request.uris"] = null;
+        }
+        if (!$scope.clientEdit.frontchannelLogout) {
+            $scope.clientEdit.attributes["frontchannel.logout.url"] = null;
         }
         delete $scope.clientEdit.requestUris;
 

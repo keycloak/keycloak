@@ -13,3 +13,5 @@ org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutorFactory
 org.keycloak.protocol.oidc.grants.ciba.clientpolicy.executor.SecureCibaSessionEnforceExecutorFactory
 org.keycloak.protocol.oidc.grants.ciba.clientpolicy.executor.SecureCibaSignedAuthenticationRequestExecutorFactory
 org.keycloak.protocol.oidc.grants.ciba.clientpolicy.executor.SecureCibaAuthenticationRequestSigningAlgorithmExecutorFactory
+org.keycloak.services.clientpolicy.executor.SecureLogoutExecutorFactory
+org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCredentialsGrantExecutorFactory

@@ -31,10 +31,10 @@ import java.util.Set;
  *
  * @author mhajas
  */
-public class MapGroupEntity implements AbstractEntity, UpdatableEntity {
+public class MapGroupEntity extends UpdatableEntity.Impl implements AbstractEntity {
 
     private String id;
-    private final String realmId;
+    private String realmId;
 
     private String name;
     private String parentId;
@@ -44,16 +44,10 @@ public class MapGroupEntity implements AbstractEntity, UpdatableEntity {
     /**
      * Flag signalizing that any of the setters has been meaningfully used.
      */
-    protected boolean updated;
 
-    protected MapGroupEntity() {
-        this.id = null;
-        this.realmId = null;
-    }
+    public MapGroupEntity() {}
 
     public MapGroupEntity(String id, String realmId) {
-        Objects.requireNonNull(realmId, "realmId");
-
         this.id = id;
         this.realmId = realmId;
     }
@@ -64,10 +58,11 @@ public class MapGroupEntity implements AbstractEntity, UpdatableEntity {
     }
 
     @Override
-    public boolean isUpdated() {
-        return this.updated;
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
-
 
     public String getName() {
         return name;
@@ -111,6 +106,11 @@ public class MapGroupEntity implements AbstractEntity, UpdatableEntity {
 
     public String getRealmId() {
         return this.realmId;
+    }
+
+    public void setRealmId(String realmId) {
+        this.updated |= !Objects.equals(this.realmId, realmId);
+        this.realmId = realmId;
     }
 
     public Set<String> getGrantedRoles() {

@@ -17,6 +17,7 @@
 
 package org.keycloak.services.clientpolicy.context;
 
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
@@ -31,6 +32,10 @@ public class LogoutRequestContext implements ClientPolicyContext {
 
     public LogoutRequestContext(MultivaluedMap<String, String> params) {
         this.params = params;
+    }
+
+    public LogoutRequestContext() {
+        this(null);
     }
 
     @Override

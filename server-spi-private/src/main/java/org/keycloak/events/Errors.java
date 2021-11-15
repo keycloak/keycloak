@@ -62,6 +62,7 @@ public interface Errors {
     String INVALID_CONFIG = "invalid_config";
     String EXPIRED_CODE = "expired_code";
     String INVALID_INPUT = "invalid_input";
+    String COOKIE_NOT_FOUND = "cookie_not_found";
 
     String REGISTRATION_DISABLED = "registration_disabled";
     String RESET_CREDENTIAL_DISABLED = "reset_credential_disabled";
@@ -108,6 +109,5 @@ public interface Errors {
     String INVALID_OAUTH2_DEVICE_CODE = "invalid_oauth2_device_code";
     String EXPIRED_OAUTH2_DEVICE_CODE = "expired_oauth2_device_code";
     String INVALID_OAUTH2_USER_CODE = "invalid_oauth2_user_code";
-    String EXPIRED_OAUTH2_USER_CODE = "expired_oauth2_user_code";
     String SLOW_DOWN = "slow_down";
 }
