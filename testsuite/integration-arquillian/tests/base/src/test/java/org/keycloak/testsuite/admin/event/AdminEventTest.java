@@ -160,6 +160,31 @@ public class AdminEventTest extends AbstractEventTest {
         assertThat(realm.getAdminEvents(null, null, null, null, null, null, null, null, 0, 1000).size(), is(greaterThanOrEqualTo(110)));
     }
 
+    @Test
+    public void orderResultsTest() {
+        RealmResource realm = adminClient.realms().realm("test");
+        AdminEventRepresentation firstEvent = new AdminEventRepresentation();
+        firstEvent.setOperationType(OperationType.CREATE.toString());
+        firstEvent.setAuthDetails(new AuthDetailsRepresentation());
+        firstEvent.setRealmId(realm.toRepresentation().getId());
+        firstEvent.setTime(System.currentTimeMillis() - 1000);
+
+        AdminEventRepresentation secondEvent = new AdminEventRepresentation();
+        secondEvent.setOperationType(OperationType.DELETE.toString());
+        secondEvent.setAuthDetails(new AuthDetailsRepresentation());
+        secondEvent.setRealmId(realm.toRepresentation().getId());
+        secondEvent.setTime(System.currentTimeMillis());
+
+        testingClient.testing("test").onAdminEvent(firstEvent, false);
+        testingClient.testing("test").onAdminEvent(secondEvent, false);
+
+        List<AdminEventRepresentation> adminEvents = realm.getAdminEvents(null, null, null, null, null, null, null, null, null, null);
+        assertThat(adminEvents.size(), is(equalTo(2)));
+        assertThat(adminEvents.get(0).getOperationType(), is(equalTo(OperationType.DELETE.toString())));
+        assertThat(adminEvents.get(1).getOperationType(), is(equalTo(OperationType.CREATE.toString())));
+    }
+
+
     private void checkUpdateRealmEventsConfigEvent(int size) {
         List<AdminEventRepresentation> events = events();
         assertThat(events.size(), is(equalTo(size)));
