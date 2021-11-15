@@ -34,6 +34,6 @@ jobs:
       with:
         java-version: 1.8
     - name: Build
-      run: mvn install -B -Dproduct
+      run: mvn install -B -Dproduct -DskipTests
     - name: Test
       run: mvn test -B -Dproduct -pl tests -Dtest=ExternalLinksTest
