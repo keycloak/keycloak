@@ -126,7 +126,7 @@
             <label for="type" class="col-md-2 control-label">{{:: 'webauthn-acceptable-aaguids' | translate}}</label>
             <div class="col-sm-4">
                 <div class="input-group" ng-repeat="(i, acceptableAaguid) in realm.webAuthnPolicyAcceptableAaguids track by $index">
-                    <input id="type" class="form-control" ng-model="realm.webAuthnPolicyAcceptableAaguids[i]">
+                    <input id="type" class="form-control webauthn-acceptable-aaguid" ng-model="realm.webAuthnPolicyAcceptableAaguids[i]">
                     <div class="input-group-btn">
                         <button class="btn btn-default" type="button" data-ng-click="deleteAcceptableAaguid($index)">
                             <span class="fa fa-minus"></span>
