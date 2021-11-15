@@ -51,7 +51,7 @@
     "@snowpack/plugin-postcss": "^1.4.3",
     "@snowpack/plugin-react-refresh": "^2.5.0",
     "@snowpack/plugin-typescript": "^1.2.1",
-    "@testing-library/cypress": "^8.0.1",
+    "@testing-library/cypress": "^8.0.2",
     "@testing-library/jest-dom": "^5.15.0",
     "@testing-library/react": "^12.1.1",
     "@types/dagre": "^0.7.45",
