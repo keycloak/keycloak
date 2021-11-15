@@ -15,7 +15,10 @@ jobs:
         with:
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
       - name: Update maven settings
-        run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
+        env:
+          GITHUB_ACTOR: ${{ secrets.GITHUB_ACTOR }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: mkdir -p ~/.m2 ; envsubst < .github/settings.xml > ~/.m2/settings.xml
       - name: Cache Maven packages
         id: cache
         uses: actions/cache@v2

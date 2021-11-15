@@ -2,13 +2,54 @@
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
                       https://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+  <activeProfiles>
+    <activeProfile>github</activeProfile>
+  </activeProfiles>
+
+  <profiles>
+    <profile>
+      <id>github</id>
+      <repositories>
+        <repository>
+          <id>central</id>
+          <url>https://repo1.maven.org/maven2</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+        </repository>
+        <repository>
+          <id>github</id>
+          <url>https://maven.pkg.github.com/keycloak/keycloak-admin-ui</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+        </repository>
+      </repositories>
+    </profile>
+  </profiles>
+
+  <servers>
+    <server>
+      <id>github</id>
+      <username>$GITHUB_ACTOR</username>
+      <password>$GITHUB_TOKEN</password>
+    </server>
+  </servers>
+
   <mirrors>
     <mirror>
-     <id>jboss-public-repository-group-https</id>
-     <mirrorOf>jboss-public-repository-group</mirrorOf>
-     <name>Jboss public https</name>
-     <url>https://repository.jboss.org/nexus/content/groups/public/</url>
-     </mirror>
-   </mirrors>
+    <id>jboss-public-repository-group-https</id>
+    <mirrorOf>jboss-public-repository-group</mirrorOf>
+    <name>Jboss public https</name>
+    <url>https://repository.jboss.org/nexus/content/groups/public/</url>
+    </mirror>
+  </mirrors>
   
 </settings>
