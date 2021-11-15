@@ -164,6 +164,7 @@
         <profile>
             <id>webauthn</id>
             <modules>
+                <module>console</module>
                 <module>webauthn</module>
             </modules>
         </profile>
