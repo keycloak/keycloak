@@ -20,11 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-<<<<<<< HEAD
-        <version>15.0.3</version>
-=======
         <version>16.0.0-SNAPSHOT</version>
->>>>>>> 35bc1c673eea475e5eadb4cca10d02eb09da8424
         <relativePath>../../../pom.xml</relativePath>
     </parent>
     <name>Keycloak Jetty Integration</name>
