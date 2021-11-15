@@ -34,6 +34,7 @@ type SamlKeysDialogProps = {
   id: string;
   attr: KeyTypes;
   onClose: () => void;
+  onCancel: () => void;
 };
 
 export type SamlKeysDialogForm = KeyStoreConfig & {
@@ -65,11 +66,21 @@ export const submitForm = async (
   }
 };
 
-export const SamlKeysDialog = ({ id, attr, onClose }: SamlKeysDialogProps) => {
+export const SamlKeysDialog = ({
+  id,
+  attr,
+  onClose,
+  onCancel,
+}: SamlKeysDialogProps) => {
   const { t } = useTranslation("clients");
   const [type, setType] = useState(false);
   const [keys, setKeys] = useState<CertificateRepresentation>();
-  const { register, control, handleSubmit } = useForm<SamlKeysDialogForm>();
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { isDirty },
+  } = useForm<SamlKeysDialogForm>();
 
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
@@ -122,6 +133,7 @@ export const SamlKeysDialog = ({ id, attr, onClose }: SamlKeysDialogProps) => {
           key="confirm"
           data-testid="confirm"
           variant="primary"
+          isDisabled={!isDirty && !keys}
           onClick={() => {
             if (type) {
               handleSubmit(submit)();
@@ -136,7 +148,7 @@ export const SamlKeysDialog = ({ id, attr, onClose }: SamlKeysDialogProps) => {
           key="cancel"
           data-testid="cancel"
           variant={ButtonVariant.link}
-          onClick={onClose}
+          onClick={onCancel}
         >
           {t("common:cancel")}
         </Button>,

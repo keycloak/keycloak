@@ -225,6 +225,10 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
             save();
             setRefresh(refresh + 1);
           }}
+          onCancel={() => {
+            setValue(KEYS_MAPPING[selectedType!].name, "false");
+            setIsChanged(undefined);
+          }}
         />
       )}
       <DisableConfirm />
