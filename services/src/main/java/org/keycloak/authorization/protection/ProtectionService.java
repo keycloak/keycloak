@@ -77,7 +77,7 @@ public class ProtectionService {
         KeycloakSession keycloakSession = authorization.getKeycloakSession();
         UserModel serviceAccount = keycloakSession.users().getServiceAccount(client);
         AdminEventBuilder adminEvent = new AdminEventBuilder(realm, new AdminAuth(realm, identity.getAccessToken(), serviceAccount, client), keycloakSession, clientConnection);
-        return adminEvent.realm(realm).authClient(client).authUser(serviceAccount);
+        return adminEvent;
     }
 
     @Path("/permission")

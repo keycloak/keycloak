@@ -141,7 +141,7 @@ public class RealmAdminResource {
         this.auth = auth;
         this.realm = realm;
         this.tokenManager = tokenManager;
-        this.adminEvent = adminEvent.realm(realm).resource(ResourceType.REALM);
+        this.adminEvent = adminEvent.resource(ResourceType.REALM);
     }
 
     /**
@@ -699,7 +699,7 @@ public class RealmAdminResource {
 
         logger.debug("updating realm events config: " + realm.getName());
         new RealmManager(session).updateRealmEventsConfig(rep, realm);
-        adminEvent.operation(OperationType.UPDATE).resource(ResourceType.REALM).realm(realm)
+        adminEvent.operation(OperationType.UPDATE).resource(ResourceType.REALM)
                 .resourcePath(session.getContext().getUri()).representation(rep)
                 // refresh the builder to consider old and new config
                 .refreshRealmEventsConfig(session)

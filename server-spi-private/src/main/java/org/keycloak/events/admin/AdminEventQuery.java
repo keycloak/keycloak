@@ -128,6 +128,20 @@ public interface AdminEventQuery {
     AdminEventQuery maxResults(int max);
 
     /**
+     * Order the result by descending time
+     *
+     * @return <code>this</code> for method chaining
+     */
+    AdminEventQuery orderByDescTime();
+
+    /**
+     * Order the result by ascending time
+     *
+     * @return <code>this</code> for method chaining
+     */
+    AdminEventQuery orderByAscTime();
+
+    /**
      * Executes the query and returns the results
      * @deprecated Use {@link #getResultStream() getResultStream} instead.
      */
