@@ -49,6 +49,7 @@ import static org.junit.Assume.assumeThat;
  * @author hmlnarik
  */
 @RequireProvider(InfinispanConnectionProvider.class)
+@net.jcip.annotations.NotThreadSafe
 public class CacheExpirationTest extends KeycloakModelTest {
 
     @Test

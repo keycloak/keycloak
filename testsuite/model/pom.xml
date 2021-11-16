@@ -100,6 +100,13 @@
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-server-core</artifactId>
         </dependency>
+        <!-- https://maven.apache.org/surefire/maven-surefire-plugin/examples/fork-options-and-parallel-execution.html -->
+        <dependency>
+            <groupId>com.github.stephenc.jcip</groupId>
+            <artifactId>jcip-annotations</artifactId>
+            <version>1.0-1</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

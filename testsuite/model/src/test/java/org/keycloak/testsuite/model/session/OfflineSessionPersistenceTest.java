@@ -56,6 +56,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 @RequireProvider(UserProvider.class)
 @RequireProvider(RealmProvider.class)
 @RequireProvider(UserSessionProvider.class)
+@net.jcip.annotations.NotThreadSafe
 public class OfflineSessionPersistenceTest extends KeycloakModelTest {
 
     private static final int USER_COUNT = 50;

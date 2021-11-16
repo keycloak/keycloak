@@ -60,6 +60,7 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.U
 @RequireProvider(UserSessionProvider.class)
 @RequireProvider(UserProvider.class)
 @RequireProvider(RealmProvider.class)
+@net.jcip.annotations.NotThreadSafe
 public class UserSessionInitializerTest extends KeycloakModelTest {
 
     private String realmId;

@@ -55,6 +55,7 @@ import org.keycloak.testsuite.model.RequireProvider;
 @RequireProvider(value=UserSessionProvider.class, only={"infinispan"})
 @RequireProvider(UserProvider.class)
 @RequireProvider(RealmProvider.class)
+@net.jcip.annotations.NotThreadSafe
 public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
 
     private String realmId;

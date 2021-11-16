@@ -65,6 +65,7 @@ import java.util.LinkedList;
 @RequireProvider(value = UserSessionProvider.class, only = InfinispanUserSessionProviderFactory.PROVIDER_ID)
 @RequireProvider(UserProvider.class)
 @RequireProvider(RealmProvider.class)
+@net.jcip.annotations.NotThreadSafe
 public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
     private static final int USER_SESSION_COUNT = 2000;

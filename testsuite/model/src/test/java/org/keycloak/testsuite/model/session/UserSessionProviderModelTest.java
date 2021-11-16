@@ -52,6 +52,7 @@ import static org.keycloak.testsuite.model.session.UserSessionPersisterProviderT
 @RequireProvider(UserSessionProvider.class)
 @RequireProvider(UserProvider.class)
 @RequireProvider(RealmProvider.class)
+@net.jcip.annotations.NotThreadSafe
 public class UserSessionProviderModelTest extends KeycloakModelTest {
 
     private String realmId;
