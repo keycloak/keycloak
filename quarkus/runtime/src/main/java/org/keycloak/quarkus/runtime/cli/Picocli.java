@@ -403,6 +403,7 @@ public final class Picocli {
                         .completionCandidates(expectedValues)
                         .parameterConsumer(PropertyMapperParameterConsumer.INSTANCE)
                         .type(String.class)
+                        .hidden(mapper.isHidden())
                         .build());
             }
 
