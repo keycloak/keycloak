@@ -254,6 +254,26 @@ public class ConfigurationTest {
     }
 
     @Test
+    public void testDefaultDbPropertiesGetApplied() {
+        System.setProperty(CLI_ARGS, "--db=postgres" + ARG_SEPARATOR + "--db-url-host=myhost" + ARG_SEPARATOR + "--db-url-database=kcdb" + ARG_SEPARATOR + "--db-url-properties=?foo=bar");
+        SmallRyeConfig config = createConfig();
+        assertEquals("io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL10Dialect",
+                config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
+        assertEquals("jdbc:postgresql://myhost/kcdb?foo=bar", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals("postgresql", config.getConfigValue("quarkus.datasource.db-kind").getValue());
+    }
+
+    @Test
+    public void testSetDbUrlOverridesDefaultDataSource() {
+        System.setProperty(CLI_ARGS, "--db=mariadb" + ARG_SEPARATOR + "--db-url-host=myhost" + ARG_SEPARATOR + "--db-url=jdbc:mariadb://localhost/keycloak");
+        SmallRyeConfig config = createConfig();
+        assertEquals("org.hibernate.dialect.MariaDBDialect",
+                config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
+        assertEquals("jdbc:mariadb://localhost/keycloak", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals("mariadb", config.getConfigValue("quarkus.datasource.db-kind").getValue());
+    }
+
+    @Test
     public void testDatabaseProperties() {
         System.setProperty("kc.db.url.properties", ";;test=test;test1=test1");
         System.setProperty("kc.db.url.path", "test-dir");
