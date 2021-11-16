@@ -554,8 +554,8 @@ public class GenerateEntityImplementationsProcessor extends AbstractProcessor {
                 }
 
                 pw.println("public class " + mapSimpleClassName + " implements " + className + " {");
-                pw.println("    private final org.keycloak.models.map.common.delegate.DelegateProvider<" + mapSimpleClassName + "> delegateProvider;");
-                pw.println("    public " + mapSimpleClassName + "(org.keycloak.models.map.common.delegate.DelegateProvider<" + mapSimpleClassName + "> delegateProvider) {");
+                pw.println("    private final org.keycloak.models.map.common.delegate.DelegateProvider<" + className + "> delegateProvider;");
+                pw.println("    public " + mapSimpleClassName + "(org.keycloak.models.map.common.delegate.DelegateProvider<" + className + "> delegateProvider) {");
                 pw.println("        this.delegateProvider = delegateProvider;");
                 pw.println("    }");
 
