@@ -69,7 +69,9 @@ export const FileUploadForm = ({
         filename,
       });
 
-      onChange(value.toString());
+      if (value) {
+        onChange(value.toString());
+      }
     }
   };
 
