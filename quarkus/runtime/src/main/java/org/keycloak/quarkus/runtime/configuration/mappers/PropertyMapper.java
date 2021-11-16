@@ -27,7 +27,7 @@ import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 public class PropertyMapper {
 
     static PropertyMapper IDENTITY = new PropertyMapper(null, null, null, null, null,
-            false,null, null, false,Collections.emptyList(),null) {
+            false,null, null, false,Collections.emptyList(),null, true) {
         @Override
         public ConfigValue getOrDefault(String name, ConfigSourceInterceptorContext context, ConfigValue current) {
             return current;
@@ -45,9 +45,11 @@ public class PropertyMapper {
     private final Iterable<String> expectedValues;
     private final ConfigCategory category;
     private final String paramLabel;
+    private final boolean hidden;
 
     PropertyMapper(String from, String to, String defaultValue, BiFunction<String, ConfigSourceInterceptorContext, String> mapper,
-            String mapFrom, boolean buildTime, String description, String paramLabel, boolean mask, Iterable<String> expectedValues, ConfigCategory category) {
+            String mapFrom, boolean buildTime, String description, String paramLabel, boolean mask, Iterable<String> expectedValues,
+            ConfigCategory category, boolean hidden) {
         this.from = MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + from;
         this.to = to == null ? this.from : to;
         this.defaultValue = defaultValue;
@@ -59,6 +61,7 @@ public class PropertyMapper {
         this.mask = mask;
         this.expectedValues = expectedValues == null ? Collections.emptyList() : expectedValues;
         this.category = category != null ? category : ConfigCategory.GENERAL;
+        this.hidden = hidden;
     }
 
     public static PropertyMapper.Builder builder(String fromProp, String toProp) {
@@ -124,6 +127,10 @@ public class PropertyMapper {
             return config;
         }
 
+        if (config.getName().equals(name)) {
+            return config;
+        }
+
         ConfigValue value = transformValue(config.getValue(), context);
 
         // we always fallback to the current value from the property we are mapping
@@ -150,6 +157,10 @@ public class PropertyMapper {
 
     public ConfigCategory getCategory() {
         return category;
+    }
+
+    public boolean isHidden() {
+        return hidden;
     }
 
     private ConfigValue transformValue(String value, ConfigSourceInterceptorContext context) {
@@ -199,6 +210,7 @@ public class PropertyMapper {
         private boolean isMasked = false;
         private ConfigCategory category = ConfigCategory.GENERAL;
         private String paramLabel;
+        private boolean hidden;
 
         public Builder(ConfigCategory category) {
             this.category = category;
@@ -273,12 +285,20 @@ public class PropertyMapper {
         public Builder type(Class<Boolean> type) {
             if (Boolean.class.equals(type)) {
                 expectedValues(Boolean.TRUE.toString(), Boolean.FALSE.toString());
+                paramLabel(defaultValue == null ? "true|false" : defaultValue);
+                defaultValue(defaultValue == null ? Boolean.FALSE.toString() : defaultValue);
             }
             return this;
         }
 
+        public Builder hidden(boolean hidden) {
+            this.hidden = hidden;
+            return this;
+        }
+
         public PropertyMapper build() {
-            return new PropertyMapper(from, to, defaultValue, mapper, mapFrom, isBuildTimeProperty, description, paramLabel, isMasked, expectedValues, category);
+            return new PropertyMapper(from, to, defaultValue, mapper, mapFrom, isBuildTimeProperty, description, paramLabel,
+                    isMasked, expectedValues, category, hidden);
         }
     }
 }

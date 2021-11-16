@@ -127,6 +127,9 @@ import org.keycloak.quarkus.runtime.services.health.KeycloakMetricsHandler;
 import org.keycloak.theme.FolderThemeProviderFactory;
 import org.keycloak.transaction.JBossJtaTransactionManagerLookup;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.url.DefaultHostnameProviderFactory;
+import org.keycloak.url.FixedHostnameProviderFactory;
+import org.keycloak.url.RequestHostnameProviderFactory;
 import org.keycloak.util.JsonSerialization;
 
 class KeycloakProcessor {
@@ -143,7 +146,10 @@ class KeycloakProcessor {
             DefaultJpaConnectionProviderFactory.class,
             DefaultLiquibaseConnectionProvider.class,
             FolderThemeProviderFactory.class,
-            LiquibaseJpaUpdaterProviderFactory.class);
+            LiquibaseJpaUpdaterProviderFactory.class,
+            DefaultHostnameProviderFactory.class,
+            FixedHostnameProviderFactory.class,
+            RequestHostnameProviderFactory.class);
 
     static {
         DEPLOYEABLE_SCRIPT_PROVIDERS.put(AUTHENTICATORS, KeycloakProcessor::registerScriptAuthenticator);

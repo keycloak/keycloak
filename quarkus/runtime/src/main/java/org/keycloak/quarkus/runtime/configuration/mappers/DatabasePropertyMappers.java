@@ -16,14 +16,18 @@ final class DatabasePropertyMappers {
 
     public static PropertyMapper[] getDatabasePropertyMappers() {
         return new PropertyMapper[] {
-                builder().from("db")
+                builder().from("db-dialect")
+                        .mapFrom("db")
                         .to("quarkus.hibernate-orm.dialect")
                         .isBuildTimeProperty(true)
                         .transformer((db, context) -> Database.getDialect(db).orElse(null))
+                        .hidden(true)
                         .build(),
-                builder().from("db")
+                builder().from("db-driver")
+                        .mapFrom("db")
                         .to("quarkus.datasource.jdbc.driver")
                         .transformer((db, context) -> Database.getDriver(db).orElse(null))
+                        .hidden(true)
                         .build(),
                 builder().from("db").
                         to("quarkus.datasource.db-kind")
@@ -33,9 +37,11 @@ final class DatabasePropertyMappers {
                         .paramLabel("vendor")
                         .expectedValues(asList(Database.getAliases()))
                         .build(),
-                builder().from("db")
+                builder().from("db-tx-type")
+                        .mapFrom("db")
                         .to("quarkus.datasource.jdbc.transactions")
                         .transformer((db, context) -> "xa")
+                        .hidden(true)
                         .build(),
                 builder().from("db.url")
                         .to("quarkus.datasource.jdbc.url")
