@@ -20,7 +20,7 @@ Here's a quick checklist for a good PR, more details below:
 3. One feature/change per PR
 4. One commit per PR
 5. PR rebased on main (`git rebase`, not `git pull`) 
-5. Commit message is prefixed by the issue number (for example `#58 Message`)
+5. Commit message includes link to issue (see [Linking a pull request to an issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue))
 6. No changes to code not directly related to your PR
 7. Includes functional/integration test
 8. Includes documentation
@@ -92,5 +92,4 @@ for more details.
 The above helps us review your PR and also makes it easier for us to maintain the repository. It is also required by
 our automatic merging process. 
 
-We also require that the commit message is prefixed with the issue number (example commit message 
-`#12 My super cool new feature`).
+We also require that the commit message includes a link to the issue (see [Linking a pull request to an issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue)).
