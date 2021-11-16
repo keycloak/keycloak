@@ -1,5 +1,5 @@
 import React, { FunctionComponent, Suspense } from "react";
-import { Page, Spinner } from "@patternfly/react-core";
+import { Page } from "@patternfly/react-core";
 import { HashRouter as Router, Route, Switch } from "react-router-dom";
 import { ErrorBoundary } from "react-error-boundary";
 
@@ -13,6 +13,7 @@ import { AlertProvider } from "./components/alert/Alerts";
 import { AccessContextProvider, useAccess } from "./context/access/Access";
 import { routes, RouteDef } from "./route-config";
 import { PageBreadCrumbs } from "./components/bread-crumb/PageBreadCrumbs";
+import { KeycloakSpinner } from "./components/keycloak-spinner/KeycloakSpinner";
 import { ForbiddenSection } from "./ForbiddenSection";
 import { SubGroups } from "./groups/SubGroupsContext";
 import { RealmsProvider } from "./context/RealmsContext";
@@ -65,7 +66,7 @@ const SecuredRoute = ({ route }: SecuredRouteProps) => {
 
   if (accessAllowed)
     return (
-      <Suspense fallback={<Spinner />}>
+      <Suspense fallback={<KeycloakSpinner />}>
         <route.component />
       </Suspense>
     );

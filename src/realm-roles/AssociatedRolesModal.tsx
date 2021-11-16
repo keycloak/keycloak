@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { useHistory, useParams, useRouteMatch } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { omit, sortBy } from "lodash";
 import {
-  AlertVariant,
   Button,
   Dropdown,
   DropdownItem,
@@ -9,31 +9,23 @@ import {
   Label,
   Modal,
   ModalVariant,
-  Spinner,
 } from "@patternfly/react-core";
-import { useTranslation } from "react-i18next";
-import { useFetch, useAdminClient } from "../context/auth/AdminClient";
+import { CaretDownIcon, FilterIcon } from "@patternfly/react-icons";
+
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import { useFetch, useAdminClient } from "../context/auth/AdminClient";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import { CaretDownIcon, FilterIcon } from "@patternfly/react-icons";
-import { omit, sortBy } from "lodash";
-import { RealmRoleParams, toRealmRole } from "./routes/RealmRole";
-import { useRealm } from "../context/realm-context/RealmContext";
-import { useAlerts } from "../components/alert/Alerts";
-import {
-  ClientRoleParams,
-  ClientRoleRoute,
-  toClientRole,
-} from "./routes/ClientRole";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 
 type Role = RoleRepresentation & {
   clientId?: string;
 };
 
 export type AssociatedRolesModalProps = {
+  id: string;
   toggleDialog: () => void;
-  onConfirm?: (newReps: RoleRepresentation[]) => void;
+  onConfirm: (newReps: RoleRepresentation[]) => void;
   omitComposites?: boolean;
   isRadio?: boolean;
   isMapperId?: boolean;
@@ -42,6 +34,7 @@ export type AssociatedRolesModalProps = {
 type FilterType = "roles" | "clients";
 
 export const AssociatedRolesModal = ({
+  id,
   toggleDialog,
   onConfirm,
   omitComposites,
@@ -51,8 +44,6 @@ export const AssociatedRolesModal = ({
   const { t } = useTranslation("roles");
   const [name, setName] = useState("");
   const adminClient = useAdminClient();
-  const { addAlert, addError } = useAlerts();
-  const { realm } = useRealm();
   const [selectedRows, setSelectedRows] = useState<RoleRepresentation[]>([]);
   const [compositeRoles, setCompositeRoles] = useState<RoleRepresentation[]>();
 
@@ -60,13 +51,6 @@ export const AssociatedRolesModal = ({
   const [filterType, setFilterType] = useState<FilterType>("roles");
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
-
-  const { id } = useParams<RealmRoleParams>();
-  const clientRoleRouteMatch = useRouteMatch<ClientRoleParams>(
-    ClientRoleRoute.path
-  );
-
-  const history = useHistory();
 
   const alphabetize = (rolesList: RoleRepresentation[]) => {
     return sortBy(rolesList, (role) => role.name?.toUpperCase());
@@ -117,29 +101,6 @@ export const AssociatedRolesModal = ({
     return alphabetize(clientRoles.flat());
   };
 
-  const addComposites = async (composites: RoleRepresentation[]) => {
-    const compositeArray = composites;
-
-    const to = clientRoleRouteMatch
-      ? toClientRole({ ...clientRoleRouteMatch.params, tab: "AssociateRoles" })
-      : toRealmRole({
-          realm,
-          id,
-          tab: "AssociatedRoles",
-        });
-
-    try {
-      await adminClient.roles.createComposite(
-        { roleId: id, realm },
-        compositeArray
-      );
-      history.push(to);
-      addAlert(t("addAssociatedRolesSuccess"), AlertVariant.success);
-    } catch (error) {
-      addError("roles:addAssociatedRolesError", error);
-    }
-  };
-
   useEffect(() => {
     refresh();
   }, [filterType]);
@@ -175,11 +136,7 @@ export const AssociatedRolesModal = ({
   };
 
   if (!compositeRoles) {
-    return (
-      <div className="pf-u-text-align-center">
-        <Spinner />
-      </div>
-    );
+    return <KeycloakSpinner />;
   }
 
   return (
@@ -197,11 +154,7 @@ export const AssociatedRolesModal = ({
           isDisabled={!selectedRows.length}
           onClick={() => {
             toggleDialog();
-            if (onConfirm) {
-              onConfirm(selectedRows);
-            } else {
-              addComposites(selectedRows);
-            }
+            onConfirm(selectedRows);
           }}
         >
           {t("common:add")}

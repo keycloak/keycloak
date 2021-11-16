@@ -18,7 +18,7 @@ export default class AssociatedRolesPage {
 
     cy.findByTestId(this.addAssociatedRolesModalButton).contains("Add").click();
 
-    cy.url().should("include", "/AssociatedRoles");
+    cy.url().should("include", "/associated-roles");
 
     cy.findByTestId(this.compositeRoleBadge).should(
       "contain.text",

@@ -8,7 +8,6 @@ import {
   FormGroup,
   Label,
   PageSection,
-  Spinner,
   ToolbarItem,
 } from "@patternfly/react-core";
 import { Divider, Flex, FlexItem, Radio, Title } from "@patternfly/react-core";
@@ -25,6 +24,7 @@ import { Link } from "react-router-dom";
 import { toAddClientProfile } from "./routes/AddClientProfile";
 import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
 import { toClientProfile } from "./routes/ClientProfile";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 
 import "./RealmSettingsSection.css";
 
@@ -120,11 +120,7 @@ export default function ProfilesTab() {
   );
 
   if (!tableProfiles) {
-    return (
-      <div className="pf-u-text-align-center">
-        <Spinner />
-      </div>
-    );
+    return <KeycloakSpinner />;
   }
 
   const save = async () => {

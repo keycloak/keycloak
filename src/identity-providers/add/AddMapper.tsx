@@ -264,6 +264,7 @@ export default function AddMapper() {
       />
       {rolesModalOpen && (
         <AssociatedRolesModal
+          id={id}
           onConfirm={(role) => setSelectedRole(role)}
           omitComposites
           isRadio

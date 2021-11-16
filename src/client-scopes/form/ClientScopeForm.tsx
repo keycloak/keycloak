@@ -6,7 +6,6 @@ import {
   ButtonVariant,
   DropdownItem,
   PageSection,
-  Spinner,
   Tab,
   TabTitleText,
 } from "@patternfly/react-core";
@@ -15,6 +14,7 @@ import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { KeycloakTabs } from "../../components/keycloak-tabs/KeycloakTabs";
 import { useAlerts } from "../../components/alert/Alerts";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
+import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { convertFormValuesToObject } from "../../util";
 import { MapperList } from "../details/MapperList";
 import { ScopeForm } from "../details/ScopeForm";
@@ -236,11 +236,7 @@ export default function ClientScopeForm() {
   };
 
   if (id && !clientScope) {
-    return (
-      <div className="pf-u-text-align-center">
-        <Spinner />
-      </div>
-    );
+    return <KeycloakSpinner />;
   }
 
   return (

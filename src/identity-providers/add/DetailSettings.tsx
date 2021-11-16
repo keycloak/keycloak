@@ -11,7 +11,6 @@ import {
   DropdownItem,
   Form,
   PageSection,
-  Spinner,
   Tab,
   TabTitleText,
   ToolbarItem,
@@ -21,6 +20,7 @@ import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { ScrollForm } from "../../components/scroll-form/ScrollForm";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
+import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { useFetch, useAdminClient } from "../../context/auth/AdminClient";
 import { GeneralSettings } from "./GeneralSettings";
 import { AdvancedSettings } from "./AdvancedSettings";
@@ -199,7 +199,7 @@ export default function DetailSettings() {
   });
 
   if (!provider) {
-    return <Spinner />;
+    return <KeycloakSpinner />;
   }
 
   const sections = [t("generalSettings"), t("advancedSettings")];

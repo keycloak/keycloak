@@ -8,7 +8,6 @@ import {
   FlexItem,
   PageSection,
   Radio,
-  Spinner,
   Title,
   ToolbarItem,
 } from "@patternfly/react-core";
@@ -28,6 +27,8 @@ import "./RealmSettingsSection.css";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toAddClientPolicy } from "./routes/AddClientPolicy";
 import { toEditClientPolicy } from "./routes/EditClientPolicy";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+
 export const PoliciesTab = () => {
   const { t } = useTranslation("realm-settings");
   const adminClient = useAdminClient();
@@ -112,11 +113,7 @@ export const PoliciesTab = () => {
   });
 
   if (!policies) {
-    return (
-      <div className="pf-u-text-align-center">
-        <Spinner />
-      </div>
-    );
+    return <KeycloakSpinner />;
   }
   return (
     <>

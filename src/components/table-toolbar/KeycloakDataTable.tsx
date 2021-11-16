@@ -18,12 +18,12 @@ import {
   TableProps,
   TableVariant,
 } from "@patternfly/react-table";
-import { Spinner } from "@patternfly/react-core";
 import _ from "lodash";
 
 import { PaginatingTableToolbar } from "./PaginatingTableToolbar";
-import { useFetch } from "../../context/auth/AdminClient";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
+import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";
+import { useFetch } from "../../context/auth/AdminClient";
 import type { SVGIconProps } from "@patternfly/react-icons/dist/js/createIcon";
 
 type TitleCell = { title: JSX.Element };
@@ -324,11 +324,7 @@ export function KeycloakDataTable<T>({
       return action;
     });
 
-  const Loading = () => (
-    <div className="pf-u-text-align-center">
-      <Spinner />
-    </div>
-  );
+  const Loading = () => <KeycloakSpinner />;
 
   const _onSelect = (isSelected: boolean, rowIndex: number) => {
     const data = filteredData || rows;

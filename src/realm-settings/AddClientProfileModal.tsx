@@ -1,16 +1,11 @@
 import React, { useState } from "react";
-import {
-  Button,
-  Label,
-  Modal,
-  ModalVariant,
-  Spinner,
-} from "@patternfly/react-core";
+import { Button, Label, Modal, ModalVariant } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { useFetch, useAdminClient } from "../context/auth/AdminClient";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
 
 type ClientProfile = ClientProfileRepresentation & {
@@ -57,11 +52,7 @@ export const AddClientProfileModal = (props: AddClientProfileModalProps) => {
   const loader = async () => tableProfiles ?? [];
 
   if (!tableProfiles) {
-    return (
-      <div className="pf-u-text-align-center">
-        <Spinner />
-      </div>
-    );
+    return <KeycloakSpinner />;
   }
 
   const AliasRenderer = ({ name }: ClientProfile) => (

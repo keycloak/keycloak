@@ -23,7 +23,7 @@ import { FilterIcon } from "@patternfly/react-icons";
 import { Row, ServiceRole } from "./RoleMapping";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 
-export type MappingType = "service-account" | "client-scope" | "user-fed";
+export type MappingType = "service-account" | "client-scope" | "role";
 
 type AddRoleMappingModalProps = {
   id: string;
@@ -89,8 +89,8 @@ export const AddRoleMappingModal = ({
                     }
                   );
                 break;
-              case "user-fed":
-                roles = await adminClient.roles.find();
+              case "role":
+                roles = await adminClient.clients.listRoles({ id: client.id! });
                 break;
             }
             return {
@@ -102,9 +102,7 @@ export const AddRoleMappingModal = ({
       )
         .flat()
         .filter((row) => row.roles.length !== 0)
-        .map((row) => {
-          return { ...row.client, numberOfRoles: row.roles.length };
-        });
+        .map((row) => ({ ...row.client, numberOfRoles: row.roles.length }));
     },
     (clients) => {
       setClients(clients);
@@ -146,7 +144,7 @@ export const AddRoleMappingModal = ({
             id,
           });
         break;
-      case "user-fed":
+      case "role":
         availableRoles = await adminClient.roles.find();
         break;
     }
@@ -183,7 +181,7 @@ export const AddRoleMappingModal = ({
                   { id, client: client.id! }
                 );
               break;
-            case "user-fed":
+            case "role":
               clientAvailableRoles = await adminClient.clients.listRoles({
                 id: client.id!,
               });

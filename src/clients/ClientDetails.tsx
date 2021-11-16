@@ -6,7 +6,6 @@ import {
   DropdownItem,
   Label,
   PageSection,
-  Spinner,
   Tab,
   Tabs,
   TabTitleText,
@@ -35,6 +34,7 @@ import {
   ViewHeader,
   ViewHeaderBadge,
 } from "../components/view-header/ViewHeader";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { RolesList } from "../realm-roles/RolesList";
@@ -329,11 +329,7 @@ export default function ClientDetails() {
   };
 
   if (!client) {
-    return (
-      <div className="pf-u-text-align-center">
-        <Spinner />
-      </div>
-    );
+    return <KeycloakSpinner />;
   }
 
   return (

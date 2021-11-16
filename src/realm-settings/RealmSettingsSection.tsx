@@ -1,9 +1,11 @@
-import { Breadcrumb, BreadcrumbItem, Spinner } from "@patternfly/react-core";
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { Breadcrumb, BreadcrumbItem } from "@patternfly/react-core";
+
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import React, { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { KEY_PROVIDER_TYPE } from "../util";
@@ -153,11 +155,7 @@ export default function RealmSettingsSection() {
   );
 
   if (!realm || !realmComponents) {
-    return (
-      <div className="pf-u-text-align-center">
-        <Spinner />
-      </div>
-    );
+    return <KeycloakSpinner />;
   }
   return (
     <RealmSettingsTabs

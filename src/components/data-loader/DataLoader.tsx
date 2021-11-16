@@ -1,7 +1,7 @@
 import React, { DependencyList, useState } from "react";
-import { Spinner } from "@patternfly/react-core";
 
 import { useFetch } from "../../context/auth/AdminClient";
+import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";
 
 type DataLoaderProps<T> = {
   loader: () => Promise<T>;
@@ -24,9 +24,5 @@ export function DataLoader<T>(props: DataLoaderProps<T>) {
     }
     return props.children;
   }
-  return (
-    <div className="pf-u-text-align-center">
-      <Spinner />
-    </div>
-  );
+  return <KeycloakSpinner />;
 }

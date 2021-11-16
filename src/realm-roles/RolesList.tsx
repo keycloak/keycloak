@@ -6,6 +6,7 @@ import { AlertVariant, Button, ButtonVariant } from "@patternfly/react-core";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
@@ -16,6 +17,7 @@ import { HelpItem } from "../components/help-enabler/HelpItem";
 import { ClientParams, ClientRoute } from "../clients/routes/Client";
 import { toClientRole } from "./routes/ClientRole";
 import { toRealmRole } from "./routes/RealmRole";
+import { toRealmSettings } from "../realm-settings/routes/RealmSettings";
 
 import "./RealmRolesSection.css";
 
@@ -41,11 +43,7 @@ const RoleLink: FunctionComponent<RoleLinkProps> = ({ children, role }) => {
     ? toClientRole({ ...clientRouteMatch.params, id: role.id!, tab: "details" })
     : toRealmRole({ realm, id: role.id!, tab: "details" });
 
-  return (
-    <Link key={role.id} to={to}>
-      {children}
-    </Link>
-  );
+  return <Link to={to}>{children}</Link>;
 };
 
 export const RolesList = ({
@@ -72,21 +70,26 @@ export const RolesList = ({
     []
   );
 
-  const RoleDetailLink = (role: RoleRepresentation) => (
-    <>
+  const RoleDetailLink = (role: RoleRepresentation) =>
+    role.name !== realm?.defaultRole?.name ? (
       <RoleLink role={role}>{role.name}</RoleLink>
-      {role.name?.includes("default-role") ? (
+    ) : (
+      <>
+        <Link
+          to={toRealmSettings({ realm: realmName, tab: "userRegistration" })}
+        >
+          {role.name}{" "}
+        </Link>
         <HelpItem
           helpText={t("defaultRole")}
           forLabel={t("defaultRole")}
-          forID="kc-defaultRole"
+          forID={t("common:helpLabel", {
+            label: t("defaultRole"),
+          })}
           id="default-role-help-icon"
         />
-      ) : (
-        ""
-      )}
-    </>
-  );
+      </>
+    );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "roles:roleDeleteConfirm",
@@ -116,6 +119,10 @@ export const RolesList = ({
 
   const goToCreate = () => history.push(`${url}/add-role`);
 
+  if (!realm) {
+    return <KeycloakSpinner />;
+  }
+
   return (
     <>
       <DeleteConfirm />
@@ -131,10 +138,7 @@ export const RolesList = ({
             title: t("common:delete"),
             onRowClick: (role) => {
               setSelectedRole(role);
-              if (
-                role.name ===
-                (realm!.defaultRole! as unknown as RoleRepresentation).name
-              ) {
+              if (role.name === realm!.defaultRole!.name) {
                 addAlert(t("defaultRoleDeleteError"), AlertVariant.danger);
               } else toggleDeleteDialog();
             },

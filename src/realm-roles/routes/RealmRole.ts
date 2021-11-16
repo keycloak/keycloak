@@ -5,7 +5,7 @@ import type { RouteDef } from "../../route-config";
 
 export type RealmRoleTab =
   | "details"
-  | "AssociatedRoles"
+  | "associated-roles"
   | "attributes"
   | "users-in-role";
 
