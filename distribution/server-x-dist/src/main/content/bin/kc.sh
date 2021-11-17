@@ -46,9 +46,10 @@ do
           ;;
       *)
           if [[ $1 = --* || ! $1 =~ ^-D.* ]]; then
-            CONFIG_ARGS="$CONFIG_ARGS $1"
             if [[ "$1" = "start-dev" ]]; then
-              CONFIG_ARGS="$CONFIG_ARGS --profile=dev --auto-build"
+              CONFIG_ARGS="$CONFIG_ARGS --profile=dev $1 --auto-build"
+            else
+              CONFIG_ARGS="$CONFIG_ARGS $1"
             fi
           else
             SERVER_OPTS="$SERVER_OPTS $1"

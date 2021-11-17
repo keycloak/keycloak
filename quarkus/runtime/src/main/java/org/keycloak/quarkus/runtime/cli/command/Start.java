@@ -18,8 +18,8 @@
 package org.keycloak.quarkus.runtime.cli.command;
 
 import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
+import static org.keycloak.quarkus.runtime.Environment.setProfile;
 import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
-import static org.keycloak.quarkus.runtime.cli.Picocli.error;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuiltTimeProperty;
 
 import org.keycloak.quarkus.runtime.Environment;
@@ -70,7 +70,7 @@ public final class Start extends AbstractStartCommand implements Runnable {
         setProfile(currentProfile.orElse(persistedProfile.orElse("prod")));
 
         if (isDevProfile() && (!currentCliArgs.contains(AUTO_BUILD_OPTION_LONG) || !currentCliArgs.contains(AUTO_BUILD_OPTION_SHORT))) {
-            showDevNotAllowedErrorAndExit(Start.NAME);
+            devProfileNotAllowedError(Start.NAME);
         }
     }
 }

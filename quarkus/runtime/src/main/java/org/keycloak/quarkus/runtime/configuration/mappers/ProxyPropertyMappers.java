@@ -7,6 +7,8 @@ import java.util.function.BiFunction;
 
 import static org.keycloak.quarkus.runtime.integration.QuarkusPlatform.addInitializationException;
 
+import org.keycloak.quarkus.runtime.Messages;
+
 final class ProxyPropertyMappers {
 
     private static final String[] possibleProxyValues = {"none", "edge", "reencrypt", "passthrough"};

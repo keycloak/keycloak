@@ -7,7 +7,7 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 
 import static java.util.Arrays.asList;
-import static org.keycloak.quarkus.runtime.configuration.mappers.Messages.invalidDatabaseVendor;
+import static org.keycloak.quarkus.runtime.Messages.invalidDatabaseVendor;
 import static org.keycloak.quarkus.runtime.integration.QuarkusPlatform.addInitializationException;
 
 final class DatabasePropertyMappers {

@@ -17,8 +17,8 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import static org.keycloak.quarkus.runtime.Environment.*;
-import static org.keycloak.quarkus.runtime.cli.Picocli.error;
+import static org.keycloak.quarkus.runtime.Environment.getHomePath;
+import static org.keycloak.quarkus.runtime.Environment.isDevMode;
 import static org.keycloak.quarkus.runtime.cli.Picocli.println;
 
 import org.keycloak.quarkus.runtime.Environment;
@@ -83,7 +83,7 @@ public final class Build extends AbstractCommand implements Runnable {
                 println(spec.commandLine(), "\t" + Environment.getCommand() + " show-config\n");
             }
         } catch (Throwable throwable) {
-            error(spec.commandLine(), "Failed to update server configuration.", throwable);
+            executionError(spec.commandLine(), "Failed to update server configuration.", throwable);
         } finally {
             cleanTempResources();
         }
@@ -92,7 +92,7 @@ public final class Build extends AbstractCommand implements Runnable {
     private void exitWithErrorIfDevProfileIsSetAndNotStartDev() {
         List<String> userInvokedCliArgs = Environment.getUserInvokedCliArgs();
         if(Environment.isDevProfile() && !userInvokedCliArgs.contains(StartDev.NAME)) {
-            showDevNotAllowedErrorAndExit(Build.NAME);
+            devProfileNotAllowedError(Build.NAME);
         }
     }
 

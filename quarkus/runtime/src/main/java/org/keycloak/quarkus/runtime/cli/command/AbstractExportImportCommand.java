@@ -17,8 +17,6 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import static org.keycloak.quarkus.runtime.cli.Picocli.error;
-
 import org.keycloak.quarkus.runtime.Environment;
 
 import picocli.CommandLine;
@@ -62,7 +60,7 @@ public abstract class AbstractExportImportCommand extends AbstractCommand implem
             System.setProperty("keycloak.migration.provider", "singleFile");
             System.setProperty("keycloak.migration.file", toFile);
         } else {
-            error(spec.commandLine(), "Must specify either --dir or --file options.");
+            executionError(spec.commandLine(), "Must specify either --dir or --file options.");
         }
 
         if (realm != null) {
