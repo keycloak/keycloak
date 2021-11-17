@@ -17,15 +17,14 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
+import static org.keycloak.quarkus.runtime.Messages.cliExecutionError;
+
 import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
 import picocli.CommandLine.Option;
-
-import static org.keycloak.quarkus.runtime.cli.Picocli.error;
 
 public abstract class AbstractCommand {
 
@@ -37,22 +36,15 @@ public abstract class AbstractCommand {
             usageHelp = true)
     boolean help;
 
-    @Option(names = {"-pf", "--profile"},
-            description = "Set the profile. Use 'dev' profile to enable development mode.")
-    public void setProfile(String profile) {
-        Environment.setProfile(profile);
+    protected void devProfileNotAllowedError(String cmd) {
+        executionError(spec.commandLine(), String.format("You can not '%s' the server using the '%s' configuration profile. Please re-build the server first, using './kc.sh build' for the default production profile, or using '/.kc.sh build --profile=<profile>' with a profile more suitable for production.%n", cmd, Environment.DEV_PROFILE_VALUE));
     }
 
-    @Option(names = { "-cf", "--config-file" },
-            arity = "1",
-            description = "Set the path to a configuration file. By default, configuration properties are read from the \"keycloak.properties\" file in the \"conf\" directory.",
-            paramLabel = "file",
-            scope = CommandLine.ScopeType.INHERIT)
-    public void setConfigFile(String path) {
-        System.setProperty(KeycloakConfigSourceProvider.KEYCLOAK_CONFIG_FILE_PROP, path);
+    protected void executionError(CommandLine cmd, String message) {
+        executionError(cmd, message, null);
     }
 
-    protected void showDevNotAllowedErrorAndExit(String cmd) {
-        error(spec.commandLine(), String.format("You can not '%s' the server using the 'dev' configuration profile. Please re-build the server first, using './kc.sh build' for the default production profile, or using '/.kc.sh build --profile=<profile>' with a profile more suitable for production.%n", cmd));
+    protected void executionError(CommandLine cmd, String message, Throwable cause) {
+        cliExecutionError(cmd, message, cause);
     }
 }

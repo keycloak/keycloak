@@ -150,11 +150,6 @@ public final class Environment {
             return true;
         }
 
-        // if running in quarkus:dev mode
-        if (ProfileManager.getLaunchMode() == LaunchMode.DEVELOPMENT) {
-            return true;
-        }
-
         return DEV_PROFILE_VALUE.equals(getBuiltTimeProperty(PROFILE).orElse(null));
     }
 
@@ -193,5 +188,9 @@ public final class Environment {
                 return name.endsWith(".jar");
             }
         })).collect(Collectors.toMap(File::getName, Function.identity()));
+    }
+
+    public static boolean isQuarkusDevMode() {
+        return ProfileManager.getLaunchMode().equals(LaunchMode.DEVELOPMENT);
     }
 }
