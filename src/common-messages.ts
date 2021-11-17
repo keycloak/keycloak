@@ -52,6 +52,7 @@ export default {
     show: "Show",
     hide: "Hide",
     showRemaining: "Show ${remaining}",
+    more: "{{count}} more",
     test: "Test",
     testConnection: "Test connection",
     name: "Name",

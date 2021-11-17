@@ -154,5 +154,13 @@ export default {
       "Applicable only if 'Consent Required' is on for this client. If this switch is off, the consent screen will contain just the consents corresponding to configured client scopes. If on, there will be also one item on the consent screen about this client itself.",
     consentScreenText:
       "Applicable only if 'Display Client On Consent Screen' is on for this client. Contains the text which will be on the consent screen about permissions specific just for this client.",
+    import:
+      "Import a JSON file containing authorization settings for this resource server.",
+    policyEnforcementMode:
+      "The policy enforcement mode dictates how policies are enforced when evaluating authorization requests. 'Enforcing' means requests are denied by default even when there is no policy associated with a given resource. 'Permissive' means requests are allowed even when there is no policy associated with a given resource. 'Disabled' completely disables the evaluation of policies and allows access to any resource.",
+    decisionStrategy:
+      "The decision strategy dictates how permissions are evaluated and how a final decision is obtained. 'Affirmative' means that at least one permission must evaluate to a positive decision in order to grant access to a resource and its scopes. 'Unanimous' means that all permissions must evaluate to a positive decision in order for the final decision to be also positive.",
+    allowRemoteResourceManagement:
+      "Should resources be managed remotely by the resource server? If false, resources can be managed only from this admin console.",
   },
 };
