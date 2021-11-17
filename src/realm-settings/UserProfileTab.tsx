@@ -60,6 +60,7 @@ export const UserProfileTab = () => {
     <Tabs
       activeKey={activeTab}
       onSelect={(_, key) => setActiveTab(key.toString())}
+      mountOnEnter
     >
       <Tab
         eventKey="attributes"
@@ -73,17 +74,11 @@ export const UserProfileTab = () => {
         eventKey="jsonEditor"
         title={<TabTitleText>{t("jsonEditor")}</TabTitleText>}
       >
-        {/** The code editor needs to be rendered conditionally to prevent it from being initialized
-         * while the tab contents are hidden. If the contents of the tab are hidden then it
-         * might not initialize correctly.
-         */}
-        {activeTab === "jsonEditor" && (
-          <JsonEditorTab
-            profiles={profiles}
-            onSave={onSave}
-            isSaving={isSaving}
-          />
-        )}
+        <JsonEditorTab
+          profiles={profiles}
+          onSave={onSave}
+          isSaving={isSaving}
+        />
       </Tab>
     </Tabs>
   );
