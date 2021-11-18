@@ -31,6 +31,7 @@ export const LdapMapperFullNameAttribute = ({
         <TextInput
           isRequired
           type="text"
+          defaultValue="cn"
           id="kc-full-name-attribute"
           data-testid="mapper-fullNameAttribute-fld"
           name="config.ldap-full-name-attribute[0]"
@@ -41,7 +42,7 @@ export const LdapMapperFullNameAttribute = ({
         label={t("readOnly")}
         labelIcon={
           <HelpItem
-            helpText={helpText("readOnlyHelp")}
+            helpText={helpText("fullNameLdapReadOnlyHelp")}
             forLabel={t("readOnly")}
             forID="kc-read-only"
           />
@@ -51,7 +52,7 @@ export const LdapMapperFullNameAttribute = ({
       >
         <Controller
           name="config.read-only"
-          defaultValue={["false"]}
+          defaultValue={["true"]}
           control={form.control}
           render={({ onChange, value }) => (
             <Switch
@@ -69,7 +70,7 @@ export const LdapMapperFullNameAttribute = ({
         label={t("writeOnly")}
         labelIcon={
           <HelpItem
-            helpText={helpText("writeOnlyHelp")}
+            helpText={helpText("fullNameLdapWriteOnlyHelp")}
             forLabel={t("writeOnly")}
             forID="kc-write-only"
           />
