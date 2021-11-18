@@ -211,10 +211,10 @@ export default {
       "Value of the model attribute to be added when importing user from LDAP",
 
     roleHelp:
-      "Role to grant to user.  Click 'Select Role' button to browse roles, or just type it in the textbox.  To reference an application role the syntax is appname.approle, i.e. myapp.myrole.",
+      "Role to grant to user. Click 'Select Role' button to browse roles, or just type it in the textbox. To reference an application role the syntax is appname.approle, i.e. myapp.myrole.",
 
     groupHelp:
-      "Users imported from LDAP will be automatically added into this configured group.",
+      "Group to add the user in. Fill the full path of the group including path. For example: '/root-group/child-group'.",
 
     ldapAttributeNameHelp:
       "Name of the LDAP attribute, which will be added to the new user during registration",
