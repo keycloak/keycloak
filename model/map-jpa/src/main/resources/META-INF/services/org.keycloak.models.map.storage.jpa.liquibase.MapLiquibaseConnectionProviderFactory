@@ -1,5 +1,5 @@
 #
-# Copyright 2021 Red Hat, Inc. and/or its affiliates
+# Copyright 2016 Red Hat, Inc. and/or its affiliates
 # and other contributors as indicated by the @author tags.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,5 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterSpi
-org.keycloak.models.map.storage.jpa.liquibase.MapLiquibaseConnectionSpi
+org.keycloak.models.map.storage.jpa.liquibase.DefaultLiquibaseConnectionProviderFactory
