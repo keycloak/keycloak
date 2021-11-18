@@ -132,6 +132,17 @@ Executions have a *Config* menu option to configure the execution. It is also po
 
 Since the order of execution is important, you can move executions and sub-flows up and down within their flows using the up and down buttons beside their names.
 
+[WARNING]
+====
+Make sure to properly test your configuration when you configure the authentication flow to confirm that no security holes exist in your setup. We recommend that you test various
+corner cases. For example, consider testing the authentication behavior for a user when you remove various credentials from the user's account before authentication.
+
+As an example, when 2nd-factor authenticators, such as OTP Form or WebAuthn Authenticator, are configured in the flow as REQUIRED and the user does not have credential of particular
+type, the user will be able to setup the particular credential during authentication itself. This situation means that the user does not authenticate with this credential as he setup
+it right during the authentication. So for browser authentication, make sure to configure your authentication flow with some 1st-factor credentials such as Password or WebAuthn
+Passwordless Authenticator.
+====
+
 ==== Creating a password-less browser login flow
 
 To illustrate the creation of flows, this section describes creating an advanced browser login flow. The purpose of this flow is to allow a user a choice between logging in using a password-less manner with <<_webauthn, WebAuthn>>, or two-factor authentication with a password and OTP.
