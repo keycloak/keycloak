@@ -28,7 +28,7 @@ export default {
     scopes:
       "The scopes to be sent when asking for authorization. It can be a space-separated list of scopes. Defaults to 'openid'.",
     prompt:
-      "Specifies whether the Authorization Server prompts the End-User for reauthentication and consent.",
+      "Specifies whether the Authorization Server prompts the End-User for re-authentication and consent.",
     acceptsPromptNone:
       "This is just used together with Identity Provider Authenticator or when kc_idp_hint points to this identity provider. In case that client sends a request with prompt=none and user is not yet authenticated, the error will not be directly returned to client, but the request with prompt=none will be forwarded to this identity provider.",
     validateSignature:
@@ -39,6 +39,10 @@ export default {
       "URL where identity provider keys in JWK format are stored. See JWK specification for more details. If you use external Keycloak identity provider, you can use URL like 'http://broker-keycloak:8180/auth/realms/test/protocol/openid-connect/certs' assuming your brokered Keycloak is running on 'http://broker-keycloak:8180' and its realm is 'test' .",
     allowedClockSkew:
       "Clock skew in seconds that is tolerated when validating identity provider tokens. Default value is zero.",
+    attributeConsumingServiceIndex:
+      "Index of the Attribute Consuming Service profile to request during authentication.",
+    attributeConsumingServiceName:
+      "Name of the Attribute Consuming Service profile to advertise in the SP metadata.",
     forwardParameters:
       "Non OpenID Connect/OAuth standard query parameters to be forwarded to external IDP from the initial application request to Authorization Endpoint. Multiple parameters can be entered, separated by comma (,).",
     clientAuthentication:
@@ -87,7 +91,7 @@ export default {
       "Indicates whether the identity provider expects a signed AuthnRequest.",
     signatureAlgorithm: "The signature algorithm to use to sign documents.",
     samlSignatureKeyName:
-      "Signed SAML documents contain identification of signing key in KeyName element. For Keycloak / RH-SSO counterparty, use KEY_ID, for MS AD FS use CERT_SUBJECT, for others check and use NONE if no other option works.",
+      "Signed SAML documents contain identification of signing key in KeyName element. For Keycloak / RH-SSO counter-party, use KEY_ID, for MS AD FS use CERT_SUBJECT, for others check and use NONE if no other option works.",
     wantAssertionsSigned:
       "Indicates whether this service provider expects a signed Assertion.",
     wantAssertionsEncrypted:

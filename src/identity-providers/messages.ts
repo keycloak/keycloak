@@ -129,6 +129,8 @@ export default {
     useJwksUrl: "Use JWKS URL",
     jwksUrl: "JWKS URL",
     allowedClockSkew: "Allowed clock skew",
+    attributeConsumingServiceIndex: "Attribute Consuming Service Index",
+    attributeConsumingServiceName: "Attribute Consuming Service Name",
     forwardParameters: "Forwarded query parameters",
     generalSettings: "General settings",
     oidcSettings: "OpenID Connect settings",

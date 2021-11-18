@@ -414,7 +414,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         isReadOnly={readOnly}
       />
       <SwitchField
-        field="config.passSubject"
+        field="config.loginHint"
         label="passSubject"
         isReadOnly={readOnly}
       />
@@ -437,6 +437,50 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           max="2147483"
           id="allowedClockSkew"
           name="config.allowedClockSkew"
+          ref={register}
+          isReadOnly={readOnly}
+        />
+      </FormGroup>
+
+      <FormGroup
+        label={t("attributeConsumingServiceIndex")}
+        labelIcon={
+          <HelpItem
+            helpText={th("attributeConsumingServiceIndex")}
+            forLabel={t("attributeConsumingServiceIndex")}
+            forID="attributeConsumingServiceIndex"
+          />
+        }
+        fieldId="attributeConsumingServiceIndex"
+        helperTextInvalid={t("common:required")}
+      >
+        <TextInput
+          type="number"
+          min="0"
+          max="65535"
+          id="attributeConsumingServiceIndex"
+          name="config.attributeConsumingServiceIndex"
+          ref={register}
+          isReadOnly={readOnly}
+        />
+      </FormGroup>
+
+      <FormGroup
+        label={t("attributeConsumingServiceName")}
+        labelIcon={
+          <HelpItem
+            helpText={th("attributeConsumingServiceName")}
+            forLabel={t("attributeConsumingServiceName")}
+            forID="attributeConsumingServiceName"
+          />
+        }
+        fieldId="attributeConsumingServiceName"
+        helperTextInvalid={t("common:required")}
+      >
+        <TextInput
+          type="text"
+          id="attributeConsumingServiceName"
+          name="config.attributeConsumingServiceName"
           ref={register}
           isReadOnly={readOnly}
         />
