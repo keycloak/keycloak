@@ -418,6 +418,7 @@ public class RealmAdminResource {
             }
 
             boolean wasDuplicateEmailsAllowed = realm.isDuplicateEmailsAllowed();
+            RepresentationToModel.validateRealmRepresentation(rep, realm, session);
             RepresentationToModel.updateRealm(rep, realm, session);
 
             // Refresh periodic sync tasks for configured federationProviders

@@ -110,6 +110,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
     public static final int ALLOWED_CLOCK_SKEW = 3;
 
+    private static final int MAX_SSO_MAX_LIFESPAN = 31536000;
+
     @Page
     protected LoginPage loginPage;
 
@@ -1348,7 +1350,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         getCleanup()
                 .addCleanup(new RealmAttributeUpdater(adminClient.realm("test"))
                     .setSsoSessionIdleTimeout(2592000) // 30 Days
-                    .setSsoSessionMaxLifespan(86313600) // 999 Days
+                    .setSsoSessionMaxLifespan(MAX_SSO_MAX_LIFESPAN) // 365 Days
                     .update()
                 )
                 .addCleanup(ClientAttributeUpdater.forClient(adminClient, "test", "test-app")

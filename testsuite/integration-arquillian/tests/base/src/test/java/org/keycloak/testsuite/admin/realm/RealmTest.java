@@ -445,6 +445,8 @@ public class RealmTest extends AbstractAdminTest {
         rep.setAccessCodeLifespanLogin(1234);
         rep.setActionTokenGeneratedByAdminLifespan(2345);
         rep.setActionTokenGeneratedByUserLifespan(3456);
+        rep.setOfflineSessionIdleTimeout(36000);
+        rep.setOfflineSessionMaxLifespan(72000);
         rep.setRegistrationAllowed(true);
         rep.setRegistrationEmailAsUsername(true);
         rep.setEditUsernameAllowed(true);
@@ -462,6 +464,8 @@ public class RealmTest extends AbstractAdminTest {
         assertEquals(1234, rep.getAccessCodeLifespanLogin().intValue());
         assertEquals(2345, rep.getActionTokenGeneratedByAdminLifespan().intValue());
         assertEquals(3456, rep.getActionTokenGeneratedByUserLifespan().intValue());
+        assertEquals(36000, rep.getOfflineSessionIdleTimeout().intValue());
+        assertEquals(72000, rep.getOfflineSessionMaxLifespan().intValue());
         assertEquals(Boolean.TRUE, rep.isRegistrationAllowed());
         assertEquals(Boolean.TRUE, rep.isRegistrationEmailAsUsername());
         assertEquals(Boolean.TRUE, rep.isEditUsernameAllowed());
@@ -485,6 +489,43 @@ public class RealmTest extends AbstractAdminTest {
         assertEquals(Boolean.FALSE, rep.isRegistrationEmailAsUsername());
         assertEquals(Boolean.FALSE, rep.isEditUsernameAllowed());
         assertEquals(Boolean.FALSE, rep.isUserManagedAccessAllowed());
+
+        // update with invalid value
+        try {
+            rep.setSsoSessionIdleTimeout(0);
+            realm.update(rep);
+            fail();
+        } catch (BadRequestException bre) {
+            rep = realm.toRepresentation();
+            assertEquals(123, rep.getSsoSessionIdleTimeout().intValue());
+        }
+
+        try {
+            rep.setSsoSessionMaxLifespan(31536001);
+            realm.update(rep);
+            fail();
+        } catch (BadRequestException bre) {
+            rep = realm.toRepresentation();
+            assertEquals(12, rep.getSsoSessionMaxLifespan().intValue());
+        }
+
+        try {
+            rep.setOfflineSessionIdleTimeout(-1);
+            realm.update(rep);
+            fail();
+        } catch (BadRequestException bre) {
+            rep = realm.toRepresentation();
+            assertEquals(36000, rep.getOfflineSessionIdleTimeout().intValue());
+        }
+
+        try {
+            rep.setOfflineSessionMaxLifespan(-200);
+            realm.update(rep);
+            fail();
+        } catch (BadRequestException bre) {
+            rep = realm.toRepresentation();
+            assertEquals(72000, rep.getOfflineSessionMaxLifespan().intValue());
+        }
     }
 
     @Test

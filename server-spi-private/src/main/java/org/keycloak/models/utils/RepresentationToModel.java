@@ -1598,4 +1598,21 @@ public class RepresentationToModel {
 
         return toModel(representation, authorization, client);
     }
+ 
+    public static void validateRealmRepresentation(RealmRepresentation rep, RealmModel realm, KeycloakSession session) throws ModelException {
+        int secondsPerYear = 31536000; // valid value condition the same as admin UI's partials/realm-tokens.html
+        validatePositiveIntegerParameter(rep.getSsoSessionIdleTimeout(), secondsPerYear, "ssoSessionIdleTimeout");
+        validatePositiveIntegerParameter(rep.getSsoSessionMaxLifespan(), secondsPerYear, "ssoSessionMaxLifespan");
+        validatePositiveIntegerParameter(rep.getOfflineSessionIdleTimeout(), secondsPerYear, "offlineSessionIdleTimeout");
+        validatePositiveIntegerParameter(rep.getOfflineSessionMaxLifespan(), secondsPerYear, "offlineSessionMaxLifespan");
+    }
+
+    private static void validatePositiveIntegerParameter(Integer paramValue, int upperLimit, String paramName) throws ModelException {
+        if (paramValue != null) {
+            int value = paramValue.intValue();
+            if (value < 1 || value > upperLimit) {
+                throw new ModelException(String.format("invalid parameter value : %s", paramName));
+            }
+        }
+    }
 }

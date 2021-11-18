@@ -35,6 +35,8 @@ public class SessionNotOnOrAfterTest extends AbstractSamlTest {
     private static final int ACCESS_CODE_LIFESPAN = 600;
     private static final int ACCESS_TOKEN_LIFESPAN = 1200;
 
+    private static final int MAX_SSO_MAX_LIFESPAN = 31536000;
+
     private SAML2Object checkSessionNotOnOrAfter(SAML2Object ob, int ssoMaxLifespan,
             int accessCodeLifespan, int accessTokenLifespan) {
         assertThat(ob, Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
@@ -105,7 +107,7 @@ public class SessionNotOnOrAfterTest extends AbstractSamlTest {
     public void testMaxValuesForAllTimeouts() throws Exception {
         try(AutoCloseable c = new RealmAttributeUpdater(adminClient.realm(REALM_NAME))
                 .updateWith(r -> {
-                    r.setSsoSessionMaxLifespan(Integer.MAX_VALUE);
+                    r.setSsoSessionMaxLifespan(MAX_SSO_MAX_LIFESPAN);
                     r.setAccessCodeLifespan(Integer.MAX_VALUE);
                     r.setAccessTokenLifespan(Integer.MAX_VALUE);
                 })
@@ -114,7 +116,7 @@ public class SessionNotOnOrAfterTest extends AbstractSamlTest {
                     .idpInitiatedLogin(getAuthServerSamlEndpoint(REALM_NAME), "sales-post").build()
                     .login().user(bburkeUser).build()
                     .processSamlResponse(SamlClient.Binding.POST)
-                    .transformObject(r -> { return checkSessionNotOnOrAfter(r, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE); })
+                    .transformObject(r -> { return checkSessionNotOnOrAfter(r, MAX_SSO_MAX_LIFESPAN, Integer.MAX_VALUE, Integer.MAX_VALUE); })
                     .build()
                     .execute();
         }
