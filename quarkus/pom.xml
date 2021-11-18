@@ -31,9 +31,6 @@
     <packaging>pom</packaging>
 
     <properties>
-        <!-- Quarkus version -->
-        <quarkus.version>2.5.1.Final</quarkus.version>
-
         <!--
             Override versions based on Quarkus dependencies.
             Make sure to update these dependencies when Quarkus version changes.

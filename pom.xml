@@ -35,6 +35,7 @@
     <packaging>pom</packaging>
 
     <properties>
+        <quarkus.version>2.5.1.Final</quarkus.version>
 
         <!--
         Performing a Wildfly upgrade? Run the:
@@ -262,6 +263,7 @@
         <module>common</module>
         <module>core</module>
         <module>dependencies</module>
+        <module>docs</module>
         <module>server-spi</module>
         <module>server-spi-private</module>
         <module>saml-core-api</module>
