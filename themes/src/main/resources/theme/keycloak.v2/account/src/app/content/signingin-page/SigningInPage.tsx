@@ -18,25 +18,26 @@ import * as React from 'react';
 
 import {withRouter, RouteComponentProps} from 'react-router-dom';
 import {
-        Button,
-        DataList,
-        DataListAction,
-        DataListItemCells,
-        DataListCell,
-        DataListItem,
-        DataListItemRow,
-        EmptyState,
-        EmptyStateVariant,
-        EmptyStateBody,
-        Stack,
-        StackItem,
-        Title,
-        Dropdown,
-        DropdownPosition,
-        KebabToggle,
-        Card,
-        CardTitle
-    } from '@patternfly/react-core';
+    Button,
+    DataList,
+    DataListAction,
+    DataListItemCells,
+    DataListCell,
+    DataListItem,
+    DataListItemRow,
+    EmptyState,
+    EmptyStateVariant,
+    EmptyStateBody,
+    Stack,
+    StackItem,
+    Title,
+    Dropdown,
+    DropdownPosition,
+    KebabToggle,
+    Card,
+    CardTitle,
+    PageSection
+} from '@patternfly/react-core';
 
 import {AIACommand} from '../../util/AIACommand';
 import TimeUtil from '../../util/TimeUtil';
@@ -144,12 +145,14 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
 
     public render(): React.ReactNode {
         return (
-          <ContentPage title="signingIn"
-                   introMessage="signingInSubMessage">
-              <Stack hasGutter>
-                  {this.renderCategories()}
-              </Stack>
-          </ContentPage>
+            <ContentPage title="signingIn"
+                introMessage="signingInSubMessage">
+                <PageSection isFilled>
+                    <Stack hasGutter>
+                        {this.renderCategories()}
+                    </Stack>
+                </PageSection>
+            </ContentPage>
         );
     }
 

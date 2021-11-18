@@ -26,7 +26,6 @@ import {
     Brand,
     Page,
     PageHeader,
-    PageSection,
     PageSidebar,
 } from '@patternfly/react-core';
 
@@ -76,9 +75,7 @@ export class App extends React.Component<AppProps> {
         return (
             <span style={{ height: '100%'}}>
                 <Page header={Header} sidebar={Sidebar} isManagedSidebar>
-                    <PageSection>
-                        {makeRoutes()}
-                    </PageSection>
+                    {makeRoutes()}
                 </Page>
             </span>
         );

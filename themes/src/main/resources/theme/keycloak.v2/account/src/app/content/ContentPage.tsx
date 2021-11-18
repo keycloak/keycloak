@@ -15,8 +15,8 @@
  */
 
 import * as React from 'react';
-import {Button, Grid, GridItem, Title, Tooltip, Card, CardBody, Stack, StackItem} from '@patternfly/react-core';
-import {RedoIcon} from '@patternfly/react-icons';
+import {Button, Grid, GridItem, Text, Title, Tooltip, Card, CardBody, Stack, StackItem, PageSection, TextContent, PageSectionVariants, SplitItem, Split} from '@patternfly/react-core';
+import {RedoIcon, SyncAltIcon} from '@patternfly/react-icons';
 
 import {Msg} from '../widgets/Msg';
 import {ContentAlert} from './ContentAlert';
@@ -40,34 +40,46 @@ export class ContentPage extends React.Component<ContentPageProps> {
     public render(): React.ReactNode {
         return (
             <React.Fragment>
-                <ContentAlert/>
-                <Stack hasGutter>
-                    <StackItem>
-                        <Card>
-                            <CardBody>
-                                <Grid>
-                                    <GridItem span={11}><Title headingLevel='h1' size='2xl'><strong><Msg msgKey={this.props.title}/></strong></Title></GridItem>
-                                    {this.props.onRefresh &&
-                                        <GridItem span={1}>
-                                            <Tooltip content={<Msg msgKey='refreshPage'/>}>
-                                                <Button aria-describedby="refresh page" id='refresh-page' variant='plain' onClick={this.props.onRefresh}>
-                                                    <RedoIcon size='sm'/>
-                                                </Button>
-                                            </Tooltip>
-                                        </GridItem>
-                                    }
-                                    {this.props.introMessage && <GridItem span={12}> <Msg msgKey={this.props.introMessage}/></GridItem>}
-                                </Grid>
-                            </CardBody>
-                        </Card>
-                    </StackItem>
-                    <StackItem>
-                        <section className="pf-m-no-padding-mobile">
-                            {this.props.children}
-                        </section>
-                    </StackItem>
-                </Stack>
-            </React.Fragment>
+            <ContentAlert />
+
+            <PageSection variant={PageSectionVariants.light}>
+              <Split>
+                <SplitItem isFilled>
+                  <TextContent>
+                    <Title headingLevel="h1" size="2xl">
+                      <Msg msgKey={this.props.title} />
+                    </Title>
+                    {this.props.introMessage && (
+                      <Text component="p">
+                        <Msg msgKey={this.props.introMessage} />
+                      </Text>
+                    )}
+                  </TextContent>
+                </SplitItem>
+                {this.props.onRefresh && (
+                  <SplitItem>
+                    <Tooltip content={<Msg msgKey="refreshPage" />}>
+                      <Button
+                        aria-describedby="refresh page"
+                        id="refresh-page"
+                        variant="link"
+                        onClick={this.props.onRefresh}
+                        icon={<SyncAltIcon />}
+                      >
+                        Refresh
+                      </Button>
+                    </Tooltip>
+                  </SplitItem>
+                )}
+              </Split>
+            </PageSection>
+
+            {/* TODO: this might be better left here, but down the road you'd probably want a parameter for variant and whether there's padding or not */}
+            {/* If so, the page sections in the children should be removed */}
+            {/* <PageSection isFilled variant={PageSectionVariants.light}> */}
+                {this.props.children}
+            {/* </PageSection> */}
+          </React.Fragment>
         );
     }
 };
