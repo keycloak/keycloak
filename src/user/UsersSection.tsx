@@ -23,6 +23,8 @@ import {
   SearchIcon,
   WarningTriangleIcon,
 } from "@patternfly/react-icons";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -36,9 +38,9 @@ import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { emptyFormatter } from "../util";
 import { toUser } from "./routes/User";
-import "./user-section.css";
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { toAddUser } from "./routes/AddUser";
+
+import "./user-section.css";
 
 type BruteUser = UserRepresentation & {
   brute?: Record<string, object>;
@@ -52,7 +54,7 @@ export default function UsersSection() {
   const history = useHistory();
   const [listUsers, setListUsers] = useState(false);
   const [searchUser, setSearchUser] = useState<string>();
-  const [realm, setRealm] = useState<RealmRepresentation>();
+  const [realm, setRealm] = useState<RealmRepresentation | undefined>();
   const [kebabOpen, setKebabOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
 
@@ -68,7 +70,13 @@ export default function UsersSection() {
       return Promise.all([
         adminClient.components.find(testParams),
         adminClient.realms.findOne({ realm: realmName }),
-      ]);
+      ]).catch(
+        () =>
+          [[], undefined] as [
+            ComponentRepresentation[],
+            RealmRepresentation | undefined
+          ]
+      );
     },
     ([storageProviders, realm]) => {
       //should *only* list users when no user federation is configured

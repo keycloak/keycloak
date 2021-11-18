@@ -27,12 +27,14 @@ import { toUser } from "./routes/User";
 import { toUsers } from "./routes/Users";
 import { UserRoleMapping } from "./UserRoleMapping";
 import { UserAttributes } from "./UserAttributes";
+import { useAccess } from "../context/access/Access";
 
 const UsersTabs = () => {
   const { t } = useTranslation("users");
   const { addAlert, addError } = useAlerts();
   const history = useHistory();
   const { realm } = useRealm();
+  const { hasAccess } = useAccess();
 
   const adminClient = useAdminClient();
   const userForm = useForm<UserRepresentation>({ mode: "onChange" });
@@ -159,7 +161,7 @@ const UsersTabs = () => {
       <PageSection variant="light" className="pf-u-p-0">
         <FormProvider {...userForm}>
           {id && user && (
-            <KeycloakTabs isBox>
+            <KeycloakTabs isBox mountOnEnter>
               <Tab
                 eventKey="settings"
                 data-testid="user-details-tab"
@@ -204,15 +206,17 @@ const UsersTabs = () => {
               >
                 <UserRoleMapping id={id} name={user.username!} />
               </Tab>
-              <Tab
-                eventKey="identity-provider-links"
-                data-testid="identity-provider-links-tab"
-                title={
-                  <TabTitleText>{t("identityProviderLinks")}</TabTitleText>
-                }
-              >
-                <UserIdentityProviderLinks />
-              </Tab>
+              {hasAccess("view-identity-providers") && (
+                <Tab
+                  eventKey="identity-provider-links"
+                  data-testid="identity-provider-links-tab"
+                  title={
+                    <TabTitleText>{t("identityProviderLinks")}</TabTitleText>
+                  }
+                >
+                  <UserIdentityProviderLinks />
+                </Tab>
+              )}
             </KeycloakTabs>
           )}
           {!id && (
