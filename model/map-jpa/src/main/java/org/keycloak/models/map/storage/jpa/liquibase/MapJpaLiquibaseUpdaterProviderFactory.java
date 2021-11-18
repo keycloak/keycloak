@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.map.storage.jpa.updater.liquibase;
+package org.keycloak.models.map.storage.jpa.liquibase;
 
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;

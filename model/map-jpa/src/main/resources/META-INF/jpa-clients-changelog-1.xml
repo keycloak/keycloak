@@ -17,37 +17,58 @@ limitations under the License.
 -->
 
 
-<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd
+                    http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
 
     <!-- format of id of changeSet: clients-${JpaClientMapStorage.SUPPORTED_VERSION} -->
     <changeSet author="keycloak" id="clients-1">
 
-        <sql>
-            create table client (
-                id uuid primary key not null,
-                entityVersion integer generated always as ((metadata->>'entityVersion')::int) stored,
-                realmId varchar(36) generated always as (metadata->>'fRealmId') stored,
-                clientId varchar(255) generated always as (metadata->>'fClientId') stored,
-                protocol varchar(36) generated always as (metadata->>'fProtocol') stored,
-                enabled boolean generated always as ((metadata->>'fEnabled')::boolean) stored,
-                metadata jsonb
-            );
+        <createTable tableName="client">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="metadata" type="json"/>
+        </createTable>
+        <ext:addGeneratedColumn tableName="client">
+            <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
+            <ext:column name="realmid" type="VARCHAR(36)" jsonColumn="metadata" jsonProperty="fRealmId"/>
+            <ext:column name="clientid" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fClientId"/>
+            <ext:column name="protocol" type="VARCHAR(36)" jsonColumn="metadata" jsonProperty="fProtocol"/>
+            <ext:column name="enabled" type="BOOLEAN" jsonColumn="metadata" jsonProperty="fEnabled"/>
+        </ext:addGeneratedColumn>
+        <createIndex tableName="client" indexName="client_entityVersion">
+            <column name="entityversion"/>
+        </createIndex>
+        <createIndex tableName="client" indexName="client_realmId_clientId">
+            <column name="realmid"/>
+            <column name="clientid"/>
+        </createIndex>
+        <ext:createJsonIndex tableName="client" indexName="client_scopeMappings">
+            <ext:column jsonColumn="metadata" jsonProperty="fScopeMappings"/>
+        </ext:createJsonIndex>
 
-            create index client_entityVersion on client(entityVersion);
-            create index client_realmId_clientId on client(realmId, clientId);
-            create index client_scopeMappings on client using gin ((metadata->'fScopeMappings') jsonb_path_ops);
-
-            create table client_attribute (
-                id uuid primary key not null,
-                fk_client uuid references client(id) on delete cascade,
-                name varchar(255),
-                value text
-            );
-
-            create index client_attr_fk_client on client_attribute(fk_client);
-            create index client_attr_name_value on client_attribute(name, (value::varchar(250))); 
-        </sql>
-
+        <createTable tableName="client_attribute">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="fk_client" type="UUID">
+                <constraints foreignKeyName="client_attr_fk_client_fkey" references="client(id)" deleteCascade="true"/>
+            </column>
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="value" type="text"/>
+        </createTable>
+        <createIndex tableName="client_attribute" indexName="client_attr_fk_client">
+            <column name="fk_client"/>
+        </createIndex>
+        <createIndex tableName="client_attribute" indexName="client_attr_name_value">
+            <column name="name"/>
+            <column name="VALUE(255)" valueComputed="VALUE(255)"/>
+        </createIndex>
+        <modifySql dbms="postgresql">
+            <replace replace="VALUE(255)" with="(value::varchar(250))"/>
+        </modifySql>
     </changeSet>
 
 </databaseChangeLog>

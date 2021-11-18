@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.map.storage.jpa.updater.liquibase;
+package org.keycloak.models.map.storage.jpa.liquibase;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -33,12 +33,10 @@ import liquibase.changelog.RanChangeSet;
 import liquibase.exception.LiquibaseException;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.reflections.Reflections;
-import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
 import org.keycloak.connections.jpa.updater.liquibase.ThreadLocalSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterProvider;
-import org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterProvider.Status;
 
 public class MapJpaLiquibaseUpdaterProvider implements MapJpaUpdaterProvider {
 
@@ -163,12 +161,12 @@ public class MapJpaLiquibaseUpdaterProvider implements MapJpaUpdaterProvider {
     }
 
     private Liquibase getLiquibase(Class modelType, Connection connection, String defaultSchema) throws LiquibaseException {
-        LiquibaseConnectionProvider liquibaseProvider = session.getProvider(LiquibaseConnectionProvider.class);
-        String changelog = "META-INF/jpa-" + ModelEntityUtil.getModelName(modelType) + "-changelog.xml";
-        if (changelog == null) {
+        MapLiquibaseConnectionProvider liquibaseProvider = session.getProvider(MapLiquibaseConnectionProvider.class);
+        String modelName = ModelEntityUtil.getModelName(modelType);
+        if (modelName == null) {
             throw new IllegalStateException("Cannot find changlelog for modelClass " + modelType.getName());
         }
-
+        String changelog = "META-INF/jpa-" + modelName + "-changelog.xml";
         return liquibaseProvider.getLiquibaseForCustomUpdate(connection, defaultSchema, changelog, this.getClass().getClassLoader(), "databasechangelog");
     }
 
