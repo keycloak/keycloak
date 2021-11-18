@@ -37,6 +37,7 @@ public class Profile {
     public static final String PRODUCT_NAME = ProductValue.RHSSO.getName();
     public static final String PROJECT_NAME = ProductValue.KEYCLOAK.getName();
     private static final Logger logger = Logger.getLogger(Profile.class);
+
     private static Profile CURRENT;
     private final ProductValue product;
     private final ProfileValue profile;
@@ -167,7 +168,8 @@ public class Profile {
         DECLARATIVE_USER_PROFILE("Configure user profiles using a declarative style", Type.PREVIEW),
         DYNAMIC_SCOPES("Dynamic OAuth 2.0 scopes", Type.EXPERIMENTAL),
         CLIENT_SECRET_ROTATION("Client Secret Rotation", Type.PREVIEW),
-        STEP_UP_AUTHENTICATION("Step-up Authentication", Type.DEFAULT);
+        STEP_UP_AUTHENTICATION("Step-up Authentication", Type.DEFAULT),
+        RECOVERY_CODES("Recovery codes", Type.PREVIEW);
 
 
         private final Type typeProject;
