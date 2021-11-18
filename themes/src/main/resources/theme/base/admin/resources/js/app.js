@@ -13,9 +13,9 @@ var currentRealm = null;
 angular.element(document).ready(function () {
     var keycloakAuth = new Keycloak(consoleBaseUrl + 'config');
 
-    function whoAmI(success, error) {
+    function whoAmI(realm, success, error) {
         var req = new XMLHttpRequest();
-        req.open('GET', consoleBaseUrl + 'whoami', true);
+        req.open('GET', consoleBaseUrl + 'whoami?realm=' + encodeURIComponent(realm), true);
         req.setRequestHeader('Accept', 'application/json');
         req.setRequestHeader('Authorization', 'bearer ' + keycloakAuth.token);
 
@@ -82,8 +82,16 @@ angular.element(document).ready(function () {
         location.reload();
     }
 
-    auth.refreshPermissions = function(success, error) {
-        whoAmI(function(data) {
+    auth.refreshPermissions = function(realm, success, error) {
+        whoAmI(realm, function(data) {
+            // Add already existing realm_access to data object, before it is set to auth.user
+            if (auth.user && auth.user.userId === data.userId && auth.user.realm === data.realm) {
+                Object.keys(auth.user['realm_access'])
+                    .filter(r => r !== realm)
+                    .forEach(r => {
+                        data['realm_access'][r] = auth.user['realm_access'][r];
+                    });
+            }
             auth.user = data;
             auth.loggedIn = true;
             auth.hasAnyAccess = hasAnyAccess(data);
@@ -101,7 +109,7 @@ angular.element(document).ready(function () {
     keycloakAuth.init({ onLoad: 'login-required', pkceMethod: 'S256' }).then(function () {
         auth.authz = keycloakAuth;
 
-        whoAmI(function(data) {
+        whoAmI(keycloakAuth.realm, function(data) {
             auth.user = data;
             auth.loggedIn = true;
             auth.hasAnyAccess = hasAnyAccess(data);

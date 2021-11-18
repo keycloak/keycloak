@@ -102,11 +102,13 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
         return Current.realm;
     }, function() {
         if(Current.realm !== null && currentRealm !== Current.realm.id) {
-            currentRealm = Current.realm.id;
-            translateProvider.translations(locale, resourceBundle);
-            RealmSpecificLocalizationTexts.get({id: Current.realm.realm, locale: locale}, function (localizationTexts) {
-                translateProvider.translations(locale, localizationTexts.toJSON());
-            })
+            Auth.refreshPermissions(Current.realm.realm, function () {
+                currentRealm = Current.realm.id;
+                translateProvider.translations(locale, resourceBundle);
+                RealmSpecificLocalizationTexts.get({id: Current.realm.realm, locale: locale}, function (localizationTexts) {
+                    translateProvider.translations(locale, localizationTexts.toJSON());
+                });
+            });
         }
     })
 });
@@ -238,7 +240,7 @@ module.controller('RealmCreateCtrl', function($scope, Current, Realm, $upload, $
         Realm.create(realmCopy, function() {
             Notifications.success("The realm has been created.");
 
-            Auth.refreshPermissions(function() {
+            Auth.refreshPermissions(realmCopy.realm, function() {
                 $scope.$apply(function() {
                     $location.url("/realms/" + realmCopy.realm);
                 });
@@ -321,8 +323,8 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, ser
                 console.debug(Auth.authz.tokenParsed.iss);
 
                 if (Auth.authz.tokenParsed.iss.endsWith(masterRealm)) {
-                    Auth.refreshPermissions(function () {
-                        Auth.refreshPermissions(function () {
+                    Auth.refreshPermissions(realmCopy.realm, function () {
+                        Auth.refreshPermissions(realmCopy.realm, function () {
                             Notifications.success("Your changes have been saved to the realm.");
                             $scope.$apply(function () {
                                 $location.url("/realms/" + realmCopy.realm);

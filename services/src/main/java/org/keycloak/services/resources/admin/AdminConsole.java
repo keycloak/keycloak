@@ -35,6 +35,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -198,13 +199,14 @@ public class AdminConsole {
      * Permission information
      *
      * @param headers
+     * @param realmName the name of the realm to retrieve information. Only applicable, if requested from master realm
      * @return
      */
     @Path("whoami")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public Response whoAmI(final @Context HttpHeaders headers) {
+    public Response whoAmI(final @Context HttpHeaders headers, @QueryParam("realm") final String realmName) {
         RealmManager realmManager = new RealmManager(session);
         AuthenticationManager.AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session)
                 .setRealm(realm)
@@ -230,11 +232,14 @@ public class AdminConsole {
         Map<String, Set<String>> realmAccess = new HashMap<String, Set<String>>();
         if (masterRealm == null)
             throw new NotFoundException("No realm found");
+        if (realmName != null && !realm.equals(masterRealm) && !realmName.equals(realm.getName())) {
+            throw new ForbiddenException("Realm name may only be provided for master realm");
+        }
         boolean createRealm = false;
         if (realm.equals(masterRealm)) {
             logger.debug("setting up realm access for a master realm user");
             createRealm = user.hasRole(masterRealm.getRole(AdminRoles.CREATE_REALM));
-            addMasterRealmAccess(user, realmAccess);
+            addMasterRealmAccess(user, realmName, realmAccess);
         } else {
             logger.debug("setting up realm access for a realm user");
             addRealmAccess(realm, user, realmAccess);
@@ -254,11 +259,13 @@ public class AdminConsole {
         getRealmAdminAccess(realm, realmAdminApp, user, realmAdminAccess);
     }
 
-    private void addMasterRealmAccess(UserModel user, Map<String, Set<String>> realmAdminAccess) {
-        session.realms().getRealmsStream().forEach(realm -> {
-            ClientModel realmAdminApp = realm.getMasterAdminClient();
-            getRealmAdminAccess(realm, realmAdminApp, user, realmAdminAccess);
-        });
+    private void addMasterRealmAccess(UserModel user, String realmName, Map<String, Set<String>> realmAdminAccess) {
+        session.realms().getRealmsStream()
+            .filter(r -> realmName == null || realmName.equals(r.getName()))
+            .forEach(realm -> {
+                ClientModel realmAdminApp = realm.getMasterAdminClient();
+                getRealmAdminAccess(realm, realmAdminApp, user, realmAdminAccess);
+            });
     }
 
     private static <T> HashSet<T> union(Set<T> set1, Set<T> set2) {
