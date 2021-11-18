@@ -161,7 +161,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
             >
                 <PageSection isFilled variant={PageSectionVariants.light}>
                     <Form
-                        isHorizontal
+                        
                         onSubmit={(event) => this.handleSubmit(event)}
                         isWidthLimited
                     >
@@ -286,26 +286,26 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                             </FormGroup>
                         )}
                         <ActionGroup>
-                <Button
-                    type="submit"
-                    id="save-btn"
-                    variant="primary"
-                    isDisabled={
-                        Object.values(this.state.errors).filter((e) => e !== "")
-                        .length !== 0
-                    }
-                >
-                    <Msg msgKey="doSave" />
-                </Button>
-                <Button
-                    id="cancel-btn"
-                    variant="secondary"
-                    onClick={this.handleCancel}
-                >
-                    <Msg msgKey="doCancel" />
-                </Button>
+                            <Button
+                                type="submit"
+                                id="save-btn"
+                                variant="primary"
+                                isDisabled={
+                                    Object.values(this.state.errors).filter((e) => e !== "")
+                                    .length !== 0
+                                }
+                            >
+                                <Msg msgKey="doSave" />
+                            </Button>
+                            <Button
+                                id="cancel-btn"
+                                variant="link"
+                                onClick={this.handleCancel}
+                            >
+                                <Msg msgKey="doCancel" />
+                            </Button>
                         </ActionGroup>
-            </Form>
+                    </Form>
 
             {this.isDeleteAccountAllowed && (
                 <div id="delete-account" style={{ marginTop: "30px" }}>
