@@ -45,10 +45,9 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
     name: "config.validateSignature",
   });
 
-  const principalType = useWatch({
+  const principalType = useWatch<string>({
     control,
     name: "config.principalType",
-    defaultValue: "",
   });
 
   return (
@@ -248,7 +247,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         ></Controller>
       </FormGroup>
 
-      {principalType.includes("ATTRIBUTE") && (
+      {principalType?.includes("ATTRIBUTE") && (
         <FormGroup
           label={t("principalAttribute")}
           labelIcon={
