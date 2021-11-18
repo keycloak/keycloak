@@ -33,10 +33,13 @@ export function useFetch<T>(
   const adminClient = useAdminClient();
   const onError = useErrorHandler();
 
-  const source = axios.CancelToken.source();
-  adminClient.setConfig({ requestConfig: { cancelToken: source.token } });
-
   useEffect(() => {
+    const source = axios.CancelToken.source();
+
+    adminClient.setConfig({
+      requestConfig: { cancelToken: source.token },
+    });
+
     adminClientCall()
       .then((result) => {
         if (!source.token.reason) {
@@ -48,6 +51,10 @@ export function useFetch<T>(
           onError(error);
         }
       });
+
+    adminClient.setConfig({
+      requestConfig: { cancelToken: undefined },
+    });
 
     return () => {
       source.cancel();

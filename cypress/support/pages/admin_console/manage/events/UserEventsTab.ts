@@ -55,7 +55,7 @@ export default class UserEventsTab {
 
     cy.get("[id^=remove_group]").click();
     cy.wait("@eventsFetch");
-    cy.get("table").should("be.visible").contains("td", "LOGOUT");
+    cy.get("table").should("not.contain", "LOGOUT");
   }
 
   shouldHaveSearchBtnEnabled() {

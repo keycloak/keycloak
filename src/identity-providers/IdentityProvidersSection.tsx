@@ -15,6 +15,7 @@ import {
   DropdownToggle,
   Gallery,
   PageSection,
+  Spinner,
   Split,
   SplitItem,
   Text,
@@ -50,9 +51,8 @@ export default function IdentityProvidersSection() {
 
   const [addProviderOpen, setAddProviderOpen] = useState(false);
   const [manageDisplayDialog, setManageDisplayDialog] = useState(false);
-  const [providers, setProviders] = useState<IdentityProviderRepresentation[]>(
-    []
-  );
+  const [providers, setProviders] =
+    useState<IdentityProviderRepresentation[]>();
   const [selectedProvider, setSelectedProvider] =
     useState<IdentityProviderRepresentation>();
 
@@ -142,7 +142,7 @@ export default function IdentityProvidersSection() {
           alias: selectedProvider!.alias!,
         });
         setProviders([
-          ...providers.filter((p) => p.alias !== selectedProvider?.alias),
+          ...providers!.filter((p) => p.alias !== selectedProvider?.alias),
         ]);
         refresh();
         addAlert(t("deletedSuccess"), AlertVariant.success);
@@ -151,6 +151,10 @@ export default function IdentityProvidersSection() {
       }
     },
   });
+
+  if (!providers) {
+    return <Spinner />;
+  }
 
   return (
     <>
