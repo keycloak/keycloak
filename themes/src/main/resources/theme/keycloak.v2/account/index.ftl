@@ -112,8 +112,10 @@
             </#list>
         </#if>
 
+        
         <link rel="stylesheet" type="text/css" href="${resourceCommonUrl}/web_modules/@patternfly/react-core/dist/styles/base.css"/>
         <link rel="stylesheet" type="text/css" href="${resourceCommonUrl}/web_modules/@patternfly/react-core/dist/styles/app.css"/>
+        <link rel="stylesheet" type="text/css" href="${resourceCommonUrl}/node_modules/@patternfly/patternfly/patternfly-addons.css"/>
         <link href="${resourceUrl}/public/layout.css" rel="stylesheet"/>
     </head>
 
