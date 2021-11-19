@@ -25,6 +25,8 @@ import {
     DataListCell,
     DataListItemRow,
     Label,
+    PageSection,
+    PageSectionVariants,
     Stack,
     StackItem,
     Title,
@@ -127,25 +129,26 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
 
         return (
             <ContentPage title={Msg.localize('linkedAccountsTitle')} introMessage={Msg.localize('linkedAccountsIntroMessage')}>
-                <Stack hasGutter>
-                    <StackItem isFilled>
-                        <Title headingLevel="h2" size='2xl'>
-                            <Msg msgKey='linkedLoginProviders'/>
-                        </Title>
-                        <DataList id="linked-idps" aria-label='foo'>
-                            {this.makeRows(this.state.linkedAccounts, true)}
-                        </DataList>
-                    </StackItem>
-                    <StackItem isFilled/>
-                    <StackItem isFilled>
-                        <Title headingLevel="h2" size='2xl'>
-                            <Msg msgKey='unlinkedLoginProviders'/>
-                        </Title>
-                        <DataList id="unlinked-idps" aria-label='foo'>
-                            {this.makeRows(this.state.unLinkedAccounts, false)}
-                        </DataList>
-                    </StackItem>
-                </Stack>
+                <PageSection isFilled variant={PageSectionVariants.light}>
+                    <Stack hasGutter>
+                        <StackItem>
+                            <Title headingLevel="h2" size='2xl'>
+                                <Msg msgKey='linkedLoginProviders'/>
+                            </Title>
+                            <DataList id="linked-idps" aria-label='foo'>
+                                {this.makeRows(this.state.linkedAccounts, true)}
+                            </DataList>
+                        </StackItem>
+                        <StackItem>
+                            <Title headingLevel="h2" size='2xl'>
+                                <Msg msgKey='unlinkedLoginProviders'/>
+                            </Title>
+                            <DataList id="unlinked-idps" aria-label='foo'>
+                                {this.makeRows(this.state.unLinkedAccounts, false)}
+                            </DataList>
+                        </StackItem>
+                    </Stack>
+                </PageSection>
             </ContentPage>
         );
     }
