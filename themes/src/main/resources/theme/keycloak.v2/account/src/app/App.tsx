@@ -73,11 +73,9 @@ export class App extends React.Component<AppProps> {
         const Sidebar = <PageSidebar nav={<PageNav/>} />;
 
         return (
-            <span style={{ height: '100%'}}>
-                <Page header={Header} sidebar={Sidebar} isManagedSidebar>
-                    {makeRoutes()}
-                </Page>
-            </span>
+            <Page header={Header} sidebar={Sidebar} isManagedSidebar>
+                {makeRoutes()}
+            </Page>
         );
     }
 };

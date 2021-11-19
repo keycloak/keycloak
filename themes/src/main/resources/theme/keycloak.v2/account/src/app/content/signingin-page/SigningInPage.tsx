@@ -36,7 +36,8 @@ import {
     KebabToggle,
     Card,
     CardTitle,
-    PageSection
+    PageSection,
+    PageSectionVariants
 } from '@patternfly/react-core';
 
 import {AIACommand} from '../../util/AIACommand';
@@ -147,7 +148,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         return (
             <ContentPage title="signingIn"
                 introMessage="signingInSubMessage">
-                <PageSection isFilled>
+                <PageSection isFilled variant={PageSectionVariants.light}>
                     <Stack hasGutter>
                         {this.renderCategories()}
                     </Stack>

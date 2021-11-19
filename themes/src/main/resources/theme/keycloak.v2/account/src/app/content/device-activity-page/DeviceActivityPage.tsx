@@ -30,6 +30,8 @@ import {
   Grid,
   GridItem,
   Label,
+  PageSection,
+  PageSectionVariants,
   Stack,
   StackItem
 } from '@patternfly/react-core';
@@ -221,40 +223,42 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
     public render(): React.ReactNode {
 
       return (
-          <ContentPage title="device-activity" onRefresh={this.fetchDevices.bind(this)}>
+        <ContentPage title="device-activity" onRefresh={this.fetchDevices.bind(this)}>
+          <PageSection isFilled variant={PageSectionVariants.light}>
+            <Stack hasGutter>
               <DataList aria-label={Msg.localize('signedInDevices')}>
-                  <DataListItem key="SignedInDevicesHeader" aria-labelledby="signedInDevicesTitle" isExpanded={false}>
-                      <DataListItemRow>
-                          <DataListItemCells
-                              dataListCells={[
-                                <DataListCell key='signedInDevicesTitle' width={4}>
-                                  <div id="signedInDevicesTitle" className="pf-c-content">
-                                      <h2><Msg msgKey="signedInDevices"/></h2>
-                                      <p>
-                                          <Msg msgKey="signedInDevicesExplanation"/>
-                                      </p>
-                                  </div>
-                                </DataListCell>,
-                                <KeycloakContext.Consumer>
-                                { (keycloak: KeycloakService) => (
-                                  <DataListCell key='signOutAllButton' width={1}>
-                                    {this.isShowSignOutAll(this.state.devices) &&
-                                      <ContinueCancelModal buttonTitle='signOutAllDevices'
-                                                    buttonId='sign-out-all'
-                                                    modalTitle='signOutAllDevices'
-                                                    modalMessage='signOutAllDevicesWarning'
-                                                    onContinue={() => this.signOutAll(keycloak)}
-                                      />
-                                    }
-                                  </DataListCell>
-                                )}
-                                </KeycloakContext.Consumer>
-                              ]}
-                          />
-                      </DataListItemRow>
-                  </DataListItem>
+                <DataListItem key="SignedInDevicesHeader" aria-labelledby="signedInDevicesTitle" isExpanded={false}>
+                  <DataListItemRow>
+                    <DataListItemCells
+                      dataListCells={[
+                        <DataListCell key='signedInDevicesTitle' width={4}>
+                          <div id="signedInDevicesTitle" className="pf-c-content">
+                            <h2><Msg msgKey="signedInDevices"/></h2>
+                            <p>
+                              <Msg msgKey="signedInDevicesExplanation"/>
+                            </p>
+                          </div>
+                        </DataListCell>,
+                        <KeycloakContext.Consumer>
+                          { (keycloak: KeycloakService) => (
+                            <DataListCell key='signOutAllButton' width={1}>
+                              {this.isShowSignOutAll(this.state.devices) &&
+                              <ContinueCancelModal buttonTitle='signOutAllDevices'
+                                buttonId='sign-out-all'
+                                modalTitle='signOutAllDevices'
+                                modalMessage='signOutAllDevicesWarning'
+                                onContinue={() => this.signOutAll(keycloak)}
+                              />
+                              }
+                            </DataListCell>
+                          )}
+                        </KeycloakContext.Consumer>
+                      ]}
+                    />
+                  </DataListItemRow>
+                </DataListItem>
 
-                  <DataListItem aria-labelledby='sessions'>
+                <DataListItem aria-labelledby='sessions'>
                   <DataListItemRow>
                     <Grid hasGutter={true}>
                       <GridItem span={12} /> {/* <-- top spacing */}
@@ -274,27 +278,27 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
                                         <Bullseye id={this.elementId('ip', session)}>{session.ipAddress}</Bullseye>
                                       </StackItem>
                                       {session.current &&
-                                        <StackItem isFilled={false}>
-                                          <Label><strong className='pf-c-badge pf-m-read'><Msg msgKey="currentSession" /></strong></Label>
-                                        </StackItem>
+                                      <StackItem isFilled={false}>
+                                        <Label><strong className='pf-c-badge pf-m-read'><Msg msgKey="currentSession" /></strong></Label>
+                                      </StackItem>
                                       }
                                     </Stack>
                                   </GridItem>
                                   <GridItem md={9}>
-                                  {!session.browser.toLowerCase().includes('unknown') &&
+                                    {!session.browser.toLowerCase().includes('unknown') &&
                                     <p id={this.elementId('browser', session)}><strong>{session.browser} / {this.findOS(device)} {this.findOSVersion(device)}</strong></p>}
                                     <p id={this.elementId('last-access', session)}><strong>{Msg.localize('lastAccessedOn')}</strong> {this.time(session.lastAccess)}</p>
                                     <p id={this.elementId('clients', session)}><strong>{Msg.localize('clients')}</strong> {this.makeClientsString(session.clients)}</p>
                                     <p id={this.elementId('started', session)}><strong>{Msg.localize('started')}</strong> {this.time(session.started)}</p>
                                     <p id={this.elementId('expires', session)}><strong>{Msg.localize('expires')}</strong> {this.time(session.expires)}</p>
                                     {!session.current &&
-                                      <ContinueCancelModal buttonTitle='doSignOut'
-                                        buttonId={this.elementId('sign-out', session)}
-                                        modalTitle='doSignOut'
-                                        buttonVariant='secondary'
-                                        modalMessage='signOutWarning'
-                                        onContinue={() => this.signOutSession(device, session)}
-                                      />
+                                    <ContinueCancelModal buttonTitle='doSignOut'
+                                      buttonId={this.elementId('sign-out', session)}
+                                      modalTitle='doSignOut'
+                                      buttonVariant='secondary'
+                                      modalMessage='signOutWarning'
+                                      onContinue={() => this.signOutSession(device, session)}
+                                    />
                                     }
 
                                   </GridItem>
@@ -310,7 +314,9 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
                   </DataListItemRow>
                 </DataListItem>
               </DataList>
-          </ContentPage>
+            </Stack>
+          </PageSection>
+        </ContentPage>
         );
     }
 };
