@@ -24,17 +24,11 @@ import org.keycloak.quarkus.runtime.Environment;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
-import picocli.CommandLine.Option;
 
 public abstract class AbstractCommand {
 
     @Spec
     protected CommandSpec spec;
-
-    @Option(names = { "-h", "--help" },
-            description = "This help message.",
-            usageHelp = true)
-    boolean help;
 
     protected void devProfileNotAllowedError(String cmd) {
         executionError(spec.commandLine(), String.format("You can not '%s' the server using the '%s' configuration profile. Please re-build the server first, using './kc.sh build' for the default production profile, or using '/.kc.sh build --profile=<profile>' with a profile more suitable for production.%n", cmd, Environment.DEV_PROFILE_VALUE));

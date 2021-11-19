@@ -19,24 +19,26 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import org.keycloak.quarkus.runtime.Environment;
 
-import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Option;
 
 @Command(name = StartDev.NAME,
         header = "Start the server in development mode.",
         description = {
             "%nUse this command if you want to run the server locally for development or testing purposes.",
         },
-        footer = "%nDo NOT start the server using this command when deploying to production.",
-        optionListHeading = "Options:",
-        commandListHeading = "Commands:",
-        abbreviateSynopsis = true)
+        footer = "%nDo NOT start the server using this command when deploying to production.%n%n"
+                + "Use '${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --help-all' to list all available options, including build options.")
 public final class StartDev extends AbstractStartCommand implements Runnable {
 
     public static final String NAME = "start-dev";
 
-    @CommandLine.Option(names = AUTO_BUILD_OPTION_LONG, hidden = true)
+    @Option(names = AUTO_BUILD_OPTION_LONG, hidden = true)
     Boolean autoConfig;
+
+    @Mixin
+    HelpAllMixin helpAllMixin;
 
     @Override
     protected void doBeforeRun() {

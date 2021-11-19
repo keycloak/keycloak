@@ -19,8 +19,6 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import org.keycloak.quarkus.runtime.KeycloakMain;
 
-import picocli.CommandLine;
-
 public abstract class AbstractStartCommand extends AbstractCommand implements Runnable {
 
     public static final String AUTO_BUILD_OPTION_LONG = "--auto-build";

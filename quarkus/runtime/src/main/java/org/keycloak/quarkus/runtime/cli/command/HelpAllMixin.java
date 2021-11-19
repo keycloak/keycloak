@@ -17,11 +17,18 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import picocli.CommandLine.Command;
+import org.keycloak.quarkus.runtime.cli.Help;
 
-@Command(name = "tools",
-        description = "%nUtilities for use and interaction with the server.",
-        subcommands = {Completion.class})
-public class Tools {
+import picocli.CommandLine;
 
+final class HelpAllMixin {
+
+    @CommandLine.Spec
+    private CommandLine.Model.CommandSpec spec;
+
+    @CommandLine.Option(names = { "--help-all" }, usageHelp = true, description = "This same help message but with additional options.")
+    public void setHelpAll(boolean allOptions) {
+        Help help = (Help) spec.commandLine().getHelp();
+        help.setAllOptions(true);
+    }
 }

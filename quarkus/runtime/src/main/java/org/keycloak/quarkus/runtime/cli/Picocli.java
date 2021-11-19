@@ -34,7 +34,6 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -59,8 +58,6 @@ import org.keycloak.quarkus.runtime.Environment;
 import io.smallrye.config.ConfigValue;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
-import picocli.CommandLine.UnmatchedArgumentException;
-import picocli.CommandLine.ParseResult;
 import picocli.CommandLine.Model.OptionSpec;
 import picocli.CommandLine.Model.ArgGroupSpec;
 
@@ -81,26 +78,6 @@ public final class Picocli {
     public static void parseAndRun(List<String> cliArgs) {
         CommandLine cmd = createCommandLine(cliArgs);
 
-        try {
-            ParseResult result = cmd.parseArgs(cliArgs.toArray(new String[0]));
-
-            if (!result.hasSubcommand() && !result.isUsageHelpRequested() && !result.isVersionHelpRequested()) {
-                // if no command was set, the start command becomes the default
-                cliArgs.add(0, Start.NAME);
-            }
-        } catch (UnmatchedArgumentException e) {
-            // if no command was set but options were provided, the start command becomes the default
-            if (!cmd.getParseResult().hasSubcommand() && cliArgs.get(0).startsWith("--")) {
-                cliArgs.add(0, "start");
-            } else {
-                cmd.getErr().println(e.getMessage());
-                System.exit(cmd.getCommandSpec().exitCodeOnInvalidInput());
-            }
-        } catch (Exception e) {
-            cmd.getErr().println(e.getMessage());
-            System.exit(cmd.getCommandSpec().exitCodeOnExecutionException());
-        }
-
         runReAugmentationIfNeeded(cliArgs, cmd);
 
         int exitCode = cmd.execute(cliArgs.toArray(new String[0]));
@@ -114,7 +91,17 @@ public final class Picocli {
     }
 
     private static void runReAugmentationIfNeeded(List<String> cliArgs, CommandLine cmd) {
-        if (hasAutoBuildOption(cliArgs) && !(cliArgs.contains("--help") || cliArgs.contains("-h"))) {
+        if (hasAutoBuildOption(cliArgs) && !isHelpCommand(cliArgs)) {
+            if (cliArgs.contains(StartDev.NAME)) {
+                String profile = Environment.getProfile();
+
+                if (profile == null) {
+                    // force the server image to be set with the dev profile
+                    Environment.forceDevProfile();
+                }
+
+                Environment.setUserInvokedCliArgs(cliArgs);
+            }
             if (requiresReAugmentation(cmd)) {
                 runReAugmentation(cliArgs, cmd);
             }
@@ -123,6 +110,10 @@ public final class Picocli {
         if (Boolean.getBoolean("kc.config.rebuild-and-exit")) {
             System.exit(cmd.getCommandSpec().exitCodeOnSuccess());
         }
+    }
+
+    private static boolean isHelpCommand(List<String> cliArgs) {
+        return cliArgs.contains("--help") || cliArgs.contains("-h") || cliArgs.contains("--help-all");
     }
 
     private static boolean hasAutoBuildOption(List<String> cliArgs) {
@@ -146,17 +137,6 @@ public final class Picocli {
     }
 
     private static void runReAugmentation(List<String> cliArgs, CommandLine cmd) {
-        if (cliArgs.contains(StartDev.NAME)) {
-            String profile = Environment.getProfile();
-
-            if (profile == null) {
-                // force the server image to be set with the dev profile
-                Environment.forceDevProfile();
-            }
-
-            Environment.setUserInvokedCliArgs(cliArgs);
-        }
-
         List<String> configArgsList = new ArrayList<>(cliArgs);
 
         configArgsList.remove(AUTO_BUILD_OPTION_LONG);
@@ -270,6 +250,16 @@ public final class Picocli {
         CommandSpec spec = CommandSpec.forAnnotatedObject(new Main())
                 .name(Environment.getCommand());
 
+        for (CommandLine subCommand : spec.subcommands().values()) {
+            CommandSpec subCommandSpec = subCommand.getCommandSpec();
+
+            // help option added to any subcommand
+            subCommandSpec.addOption(OptionSpec.builder(Help.OPTION_NAMES)
+                    .usageHelp(true)
+                    .description("This help message.")
+                    .build());
+        }
+
         boolean isStartCommand = cliArgs.size() == 1 && cliArgs.contains(Start.NAME);
 
         // avoid unnecessary processing when starting the server
@@ -284,7 +274,7 @@ public final class Picocli {
         cmd.setExecutionExceptionHandler(new ExecutionExceptionHandler());
 
         if (!isStartCommand) {
-            cmd.setHelpFactory(Help::new);
+            cmd.setHelpFactory(new HelpFactory());
             cmd.getHelpSectionMap().put(SECTION_KEY_COMMAND_LIST, new SubCommandListRenderer());
         }
 
@@ -414,16 +404,6 @@ public final class Picocli {
 
             cSpec.addArgGroup(argGroupBuilder.build());
         }
-    }
-
-    public static List<String> getCliArgs(CommandLine cmd) {
-        ParseResult parseResult = cmd.getParseResult();
-
-        if (parseResult == null) {
-            return Collections.emptyList();
-        }
-
-        return parseResult.expandedArgs();
     }
 
     public static void println(CommandLine cmd, String message) {

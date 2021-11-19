@@ -53,9 +53,6 @@ import picocli.CommandLine.Option;
             "JVM: ${java.version} (${java.vendor} ${java.vm.name} ${java.vm.version})",
             "OS: ${os.name} ${os.version} ${os.arch}"
         },
-        optionListHeading = "Options:",
-        commandListHeading = "Commands:",
-        abbreviateSynopsis = true,
         subcommands = {
                 Build.class,
                 Start.class,
