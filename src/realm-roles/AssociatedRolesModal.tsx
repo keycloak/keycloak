@@ -68,7 +68,9 @@ export const AssociatedRolesModal = ({
       params.search = searchParam;
     }
 
-    return adminClient.roles.find(params);
+    return (await adminClient.roles.find(params)).filter(
+      (item) => item.name !== name
+    );
   };
 
   const AliasRenderer = ({ id, name, clientId }: Role) => {
@@ -91,10 +93,12 @@ export const AssociatedRolesModal = ({
       clients.map(async (client) => {
         const roles = await adminClient.clients.listRoles({ id: client.id! });
 
-        return roles.map<Role>((role) => ({
-          ...role,
-          clientId: client.clientId,
-        }));
+        return roles
+          .map<Role>((role) => ({
+            ...role,
+            clientId: client.clientId,
+          }))
+          .filter((item) => item.name !== name);
       })
     );
 
@@ -115,7 +119,7 @@ export const AssociatedRolesModal = ({
       return { role, compositeRoles };
     },
     ({ role, compositeRoles }) => {
-      setName(role ? role.name! : t("createRole"));
+      setName(role?.name!);
       setCompositeRoles(compositeRoles);
     },
     []
@@ -142,7 +146,9 @@ export const AssociatedRolesModal = ({
   return (
     <Modal
       data-testid="addAssociatedRole"
-      title={t("roles:associatedRolesModalTitle", { name })}
+      title={
+        name ? t("roles:associatedRolesModalTitle", { name }) : t("addRole")
+      }
       isOpen
       onClose={toggleDialog}
       variant={ModalVariant.large}

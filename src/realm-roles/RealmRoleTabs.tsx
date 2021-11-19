@@ -204,53 +204,42 @@ export default function RealmRoleTabs() {
     },
   });
 
-  const dropdownItems =
-    url.includes("associated-roles") && !realm?.defaultRole
-      ? [
-          <DropdownItem
-            key="delete-all-associated"
-            component="button"
-            onClick={() => toggleDeleteAllAssociatedRolesDialog()}
-          >
-            {t("roles:removeAllAssociatedRoles")}
-          </DropdownItem>,
-          <DropdownItem
-            key="delete-role"
-            component="button"
-            onClick={() => {
-              toggleDeleteDialog();
-            }}
-          >
-            {t("deleteRole")}
-          </DropdownItem>,
-        ]
-      : id && realm?.defaultRole && url.includes("associated-roles")
-      ? [
-          <DropdownItem
-            key="delete-all-associated"
-            component="button"
-            onClick={() => toggleDeleteAllAssociatedRolesDialog()}
-          >
-            {t("roles:removeAllAssociatedRoles")}
-          </DropdownItem>,
-        ]
-      : [
-          <DropdownItem
-            key="toggle-modal"
-            data-testid="add-roles"
-            component="button"
-            onClick={() => toggleModal()}
-          >
-            {t("addAssociatedRolesText")}
-          </DropdownItem>,
-          <DropdownItem
-            key="delete-role"
-            component="button"
-            onClick={() => toggleDeleteDialog()}
-          >
-            {t("deleteRole")}
-          </DropdownItem>,
-        ];
+  const dropdownItems = url.includes("associated-roles")
+    ? [
+        <DropdownItem
+          key="delete-all-associated"
+          component="button"
+          onClick={() => toggleDeleteAllAssociatedRolesDialog()}
+        >
+          {t("roles:removeAllAssociatedRoles")}
+        </DropdownItem>,
+        <DropdownItem
+          key="delete-role"
+          component="button"
+          onClick={() => {
+            toggleDeleteDialog();
+          }}
+        >
+          {t("deleteRole")}
+        </DropdownItem>,
+      ]
+    : [
+        <DropdownItem
+          key="toggle-modal"
+          data-testid="add-roles"
+          component="button"
+          onClick={() => toggleModal()}
+        >
+          {t("addAssociatedRolesText")}
+        </DropdownItem>,
+        <DropdownItem
+          key="delete-role"
+          component="button"
+          onClick={() => toggleDeleteDialog()}
+        >
+          {t("deleteRole")}
+        </DropdownItem>,
+      ];
 
   const [
     toggleDeleteAllAssociatedRolesDialog,
