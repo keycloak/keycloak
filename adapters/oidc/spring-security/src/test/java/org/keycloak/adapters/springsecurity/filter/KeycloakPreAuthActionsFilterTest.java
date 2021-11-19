@@ -52,15 +52,13 @@ public class KeycloakPreAuthActionsFilterTest {
     @Before
     public void setUp() throws Exception {
         initMocks(this);
-        filter = new KeycloakPreAuthActionsFilter(userSessionManagement);
+        filter = new KeycloakPreAuthActionsFilter(deploymentContext);
         filter.setNodesRegistrationManagement(nodesRegistrationManagement);
-        filter.setApplicationContext(applicationContext);
         filter.setPreAuthActionsHandlerFactory(preAuthActionsHandlerFactory);
         when(applicationContext.getBean(AdapterDeploymentContext.class)).thenReturn(deploymentContext);
         when(deploymentContext.resolveDeployment(any(HttpFacade.class))).thenReturn(deployment);
         when(preAuthActionsHandlerFactory.createPreAuthActionsHandler(any(HttpFacade.class))).thenReturn(preAuthActionsHandler);
         when(deployment.isConfigured()).thenReturn(true);
-        filter.initFilterBean();
     }
     
     @Test

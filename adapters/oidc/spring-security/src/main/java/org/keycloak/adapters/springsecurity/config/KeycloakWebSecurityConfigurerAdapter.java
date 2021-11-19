@@ -57,52 +57,54 @@ public abstract class KeycloakWebSecurityConfigurerAdapter extends WebSecurityCo
 
     @Value("${keycloak.configurationFile:WEB-INF/keycloak.json}")
     private Resource keycloakConfigFileResource;
+
     @Autowired(required = false)
     private KeycloakConfigResolver keycloakConfigResolver;
 
-    @Bean
-    protected AdapterDeploymentContext adapterDeploymentContext() throws Exception {
+    protected AdapterDeploymentContext adapterDeploymentContext() {
         AdapterDeploymentContextFactoryBean factoryBean;
         if (keycloakConfigResolver != null) {
-             factoryBean = new AdapterDeploymentContextFactoryBean(new KeycloakSpringConfigResolverWrapper(keycloakConfigResolver));
+            factoryBean = new AdapterDeploymentContextFactoryBean(new KeycloakSpringConfigResolverWrapper(keycloakConfigResolver));
         }
         else {
             factoryBean = new AdapterDeploymentContextFactoryBean(keycloakConfigFileResource);
         }
-        factoryBean.afterPropertiesSet();
-        return factoryBean.getObject();
+        try {
+            factoryBean.afterPropertiesSet();
+            return factoryBean.getObject();
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     protected AuthenticationEntryPoint authenticationEntryPoint() throws Exception {
         return new KeycloakAuthenticationEntryPoint(adapterDeploymentContext());
     }
 
+    @Bean
     protected KeycloakAuthenticationProvider keycloakAuthenticationProvider() {
         return new KeycloakAuthenticationProvider();
     }
 
-    @Bean
     protected KeycloakAuthenticationProcessingFilter keycloakAuthenticationProcessingFilter() throws Exception {
-        KeycloakAuthenticationProcessingFilter filter = new KeycloakAuthenticationProcessingFilter(authenticationManagerBean());
+        KeycloakAuthenticationProcessingFilter filter = new KeycloakAuthenticationProcessingFilter(authenticationManagerBean(), adapterDeploymentContext());
         filter.setSessionAuthenticationStrategy(sessionAuthenticationStrategy());
         return filter;
     }
 
-    @Bean
     protected KeycloakPreAuthActionsFilter keycloakPreAuthActionsFilter() {
-        return new KeycloakPreAuthActionsFilter(httpSessionManager());
+        return new KeycloakPreAuthActionsFilter(adapterDeploymentContext(), httpSessionManager());
     }
 
     protected KeycloakCsrfRequestMatcher keycloakCsrfRequestMatcher() {
         return new KeycloakCsrfRequestMatcher();
     }
 
-    @Bean
     protected HttpSessionManager httpSessionManager() {
         return new HttpSessionManager();
     }
 
-    protected KeycloakLogoutHandler keycloakLogoutHandler() throws Exception {
+    protected KeycloakLogoutHandler keycloakLogoutHandler() {
         return new KeycloakLogoutHandler(adapterDeploymentContext());
     }
 
@@ -129,13 +131,11 @@ public abstract class KeycloakWebSecurityConfigurerAdapter extends WebSecurityCo
                 .logoutSuccessUrl("/");
     }
 
-    @Bean
     protected KeycloakSecurityContextRequestFilter keycloakSecurityContextRequestFilter() {
-        return new KeycloakSecurityContextRequestFilter();
+        return new KeycloakSecurityContextRequestFilter(adapterDeploymentContext());
     }
 
-    @Bean
     protected KeycloakAuthenticatedActionsFilter keycloakAuthenticatedActionsRequestFilter() {
-        return new KeycloakAuthenticatedActionsFilter();
+        return new KeycloakAuthenticatedActionsFilter(adapterDeploymentContext());
     }
 }

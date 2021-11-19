@@ -46,7 +46,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.event.InteractiveAuthenticationSuccessEvent;
 import org.springframework.security.core.Authentication;
@@ -67,7 +66,7 @@ import org.springframework.util.Assert;
  * @author <a href="mailto:srossillo@smartling.com">Scott Rossillo</a>
  * @version $Revision: 1 $
  */
-public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticationProcessingFilter implements ApplicationContextAware {
+public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticationProcessingFilter {
     public static final String AUTHORIZATION_HEADER = "Authorization";
 
     /**
@@ -84,8 +83,7 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
 
     private static final Logger log = LoggerFactory.getLogger(KeycloakAuthenticationProcessingFilter.class);
 
-    private ApplicationContext applicationContext;
-    private AdapterDeploymentContext adapterDeploymentContext;
+    private final AdapterDeploymentContext adapterDeploymentContext;
     private AdapterTokenStoreFactory adapterTokenStoreFactory = new SpringSecurityAdapterTokenStoreFactory();
     private AuthenticationManager authenticationManager;
     private RequestAuthenticatorFactory requestAuthenticatorFactory = new SpringSecurityRequestAuthenticatorFactory();
@@ -95,10 +93,11 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
      * {@link KeycloakAuthenticationProcessingFilter#DEFAULT_REQUEST_MATCHER default request matcher}.
      *
      * @param authenticationManager the {@link AuthenticationManager} to authenticate requests (cannot be null)
+     * @param adapterDeploymentContext
      * @see KeycloakAuthenticationProcessingFilter#DEFAULT_REQUEST_MATCHER
      */
-    public KeycloakAuthenticationProcessingFilter(AuthenticationManager authenticationManager) {
-        this(authenticationManager, DEFAULT_REQUEST_MATCHER);
+    public KeycloakAuthenticationProcessingFilter(AuthenticationManager authenticationManager, AdapterDeploymentContext adapterDeploymentContext) {
+        this(authenticationManager, DEFAULT_REQUEST_MATCHER, adapterDeploymentContext);
         setAuthenticationFailureHandler(new KeycloakAuthenticationFailureHandler());
         setAuthenticationSuccessHandler(new KeycloakAuthenticationSuccessHandler(new SavedRequestAwareAuthenticationSuccessHandler()));
     }
@@ -115,13 +114,15 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
      * @param requiresAuthenticationRequestMatcher the {@link RequestMatcher} used to determine if authentication
      *  is required (cannot be null)
      *
-     *  @see RequestHeaderRequestMatcher
+     *  @param adapterDeploymentContext
+     * @see RequestHeaderRequestMatcher
      *  @see OrRequestMatcher
      *
      */
     public KeycloakAuthenticationProcessingFilter(AuthenticationManager authenticationManager, RequestMatcher
-            requiresAuthenticationRequestMatcher) {
+            requiresAuthenticationRequestMatcher, AdapterDeploymentContext adapterDeploymentContext) {
         super(requiresAuthenticationRequestMatcher);
+        this.adapterDeploymentContext = adapterDeploymentContext;
         Assert.notNull(authenticationManager, "authenticationManager cannot be null");
         this.authenticationManager = authenticationManager;
         super.setAuthenticationManager(authenticationManager);
@@ -131,7 +132,6 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
 
     @Override
     public void afterPropertiesSet() {
-        adapterDeploymentContext = applicationContext.getBean(AdapterDeploymentContext.class);
         super.afterPropertiesSet();
     }
 
@@ -221,11 +221,6 @@ public class KeycloakAuthenticationProcessingFilter extends AbstractAuthenticati
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
                                               AuthenticationException failed) throws IOException, ServletException {
         super.unsuccessfulAuthentication(request, response, failed);
-    }
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
     }
 
     /**

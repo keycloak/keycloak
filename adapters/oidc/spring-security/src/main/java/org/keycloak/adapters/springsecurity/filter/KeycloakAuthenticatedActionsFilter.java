@@ -18,10 +18,7 @@ package org.keycloak.adapters.springsecurity.filter;
 
 import java.io.IOException;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -44,12 +41,15 @@ import org.springframework.web.filter.GenericFilterBean;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class KeycloakAuthenticatedActionsFilter extends GenericFilterBean implements ApplicationContextAware {
+public class KeycloakAuthenticatedActionsFilter implements Filter {
 
     private static final String FILTER_APPLIED = KeycloakAuthenticatedActionsFilter.class.getPackage().getName() + ".authenticated-actions";
 
-    private ApplicationContext applicationContext;
     private AdapterDeploymentContext deploymentContext;
+
+    public KeycloakAuthenticatedActionsFilter(AdapterDeploymentContext deploymentContext) {
+        this.deploymentContext = deploymentContext;
+    }
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
@@ -72,16 +72,6 @@ public class KeycloakAuthenticatedActionsFilter extends GenericFilterBean implem
         }
 
         filterChain.doFilter(request, response);
-    }
-
-    @Override
-    protected void initFilterBean() {
-        deploymentContext = applicationContext.getBean(AdapterDeploymentContext.class);
-    }
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
     }
 
     private KeycloakSecurityContext getKeycloakPrincipal() {

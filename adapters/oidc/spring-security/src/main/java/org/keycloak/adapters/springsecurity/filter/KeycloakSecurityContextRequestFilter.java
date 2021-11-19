@@ -18,10 +18,7 @@ package org.keycloak.adapters.springsecurity.filter;
 
 import java.io.IOException;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -36,24 +33,23 @@ import org.keycloak.adapters.springsecurity.token.AdapterTokenStoreFactory;
 import org.keycloak.adapters.springsecurity.token.SpringSecurityAdapterTokenStoreFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.filter.GenericFilterBean;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class KeycloakSecurityContextRequestFilter extends GenericFilterBean implements ApplicationContextAware {
+public class KeycloakSecurityContextRequestFilter implements Filter {
     private static final Logger log = LoggerFactory.getLogger(KeycloakSecurityContextRequestFilter.class);
 
     private static final String FILTER_APPLIED = KeycloakSecurityContext.class.getPackage().getName() + ".token-refreshed";
     private final AdapterTokenStoreFactory adapterTokenStoreFactory = new SpringSecurityAdapterTokenStoreFactory();
 
-    private ApplicationContext applicationContext;
-    private AdapterDeploymentContext deploymentContext;
+    private final AdapterDeploymentContext deploymentContext;
+
+    public KeycloakSecurityContextRequestFilter(AdapterDeploymentContext deploymentContext) {
+        this.deploymentContext = deploymentContext;
+    }
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
@@ -90,16 +86,6 @@ public class KeycloakSecurityContextRequestFilter extends GenericFilterBean impl
         }
 
         filterChain.doFilter(request, response);
-    }
-
-    @Override
-    protected void initFilterBean() {
-        deploymentContext = applicationContext.getBean(AdapterDeploymentContext.class);
-    }
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
     }
 
     private KeycloakSecurityContext getKeycloakSecurityContext() {

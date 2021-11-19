@@ -107,10 +107,9 @@ public class KeycloakAuthenticationProcessingFilterTest {
         MockitoAnnotations.initMocks(this);
         request = spy(new MockHttpServletRequest());
         request.setRequestURI("http://host");
-        filter = new KeycloakAuthenticationProcessingFilter(authenticationManager);
+        filter = new KeycloakAuthenticationProcessingFilter(authenticationManager, adapterDeploymentContext);
         keycloakFailureHandler = new KeycloakAuthenticationFailureHandler();
 
-        filter.setApplicationContext(applicationContext);
         filter.setAuthenticationSuccessHandler(successHandler);
         filter.setAuthenticationFailureHandler(failureHandler);
 

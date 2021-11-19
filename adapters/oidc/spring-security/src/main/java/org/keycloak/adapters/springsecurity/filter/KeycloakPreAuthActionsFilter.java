@@ -26,15 +26,8 @@ import org.keycloak.adapters.spi.UserSessionManagement;
 import org.keycloak.adapters.springsecurity.facade.SimpleHttpFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.web.filter.GenericFilterBean;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -45,27 +38,23 @@ import java.io.IOException;
  * @author <a href="mailto:srossillo@smartling.com">Scott Rossillo</a>
  * @version $Revision: 1 $
  */
-public class KeycloakPreAuthActionsFilter extends GenericFilterBean implements ApplicationContextAware {
+public class KeycloakPreAuthActionsFilter implements Filter {
 
     private static final Logger log = LoggerFactory.getLogger(KeycloakPreAuthActionsFilter.class);
 
     private NodesRegistrationManagement nodesRegistrationManagement = new NodesRegistrationManagement();
-    private ApplicationContext applicationContext;
-    private AdapterDeploymentContext deploymentContext;
+    private final AdapterDeploymentContext deploymentContext;
     private UserSessionManagement userSessionManagement;
     private PreAuthActionsHandlerFactory preAuthActionsHandlerFactory = new PreAuthActionsHandlerFactory();
 
-    public KeycloakPreAuthActionsFilter() {
+    public KeycloakPreAuthActionsFilter(AdapterDeploymentContext deploymentContext) {
         super();
+        this.deploymentContext = deploymentContext;
     }
 
-    public KeycloakPreAuthActionsFilter(UserSessionManagement userSessionManagement) {
+    public KeycloakPreAuthActionsFilter(AdapterDeploymentContext deploymentContext, UserSessionManagement userSessionManagement) {
+        this.deploymentContext = deploymentContext;
         this.userSessionManagement = userSessionManagement;
-    }
-
-    @Override
-    protected void initFilterBean() throws ServletException {
-        deploymentContext = applicationContext.getBean(AdapterDeploymentContext.class);
     }
 
     @Override
@@ -80,7 +69,7 @@ public class KeycloakPreAuthActionsFilter extends GenericFilterBean implements A
 
         HttpFacade facade = new SimpleHttpFacade((HttpServletRequest)request, (HttpServletResponse)response);
         KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
-        
+
         if (deployment == null) {
             return;
         }
@@ -101,22 +90,17 @@ public class KeycloakPreAuthActionsFilter extends GenericFilterBean implements A
         this.userSessionManagement = userSessionManagement;
     }
 
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
-    }
-    
     void setNodesRegistrationManagement(NodesRegistrationManagement nodesRegistrationManagement) {
         this.nodesRegistrationManagement = nodesRegistrationManagement;
     }
-    
+
     void setPreAuthActionsHandlerFactory(PreAuthActionsHandlerFactory preAuthActionsHandlerFactory) {
         this.preAuthActionsHandlerFactory = preAuthActionsHandlerFactory;
     }
-    
+
     /**
      * Creates {@link PreAuthActionsHandler}s.
-     * 
+     *
      * Package-private class to enable mocking.
      */
     class PreAuthActionsHandlerFactory {
