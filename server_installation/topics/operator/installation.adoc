@@ -25,7 +25,7 @@ endif::[]
 
 .Procedure
 
-Perform this procedure on an OpenShift 4.4 cluster.
+Perform this procedure on an OpenShift cluster.
 
 . Open the OpenShift Container Platform web console.
 
