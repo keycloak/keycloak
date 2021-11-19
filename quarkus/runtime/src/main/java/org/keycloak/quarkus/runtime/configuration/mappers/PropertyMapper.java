@@ -181,7 +181,7 @@ public class PropertyMapper {
         return null;
     }
 
-    boolean isBuildTime() {
+    public boolean isBuildTime() {
         return buildTime;
     }
 

@@ -15,13 +15,22 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.cli.command;
+package org.keycloak.quarkus.runtime.cli;
 
-import picocli.CommandLine.Command;
+import picocli.CommandLine;
+import picocli.CommandLine.Help.ColorScheme;
+import picocli.CommandLine.Model.CommandSpec;
 
-@Command(name = "tools",
-        description = "%nUtilities for use and interaction with the server.",
-        subcommands = {Completion.class})
-public class Tools {
+final class HelpFactory implements CommandLine.IHelpFactory {
 
+    private Help help;
+
+    @Override
+    public CommandLine.Help create(CommandSpec commandSpec,
+            ColorScheme colorScheme) {
+        if (help == null) {
+            help = new Help(commandSpec, colorScheme);
+        }
+        return help;
+    }
 }

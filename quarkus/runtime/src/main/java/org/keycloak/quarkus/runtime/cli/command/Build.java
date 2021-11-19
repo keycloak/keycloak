@@ -28,6 +28,7 @@ import io.quarkus.bootstrap.runner.RunnerClassLoader;
 
 import io.quarkus.runtime.configuration.ProfileManager;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Mixin;
 
 import java.util.List;
 
@@ -59,13 +60,14 @@ import java.util.List;
                 + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --http-relative-path=/auth%n%n"
                 + "You can also use the \"--auto-build\" option when starting the server to avoid running this command every time you change a configuration:%n%n"
                 + "    $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} start --auto-build <OPTIONS>%n%n"
-                + "By doing that you have an additional overhead when the server is starting.",
-        abbreviateSynopsis = true,
-        optionListHeading = "Options:",
-        commandListHeading = "Commands:")
+                + "By doing that you have an additional overhead when the server is starting.%n%n"
+                + "Use '${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --help-all' to list all available options, including the start options.")
 public final class Build extends AbstractCommand implements Runnable {
 
     public static final String NAME = "build";
+
+    @Mixin
+    HelpAllMixin helpAllMixin;
 
     @Override
     public void run() {
