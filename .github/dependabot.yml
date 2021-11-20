@@ -15,3 +15,11 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: use-react-router-breadcrumbs
         update-types: ["version-update:semver-major"]
+  - package-ecosystem: maven
+    directory: keycloak-theme
+    open-pull-requests-limit: 999
+    rebase-strategy: disabled
+    schedule:
+      interval: weekly
+    labels:
+      - area/dependencies
