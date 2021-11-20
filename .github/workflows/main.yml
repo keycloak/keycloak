@@ -4,6 +4,8 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+env:
+  NODE_VERSION: 16
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -14,7 +16,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v2
         with:
-          node-version: 17
+          node-version: ${{ env.NODE_VERSION }}
           check-latest: true
           cache: npm
 
@@ -51,7 +53,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v2
         with:
-          node-version: 17
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Run ${{ matrix.command }} task
         run: npm run ${{ matrix.command }}

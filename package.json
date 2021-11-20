@@ -9,7 +9,7 @@
   },
   "license": "Apache",
   "engines": {
-    "node": "17"
+    "node": "16"
   },
   "scripts": {
     "build": "snowpack build",
