@@ -19,6 +19,7 @@ package org.keycloak.keys;
 
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
+import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import static org.keycloak.provider.ProviderConfigProperty.*;
@@ -68,5 +69,9 @@ public interface Attributes {
     ProviderConfigProperty HS_ALGORITHM_PROPERTY = new ProviderConfigProperty(ALGORITHM_KEY, "Algorithm", "Intended algorithm for the key", LIST_TYPE,
             Algorithm.HS256,
             Algorithm.HS256, Algorithm.HS384, Algorithm.HS512);
+
+    ProviderConfigProperty RS_ENC_ALGORITHM_PROPERTY = new ProviderConfigProperty(ALGORITHM_KEY, "Algorithm", "Intended algorithm for the key encryption", LIST_TYPE,
+            JWEConstants.RSA_OAEP,
+            JWEConstants.RSA1_5, JWEConstants.RSA_OAEP, JWEConstants.RSA_OAEP_256);
 
 }

@@ -15,24 +15,18 @@ import java.util.stream.Collectors;
 
 public final class PropertyMappers {
 
-    static final Map<String, PropertyMapper> MAPPERS = new HashMap<>();
+    static final MappersConfig MAPPERS = new MappersConfig();
 
     private PropertyMappers(){}
 
     static {
-        addMappers(ClusteringPropertyMappers.getClusteringPropertyMappers());
-        addMappers(DatabasePropertyMappers.getDatabasePropertyMappers());
-        addMappers(HostnamePropertyMappers.getHostnamePropertyMappers());
-        addMappers(HttpPropertyMappers.getHttpPropertyMappers());
-        addMappers(MetricsPropertyMappers.getMetricsPropertyMappers());
-        addMappers(ProxyPropertyMappers.getProxyPropertyMappers());
-        addMappers(VaultPropertyMappers.getVaultPropertyMappers());
-    }
-
-    private static void addMappers(PropertyMapper[] mappers) {
-        for (PropertyMapper mapper : mappers) {
-            MAPPERS.put(mapper.getTo(), mapper);
-        }
+        MAPPERS.addAll(ClusteringPropertyMappers.getClusteringPropertyMappers());
+        MAPPERS.addAll(DatabasePropertyMappers.getDatabasePropertyMappers());
+        MAPPERS.addAll(HostnamePropertyMappers.getHostnamePropertyMappers());
+        MAPPERS.addAll(HttpPropertyMappers.getHttpPropertyMappers());
+        MAPPERS.addAll(MetricsPropertyMappers.getMetricsPropertyMappers());
+        MAPPERS.addAll(ProxyPropertyMappers.getProxyPropertyMappers());
+        MAPPERS.addAll(VaultPropertyMappers.getVaultPropertyMappers());
     }
 
     public static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
@@ -138,12 +132,7 @@ public final class PropertyMappers {
             return mapper;
         }
 
-        return MAPPERS.values().stream().filter(new Predicate<PropertyMapper>() {
-            @Override
-            public boolean test(PropertyMapper propertyMapper) {
-                return property.equals(propertyMapper.getFrom()) || property.equals(propertyMapper.getTo());
-            }
-        }).findFirst().orElse(null);
+        return null;
     }
 
     public static Collection<PropertyMapper> getMappers() {
@@ -167,5 +156,23 @@ public final class PropertyMappers {
                 })
                 .map(Map.Entry::getKey)
                 .findAny();
+    }
+
+    private static class MappersConfig extends HashMap<String, PropertyMapper> {
+
+        public void addAll(PropertyMapper[] mappers) {
+            for (PropertyMapper mapper : mappers) {
+                super.put(mapper.getTo(), mapper);
+                super.put(mapper.getFrom(), mapper);
+            }
+        }
+
+        @Override
+        public PropertyMapper put(String key, PropertyMapper value) {
+            if (containsKey(key)) {
+                throw new IllegalArgumentException("Duplicated mapper for key [" + key + "]");
+            }
+            return super.put(key, value);
+        }
     }
 }

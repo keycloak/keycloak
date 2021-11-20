@@ -369,6 +369,27 @@
                 </div>
                 <kc-tooltip>{{:: 'idp-sso-url-ref.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group" data-ng-show="protocol == 'saml' || protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="logoUri">{{:: 'logo-uri' | translate}}</label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" name="logoUri" id="logoUri" data-ng-model="clientEdit.attributes.logoUri">
+                </div>
+                <kc-tooltip>{{:: 'logo-uri.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="protocol == 'saml' || protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="policyUri">{{:: 'policy-uri' | translate}}</label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" name="policyUri" id="policyUri" data-ng-model="clientEdit.attributes.policyUri">
+                </div>
+                <kc-tooltip>{{:: 'policy-uri.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="protocol == 'saml' || protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="tosUri">{{:: 'tos-uri' | translate}}</label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" name="tosUri" id="tosUri" data-ng-model="clientEdit.attributes.tosUri">
+                </div>
+                <kc-tooltip>{{:: 'tos-uri.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
                 <label class="col-md-2 control-label" for="idpInitiatedRelayState">{{:: 'idp-sso-relay-state' | translate}}</label>
                 <div class="col-sm-6">

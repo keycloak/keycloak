@@ -119,6 +119,11 @@ public class OIDCLoginProtocolService {
         return uriBuilder.path(OIDCLoginProtocolService.class, "auth");
     }
 
+    public static UriBuilder registrationsUrl(UriBuilder baseUriBuilder) {
+        UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
+        return uriBuilder.path(OIDCLoginProtocolService.class, "registrations");
+    }
+
     public static UriBuilder delegatedUrl(UriInfo uriInfo) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(uriInfo);
         return uriBuilder.path(OIDCLoginProtocolService.class, "kcinitBrowserLoginComplete");
@@ -172,7 +177,7 @@ public class OIDCLoginProtocolService {
      * Registration endpoint
      */
     @Path("registrations")
-    public Object registerPage() {
+    public Object registrations() {
         AuthorizationEndpoint endpoint = new AuthorizationEndpoint(realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint.register();

@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.configuration.mappers;
+package org.keycloak.quarkus.runtime;
 
-import org.keycloak.quarkus.runtime.Environment;
+import picocli.CommandLine;
 
 public final class Messages {
 
@@ -25,20 +25,24 @@ public final class Messages {
 
     }
 
-    static IllegalArgumentException invalidDatabaseVendor(String db, String... availableOptions) {
+    public static IllegalArgumentException invalidDatabaseVendor(String db, String... availableOptions) {
         return new IllegalArgumentException("Invalid database vendor [" + db + "]. Possible values are: " + String.join(", ", availableOptions) + ".");
     }
 
-    static IllegalArgumentException invalidProxyMode(String mode) {
+    public static IllegalArgumentException invalidProxyMode(String mode) {
         return new IllegalArgumentException("Invalid value [" + mode + "] for configuration property [proxy].");
     }
 
     public static IllegalStateException httpsConfigurationNotSet() {
         StringBuilder builder = new StringBuilder("Key material not provided to setup HTTPS. Please configure your keys/certificates");
-        if (!"dev".equals(Environment.getProfile())) {
+        if (!Environment.DEV_PROFILE_VALUE.equals(Environment.getProfile())) {
             builder.append(" or start the server in development mode");
         }
         builder.append(".");
         return new IllegalStateException(builder.toString());
+    }
+
+    public static void cliExecutionError(CommandLine cmd, String message, Throwable cause) {
+        throw new CommandLine.ExecutionException(cmd, message, cause);
     }
 }

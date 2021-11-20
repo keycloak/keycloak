@@ -17,12 +17,10 @@
 
 package org.keycloak.quarkus.runtime;
 
-import static org.keycloak.quarkus.runtime.Environment.isDevMode;
-import static org.keycloak.quarkus.runtime.cli.Picocli.error;
-import static org.keycloak.quarkus.runtime.cli.Picocli.parseAndRun;
+import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
 import static org.keycloak.quarkus.runtime.Environment.getProfileOrDefault;
+import static org.keycloak.quarkus.runtime.cli.Picocli.parseAndRun;
 
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -31,11 +29,13 @@ import io.quarkus.runtime.ApplicationLifecycleManager;
 import io.quarkus.runtime.Quarkus;
 
 import org.jboss.logging.Logger;
+import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.common.Version;
 
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
+import picocli.CommandLine;
 
 /**
  * <p>The main entry point, responsible for initialize and run the CLI as well as start the server.
@@ -59,17 +59,21 @@ public class KeycloakMain implements QuarkusApplication {
         parseAndRun(cliArgs);
     }
 
-    public static void start(List<String> cliArgs, PrintWriter errorWriter) {
+    public static void start(CommandLine cmd) {
         try {
             Quarkus.run(KeycloakMain.class, (integer, cause) -> {
                 if (cause != null) {
-                    error(cliArgs, errorWriter,
+                    ExecutionExceptionHandler exceptionHandler = (ExecutionExceptionHandler) cmd.getExecutionExceptionHandler();
+
+                    exceptionHandler.error(cmd.getErr(),
                             String.format("Failed to start server using profile (%s)", getProfileOrDefault("prod")),
                             cause.getCause());
                 }
             });
         } catch (Throwable cause) {
-            error(cliArgs, errorWriter,
+            ExecutionExceptionHandler exceptionHandler = (ExecutionExceptionHandler) cmd.getExecutionExceptionHandler();
+
+            exceptionHandler.error(cmd.getErr(),
                     String.format("Unexpected error when starting the server using profile (%s)", getProfileOrDefault("prod")),
                     cause.getCause());
         }
@@ -80,7 +84,7 @@ public class KeycloakMain implements QuarkusApplication {
      */
     @Override
     public int run(String... args) throws Exception {
-        if (isDevMode()) {
+        if (isDevProfile()) {
             LOGGER.warnf("Running the server in dev mode. DO NOT use this configuration in production.");
         }
         Quarkus.waitForExit();

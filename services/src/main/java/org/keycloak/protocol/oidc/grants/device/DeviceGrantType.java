@@ -273,15 +273,14 @@ public class DeviceGrantType {
         // Compute client scopes again from scope parameter. Check if user still has them granted
         // (but in device_code-to-token request, it could just theoretically happen that they are not available)
         String scopeParam = deviceCodeModel.getScope();
-        Stream<ClientScopeModel> clientScopes = TokenManager.getRequestedClientScopes(scopeParam, client);
-        if (!TokenManager.verifyConsentStillAvailable(session, user, client, clientScopes)) {
+        if (!TokenManager.verifyConsentStillAvailable(session, user, client, TokenManager.getRequestedClientScopes(scopeParam, client))) {
             event.error(Errors.NOT_ALLOWED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE,
                 "Client no longer has requested consent from user", Response.Status.BAD_REQUEST);
         }
 
         ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndClientScopes(clientSession,
-            clientScopes, session);
+            TokenManager.getRequestedClientScopes(scopeParam, client), session);
 
         // Set nonce as an attribute in the ClientSessionContext. Will be used for the token generation
         clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, deviceCodeModel.getNonce());

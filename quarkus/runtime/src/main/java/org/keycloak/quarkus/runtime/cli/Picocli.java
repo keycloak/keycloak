@@ -32,13 +32,19 @@ import static picocli.CommandLine.Model.UsageMessageSpec.SECTION_KEY_COMMAND_LIS
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.io.PrintWriter;
-import java.nio.file.FileSystemException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.Set;
+import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.jboss.logging.Logger;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.cli.command.Start;
@@ -47,11 +53,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.quarkus.runtime.configuration.mappers.ConfigCategory;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
-import org.keycloak.quarkus.runtime.configuration.mappers.Messages;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
-import org.keycloak.platform.Platform;
-import org.keycloak.quarkus.runtime.InitializationException;
-import org.keycloak.quarkus.runtime.integration.QuarkusPlatform;
 import org.keycloak.quarkus.runtime.Environment;
 
 import io.smallrye.config.ConfigValue;
@@ -63,8 +65,6 @@ import picocli.CommandLine.Model.OptionSpec;
 import picocli.CommandLine.Model.ArgGroupSpec;
 
 public final class Picocli {
-
-    private static final Logger logger = Logger.getLogger(Picocli.class);
 
     private static final String ARG_SEPARATOR = ";;";
     public static final String ARG_PREFIX = "--";
@@ -105,7 +105,7 @@ public final class Picocli {
 
         int exitCode = cmd.execute(cliArgs.toArray(new String[0]));
 
-        if (isDevMode()) {
+        if (Environment.isQuarkusDevMode()) {
             // do not exit if running in dev mode, otherwise quarkus dev mode will exit when running from IDE
             return;
         }
@@ -132,12 +132,13 @@ public final class Picocli {
     private static boolean requiresReAugmentation(CommandLine cmd) {
         if (hasConfigChanges()) {
             cmd.getOut().println("Changes detected in configuration. Updating the server image.");
-            cmd.getOut().printf("For an optional runtime and bypass this step, please run the '%s' command prior to starting the server:%n%n\t%s %s %s%n",
-                    Build.NAME,
-                    Environment.getCommand(),
-                    Build.NAME,
-                    String.join(" ", asList(ARG_SPLIT.split(Environment.getConfigArgs()))) + "\n");
-
+            if(!isDevMode()) {
+                cmd.getOut().printf("For an optional runtime and bypass this step, please run the '%s' command prior to starting the server:%n%n\t%s %s %s%n",
+                        Build.NAME,
+                        Environment.getCommand(),
+                        Build.NAME,
+                        String.join(" ", asList(ARG_SPLIT.split(Environment.getConfigArgs()))) + "\n");
+            }
             return true;
         }
 
@@ -145,28 +146,37 @@ public final class Picocli {
     }
 
     private static void runReAugmentation(List<String> cliArgs, CommandLine cmd) {
-        if (StartDev.NAME.equals(cliArgs.get(0))) {
+        if (cliArgs.contains(StartDev.NAME)) {
             String profile = Environment.getProfile();
 
             if (profile == null) {
                 // force the server image to be set with the dev profile
                 Environment.forceDevProfile();
             }
+
+            Environment.setUserInvokedCliArgs(cliArgs);
         }
 
         List<String> configArgsList = new ArrayList<>(cliArgs);
 
-        if (!configArgsList.get(0).startsWith("--")) {
-            configArgsList.remove(0);
-        }
-
         configArgsList.remove(AUTO_BUILD_OPTION_LONG);
         configArgsList.remove(AUTO_BUILD_OPTION_SHORT);
-        configArgsList.add(0, Build.NAME);
+
+        configArgsList.replaceAll(new UnaryOperator<String>() {
+            @Override
+            public String apply(String arg) {
+                if (arg.equals(Start.NAME) || arg.equals(StartDev.NAME)) {
+                    return Build.NAME;
+                }
+                return arg;
+            }
+        });
 
         cmd.execute(configArgsList.toArray(new String[0]));
 
-        cmd.getOut().printf("Next time you run the server, just run:%n%n\t%s %s%n%n", Environment.getCommand(), Start.NAME);
+        if(!isDevMode()) {
+            cmd.getOut().printf("Next time you run the server, just run:%n%n\t%s %s%n%n", Environment.getCommand(), Start.NAME);
+        }
     }
 
     private static boolean hasProviderChanges() {
@@ -398,6 +408,7 @@ public final class Picocli {
                         .completionCandidates(expectedValues)
                         .parameterConsumer(PropertyMapperParameterConsumer.INSTANCE)
                         .type(String.class)
+                        .hidden(mapper.isHidden())
                         .build());
             }
 
@@ -415,98 +426,8 @@ public final class Picocli {
         return parseResult.expandedArgs();
     }
 
-    public static void error(List<String> cliArgs, PrintWriter errorWriter, String message, Throwable throwable) {
-        logError(errorWriter, "ERROR: " + message);
-
-        if (throwable != null) {
-            boolean verbose = cliArgs.contains("--verbose") || cliArgs.contains("-v");
-
-            if (throwable instanceof InitializationException) {
-                InitializationException initializationException = (InitializationException) throwable;
-                if (initializationException.getSuppressed() == null || initializationException.getSuppressed().length == 0) {
-                    dumpException(errorWriter, initializationException, verbose);
-                } else if (initializationException.getSuppressed().length == 1) {
-                    dumpException(errorWriter, initializationException.getSuppressed()[0], verbose);
-                } else {
-                    logError(errorWriter, "ERROR: Multiple configuration errors during startup");
-                    int counter = 0;
-                    for (Throwable inner : initializationException.getSuppressed()) {
-                        counter++;
-                        logError(errorWriter, "ERROR " + counter);
-                        dumpException(errorWriter, inner, verbose);
-                    }
-                }
-            } else {
-                dumpException(errorWriter, throwable, verbose);
-            }
-
-            if (!verbose) {
-                logError(errorWriter, "For more details run the same command passing the '--verbose' option. Also you can use '--help' to see the details about the usage of the particular command.");
-            }
-        }
-
-        System.exit(1);
-    }
-
-    public static void error(CommandLine cmd, String message, Throwable throwable) {
-        error(getCliArgs(cmd), cmd.getErr(), message, throwable);
-    }
-
-    public static void error(CommandLine cmd, String message) {
-        error(getCliArgs(cmd), cmd.getErr(), message, null);
-    }
-
     public static void println(CommandLine cmd, String message) {
         cmd.getOut().println(message);
-    }
-
-    private static void dumpException(PrintWriter errorWriter, Throwable cause, boolean verbose) {
-        if (verbose) {
-            logError(errorWriter, "ERROR: Details:", cause);
-        } else {
-            do {
-                if (cause.getMessage() != null) {
-                    logError(errorWriter, String.format("ERROR: %s", cause.getMessage()));
-                }
-                printErrorHints(errorWriter, cause);
-            } while ((cause = cause.getCause())!= null);
-        }
-        printErrorHints(errorWriter, cause);
-    }
-
-    private static void printErrorHints(PrintWriter errorWriter, Throwable cause) {
-        if (cause instanceof FileSystemException) {
-            FileSystemException fse = (FileSystemException) cause;
-            ConfigValue httpsCertFile = getConfig().getConfigValue("kc.https.certificate.file");
-
-            if (fse.getFile().equals(Optional.ofNullable(httpsCertFile.getValue()).orElse(null))) {
-                logError(errorWriter, Messages.httpsConfigurationNotSet().getMessage());
-            }
-        }
-    }
-
-    private static void logError(PrintWriter errorWriter, String errorMessage) {
-        logError(errorWriter, errorMessage, null);
-    }
-
-    // The "cause" can be null
-    private static void logError(PrintWriter errorWriter, String errorMessage, Throwable cause) {
-        QuarkusPlatform platform = (QuarkusPlatform) Platform.getPlatform();
-        if (platform.isStarted()) {
-            // Can delegate to proper logger once the platform is started
-            if (cause == null) {
-                logger.error(errorMessage);
-            } else {
-                logger.error(errorMessage, cause);
-            }
-        } else {
-            if (cause == null) {
-                errorWriter.println(errorMessage);
-            } else {
-                errorWriter.println(errorMessage);
-                cause.printStackTrace();
-            }
-        }
     }
 
     public static String normalizeKey(String key) {

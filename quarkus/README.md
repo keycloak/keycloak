@@ -50,13 +50,13 @@ the HTTP port, run the server in development mode as follows:
 
 To run the server in development mode:
 
-    mvn -f server/pom.xml compile quarkus:dev
+    mvn -f server/pom.xml compile quarkus:dev -Dquarkus.args="start-dev"
 
 You should be able to attach your debugger to port `5005`.
 
 For debugging the build steps, you can suspend the JVM by running:
 
-    mvn -f server/pom.xml -Dsuspend=true compile quarkus:dev
+    mvn -f server/pom.xml -Dsuspend=true compile quarkus:dev -Dquarkus.args="start-dev"
 
 When running using `quarkus:dev` you should be able to do live coding whenever code changes within the `server` module. Changes you make to transient dependencies from the server extension (e.g: services, model, etc) won't be reflected into the running server. However, you can still leverage the hot swapping capabilities from your IDE to make changes at runtime.
 

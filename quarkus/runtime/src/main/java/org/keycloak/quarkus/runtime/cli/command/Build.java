@@ -18,7 +18,7 @@
 package org.keycloak.quarkus.runtime.cli.command;
 
 import static org.keycloak.quarkus.runtime.Environment.getHomePath;
-import static org.keycloak.quarkus.runtime.cli.Picocli.error;
+import static org.keycloak.quarkus.runtime.Environment.isDevMode;
 import static org.keycloak.quarkus.runtime.cli.Picocli.println;
 
 import org.keycloak.quarkus.runtime.Environment;
@@ -28,6 +28,8 @@ import io.quarkus.bootstrap.runner.RunnerClassLoader;
 
 import io.quarkus.runtime.configuration.ProfileManager;
 import picocli.CommandLine.Command;
+
+import java.util.List;
 
 @Command(name = Build.NAME,
         header = "Creates a new and optimized server image.",
@@ -67,18 +69,30 @@ public final class Build extends AbstractCommand implements Runnable {
 
     @Override
     public void run() {
+        exitWithErrorIfDevProfileIsSetAndNotStartDev();
+
         System.setProperty("quarkus.launch.rebuild", "true");
         println(spec.commandLine(), "Updating the configuration and installing your custom providers, if any. Please wait.");
 
         try {
             beforeReaugmentationOnWindows();
             QuarkusEntryPoint.main();
-            println(spec.commandLine(), "Server configuration updated and persisted. Run the following command to review the configuration:\n");
-            println(spec.commandLine(), "\t" + Environment.getCommand() + " show-config\n");
+
+            if (!isDevMode()) {
+                println(spec.commandLine(), "Server configuration updated and persisted. Run the following command to review the configuration:\n");
+                println(spec.commandLine(), "\t" + Environment.getCommand() + " show-config\n");
+            }
         } catch (Throwable throwable) {
-            error(spec.commandLine(), "Failed to update server configuration.", throwable);
+            executionError(spec.commandLine(), "Failed to update server configuration.", throwable);
         } finally {
             cleanTempResources();
+        }
+    }
+
+    private void exitWithErrorIfDevProfileIsSetAndNotStartDev() {
+        List<String> userInvokedCliArgs = Environment.getUserInvokedCliArgs();
+        if(Environment.isDevProfile() && !userInvokedCliArgs.contains(StartDev.NAME)) {
+            devProfileNotAllowedError(Build.NAME);
         }
     }
 

@@ -55,13 +55,13 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
 
     @Override
     public String getValue(String propertyName) {
-        String value = super.getValue(propertyName.replace('-', '.'));
+        String value = super.getValue(propertyName);
 
         if (value != null) {
             return value;
         }
 
-        return null;
+        return super.getValue(propertyName.replace('-', '.'));
     }
 
     private static Map<String, String> parseArgument() {
