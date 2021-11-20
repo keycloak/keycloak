@@ -55,7 +55,7 @@
     "@testing-library/jest-dom": "^5.15.0",
     "@testing-library/react": "^12.1.1",
     "@types/dagre": "^0.7.45",
-    "@types/file-saver": "^2.0.3",
+    "@types/file-saver": "^2.0.4",
     "@types/lodash": "^4.14.177",
     "@types/node": "^16.11.7",
     "@types/react": "^17.0.34",
