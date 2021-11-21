@@ -136,7 +136,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
     }
 
     private handleSetDefault = (credentialId: string, userLabel: string) => {
-      this.context!.doPost("/credentials/" + credentialId + "/moveToFirst", {})
+      this.context!.doPost("/credentials/" + credentialId + "/setDefault", {})
         .then(() => {
             this.getCredentialContainers();
             ContentAlert.success('successSetDefaultMessage', [userLabel]);
