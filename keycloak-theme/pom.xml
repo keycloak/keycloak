@@ -105,6 +105,19 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>io.github.git-commit-id</groupId>
+                <artifactId>git-commit-id-maven-plugin</artifactId>
+                <version>5.0.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                        <phase>initialize</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>com.google.code.maven-replacer-plugin</groupId>
                 <artifactId>maven-replacer-plugin</artifactId>
                 <version>1.4.1</version>
@@ -142,6 +155,7 @@
       "resourceUrl": "${resourceUrl}",
       "masterRealm": "${masterRealm}",
       "resourceVersion": "${resourceVersion}",
+      "commitHash": "${git.commit.id}",
       "isRunningAsTheme": true
     }
   </script>

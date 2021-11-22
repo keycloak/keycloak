@@ -13,5 +13,6 @@ export default {
     infoEnabledFeatures: "Something about what enabled features are.",
     infoDisabledFeatures: "Something about what disabled features are.",
     disabledFeatures: "Disabled features",
+    adminUiVersion: "Admin UI version: {{version}}",
   },
 };

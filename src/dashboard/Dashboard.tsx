@@ -160,6 +160,9 @@ const Dashboard = () => {
             </Card>
           </GridItem>
         </Grid>
+        <Text className="pf-u-font-size-sm pf-u-color-200 pf-u-mt-sm">
+          {t("adminUiVersion", { version: environment.commitHash })}
+        </Text>
       </PageSection>
     </>
   );
