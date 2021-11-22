@@ -27,6 +27,9 @@ import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.configuration.parsing.ParserRegistry;
 import org.infinispan.jboss.marshalling.core.JBossUserMarshaller;
 import org.infinispan.manager.DefaultCacheManager;
+import io.quarkus.smallrye.metrics.runtime.SmallRyeMetricsHandler;
+import io.vertx.core.Handler;
+import io.vertx.ext.web.RoutingContext;
 import org.keycloak.common.Profile;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
@@ -151,5 +154,11 @@ public class KeycloakRecorder {
                 QuarkusKeycloakSessionFactory.getInstance().close();
             }
         });
+    }
+
+    public Handler<RoutingContext> createMetricsHandler(String path) {
+        SmallRyeMetricsHandler metricsHandler = new SmallRyeMetricsHandler();
+        metricsHandler.setMetricsPath(path);
+        return metricsHandler;
     }
 }
