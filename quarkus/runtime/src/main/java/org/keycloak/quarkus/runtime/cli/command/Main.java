@@ -33,7 +33,10 @@ import picocli.CommandLine.Option;
                 "",
                 "Find more information at: https://www.keycloak.org/docs/latest"
         },
-        description = "%nUse this command-line tool to manage your Keycloak cluster.",
+        description = {
+                "Use this command-line tool to manage your Keycloak cluster.",
+                "Make sure the command is available on your \"PATH\" or prefix it with \"./\" (e.g.: \"./${COMMAND-NAME}\") to execute from the current folder."
+        },
         footerHeading = "Examples:",
         footer = { "  Start the server in development mode for local development or testing:%n%n"
                 + "      $ ${COMMAND-NAME} start-dev%n%n"

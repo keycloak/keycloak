@@ -88,9 +88,9 @@ public final class Environment {
         }
 
         if (isWindows()) {
-            return "./kc.bat";
+            return "kc.bat";
         }
-        return "./kc.sh";
+        return "kc.sh";
     }
 
     /**
