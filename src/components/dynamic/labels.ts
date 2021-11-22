@@ -1,6 +1,7 @@
 export default {
   dynamic: {
     addMultivaluedLabel: "Add {{fieldLabel}}",
+    selectARole: "Select a role",
     usermodel: {
       prop: {
         label: "Property",

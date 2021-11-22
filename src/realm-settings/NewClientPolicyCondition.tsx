@@ -25,25 +25,32 @@ import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/li
 import { useRealm } from "../context/realm-context/RealmContext";
 import type { ConfigPropertyRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigInfoRepresentation";
 import type ClientPolicyConditionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyConditionRepresentation";
-import { DynamicComponents } from "../components/dynamic/DynamicComponents";
 import {
   EditClientPolicyParams,
   toEditClientPolicy,
 } from "./routes/EditClientPolicy";
 import type { EditClientPolicyConditionParams } from "./routes/EditCondition";
-import { convertToMultiline } from "../components/multi-line-input/MultiLineInput";
+import {
+  convertToMultiline,
+  toValue,
+} from "../components/multi-line-input/MultiLineInput";
+import { MultivaluedRoleComponent } from "../components/dynamic/MultivaluedRoleComponent";
+import {
+  COMPONENTS,
+  isValidComponentType,
+} from "../components/dynamic/components";
 
 export type ItemType = { value: string };
+
+type ConfigProperty = ConfigPropertyRepresentation & {
+  config: any;
+};
 
 export default function NewClientPolicyCondition() {
   const { t } = useTranslation("realm-settings");
   const { addAlert, addError } = useAlerts();
   const history = useHistory();
   const { realm } = useRealm();
-
-  const { handleSubmit, control } = useForm<ClientPolicyRepresentation>({
-    mode: "onChange",
-  });
 
   const [openConditionType, setOpenConditionType] = useState(false);
   const [policies, setPolicies] = useState<ClientPolicyRepresentation[]>([]);
@@ -57,13 +64,13 @@ export default function NewClientPolicyCondition() {
     ConfigPropertyRepresentation[]
   >([]);
 
-  const [selectedVals, setSelectedVals] = useState<any>();
-
   const { policyName } = useParams<EditClientPolicyParams>();
   const { conditionName } = useParams<EditClientPolicyConditionParams>();
 
   const serverInfo = useServerInfo();
-  const form = useForm();
+  const form = useForm<ClientPolicyConditionRepresentation>({
+    shouldUnregister: false,
+  });
 
   const conditionTypes =
     serverInfo.componentTypes?.[
@@ -72,36 +79,20 @@ export default function NewClientPolicyCondition() {
 
   const adminClient = useAdminClient();
 
-  const setupForm = (condition: ClientPolicyConditionRepresentation) => {
+  const setupForm = (
+    condition: ClientPolicyConditionRepresentation,
+    properties: ConfigPropertyRepresentation[]
+  ) => {
     form.reset();
 
-    Object.entries(condition).map(([key, value]) => {
-      if (key === "configuration") {
-        if (
-          conditionName === "client-roles" ||
-          conditionName === "client-updater-source-roles"
-        ) {
-          form.setValue("config.roles", convertToMultiline(value["roles"]));
-        } else if (conditionName === "client-scopes") {
-          form.setValue("config.scopes", convertToMultiline(value["scopes"]));
-          form.setValue("config.type", value["type"]);
-        } else if (conditionName === "client-updater-source-groups") {
-          form.setValue("config.groups", convertToMultiline(value["groups"]));
-        } else if (conditionName === "client-updater-source-host") {
-          form.setValue(
-            "config.trusted-hosts",
-            convertToMultiline(value["trusted-hosts"])
-          );
-        } else if (conditionName === "client-updater-context") {
-          form.setValue(
-            "config.update-client-source",
-            value["update-client-source"][0]["update-client-source"]
-          );
-        } else if (conditionName === "client-access-type") {
-          form.setValue("config.type", value.type[0]);
-        }
+    Object.entries(condition.configuration!).map(([key, value]) => {
+      const formKey = `config.${key}`;
+      const property = properties.find((p) => p.name === key);
+      if (property?.type === "MultivaluedString") {
+        form.setValue(formKey, convertToMultiline(value));
+      } else {
+        form.setValue(formKey, value);
       }
-      form.setValue(key, value);
     });
   };
 
@@ -123,53 +114,23 @@ export default function NewClientPolicyCondition() {
         );
 
         setConditionData(typeAndConfigData!);
-        setSelectedVals(Object.values(typeAndConfigData?.configuration!)[0][0]);
         setConditionProperties(currentCondition?.properties!);
-        setupForm(typeAndConfigData!);
+        setupForm(typeAndConfigData!, currentCondition?.properties!);
       }
     },
     []
   );
 
-  const save = async () => {
-    const formValues = form.getValues();
-    const configValues = formValues.config;
+  const save = async (configPolicy: ConfigProperty) => {
+    const configValues = configPolicy.config;
 
-    const writeConfig = () => {
-      if (
-        condition[0]?.condition === "any-client" ||
-        conditionName === "any-client"
-      ) {
-        return {};
-      } else if (
-        condition[0]?.condition === "client-access-type" ||
-        conditionName === "client-access-type"
-      ) {
-        return { type: [formValues.config.type] };
-      } else if (
-        condition[0]?.condition === "client-updater-context" ||
-        conditionName === "client-updater-context"
-      ) {
-        return {
-          "update-client-source": [Object.values(formValues)[0]],
-        };
-      } else if (
-        condition[0]?.condition === "client-scopes" ||
-        conditionName === "client-scopes"
-      ) {
-        return {
-          type: Object.values(formValues)[0].type,
-          scopes: (Object.values(formValues)[0].scopes as ItemType[]).map(
-            (item) => (item as ItemType).value
-          ),
-        };
-      } else
-        return {
-          [Object.keys(configValues)[0]]: Object.values(
-            configValues?.[Object.keys(configValues)[0]]
-          ).map((item) => (item as ItemType).value),
-        };
-    };
+    const writeConfig = () =>
+      conditionProperties.reduce((r: any, p) => {
+        p.type === "MultivaluedString"
+          ? (r[p.name!] = toValue(configValues[p.name!]))
+          : (r[p.name!] = configValues[p.name!]);
+        return r;
+      }, {});
 
     const updatedPolicies = policies.map((policy) => {
       if (policy.name !== policyName) {
@@ -234,10 +195,6 @@ export default function NewClientPolicyCondition() {
     }
   };
 
-  const handleCallback = (childData: any) => {
-    setSelectedVals(childData);
-  };
-
   return (
     <PageSection variant="light">
       <FormPanel
@@ -248,7 +205,7 @@ export default function NewClientPolicyCondition() {
           isHorizontal
           role="manage-realm"
           className="pf-u-mt-lg"
-          onSubmit={handleSubmit(save)}
+          onSubmit={form.handleSubmit(save)}
         >
           <FormGroup
             label={t("conditionType")}
@@ -272,10 +229,11 @@ export default function NewClientPolicyCondition() {
             <Controller
               name="conditions"
               defaultValue={"any-client"}
-              control={control}
+              control={form.control}
               render={({ onChange, value }) => (
                 <Select
                   placeholderText={t("selectACondition")}
+                  className="kc-conditionType-select"
                   data-testid="conditionType-select"
                   toggleId="provider"
                   isDisabled={!!conditionName}
@@ -316,18 +274,25 @@ export default function NewClientPolicyCondition() {
               )}
             />
           </FormGroup>
+
           <FormProvider {...form}>
-            <DynamicComponents
-              properties={conditionProperties}
-              selectedValues={
-                conditionName === "client-access-type"
-                  ? selectedVals
-                  : conditionName === "client-updater-context"
-                  ? selectedVals?.["update-client-source"]
-                  : []
+            {conditionProperties.map((property) => {
+              const componentType = property.type!;
+              if (
+                property.name === "roles" &&
+                (conditionType === "client-roles" ||
+                  conditionName === "client-roles")
+              ) {
+                return <MultivaluedRoleComponent {...property} />;
+              } else if (isValidComponentType(componentType)) {
+                const Component = COMPONENTS[componentType];
+                return <Component key={property.name} {...property} />;
+              } else {
+                console.warn(
+                  `There is no editor registered for ${componentType}`
+                );
               }
-              parentCallback={handleCallback}
-            />
+            })}
           </FormProvider>
           <ActionGroup>
             <Button

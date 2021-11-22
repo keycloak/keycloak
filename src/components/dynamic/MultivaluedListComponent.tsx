@@ -48,12 +48,13 @@ export const MultiValuedListComponent = ({
             typeAheadAriaLabel="Select"
             onToggle={(isOpen) => setOpen(isOpen)}
             selections={value}
-            onSelect={(_, selectedValue) => {
-              const option = selectedValue.toString();
-              const changedValue = value.includes(option)
-                ? value.filter((item: string) => item !== option)
-                : [...value, option];
-              onChange(changedValue);
+            onSelect={(_, v) => {
+              const option = v.toString();
+              if (value.includes(option)) {
+                onChange(value.filter((item: string) => item !== option));
+              } else {
+                onChange([...value, option]);
+              }
             }}
             onClear={(event) => {
               event.stopPropagation();

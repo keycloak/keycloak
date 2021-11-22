@@ -176,8 +176,10 @@ export default class RealmSettingsPage {
   private clientPolicyDrpDwn = "action-dropdown";
   private searchFld = "[id^=realm-settings][id$=profilesinput]";
   private searchFldPolicies = "[id^=realm-settings][id$=clientPoliciesinput]";
-  private clientProfileOne = 'a[href*="realm-settings/clientPolicies/Test"]';
-  private clientProfileTwo = 'a[href*="realm-settings/clientPolicies/Edit"]';
+  private clientProfileOne =
+    'a[href*="realm-settings/clientPolicies/Test/edit-profile"]';
+  private clientProfileTwo =
+    'a[href*="realm-settings/clientPolicies/Edit/edit-profile"]';
   private clientPolicy =
     'a[href*="realm-settings/clientPolicies/Test/edit-policy"]';
   private reloadBtn = "reloadProfile";
@@ -195,7 +197,6 @@ export default class RealmSettingsPage {
   private addConditionCancelBtn = "addCondition-cancelBtn";
   private addConditionSaveBtn = "addCondition-saveBtn";
   private conditionTypeLink = "condition-type-link";
-  private addValue = "addValue";
   private eventListenersFormLabel = ".pf-c-form__label-text";
   private eventListenersDrpDwn = ".pf-c-select.kc_eventListeners_select";
   private eventListenersSaveBtn = "saveEventListenerBtn";
@@ -206,6 +207,7 @@ export default class RealmSettingsPage {
   private eventListenersDrwDwnSelect =
     ".pf-c-button.pf-c-select__toggle-button.pf-m-plain";
   private eventListenerRemove = '[data-ouia-component-id="Remove"]';
+  private roleSelect = ".pf-c-select.kc-role-select";
 
   selectLoginThemeType(themeType: string) {
     cy.get(this.selectLoginTheme).click();
@@ -971,7 +973,13 @@ export default class RealmSettingsPage {
     cy.findByTestId(this.addConditionDrpDwnOption)
       .contains("client-roles")
       .click();
-    cy.get('input[name="config.roles[0].value"]').click().type("role 1");
+    cy.get(this.roleSelect).click().contains("impersonation").click();
+
+    cy.get(this.roleSelect).contains("manage-realm").click();
+
+    cy.get(this.roleSelect).contains("view-users").click();
+
+    cy.get(this.roleSelect).click();
 
     cy.findByTestId(this.addConditionSaveBtn).click();
     cy.get(this.alertMessage).should(
@@ -986,9 +994,10 @@ export default class RealmSettingsPage {
 
     cy.findByTestId(this.conditionTypeLink).contains("client-roles").click();
 
-    cy.findByTestId(this.addValue).click();
+    cy.get(this.roleSelect).click();
+    cy.get(this.roleSelect).contains("create-client").click();
 
-    cy.get('input[name="config.roles[1].value"]').click().type("role 2");
+    cy.get(this.roleSelect).click();
 
     cy.findByTestId(this.addConditionSaveBtn).click();
     cy.get(this.alertMessage).should(

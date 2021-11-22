@@ -30,7 +30,6 @@ export default {
     addMapperExplain:
       "If you want more fine-grain control, you can create protocol mapper on this client",
     realmRoles: "Realm roles",
-    selectARole: "Select a role",
     clientRoles: "Client roles",
     selectASourceOfRoles: "Select a source of roles",
     newRoleName: "New role name",
