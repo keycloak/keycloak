@@ -56,22 +56,30 @@ export const MapperList = ({
     setAddMapperDialogOpen(!addMapperDialogOpen);
   };
 
-  const loader = async () =>
-    Promise.resolve(
-      (mapperList || [])
-        .map((mapper) => {
-          const mapperType = mapperTypes.filter(
-            (type) => type.id === mapper.protocolMapper
-          )[0];
-          return {
-            ...mapper,
-            category: mapperType.category,
-            type: mapperType.name,
-            priority: mapperType.priority,
-          } as Row;
-        })
-        .sort((a, b) => a.priority - b.priority)
-    );
+  const loader = async () => {
+    if (!mapperList) {
+      return [];
+    }
+
+    const list = mapperList.reduce<Row[]>((rows, mapper) => {
+      const mapperType = mapperTypes.find(
+        ({ id }) => id === mapper.protocolMapper
+      );
+
+      if (!mapperType) {
+        return rows;
+      }
+
+      return rows.concat({
+        ...mapper,
+        category: mapperType.category,
+        type: mapperType.name,
+        priority: mapperType.priority,
+      });
+    }, []);
+
+    return list.sort((a, b) => a.priority - b.priority);
+  };
 
   const MapperLink = ({ id, name }: Row) => (
     <Link to={detailLink(id!)}>{name}</Link>
