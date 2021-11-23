@@ -21,7 +21,6 @@ import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.configuration.parsing.ParserRegistry;
 import org.infinispan.jboss.marshalling.core.JBossUserMarshaller;
 import org.infinispan.manager.DefaultCacheManager;
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 
 public class CacheInitializer {

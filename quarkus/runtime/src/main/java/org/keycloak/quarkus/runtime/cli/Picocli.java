@@ -55,6 +55,7 @@ import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.Environment;
 
+import io.quarkus.runtime.Quarkus;
 import io.smallrye.config.ConfigValue;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
@@ -80,14 +81,7 @@ public final class Picocli {
 
         runReAugmentationIfNeeded(cliArgs, cmd);
 
-        int exitCode = cmd.execute(cliArgs.toArray(new String[0]));
-
-        if (Environment.isQuarkusDevMode()) {
-            // do not exit if running in dev mode, otherwise quarkus dev mode will exit when running from IDE
-            return;
-        }
-
-        System.exit(exitCode);
+        cmd.execute(cliArgs.toArray(new String[0]));
     }
 
     private static void runReAugmentationIfNeeded(List<String> cliArgs, CommandLine cmd) {
@@ -246,7 +240,7 @@ public final class Picocli {
         return key.startsWith("kc.provider.file");
     }
 
-    private static CommandLine createCommandLine(List<String> cliArgs) {
+    public static CommandLine createCommandLine(List<String> cliArgs) {
         CommandSpec spec = CommandSpec.forAnnotatedObject(new Main())
                 .name(Environment.getCommand());
 
