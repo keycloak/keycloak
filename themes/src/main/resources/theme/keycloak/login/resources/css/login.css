@@ -172,8 +172,12 @@ h1#kc-page-title {
     padding: 0;
 }
 
-#kc-locale:hover ul {
-    display: block;
+#kc-locale-dropdown{
+    display: inline-block;
+}
+
+#kc-locale-dropdown:hover ul {
+    display:block;
 }
 
 /* IE compatibility */
