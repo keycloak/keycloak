@@ -42,7 +42,13 @@ public enum DefaultVirtualAuthOptions {
 
     YUBIKEY_4(DefaultVirtualAuthOptions::getYubiKeyGeneralOptions),
     YUBIKEY_5_USB(DefaultVirtualAuthOptions::getYubiKeyGeneralOptions),
-    YUBIKEY_5_NFC(() -> getYubiKeyGeneralOptions().setTransport(NFC));
+    YUBIKEY_5_NFC(() -> getYubiKeyGeneralOptions().setTransport(NFC)),
+
+    TOUCH_ID(() -> DEFAULT.getOptions()
+            .setTransport(INTERNAL)
+            .setHasUserVerification(true)
+            .setIsUserVerified(true)
+    );
 
     private final Supplier<VirtualAuthenticatorOptions> options;
 
@@ -50,7 +56,7 @@ public enum DefaultVirtualAuthOptions {
         this.options = options;
     }
 
-    public VirtualAuthenticatorOptions getOptions() {
+    public final VirtualAuthenticatorOptions getOptions() {
         return options.get();
     }
 

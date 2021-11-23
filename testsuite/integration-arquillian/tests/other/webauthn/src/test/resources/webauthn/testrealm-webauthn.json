@@ -22,10 +22,6 @@
   "webAuthnPolicyRpEntityName": "keycloak-webauthn-2FA",
   "webAuthnPolicyCreateTimeout": 60,
   "webAuthnPolicyAvoidSameAuthenticatorRegister": true,
-  "webAuthnPolicyAcceptableAaguids": [
-    "00000000-0000-0000-0000-000000000000",
-    "6d44ba9b-f6ec-2e49-b930-0c8fe920cb73"
-  ],
   "smtpServer": {
     "from": "auto@keycloak.org",
     "host": "localhost",

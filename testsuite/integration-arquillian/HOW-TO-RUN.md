@@ -513,6 +513,8 @@ mvn -f testsuite/integration-arquillian/tests/other/pom.xml clean test \
     -Dbrowser=chrome -Pwebauthn
 ```
 
+**Note:** You can also execute those tests with `chromeHeadless` browser in order to not open a new window.
+
 #### Troubleshooting
 
 If you try to run WebAuthn tests with Chrome browser and you see error like:
