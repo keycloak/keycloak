@@ -252,3 +252,16 @@ article.pf-c-card.pf-m-flat.kc-login-settings-template
 .kc_eventListeners_select {
   width: 35rem;
 }
+
+input#kc-scopes {
+  width: 630px;
+  
+  margin-right: 24px;
+}
+
+.kc-client-scopes-chip-group {
+  margin-right: var(--pf-global--spacer--2xl);
+  max-width: 585px;
+  min-width: 585px;
+  padding-left: none;
+}

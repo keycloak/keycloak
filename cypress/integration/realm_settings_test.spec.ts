@@ -118,7 +118,7 @@ describe("Realm settings tests", () => {
       masthead.checkNotificationMessage("Realm successfully updated");
     });
 
-    it.skip("Go to login tab", () => {
+    it("Go to login tab", () => {
       sidebarPage.goToRealmSettings();
       cy.findByTestId("rs-login-tab").click();
       realmSettingsPage.toggleSwitch(realmSettingsPage.userRegSwitch);
@@ -126,7 +126,7 @@ describe("Realm settings tests", () => {
       realmSettingsPage.toggleSwitch(realmSettingsPage.rememberMeSwitch);
     });
 
-    it.skip("Check login tab values", () => {
+    it("Check login tab values", () => {
       sidebarPage.goToRealmSettings();
       cy.findByTestId("rs-login-tab").click();
 
@@ -605,20 +605,32 @@ describe("Realm settings tests", () => {
       realmSettingsPage.shouldCancelAddingCondition();
     });
 
-    it("Should add a new condition to a client profile", () => {
-      realmSettingsPage.shouldAddCondition();
+    it("Should add a new client-roles condition to a client profile", () => {
+      realmSettingsPage.shouldAddClientRolesCondition();
     });
 
-    it("Should edit the condition of a client profile", () => {
-      realmSettingsPage.shouldEditCondition();
+    it("Should add a new client-scopes condition to a client profile", () => {
+      realmSettingsPage.shouldAddClientScopesCondition();
+    });
+
+    it("Should edit the client-roles condition of a client profile", () => {
+      realmSettingsPage.shouldEditClientRolesCondition();
+    });
+
+    it("Should edit the client-scopes condition of a client profile", () => {
+      realmSettingsPage.shouldEditClientScopesCondition();
     });
 
     it("Should cancel deleting condition from a client profile", () => {
       realmSettingsPage.shouldCancelDeletingCondition();
     });
 
-    it("Should delete condition from a client profile", () => {
-      realmSettingsPage.shouldDeleteCondition();
+    it("Should delete client-roles condition from a client profile", () => {
+      realmSettingsPage.shouldDeleteClientRolesCondition();
+    });
+
+    it("Should delete client-scopes condition from a client profile", () => {
+      realmSettingsPage.shouldDeleteClientScopesCondition();
     });
 
     it("Check cancelling the client policy deletion", () => {

@@ -38,6 +38,7 @@ import { ChangeTypeDropdown } from "../../client-scopes/ChangeTypeDropdown";
 export type ClientScopesProps = {
   clientId: string;
   protocol: string;
+  clientName: string;
 };
 
 export type Row = ClientScopeRepresentation & {
@@ -45,7 +46,11 @@ export type Row = ClientScopeRepresentation & {
   description?: string;
 };
 
-export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
+export const ClientScopes = ({
+  clientId,
+  protocol,
+  clientName,
+}: ClientScopesProps) => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
@@ -135,6 +140,7 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
       {rest && (
         <AddScopeDialog
           clientScopes={rest}
+          clientName={clientName!}
           open={addDialogOpen}
           toggleDialog={() => setAddDialogOpen(!addDialogOpen)}
           onAdd={async (scopes) => {
@@ -146,7 +152,7 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
                       adminClient,
                       clientId,
                       scope.scope,
-                      scope.type
+                      scope.type!
                     )
                 )
               );

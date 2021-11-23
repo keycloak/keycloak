@@ -551,7 +551,7 @@ export default function NewClientPolicyForm() {
                               0 ? (
                                 <Link
                                   key={condition.condition}
-                                  data-testid="condition-type-link"
+                                  data-testid={`${condition.condition}-condition-link`}
                                   to={toEditClientPolicyCondition({
                                     realm,
                                     conditionName: condition.condition!,
@@ -581,7 +581,7 @@ export default function NewClientPolicyForm() {
                                         icon={
                                           <TrashIcon
                                             className="kc-conditionType-trash-icon"
-                                            data-testid="deleteClientProfileDropdown"
+                                            data-testid={`delete-${condition.condition}-condition`}
                                             onClick={() => {
                                               toggleDeleteConditionDialog();
                                               setConditionToDelete({

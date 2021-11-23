@@ -34,12 +34,12 @@ import {
   convertToMultiline,
   toValue,
 } from "../components/multi-line-input/MultiLineInput";
-import { MultivaluedRoleComponent } from "../components/dynamic/MultivaluedRoleComponent";
 import {
   COMPONENTS,
   isValidComponentType,
 } from "../components/dynamic/components";
-
+import { MultivaluedScopesComponent } from "../components/dynamic/MultivaluedScopesComponent";
+import { MultivaluedRoleComponent } from "../components/dynamic/MultivaluedRoleComponent";
 export type ItemType = { value: string };
 
 type ConfigProperty = ConfigPropertyRepresentation & {
@@ -54,6 +54,7 @@ export default function NewClientPolicyCondition() {
 
   const [openConditionType, setOpenConditionType] = useState(false);
   const [policies, setPolicies] = useState<ClientPolicyRepresentation[]>([]);
+
   const [condition, setCondition] = useState<
     ClientPolicyConditionRepresentation[]
   >([]);
@@ -87,9 +88,15 @@ export default function NewClientPolicyCondition() {
 
     Object.entries(condition.configuration!).map(([key, value]) => {
       const formKey = `config.${key}`;
+
       const property = properties.find((p) => p.name === key);
-      if (property?.type === "MultivaluedString") {
+      if (
+        property?.type === "MultivaluedString" &&
+        property.name !== "scopes"
+      ) {
         form.setValue(formKey, convertToMultiline(value));
+      } else if (property?.name === "client-scopes") {
+        form.setValue("config.scopes", value);
       } else {
         form.setValue(formKey, value);
       }
@@ -98,8 +105,10 @@ export default function NewClientPolicyCondition() {
 
   useFetch(
     () => adminClient.clientPolicies.listPolicies(),
+
     (policies) => {
       setPolicies(policies.policies ?? []);
+
       if (conditionName) {
         const currentPolicy = policies.policies?.find(
           (item) => item.name === policyName
@@ -124,13 +133,14 @@ export default function NewClientPolicyCondition() {
   const save = async (configPolicy: ConfigProperty) => {
     const configValues = configPolicy.config;
 
-    const writeConfig = () =>
-      conditionProperties.reduce((r: any, p) => {
-        p.type === "MultivaluedString"
+    const writeConfig = () => {
+      return conditionProperties.reduce((r: any, p) => {
+        p.type === "MultivaluedString" && p.name !== "scopes"
           ? (r[p.name!] = toValue(configValues[p.name!]))
           : (r[p.name!] = configValues[p.name!]);
         return r;
       }, {});
+    };
 
     const updatedPolicies = policies.map((policy) => {
       if (policy.name !== policyName) {
@@ -284,6 +294,17 @@ export default function NewClientPolicyCondition() {
                   conditionName === "client-roles")
               ) {
                 return <MultivaluedRoleComponent {...property} />;
+              } else if (
+                property.name === "scopes" &&
+                (conditionType === "client-scopes" ||
+                  conditionName === "client-scopes")
+              ) {
+                return (
+                  <MultivaluedScopesComponent
+                    defaultValue="offline_access"
+                    {...property}
+                  />
+                );
               } else if (isValidComponentType(componentType)) {
                 const Component = COMPONENTS[componentType];
                 return <Component key={property.name} {...property} />;

@@ -458,6 +458,7 @@ export default function ClientDetails() {
                     title={<TabTitleText>{t("setup")}</TabTitleText>}
                   >
                     <ClientScopes
+                      clientName={client.clientId!}
                       clientId={clientId}
                       protocol={client!.protocol!}
                     />

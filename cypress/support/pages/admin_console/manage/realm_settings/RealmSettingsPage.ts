@@ -197,6 +197,8 @@ export default class RealmSettingsPage {
   private addConditionCancelBtn = "addCondition-cancelBtn";
   private addConditionSaveBtn = "addCondition-saveBtn";
   private conditionTypeLink = "condition-type-link";
+  private clientRolesConditionLink = "client-roles-condition-link";
+  private clientScopesConditionLink = "client-scopes-condition-link";
   private eventListenersFormLabel = ".pf-c-form__label-text";
   private eventListenersDrpDwn = ".pf-c-select.kc_eventListeners_select";
   private eventListenersSaveBtn = "saveEventListenerBtn";
@@ -208,6 +210,9 @@ export default class RealmSettingsPage {
     ".pf-c-button.pf-c-select__toggle-button.pf-m-plain";
   private eventListenerRemove = '[data-ouia-component-id="Remove"]';
   private roleSelect = ".pf-c-select.kc-role-select";
+  private selectScopeButton = "select-scope-button";
+  private deleteClientRolesCondition = "delete-client-roles-condition";
+  private deleteClientScopesCondition = "delete-client-scopes-condition";
 
   selectLoginThemeType(themeType: string) {
     cy.get(this.selectLoginTheme).click();
@@ -966,7 +971,7 @@ export default class RealmSettingsPage {
     );
   }
 
-  shouldAddCondition() {
+  shouldAddClientRolesCondition() {
     cy.get(this.clientPolicy).click();
     cy.findByTestId(this.addCondition).click();
     cy.get(this.addConditionDrpDwn).click();
@@ -989,10 +994,37 @@ export default class RealmSettingsPage {
     cy.get('ul[class*="pf-c-data-list"]').should("have.text", "client-roles");
   }
 
-  shouldEditCondition() {
+  addClientScopes() {
+    cy.findByTestId(this.selectScopeButton).click();
+    cy.get(".pf-c-table__check > input[name=checkrow0]").click();
+    cy.get(".pf-c-table__check > input[name=checkrow1]").click();
+    cy.get(".pf-c-table__check > input[name=checkrow2]").click();
+
+    cy.findByTestId("modalConfirm").contains("Add").click();
+  }
+
+  shouldAddClientScopesCondition() {
+    cy.get(this.clientPolicy).click();
+    cy.findByTestId(this.addCondition).click();
+    cy.get(this.addConditionDrpDwn).click();
+    cy.findByTestId(this.addConditionDrpDwnOption)
+      .contains("client-scopes")
+      .click();
+
+    this.addClientScopes();
+
+    cy.findByTestId(this.addConditionSaveBtn).click();
+    cy.get(this.alertMessage).should(
+      "be.visible",
+      "Success! Condition created successfully"
+    );
+    cy.get('ul[class*="pf-c-data-list"]').contains("client-scopes");
+  }
+
+  shouldEditClientRolesCondition() {
     cy.get(this.clientPolicy).click();
 
-    cy.findByTestId(this.conditionTypeLink).contains("client-roles").click();
+    cy.findByTestId(this.clientRolesConditionLink).click();
 
     cy.get(this.roleSelect).click();
     cy.get(this.roleSelect).contains("create-client").click();
@@ -1006,24 +1038,51 @@ export default class RealmSettingsPage {
     );
   }
 
+  shouldEditClientScopesCondition() {
+    cy.get(this.clientPolicy).click();
+
+    cy.findByTestId(this.clientScopesConditionLink).click();
+
+    cy.wait(200);
+
+    this.addClientScopes();
+
+    cy.findByTestId(this.addConditionSaveBtn).click();
+    cy.get(this.alertMessage).should(
+      "be.visible",
+      "Success! Condition updated successfully"
+    );
+  }
+
   shouldCancelDeletingCondition() {
     cy.get(this.clientPolicy).click();
-    cy.get('svg[class*="kc-conditionType-trash-icon"]').click();
+    cy.findByTestId(this.deleteClientRolesCondition).click();
     cy.get(this.deleteDialogTitle).contains("Delete condition?");
     cy.get(this.deleteDialogBodyText).contains(
       "This action will permanently delete client-roles. This cannot be undone."
     );
     cy.findByTestId("modalConfirm").contains("Delete");
     cy.get(this.deleteDialogCancelBtn).contains("Cancel").click();
-    cy.get('ul[class*="pf-c-data-list"]').should("have.text", "client-roles");
+    cy.get('ul[class*="pf-c-data-list"]').contains("client-roles");
   }
 
-  shouldDeleteCondition() {
+  shouldDeleteClientRolesCondition() {
     cy.get(this.clientPolicy).click();
-    cy.get('svg[class*="kc-conditionType-trash-icon"]').click();
+    cy.findByTestId(this.deleteClientRolesCondition).click();
     cy.get(this.deleteDialogTitle).contains("Delete condition?");
     cy.get(this.deleteDialogBodyText).contains(
       "This action will permanently delete client-roles. This cannot be undone."
+    );
+    cy.findByTestId("modalConfirm").contains("Delete").click();
+    cy.get('ul[class*="pf-c-data-list"]').contains("client-scopes");
+  }
+
+  shouldDeleteClientScopesCondition() {
+    cy.get(this.clientPolicy).click();
+    cy.findByTestId(this.deleteClientScopesCondition).click();
+    cy.get(this.deleteDialogTitle).contains("Delete condition?");
+    cy.get(this.deleteDialogBodyText).contains(
+      "This action will permanently delete client-scopes. This cannot be undone."
     );
     cy.findByTestId("modalConfirm").contains("Delete").click();
     cy.get('h6[class*="kc-emptyConditions"]').should(

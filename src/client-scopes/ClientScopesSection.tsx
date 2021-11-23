@@ -19,7 +19,7 @@ import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { upperCaseFormatter, emptyFormatter } from "../util";
+import { emptyFormatter } from "../util";
 import {
   CellDropdown,
   ClientScope,
@@ -44,6 +44,7 @@ import {
   typeFilter,
 } from "./details/SearchFilter";
 import type { Row } from "../clients/scopes/ClientScopes";
+import { getProtocolName } from "../clients/utils";
 
 export default function ClientScopesSection() {
   const { realm } = useRealm();
@@ -267,7 +268,8 @@ export default function ClientScopesSection() {
             {
               name: "protocol",
               displayKey: "client-scopes:protocol",
-              cellFormatters: [upperCaseFormatter()],
+              cellRenderer: (client) =>
+                getProtocolName(t, client.protocol ?? "openid-connect"),
               transforms: [cellWidth(15)],
             },
             {

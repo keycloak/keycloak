@@ -1,9 +1,11 @@
 export default {
   clients: {
-    protocol: {
+    protocolTypes: {
       openIdConnect: "OpenID Connect",
       saml: "SAML",
+      all: "All",
     },
+    protocol: "Protocol",
     clientType: "Client type",
     clientAuthorization: "Authorization",
     implicitFlow: "Implicit flow",
@@ -27,7 +29,7 @@ export default {
       "You haven't created any roles for this client. Create a role to get started.",
     clientScopes: "Client scopes",
     addClientScope: "Add client scope",
-    addClientScopesTo: "Add client scopes to {{clientId}}",
+    addClientScopesTo: "Add client scopes to {{clientName}}",
     clientScopeRemoveSuccess: "Scope mapping successfully removed",
     clientScopeRemoveError: "Could not remove the scope mapping {{error}}",
     clientScopeSuccess: "Scope mapping successfully updated",
