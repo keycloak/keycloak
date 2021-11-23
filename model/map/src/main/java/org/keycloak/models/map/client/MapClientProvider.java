@@ -164,8 +164,11 @@ public class MapClientProvider implements ClientProvider {
 
     @Override
     public Stream<ClientModel> getAlwaysDisplayInConsoleClientsStream(RealmModel realm) {
-        return getClientsStream(realm)
-                .filter(ClientModel::isAlwaysDisplayInConsole);
+        DefaultModelCriteria<ClientModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+                 .compare(SearchableFields.ALWAYS_DISPLAY_IN_CONSOLE, Operator.EQ, Boolean.TRUE);
+        return tx.read(withCriteria(mcb).orderBy(SearchableFields.CLIENT_ID, ASCENDING))
+                  .map(entityToAdapterFunc(realm));
     }
 
     @Override
