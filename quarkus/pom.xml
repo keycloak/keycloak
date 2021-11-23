@@ -159,6 +159,7 @@
         <module>runtime</module>
         <module>deployment</module>
         <module>server</module>
+        <module>tests</module>
     </modules>
 
     <repositories>

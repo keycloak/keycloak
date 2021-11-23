@@ -17,6 +17,7 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
+import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_KEY_VALUE_SPLIT;
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_SPLIT;
@@ -48,20 +49,29 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
 
     private static final Logger log = Logger.getLogger(ConfigArgsConfigSource.class);
 
+    private final boolean alwaysParseArgs;
+
     ConfigArgsConfigSource() {
         // higher priority over default Quarkus config sources
         super(parseArgument(), "CliConfigSource", 500);
+        alwaysParseArgs = isTestLaunchMode();
     }
 
     @Override
     public String getValue(String propertyName) {
-        String value = super.getValue(propertyName);
+        Map<String, String> properties = getProperties();
+
+        if (alwaysParseArgs) {
+            properties = parseArgument();
+        }
+
+        String value = properties.get(propertyName);
 
         if (value != null) {
             return value;
         }
 
-        return super.getValue(propertyName.replace('-', '.'));
+        return properties.get(propertyName.replace('-', '.'));
     }
 
     private static Map<String, String> parseArgument() {

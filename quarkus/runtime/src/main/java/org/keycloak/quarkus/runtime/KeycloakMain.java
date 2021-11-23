@@ -19,11 +19,14 @@ package org.keycloak.quarkus.runtime;
 
 import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
 import static org.keycloak.quarkus.runtime.Environment.getProfileOrDefault;
+import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
 import static org.keycloak.quarkus.runtime.cli.Picocli.parseAndRun;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import javax.enterprise.context.ApplicationScoped;
 
 import io.quarkus.runtime.ApplicationLifecycleManager;
 import io.quarkus.runtime.Quarkus;
@@ -41,6 +44,7 @@ import picocli.CommandLine;
  * <p>The main entry point, responsible for initialize and run the CLI as well as start the server.
  */
 @QuarkusMain(name = "keycloak")
+@ApplicationScoped
 public class KeycloakMain implements QuarkusApplication {
 
     private static final Logger LOGGER = Logger.getLogger(KeycloakMain.class);
@@ -61,13 +65,19 @@ public class KeycloakMain implements QuarkusApplication {
 
     public static void start(CommandLine cmd) {
         try {
-            Quarkus.run(KeycloakMain.class, (integer, cause) -> {
+            Quarkus.run(KeycloakMain.class, (exitCode, cause) -> {
                 if (cause != null) {
                     ExecutionExceptionHandler exceptionHandler = (ExecutionExceptionHandler) cmd.getExecutionExceptionHandler();
 
                     exceptionHandler.error(cmd.getErr(),
                             String.format("Failed to start server using profile (%s)", getProfileOrDefault("prod")),
                             cause.getCause());
+                }
+
+                if (Environment.isDistribution()) {
+                    // assume that it is running the distribution
+                    // as we are replacing the default exit handler, we need to force exit
+                    System.exit(exitCode);
                 }
             });
         } catch (Throwable cause) {
@@ -87,7 +97,17 @@ public class KeycloakMain implements QuarkusApplication {
         if (isDevProfile()) {
             LOGGER.warnf("Running the server in dev mode. DO NOT use this configuration in production.");
         }
-        Quarkus.waitForExit();
-        return ApplicationLifecycleManager.getExitCode();
+
+        int exitCode = ApplicationLifecycleManager.getExitCode();
+
+        if (isTestLaunchMode()) {
+            // in test mode we exit immediately
+            // we should be managing this behavior more dynamically depending on the tests requirements (short/long lived)
+            Quarkus.asyncExit(exitCode);
+        } else {
+            Quarkus.waitForExit();
+        }
+
+        return exitCode;
     }
 }

@@ -41,6 +41,7 @@ public final class Environment {
     public static final String DEFAULT_THEMES_PATH = "/themes";
     public static final String DEV_PROFILE_VALUE = "dev";
     public static final String USER_INVOKED_CLI_COMMAND = "picocli.invoked.command";
+    public static final String LAUNCH_MODE = "kc.launch.mode";
 
     private Environment() {}
 
@@ -90,6 +91,7 @@ public final class Environment {
         if (isWindows()) {
             return "kc.bat";
         }
+
         return "kc.sh";
     }
 
@@ -133,6 +135,10 @@ public final class Environment {
     public static void setProfile(String profile) {
         System.setProperty(PROFILE, profile);
         System.setProperty("quarkus.profile", profile);
+        if (isTestLaunchMode()) {
+            System.setProperty("mp.config.profile", profile);
+            System.setProperty(ProfileManager.QUARKUS_TEST_PROFILE_PROP, profile);
+        }
     }
 
     public static String getProfileOrDefault(String defaultProfile) {
@@ -192,5 +198,17 @@ public final class Environment {
 
     public static boolean isQuarkusDevMode() {
         return ProfileManager.getLaunchMode().equals(LaunchMode.DEVELOPMENT);
+    }
+
+    public static boolean isTestLaunchMode() {
+        return "test".equals(System.getProperty(LAUNCH_MODE));
+    }
+
+    public static void forceTestLaunchMode() {
+        System.setProperty(LAUNCH_MODE, "test");
+    }
+
+    public static boolean isDistribution() {
+        return Environment.getCommand().startsWith("kc.");
     }
 }

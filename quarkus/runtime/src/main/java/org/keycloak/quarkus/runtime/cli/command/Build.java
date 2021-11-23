@@ -30,6 +30,8 @@ import io.quarkus.runtime.configuration.ProfileManager;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.List;
 
 @Command(name = Build.NAME,
@@ -115,7 +117,11 @@ public final class Build extends AbstractCommand implements Runnable {
     private void cleanTempResources() {
         if (!ProfileManager.getLaunchMode().isDevOrTest()) {
             // only needed for dev/testing purposes
-            getHomePath().resolve("quarkus-artifact.properties").toFile().delete();
+            try {
+                Files.delete(getHomePath().resolve("quarkus-artifact.properties"));
+            } catch (IOException cause) {
+                throw new RuntimeException("Failed to delete temporary resources", cause);
+            }
         }
     }
 }

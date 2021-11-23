@@ -373,6 +373,52 @@ jobs:
           path: reports-quarkus-cluster-tests.zip
           if-no-files-found: ignore
 
+  ### Tests: Quarkus distribution
+
+  quarkus-tests:
+    name: Quarkus Tests
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      MAVEN_OPTS: -Xmx1024m
+    steps:
+      - uses: actions/checkout@v2
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: cache-1-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: cache-1-${{ runner.os }}-m2
+      - name: Cleanup org.keycloak artifacts
+        run: rm -rf ~/.m2/repository/org/keycloak >/dev/null || true
+
+      - name: Download built keycloak
+        id: download-keycloak
+        uses: actions/download-artifact@v2
+        with:
+          path: ~/.m2/repository/org/keycloak/
+          name: keycloak-artifacts.zip
+      - uses: actions/setup-java@v1
+        with:
+          java-version: ${{ env.DEFAULT_JDK_VERSION }}
+      - name: Update maven settings
+        run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
+      - name: Run Quarkus Tests
+        run: |
+          mvn clean install -nsu -B -f quarkus/tests/pom.xml  | misc/log/trimmer.sh
+          TEST_RESULT=${PIPESTATUS[0]}
+          find . -path '*/target/surefire-reports/*.xml' | zip -q reports-quarkus-tests.zip -@
+          exit $TEST_RESULT
+
+      - name: Quarkus test reports
+        uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: reports-quarkus-tests
+          retention-days: 14
+          path: reports-quarkus-tests.zip
+          if-no-files-found: ignore
+
   quickstarts-tests:
     name: Quickstarts Tests
     needs: build

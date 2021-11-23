@@ -36,6 +36,7 @@ import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.Environment;
 
+import io.quarkus.runtime.Quarkus;
 import io.smallrye.config.ConfigValue;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
@@ -70,8 +71,8 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
                         .forEachOrdered(this::printProperty);
             }
 
-            if (!parseBoolean(System.getProperty("kc.show.config.runtime", Boolean.FALSE.toString()))) {
-                System.exit(0);
+            if (!Boolean.getBoolean("kc.show.config.runtime")) {
+                Quarkus.asyncExit(0);
             }
         }
     }
