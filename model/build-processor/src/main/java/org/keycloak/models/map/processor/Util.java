@@ -18,10 +18,12 @@ package org.keycloak.models.map.processor;
 
 import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -40,6 +42,7 @@ import javax.lang.model.util.SimpleTypeVisitor8;
 public class Util {
 
     private static final HashSet<String> SET_TYPES = new HashSet<>(Arrays.asList(Set.class.getCanonicalName(), TreeSet.class.getCanonicalName(), HashSet.class.getCanonicalName(), LinkedHashSet.class.getCanonicalName()));
+    private static final HashSet<String> MAP_TYPES = new HashSet<>(Arrays.asList(Map.class.getCanonicalName(), HashMap.class.getCanonicalName()));
 
     public static List<TypeMirror> getGenericsDeclaration(TypeMirror fieldType) {
         List<TypeMirror> res = new LinkedList<>();
@@ -65,6 +68,11 @@ public class Util {
     public static boolean isSetType(TypeElement typeElement) {
         Name name = typeElement.getQualifiedName();
         return SET_TYPES.contains(name.toString());
+    }
+
+    public static boolean isMapType(TypeElement typeElement) {
+        Name name = typeElement.getQualifiedName();
+        return MAP_TYPES.contains(name.toString());
     }
 
     public static boolean isNotIgnored(Element el) {

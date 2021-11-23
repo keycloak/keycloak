@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.keycloak.models.map.annotations;
 
 import java.lang.annotation.ElementType;
@@ -21,11 +22,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- *
- * @author hmlnarik
- */
-@Retention(RetentionPolicy.CLASS)
-@Target({ElementType.TYPE, ElementType.METHOD})
-public @interface IgnoreForEntityImplementationGenerator {
+@Retention(RetentionPolicy.SOURCE)
+@Target(ElementType.TYPE)
+public @interface GenerateHotRodEntityImplementation {
+    String implementInterface();
+    String inherits() default "org.keycloak.models.map.common.UpdatableEntity.Impl";
 }

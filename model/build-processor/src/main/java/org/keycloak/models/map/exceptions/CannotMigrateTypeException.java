@@ -14,18 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.annotations;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package org.keycloak.models.map.exceptions;
 
-/**
- *
- * @author hmlnarik
- */
-@Retention(RetentionPolicy.CLASS)
-@Target({ElementType.TYPE, ElementType.METHOD})
-public @interface IgnoreForEntityImplementationGenerator {
+import javax.lang.model.type.TypeMirror;
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
+public class CannotMigrateTypeException extends RuntimeException {
+    private final TypeMirror toType;
+    private final TypeMirror[] fromType;
+
+    public CannotMigrateTypeException(TypeMirror toType, TypeMirror[] fromType) {
+        this.toType = toType;
+        this.fromType = fromType;
+    }
+
+    public String getFormattedMessage() {
+        return "Cannot migrate [" + Arrays.stream(fromType).map(TypeMirror::toString).collect(Collectors.joining(", ")) + "] to " + toType.toString();
+    }
+
 }
