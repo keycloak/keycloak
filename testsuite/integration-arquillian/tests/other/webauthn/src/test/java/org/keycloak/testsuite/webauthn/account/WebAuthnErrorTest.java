@@ -64,7 +64,7 @@ public class WebAuthnErrorTest extends AbstractWebAuthnAccountTest {
             final int webAuthnCount = webAuthnCredentialType.getUserCredentialsCount();
             assertThat(webAuthnCount, is(2));
 
-            getWebAuthnManager().getActualAuthenticator().getAuthenticator().removeAllCredentials();
+            getWebAuthnManager().getCurrent().getAuthenticator().removeAllCredentials();
 
             setUpWebAuthnFlow("webAuthnFlow");
             logout();
