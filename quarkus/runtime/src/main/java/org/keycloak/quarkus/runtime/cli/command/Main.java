@@ -34,7 +34,7 @@ import picocli.CommandLine.Option;
                 "Find more information at: https://www.keycloak.org/docs/latest"
         },
         description = {
-                "Use this command-line tool to manage your Keycloak cluster.",
+                "%nUse this command-line tool to manage your Keycloak cluster.",
                 "Make sure the command is available on your \"PATH\" or prefix it with \"./\" (e.g.: \"./${COMMAND-NAME}\") to execute from the current folder."
         },
         footerHeading = "Examples:",
