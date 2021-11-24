@@ -83,11 +83,7 @@ This is used by clients running on internet-connected devices that have limited 
 [[_client_initiated_backchannel_authentication_grant]]
 ===== Client initiated backchannel authentication grant
 
-:tech_feature_name: Client Initiated Backchannel Authentication Grant
-:tech_feature_setting: -Dkeycloak.profile.feature.ciba=enabled
-include::../templates/techpreview.adoc[]
-
-This is used by clients who want to initiate the authentication flow by communicating with the OpenID Provider directly without redirect through the user's browser like OAuth 2.0's authorization code grant. Here's a brief summary of the protocol:
+This feature is used by clients who want to initiate the authentication flow by communicating with the OpenID Provider directly without redirect through the user's browser like OAuth 2.0's authorization code grant. Here's a brief summary of the protocol:
 
 . The client requests {project_name} an auth_req_id that identifies the authentication request made by the client. {project_name} creates the auth_req_id.
 . After receiving this auth_req_id, this client repeatedly needs to poll {project_name} to obtain an Access Token, Refresh Token and ID Token from {project_name} in return for the auth_req_id until the user is authenticated. 
