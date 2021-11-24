@@ -113,3 +113,30 @@ article.pf-c-card.pf-m-flat.kc-available-idps > div > div > h1 {
 .kc-no-providers-text {
   text-align: center;
 }
+
+.kc-temporaryPassword {
+  margin: 6px 0 10px 35px;
+}
+
+.kc-password, .kc-passwordConfirmation {
+  width: 355px;
+  float: right;
+}
+
+.pf-c-form__group-label {
+  width: max-content;
+}
+
+.pf-m-error {
+  display: inline-block;
+  margin-left: var(--pf-global--spacer--xl);
+}
+
+.kc-edit-icon {
+  color: var(--pf-global--Color--200);
+  margin-left: 5px;
+}
+
+.kc-showData-btn {
+  padding-left: 0;
+}
