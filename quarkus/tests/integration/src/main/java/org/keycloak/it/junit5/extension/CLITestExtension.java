@@ -20,9 +20,13 @@ package org.keycloak.it.junit5.extension;
 import static org.keycloak.it.junit5.extension.DistributionTest.ReInstall.BEFORE_ALL;
 import static org.keycloak.quarkus.runtime.Environment.forceTestLaunchMode;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
@@ -35,75 +39,45 @@ import org.keycloak.quarkus.runtime.cli.command.StartDev;
 import io.quarkus.test.junit.QuarkusMainTestExtension;
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.output.OutputFrame;
+import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.images.builder.ImageFromDockerfile;
 
 public class CLITestExtension extends QuarkusMainTestExtension {
 
-    private KeycloakDistribution dist;
+    private GenericContainer keycloakContainer = new GenericContainer(
+            new ImageFromDockerfile()
+                    .withFileFromFile("keycloak.x-16.0.0-SNAPSHOT.tar.gz", new File("../../../distribution/server-x-dist/target/keycloak.x-16.0.0-SNAPSHOT.tar.gz"))
+                    .withFileFromFile("Dockerfile", new File("./Dockerfile"))
+                    .withBuildArg("KEYCLOAK_DIST", "keycloak.x-16.0.0-SNAPSHOT.tar.gz")
+    ).withExposedPorts(8080).waitingFor(Wait.forHttp("/").forStatusCode(200));
 
     @Override
     public void beforeEach(ExtensionContext context) throws Exception {
-        DistributionTest distConfig = getDistributionConfig(context);
 
-        if (distConfig != null) {
-            Launch launch = context.getRequiredTestMethod().getAnnotation(Launch.class);
+        List<String> additionalProperties = List.of(
+                "-Dhttp.enabled=true",
+                "-Dcluster=local",
+                "-Dhostname.strict=false",
+                "-Dhostname.strict-https=false"
+        );
 
-            if (launch != null) {
-                if (dist == null) {
-                    dist = createDistribution(distConfig);
-                }
-                dist.start(Arrays.asList(launch.value()));
-            }
-        } else {
-            configureProfile(context);
-            super.beforeEach(context);
-        }
+        List<String> cmd = getCliArgs(context);
+        Stream<String> fullCmd = Stream.concat(cmd.stream(), additionalProperties.stream());
+
+        keycloakContainer.withCommand(fullCmd.collect(Collectors.toList()).toArray(new String[0])).start();
+
+        super.beforeEach(context);
     }
 
     @Override
     public void afterEach(ExtensionContext context) throws Exception {
-        DistributionTest distConfig = getDistributionConfig(context);
-
-        if (distConfig != null) {
-            if (distConfig.keepAlive()) {
-                dist.stopIfRunning();
-            }
+        if (keycloakContainer != null) {
+            keycloakContainer.stop();
         }
 
         super.afterEach(context);
-    }
-
-    @Override
-    public void afterAll(ExtensionContext context) throws Exception {
-        if (dist != null) {
-            // just to make sure the server is stopped after all tests
-            dist.stopIfRunning();
-        }
-        super.afterAll(context);
-    }
-
-    private KeycloakDistribution createDistribution(DistributionTest config) {
-        KeycloakDistribution distribution = new KeycloakDistribution();
-
-        distribution.setReCreate(!ReInstall.NEVER.equals(config.reInstall()));
-        distribution.setDebug(config.debug());
-        distribution.setManualStop(config.keepAlive());
-
-        return distribution;
-    }
-
-    @Override
-    public void beforeAll(ExtensionContext context) throws Exception {
-        DistributionTest distConfig = getDistributionConfig(context);
-
-        if (distConfig != null) {
-            if (BEFORE_ALL.equals(distConfig.reInstall())) {
-                dist = createDistribution(distConfig);
-            }
-        } else {
-            forceTestLaunchMode();
-        }
-
-        super.beforeAll(context);
     }
 
     @Override
@@ -116,12 +90,13 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             List<String> errStream;
             int exitCode;
 
-            boolean isDistribution = getDistributionConfig(context) != null;
+            boolean isDistribution = keycloakContainer != null;
 
             if (isDistribution) {
-                outputStream = dist.getOutputStream();
-                errStream = dist.getErrorStream();
-                exitCode = dist.getExitCode();
+                keycloakContainer.getLogs(OutputFrame.OutputType.END);
+                outputStream = List.of(keycloakContainer.getLogs(OutputFrame.OutputType.STDOUT));
+                errStream = List.of(keycloakContainer.getLogs(OutputFrame.OutputType.STDERR));
+                exitCode = keycloakContainer.isRunning() ? 0 : 1;
             } else {
                 LaunchResult result = (LaunchResult) super.resolveParameter(parameterContext, context);
                 outputStream = result.getOutputStream();
@@ -136,26 +111,6 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         throw new RuntimeException("Parameter type [" + type + "] not supported");
     }
 
-    @Override
-    public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
-            throws ParameterResolutionException {
-        Class<?> type = parameterContext.getParameter().getType();
-        return type == LaunchResult.class;
-    }
-
-    private void configureProfile(ExtensionContext context) {
-        List<String> cliArgs = getCliArgs(context);
-
-        // when running tests, build steps happen before executing our CLI so that profiles are not set and not taken
-        // into account when executing the build steps
-        // this is basically reproducing the behavior when using kc.sh
-        if (cliArgs.contains(Start.NAME)) {
-            Environment.setProfile("prod");
-        } else if (cliArgs.contains(StartDev.NAME)) {
-            Environment.forceDevProfile();
-        }
-    }
-
     private List<String> getCliArgs(ExtensionContext context) {
         Launch annotation = context.getRequiredTestMethod().getAnnotation(Launch.class);
 
@@ -166,7 +121,4 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         return Collections.emptyList();
     }
 
-    private DistributionTest getDistributionConfig(ExtensionContext context) {
-        return context.getTestClass().get().getDeclaredAnnotation(DistributionTest.class);
-    }
 }
