@@ -30,15 +30,20 @@ import java.util.Arrays;
  */
 public class HashUtils {
 
-    // See "at_hash" and "c_hash" in OIDC specification
-    public static String oidcHash(String jwtAlgorithmName, String input) {
+    // See:
+    // - "at_hash" and "c_hash" in OIDC specification (full = false)
+    // - "ath" in DPoP specification (full = true)
+    public static String accessTokenHash(String jwtAlgorithmName, String input, boolean full) {
         byte[] inputBytes = input.getBytes(StandardCharsets.UTF_8);
         String javaAlgName = JavaAlgorithm.getJavaAlgorithmForHash(jwtAlgorithmName);
         byte[] hash = hash(javaAlgName, inputBytes);
 
-        return encodeHashToOIDC(hash);
+        return encodeHashToOIDC(hash, full);
     }
 
+    public static String accessTokenHash(String jwtAlgorithmName, String input) {
+        return HashUtils.accessTokenHash(jwtAlgorithmName, input, false);
+    }
 
     public static byte[] hash(String javaAlgorithmName, byte[] inputBytes) {
         try {
@@ -50,9 +55,12 @@ public class HashUtils {
         }
     }
 
-
     public static String encodeHashToOIDC(byte[] hash) {
-        int hashLength = hash.length / 2;
+        return encodeHashToOIDC(hash, false);
+    }
+
+    public static String encodeHashToOIDC(byte[] hash, boolean full) {
+        int hashLength = full ? hash.length : hash.length / 2;
         byte[] hashInput = Arrays.copyOf(hash, hashLength);
 
         return Base64Url.encode(hashInput);
