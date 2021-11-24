@@ -17,7 +17,8 @@
 
 package org.keycloak.protocol.oidc;
 
-import java.util.HashMap;
+import static org.keycloak.representations.IDToken.NONCE;
+
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
@@ -43,6 +44,7 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -50,6 +52,7 @@ import org.keycloak.models.TokenRevocationStoreProvider;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
@@ -57,6 +60,7 @@ import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenResponseMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
+import org.keycloak.protocol.oidc.utils.OIDCTokenChangeUtils;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
@@ -73,10 +77,18 @@ import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -90,8 +102,6 @@ import java.util.stream.Stream;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-
-import static org.keycloak.representations.IDToken.NONCE;
 
 /**
  * Stateless object that creates tokens and manages oauth access codes
@@ -531,6 +541,141 @@ public class TokenManager {
         return token;
     }
 
+    public AccessToken completeIntrospectableAccessToken(AccessToken inputAccessToken, KeycloakSession session,
+                                                         RealmModel realm) {
+        Map<String, Object> otherClaims = inputAccessToken.getOtherClaims();
+        if (otherClaims == null) {
+            return inputAccessToken;
+        }
+        Object introspectableClaimsObj = otherClaims.get(Constants.INTROSPECTABLE_CLAIMS_CLAIM_NAME);
+        if (introspectableClaimsObj == null) {
+            return inputAccessToken;
+        }
+
+        if (!(introspectableClaimsObj instanceof String || introspectableClaimsObj instanceof List)) {
+            logger.warnf("Invalid value for claim %s for token with subject %s: %s",
+                    Constants.INTROSPECTABLE_CLAIMS_CLAIM_NAME, inputAccessToken.getSubject(), introspectableClaimsObj);
+            return inputAccessToken;
+        }
+
+        Set<String> introspectableClaims;
+        if (introspectableClaimsObj instanceof String) {
+            introspectableClaims = Collections.singleton((String) introspectableClaimsObj);
+        } else {
+            introspectableClaims = new HashSet<>();
+            try {
+                ((List<?>) introspectableClaimsObj).forEach(introspectableClaim -> {
+                    introspectableClaims.add((String) introspectableClaim);
+                });
+            } catch (ClassCastException cce) {
+                logger.warnf(cce, "Invalid value for claim %s for token with subject %s: %s",
+                        Constants.INTROSPECTABLE_CLAIMS_CLAIM_NAME, inputAccessToken.getSubject(), introspectableClaimsObj);
+                return inputAccessToken;
+            }
+        }
+
+        if (introspectableClaims.isEmpty()) {
+            return inputAccessToken;
+        }
+
+        /*
+         * the full access token might contain invalid metadata such as wrong iat and exp, so we cannot use it as the
+         * result token. Instead, we copy specific claims to the result, which is based on the input.
+         */
+        final AccessToken fullAccessToken = getFullToken(session, inputAccessToken, realm);
+        AccessToken resultAccessToken = clone(inputAccessToken);
+        resultAccessToken.getOtherClaims().remove(Constants.INTROSPECTABLE_CLAIMS_CLAIM_NAME);
+
+        ObjectNode resultAccessTokenObject = convertAccessTokenToJson(resultAccessToken);
+        OIDCTokenChangeUtils.copyClaims(convertAccessTokenToJson(fullAccessToken), resultAccessTokenObject, introspectableClaims);
+        resultAccessToken = readAccessTokenFromJson(resultAccessTokenObject);
+
+        return resultAccessToken;
+    }
+
+    private static AccessToken clone(AccessToken accessToken) {
+        ObjectNode jsonObject = convertAccessTokenToJson(accessToken);
+        return readAccessTokenFromJson(jsonObject);
+    }
+
+    private static AccessToken readAccessTokenFromJson(ObjectNode jsonObject) {
+        try {
+            return JsonSerialization.mapper.readerFor(AccessToken.class).readValue(jsonObject);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static ObjectNode convertAccessTokenToJson(AccessToken accessToken) {
+        try {
+            return JsonSerialization.createObjectNode(accessToken);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private AccessToken getFullToken(KeycloakSession keycloakSession, final AccessToken inputAccessToken,
+            RealmModel realm) {
+        AuthenticationSessionModel authSession = null;
+        AuthenticationSessionManager authSessionManager = new AuthenticationSessionManager(keycloakSession);
+        try {
+            keycloakSession.setAttribute(Constants.SKIP_ACCESS_TOKEN_SHORTENER_SESSION_ATTRIBUTE, true);
+
+            ClientModel client = realm.getClientByClientId(inputAccessToken.getIssuedFor());
+
+            UserSessionModel userSession;
+            ClientSessionContext clientSessionCtx;
+            if (inputAccessToken.getSessionState() == null) {
+                UserModel user = TokenManager.lookupUserFromStatelessToken(keycloakSession, realm, inputAccessToken);
+
+                RootAuthenticationSessionModel rootAuthSession =
+                        authSessionManager.createAuthenticationSession(realm, false);
+                authSession = rootAuthSession.createAuthenticationSession(client);
+
+                authSession.setAuthenticatedUser(user);
+                authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+                authSession.setClientNote(OIDCLoginProtocol.ISSUER, inputAccessToken.getIssuer());
+                authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, inputAccessToken.getScope());
+
+                userSession =
+                        keycloakSession.sessions().createUserSession(authSession.getParentSession().getId(),
+                                realm, user, user.getUsername(),
+                                keycloakSession.getContext().getConnection().getRemoteAddr(), "token-introspection",
+                                false, null, null,
+                                UserSessionModel.SessionPersistenceState.TRANSIENT);
+
+                AuthenticationManager.setClientScopesInSession(authSession);
+                clientSessionCtx =
+                        TokenManager.attachAuthenticationSession(keycloakSession, userSession, authSession);
+            } else {
+                UserSessionProvider sessions = keycloakSession.sessions();
+                userSession = sessions.getUserSession(realm, inputAccessToken.getSessionState());
+
+                if (userSession == null) {
+                    userSession = sessions.getOfflineUserSession(realm, inputAccessToken.getSessionState());
+                }
+
+                if (userSession == null) {
+                    throw new RuntimeException("No active session associated with the token");
+                }
+
+                AuthenticatedClientSessionModel clientSessionModel =
+                        userSession.getAuthenticatedClientSessions().get(client.getId());
+
+                clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSessionModel,
+                        keycloakSession);
+            }
+
+            return createClientAccessToken(keycloakSession, realm, client, userSession.getUser(), userSession,
+                    clientSessionCtx);
+        } finally {
+            if (authSession != null) {
+                authSessionManager.removeAuthenticationSession(realm, authSession, false);
+            }
+
+            keycloakSession.removeAttribute(Constants.SKIP_ACCESS_TOKEN_SHORTENER_SESSION_ATTRIBUTE);
+        }
+    }
 
     public static ClientSessionContext attachAuthenticationSession(KeycloakSession session, UserSessionModel userSession, AuthenticationSessionModel authSession) {
         ClientModel client = authSession.getClient();

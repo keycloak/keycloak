@@ -130,4 +130,6 @@ public final class Constants {
     public static final String CLIENT_PROFILES = "client-policies.profiles";
     public static final String CLIENT_POLICIES = "client-policies.policies";
 
+    public static final String INTROSPECTABLE_CLAIMS_CLAIM_NAME = "isc";
+    public static final String SKIP_ACCESS_TOKEN_SHORTENER_SESSION_ATTRIBUTE = "skipAccessTokenShortener";
 }

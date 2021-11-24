@@ -18,6 +18,7 @@
 org.keycloak.protocol.oidc.mappers.UserAttributeMapper
 org.keycloak.protocol.oidc.mappers.FullNameMapper
 org.keycloak.protocol.oidc.mappers.UserPropertyMapper
+org.keycloak.protocol.oidc.mappers.AccessTokenShortenerMapper
 org.keycloak.protocol.oidc.mappers.AddressMapper
 org.keycloak.protocol.oidc.mappers.HardcodedClaim
 org.keycloak.protocol.oidc.mappers.HardcodedRole

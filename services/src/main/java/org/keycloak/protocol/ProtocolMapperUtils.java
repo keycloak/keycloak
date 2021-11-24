@@ -80,8 +80,11 @@ public class ProtocolMapperUtils {
     // Add roles to tokens finally
     public static final int PRIORITY_ROLE_MAPPER = 40;
 
-    // Script mapper goes last, so it can access the roles in the token
+    // Script mapper goes after roles, so it can access the roles in the token
     public static final int PRIORITY_SCRIPT_MAPPER = 50;
+
+    // Shortener mapper goes last, so it can access all token content
+    public static final int PRIORITY_ACCESS_TOKEN_SHORTENER = 60;
 
     public static String getUserModelValue(UserModel user, String propertyName) {
 

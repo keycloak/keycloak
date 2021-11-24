@@ -17,7 +17,6 @@
  */
 package org.keycloak.protocol.oidc;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jboss.logging.Logger;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
@@ -29,6 +28,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.Urls;
 import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -55,14 +56,16 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
             ObjectNode tokenMetadata;
 
             if (accessToken != null) {
-                tokenMetadata = JsonSerialization.createObjectNode(accessToken);
-                tokenMetadata.put("client_id", accessToken.getIssuedFor());
+                AccessToken introspectedAccessToken = completeIntrospectableClaims(accessToken);
+                tokenMetadata = JsonSerialization.createObjectNode(introspectedAccessToken);
 
-                if (!tokenMetadata.has("username")) {
-                    if (accessToken.getPreferredUsername() != null) {
-                        tokenMetadata.put("username", accessToken.getPreferredUsername());
+                tokenMetadata.put("client_id", introspectedAccessToken.getIssuedFor());
+
+                if (tokenMetadata.get("username") == null) {
+                    if (introspectedAccessToken.getPreferredUsername() != null) {
+                        tokenMetadata.put("username", introspectedAccessToken.getPreferredUsername());
                     } else {
-                        UserModel userModel = session.users().getUserById(realm, accessToken.getSubject());
+                        UserModel userModel = session.users().getUserById(realm, introspectedAccessToken.getSubject());
                         if (userModel != null) {
                             tokenMetadata.put("username", userModel.getUsername());
                         }
@@ -78,6 +81,10 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
         } catch (Exception e) {
             throw new RuntimeException("Error creating token introspection response.", e);
         }
+    }
+
+    private AccessToken completeIntrospectableClaims(final AccessToken inputToken) {
+        return tokenManager.completeIntrospectableAccessToken(inputToken, session, realm);
     }
 
     protected AccessToken verifyAccessToken(String token) {
