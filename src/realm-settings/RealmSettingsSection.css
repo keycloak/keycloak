@@ -265,3 +265,7 @@ input#kc-scopes {
   min-width: 585px;
   padding-left: none;
 }
+
+.kc-join-group-modal-check {
+  margin-right: var(--pf-global--spacer--sm);
+}

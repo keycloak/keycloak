@@ -38,7 +38,7 @@ import {
   COMPONENTS,
   isValidComponentType,
 } from "../components/dynamic/components";
-import { MultivaluedScopesComponent } from "../components/dynamic/MultivaluedScopesComponent";
+import { MultivaluedChipsComponent } from "../components/dynamic/MultivaluedChipsComponent";
 import { MultivaluedRoleComponent } from "../components/dynamic/MultivaluedRoleComponent";
 export type ItemType = { value: string };
 
@@ -92,7 +92,8 @@ export default function NewClientPolicyCondition() {
       const property = properties.find((p) => p.name === key);
       if (
         property?.type === "MultivaluedString" &&
-        property.name !== "scopes"
+        property.name !== "scopes" &&
+        property.name !== "groups"
       ) {
         form.setValue(formKey, convertToMultiline(value));
       } else if (property?.name === "client-scopes") {
@@ -135,7 +136,9 @@ export default function NewClientPolicyCondition() {
 
     const writeConfig = () => {
       return conditionProperties.reduce((r: any, p) => {
-        p.type === "MultivaluedString" && p.name !== "scopes"
+        p.type === "MultivaluedString" &&
+        p.name !== "scopes" &&
+        p.name !== "groups"
           ? (r[p.name!] = toValue(configValues[p.name!]))
           : (r[p.name!] = configValues[p.name!]);
         return r;
@@ -300,8 +303,19 @@ export default function NewClientPolicyCondition() {
                   conditionName === "client-scopes")
               ) {
                 return (
-                  <MultivaluedScopesComponent
+                  <MultivaluedChipsComponent
                     defaultValue="offline_access"
+                    {...property}
+                  />
+                );
+              } else if (
+                property.name === "groups" &&
+                (conditionType === "client-updater-source-groups" ||
+                  conditionName === "client-updater-source-groups")
+              ) {
+                return (
+                  <MultivaluedChipsComponent
+                    defaultValue="topgroup"
                     {...property}
                   />
                 );

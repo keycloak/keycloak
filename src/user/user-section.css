@@ -15,6 +15,11 @@ kc-consents-chip-group .pf-c-chip-group__list {
 button#kc-join-groups-button {
   height: min-content;
 }
+
+.kc-join-group-modal-check {
+  margin-right: var(--pf-global--spacer--sm);
+}
+
 .join-group-dialog-row-disabled {
   cursor: not-allowed;
 }

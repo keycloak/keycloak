@@ -203,7 +203,7 @@ export const GroupTable = () => {
       {move && (
         <GroupPickerDialog
           type="selectOne"
-          filterGroups={[move]}
+          filterGroups={[move.name!]}
           text={{
             title: "groups:moveToGroup",
             ok: "groups:moveHere",

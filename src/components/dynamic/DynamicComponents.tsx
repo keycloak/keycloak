@@ -13,7 +13,7 @@ export const DynamicComponents = ({ properties }: DynamicComponentProps) => (
   <>
     {properties.map((property) => {
       const componentType = property.type!;
-      if (isValidComponentType(componentType)) {
+      if (isValidComponentType(componentType) && property.name !== "scopes") {
         const Component = COMPONENTS[componentType];
         return <Component key={property.name} {...property} />;
       } else {

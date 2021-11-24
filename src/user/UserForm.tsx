@@ -145,13 +145,13 @@ export const UserForm = ({
             setOpen(false);
           }}
           onClose={() => setOpen(false)}
-          filterGroups={selectedGroups}
+          filterGroups={selectedGroups.map((group) => group.name!)}
         />
       )}
       {user?.id ? (
         <>
           <FormGroup label={t("common:id")} fieldId="kc-id" isRequired>
-            <TextInput id={user?.id} value={user?.id} type="text" isReadOnly />
+            <TextInput id={user.id} value={user.id} type="text" isReadOnly />
           </FormGroup>
           <FormGroup label={t("createdAt")} fieldId="kc-created-at" isRequired>
             <TextInput
