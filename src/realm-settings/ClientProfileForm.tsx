@@ -37,6 +37,7 @@ import { toAddExecutor } from "./routes/AddExecutor";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { ClientProfileParams, toClientProfile } from "./routes/ClientProfile";
 import { toExecutor } from "./routes/Executor";
+import { toClientPolicies } from "./routes/ClientPolicies";
 
 type ClientProfileForm = Required<ClientProfileRepresentation>;
 
@@ -175,7 +176,7 @@ export default function ClientProfileForm() {
             globalProfiles,
           });
           addAlert(t("deleteClientSuccess"), AlertVariant.success);
-          history.push(`/${realm}/realm-settings/clientPolicies`);
+          history.push(toClientPolicies({ realm }));
         } catch (error) {
           addError(t("deleteClientError"), error);
         }
