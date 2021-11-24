@@ -2198,7 +2198,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 accessTokenResponse = doBackchannelAuthenticationTokenRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, response.getAuthReqId(), client);
                 AccessToken accessToken = oauth.verifyToken(accessTokenResponse.getAccessToken(), AccessToken.class);
                 assertThat(accessTokenResponse.getStatusCode(), is(equalTo(200)));
-                assertThat(accessToken.getCertConf().getCertThumbprint(), notNullValue());
+                assertThat(accessToken.getConfirmation().getCertThumbprint(), notNullValue());
             }
 
             // Check logout.

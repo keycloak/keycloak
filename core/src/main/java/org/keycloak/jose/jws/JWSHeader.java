@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.keycloak.jose.JOSEHeader;
+import org.keycloak.jose.jwk.JWK;
 
 import java.io.IOException;
 
@@ -43,6 +44,9 @@ public class JWSHeader implements JOSEHeader {
 
     @JsonProperty("kid")
     private String keyId;
+
+    @JsonProperty("jwk")
+    private JWK key;
 
     public JWSHeader() {
     }
@@ -79,6 +83,10 @@ public class JWSHeader implements JOSEHeader {
 
     public String getKeyId() {
         return keyId;
+    }
+
+    public JWK getKey() {
+        return key;
     }
 
     private static final ObjectMapper mapper = new ObjectMapper();
