@@ -80,7 +80,7 @@ $ sudo subscription-manager repos --enable=jb-eap-6-for-rhel-<RHEL_VERSION>-serv
 +
 [source,bash,subs="attributes+"]
 ----
-$ sudo yum install keycloak-adapter-sso7_5eap6
+$ sudo yum install keycloak-adapter-sso7_5-eap6
 ----
 +
 NOTE: The default EAP_HOME path for the RPM installation is /opt/rh/eap6/root/usr/share/wildfly.
