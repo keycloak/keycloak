@@ -24,9 +24,45 @@ import org.keycloak.provider.Provider;
  */
 public interface TimerProvider extends Provider {
 
-    public void schedule(Runnable runnable, long intervalMillis, String taskName);
+    /**
+     * Schedules the execution of the given {@code runnable}. The first execution happens after {@code intervalMillis} millis
+     * and repeats every {@code intervalMillis} millis.
+     *
+     * @param runnable
+     * @param intervalMillis
+     * @param taskName
+     */
+    void schedule(Runnable runnable, long intervalMillis, String taskName);
 
-    public void scheduleTask(ScheduledTask scheduledTask, long intervalMillis, String taskName);
+    /**
+     * Schedules the execution of the given {@code runnable}. The first execution happens after {@code delayMillis} millis
+     * and repeats every {@code intervalMillis} millis.
+     *
+     * @param runnable
+     * @param intervalMillis
+     * @param taskName
+     */
+    void schedule(Runnable runnable, long delayMillis, long intervalMillis, String taskName);
+
+    /**
+     * Schedules the execution of the given {@code scheduledTask}. The first execution happens after {@code intervalMillis} millis
+     * and repeats every {@code intervalMillis} millis.
+     *
+     * @param scheduledTask
+     * @param intervalMillis
+     * @param taskName
+     */
+    void scheduleTask(ScheduledTask scheduledTask, long intervalMillis, String taskName);
+
+    /**
+     * Schedules the execution of the given {@code scheduledTask}. The first execution happens after {@code delayMillis} millis
+     * and repeats every {@code intervalMillis} millis.
+     *
+     * @param scheduledTask
+     * @param intervalMillis
+     * @param taskName
+     */
+    void scheduleTask(ScheduledTask scheduledTask, long delayMillis, long intervalMillis, String taskName);
 
 
     /**
@@ -35,7 +71,7 @@ public interface TimerProvider extends Provider {
      * @param taskName
      * @return existing task or null if task under this name doesn't exist
      */
-    public TimerTaskContext cancelTask(String taskName);
+    TimerTaskContext cancelTask(String taskName);
 
 
     interface TimerTaskContext {
