@@ -1,5 +1,7 @@
 package org.keycloak.it.utils;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.common.Version;
 import org.testcontainers.containers.GenericContainer;
@@ -11,6 +13,7 @@ import org.testcontainers.containers.wait.strategy.WaitStrategy;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 
 import java.io.File;
+import java.net.URL;
 import java.time.Duration;
 import java.util.List;
 
@@ -34,10 +37,18 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         if (!distributionFile.exists()) {
             throw new RuntimeException("Distribution archive " + distributionFile.getAbsolutePath() +" doesn't exists");
         }
+        // TODO: decide on one approach
+        File dockerFile = new File("./Dockerfile");
+        try {
+            dockerFile = File.createTempFile("keycloakx", "Dockerfile");
+            FileUtils.copyURLToFile(new URL("https://raw.githubusercontent.com/keycloak/keycloak-containers/main/server-x/Dockerfile"), dockerFile);
+        } catch (Exception cause) {
+            throw new RuntimeException("Cannot download upstream Dockerfile", cause);
+        }
         return new GenericContainer(
                 new ImageFromDockerfile()
                         .withFileFromFile("keycloakx.tar.gz", distributionFile)
-                        .withFileFromFile("Dockerfile", new File("./Dockerfile"))
+                        .withFileFromFile("Dockerfile", dockerFile)
                         .withBuildArg("KEYCLOAK_DIST", "keycloakx.tar.gz")
         )
                 .withExposedPorts(8080)
