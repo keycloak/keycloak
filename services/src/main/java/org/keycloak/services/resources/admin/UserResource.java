@@ -954,7 +954,7 @@ public class UserResource {
         if (clientSession == null) {
             return null;
         }
-        rep.setLastAccess(clientSession.getTimestamp());
+        rep.setLastAccess(Time.toMillis(clientSession.getTimestamp()));
         return rep;
     }
 }
