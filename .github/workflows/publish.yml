@@ -24,7 +24,17 @@ jobs:
           check-latest: true
           cache: maven
 
-      - name: Build and deploy Admin UI
-        run: mvn --batch-mode deploy
+      - name: Build Admin UI
+        run: mvn --batch-mode install
+
+      - name: Prune existing snapshots
+        uses: actions/delete-package-versions@v2
+        with:
+          package-name: org.keycloak.keycloak-admin-ui
+          num-old-versions-to-delete: 100
+          delete-only-pre-release-versions: true
+
+      - name: Publish Admin UI
+        run: mvn --batch-mode deploy -Dskip.npm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
