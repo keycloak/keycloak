@@ -27,7 +27,9 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.keycloak.it.junit5.extension.DistributionTest.ReInstall;
+import org.keycloak.it.utils.DockerKeycloakDistribution;
 import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.it.utils.RawKeycloakDistribution;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
@@ -65,7 +67,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
 
         if (distConfig != null) {
             if (distConfig.keepAlive()) {
-                dist.stopIfRunning();
+                dist.stop();
             }
         }
 
@@ -76,17 +78,32 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     public void afterAll(ExtensionContext context) throws Exception {
         if (dist != null) {
             // just to make sure the server is stopped after all tests
-            dist.stopIfRunning();
+            dist.stop();
         }
         super.afterAll(context);
     }
 
-    private KeycloakDistribution createDistribution(DistributionTest config) {
-        KeycloakDistribution distribution = new KeycloakDistribution();
+    private String kcDistribution = System.getProperty("kcDistribution", "raw");
 
-        distribution.setReCreate(!ReInstall.NEVER.equals(config.reInstall()));
-        distribution.setDebug(config.debug());
-        distribution.setManualStop(config.keepAlive());
+    private KeycloakDistribution createDistribution(DistributionTest config) {
+        KeycloakDistribution distribution = null;
+
+        switch (kcDistribution) {
+            case "docker":
+                distribution = new DockerKeycloakDistribution(
+                        config.debug(),
+                        config.keepAlive(),
+                        !ReInstall.NEVER.equals(config.reInstall())
+                );
+                break;
+            case "raw":
+            default:
+                distribution = new RawKeycloakDistribution(
+                    config.debug(),
+                    config.keepAlive(),
+                    !ReInstall.NEVER.equals(config.reInstall())
+                );
+        }
 
         return distribution;
     }
