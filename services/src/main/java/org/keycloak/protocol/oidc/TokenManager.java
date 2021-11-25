@@ -25,6 +25,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenCategory;
 import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.AuthenticatorUtil;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.cluster.ClusterProvider;
@@ -73,6 +74,7 @@ import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
+import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.IdentityBrokerService;
@@ -155,6 +157,12 @@ public class TokenManager {
         UserModel user = userSession.getUser();
         if (user == null) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", "Unknown user");
+        }
+
+        String bruteForceError = AuthenticatorUtils.getDisabledByBruteForceEventError(session.getProvider(BruteForceProtector.class), session, realm, user);
+        if (bruteForceError != null) {
+            logger.debugf("Refresh token attempt for user disabled by BFD with error: %s", bruteForceError);
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "User disabled", "User disabled by BFD");
         }
 
         if (!user.isEnabled()) {

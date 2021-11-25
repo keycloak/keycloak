@@ -173,6 +173,10 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
     }
 
+    public OAuthClient.AccessTokenResponse refreshTestToken(String refreshToken, String password) {
+        return oauth.doRefreshTokenRequest(refreshToken, password);
+    }
+
     protected void clearUserFailures() throws Exception {
         adminClient.realm("test").attackDetection().clearBruteForceForUser(findUser("test-user@localhost").getId());
     }
@@ -384,6 +388,25 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
              user.setEnabled(true);
              updateUser(user);
          }
+    }
+
+    @Test
+    public void testRefreshingTokenForTemporaryDisabledUsersWithPasswordGrantType() throws Exception {
+        // Make sure the user can login and has valid refresh token
+        String totpSecret = totp.generateTOTP("totpSecret");
+        OAuthClient.AccessTokenResponse response = getTestToken("password", totpSecret);
+        Assert.assertNotNull(response.getAccessToken());
+        Assert.assertNotNull(response.getRefreshToken());
+        Assert.assertNull(response.getError());
+        events.clear();
+
+        lockUserWithPasswordGrant();
+
+        // Make sure refresh token doesn't work for disabled user
+        response = refreshTestToken(response.getRefreshToken(), "password");
+        Assert.assertNull(response.getAccessToken());
+        Assert.assertNull(response.getRefreshToken());
+        Assert.assertNotNull(response.getError());
     }
 
     @Test
