@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ * Copyright 2020 Red Hat, Inc. and/or its affiliates
+  ~ * and other contributors as indicated by the @author tags.
+  ~ *
+  ~ * Licensed under the Apache License, Version 2.0 (the "License");
+  ~ * you may not use this file except in compliance with the License.
+  ~ * You may obtain a copy of the License at
+  ~ *
+  ~ * http://www.apache.org/licenses/LICENSE-2.0
+  ~ *
+  ~ * Unless required by applicable law or agreed to in writing, software
+  ~ * distributed under the License is distributed on an "AS IS" BASIS,
+  ~ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ * See the License for the specific language governing permissions and
+  ~ * limitations under the License.
+  -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+    
+    <changeSet author="keycloak" id="16.0.0-KEYCLOAK-8955-IDX_USER_REALM_SACL_NON_MSSQL">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <dbms type="!mssql"/> <!-- mssql uses an filtered index, see changeSet below -->
+        </preConditions>
+        <createIndex  tableName="USER_ENTITY" indexName="IDX_USER_REALM_SACL">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+            <column name="SERVICE_ACCOUNT_CLIENT_LINK" type="VARCHAR(255)"/>
+        </createIndex>
+    </changeSet>
+    
+    <changeSet author="keycloak" id="16.0.0-KEYCLOAK-8955-IDX_USER_REALM_SACL_MSSQL">
+        <!-- this is the mssql specific code, for other databases see changeSet above -->
+        <!-- use filtered index on mssql, since SERVICE_ACCOUNT_CLIENT_LINK is expected to be NULL for most entries -->
+        <sql dbms="mssql" 
+             endDelimiter="\nGO"
+             splitStatements="true"
+             stripComments="true">
+                CREATE NONCLUSTERED INDEX IDX_USER_REALM_SACL 
+                    ON USER_ENTITY(REALM_ID, SERVICE_ACCOUNT_CLIENT_LINK) 
+                    WHERE SERVICE_ACCOUNT_CLIENT_LINK IS NOT NULL
+        </sql>
+    </changeSet>
+
+    <changeSet author="keycloak" id="16.0.0-KEYCLOAK-8955-IDX_ADMIN_EVENT_TIME">
+        <!-- improve loading time of admin event list -->
+        <createIndex tableName="ADMIN_EVENT_ENTITY" indexName="IDX_ADMIN_EVENT_TIME">
+            <column name="ADMIN_EVENT_TIME" type="DESC"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
