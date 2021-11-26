@@ -27,7 +27,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
-import org.hamcrest.collection.IsArrayContaining;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Assert;
 import org.junit.Before;
@@ -98,11 +97,12 @@ import java.util.concurrent.TimeUnit;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.hamcrest.Matchers.hasItemInArray;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
@@ -1291,7 +1291,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
     }
 
     private void validateTokenECDSASignature(String expectedAlg) {
-        assertThat(ECDSASignatureProvider.ECDSA.values(), IsArrayContaining.hasItemInArray(ECDSASignatureProvider.ECDSA.valueOf(expectedAlg)));
+        assertThat(ECDSASignatureProvider.ECDSA.values(), hasItemInArray(ECDSASignatureProvider.ECDSA.valueOf(expectedAlg)));
 
         try {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, expectedAlg);
