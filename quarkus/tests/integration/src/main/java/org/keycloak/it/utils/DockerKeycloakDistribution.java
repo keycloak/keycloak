@@ -37,8 +37,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         if (!distributionFile.exists()) {
             throw new RuntimeException("Distribution archive " + distributionFile.getAbsolutePath() +" doesn't exists");
         }
-        // TODO: decide on one approach
-        File dockerFile = new File("./Dockerfile");
+        File dockerFile = null;
         try {
             dockerFile = File.createTempFile("keycloakx", "Dockerfile");
             FileUtils.copyURLToFile(new URL("https://raw.githubusercontent.com/keycloak/keycloak-containers/main/server-x/Dockerfile"), dockerFile);
