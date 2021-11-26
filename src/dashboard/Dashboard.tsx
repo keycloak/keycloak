@@ -21,8 +21,8 @@ import {
   Title,
 } from "@patternfly/react-core";
 import React from "react";
-import { useTranslation } from "react-i18next";
-import _ from "lodash";
+import { Trans, useTranslation } from "react-i18next";
+import { xor } from "lodash";
 
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
@@ -60,7 +60,7 @@ const Dashboard = () => {
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
 
-  const enabledFeatures = _.xor(
+  const enabledFeatures = xor(
     serverInfo.profileInfo?.disabledFeatures,
     serverInfo.profileInfo?.experimentalFeatures,
     serverInfo.profileInfo?.previewFeatures
@@ -78,7 +78,15 @@ const Dashboard = () => {
     <>
       <PageSection variant="light">
         <TextContent className="pf-u-mr-sm">
-          <Text component="h1">{toUpperCase(realm)} realm</Text>
+          <Text component="h1">
+            {t("realmName", { name: toUpperCase(realm) })}
+          </Text>
+          <Text>
+            <Trans t={t} i18nKey="adminUiVersion">
+              <strong>Admin UI version</strong>
+              {{ version: environment.commitHash }}
+            </Trans>
+          </Text>
         </TextContent>
       </PageSection>
       <PageSection>
@@ -160,9 +168,6 @@ const Dashboard = () => {
             </Card>
           </GridItem>
         </Grid>
-        <Text className="pf-u-font-size-sm pf-u-color-200 pf-u-mt-sm">
-          {t("adminUiVersion", { version: environment.commitHash })}
-        </Text>
       </PageSection>
     </>
   );
