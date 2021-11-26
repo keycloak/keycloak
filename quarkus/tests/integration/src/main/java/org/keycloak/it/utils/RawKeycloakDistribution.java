@@ -26,6 +26,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyManagementException;
@@ -252,7 +253,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
     private Path prepareDistribution() {
         try {
-            Path distRootPath = Paths.get(System.getProperty("java.io.tmpdir")).resolve("kc-tests");
+            Path distRootPath = Files.createTempDirectory("keycloak-x-it").resolve("kc-tests");
             File distFile = new File("../../../distribution/server-x-dist/target/keycloak.x-" + Version.VERSION_KEYCLOAK + ".zip");
             if (!distFile.exists()) {
                 throw new RuntimeException("Distribution archive " + distFile.getAbsolutePath() +" doesn't exists");
