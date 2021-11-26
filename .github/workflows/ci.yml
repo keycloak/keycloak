@@ -412,6 +412,12 @@ jobs:
       - name: Prepare the local distribution archives
         run: mvn clean install -DskipTests -Pdistribution
 
+      - name: Run Quarkus Tests in Docker
+        run: |
+          mvn clean install -nsu -B -f quarkus/tests/pom.xml -Dkc.quarkus.tests.enable=true -Dkc.quarkus.tests.dist=docker | misc/log/trimmer.sh
+          TEST_RESULT=${PIPESTATUS[0]}
+          exit $TEST_RESULT
+
       - name: Run Quarkus Integration Tests
         run: |
           mvn clean install -nsu -B -f quarkus/tests/pom.xml | misc/log/trimmer.sh
