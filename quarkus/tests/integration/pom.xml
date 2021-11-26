@@ -83,7 +83,7 @@
             <id>skipTests</id>
             <activation>
                 <property>
-                    <name>kc.quarkus.tests</name>
+                    <name>kc.quarkus.tests.enable</name>
                     <value>true</value>
                 </property>
             </activation>
