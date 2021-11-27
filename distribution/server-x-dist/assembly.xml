@@ -102,7 +102,7 @@
             <outputDirectory>conf</outputDirectory>
         </file>
         <file>
-            <source>target/keycloak-quarkus-server-app/META-INF/keycloak.properties</source>
+            <source>../../quarkus/runtime/src/main/resources/META-INF/keycloak.properties</source>
             <outputDirectory>conf</outputDirectory>
         </file>
     </files>

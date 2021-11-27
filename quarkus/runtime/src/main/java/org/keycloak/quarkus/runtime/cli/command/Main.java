@@ -22,6 +22,7 @@ import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
+import org.keycloak.quarkus.runtime.configuration.KeycloakPropertiesConfigSource;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -33,7 +34,10 @@ import picocli.CommandLine.Option;
                 "",
                 "Find more information at: https://www.keycloak.org/docs/latest"
         },
-        description = "%nUse this command-line tool to manage your Keycloak cluster.",
+        description = {
+                "%nUse this command-line tool to manage your Keycloak cluster.",
+                "Make sure the command is available on your \"PATH\" or prefix it with \"./\" (e.g.: \"./${COMMAND-NAME}\") to execute from the current folder."
+        },
         footerHeading = "Examples:",
         footer = { "  Start the server in development mode for local development or testing:%n%n"
                 + "      $ ${COMMAND-NAME} start-dev%n%n"
@@ -53,9 +57,6 @@ import picocli.CommandLine.Option;
             "JVM: ${java.version} (${java.vendor} ${java.vm.name} ${java.vm.version})",
             "OS: ${os.name} ${os.version} ${os.arch}"
         },
-        optionListHeading = "Options:",
-        commandListHeading = "Commands:",
-        abbreviateSynopsis = true,
         subcommands = {
                 Build.class,
                 Start.class,
@@ -104,6 +105,6 @@ public final class Main {
             description = "Set the path to a configuration file. By default, configuration properties are read from the \"keycloak.properties\" file in the \"conf\" directory.",
             paramLabel = "file")
     public void setConfigFile(String path) {
-        System.setProperty(KeycloakConfigSourceProvider.KEYCLOAK_CONFIG_FILE_PROP, path);
+        System.setProperty(KeycloakPropertiesConfigSource.KEYCLOAK_CONFIG_FILE_PROP, path);
     }
 }

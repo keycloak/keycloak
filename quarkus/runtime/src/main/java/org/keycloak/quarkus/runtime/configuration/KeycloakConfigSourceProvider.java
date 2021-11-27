@@ -17,9 +17,7 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -34,8 +32,6 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider {
 
     private static final Logger log = Logger.getLogger(KeycloakConfigSourceProvider.class);
 
-    public static final String KEYCLOAK_CONFIG_FILE_ENV = "KC_CONFIG_FILE";
-    public static final String KEYCLOAK_CONFIG_FILE_PROP = NS_KEYCLOAK_PREFIX + "config.file";
     private static final List<ConfigSource> CONFIG_SOURCES = new ArrayList<>();
     public static PersistedConfigSource PERSISTED_CONFIG_SOURCE;
 
@@ -57,14 +53,10 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider {
         PERSISTED_CONFIG_SOURCE = new PersistedConfigSource(getPersistedConfigFile());
         CONFIG_SOURCES.add(PERSISTED_CONFIG_SOURCE);
 
-        Path configFile = getConfigurationFile();
+        CONFIG_SOURCES.addAll(new KeycloakPropertiesConfigSource.InFileSystem().getConfigSources(Thread.currentThread().getContextClassLoader()));
 
-        if (configFile != null) {
-            CONFIG_SOURCES.add(new KeycloakPropertiesConfigSource.InFileSystem(configFile));
-        } else {
-            log.debug("Loading the default server configuration");
-            CONFIG_SOURCES.add(new KeycloakPropertiesConfigSource.InJar());
-        }
+        // by enabling this config source we are able to rely on the default settings when running tests
+        CONFIG_SOURCES.addAll(new KeycloakPropertiesConfigSource.InClassPath().getConfigSources(Thread.currentThread().getContextClassLoader()));
     }
 
     /**
@@ -74,31 +66,6 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider {
     public static void reload() {
         CONFIG_SOURCES.clear();
         initializeSources();
-    }
-
-    private static Path getConfigurationFile() {
-        String filePath = System.getProperty(KEYCLOAK_CONFIG_FILE_PROP);
-
-        if (filePath == null)
-            filePath = System.getenv(KEYCLOAK_CONFIG_FILE_ENV);
-
-        if (filePath == null) {
-            String homeDir = Environment.getHomeDir();
-
-            if (homeDir != null) {
-                File file = Paths.get(homeDir, "conf", KeycloakPropertiesConfigSource.KEYCLOAK_PROPERTIES).toFile();
-
-                if (file.exists()) {
-                    filePath = file.getAbsolutePath();
-                }
-            }
-        }
-
-        if (filePath == null) {
-            return null;
-        }
-        
-        return Paths.get(filePath);
     }
 
     public static Path getPersistedConfigFile() {

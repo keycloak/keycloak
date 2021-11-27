@@ -29,7 +29,6 @@ import org.keycloak.quarkus.runtime.InitializationException;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.integration.QuarkusPlatform;
 
-import io.quarkus.runtime.Quarkus;
 import io.smallrye.config.ConfigValue;
 import picocli.CommandLine;
 import picocli.CommandLine.ParseResult;
@@ -80,8 +79,6 @@ public final class ExecutionExceptionHandler implements CommandLine.IExecutionEx
                 logError(errorWriter, "For more details run the same command passing the '--verbose' option. Also you can use '--help' to see the details about the usage of the particular command.");
             }
         }
-
-        Quarkus.asyncExit(1);
     }
 
     private void dumpException(PrintWriter errorWriter, Throwable cause) {

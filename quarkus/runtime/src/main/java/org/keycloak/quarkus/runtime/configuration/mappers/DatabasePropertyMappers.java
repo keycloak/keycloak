@@ -20,13 +20,13 @@ final class DatabasePropertyMappers {
                         .mapFrom("db")
                         .to("quarkus.hibernate-orm.dialect")
                         .isBuildTimeProperty(true)
-                        .transformer((db, context) -> Database.getDialect(db).orElse(null))
+                        .transformer((db, context) -> Database.getDialect(db).orElse(Database.getDialect("h2-file").get()))
                         .hidden(true)
                         .build(),
                 builder().from("db-driver")
                         .mapFrom("db")
                         .to("quarkus.datasource.jdbc.driver")
-                        .transformer((db, context) -> Database.getDriver(db).orElse(null))
+                        .transformer((db, context) -> Database.getDriver(db).orElse(Database.getDriver("h2-file").get()))
                         .hidden(true)
                         .build(),
                 builder().from("db").
@@ -111,7 +111,7 @@ final class DatabasePropertyMappers {
 
             addInitializationException(invalidDatabaseVendor(db, Database.getAliases()));
 
-            return null;
+            return "h2";
         };
     }
 

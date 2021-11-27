@@ -17,98 +17,124 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-import java.io.Closeable;
-import java.io.FileNotFoundException;
-import java.io.IOError;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
+import java.net.URI;
+import java.net.URL;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.regex.Pattern;
 
-import org.jboss.logging.Logger;
+import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
+import org.keycloak.quarkus.runtime.Environment;
 
+import io.smallrye.config.AbstractLocationConfigSourceLoader;
 import io.smallrye.config.PropertiesConfigSource;
+import io.smallrye.config.common.utils.ConfigSourceUtil;
 
 import static org.keycloak.common.util.StringPropertyReplacer.replaceProperties;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getMappedPropertyName;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS;
 
 /**
  * A configuration source for {@code keycloak.properties}.
  */
-public abstract class KeycloakPropertiesConfigSource extends PropertiesConfigSource {
-
-    private static final Logger log = Logger.getLogger(KeycloakPropertiesConfigSource.class);
+public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSourceLoader {
 
     private static final Pattern DOT_SPLIT = Pattern.compile("\\.");
-    static final String KEYCLOAK_PROPERTIES = "keycloak.properties";
+    private static final String KEYCLOAK_CONFIG_FILE_ENV = "KC_CONFIG_FILE";
+    private static final String KEYCLOAK_PROPERTIES = "keycloak.properties";
+    public static final String KEYCLOAK_CONFIG_FILE_PROP = NS_KEYCLOAK_PREFIX + "config.file";
 
-    KeycloakPropertiesConfigSource(InputStream is, int ordinal) {
-        super(readProperties(is), KEYCLOAK_PROPERTIES, ordinal);
+    @Override
+    protected String[] getFileExtensions() {
+        return new String[] { "properties" };
     }
 
-    private static Map<String, String> readProperties(final InputStream is) {
-        if (is == null) {
-            return Collections.emptyMap();
-        }
-        try (Closeable ignored = is) {
-            Properties properties = new Properties();
-            properties.load(is);
-            return transform((Map) properties);
-        } catch (IOException e) {
-            throw new IOError(e);
-        }
+    @Override
+    protected ConfigSource loadConfigSource(URL url, int ordinal) throws IOException {
+        return new PropertiesConfigSource(transform(ConfigSourceUtil.urlToMap(url)), KEYCLOAK_PROPERTIES, ordinal);
     }
 
-    public static final class InJar extends KeycloakPropertiesConfigSource {
-        public InJar() {
-            super(openStream(), 250);
+    public static class InClassPath extends KeycloakPropertiesConfigSource implements ConfigSourceProvider {
+
+        @Override
+        public List<ConfigSource> getConfigSources(final ClassLoader classLoader) {
+            return loadConfigSources("META-INF/keycloak.properties", 240, classLoader);
         }
 
-        private static InputStream openStream() {
-            ClassLoader cl = Thread.currentThread().getContextClassLoader();
-            if (cl == null) {
-                cl = KeycloakPropertiesConfigSource.class.getClassLoader();
-            }
-            InputStream is;
-            String fileName = "META-INF/" + KEYCLOAK_PROPERTIES;
-            if (cl == null) {
-                is = ClassLoader.getSystemResourceAsStream(fileName);
-            } else {
-                is = cl.getResourceAsStream(fileName);
-            }
-            if (is != null) {
-                log.debug("Loading the server configuration from the classpath");
-            }
-            return is;
-        }
-    }
-
-    public static final class InFileSystem extends KeycloakPropertiesConfigSource {
-
-        public InFileSystem(Path path) {
-            super(openStream(path), 250);
-        }
-
-        private static InputStream openStream(Path path) {
-            if (path == null) {
-                throw new IllegalArgumentException("Configuration file path can not be null");
-            }
+        @Override
+        protected List<ConfigSource> tryClassPath(URI uri, int ordinal, ClassLoader classLoader) {
             try {
-                log.debugf("Loading the server configuration from %s", path);
-                return Files.newInputStream(path);
-            } catch (NoSuchFileException | FileNotFoundException e) {
-                throw new IllegalArgumentException("Configuration file not found at [" + path + "]");
-            } catch (IOException e) {
-                throw new RuntimeException("Unexpected error reading configuration file at [" + path + "]", e);
+                return super.tryClassPath(uri, ordinal, classLoader);
+            } catch (RuntimeException e) {
+                Throwable cause = e.getCause();
+
+                if (cause instanceof NoSuchFileException) {
+                    // configuration step happens before classpath is updated, and it might happen that
+                    // provider JARs are still in classpath index but removed from the providers dir
+                    return Collections.emptyList();
+                }
+
+                throw e;
             }
+        }
+
+        @Override
+        protected List<ConfigSource> tryFileSystem(final URI uri, final int ordinal) {
+            return Collections.emptyList();
+        }
+    }
+
+    public static class InFileSystem extends KeycloakPropertiesConfigSource implements ConfigSourceProvider {
+
+        @Override
+        public List<ConfigSource> getConfigSources(final ClassLoader classLoader) {
+            Path configFile = getConfigurationFile();
+
+            if (configFile == null) {
+                return Collections.emptyList();
+            }
+
+            return loadConfigSources(configFile.toUri().toString(), 250, classLoader);
+        }
+
+        @Override
+        protected List<ConfigSource> tryClassPath(final URI uri, final int ordinal, final ClassLoader classLoader) {
+            return Collections.emptyList();
+        }
+
+        private Path getConfigurationFile() {
+            String filePath = System.getProperty(KEYCLOAK_CONFIG_FILE_PROP);
+
+            if (filePath == null)
+                filePath = System.getenv(KEYCLOAK_CONFIG_FILE_ENV);
+
+            if (filePath == null) {
+                String homeDir = Environment.getHomeDir();
+
+                if (homeDir != null) {
+                    File file = Paths.get(homeDir, "conf", KeycloakPropertiesConfigSource.KEYCLOAK_PROPERTIES).toFile();
+
+                    if (file.exists()) {
+                        filePath = file.getAbsolutePath();
+                    }
+                }
+            }
+
+            if (filePath == null) {
+                return null;
+            }
+
+            return Paths.get(filePath);
         }
     }
 

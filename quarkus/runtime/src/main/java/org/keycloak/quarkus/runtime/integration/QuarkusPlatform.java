@@ -31,6 +31,8 @@ import org.keycloak.platform.PlatformProvider;
 import org.keycloak.quarkus.runtime.InitializationException;
 import org.keycloak.quarkus.runtime.Environment;
 
+import io.quarkus.runtime.Quarkus;
+
 public class QuarkusPlatform implements PlatformProvider {
 
     private static final Logger log = Logger.getLogger(QuarkusPlatform.class);
@@ -56,6 +58,9 @@ public class QuarkusPlatform implements PlatformProvider {
             for (Throwable inner : platform.getDeferredExceptions()) {
                 quarkusException.addSuppressed(inner);
             }
+            // reset this instance, mainly deferred exceptions, so that the subsequent starts do not fail due to previous errors
+            // this is mainly important when the server is running in test mode
+            platform.reset();
             throw quarkusException;
         }
     }
@@ -91,7 +96,7 @@ public class QuarkusPlatform implements PlatformProvider {
 
     @Override
     public void exit(Throwable cause) {
-        throw new RuntimeException(cause);
+        Quarkus.asyncExit(1);
     }
 
     /**
@@ -161,5 +166,9 @@ public class QuarkusPlatform implements PlatformProvider {
             }
         }
         return tmpDir;
+    }
+
+    private void reset() {
+        deferredExceptions.clear();
     }
 }
