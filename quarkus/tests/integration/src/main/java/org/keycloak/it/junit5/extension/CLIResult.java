@@ -102,7 +102,7 @@ public interface CLIResult extends LaunchResult {
             }
 
             // not very reliable, we should be comparing the output with some static reference to the help message.
-            assertTrue(getOutput().trim().equals(outStream.toString().trim()),
+            assertTrue(getOutput().trim().contains(outStream.toString().trim()),
                     () -> "The Output:\n " + getOutput() + "\ndoesnt't contains " + outStream.toString().trim());
         } catch (IOException cause) {
             throw new RuntimeException("Failed to assert help", cause);

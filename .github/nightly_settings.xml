@@ -1,0 +1,48 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                      https://maven.apache.org/xsd/settings-1.0.0.xsd">
+  <mirrors>
+    <mirror>
+     <id>jboss-public-repository-group-https</id>
+     <mirrorOf>jboss-public-repository-group</mirrorOf>
+     <name>Jboss public https</name>
+     <url>https://repository.jboss.org/nexus/content/groups/public/</url>
+     </mirror>
+   </mirrors>
+
+   <profiles>
+      <profile>
+        <id>snapshot</id>
+        <repositories>
+          <repository>
+            <id>s01.oss.sonatype.org</id>
+            <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
+            <releases>
+              <enabled>true</enabled>
+            </releases>
+            <snapshots>
+              <enabled>true</enabled>
+            </snapshots>
+          </repository>
+        </repositories>
+        <pluginRepositories>
+          <pluginRepository>
+            <id>s01.oss.sonatype.org</id>
+            <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
+            <releases>
+              <enabled>true</enabled>
+            </releases>
+            <snapshots>
+              <enabled>true</enabled>
+            </snapshots>
+          </pluginRepository>
+        </pluginRepositories>
+      </profile>
+  </profiles>
+  
+  <activeProfiles>
+    <activeProfile>snapshot</activeProfile>
+  </activeProfiles>
+  
+</settings>
