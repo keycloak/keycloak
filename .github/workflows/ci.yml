@@ -5,6 +5,11 @@ on: [push, pull_request]
 env:
   DEFAULT_JDK_VERSION: 11
 
+concurrency:
+  # Only run once for latest commit per ref and cancel other (previous) runs.
+  group: ci-keycloak-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Build
@@ -76,7 +81,7 @@ jobs:
           name: keycloak-artifacts.zip
       - name: Run unit tests
         run: |
-          if ! mvn install -nsu -B -DskipTestsuite -DskipExamples -f pom.xml; then
+          if ! mvn install -nsu -B -DskipTestsuite -DskipQuarkus -DskipExamples -f pom.xml; then
             find . -path '*/target/surefire-reports/*.xml' | zip -q reports-unit-tests.zip -@
             exit 1
           fi
@@ -403,9 +408,13 @@ jobs:
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
-      - name: Run Quarkus Tests
+
+      - name: Prepare the local distribution archives
+        run: mvn clean install -DskipTests -Pdistribution
+
+      - name: Run Quarkus Integration Tests
         run: |
-          mvn clean install -nsu -B -f quarkus/tests/pom.xml  | misc/log/trimmer.sh
+          mvn clean install -nsu -B -f quarkus/tests/pom.xml | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}
           find . -path '*/target/surefire-reports/*.xml' | zip -q reports-quarkus-tests.zip -@
           exit $TEST_RESULT

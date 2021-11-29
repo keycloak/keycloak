@@ -32,8 +32,18 @@
     <artifactId>keycloak-quarkus-test-parent</artifactId>
     <packaging>pom</packaging>
 
-    <modules>
-        <module>integration</module>
-    </modules>
+    <profiles>
+        <profile>
+            <id>noIntegrations</id>
+            <activation>
+                <property>
+                    <name>!skipQuarkus</name>
+                </property>
+            </activation>
+            <modules>
+                <module>integration</module>
+            </modules>
+        </profile>
+    </profiles>
 
 </project>

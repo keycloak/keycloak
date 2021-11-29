@@ -31,17 +31,24 @@ class BuildCommandDistTest {
     @Test
     @Launch({ "build" })
     void resetConfig(LaunchResult result) {
-        assertTrue(result.getOutput().contains("Updating the configuration and installing your custom providers, if any. Please wait."));
-        assertTrue(result.getOutput().contains("Quarkus augmentation completed"));
-        assertTrue(result.getOutput().contains("Server configuration updated and persisted. Run the following command to review the configuration:"));
-        assertTrue(result.getOutput().contains("kc.sh show-config"));
+        assertTrue(result.getOutput().contains("Updating the configuration and installing your custom providers, if any. Please wait."),
+                () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
+        assertTrue(result.getOutput().contains("Quarkus augmentation completed"),
+                () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
+        assertTrue(result.getOutput().contains("Server configuration updated and persisted. Run the following command to review the configuration:"),
+                () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
+        assertTrue(result.getOutput().contains("kc.sh show-config"),
+                () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
     }
 
     @Test
     @Launch({ "--profile=dev", "build" })
     void failIfDevProfile(LaunchResult result) {
-        assertTrue(result.getErrorOutput().contains("ERROR: Failed to run 'build' command."));
-        assertTrue(result.getErrorOutput().contains("ERROR: You can not 'build' the server using the 'dev' configuration profile. Please re-build the server first, using 'kc.sh build' for the default production profile, or using 'kc.sh build --profile=<profile>' with a profile more suitable for production."));
-        assertTrue(result.getErrorOutput().contains("For more details run the same command passing the '--verbose' option. Also you can use '--help' to see the details about the usage of the particular command."));
+        assertTrue(result.getErrorOutput().contains("ERROR: Failed to run 'build' command."),
+                () -> "The Error Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
+        assertTrue(result.getErrorOutput().contains("ERROR: You can not 'build' the server using the 'dev' configuration profile. Please re-build the server first, using 'kc.sh build' for the default production profile, or using 'kc.sh build --profile=<profile>' with a profile more suitable for production."),
+                () -> "The Error Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
+        assertTrue(result.getErrorOutput().contains("For more details run the same command passing the '--verbose' option. Also you can use '--help' to see the details about the usage of the particular command."),
+                () -> "The Error Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
     }
 }
