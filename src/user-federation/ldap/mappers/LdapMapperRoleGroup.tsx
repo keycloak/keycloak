@@ -33,6 +33,7 @@ export const LdapMapperRoleGroup = ({
   const [isRetrieveStratDropdownOpen, setIsRetrieveStratDropdownOpen] =
     useState(false);
   const [isClientIdDropdownOpen, setIsClientIdDropdownOpen] = useState(false);
+  const [vendorType, setVendorType] = useState<string | undefined>();
   const [clients, setClients] = useState<ClientRepresentation[]>([]);
   const { id, mapperId } = useParams<UserFederationLdapMapperParams>();
 
@@ -62,6 +63,7 @@ export const LdapMapperRoleGroup = ({
     (fetchedComponent) => {
       if (fetchedComponent) {
         const vendor = fetchedComponent.config?.vendor[0];
+        setVendorType(vendor);
         if (mapperId === "new" && vendor === "ad") {
           form.setValue(
             isRole
@@ -384,70 +386,107 @@ export const LdapMapperRoleGroup = ({
           )}
         ></Controller>
       </FormGroup>
-      <FormGroup
-        label={
-          isRole
-            ? t("userRolesRetrieveStrategy")
-            : t("userGroupsRetrieveStrategy")
-        }
-        labelIcon={
-          <HelpItem
-            helpText={
-              isRole
-                ? helpText("userRolesRetrieveStrategyHelp")
-                : helpText("userGroupsRetrieveStrategyHelp")
-            }
-            forLabel={
-              isRole
-                ? t("userRolesRetrieveStrategy")
-                : t("userGroupsRetrieveStrategy")
-            }
-            forID="kc-user-retrieve-strategy"
-          />
-        }
-        fieldId="kc-user-retrieve-strategy"
-      >
-        <Controller
-          name={
-            isRole
-              ? "config.user-roles-retrieve-strategy[0]"
-              : "config.user-groups-retrieve-strategy[0]"
+      {isRole ? (
+        <FormGroup
+          label={t("userRolesRetrieveStrategy")}
+          labelIcon={
+            <HelpItem
+              helpText={helpText("userRolesRetrieveStrategyHelp")}
+              forLabel={t("userRolesRetrieveStrategy")}
+              forID="kc-user-retrieve-strategy"
+            />
           }
-          defaultValue="LOAD_ROLES_BY_MEMBER_ATTRIBUTE"
-          control={form.control}
-          render={({ onChange, value }) => (
-            <Select
-              toggleId="kc-user-retrieve-strategy"
-              onToggle={() =>
-                setIsRetrieveStratDropdownOpen(!isRetrieveStratDropdownOpen)
-              }
-              isOpen={isRetrieveStratDropdownOpen}
-              onSelect={(_, value) => {
-                onChange(value as string);
-                setIsRetrieveStratDropdownOpen(false);
-              }}
-              selections={value}
-              variant={SelectVariant.single}
-            >
-              <SelectOption key={0} value="LOAD_ROLES_BY_MEMBER_ATTRIBUTE">
-                LOAD_ROLES_BY_MEMBER_ATTRIBUTE
-              </SelectOption>
-              <SelectOption
-                key={1}
-                value="GET_ROLES_FROM_USER_MEMBEROF_ATTRIBUTE"
+          fieldId="kc-user-retrieve-strategy"
+        >
+          <Controller
+            name="config.user-roles-retrieve-strategy[0]"
+            defaultValue="LOAD_ROLES_BY_MEMBER_ATTRIBUTE"
+            control={form.control}
+            render={({ onChange, value }) => (
+              <Select
+                toggleId="kc-user-retrieve-strategy"
+                onToggle={() =>
+                  setIsRetrieveStratDropdownOpen(!isRetrieveStratDropdownOpen)
+                }
+                isOpen={isRetrieveStratDropdownOpen}
+                onSelect={(_, value) => {
+                  onChange(value as string);
+                  setIsRetrieveStratDropdownOpen(false);
+                }}
+                selections={value}
+                variant={SelectVariant.single}
               >
-                GET_ROLES_FROM_USER_MEMBEROF_ATTRIBUTE
-              </SelectOption>
-              <SelectOption
-                key={2}
-                value="LOAD_ROLES_BY_MEMBER_ATTRIBUTE_RECURSIVELY"
+                <SelectOption key={0} value="LOAD_ROLES_BY_MEMBER_ATTRIBUTE">
+                  LOAD_ROLES_BY_MEMBER_ATTRIBUTE
+                </SelectOption>
+                <SelectOption
+                  key={1}
+                  value="GET_ROLES_FROM_USER_MEMBEROF_ATTRIBUTE"
+                >
+                  GET_ROLES_FROM_USER_MEMBEROF_ATTRIBUTE
+                </SelectOption>
+                <SelectOption
+                  hidden={vendorType !== "ad"}
+                  key={2}
+                  value="LOAD_ROLES_BY_MEMBER_ATTRIBUTE_RECURSIVELY"
+                >
+                  LOAD_ROLES_BY_MEMBER_ATTRIBUTE_RECURSIVELY
+                </SelectOption>
+              </Select>
+            )}
+          ></Controller>
+        </FormGroup>
+      ) : (
+        <FormGroup
+          label={t("userGroupsRetrieveStrategy")}
+          labelIcon={
+            <HelpItem
+              helpText={helpText("userGroupsRetrieveStrategyHelp")}
+              forLabel={t("userGroupsRetrieveStrategy")}
+              forID="kc-user-retrieve-strategy"
+            />
+          }
+          fieldId="kc-user-retrieve-strategy"
+        >
+          <Controller
+            name="config.user-roles-retrieve-strategy[0]"
+            defaultValue="LOAD_GROUPS_BY_MEMBER_ATTRIBUTE"
+            control={form.control}
+            render={({ onChange, value }) => (
+              <Select
+                toggleId="kc-user-retrieve-strategy"
+                onToggle={() =>
+                  setIsRetrieveStratDropdownOpen(!isRetrieveStratDropdownOpen)
+                }
+                isOpen={isRetrieveStratDropdownOpen}
+                onSelect={(_, value) => {
+                  onChange(value as string);
+                  setIsRetrieveStratDropdownOpen(false);
+                }}
+                selections={value}
+                variant={SelectVariant.single}
               >
-                LOAD_ROLES_BY_MEMBER_ATTRIBUTE_RECURSIVELY
-              </SelectOption>
-            </Select>
-          )}
-        ></Controller>
-      </FormGroup>
+                <SelectOption key={0} value="LOAD_GROUPS_BY_MEMBER_ATTRIBUTE">
+                  LOAD_GROUPS_BY_MEMBER_ATTRIBUTE
+                </SelectOption>
+                <SelectOption
+                  key={1}
+                  value="GET_GROUPS_FROM_USER_MEMBEROF_ATTRIBUTE"
+                >
+                  GET_GROUPS_FROM_USER_MEMBEROF_ATTRIBUTE
+                </SelectOption>
+                <SelectOption
+                  hidden={vendorType !== "ad"}
+                  key={2}
+                  value="LOAD_GROUPS_BY_MEMBER_ATTRIBUTE_RECURSIVELY"
+                >
+                  LOAD_GROUPS_BY_MEMBER_ATTRIBUTE_RECURSIVELY
+                </SelectOption>
+              </Select>
+            )}
+          ></Controller>
+        </FormGroup>
+      )}
       <FormGroup
         label={t("memberofLdapAttribute")}
         labelIcon={
