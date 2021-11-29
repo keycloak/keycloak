@@ -52,6 +52,7 @@ import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.group.MapGroupEntity;
+import org.keycloak.models.map.group.MapGroupEntityImpl;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntity;
 import org.keycloak.models.map.realm.MapRealmEntity;
 import org.keycloak.models.map.role.MapRoleEntity;
@@ -104,6 +105,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
       .genericCloner(Serialization::from)
       .constructorDC(MapClientEntityImpl.class,         MapClientEntityImpl::new)
       .constructor(MapProtocolMapperEntity.class,       MapProtocolMapperEntityImpl::new)
+      .constructor(MapGroupEntityImpl.class,            MapGroupEntityImpl::new)
       .build();
 
     public static final Map<Class<?>, String> MODEL_TO_NAME = new HashMap<>();
@@ -153,7 +155,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
         INTERFACE_TO_IMPL.put(MapClientEntity.class, MapClientEntityImpl.class);
 //        INTERFACE_TO_IMPL.put(MapClientScopeEntity.class, MapClientScopeEntityImpl.class);
 //        INTERFACE_TO_IMPL.put(MapClientEntity.class, MapClientEntityImpl.class);
-//        INTERFACE_TO_IMPL.put(MapGroupEntity.class, MapGroupEntityImpl.class);
+        INTERFACE_TO_IMPL.put(MapGroupEntity.class, MapGroupEntityImpl.class);
 //        INTERFACE_TO_IMPL.put(MapRealmEntity.class, MapRealmEntityImpl.class);
 //        INTERFACE_TO_IMPL.put(MapRoleEntity.class, MapRoleEntityImpl.class);
 //        INTERFACE_TO_IMPL.put(MapRootAuthenticationSessionEntity.class, MapRootAuthenticationSessionEntityImpl.class);
