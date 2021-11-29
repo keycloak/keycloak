@@ -129,14 +129,10 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
 
   public render(): React.ReactNode {
     return (
-      <ContentPage title={Msg.localize('applicationsPageTitle')}>
-        <PageSection isFilled={false} variant={PageSectionVariants.light}>
-          <Stack>
-            <StackItem>
-              <TextContent>Manage your application permissions.</TextContent>
-            </StackItem>
-          </Stack>
-        </PageSection>
+      <ContentPage
+        title={Msg.localize('applicationsPageTitle')}
+        introMessage="Manage your application permissions."
+      >
         <PageSection isFilled variant={PageSectionVariants.light}>
           <Stack hasGutter>
             <DataList id="applications-list" aria-label={Msg.localize('applicationsPageTitle')} isCompact>
