@@ -77,7 +77,7 @@
     "husky": "^7.0.4",
     "jest": "^27.3.1",
     "lint-staged": "^12.1.1",
-    "postcss": "^8.3.11",
+    "postcss": "^8.4.4",
     "postcss-import": "^14.0.2",
     "prettier": "^2.4.1",
     "progress-promise": "^0.0.6",
