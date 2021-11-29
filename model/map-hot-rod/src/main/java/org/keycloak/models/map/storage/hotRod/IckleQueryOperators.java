@@ -31,7 +31,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
- * This class provides knowledge on how to build Ickle query where clauses for specified {@link ModelCriteriaBuilder.Operator}. 
+ * This class provides knowledge on how to build Ickle query where clauses for specified {@link ModelCriteriaBuilder.Operator}.
  * <p/>
  * For example,
  * <p/>

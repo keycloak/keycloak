@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.common;
+package org.keycloak.models.map.storage.hotRod.common;
 
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.query.dsl.Query;

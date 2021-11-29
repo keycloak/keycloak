@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.map.client;
+package org.keycloak.models.map.storage.hotRod.client;
 
 import org.infinispan.protostream.annotations.ProtoField;
 
