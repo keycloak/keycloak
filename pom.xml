@@ -2030,6 +2030,18 @@
         </profile>
 
         <profile>
+            <id>quarkus</id>
+            <activation>
+                <property>
+                    <name>!skipQuarkus</name>
+                </property>
+            </activation>
+            <modules>
+                <module>quarkus</module>
+            </modules>
+        </profile>
+
+        <profile>
             <id>examples</id>
             <activation>
                 <property>

@@ -81,7 +81,7 @@ jobs:
           name: keycloak-artifacts.zip
       - name: Run unit tests
         run: |
-          if ! mvn install -nsu -B -DskipTestsuite -DskipExamples -f pom.xml; then
+          if ! mvn install -nsu -B -DskipTestsuite -DskipQuarkus -DskipExamples -f pom.xml; then
             find . -path '*/target/surefire-reports/*.xml' | zip -q reports-unit-tests.zip -@
             exit 1
           fi
