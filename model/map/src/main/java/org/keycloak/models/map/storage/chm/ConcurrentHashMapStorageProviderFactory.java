@@ -56,6 +56,7 @@ import org.keycloak.models.map.group.MapGroupEntityImpl;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntity;
 import org.keycloak.models.map.realm.MapRealmEntity;
 import org.keycloak.models.map.role.MapRoleEntity;
+import org.keycloak.models.map.role.MapRoleEntityImpl;
 import com.fasterxml.jackson.databind.JavaType;
 import java.io.File;
 import java.io.IOException;
@@ -106,6 +107,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
       .constructorDC(MapClientEntityImpl.class,         MapClientEntityImpl::new)
       .constructor(MapProtocolMapperEntity.class,       MapProtocolMapperEntityImpl::new)
       .constructor(MapGroupEntityImpl.class,            MapGroupEntityImpl::new)
+      .constructor(MapRoleEntityImpl.class,             MapRoleEntityImpl::new)
       .build();
 
     public static final Map<Class<?>, String> MODEL_TO_NAME = new HashMap<>();
@@ -154,10 +156,9 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
     static {
         INTERFACE_TO_IMPL.put(MapClientEntity.class, MapClientEntityImpl.class);
 //        INTERFACE_TO_IMPL.put(MapClientScopeEntity.class, MapClientScopeEntityImpl.class);
-//        INTERFACE_TO_IMPL.put(MapClientEntity.class, MapClientEntityImpl.class);
         INTERFACE_TO_IMPL.put(MapGroupEntity.class, MapGroupEntityImpl.class);
 //        INTERFACE_TO_IMPL.put(MapRealmEntity.class, MapRealmEntityImpl.class);
-//        INTERFACE_TO_IMPL.put(MapRoleEntity.class, MapRoleEntityImpl.class);
+        INTERFACE_TO_IMPL.put(MapRoleEntity.class, MapRoleEntityImpl.class);
 //        INTERFACE_TO_IMPL.put(MapRootAuthenticationSessionEntity.class, MapRootAuthenticationSessionEntityImpl.class);
 //        INTERFACE_TO_IMPL.put(MapUserLoginFailureEntity.class, MapUserLoginFailureEntityImpl.class);
 //        INTERFACE_TO_IMPL.put(MapUserEntity.class, MapUserEntityImpl.class);

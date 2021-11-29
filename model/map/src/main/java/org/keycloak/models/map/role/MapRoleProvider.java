@@ -66,9 +66,10 @@ public class MapRoleProvider implements RoleProvider {
 
         LOG.tracef("addRealmRole(%s, %s, %s)%s", realm, id, name, getShortStackTrace());
 
-        MapRoleEntity entity = new MapRoleEntity(id, realm.getId());
-        entity.setName(name);
+        MapRoleEntity entity = new MapRoleEntityImpl();
+        entity.setId(id);
         entity.setRealmId(realm.getId());
+        entity.setName(name);
         if (tx.read(entity.getId()) != null) {
             throw new ModelDuplicateException("Role exists: " + id);
         }
@@ -121,7 +122,9 @@ public class MapRoleProvider implements RoleProvider {
 
         LOG.tracef("addClientRole(%s, %s, %s)%s", client, id, name, getShortStackTrace());
 
-        MapRoleEntity entity = new MapRoleEntity(id, client.getRealm().getId());
+        MapRoleEntity entity = new MapRoleEntityImpl();
+        entity.setId(id);
+        entity.setRealmId(client.getRealm().getId());
         entity.setName(name);
         entity.setClientRole(true);
         entity.setClientId(client.getId());
