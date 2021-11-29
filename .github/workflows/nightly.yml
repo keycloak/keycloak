@@ -1,0 +1,66 @@
+name: Keycloak Nightly CI
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+
+env:
+  DEFAULT_JDK_VERSION: 11
+
+concurrency:
+  # Only run once for latest commit per ref and cancel other (previous) runs.
+  group: ci-keycloak-ci-nightly-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    # Prevent this nightly job to run on forks
+    if: github.repository == 'keycloak/keycloak'
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v1
+        with:
+          java-version: ${{ env.DEFAULT_JDK_VERSION }}
+      - name: Update maven settings
+        run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
+      - name: Cache Maven packages
+        id: cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.m2/repository
+          key: cache-1-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: cache-1-${{ runner.os }}-m2
+
+      - name: Build Quarkus Nightly
+        run: |
+          cd /tmp
+          git clone --depth=2 https://github.com/quarkusio/quarkus.git
+          cd quarkus
+          export MAVEN_OPTS="-Xmx4g"
+          ./mvnw -Dquickly
+
+      - name: Set Quarkus version to Snapshot
+        run: mvn -f quarkus/pom.xml versions:set-property -DgenerateBackupPoms=false -Dproperty=quarkus.version -DnewVersion=999-SNAPSHOT
+
+      - name: Build Keycloak
+        run: |
+           mvn clean install -nsu -B -e -DskipTests -Pdistribution
+
+      - name: Run Quarkus Integration Tests
+        run: |
+          mvn clean install -nsu -B -f quarkus/tests/pom.xml | misc/log/trimmer.sh
+          TEST_RESULT=${PIPESTATUS[0]}
+          find . -path '*/target/surefire-reports/*.xml' | zip -q reports-quarkus-tests.zip -@
+          exit $TEST_RESULT
+
+      - name: Quarkus test reports
+        uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: reports-quarkus-tests
+          retention-days: 14
+          path: reports-quarkus-tests.zip
+          if-no-files-found: ignore
