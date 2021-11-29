@@ -45,6 +45,7 @@ import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
+import org.keycloak.services.clientpolicy.context.PreAuthorizationRequestContext;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.util.CacheControlUtil;
@@ -144,6 +145,12 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
         checkSsl();
         checkRealm();
+
+        try {
+            session.clientPolicy().triggerOnEvent(new PreAuthorizationRequestContext(clientId, params));
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorPageException(session, authenticationSession, cpe.getErrorStatus(), cpe.getErrorDetail());
+        }
         checkClient(clientId);
 
         request = AuthorizationEndpointRequestParserProcessor.parseRequest(event, session, client, params, AuthorizationEndpointRequestParserProcessor.EndpointType.OIDC_AUTH_ENDPOINT);
