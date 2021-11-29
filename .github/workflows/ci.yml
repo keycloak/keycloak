@@ -414,7 +414,7 @@ jobs:
 
       - name: Run Quarkus Integration Tests
         run: |
-          mvn clean install -nsu -B -f quarkus/tests/pom.xml -Dkc.quarkus.tests.enable=true | misc/log/trimmer.sh
+          mvn clean install -nsu -B -f quarkus/tests/pom.xml | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}
           find . -path '*/target/surefire-reports/*.xml' | zip -q reports-quarkus-tests.zip -@
           exit $TEST_RESULT
