@@ -25,6 +25,7 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuiltT
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfig;
 import static org.keycloak.quarkus.runtime.Environment.isDevMode;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getRuntimeProperty;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.formatValue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.isBuildTimeProperty;
 import static org.keycloak.utils.StringUtil.isNotBlank;
 import static picocli.CommandLine.Model.UsageMessageSpec.SECTION_KEY_COMMAND_LIST;
@@ -34,6 +35,7 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -49,13 +51,13 @@ import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
 import org.keycloak.common.Profile;
+import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.mappers.ConfigCategory;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.Environment;
 
-import io.quarkus.runtime.Quarkus;
 import io.smallrye.config.ConfigValue;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
@@ -118,16 +120,50 @@ public final class Picocli {
         if (hasConfigChanges()) {
             cmd.getOut().println("Changes detected in configuration. Updating the server image.");
             if(!isDevMode()) {
+                List<String> cliInput = getSanitizedCliInput();
                 cmd.getOut().printf("For an optional runtime and bypass this step, please run the '%s' command prior to starting the server:%n%n\t%s %s %s%n",
                         Build.NAME,
                         Environment.getCommand(),
                         Build.NAME,
-                        String.join(" ", asList(ARG_SPLIT.split(Environment.getConfigArgs()))) + "\n");
+                        String.join(" ", cliInput) + "\n");
             }
             return true;
         }
 
         return hasProviderChanges();
+    }
+
+    /**
+     * checks the raw cli input for possible credentials / properties which should be masked,
+     * and masks them.
+     * @return a list of potentially masked properties in CLI format, e.g. `--db-password=*******`
+     * instead of the actual passwords value.
+     */
+    private static List<String> getSanitizedCliInput() {
+
+        if(Environment.getConfigArgs().isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<String> rawCliArgs = asList(ARG_SPLIT.split(Environment.getConfigArgs()));
+        List<String> properties = new ArrayList<>();
+
+        if (!rawCliArgs.isEmpty()) {
+            for(String rawCliArg : rawCliArgs) {
+                String rawKey = rawCliArg.split("=")[0];
+                PropertyMapper mapper = PropertyMappers.getMapper(rawKey);
+                String value = rawCliArg.split("=")[1];
+
+                if (mapper != null) {
+                    value = formatValue(
+                            mapper.getFrom(),
+                            value);
+                }
+
+                properties.add(rawKey + "=" + value);
+            }
+        }
+        return properties;
     }
 
     private static void runReAugmentation(List<String> cliArgs, CommandLine cmd) {
