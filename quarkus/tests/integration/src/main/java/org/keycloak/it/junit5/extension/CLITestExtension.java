@@ -27,6 +27,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.it.utils.DockerKeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.command.Start;
@@ -82,11 +83,24 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     }
 
     private KeycloakDistribution createDistribution(DistributionTest config) {
-        KeycloakDistribution distribution = new RawKeycloakDistribution(
-            config.debug(),
-            config.keepAlive(),
-                !DistributionTest.ReInstall.NEVER.equals(config.reInstall())
-        );
+        KeycloakDistribution distribution = null;
+
+        switch (System.getProperty("kc.quarkus.tests.dist", "raw")) {
+            case "docker":
+                distribution = new DockerKeycloakDistribution(
+                        config.debug(),
+                        config.keepAlive(),
+                        !DistributionTest.ReInstall.NEVER.equals(config.reInstall())
+                );
+                break;
+            case "raw":
+            default:
+                distribution = new RawKeycloakDistribution(
+                    config.debug(),
+                    config.keepAlive(),
+                    !DistributionTest.ReInstall.NEVER.equals(config.reInstall())
+                );
+        }
 
         return distribution;
     }
