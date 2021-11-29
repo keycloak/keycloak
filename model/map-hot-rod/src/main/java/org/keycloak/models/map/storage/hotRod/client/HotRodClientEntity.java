@@ -15,12 +15,14 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.map.client;
+package org.keycloak.models.map.storage.hotRod.client;
 
 import org.infinispan.protostream.annotations.ProtoField;
+import org.keycloak.models.map.client.MapClientEntity;
+import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.common.DeepCloner;
-import org.keycloak.models.map.common.HotRodPair;
-import org.keycloak.models.map.common.Versioned;
+import org.keycloak.models.map.storage.hotRod.common.HotRodPair;
+import org.keycloak.models.map.storage.hotRod.common.Versioned;
 
 import java.util.Collection;
 import java.util.Collections;

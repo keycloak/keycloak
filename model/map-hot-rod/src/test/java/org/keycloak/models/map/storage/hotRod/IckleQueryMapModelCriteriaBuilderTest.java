@@ -19,7 +19,7 @@ package org.keycloak.models.map.storage.hotRod;
 
 import org.junit.Test;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.map.client.HotRodClientEntity;
+import org.keycloak.models.map.storage.hotRod.client.HotRodClientEntity;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 

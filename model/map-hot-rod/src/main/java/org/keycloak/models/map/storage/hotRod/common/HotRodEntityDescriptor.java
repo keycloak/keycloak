@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.map.common;
+package org.keycloak.models.map.storage.hotRod.common;
 
 import java.util.List;
 import java.util.stream.Stream;
