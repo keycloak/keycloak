@@ -168,7 +168,7 @@ export default {
     "client-updater-source-groups": {
       label: "Groups",
       tooltip:
-        "Name of groups to check. Condition evaluates to true if the entity, who creates/updates client is member of some of the specified groups. Configured groups are specified by their simple name, which must match to the name of the Keycloak group. No support for group hierarchy is used here.}",
+        "Name of groups to check. Condition evaluates to true if the entity, who creates/updates client is member of some of the specified groups. Configured groups are specified by their simple name, which must match to the name of the Keycloak group. No support for group hierarchy is used here.",
     },
     "client-updater-trusted-hosts": {
       label: "Trusted hosts",

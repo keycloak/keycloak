@@ -291,35 +291,22 @@ export default function NewClientPolicyCondition() {
           <FormProvider {...form}>
             {conditionProperties.map((property) => {
               const componentType = property.type!;
-              if (
-                property.name === "roles" &&
-                (conditionType === "client-roles" ||
-                  conditionName === "client-roles")
-              ) {
+              if (property.name === "roles") {
                 return <MultivaluedRoleComponent {...property} />;
-              } else if (
-                property.name === "scopes" &&
-                (conditionType === "client-scopes" ||
-                  conditionName === "client-scopes")
-              ) {
+              }
+
+              if (property.name === "scopes" || property.name === "groups") {
                 return (
                   <MultivaluedChipsComponent
-                    defaultValue="offline_access"
+                    defaultValue={
+                      property.name === "scopes" ? "offline_access" : "topgroup"
+                    }
                     {...property}
                   />
                 );
-              } else if (
-                property.name === "groups" &&
-                (conditionType === "client-updater-source-groups" ||
-                  conditionName === "client-updater-source-groups")
-              ) {
-                return (
-                  <MultivaluedChipsComponent
-                    defaultValue="topgroup"
-                    {...property}
-                  />
-                );
-              } else if (isValidComponentType(componentType)) {
+              }
+
+              if (isValidComponentType(componentType)) {
                 const Component = COMPONENTS[componentType];
                 return <Component key={property.name} {...property} />;
               } else {
