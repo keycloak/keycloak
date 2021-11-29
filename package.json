@@ -58,7 +58,7 @@
     "@types/file-saver": "^2.0.4",
     "@types/lodash": "^4.14.177",
     "@types/node": "^16.11.9",
-    "@types/react": "^17.0.36",
+    "@types/react": "^17.0.37",
     "@types/react-dom": "^17.0.11",
     "@types/react-router-dom": "^5.3.2",
     "@types/snowpack-env": "^2.3.4",
