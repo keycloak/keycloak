@@ -35,6 +35,7 @@ import org.keycloak.forms.login.freemarker.model.IdpReviewProfileBean;
 import org.keycloak.forms.login.freemarker.model.LoginBean;
 import org.keycloak.forms.login.freemarker.model.FrontChannelLogoutBean;
 import org.keycloak.forms.login.freemarker.model.OAuthGrantBean;
+import org.keycloak.forms.login.freemarker.model.PasswordPolicyBean;
 import org.keycloak.forms.login.freemarker.model.ProfileBean;
 import org.keycloak.forms.login.freemarker.model.RealmBean;
 import org.keycloak.forms.login.freemarker.model.RegisterBean;
@@ -455,6 +456,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
             attributes.put("requiredActionUrl", new RequiredActionUrlFormatterMethod(realm, baseUri));
+            attributes.put("passwordPolicy", new PasswordPolicyBean(realm));
             attributes.put("auth", new AuthenticationContextBean(context, page));
             attributes.put(Constants.EXECUTION, execution);
 
