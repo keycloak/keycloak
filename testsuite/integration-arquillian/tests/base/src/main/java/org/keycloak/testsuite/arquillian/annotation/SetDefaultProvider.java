@@ -33,4 +33,6 @@ public @interface SetDefaultProvider {
      * the default provider is only set after enabling a feature.
      */
     boolean beforeEnableFeature() default true;
+
+    String defaultProvider() default "";
 }

@@ -176,12 +176,13 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         commands.add("--auto-build");
         commands.add("--http-enabled=true");
 
-        if (configuration.getDebugPort() > 0) {
+        if (Boolean.parseBoolean(System.getProperty("auth.server.debug", "false"))) {
             commands.add("--debug");
-            commands.add(Integer.toString(configuration.getDebugPort()));
-        } else if (Boolean.parseBoolean(System.getProperty("auth.server.debug", "false"))) {
-            commands.add("--debug");
-            commands.add(System.getProperty("auth.server.debug.port", "5005"));
+            if (configuration.getDebugPort() > 0) {
+                commands.add(Integer.toString(configuration.getDebugPort()));
+            } else {
+                commands.add(System.getProperty("auth.server.debug.port", "5005"));
+            }
         }
 
         commands.add("--http-port=" + configuration.getBindHttpPort());
@@ -194,16 +195,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         commands.add("--cluster=" + System.getProperty("auth.server.quarkus.cluster.config", "local"));
         commands.addAll(getAdditionalBuildArgs());
 
-        if (!containsUserProfileSpiConfiguration(commands)) {
-            // ensure that at least one user profile provider is configured
-            commands.add("--spi-user-profile-provider=declarative-user-profile");
-        }
-
         return commands.toArray(new String[0]);
-    }
-
-    private boolean containsUserProfileSpiConfiguration(List<String> commands) {
-        return commands.stream().anyMatch(s -> s.startsWith("--spi-user-profile-provider="));
     }
 
     private void waitForReadiness() throws MalformedURLException, LifecycleException {
