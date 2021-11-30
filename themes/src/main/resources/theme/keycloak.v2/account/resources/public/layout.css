@@ -12,5 +12,9 @@
     width: 120px;
     height: 50px;
   }
+}
 
+/* Account Page screen */
+.personal-info-form .pf-c-form__group-control {
+  max-width: 600px;
 }

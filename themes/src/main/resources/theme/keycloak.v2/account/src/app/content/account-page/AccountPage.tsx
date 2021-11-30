@@ -162,7 +162,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                 <PageSection isFilled variant={PageSectionVariants.light}>
                     <Form
                         onSubmit={(event) => this.handleSubmit(event)}
-                        isWidthLimited
+                        className="personal-info-form"
                     >
                         {!this.isRegistrationEmailAsUsername && (
                             <FormGroup
