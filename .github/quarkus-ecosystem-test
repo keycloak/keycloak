@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -e
+
+mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
+
+# update Quarkus dependencies
+# TODO: aligning parent pom versions with upstream Quarkus breaks compilation
+mvn versions:compare-dependencies \
+    -f quarkus/pom.xml \
+    -DremotePom=io.quarkus:quarkus-bom:${QUARKUS_VERSION} \
+    -DupdatePropertyVersions=true \
+    -DupdateDependencies=true \
+    -DgenerateBackupPoms=false
+
+# update Quarkus version
+mvn -f quarkus/pom.xml versions:set-property -DgenerateBackupPoms=false -Dproperty=quarkus.version -DnewVersion=${QUARKUS_VERSION}
+
+# Generate the Keycloak distribution
+mvn clean install -DskipTests -Pdistribution
+
+# run the tests
+mvn clean test -f quarkus/tests/pom.xml

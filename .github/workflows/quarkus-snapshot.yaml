@@ -1,0 +1,52 @@
+name: "Quarkus ecosystem CI"
+on:
+  watch:
+    types: [started]
+
+  # For this CI to work, ECOSYSTEM_CI_TOKEN needs to contain a GitHub with rights to close the Quarkus issue that the user/bot has opened,
+  # while 'ECOSYSTEM_CI_REPO_PATH' needs to be set to the corresponding path in the 'quarkusio/quarkus-ecosystem-ci' repository
+
+env:
+  ECOSYSTEM_CI_REPO: quarkusio/quarkus-ecosystem-ci
+  ECOSYSTEM_CI_REPO_FILE: context.yaml
+  JAVA_VERSION: 11
+
+  #########################
+  # Repo specific setting #
+  #########################
+
+  ECOSYSTEM_CI_REPO_PATH:  keycloak-quarkus
+
+jobs:
+  quarkus-main:
+    name: "Build against latest Quarkus snapshot"
+    runs-on: ubuntu-latest
+    if: github.actor == 'quarkusbot'
+
+    steps:
+      - name: Install yq
+        run: sudo add-apt-repository ppa:rmescandon/yq && sudo apt update && sudo apt install yq -y
+
+      - name: Set up Java
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Checkout current repository on main
+        uses: actions/checkout@v2
+        with:
+          path: current-repo
+          ref: main
+
+      - name: Checkout Ecosystem
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ env.ECOSYSTEM_CI_REPO }}
+          ref: main
+          path: ecosystem-ci
+
+      - name: Setup and Run Tests against Quarkus main
+        run: ./ecosystem-ci/setup-and-test
+        env:
+          ECOSYSTEM_CI_TOKEN: ${{ secrets.ECOSYSTEM_CI_TOKEN }}
+  
