@@ -44,6 +44,10 @@ public class HotRodTypesUtils {
         return new HotRodPair<>(entry.getKey(), entry.getValue());
     }
 
+    public static HotRodAttributeEntity createHotRodAttributeEntityFromMapEntry(Map.Entry<String, List<String>> entry) {
+        return new HotRodAttributeEntity(entry.getKey(), entry.getValue());
+    }
+
     public static <SetType, KeyType> boolean removeFromSetByMapKey(Set<SetType> set, KeyType key, Function<SetType, KeyType> keyGetter) {
         if (set == null || set.isEmpty()) { return false; }
         return set.stream()
