@@ -166,5 +166,8 @@ export default {
     userLabel: "User label",
     data: "Data",
     passwordDataTitle: "Password data",
+    updateCredentialUserLabelSuccess:
+      "The user label has been changed successfully.",
+    updateCredentialUserLabelError: "Error changing user label: {{error}}",
   },
 };
