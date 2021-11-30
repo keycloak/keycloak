@@ -67,7 +67,7 @@ export const TokenLifespan = ({
             <SplitItem>
               <Select
                 variant={SelectVariant.single}
-                onToggle={(isExpanded) => setOpen(isExpanded)}
+                onToggle={setOpen}
                 isOpen={open}
                 onSelect={(_, value) => {
                   onChange(value);

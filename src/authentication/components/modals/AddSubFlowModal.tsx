@@ -151,7 +151,7 @@ export const AddSubFlowModal = ({
               <Select
                 menuAppendTo="parent"
                 toggleId="flowType"
-                onToggle={() => setOpen(!open)}
+                onToggle={setOpen}
                 onSelect={(_, value) => {
                   onChange(value as string);
                   setOpen(false);
@@ -194,9 +194,9 @@ export const AddSubFlowModal = ({
                 <Select
                   menuAppendTo="parent"
                   toggleId="provider"
-                  onToggle={(toggle) => setOpenProvider(toggle)}
+                  onToggle={setOpenProvider}
                   onSelect={(_, value) => {
-                    onChange(value as string);
+                    onChange(value.toString());
                     setOpenProvider(false);
                   }}
                   selections={value.displayName}

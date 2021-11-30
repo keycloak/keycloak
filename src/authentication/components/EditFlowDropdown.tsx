@@ -47,7 +47,7 @@ export const EditFlowDropdown = ({
         data-testid={`${execution.displayName}-edit-dropdown`}
         isOpen={open}
         toggle={
-          <DropdownToggle onToggle={(open) => setOpen(open)}>
+          <DropdownToggle onToggle={setOpen}>
             <PlusIcon />
           </DropdownToggle>
         }

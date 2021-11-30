@@ -85,7 +85,7 @@ export const SamlSignature = () => {
               render={({ onChange, value }) => (
                 <Select
                   toggleId="signatureAlgorithm"
-                  onToggle={(open) => setAlgOpen(open)}
+                  onToggle={setAlgOpen}
                   onSelect={(_, value) => {
                     onChange(value.toString());
                     setAlgOpen(false);
@@ -126,7 +126,7 @@ export const SamlSignature = () => {
               render={({ onChange, value }) => (
                 <Select
                   toggleId="signatureKeyName"
-                  onToggle={(open) => setKeyOpen(open)}
+                  onToggle={setKeyOpen}
                   onSelect={(_, value) => {
                     onChange(value.toString());
                     setKeyOpen(false);
@@ -167,7 +167,7 @@ export const SamlSignature = () => {
               render={({ onChange, value }) => (
                 <Select
                   toggleId="canonicalization"
-                  onToggle={(open) => setCanOpen(open)}
+                  onToggle={setCanOpen}
                   onSelect={(_, value) => {
                     onChange(value.toString());
                     setCanOpen(false);

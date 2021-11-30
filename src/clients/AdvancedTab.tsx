@@ -300,7 +300,7 @@ export const AdvancedTab = ({
             />
             <ExpandableSection
               toggleText={t("registeredClusterNodes")}
-              onToggle={() => setExpanded(!expanded)}
+              onToggle={setExpanded}
               isExpanded={expanded}
             >
               <KeycloakDataTable

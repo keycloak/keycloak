@@ -40,6 +40,7 @@ import { AddSubFlowModal, Flow } from "./components/modals/AddSubFlowModal";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { DuplicateFlowModal } from "./DuplicateFlowModal";
 import { useRealm } from "../context/realm-context/RealmContext";
+import useToggle from "../utils/useToggle";
 import { toAuthentication } from "./routes/Authentication";
 import { EditFlowModal } from "./EditFlowModal";
 
@@ -69,7 +70,7 @@ export default function FlowDetails() {
   const [showAddSubFlowDialog, setShowSubFlowDialog] = useState<boolean>();
   const [selectedExecution, setSelectedExecution] =
     useState<ExpandableExecution>();
-  const [open, setOpen] = useState(false);
+  const [open, toggleOpen, setOpen] = useToggle();
   const [edit, setEdit] = useState(false);
 
   useFetch(
@@ -280,7 +281,7 @@ export default function FlowDetails() {
         <DuplicateFlowModal
           name={flow?.alias!}
           description={flow?.description!}
-          toggleDialog={() => setOpen(!open)}
+          toggleDialog={toggleOpen}
           onComplete={() => {
             refresh();
             setOpen(false);

@@ -37,7 +37,7 @@ export const ChangeTypeDropdown = ({
       selections={[]}
       isDisabled={selectedRows.length === 0}
       placeholderText={t("changeTypeTo")}
-      onToggle={(isExpanded) => setOpen(isExpanded)}
+      onToggle={setOpen}
       onSelect={async (_, value) => {
         try {
           await Promise.all(

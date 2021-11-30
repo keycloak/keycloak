@@ -132,16 +132,12 @@ export const Header = () => {
   const KebabDropdown = () => {
     const [isDropdownOpen, setDropdownOpen] = useState(false);
 
-    const onDropdownToggle = () => {
-      setDropdownOpen(!isDropdownOpen);
-    };
-
     return (
       <Dropdown
         id="user-dropdown-kebab"
         isPlain
         position="right"
-        toggle={<KebabToggle onToggle={onDropdownToggle} />}
+        toggle={<KebabToggle onToggle={setDropdownOpen} />}
         isOpen={isDropdownOpen}
         dropdownItems={kebabDropdownItems}
       />
@@ -152,10 +148,6 @@ export const Header = () => {
     const { whoAmI } = useWhoAmI();
     const [isDropdownOpen, setDropdownOpen] = useState(false);
 
-    const onDropdownToggle = () => {
-      setDropdownOpen(!isDropdownOpen);
-    };
-
     return (
       <Dropdown
         isPlain
@@ -163,7 +155,7 @@ export const Header = () => {
         id="user-dropdown"
         isOpen={isDropdownOpen}
         toggle={
-          <DropdownToggle onToggle={onDropdownToggle}>
+          <DropdownToggle onToggle={setDropdownOpen}>
             {whoAmI.getDisplayName()}
           </DropdownToggle>
         }

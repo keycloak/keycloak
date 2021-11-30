@@ -142,7 +142,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
               variant={SelectVariant.single}
               isOpen={openType}
               selections={value}
-              onToggle={() => setOpenType(!openType)}
+              onToggle={setOpenType}
               onSelect={(_, value) => {
                 onChange(value);
                 setOpenType(false);
@@ -173,7 +173,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
               <Select
                 toggleId="kc-protocol"
                 required
-                onToggle={() => isOpen(!open)}
+                onToggle={isOpen}
                 onSelect={(_, value) => {
                   onChange(value as string);
                   isOpen(false);

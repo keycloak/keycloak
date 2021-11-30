@@ -182,9 +182,9 @@ export const ClientSettings = ({
             render={({ onChange, value }) => (
               <Select
                 toggleId="loginTheme"
-                onToggle={() => setLoginThemeOpen(!loginThemeOpen)}
+                onToggle={setLoginThemeOpen}
                 onSelect={(_, value) => {
-                  onChange(value as string);
+                  onChange(value.toString());
                   setLoginThemeOpen(false);
                 }}
                 selections={value || t("common:choose")}

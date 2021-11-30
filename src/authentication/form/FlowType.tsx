@@ -37,9 +37,9 @@ export const FlowType = () => {
         render={({ onChange, value }) => (
           <Select
             toggleId="flowType"
-            onToggle={() => setOpen(!open)}
+            onToggle={setOpen}
             onSelect={(_, value) => {
-              onChange(value as string);
+              onChange(value.toString());
               setOpen(false);
             }}
             selections={t(`top-level-flow-type.${value}`)}

@@ -28,7 +28,7 @@ export const FlowRequirementDropdown = ({
         <Select
           className="keycloak__authentication__requirement-dropdown"
           variant={SelectVariant.single}
-          onToggle={() => setOpen(!open)}
+          onToggle={setOpen}
           onSelect={(_event, value) => {
             flow.requirement = value.toString();
             onChange(flow);

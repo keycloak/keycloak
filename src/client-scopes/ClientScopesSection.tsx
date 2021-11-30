@@ -221,9 +221,7 @@ export default function ClientScopesSection() {
               </ToolbarItem>
               <ToolbarItem>
                 <Dropdown
-                  toggle={
-                    <KebabToggle onToggle={() => setKebabOpen(!kebabOpen)} />
-                  }
+                  toggle={<KebabToggle onToggle={setKebabOpen} />}
                   isOpen={kebabOpen}
                   isPlain
                   dropdownItems={[

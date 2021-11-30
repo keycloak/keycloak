@@ -155,7 +155,7 @@ export const Credentials = ({ clientId, save }: CredentialsProps) => {
                   <Select
                     toggleId="kc-client-authenticator-type"
                     required
-                    onToggle={() => isOpen(!open)}
+                    onToggle={isOpen}
                     onSelect={(_, value) => {
                       onChange(value as string);
                       isOpen(false);

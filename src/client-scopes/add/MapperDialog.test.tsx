@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-import React, { useState } from "react";
+import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { Button } from "@patternfly/react-core";
 
@@ -9,6 +9,7 @@ import type { ServerInfoRepresentation } from "@keycloak/keycloak-admin-client/l
 import type WhoAmIRepresentation from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
 import { ServerInfoContext } from "../../context/server-info/ServerInfoProvider";
 import serverInfo from "../../context/server-info/__tests__/mock.json";
+import useToggle from "../../utils/useToggle";
 import { AddMapperDialog, AddMapperDialogModalProps } from "./MapperDialog";
 import { WhoAmI, WhoAmIContext } from "../../context/whoami/WhoAmI";
 
@@ -16,7 +17,7 @@ import whoami from "../../context/whoami/__tests__/mock-whoami.json";
 
 describe("MapperDialog", () => {
   const Test = (args: AddMapperDialogModalProps) => {
-    const [open, setOpen] = useState(false);
+    const [open, toggleOpen, setOpen] = useToggle();
 
     return (
       <ServerInfoContext.Provider
@@ -28,11 +29,7 @@ describe("MapperDialog", () => {
             whoAmI: new WhoAmI(whoami as WhoAmIRepresentation),
           }}
         >
-          <AddMapperDialog
-            {...args}
-            open={open}
-            toggleDialog={() => setOpen(!open)}
-          />
+          <AddMapperDialog {...args} open={open} toggleDialog={toggleOpen} />
           <Button onClick={() => setOpen(true)}>
             {!open ? "Show" : "Hide"}
           </Button>

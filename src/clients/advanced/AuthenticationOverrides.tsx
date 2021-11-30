@@ -76,7 +76,7 @@ export const AuthenticationOverrides = ({
             <Select
               toggleId="browserFlow"
               variant={SelectVariant.single}
-              onToggle={() => setBrowserFlowOpen(!browserFlowOpen)}
+              onToggle={setBrowserFlowOpen}
               isOpen={browserFlowOpen}
               onSelect={(_, value) => {
                 onChange(value);
@@ -109,7 +109,7 @@ export const AuthenticationOverrides = ({
               <Select
                 toggleId="directGrant"
                 variant={SelectVariant.single}
-                onToggle={() => setDirectGrantOpen(!directGrantOpen)}
+                onToggle={setDirectGrantOpen}
                 isOpen={directGrantOpen}
                 onSelect={(_, value) => {
                   onChange(value);

@@ -43,6 +43,7 @@ import {
   convertToFormValues,
   exportClient,
 } from "../util";
+import useToggle from "../utils/useToggle";
 import { AdvancedTab } from "./AdvancedTab";
 import { ClientSettings } from "./ClientSettings";
 import { Credentials } from "./credentials/Credentials";
@@ -115,7 +116,7 @@ const ClientDetailHeader = ({
   }, [client, t]);
 
   const dropdownItems = [
-    <DropdownItem key="download" onClick={() => toggleDownloadDialog()}>
+    <DropdownItem key="download" onClick={toggleDownloadDialog}>
       {t("downloadAdapterConfig")}
     </DropdownItem>,
     <DropdownItem key="export" onClick={() => exportClient(client)}>
@@ -127,7 +128,7 @@ const ClientDetailHeader = ({
           <DropdownItem
             data-testid="delete-client"
             key="delete"
-            onClick={() => toggleDeleteDialog()}
+            onClick={toggleDeleteDialog}
           >
             {t("common:delete")}
           </DropdownItem>,
@@ -180,11 +181,8 @@ export default function ClientDetails() {
 
   const history = useHistory();
 
-  const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
-  const toggleDownloadDialog = () => setDownloadDialogOpen(!downloadDialogOpen);
-  const [changeAuthenticatorOpen, setChangeAuthenticatorOpen] = useState(false);
-  const toggleChangeAuthenticator = () =>
-    setChangeAuthenticatorOpen(!changeAuthenticatorOpen);
+  const [downloadDialogOpen, toggleDownloadDialogOpen] = useToggle();
+  const [changeAuthenticatorOpen, toggleChangeAuthenticatorOpen] = useToggle();
   const [clientScopeSubTab, setClientScopeSubTab] = useState(30);
   const [authorizationSubTab, setAuthorizationSubTab] = useState(40);
 
@@ -259,7 +257,7 @@ export default function ClientDetails() {
         client?.clientAuthenticatorType !== clientAuthenticatorType &&
         !confirmed
       ) {
-        toggleChangeAuthenticator();
+        toggleChangeAuthenticatorOpen();
         return;
       }
       const redirectUris = toValue(form.getValues()["redirectUris"]);
@@ -343,7 +341,7 @@ export default function ClientDetails() {
           clientAuthenticatorType: clientAuthenticatorType,
         })}
         open={changeAuthenticatorOpen}
-        toggleDialog={toggleChangeAuthenticator}
+        toggleDialog={toggleChangeAuthenticatorOpen}
         onConfirm={() => save({ confirmed: true })}
       >
         <>
@@ -360,7 +358,7 @@ export default function ClientDetails() {
         id={client.id!}
         protocol={client.protocol}
         open={downloadDialogOpen}
-        toggleDialog={toggleDownloadDialog}
+        toggleDialog={toggleDownloadDialogOpen}
       />
       <Controller
         name="enabled"
@@ -373,7 +371,7 @@ export default function ClientDetails() {
             client={client}
             save={save}
             toggleDeleteDialog={toggleDeleteDialog}
-            toggleDownloadDialog={toggleDownloadDialog}
+            toggleDownloadDialog={toggleDownloadDialogOpen}
           />
         )}
       />

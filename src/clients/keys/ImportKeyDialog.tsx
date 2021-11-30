@@ -105,7 +105,7 @@ export const ImportKeyDialog = ({
             render={({ onChange, value }) => (
               <Select
                 toggleId="archiveFormat"
-                onToggle={() => setOpenArchiveFormat(!openArchiveFormat)}
+                onToggle={setOpenArchiveFormat}
                 onSelect={(_, value) => {
                   onChange(value as string);
                   setOpenArchiveFormat(false);

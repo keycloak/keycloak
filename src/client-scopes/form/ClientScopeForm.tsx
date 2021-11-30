@@ -33,6 +33,7 @@ import {
   ClientScopeDefaultOptionalType,
 } from "../../components/client-scope/ClientScopeTypes";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import useToggle from "../../utils/useToggle";
 import { toMapper } from "../routes/Mapper";
 import { toClientScope } from "../routes/ClientScope";
 
@@ -42,7 +43,7 @@ export default function ClientScopeForm() {
     useState<ClientScopeDefaultOptionalType>();
   const history = useHistory();
   const { realm } = useRealm();
-  const [hide, setHide] = useState(false);
+  const [hide, toggleHide] = useToggle();
 
   const adminClient = useAdminClient();
   const { id, type } = useParams<{ id: string; type: AllClientScopes }>();
@@ -249,7 +250,7 @@ export default function ClientScopeForm() {
         dropdownItems={
           clientScope
             ? [
-                <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
+                <DropdownItem key="delete" onClick={toggleDeleteDialog}>
                   {t("common:delete")}
                 </DropdownItem>,
               ]
@@ -299,7 +300,7 @@ export default function ClientScopeForm() {
                 type={"client-scope"}
                 loader={loader}
                 save={assignRoles}
-                onHideRolesToggle={() => setHide(!hide)}
+                onHideRolesToggle={toggleHide}
               />
             </Tab>
           </KeycloakTabs>

@@ -26,9 +26,10 @@ import {
   clientScopeTypesDropdown,
 } from "../../components/client-scope/ClientScopeTypes";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
+import { getProtocolName } from "../utils";
+import useToggle from "../../utils/useToggle";
 
 import "./client-scopes.css";
-import { getProtocolName } from "../utils";
 
 export type AddScopeDialogProps = {
   clientScopes: ClientScopeRepresentation[];
@@ -68,11 +69,11 @@ export const AddScopeDialog = ({
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
 
-  const [isFilterTypeDropdownOpen, setIsFilterTypeDropdownOpen] =
-    useState(false);
+  const [isFilterTypeDropdownOpen, toggleIsFilterTypeDropdownOpen] =
+    useToggle();
 
-  const [isProtocolTypeDropdownOpen, setIsProtocolTypeDropdownOpen] =
-    useState(false);
+  const [isProtocolTypeDropdownOpen, toggleIsProtocolTypeDropdownOpen] =
+    useToggle(false);
 
   useEffect(() => {
     refresh();
@@ -97,14 +98,6 @@ export const AddScopeDialog = ({
     toggleDialog();
   };
 
-  const onFilterTypeDropdownToggle = () => {
-    setIsFilterTypeDropdownOpen(!isFilterTypeDropdownOpen);
-  };
-
-  const onProtocolTypeDropdownToggle = () => {
-    setIsProtocolTypeDropdownOpen(!isProtocolTypeDropdownOpen);
-  };
-
   const onFilterTypeDropdownSelect = (filterType: string) => {
     if (filterType === FilterType.Name) {
       setFilterType(FilterType.Protocol);
@@ -112,7 +105,7 @@ export const AddScopeDialog = ({
       setFilterType(FilterType.Name);
     }
 
-    setIsFilterTypeDropdownOpen(!isFilterTypeDropdownOpen);
+    toggleIsFilterTypeDropdownOpen();
   };
 
   const onProtocolTypeDropdownSelect = (protocolType: string) => {
@@ -124,7 +117,7 @@ export const AddScopeDialog = ({
       setProtocolType(ProtocolType.All);
     }
 
-    setIsProtocolTypeDropdownOpen(!isProtocolTypeDropdownOpen);
+    toggleIsProtocolTypeDropdownOpen();
   };
 
   const protocolTypeOptions = [
@@ -226,7 +219,7 @@ export const AddScopeDialog = ({
             toggle={
               <DropdownToggle
                 id="toggle-id-9"
-                onToggle={onFilterTypeDropdownToggle}
+                onToggle={toggleIsFilterTypeDropdownOpen}
                 toggleIndicator={CaretDownIcon}
                 icon={<FilterIcon />}
               >
@@ -258,7 +251,7 @@ export const AddScopeDialog = ({
                 toggle={
                   <DropdownToggle
                     id="toggle-id-9"
-                    onToggle={onFilterTypeDropdownToggle}
+                    onToggle={toggleIsFilterTypeDropdownOpen}
                     toggleIndicator={CaretDownIcon}
                     icon={<FilterIcon />}
                   >
@@ -279,7 +272,7 @@ export const AddScopeDialog = ({
                 variant={SelectVariant.single}
                 className="kc-protocolType-select"
                 aria-label="Select Input"
-                onToggle={onProtocolTypeDropdownToggle}
+                onToggle={toggleIsProtocolTypeDropdownOpen}
                 onSelect={(_, value) =>
                   onProtocolTypeDropdownSelect(value.toString())
                 }

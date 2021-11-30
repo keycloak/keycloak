@@ -26,6 +26,7 @@ import type { ClientForm } from "../ClientDetails";
 import { GenerateKeyDialog } from "./GenerateKeyDialog";
 import { useFetch, useAdminClient } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
+import useToggle from "../../utils/useToggle";
 import { ImportKeyDialog, ImportFile } from "./ImportKeyDialog";
 import { Certificate } from "./Certificate";
 
@@ -47,8 +48,9 @@ export const Keys = ({ clientId, save }: KeysProps) => {
   const { addAlert, addError } = useAlerts();
 
   const [keyInfo, setKeyInfo] = useState<CertificateRepresentation>();
-  const [openGenerateKeys, setOpenGenerateKeys] = useState(false);
-  const [openImportKeys, setOpenImportKeys] = useState(false);
+  const [openGenerateKeys, toggleOpenGenerateKeys, setOpenGenerateKeys] =
+    useToggle();
+  const [openImportKeys, toggleOpenImportKeys, setOpenImportKeys] = useToggle();
 
   const useJwksUrl = useWatch({
     control,
@@ -104,15 +106,12 @@ export const Keys = ({ clientId, save }: KeysProps) => {
     <PageSection variant="light" className="keycloak__form">
       {openGenerateKeys && (
         <GenerateKeyDialog
-          toggleDialog={() => setOpenGenerateKeys(!openGenerateKeys)}
+          toggleDialog={toggleOpenGenerateKeys}
           save={generate}
         />
       )}
       {openImportKeys && (
-        <ImportKeyDialog
-          toggleDialog={() => setOpenImportKeys(!openImportKeys)}
-          save={importKey}
-        />
+        <ImportKeyDialog toggleDialog={toggleOpenImportKeys} save={importKey} />
       )}
       <Card isFlat>
         <CardHeader>

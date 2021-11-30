@@ -24,6 +24,7 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useAlerts } from "../components/alert/Alerts";
 import { toUpperCase } from "../util";
+import useToggle from "../utils/useToggle";
 import { DuplicateFlowModal } from "./DuplicateFlowModal";
 import { toCreateFlow } from "./routes/CreateFlow";
 import { toFlow } from "./routes/Flow";
@@ -55,7 +56,7 @@ export default function AuthenticationSection() {
   const { addAlert, addError } = useAlerts();
 
   const [selectedFlow, setSelectedFlow] = useState<AuthenticationType>();
-  const [open, setOpen] = useState(false);
+  const [open, toggleOpen, setOpen] = useToggle();
 
   const loader = async () => {
     const clients = await adminClient.clients.find();
@@ -202,7 +203,7 @@ export default function AuthenticationSection() {
         <DuplicateFlowModal
           name={selectedFlow ? selectedFlow.alias! : ""}
           description={selectedFlow?.description!}
-          toggleDialog={() => setOpen(!open)}
+          toggleDialog={toggleOpen}
           onComplete={() => {
             refresh();
             setOpen(false);

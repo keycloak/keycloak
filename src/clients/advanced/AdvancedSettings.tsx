@@ -118,7 +118,7 @@ export const AdvancedSettings = ({
                 <Select
                   toggleId="keyForCodeExchange"
                   variant={SelectVariant.single}
-                  onToggle={() => setOpen(!open)}
+                  onToggle={setOpen}
                   isOpen={open}
                   onSelect={(_, value) => {
                     onChange(value);

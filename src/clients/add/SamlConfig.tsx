@@ -78,7 +78,7 @@ export const SamlConfig = () => {
           render={({ onChange, value }) => (
             <Select
               toggleId="samlNameIdFormat"
-              onToggle={(open) => setNameFormatOpen(open)}
+              onToggle={setNameFormatOpen}
               onSelect={(_, value) => {
                 onChange(value.toString());
                 setNameFormatOpen(false);

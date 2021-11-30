@@ -40,9 +40,9 @@ export const SignedJWT = () => {
           <Select
             maxHeight={200}
             toggleId="kc-signature-algorithm"
-            onToggle={() => isOpen(!open)}
+            onToggle={isOpen}
             onSelect={(_, value) => {
-              onChange(value as string);
+              onChange(value.toString());
               isOpen(false);
             }}
             selections={value || t("anyAlgorithm")}

@@ -42,9 +42,9 @@ export const GeneralSettings = () => {
           render={({ onChange, value }) => (
             <Select
               id="kc-type"
-              onToggle={() => isOpen(!open)}
+              onToggle={isOpen}
               onSelect={(_, value) => {
-                onChange(value as string);
+                onChange(value.toString());
                 isOpen(false);
               }}
               selections={value}
