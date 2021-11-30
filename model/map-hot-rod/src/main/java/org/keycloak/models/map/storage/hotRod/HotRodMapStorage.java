@@ -111,7 +111,7 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRo
 
     @Override
     public Stream<V> read(QueryParameters<M> queryParameters) {
-        IckleQueryMapModelCriteriaBuilder<K, V, M> iqmcb = queryParameters.getModelCriteriaBuilder()
+        IckleQueryMapModelCriteriaBuilder<E, M> iqmcb = queryParameters.getModelCriteriaBuilder()
                 .flashToModelCriteriaBuilder(createCriteriaBuilder());
         String queryString = iqmcb.getIckleQuery();
 
@@ -137,7 +137,7 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRo
 
     @Override
     public long getCount(QueryParameters<M> queryParameters) {
-        IckleQueryMapModelCriteriaBuilder<K, V, M> iqmcb = queryParameters.getModelCriteriaBuilder()
+        IckleQueryMapModelCriteriaBuilder<E, M> iqmcb = queryParameters.getModelCriteriaBuilder()
                 .flashToModelCriteriaBuilder(createCriteriaBuilder());
         String queryString = iqmcb.getIckleQuery();
 
@@ -153,7 +153,7 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRo
 
     @Override
     public long delete(QueryParameters<M> queryParameters) {
-        IckleQueryMapModelCriteriaBuilder<K, V, M> iqmcb = queryParameters.getModelCriteriaBuilder()
+        IckleQueryMapModelCriteriaBuilder<E, M> iqmcb = queryParameters.getModelCriteriaBuilder()
                 .flashToModelCriteriaBuilder(createCriteriaBuilder());
         String queryString = "SELECT id " + iqmcb.getIckleQuery();
 
@@ -183,8 +183,8 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRo
         return result.get();
     }
 
-    public IckleQueryMapModelCriteriaBuilder<K, V, M> createCriteriaBuilder() {
-        return new IckleQueryMapModelCriteriaBuilder<>();
+    public IckleQueryMapModelCriteriaBuilder<E, M> createCriteriaBuilder() {
+        return new IckleQueryMapModelCriteriaBuilder<>(storedEntityDescriptor.getEntityTypeClass());
     }
 
     @Override
