@@ -74,7 +74,7 @@ export const EmptyExecutionState = ({
             <Flex alignSelf={{ default: "alignSelfCenter" }}>
               <FlexItem>
                 <Button
-                  data-testId={section}
+                  data-testid={section}
                   variant="tertiary"
                   onClick={() => setShow(section)}
                 >

@@ -3,6 +3,18 @@ export default {
     title: "Authentication",
     flows: "Flows",
     requiredActions: "Required actions",
+    policies: "Policies",
+    passwordPolicy: "Password policy",
+    otpPolicy: "OTP Policy",
+    webauthnPolicy: "Webauthn Policy",
+    webauthnPasswordlessPolicy: "Webauthn Passwordless Policy",
+    noPasswordPolicies: "No password policies",
+    noPasswordPoliciesInstructions:
+      "You haven't added any password policies to this realm. Add a policy to get started.",
+    updatePasswordPolicySuccess: "Password policies successfully updated",
+    updatePasswordPolicyError:
+      "Could not update the password policies: '{{error}}'",
+    addPolicy: "Add policy",
     flowName: "Flow name",
     searchForFlow: "Search for flow",
     usedBy: "Used by",

@@ -10,6 +10,7 @@ export default {
     save: "Save",
     revert: "Revert",
     cancel: "Cancel",
+    reload: "Reload",
     continue: "Continue",
     close: "Close",
     delete: "Delete",

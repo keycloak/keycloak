@@ -7,6 +7,7 @@ import DuplicateFlowModal from "../support/pages/admin_console/manage/authentica
 import FlowDetails from "../support/pages/admin_console/manage/authentication/FlowDetail";
 import RequiredActions from "../support/pages/admin_console/manage/authentication/RequiredActions";
 import AdminClient from "../support/util/AdminClient";
+import PasswordPolicies from "../support/pages/admin_console/manage/authentication/PasswordPolicies";
 
 describe("Authentication test", () => {
   const loginPage = new LoginPage();
@@ -152,6 +153,34 @@ describe("Authentication test", () => {
       const action = "Terms and Conditions";
       requiredActionsPage.moveRowTo(action, "Update Profile");
       masthead.checkNotificationMessage("Updated required action successfully");
+    });
+  });
+
+  describe("Password policies tab", () => {
+    const passwordPoliciesPage = new PasswordPolicies();
+    beforeEach(() => {
+      keycloakBefore();
+      loginPage.logIn();
+      sidebarPage.goToAuthentication();
+      passwordPoliciesPage.goToTab();
+    });
+
+    it("should add password policies", () => {
+      passwordPoliciesPage
+        .shouldShowEmptyState()
+        .addPolicy("Not Recently Used")
+        .save();
+      masthead.checkNotificationMessage(
+        "Password policies successfully updated"
+      );
+    });
+
+    it("should remove password policies", () => {
+      passwordPoliciesPage.removePolicy("remove-passwordHistory").save();
+      masthead.checkNotificationMessage(
+        "Password policies successfully updated"
+      );
+      passwordPoliciesPage.shouldShowEmptyState();
     });
   });
 });

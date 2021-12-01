@@ -39,7 +39,7 @@ export const Time = ({
         rules={{ required: true }}
         render={({ onChange, value }) => (
           <TimeSelector
-            data-testId={name}
+            data-testid={name}
             value={value}
             onChange={onChange}
             validated={
