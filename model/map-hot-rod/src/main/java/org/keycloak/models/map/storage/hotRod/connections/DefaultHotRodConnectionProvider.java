@@ -14,37 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.models.map.storage.hotRod.connections;
 
-package org.keycloak.models.map.connections;
-
-import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.Spi;
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.client.hotrod.RemoteCacheManager;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class HotRodConnectionSpi implements Spi {
+public class DefaultHotRodConnectionProvider implements HotRodConnectionProvider {
 
-    public static final String NAME = "connectionsHotRod";
+    private RemoteCacheManager remoteCacheManager;
 
-    @Override
-    public boolean isInternal() {
-        return true;
+    public DefaultHotRodConnectionProvider(RemoteCacheManager remoteCacheManager) {
+        this.remoteCacheManager = remoteCacheManager;
     }
 
     @Override
-    public String getName() {
-        return NAME;
+    public <K, V> RemoteCache<K, V> getRemoteCache(String name) {
+        return remoteCacheManager.getCache(name);
     }
 
     @Override
-    public Class<? extends Provider> getProviderClass() {
-        return HotRodConnectionProvider.class;
-    }
+    public void close() {
 
-    @Override
-    public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return HotRodConnectionProviderFactory.class;
     }
 }

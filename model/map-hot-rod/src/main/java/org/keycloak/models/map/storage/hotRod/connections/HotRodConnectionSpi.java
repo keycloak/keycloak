@@ -15,12 +15,36 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.map.connections;
+package org.keycloak.models.map.storage.hotRod.connections;
 
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public interface HotRodConnectionProviderFactory extends ProviderFactory<HotRodConnectionProvider> {
+public class HotRodConnectionSpi implements Spi {
+
+    public static final String NAME = "connectionsHotRod";
+
+    @Override
+    public boolean isInternal() {
+        return true;
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
+    @Override
+    public Class<? extends Provider> getProviderClass() {
+        return HotRodConnectionProvider.class;
+    }
+
+    @Override
+    public Class<? extends ProviderFactory> getProviderFactoryClass() {
+        return HotRodConnectionProviderFactory.class;
+    }
 }

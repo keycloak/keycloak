@@ -14,29 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.connections;
 
-import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.client.hotrod.RemoteCacheManager;
+package org.keycloak.models.map.storage.hotRod.connections;
+
+import org.keycloak.provider.ProviderFactory;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class DefaultHotRodConnectionProvider implements HotRodConnectionProvider {
-
-    private RemoteCacheManager remoteCacheManager;
-
-    public DefaultHotRodConnectionProvider(RemoteCacheManager remoteCacheManager) {
-        this.remoteCacheManager = remoteCacheManager;
-    }
-
-    @Override
-    public <K, V> RemoteCache<K, V> getRemoteCache(String name) {
-        return remoteCacheManager.getCache(name);
-    }
-
-    @Override
-    public void close() {
-
-    }
+public interface HotRodConnectionProviderFactory extends ProviderFactory<HotRodConnectionProvider> {
 }

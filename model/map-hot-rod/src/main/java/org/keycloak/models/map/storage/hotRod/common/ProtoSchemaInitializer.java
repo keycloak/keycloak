@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.map.common;
+package org.keycloak.models.map.storage.hotRod.common;
 
 import org.infinispan.protostream.GeneratedSchema;
 import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
-import org.keycloak.models.map.client.HotRodAttributeEntity;
-import org.keycloak.models.map.client.HotRodClientEntity;
-import org.keycloak.models.map.client.HotRodProtocolMapperEntity;
+import org.keycloak.models.map.storage.hotRod.client.HotRodAttributeEntity;
+import org.keycloak.models.map.storage.hotRod.client.HotRodClientEntity;
+import org.keycloak.models.map.storage.hotRod.client.HotRodProtocolMapperEntity;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>

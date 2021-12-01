@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.map.connections;
+package org.keycloak.models.map.storage.hotRod.connections;
 
 import org.infinispan.client.hotrod.RemoteCache;
 import org.keycloak.provider.Provider;

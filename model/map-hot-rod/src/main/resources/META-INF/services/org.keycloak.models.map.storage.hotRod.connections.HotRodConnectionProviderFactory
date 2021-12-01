@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.models.map.connections.DefaultHotRodConnectionProviderFactory
+org.keycloak.models.map.storage.hotRod.connections.DefaultHotRodConnectionProviderFactory

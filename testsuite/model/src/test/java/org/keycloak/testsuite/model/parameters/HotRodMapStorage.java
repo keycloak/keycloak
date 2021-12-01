@@ -28,9 +28,9 @@ import org.keycloak.models.map.authSession.MapRootAuthenticationSessionProviderF
 import org.keycloak.models.map.authorization.MapAuthorizationStoreFactory;
 import org.keycloak.models.map.client.MapClientProviderFactory;
 import org.keycloak.models.map.clientscope.MapClientScopeProviderFactory;
-import org.keycloak.models.map.connections.DefaultHotRodConnectionProviderFactory;
-import org.keycloak.models.map.connections.HotRodConnectionProviderFactory;
-import org.keycloak.models.map.connections.HotRodConnectionSpi;
+import org.keycloak.models.map.storage.hotRod.connections.DefaultHotRodConnectionProviderFactory;
+import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionProviderFactory;
+import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionSpi;
 import org.keycloak.models.map.deploymentState.MapDeploymentStateProviderFactory;
 import org.keycloak.models.map.group.MapGroupProviderFactory;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureProviderFactory;

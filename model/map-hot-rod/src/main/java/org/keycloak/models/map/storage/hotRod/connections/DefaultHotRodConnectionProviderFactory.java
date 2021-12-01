@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.connections;
+package org.keycloak.models.map.storage.hotRod.connections;
 
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.RemoteCacheManager;
@@ -26,9 +26,9 @@ import org.infinispan.query.remote.client.ProtobufMetadataManagerConstants;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.map.common.HotRodEntityDescriptor;
-import org.keycloak.models.map.common.HotRodUtils;
-import org.keycloak.models.map.common.ProtoSchemaInitializer;
+import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDescriptor;
+import org.keycloak.models.map.storage.hotRod.common.HotRodUtils;
+import org.keycloak.models.map.storage.hotRod.common.ProtoSchemaInitializer;
 import org.keycloak.models.map.storage.hotRod.HotRodMapStorageProviderFactory;
 
 import java.net.URI;

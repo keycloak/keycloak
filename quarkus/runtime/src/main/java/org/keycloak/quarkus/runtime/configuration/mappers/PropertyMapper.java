@@ -22,6 +22,7 @@ import java.util.function.BiFunction;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
+import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 public class PropertyMapper {
@@ -46,6 +47,8 @@ public class PropertyMapper {
     private final ConfigCategory category;
     private final String paramLabel;
     private final boolean hidden;
+    private String cliFormat;
+
 
     PropertyMapper(String from, String to, String defaultValue, BiFunction<String, ConfigSourceInterceptorContext, String> mapper,
             String mapFrom, boolean buildTime, String description, String paramLabel, boolean mask, Iterable<String> expectedValues,
@@ -62,6 +65,7 @@ public class PropertyMapper {
         this.expectedValues = expectedValues == null ? Collections.emptyList() : expectedValues;
         this.category = category != null ? category : ConfigCategory.GENERAL;
         this.hidden = hidden;
+        setCliFormat(this.from);
     }
 
     public static PropertyMapper.Builder builder(String fromProp, String toProp) {
@@ -163,6 +167,26 @@ public class PropertyMapper {
         return hidden;
     }
 
+    public boolean isBuildTime() {
+        return buildTime;
+    }
+
+    public String getTo() {
+        return to;
+    }
+
+    public String getParamLabel() {
+        return paramLabel;
+    }
+
+    public String getCliFormat() {
+        return cliFormat;
+    }
+
+    boolean isMask() {
+        return mask;
+    }
+
     private ConfigValue transformValue(String value, ConfigSourceInterceptorContext context) {
         if (value == null) {
             return null;
@@ -181,20 +205,8 @@ public class PropertyMapper {
         return null;
     }
 
-    public boolean isBuildTime() {
-        return buildTime;
-    }
-
-    boolean isMask() {
-        return mask;
-    }
-
-    public String getTo() {
-        return to;
-    }
-
-    public String getParamLabel() {
-        return paramLabel;
+    private void setCliFormat(String from) {
+        cliFormat = Picocli.ARG_PREFIX + PropertyMappers.toCLIFormat(from).substring(3);
     }
 
     public static class Builder {

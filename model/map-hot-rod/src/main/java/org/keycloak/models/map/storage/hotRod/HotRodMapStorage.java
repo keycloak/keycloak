@@ -26,7 +26,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
-import org.keycloak.models.map.common.HotRodEntityDescriptor;
+import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDescriptor;
 import org.keycloak.models.map.common.StringKeyConvertor;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static org.keycloak.models.map.common.HotRodUtils.paginateQuery;
+import static org.keycloak.models.map.storage.hotRod.common.HotRodUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 public class HotRodMapStorage<K, V extends AbstractEntity & UpdatableEntity, M> implements MapStorage<V, M>, ConcurrentHashMapCrudOperations<V, M> {

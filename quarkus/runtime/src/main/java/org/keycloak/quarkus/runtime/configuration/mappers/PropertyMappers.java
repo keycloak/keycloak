@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 
 public final class PropertyMappers {
 
+    public static String VALUE_MASK = "*******";
     static final MappersConfig MAPPERS = new MappersConfig();
 
     private PropertyMappers(){}
@@ -96,6 +97,7 @@ public final class PropertyMappers {
         if (name.indexOf('.') == -1) {
             return name;
         }
+
         return MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX
                 .concat(name.substring(3, name.lastIndexOf('.') + 1)
                         .replaceAll("\\.", "-") + name.substring(name.lastIndexOf('.') + 1));
@@ -116,23 +118,26 @@ public final class PropertyMappers {
     }
 
     public static String formatValue(String property, String value) {
+        property = removeProfilePrefixIfNeeded(property);
         PropertyMapper mapper = getMapper(property);
 
         if (mapper != null && mapper.isMask()) {
-            return "*******";
+            return VALUE_MASK;
         }
 
         return value;
     }
 
-    public static PropertyMapper getMapper(String property) {
-        PropertyMapper mapper = MAPPERS.get(property);
-
-        if (mapper != null) {
-            return mapper;
+    private static String removeProfilePrefixIfNeeded(String property) {
+        if(property.startsWith("%")) {
+            String profilePrefix = property.substring(0, property.indexOf(".") +1);
+            property = property.split(profilePrefix)[1];
         }
+        return property;
+    }
 
-        return null;
+    public static PropertyMapper getMapper(String property) {
+        return MAPPERS.get(property);
     }
 
     public static Collection<PropertyMapper> getMappers() {
@@ -164,6 +169,7 @@ public final class PropertyMappers {
             for (PropertyMapper mapper : mappers) {
                 super.put(mapper.getTo(), mapper);
                 super.put(mapper.getFrom(), mapper);
+                super.put(mapper.getCliFormat(), mapper);
             }
         }
 
