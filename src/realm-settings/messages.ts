@@ -346,8 +346,6 @@ export default {
       "Unable to save user profile, the provided information is not valid JSON.",
     userProfileSuccess: "User profile settings successfully updated.",
     userProfileError: "Could not update user profile settings: {{error}}",
-    key: "Key",
-    value: "Value",
     status: "Status",
     convertedToYearsValue: "{{convertedToYears}}",
     convertedToDaysValue: "{{convertedToDays}}",

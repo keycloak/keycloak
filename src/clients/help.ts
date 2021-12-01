@@ -162,5 +162,16 @@ export default {
       "The decision strategy dictates how permissions are evaluated and how a final decision is obtained. 'Affirmative' means that at least one permission must evaluate to a positive decision in order to grant access to a resource and its scopes. 'Unanimous' means that all permissions must evaluate to a positive decision in order for the final decision to be also positive.",
     allowRemoteResourceManagement:
       "Should resources be managed remotely by the resource server? If false, resources can be managed only from this admin console.",
+    resourceName:
+      "A unique name for this resource. The name can be used to uniquely identify a resource, useful when querying for a specific resource.",
+    displayName:
+      "A unique name for this resource. The name can be used to uniquely identify a resource, useful when querying for a specific resource.",
+    type: "The type of this resource. It can be used to group different resource instances with the same type.",
+    uris: "Set of URIs which are protected by resource.",
+    scopes: "The scopes associated with this resource.",
+    iconUri: "A URI pointing to an icon.",
+    ownerManagedAccess:
+      "If enabled, the access to this resource can be managed by the resource owner.",
+    resourceAttribute: "The attributes associated wth the resource.",
   },
 };

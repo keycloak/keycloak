@@ -9,7 +9,7 @@ import {
   TabTitleText,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { useFieldArray, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { omit } from "lodash";
 
 import { useAlerts } from "../components/alert/Alerts";
@@ -17,10 +17,12 @@ import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import {
   AttributesForm,
-  attributesToArray,
-  arrayToAttributes,
   AttributeForm,
 } from "../components/attribute-form/AttributeForm";
+import {
+  attributesToArray,
+  arrayToAttributes,
+} from "../components/attribute-form/attribute-convert";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
@@ -43,7 +45,7 @@ export default function RealmRoleTabs() {
   const form = useForm<AttributeForm>({
     mode: "onChange",
   });
-  const { control, setValue, getValues, trigger, reset } = form;
+  const { setValue, getValues, trigger, reset } = form;
   const history = useHistory();
 
   const adminClient = useAdminClient();
@@ -100,11 +102,6 @@ export default function RealmRoleTabs() {
     },
     [key]
   );
-
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "attributes",
-  });
 
   const save = async () => {
     try {
@@ -379,7 +376,6 @@ export default function RealmRoleTabs() {
                 <AttributesForm
                   form={form}
                   save={save}
-                  array={{ fields, append, remove }}
                   reset={() => reset(role)}
                 />
               </Tab>

@@ -8,6 +8,7 @@ import {
 } from "@patternfly/react-core";
 
 import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
+import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 
 import "./detail-cell.css";
@@ -45,46 +46,46 @@ export const DetailCell = ({ id, clientId, uris }: DetailCellProps) => {
     },
     []
   );
+
+  if (!permissions || !scope) {
+    return <KeycloakSpinner />;
+  }
+
   return (
     <DescriptionList isHorizontal className="keycloak_resource_details">
-      {uris?.length !== 0 && (
-        <DescriptionListGroup>
-          <DescriptionListTerm>{t("uris")}</DescriptionListTerm>
-          <DescriptionListDescription>
-            {uris?.map((uri) => (
-              <span key={uri} className="pf-u-pr-sm">
-                {uri}
-              </span>
-            ))}
-          </DescriptionListDescription>
-        </DescriptionListGroup>
-      )}
-      {scope?.length !== 0 && (
-        <DescriptionListGroup>
-          <DescriptionListTerm>{t("scopes")}</DescriptionListTerm>
-          <DescriptionListDescription>
-            {scope?.map((scope) => (
-              <span key={scope.id} className="pf-u-pr-sm">
-                {scope.name}
-              </span>
-            ))}
-          </DescriptionListDescription>
-        </DescriptionListGroup>
-      )}
-      {permissions?.length !== 0 && (
-        <DescriptionListGroup>
-          <DescriptionListTerm>
-            {t("associatedPermissions")}
-          </DescriptionListTerm>
-          <DescriptionListDescription>
-            {permissions?.map((permission) => (
-              <span key={permission.id} className="pf-u-pr-sm">
-                {permission.name}
-              </span>
-            ))}
-          </DescriptionListDescription>
-        </DescriptionListGroup>
-      )}
+      <DescriptionListGroup>
+        <DescriptionListTerm>{t("uris")}</DescriptionListTerm>
+        <DescriptionListDescription>
+          {uris?.map((uri) => (
+            <span key={uri} className="pf-u-pr-sm">
+              {uri}
+            </span>
+          ))}
+          {uris?.length === 0 && <i>{t("common:none")}</i>}
+        </DescriptionListDescription>
+      </DescriptionListGroup>
+      <DescriptionListGroup>
+        <DescriptionListTerm>{t("scopes")}</DescriptionListTerm>
+        <DescriptionListDescription>
+          {scope.map((scope) => (
+            <span key={scope.id} className="pf-u-pr-sm">
+              {scope.name}
+            </span>
+          ))}
+          {scope.length === 0 && <i>{t("common:none")}</i>}
+        </DescriptionListDescription>
+      </DescriptionListGroup>
+      <DescriptionListGroup>
+        <DescriptionListTerm>{t("associatedPermissions")}</DescriptionListTerm>
+        <DescriptionListDescription>
+          {permissions.map((permission) => (
+            <span key={permission.id} className="pf-u-pr-sm">
+              {permission.name}
+            </span>
+          ))}
+          {permissions.length === 0 && <i>{t("common:none")}</i>}
+        </DescriptionListDescription>
+      </DescriptionListGroup>
     </DescriptionList>
   );
 };

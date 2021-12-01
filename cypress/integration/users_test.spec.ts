@@ -146,18 +146,16 @@ describe("Users test", () => {
       const attributeKey = "key-multiple";
       attributesTab
         .goToAttributesTab()
-        .fillLastRow(attributeKey, "value")
-        .addRow()
         .fillLastRow(attributeKey, "other value")
         .saveAttribute();
 
       cy.wait("@save-user").should(({ request, response }) => {
         expect(response?.statusCode).to.equal(204);
 
-        expect(
-          request?.body.attributes[attributeKey],
-          "response body"
-        ).deep.equal(["value", "other value"]);
+        expect(request?.body.attributes, "response body").deep.equal({
+          key: ["value"],
+          "key-multiple": ["other value"],
+        });
       });
 
       masthead.checkNotificationMessage("The user has been saved");

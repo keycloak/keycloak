@@ -5,6 +5,8 @@ import { ClientsRoute } from "./routes/Clients";
 import { CreateInitialAccessTokenRoute } from "./routes/CreateInitialAccessToken";
 import { ImportClientRoute } from "./routes/ImportClient";
 import { MapperRoute } from "./routes/Mapper";
+import { NewResourceRoute } from "./routes/NewResource";
+import { ResourceDetailsRoute } from "./routes/Resource";
 
 const routes: RouteDef[] = [
   AddClientRoute,
@@ -13,6 +15,8 @@ const routes: RouteDef[] = [
   CreateInitialAccessTokenRoute,
   ClientRoute,
   MapperRoute,
+  NewResourceRoute,
+  ResourceDetailsRoute,
 ];
 
 export default routes;

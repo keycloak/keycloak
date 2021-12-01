@@ -1,11 +1,13 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   Alert,
   AlertVariant,
+  Button,
   Label,
   PageSection,
-  Spinner,
+  ToolbarItem,
 } from "@patternfly/react-core";
 import {
   ExpandableRowContent,
@@ -19,11 +21,15 @@ import {
 
 import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
+import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
 import { DetailCell } from "./DetailCell";
+import { toCreateResource } from "../routes/NewResource";
+import { useRealm } from "../../context/realm-context/RealmContext";
+import { toResourceDetails } from "../routes/Resource";
 
 type ResourcesProps = {
   clientId: string;
@@ -37,6 +43,8 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
+  const { realm } = useRealm();
+
   const [resources, setResources] =
     useState<ExpandableResourceRepresentation[]>();
   const [selectedResource, setSelectedResource] =
@@ -127,7 +135,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
   });
 
   if (!resources) {
-    return <Spinner />;
+    return <KeycloakSpinner />;
   }
 
   return (
@@ -143,6 +151,21 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
           setFirst(first);
           setMax(max);
         }}
+        toolbarItem={
+          <ToolbarItem>
+            <Button
+              data-testid="createResource"
+              component={(props) => (
+                <Link
+                  {...props}
+                  to={toCreateResource({ realm, id: clientId })}
+                />
+              )}
+            >
+              {t("createResource")}
+            </Button>
+          </ToolbarItem>
+        }
       >
         <TableComposable aria-label={t("resources")} variant="compact">
           <Thead>
@@ -172,7 +195,17 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
                     },
                   }}
                 />
-                <Td>{resource.name}</Td>
+                <Td data-testid={`name-column-${resource.name}`}>
+                  <Link
+                    to={toResourceDetails({
+                      realm,
+                      id: clientId,
+                      resourceId: resource._id!,
+                    })}
+                  >
+                    {resource.name}
+                  </Link>
+                </Td>
                 <Td>{resource.type}</Td>
                 <Td>{resource.owner?.name}</Td>
                 <Td>

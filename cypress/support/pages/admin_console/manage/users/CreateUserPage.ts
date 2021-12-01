@@ -34,11 +34,8 @@ export default class CreateUserPage {
   }
 
   goToCreateUser() {
-    cy.wait(100);
     cy.get("body").then((body) => {
-      if (body.find("[data-testid=empty-state]").length > 0) {
-        cy.findByTestId(this.emptyStateCreateUserBtn).click();
-      } else if (body.find("[data-testid=search-users-title]").length > 0) {
+      if (body.find("[data-testid=search-users-title]").length > 0) {
         cy.findByTestId(this.searchPgCreateUserBtn).click();
       } else {
         cy.findByTestId(this.addUserBtn).click();

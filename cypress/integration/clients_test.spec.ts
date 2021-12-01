@@ -10,6 +10,7 @@ import InitialAccessTokenTab from "../support/pages/admin_console/manage/clients
 import { keycloakBefore } from "../support/util/keycloak_before";
 import RoleMappingTab from "../support/pages/admin_console/manage/RoleMappingTab";
 import KeysTab from "../support/pages/admin_console/manage/clients/KeysTab";
+import AuthenticationTab from "../support/pages/admin_console/manage/clients/Authentication";
 
 let itemId = "client_crud";
 const loginPage = new LoginPage();
@@ -424,6 +425,54 @@ describe("Clients test", () => {
 
       modalUtils.confirmModal();
       cy.findAllByTestId("certificate").should("have.length", 1);
+    });
+  });
+
+  describe("Authentication tab", () => {
+    const clientName = "authenticationTabClient";
+    const authenticationTab = new AuthenticationTab();
+    beforeEach(() => {
+      keycloakBefore();
+      loginPage.logIn();
+      sidebarPage.goToClients();
+    });
+
+    before(async () => {
+      await new AdminClient().createClient({
+        protocol: "openid-connect",
+        clientId: clientName,
+        publicClient: false,
+        authorizationServicesEnabled: true,
+        serviceAccountsEnabled: true,
+        standardFlowEnabled: true,
+      });
+    });
+
+    after(() => {
+      new AdminClient().deleteClient(clientName);
+    });
+
+    it("Should update the resource server settings", () => {
+      listingPage.searchItem(clientName).goToItemDetails(clientName);
+      authenticationTab.goToTab();
+    });
+
+    it("Should create a resource", () => {
+      listingPage.searchItem(clientName).goToItemDetails(clientName);
+      authenticationTab.goToTab().goToResourceSubTab();
+      authenticationTab.assertDefaultResource();
+
+      authenticationTab
+        .goToCreateResource()
+        .fillResourceForm({
+          name: "Resource",
+          displayName: "The display name",
+          type: "type",
+          uris: ["one", "two"],
+        })
+        .save();
+
+      masthead.checkNotificationMessage("Resource created successfully");
     });
   });
 });

@@ -15,6 +15,8 @@ export default {
     delete: "Delete",
     remove: "Remove",
     search: "Search",
+    key: "Key",
+    value: "Value",
     noSearchResults: "No search results",
     noSearchResultsInstructions: "Click on the search bar above to search",
     next: "Next",

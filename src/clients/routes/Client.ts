@@ -8,7 +8,8 @@ export type ClientTab =
   | "roles"
   | "clientScopes"
   | "advanced"
-  | "mappers";
+  | "mappers"
+  | "authorization";
 
 export type ClientParams = {
   realm: string;

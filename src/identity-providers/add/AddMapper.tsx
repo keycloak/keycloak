@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Link, useHistory, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
+import { Controller, FormProvider, useForm } from "react-hook-form";
 import {
   ActionGroup,
   AlertVariant,
@@ -20,10 +20,8 @@ import { useRealm } from "../../context/realm-context/RealmContext";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import {
-  AttributeForm,
-  AttributesForm,
-} from "../../components/attribute-form/AttributeForm";
+import { AttributeInput } from "../../components/attribute-input/AttributeInput";
+import type { AttributeForm } from "../../components/attribute-form/AttributeForm";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import type { IdentityProviderAddMapperParams } from "../routes/AddMapper";
@@ -144,11 +142,6 @@ export default function AddMapper() {
     }
   };
 
-  const { append, remove, fields } = useFieldArray({
-    control: form.control,
-    name: "config.attributes",
-  });
-
   useFetch(
     () =>
       Promise.all([
@@ -175,10 +168,6 @@ export default function AddMapper() {
             "config.are-attribute-values-regex",
             mapper.config["are.attribute.values.regex"]
           );
-        }
-
-        if (mapper.config?.attribute) {
-          form.setValue("config.attributes", value.attribute);
         }
 
         if (mapper.config?.attributes) {
@@ -344,11 +333,9 @@ export default function AddMapper() {
                 }
                 fieldId="kc-gui-order"
               >
-                <AttributesForm
-                  form={form}
-                  inConfig
-                  array={{ fields, append, remove }}
-                />
+                <FormProvider {...form}>
+                  <AttributeInput name="config.attributes" />
+                </FormProvider>
               </FormGroup>
               <FormGroup
                 label={
