@@ -19,6 +19,7 @@ stringData:
     # Required for AWS Backup functionality
     POSTGRES_SUPERUSER: "true"
     POSTGRES_USERNAME: <Database Username>
+    SSLMODE: <TLS configuration for the Database connection>
 type: Opaque
 ```
 
@@ -35,7 +36,22 @@ The other properties work in the same way for a hosted or external database. Set
 * `POSTGRES_DATABASE` - Database name to be used.
 * `POSTGRES_USERNAME` - Database username
 * `POSTGRES_PASSWORD` - Database password
-* `POSTGRES_SUPERUSER` - Indicates, whether backups should run as super user. Typically `true`.
+* `POSTGRES_SUPERUSER` - Indicates whether backups should run as super user. Typically `true`.
+* `SSL_MODE` - Indicates whether to use TLS on the connection to the external PostgreSQL database. Check the possible https://www.postgresql.org/docs/current/libpq-ssl.html[values]
+
+When `SSL_MODE` is enabled, the operator searches for a secret called `keycloak-db-ssl-cert-secret` containing the `root.crt` that has been used by the PostgreSQL database. Creating the secret is optional and the secret is used only when you want to verify the Database's certificate (for example `SSLMODE: verify-ca`). Here is an example :
+
+.Example YAML file for `TLS Secret` to be used by the operator.
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: keycloak-db-ssl-cert-secret
+  namespace: keycloak
+type: Opaque
+data:
+  root.crt: {root.crt base64}
+```
 
 The Operator will create a Service named `keycloak-postgresql`. This Service is configured by the Operator to expose the external database based on the content of `POSTGRES_EXTERNAL_ADDRESS`. {project_name} uses this Service to connect to the Database, which means it does not connect to the Database directly but rather through this Service.
 
