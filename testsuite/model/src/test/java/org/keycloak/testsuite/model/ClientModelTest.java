@@ -18,6 +18,7 @@ package org.keycloak.testsuite.model;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -31,6 +32,9 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleProvider;
 
+import java.util.Map;
+import java.util.Set;
+
 /**
  *
  * @author rmartinc
@@ -41,6 +45,8 @@ import org.keycloak.models.RoleProvider;
 public class ClientModelTest extends KeycloakModelTest {
 
     private String realmId;
+
+    private static final String searchClientId = "My ClIeNt WITH sP%Ces and sp*ci_l Ch***cters \" ?!";
 
     @Override
     public void createEnvironment(KeycloakSession s) {
@@ -58,6 +64,12 @@ public class ClientModelTest extends KeycloakModelTest {
     public void testClientsBasics() {
         // Create client
         ClientModel originalModel = withRealm(realmId, (session, realm) -> session.clients().addClient(realm, "myClientId"));
+        ClientModel searchClient = withRealm(realmId, (session, realm) -> {
+            ClientModel client = session.clients().addClient(realm, searchClientId);
+            client.setAlwaysDisplayInConsole(true);
+            client.addRedirectUri("http://www.redirecturi.com");
+            return client;
+        });
         assertThat(originalModel.getId(), notNullValue());
 
         // Find by id
@@ -74,6 +86,49 @@ public class ClientModelTest extends KeycloakModelTest {
             assertThat(model, notNullValue());
             assertThat(model.getId(), is(equalTo(originalModel.getId())));
             assertThat(model.getClientId(), is(equalTo("myClientId")));
+        }
+
+        // Search by clientId
+        {
+            withRealm(realmId, (session, realm) -> {
+                ClientModel client = session.clients().searchClientsByClientIdStream(realm, "client with", 0, 10).findFirst().orElse(null);
+                assertThat(client, notNullValue());
+                assertThat(client.getId(), is(equalTo(searchClient.getId())));
+                assertThat(client.getClientId(), is(equalTo(searchClientId)));
+                return null;
+            });
+
+
+            withRealm(realmId, (session, realm) -> {
+                ClientModel client = session.clients().searchClientsByClientIdStream(realm, "sp*ci_l Ch***cters", 0, 10).findFirst().orElse(null);
+                assertThat(client, notNullValue());
+                assertThat(client.getId(), is(equalTo(searchClient.getId())));
+                assertThat(client.getClientId(), is(equalTo(searchClientId)));
+                return null;
+            });
+
+            withRealm(realmId, (session, realm) -> {
+                ClientModel client = session.clients().searchClientsByClientIdStream(realm, " AND ", 0, 10).findFirst().orElse(null);
+                assertThat(client, notNullValue());
+                assertThat(client.getId(), is(equalTo(searchClient.getId())));
+                assertThat(client.getClientId(), is(equalTo(searchClientId)));
+                return null;
+            });
+
+            withRealm(realmId, (session, realm) -> {
+                ClientModel client = session.clients().searchClientsByClientIdStream(realm, "%", 0, 10).findFirst().orElse(null);
+                assertThat(client, notNullValue());
+                assertThat(client.getId(), is(equalTo(searchClient.getId())));
+                assertThat(client.getClientId(), is(equalTo(searchClientId)));
+                return null;
+            });
+        }
+
+        // using Boolean operand
+        {
+            Map<ClientModel, Set<String>> allRedirectUrisOfEnabledClients = withRealm(realmId, (session, realm) -> session.clients().getAllRedirectUrisOfEnabledClients(realm));
+            assertThat(allRedirectUrisOfEnabledClients.values(), hasSize(1));
+            assertThat(allRedirectUrisOfEnabledClients.keySet().iterator().next().getId(), is(equalTo(searchClient.getId())));
         }
 
         // Test storing flow binding override

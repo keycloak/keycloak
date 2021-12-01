@@ -15,25 +15,27 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.map.storage.hotRod.client;
+package org.keycloak.models.map.storage.hotRod.common;
 
+import org.infinispan.protostream.annotations.ProtoDoc;
 import org.infinispan.protostream.annotations.ProtoField;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
-public class HotRodAttributeEntity {
+
+public class HotRodAttributeEntityNonIndexed {
     @ProtoField(number = 1)
     public String name;
 
     @ProtoField(number = 2)
     public List<String> values = new LinkedList<>();
 
-    public HotRodAttributeEntity() {
+    public HotRodAttributeEntityNonIndexed() {
     }
 
-    public HotRodAttributeEntity(String name, List<String> values) {
+    public HotRodAttributeEntityNonIndexed(String name, List<String> values) {
         this.name = name;
         this.values.addAll(values);
     }
@@ -58,7 +60,7 @@ public class HotRodAttributeEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        HotRodAttributeEntity that = (HotRodAttributeEntity) o;
+        HotRodAttributeEntityNonIndexed that = (HotRodAttributeEntityNonIndexed) o;
         return Objects.equals(name, that.name) && Objects.equals(values, that.values);
     }
 

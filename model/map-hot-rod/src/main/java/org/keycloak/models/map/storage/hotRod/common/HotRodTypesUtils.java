@@ -18,7 +18,6 @@
 package org.keycloak.models.map.storage.hotRod.common;
 
 import org.keycloak.models.map.common.AbstractEntity;
-import org.keycloak.models.map.storage.hotRod.client.HotRodAttributeEntity;
 
 import java.util.List;
 import java.util.Map;
@@ -48,6 +47,10 @@ public class HotRodTypesUtils {
         return new HotRodAttributeEntity(entry.getKey(), entry.getValue());
     }
 
+    public static HotRodAttributeEntityNonIndexed createHotRodAttributeEntityNonIndexedFromMapEntry(Map.Entry<String, List<String>> entry) {
+        return new HotRodAttributeEntityNonIndexed(entry.getKey(), entry.getValue());
+    }
+
     public static <SetType, KeyType> boolean removeFromSetByMapKey(Set<SetType> set, KeyType key, Function<SetType, KeyType> keyGetter) {
         if (set == null || set.isEmpty()) { return false; }
         return set.stream()
@@ -73,7 +76,15 @@ public class HotRodTypesUtils {
         return attributeEntity.name;
     }
 
+    public static String getKey(HotRodAttributeEntityNonIndexed attributeEntity) {
+        return attributeEntity.name;
+    }
+
     public static List<String> getValue(HotRodAttributeEntity attributeEntity) {
+        return attributeEntity.values;
+    }
+
+    public static List<String> getValue(HotRodAttributeEntityNonIndexed attributeEntity) {
         return attributeEntity.values;
     }
 

@@ -26,6 +26,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.keycloak.models.map.storage.hotRod.IckleQueryMapModelCriteriaBuilder.sanitizeAnalyzed;
+import static org.keycloak.models.map.storage.hotRod.IckleQueryOperators.C;
+
 /**
  * This class provides knowledge on how to build Ickle query where clauses for specified {@link SearchableModelField}.
  *
@@ -71,8 +74,20 @@ public class IckleQueryWhereClauses {
      */
     public static String produceWhereClause(SearchableModelField<?> modelField, ModelCriteriaBuilder.Operator op,
                                             Object[] values, Map<String, Object> parameters) {
-        return whereClauseProducerForModelField(modelField)
-                .produceWhereClause(IckleQueryMapModelCriteriaBuilder.getFieldName(modelField), op, values, parameters);
+        String fieldName = IckleQueryMapModelCriteriaBuilder.getFieldName(modelField);
+
+        if (IckleQueryMapModelCriteriaBuilder.isAnalyzedModelField(modelField) &&
+                (op.equals(ModelCriteriaBuilder.Operator.ILIKE) || op.equals(ModelCriteriaBuilder.Operator.EQ) || op.equals(ModelCriteriaBuilder.Operator.NE))) {
+
+            String clause = C + "." + fieldName + " : '" + sanitizeAnalyzed(values[0]) + "'";
+            if (op.equals(ModelCriteriaBuilder.Operator.NE)) {
+                return "not(" + clause + ")";
+            }
+
+            return clause;
+        }
+
+        return whereClauseProducerForModelField(modelField).produceWhereClause(fieldName, op, values, parameters);
     }
 
     private static String whereClauseForClientsAttributes(String modelFieldName, ModelCriteriaBuilder.Operator op, Object[] values, Map<String, Object> parameters) {
