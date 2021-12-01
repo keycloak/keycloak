@@ -24,7 +24,10 @@ import { ActionGroup,
     ExpandableSection, 
     ValidatedOptions,
     PageSection,
-    PageSectionVariants
+    PageSectionVariants,
+    Text,
+    TextVariants,
+    TextContent
 } from '@patternfly/react-core';
 
 import { HttpResponse } from '../../account-service/account.service';
@@ -160,6 +163,9 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                 introMessage="personalSubMessage"
             >
                 <PageSection isFilled variant={PageSectionVariants.light}>
+                    <TextContent className="pf-u-mb-lg">
+                        <Text component={TextVariants.small}>All fields are required.</Text>
+                    </TextContent>
                     <Form
                         onSubmit={(event) => this.handleSubmit(event)}
                         className="personal-info-form"
@@ -167,7 +173,6 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                         {!this.isRegistrationEmailAsUsername && (
                             <FormGroup
                                 label={Msg.localize("username")}
-                                isRequired
                                 fieldId="user-name"
                                 helperTextInvalid={this.state.errors.username}
                                 validated={
@@ -184,7 +189,6 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                         )}
                         <FormGroup
                             label={Msg.localize("email")}
-                            isRequired
                             fieldId="email-address"
                             helperTextInvalid={this.state.errors.email}
                             validated={
@@ -210,7 +214,6 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                         </FormGroup>
                         <FormGroup
                             label={Msg.localize("firstName")}
-                            isRequired
                             fieldId="first-name"
                             helperTextInvalid={this.state.errors.firstName}
                             validated={
@@ -236,7 +239,6 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                         </FormGroup>
                         <FormGroup
                             label={Msg.localize("lastName")}
-                            isRequired
                             fieldId="last-name"
                             helperTextInvalid={this.state.errors.lastName}
                             validated={
