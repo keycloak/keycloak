@@ -393,13 +393,12 @@ public class LDAPOperationManager {
             filter.append(config.getCustomUserSearchFilter());
         }
 
-        if (logger.isTraceEnabled()) {
-            logger.tracef("Using filter for lookup user by LDAP ID: %s", filter.toString());
-        }
-
         filter.append(")");
+        String ldapIdFilter = filter.toString();
 
-        return filter.toString();
+        logger.tracef("Using filter for lookup user by LDAP ID: %s", ldapIdFilter);
+
+        return ldapIdFilter;
     }
 
     public SearchResult lookupById(final String baseDN, final String id, final Collection<String> returningAttributes) {
