@@ -132,6 +132,7 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRo
         CloseableIterator<E> iterator = query.iterator();
         return closing(StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, 0), false))
                 .onClose(iterator::close)
+                .filter(Objects::nonNull) // see https://github.com/keycloak/keycloak/issues/9271
                 .map(this.delegateProducer);
     }
 

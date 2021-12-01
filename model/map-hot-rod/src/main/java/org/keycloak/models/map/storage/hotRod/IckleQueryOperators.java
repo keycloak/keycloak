@@ -56,6 +56,8 @@ public class IckleQueryOperators {
         OPERATOR_TO_EXPRESSION_COMBINATORS.put(ModelCriteriaBuilder.Operator.IN, IckleQueryOperators::in);
         OPERATOR_TO_EXPRESSION_COMBINATORS.put(ModelCriteriaBuilder.Operator.EXISTS, IckleQueryOperators::exists);
         OPERATOR_TO_EXPRESSION_COMBINATORS.put(ModelCriteriaBuilder.Operator.NOT_EXISTS, IckleQueryOperators::notExists);
+        OPERATOR_TO_EXPRESSION_COMBINATORS.put(ModelCriteriaBuilder.Operator.ILIKE, IckleQueryOperators::iLike);
+        OPERATOR_TO_EXPRESSION_COMBINATORS.put(ModelCriteriaBuilder.Operator.LIKE, IckleQueryOperators::like);
 
         OPERATOR_TO_STRING.put(ModelCriteriaBuilder.Operator.EQ, "=");
         OPERATOR_TO_STRING.put(ModelCriteriaBuilder.Operator.NE, "!=");
@@ -82,17 +84,29 @@ public class IckleQueryOperators {
         String combine(String fieldName, Object[] values, Map<String, Object> parameters);
     }
 
-    private static String exists(String modelField, Object[] values, Map<String, Object> parameters) {
-        String field = C + "." + modelField;
+    private static String exists(String modelFieldName, Object[] values, Map<String, Object> parameters) {
+        String field = C + "." + modelFieldName;
         return field + " IS NOT NULL AND " + field + " IS NOT EMPTY";
     }
 
-    private static String notExists(String modelField, Object[] values, Map<String, Object> parameters) {
-        String field = C + "." + modelField;
+    private static String notExists(String modelFieldName, Object[] values, Map<String, Object> parameters) {
+        String field = C + "." + modelFieldName;
         return field + " IS NULL OR " + field + " IS EMPTY";
     }
 
-    private static String in(String modelField, Object[] values, Map<String, Object> parameters) {
+    private static String iLike(String modelFieldName, Object[] values, Map<String, Object> parameters) {
+        String sanitizedValue = (String) IckleQueryMapModelCriteriaBuilder.sanitize(values[0]);
+        return singleValueOperator(ModelCriteriaBuilder.Operator.ILIKE)
+                .combine(modelFieldName + "Lowercase", new String[] {sanitizedValue.toLowerCase()}, parameters);
+    }
+
+    private static String like(String modelFieldName, Object[] values, Map<String, Object> parameters) {
+        String sanitizedValue = (String) IckleQueryMapModelCriteriaBuilder.sanitize(values[0]);
+        return singleValueOperator(ModelCriteriaBuilder.Operator.LIKE)
+                .combine(modelFieldName, new String[] {sanitizedValue}, parameters);
+    }
+
+    private static String in(String modelFieldName, Object[] values, Map<String, Object> parameters) {
         if (values == null || values.length == 0) {
             return "false";
         }
@@ -113,9 +127,9 @@ public class IckleQueryOperators {
             operands = new HashSet<>(Arrays.asList(values));
         }
 
-        return operands.isEmpty() ? "false" : C + "." + modelField + " IN (" + operands.stream()
+        return operands.isEmpty() ? "false" : C + "." + modelFieldName + " IN (" + operands.stream()
                 .map(operand -> {
-                    String namedParam = findAvailableNamedParam(parameters.keySet(), modelField);
+                    String namedParam = findAvailableNamedParam(parameters.keySet(), modelFieldName);
                     parameters.put(namedParam, operand);
                     return ":" + namedParam;
                 })
@@ -177,13 +191,13 @@ public class IckleQueryOperators {
      * Provides a string containing where clause for given operator, field name and values
      *
      * @param op operator
-     * @param filedName field name
+     * @param modelFieldName field name
      * @param values values
      * @param parameters mapping between named parameters and their values
      * @return where clause
      */
-    public static String combineExpressions(ModelCriteriaBuilder.Operator op, String filedName, Object[] values, Map<String, Object> parameters) {
-        return operatorToExpressionCombinator(op).combine(filedName, values, parameters);
+    public static String combineExpressions(ModelCriteriaBuilder.Operator op, String modelFieldName, Object[] values, Map<String, Object> parameters) {
+        return operatorToExpressionCombinator(op).combine(modelFieldName, values, parameters);
     }
 
 }

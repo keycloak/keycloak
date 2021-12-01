@@ -18,6 +18,7 @@ package org.keycloak.models.map.storage.hotRod.connections;
 
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.RemoteCacheManager;
+import org.infinispan.client.hotrod.RemoteCacheManagerAdmin;
 import org.infinispan.client.hotrod.configuration.ClientIntelligence;
 import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
 import org.infinispan.commons.marshall.ProtoStreamMarshaller;
@@ -33,6 +34,9 @@ import org.keycloak.models.map.storage.hotRod.HotRodMapStorageProviderFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
@@ -104,14 +108,31 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
         remoteBuilder.addContextInitializer(ProtoSchemaInitializer.INSTANCE);
         remoteCacheManager = new RemoteCacheManager(remoteBuilder.build());
 
+        Set<String> remoteCaches = HotRodMapStorageProviderFactory.ENTITY_DESCRIPTOR_MAP.values().stream()
+                .map(HotRodEntityDescriptor::getCacheName).collect(Collectors.toSet());
+
         if (configureRemoteCaches) {
             // access the caches to force their creation
-            HotRodMapStorageProviderFactory.ENTITY_DESCRIPTOR_MAP.values().stream()
-                    .map(HotRodEntityDescriptor::getCacheName)
-                    .forEach(remoteCacheManager::getCache);
+            remoteCaches.forEach(remoteCacheManager::getCache);
         }
 
         registerSchemata(ProtoSchemaInitializer.INSTANCE);
+
+        RemoteCacheManagerAdmin administration = remoteCacheManager.administration();
+        if (config.getBoolean("reindexAllCaches", false)) {
+            LOG.infof("Reindexing all caches. This can take a long time to complete. While the rebuild operation is in progress, queries might return fewer results.");
+            remoteCaches.forEach(administration::reindexCache);
+        } else {
+            String reindexCaches = config.get("reindexCaches", "");
+            if (reindexCaches != null) {
+                Arrays.stream(reindexCaches.split(","))
+                    .map(String::trim)
+                        .filter(e -> !e.isEmpty())
+                        .filter(remoteCaches::contains)
+                        .peek(cacheName -> LOG.infof("Reindexing %s cache. This can take a long time to complete. While the rebuild operation is in progress, queries might return fewer results.", cacheName))
+                        .forEach(administration::reindexCache);
+            }
+        }
     }
 
     private void registerSchemata(GeneratedSchema initializer) {
