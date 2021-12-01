@@ -1,10 +1,14 @@
 package org.keycloak.testsuite.error;
 
+import org.apache.http.Header;
+import org.apache.http.HeaderElement;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
+import org.hamcrest.CoreMatchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Test;
@@ -26,10 +30,18 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.utils.MediaType.APPLICATION_JSON;
 
 public class UncaughtErrorPageTest extends AbstractKeycloakTest {
 
@@ -101,6 +113,35 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
             OAuth2ErrorRepresentation error = JsonSerialization.readValue(response.getEntity().getContent(), OAuth2ErrorRepresentation.class);
             assertEquals("unknown_error", error.getError());
             assertNull(error.getErrorDescription());
+        }
+    }
+
+    @Test
+    @UncaughtServerErrorExpected
+    public void uncaughtErrorAdminPropertyError() throws IOException {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            String accessToken = adminClient.tokenManager().getAccessTokenString();
+
+            HttpPost post = new HttpPost(suiteContext.getAuthServerInfo().getUriBuilder().path("/auth/admin/realms").build());
+            post.setEntity(new StringEntity("{\"<img src=alert(1)>\":1}"));
+            post.setHeader("Authorization", "bearer " + accessToken);
+            post.setHeader("Content-Type", "application/json");
+
+            try (CloseableHttpResponse response = client.execute(post)) {
+                assertEquals(400, response.getStatusLine().getStatusCode());
+
+                Header header = response.getFirstHeader("Content-Type");
+                assertThat(header, notNullValue());
+
+                // Verify the Content-Type is not text/html
+                assertThat(Arrays.stream(header.getElements())
+                        .map(HeaderElement::getName)
+                        .filter(Objects::nonNull)
+                        .anyMatch(f -> f.equals(APPLICATION_JSON)), is(true));
+
+                // The alert is not executed
+                assertThat(EntityUtils.toString(response.getEntity()), CoreMatchers.containsString("Unrecognized field \\\"<img src=alert(1)>\\\""));
+            }
         }
     }
 

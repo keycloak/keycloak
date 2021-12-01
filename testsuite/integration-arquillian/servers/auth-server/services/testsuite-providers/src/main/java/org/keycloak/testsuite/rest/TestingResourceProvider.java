@@ -57,6 +57,7 @@ import org.keycloak.representations.idm.AuthDetailsRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.ErrorPage;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
@@ -1033,6 +1034,18 @@ public class TestingResourceProvider implements RealmResourceProvider {
                 .type(javax.ws.rs.core.MediaType.TEXT_HTML_TYPE)
                 .entity(builder.toString()).build();
 
+    }
+
+    /**
+     * Display message to Error Page - for testing purposes
+     *
+     * @param message message
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/display-error-message")
+    public Response displayErrorMessage(@QueryParam("message") String message) {
+        return ErrorPage.error(session, session.getContext().getAuthenticationSession(), Response.Status.BAD_REQUEST, message == null ? "" : message);
     }
 
     private RealmModel getRealmByName(String realmName) {
