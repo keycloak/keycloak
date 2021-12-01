@@ -318,6 +318,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
         <StackItem>
           <JsonFileUpload
             id="partial-import-file"
+            allowEditingUploadedText
             onChange={handleFileChange}
           />
         </StackItem>

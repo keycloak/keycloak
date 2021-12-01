@@ -61,6 +61,9 @@ export default {
       UNANIMOUS: "Unanimous",
       AFFIRMATIVE: "Affirmative",
     },
+    importResources: "The following settings and data will be imported:",
+    importWarning:
+      "The data and settings imported above may overwrite the data and settings that already exist.",
     createResource: "Create resource",
     createResourceBasedPermission: "Create resource-based permission",
     displayName: "Display name",
@@ -79,6 +82,7 @@ export default {
     owner: "Owner",
     uris: "URIs",
     scopes: "Scopes",
+    policies: "Policies",
     createPermission: "Create permission",
     deleteResource: "Permanently delete resource?",
     deleteResourceConfirm:

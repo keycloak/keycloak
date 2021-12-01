@@ -141,15 +141,18 @@ export const FileUploadForm = ({
             isLoading={fileUpload.isLoading}
             hideDefaultPreview
           >
-            <CodeEditor
-              isLineNumbersVisible
-              code={fileUpload.value}
-              language={language}
-              height="128px"
-              onChange={(value, event) =>
-                handleChange(value, fileUpload.filename, event as any)
-              }
-            />
+            {!rest.hideDefaultPreview && (
+              <CodeEditor
+                isLineNumbersVisible
+                code={fileUpload.value}
+                language={language}
+                height="128px"
+                onChange={(value, event) =>
+                  handleChange(value || "", fileUpload.filename, event as any)
+                }
+                isReadOnly={!rest.allowEditingUploadedText}
+              />
+            )}
           </FileUpload>
         </FormGroup>
       )}
