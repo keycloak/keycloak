@@ -19,8 +19,10 @@ package org.keycloak.testsuite.admin.client;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
@@ -37,24 +39,26 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.AdminEventPaths;
+import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.Matchers;
+import org.keycloak.testsuite.util.RoleBuilder;
 
-import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.Assert.assertNames;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -82,7 +86,8 @@ public class ClientScopeTest extends AbstractClientTest {
 
     @Test (expected = NotFoundException.class)
     public void testGetUnknownScope() {
-        clientScopes().get("unknown-id").toRepresentation();
+        String unknownId = UUID.randomUUID().toString();
+        clientScopes().get(unknownId).toRepresentation();
     }
 
 
@@ -102,7 +107,7 @@ public class ClientScopeTest extends AbstractClientTest {
         String scope1Id = createClientScope(scopeRep);
 
         List<ClientScopeRepresentation> clientScopes = clientScopes().findAll();
-        Assert.assertTrue(getClientScopeNames(clientScopes).contains("scope1"));
+        assertTrue(getClientScopeNames(clientScopes).contains("scope1"));
 
         // Create scope2
         scopeRep = new ClientScopeRepresentation();
@@ -110,14 +115,14 @@ public class ClientScopeTest extends AbstractClientTest {
         String scope2Id = createClientScope(scopeRep);
 
         clientScopes = clientScopes().findAll();
-        Assert.assertTrue(getClientScopeNames(clientScopes).contains("scope2"));
+        assertTrue(getClientScopeNames(clientScopes).contains("scope2"));
 
         // Remove scope1
         removeClientScope(scope1Id);
 
         clientScopes = clientScopes().findAll();
         Assert.assertFalse(getClientScopeNames(clientScopes).contains("scope1"));
-        Assert.assertTrue(getClientScopeNames(clientScopes).contains("scope2"));
+        assertTrue(getClientScopeNames(clientScopes).contains("scope2"));
 
 
         // Remove scope2
@@ -148,7 +153,7 @@ public class ClientScopeTest extends AbstractClientTest {
         Assert.assertEquals("scope1", scopeRep.getName());
         Assert.assertEquals("scope1-desc", scopeRep.getDescription());
         Assert.assertEquals("someAttrValue", scopeRep.getAttributes().get("someAttr"));
-        Assert.assertTrue(ObjectUtil.isBlank(scopeRep.getAttributes().get("emptyAttr")));
+        assertTrue(ObjectUtil.isBlank(scopeRep.getAttributes().get("emptyAttr")));
         Assert.assertEquals(OIDCLoginProtocol.LOGIN_PROTOCOL, scopeRep.getProtocol());
 
 
@@ -205,15 +210,12 @@ public class ClientScopeTest extends AbstractClientTest {
 
     @Test
     public void testScopes() {
-        // Add realm role1
-        RoleRepresentation roleRep1 = createRealmRole("role1");
-
-        // Add realm role2
-        RoleRepresentation roleRep2 = createRealmRole("role2");
-
-        // Add role2 as composite to role1
-        testRealmResource().roles().get("role1").addComposites(Collections.singletonList(roleRep2));
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.roleResourceCompositesPath("role1"), Collections.singletonList(roleRep2), ResourceType.REALM_ROLE);
+        RoleRepresentation realmCompositeRole = createRealmRole("realm-composite");
+        RoleRepresentation realmChildRole = createRealmRole("realm-child");
+        testRealmResource().roles().get("realm-composite").addComposites(Collections.singletonList(realmChildRole));
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE,
+                AdminEventPaths.roleResourceCompositesPath("realm-composite"),
+                Collections.singletonList(realmChildRole), ResourceType.REALM_ROLE);
 
         // create client scope
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
@@ -221,15 +223,21 @@ public class ClientScopeTest extends AbstractClientTest {
         String scopeId = createClientScope(scopeRep);
 
         // update with some scopes
-        String accountMgmtId = testRealmResource().clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0).getId();
-        RoleRepresentation viewAccountRoleRep = testRealmResource().clients().get(accountMgmtId).roles().get(AccountRoles.VIEW_PROFILE).toRepresentation();
+        String accountMgmtId =
+                testRealmResource().clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0).getId();
+        RoleRepresentation viewAccountRoleRep = testRealmResource().clients().get(accountMgmtId).roles()
+                .get(AccountRoles.VIEW_PROFILE).toRepresentation();
         RoleMappingResource scopesResource = clientScopes().get(scopeId).getScopeMappings();
 
-        scopesResource.realmLevel().add(Collections.singletonList(roleRep1));
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientScopeRoleMappingsRealmLevelPath(scopeId), Collections.singletonList(roleRep1), ResourceType.REALM_SCOPE_MAPPING);
+        scopesResource.realmLevel().add(Collections.singletonList(realmCompositeRole));
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE,
+                AdminEventPaths.clientScopeRoleMappingsRealmLevelPath(scopeId),
+                Collections.singletonList(realmCompositeRole), ResourceType.REALM_SCOPE_MAPPING);
 
         scopesResource.clientLevel(accountMgmtId).add(Collections.singletonList(viewAccountRoleRep));
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientScopeRoleMappingsClientLevelPath(scopeId, accountMgmtId), Collections.singletonList(viewAccountRoleRep), ResourceType.CLIENT_SCOPE_MAPPING);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE,
+                AdminEventPaths.clientScopeRoleMappingsClientLevelPath(scopeId, accountMgmtId),
+                Collections.singletonList(viewAccountRoleRep), ResourceType.CLIENT_SCOPE_MAPPING);
 
         // test that scopes are available (also through composite role)
         List<RoleRepresentation> allRealm = scopesResource.realmLevel().listAll();
@@ -237,61 +245,110 @@ public class ClientScopeTest extends AbstractClientTest {
         List<RoleRepresentation> effectiveRealm = scopesResource.realmLevel().listEffective();
         List<RoleRepresentation> accountRoles = scopesResource.clientLevel(accountMgmtId).listAll();
 
-        assertRolesPresent(allRealm, "role1");
-        assertRolesNotPresent(availableRealm, "role1", "role2");
-        assertRolesPresent(effectiveRealm, "role1", "role2");
-        assertRolesPresent(accountRoles, AccountRoles.VIEW_PROFILE);
+        assertNames(allRealm, "realm-composite");
+        assertNames(availableRealm, "realm-child", Constants.OFFLINE_ACCESS_ROLE, Constants.AUTHZ_UMA_AUTHORIZATION,
+                Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
+        assertNames(effectiveRealm, "realm-composite", "realm-child");
+        assertNames(accountRoles, AccountRoles.VIEW_PROFILE);
         MappingsRepresentation mappingsRep = clientScopes().get(scopeId).getScopeMappings().getAll();
-        assertRolesPresent(mappingsRep.getRealmMappings(), "role1");
-        assertRolesPresent(mappingsRep.getClientMappings().get(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings(), AccountRoles.VIEW_PROFILE);
+        assertNames(mappingsRep.getRealmMappings(), "realm-composite");
+        assertNames(mappingsRep.getClientMappings().get(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings(),
+                AccountRoles.VIEW_PROFILE);
 
 
         // remove scopes
-        scopesResource.realmLevel().remove(Collections.singletonList(roleRep1));
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientScopeRoleMappingsRealmLevelPath(scopeId), Collections.singletonList(roleRep1), ResourceType.REALM_SCOPE_MAPPING);
+        scopesResource.realmLevel().remove(Collections.singletonList(realmCompositeRole));
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE,
+                AdminEventPaths.clientScopeRoleMappingsRealmLevelPath(scopeId),
+                Collections.singletonList(realmCompositeRole), ResourceType.REALM_SCOPE_MAPPING);
 
         scopesResource.clientLevel(accountMgmtId).remove(Collections.singletonList(viewAccountRoleRep));
-        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.clientScopeRoleMappingsClientLevelPath(scopeId, accountMgmtId), Collections.singletonList(viewAccountRoleRep), ResourceType.CLIENT_SCOPE_MAPPING);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE,
+                AdminEventPaths.clientScopeRoleMappingsClientLevelPath(scopeId, accountMgmtId),
+                Collections.singletonList(viewAccountRoleRep), ResourceType.CLIENT_SCOPE_MAPPING);
 
         // assert scopes are removed
         allRealm = scopesResource.realmLevel().listAll();
         availableRealm = scopesResource.realmLevel().listAvailable();
         effectiveRealm = scopesResource.realmLevel().listEffective();
         accountRoles = scopesResource.clientLevel(accountMgmtId).listAll();
-        assertRolesNotPresent(allRealm, "role1");
-        assertRolesPresent(availableRealm, "role1", "role2");
-        assertRolesNotPresent(effectiveRealm, "role1", "role2");
-        assertRolesNotPresent(accountRoles, AccountRoles.VIEW_PROFILE);
+        assertNames(allRealm);
+        assertNames(availableRealm, "realm-composite", "realm-child", Constants.OFFLINE_ACCESS_ROLE,
+                Constants.AUTHZ_UMA_AUTHORIZATION,
+                Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
+        assertNames(effectiveRealm);
+        assertNames(accountRoles);
 
         // remove scope
         removeClientScope(scopeId);
     }
 
-    private void assertRolesPresent(List<RoleRepresentation> roles, String... expectedRoleNames) {
-        List<String> expectedList = Arrays.asList(expectedRoleNames);
+    /**
+     * Test for KEYCLOAK-10603.
+     */
+    @Test
+    public void rolesCanBeAddedToScopeEvenWhenTheyAreAlreadyIndirectlyAssigned() {
+        RealmResource realm = testRealmResource();
+        ClientScopeRepresentation clientScopeRep = new ClientScopeRepresentation();
+        clientScopeRep.setName("my-scope");
+        String clientScopeId = createClientScope(clientScopeRep);
 
-        Set<String> presentRoles = new HashSet<>();
-        for (RoleRepresentation roleRep : roles) {
-            presentRoles.add(roleRep.getName());
-        }
+        createRealmRole("realm-composite");
+        createRealmRole("realm-child");
+        realm.roles().get("realm-composite")
+                .addComposites(Collections.singletonList(realm.roles().get("realm-child").toRepresentation()));
 
-        for (String expected : expectedList) {
-            if (!presentRoles.contains(expected)) {
-                Assert.fail("Expected role " + expected + " not available");
-            }
-        }
+        Response response = realm.clients().create(ClientBuilder.create().clientId("role-container-client").build());
+        String roleContainerClientUuid = ApiUtil.getCreatedId(response);
+        getCleanup().addClientUuid(roleContainerClientUuid);
+        response.close();
+
+        RoleRepresentation clientCompositeRole = RoleBuilder.create().name("client-composite").build();
+        realm.clients().get(roleContainerClientUuid).roles().create(clientCompositeRole);
+        realm.clients().get(roleContainerClientUuid).roles().create(RoleBuilder.create().name("client-child").build());
+        realm.clients().get(roleContainerClientUuid).roles().get("client-composite").addComposites(Collections
+                .singletonList(
+                        realm.clients().get(roleContainerClientUuid).roles().get("client-child").toRepresentation()));
+
+        // Make indirect assignments: assign composite roles
+        RoleMappingResource scopesResource = realm.clientScopes().get(clientScopeId).getScopeMappings();
+        scopesResource.realmLevel()
+                .add(Collections.singletonList(realm.roles().get("realm-composite").toRepresentation()));
+        scopesResource.clientLevel(roleContainerClientUuid).add(Collections
+                .singletonList(realm.clients().get(roleContainerClientUuid).roles().get("client-composite")
+                        .toRepresentation()));
+
+        // check state before making the direct assignments
+        assertNames(scopesResource.realmLevel().listAll(), "realm-composite");
+        assertNames(scopesResource.realmLevel().listAvailable(), "realm-child", "offline_access",
+                Constants.AUTHZ_UMA_AUTHORIZATION, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
+        assertNames(scopesResource.realmLevel().listEffective(), "realm-composite", "realm-child");
+
+        assertNames(scopesResource.clientLevel(roleContainerClientUuid).listAll(), "client-composite");
+        assertNames(scopesResource.clientLevel(roleContainerClientUuid).listAvailable(), "client-child");
+        assertNames(scopesResource.clientLevel(roleContainerClientUuid).listEffective(), "client-composite",
+                "client-child");
+
+        // Make direct assignments for roles which are already indirectly assigned
+        scopesResource.realmLevel().add(Collections.singletonList(realm.roles().get("realm-child").toRepresentation()));
+        scopesResource.clientLevel(roleContainerClientUuid).add(Collections
+                .singletonList(
+                        realm.clients().get(roleContainerClientUuid).roles().get("client-child").toRepresentation()));
+
+        // List realm roles
+        assertNames(scopesResource.realmLevel().listAll(), "realm-composite", "realm-child");
+        assertNames(scopesResource.realmLevel().listAvailable(), "offline_access",
+                Constants.AUTHZ_UMA_AUTHORIZATION, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
+        assertNames(scopesResource.realmLevel().listEffective(), "realm-composite", "realm-child");
+
+        // List client roles
+        assertNames(scopesResource.clientLevel(roleContainerClientUuid).listAll(), "client-composite",
+                "client-child");
+        assertNames(scopesResource.clientLevel(roleContainerClientUuid).listAvailable());
+        assertNames(scopesResource.clientLevel(roleContainerClientUuid).listEffective(), "client-composite",
+                "client-child");
     }
-
-    private void assertRolesNotPresent(List<RoleRepresentation> roles, String... notExpectedRoleNames) {
-        List<String> notExpectedList = Arrays.asList(notExpectedRoleNames);
-        for (RoleRepresentation roleRep : roles) {
-            if (notExpectedList.contains(roleRep.getName())) {
-                Assert.fail("Role " + roleRep.getName() + " wasn't expected to be available");
-            }
-        }
-    }
-
-
+    
     // KEYCLOAK-2809
     @Test
     public void testRemoveScopedRole() {
@@ -330,15 +387,19 @@ public class ClientScopeTest extends AbstractClientTest {
 
         assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.roleResourcePath(roleName), roleRep, ResourceType.REALM_ROLE);
 
-        return testRealmResource().roles().get(roleName).toRepresentation();
+        RoleRepresentation createdRole = testRealmResource().roles().get(roleName).toRepresentation();
+
+        getCleanup().addRoleId(createdRole.getId());
+
+        return createdRole;
     }
 
-    // KEYCLOAK-2844
     @Test
     public void testRemoveClientScopeInUse() {
         // Add client scope
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("foo-scope");
+        scopeRep.setProtocol("openid-connect");
         String scopeId = createClientScope(scopeRep);
 
         // Add client with the clientScope
@@ -349,21 +410,8 @@ public class ClientScopeTest extends AbstractClientTest {
         clientRep.setDefaultClientScopes(Collections.singletonList("foo-scope"));
         String clientDbId = createClient(clientRep);
 
-        // Can't remove clientScope
-        try {
-            clientScopes().get(scopeId).remove();
-            Assert.fail("Not expected to successfully remove clientScope in use");
-        } catch (BadRequestException bre) {
-            ErrorRepresentation error = bre.getResponse().readEntity(ErrorRepresentation.class);
-            Assert.assertEquals("Cannot remove client scope, it is currently in use", error.getErrorMessage());
-            assertAdminEvents.assertEmpty();
-        }
-
-        // Remove client
-        removeClient(clientDbId);
-
-        // Can remove clientScope now
         removeClientScope(scopeId);
+        removeClient(clientDbId);
     }
 
 
@@ -391,10 +439,10 @@ public class ClientScopeTest extends AbstractClientTest {
         // Ensure defaults and optional scopes are here
         List<String> realmDefaultScopes = getClientScopeNames(testRealmResource().getDefaultDefaultClientScopes());
         List<String> realmOptionalScopes = getClientScopeNames(testRealmResource().getDefaultOptionalClientScopes());
-        Assert.assertTrue(realmDefaultScopes.contains("scope-def"));
+        assertTrue(realmDefaultScopes.contains("scope-def"));
         Assert.assertFalse(realmOptionalScopes .contains("scope-def"));
         Assert.assertFalse(realmDefaultScopes.contains("scope-opt"));
-        Assert.assertTrue(realmOptionalScopes .contains("scope-opt"));
+        assertTrue(realmOptionalScopes .contains("scope-opt"));
 
         // create client. Ensure that it has scope-def and scope-opt scopes assigned
         ClientRepresentation clientRep = new ClientRepresentation();
@@ -405,10 +453,10 @@ public class ClientScopeTest extends AbstractClientTest {
 
         List<String> clientDefaultScopes = getClientScopeNames(testRealmResource().clients().get(clientUuid).getDefaultClientScopes());
         List<String> clientOptionalScopes = getClientScopeNames(testRealmResource().clients().get(clientUuid).getOptionalClientScopes());
-        Assert.assertTrue(clientDefaultScopes.contains("scope-def"));
+        assertTrue(clientDefaultScopes.contains("scope-def"));
         Assert.assertFalse(clientOptionalScopes .contains("scope-def"));
         Assert.assertFalse(clientDefaultScopes.contains("scope-opt"));
-        Assert.assertTrue(clientOptionalScopes .contains("scope-opt"));
+        assertTrue(clientOptionalScopes .contains("scope-opt"));
 
         // Unassign scope-def and scope-opt from realm
         testRealmResource().removeDefaultDefaultClientScope(scopeDefId);
@@ -454,7 +502,7 @@ public class ClientScopeTest extends AbstractClientTest {
 
         // Ensure that scope is optional
         List<String> realmOptionalScopes = getClientScopeNames(testRealmResource().getDefaultOptionalClientScopes());
-        Assert.assertTrue(realmOptionalScopes.contains("optional-client-scope"));
+        assertTrue(realmOptionalScopes.contains("optional-client-scope"));
 
         // Create client
         ClientRepresentation client = new ClientRepresentation();
@@ -465,15 +513,65 @@ public class ClientScopeTest extends AbstractClientTest {
 
         // Ensure that default optional client scope is a default scope of the client
         List<String> clientDefaultScopes = getClientScopeNames(testRealmResource().clients().get(clientUuid).getDefaultClientScopes());
-        Assert.assertTrue(clientDefaultScopes.contains("optional-client-scope"));
+        assertTrue(clientDefaultScopes.contains("optional-client-scope"));
 
         // Ensure that no optional scopes are assigned to the client, even if there are default optional scopes!
         List<String> clientOptionalScopes = getClientScopeNames(testRealmResource().clients().get(clientUuid).getOptionalClientScopes());
-        Assert.assertTrue(clientOptionalScopes.isEmpty());
+        assertTrue(clientOptionalScopes.isEmpty());
 
         // Unassign optional client scope from realm for cleanup
         testRealmResource().removeDefaultOptionalClientScope(optionalClientScopeId);
         assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE, AdminEventPaths.defaultOptionalClientScopePath(optionalClientScopeId), ResourceType.CLIENT_SCOPE);
+    }
+
+    // KEYCLOAK-18332
+    @Test
+    public void scopesRemainAfterClientUpdate() {
+        // Create a bunch of scopes
+        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
+        scopeRep.setName("scope-def");
+        scopeRep.setProtocol("openid-connect");
+        String scopeDefId = createClientScope(scopeRep);
+        getCleanup().addClientScopeId(scopeDefId);
+
+        scopeRep = new ClientScopeRepresentation();
+        scopeRep.setName("scope-opt");
+        scopeRep.setProtocol("openid-connect");
+        String scopeOptId = createClientScope(scopeRep);
+        getCleanup().addClientScopeId(scopeOptId);
+
+        // Add scope-def as default and scope-opt as optional client scope
+        testRealmResource().addDefaultDefaultClientScope(scopeDefId);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.defaultDefaultClientScopePath(scopeDefId), ResourceType.CLIENT_SCOPE);
+        testRealmResource().addDefaultOptionalClientScope(scopeOptId);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.defaultOptionalClientScopePath(scopeOptId), ResourceType.CLIENT_SCOPE);
+
+        // Create a client
+        ClientRepresentation clientRep = new ClientRepresentation();
+        clientRep.setClientId("bar-client");
+        clientRep.setProtocol("openid-connect");
+        String clientUuid = createClient(clientRep);
+        ClientResource client = testRealmResource().clients().get(clientUuid);
+        getCleanup().addClientUuid(clientUuid);
+        assertTrue(getClientScopeNames(client.getDefaultClientScopes()).contains("scope-def"));
+        assertTrue(getClientScopeNames(client.getOptionalClientScopes()).contains("scope-opt"));
+
+        // Remove the scopes from client
+        client.removeDefaultClientScope(scopeDefId);
+        client.removeOptionalClientScope(scopeOptId);
+        List<String> expectedDefScopes = getClientScopeNames(client.getDefaultClientScopes());
+        List<String> expectedOptScopes = getClientScopeNames(client.getOptionalClientScopes());
+        assertFalse(expectedDefScopes.contains("scope-def"));
+        assertFalse(expectedOptScopes.contains("scope-opt"));
+
+        // Update the client
+        clientRep = client.toRepresentation();
+        clientRep.setDescription("desc"); // Make a small change
+        client.update(clientRep);
+
+        // Assert scopes are intact
+        assertEquals(expectedDefScopes, getClientScopeNames(client.getDefaultClientScopes()));
+        assertEquals(expectedOptScopes, getClientScopeNames(client.getOptionalClientScopes()));
     }
 
     // KEYCLOAK-5863
@@ -518,6 +616,42 @@ public class ClientScopeTest extends AbstractClientTest {
         clientScopes().get(scopeId).remove();
     }
 
+    @Test
+    public void updateClientWithDefaultScopeAssignedAsOptionalAndOpposite() {
+        // create client
+        ClientRepresentation clientRep = new ClientRepresentation();
+        clientRep.setClientId("bar-client");
+        clientRep.setProtocol("openid-connect");
+        String clientUuid = createClient(clientRep);
+        getCleanup().addClientUuid(clientUuid);
+
+        // Create 2 client scopes
+        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
+        scopeRep.setName("scope-def");
+        scopeRep.setProtocol("openid-connect");
+        String scopeDefId = createClientScope(scopeRep);
+        getCleanup().addClientScopeId(scopeDefId);
+
+        scopeRep = new ClientScopeRepresentation();
+        scopeRep.setName("scope-opt");
+        scopeRep.setProtocol("openid-connect");
+        String scopeOptId = createClientScope(scopeRep);
+        getCleanup().addClientScopeId(scopeOptId);
+
+        // assign "scope-def" as optional client scope to client
+        testRealmResource().clients().get(clientUuid).addOptionalClientScope(scopeDefId);
+
+        // assign "scope-opt" as default client scope to client
+        testRealmResource().clients().get(clientUuid).addDefaultClientScope(scopeOptId);
+
+        // Add scope-def as default and scope-opt as optional client scope within the realm
+        testRealmResource().addDefaultDefaultClientScope(scopeDefId);
+        testRealmResource().addDefaultOptionalClientScope(scopeOptId);
+
+        //update client - check it passes (it used to throw ModelDuplicateException before)
+        clientRep.setDescription("new_description");
+        testRealmResource().clients().get(clientUuid).update(clientRep);
+    }
 
     private ClientScopesResource clientScopes() {
         return testRealmResource().clientScopes();

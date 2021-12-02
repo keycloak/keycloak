@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,22 +17,33 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.keycloak.Config.Scope;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public class SecureResponseTypeExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
-    public static final String PROVIDER_ID = "secure-responsetype-executor";
+    public static final String PROVIDER_ID = "secure-response-type";
+
+    public static final String AUTO_CONFIGURE = "auto-configure";
+    public static final String ALLOW_TOKEN_RESPONSE_TYPE = "allow-token-response-type";
+
+    private static final ProviderConfigProperty AUTO_CONFIGURE_PROPERTY = new ProviderConfigProperty(
+            AUTO_CONFIGURE, "Auto-configure", "If On, then the during client creation or update, the configuration of the client will be auto-configured to use ID token returned from authorization endpoint as detached signature.", ProviderConfigProperty.BOOLEAN_TYPE, false);
+    private static final ProviderConfigProperty ALLOW_TOKEN_RESPONSE_TYPE_PROPERTY = new ProviderConfigProperty(
+            ALLOW_TOKEN_RESPONSE_TYPE, "Allow-token-response-type", "If On, then it allows an access token returned from authorization endpoint in hybrid flow.", ProviderConfigProperty.BOOLEAN_TYPE, false);
 
     @Override
-    public ClientPolicyExecutorProvider create(KeycloakSession session, ComponentModel model) {
-        return new SecureResponseTypeExecutor(session, model);
+    public ClientPolicyExecutorProvider create(KeycloakSession session) {
+        return new SecureResponseTypeExecutor(session);
     }
 
     @Override
@@ -54,12 +65,12 @@ public class SecureResponseTypeExecutorFactory implements ClientPolicyExecutorPr
 
     @Override
     public String getHelpText() {
-        return "The executor checks whether the client sent its authorization request with code id_token or code id_token token in its response type by following Financial-grade API Security Profile : Read and Write API Security Profile.";
+        return "The executor checks whether the client sent its authorization request with code id_token or code id_token token in its response type depending on its setting.";
     }
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return Collections.emptyList();
+        return new ArrayList<>(Arrays.asList(AUTO_CONFIGURE_PROPERTY, ALLOW_TOKEN_RESPONSE_TYPE_PROPERTY));
     }
 
 }

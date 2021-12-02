@@ -111,6 +111,20 @@ public interface UsersResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> searchByAttributes(@QueryParam("q") String searchQuery);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> searchByAttributes(@QueryParam("first") Integer firstResult,
+                                                @QueryParam("max") Integer maxResults,
+                                                @QueryParam("enabled") Boolean enabled,
+                                                @QueryParam("briefRepresentation") Boolean briefRepresentation,
+                                                @QueryParam("q") String searchQuery);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
     List<UserRepresentation> search(@QueryParam("username") String username, @QueryParam("exact") Boolean exact);
 
     /**
@@ -247,5 +261,7 @@ public interface UsersResource {
     @DELETE
     Response delete(@PathParam("id") String id);
 
+    @Path("profile")
+    UserProfileResource userProfile();
 
 }

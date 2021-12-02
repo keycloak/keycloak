@@ -56,7 +56,7 @@ mvn exec:java -Pkerberos
 
 This will also automatically import the LDIF from `kerberos-example-users.ldif` of kerberos example into the LDAP server. Replace with your own LDIF file if you want different users.
 
-A bit more details about embedded Kerberos server in [Executing Tests](https://github.com/keycloak/keycloak/blob/master/docs/tests.md#kerberos-server).
+A bit more details about embedded Kerberos server in [Executing Tests](https://github.com/keycloak/keycloak/blob/main/docs/tests.md#kerberos-server).
 
 **WARNING**: ApacheDS kerberos server shouldn't be used in production.
 
@@ -64,7 +64,7 @@ A bit more details about embedded Kerberos server in [Executing Tests](https://g
 **7)** Configure browser (Firefox, Chrome or other) and enable SPNEGO authentication and credential delegation for `localhost` . 
 Consult the documentation of your browser and OS on how to do it. For example in Firefox it can be done by adding `localhost` to 
 both `network.negotiate-auth.trusted-uris` and `network.negotiate-auth.delegation-uris` and switch `network.negotiate-auth.allow-non-fqdn` to `true`. 
-A bit more details in [Executing Tests](https://github.com/keycloak/keycloak/blob/master/docs/tests.md#kerberos-server).  
+A bit more details in [Executing Tests](https://github.com/keycloak/keycloak/blob/main/docs/tests.md#kerberos-server).  
  
  
 **8)** Test the example. Obtain kerberos ticket by running command from Terminal / CMD:

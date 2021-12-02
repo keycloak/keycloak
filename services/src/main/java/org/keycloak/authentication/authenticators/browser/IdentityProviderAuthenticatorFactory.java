@@ -37,12 +37,12 @@ import static org.keycloak.provider.ProviderConfigProperty.STRING_TYPE;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class IdentityProviderAuthenticatorFactory implements AuthenticatorFactory, DisplayTypeAuthenticatorFactory {
-
     protected static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
             AuthenticationExecutionModel.Requirement.REQUIRED, AuthenticationExecutionModel.Requirement.ALTERNATIVE, AuthenticationExecutionModel.Requirement.DISABLED
     };
 
-    protected static final String DEFAULT_PROVIDER = "defaultProvider";
+    public static final String PROVIDER_ID = "identity-provider-redirector";
+    public static final String DEFAULT_PROVIDER = "defaultProvider";
 
     @Override
     public String getDisplayType() {
@@ -106,7 +106,7 @@ public class IdentityProviderAuthenticatorFactory implements AuthenticatorFactor
 
     @Override
     public String getId() {
-        return "identity-provider-redirector";
+        return PROVIDER_ID;
     }
 
 }

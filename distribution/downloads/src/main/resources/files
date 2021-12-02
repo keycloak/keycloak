@@ -3,7 +3,6 @@
     keycloak-server-x-dist:keycloak.x-preview
     keycloak-server-overlay:keycloak-overlay
     keycloak-api-docs-dist:keycloak-api-docs
-    keycloak-examples-dist:keycloak-examples
 
     keycloak-as7-adapter-dist:keycloak-oidc-as7-adapter
     keycloak-eap6-adapter-dist:keycloak-oidc-eap6-adapter

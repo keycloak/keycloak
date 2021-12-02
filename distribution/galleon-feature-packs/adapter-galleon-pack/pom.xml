@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='UTF-8'?>
 <!--
 ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
 ~ and other contributors as indicated by the @author tags.
@@ -14,17 +15,16 @@
 ~ See the License for the specific language governing permissions and
 ~ limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>galleon-feature-packs-parent</artifactId>
-        <version>13.0.0-SNAPSHOT</version>
+        <version>16.0.0-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
     
-    <groupId>${galleon-adapter-group-id}</groupId>
+    <groupId>org.keycloak</groupId>
     <artifactId>keycloak-adapter-galleon-pack</artifactId>
 
     <name>Keycloak Galleon Feature Pack: Adapter</name>
@@ -32,7 +32,7 @@
     
     <properties>
         <feature-pack.resources.directory>${basedir}/../../feature-packs/adapter-feature-pack/src/main/resources</feature-pack.resources.directory>
-        <version.org.wildfly.galleon-plugins>4.2.6.Final</version.org.wildfly.galleon-plugins>
+        <version.org.wildfly.galleon-plugins>5.1.3.Final</version.org.wildfly.galleon-plugins>
         <xmlFileSource>${feature-pack.resources.directory}/licenses/${product.slot}/licenses.xml</xmlFileSource>
         <outputDirectory>${basedir}/target/resources/packages/licenses/content/docs/licenses-${product.slot}</outputDirectory>
     </properties>
@@ -258,15 +258,6 @@
             <properties>
                 <galleon-adapter-group-id>org.keycloak</galleon-adapter-group-id>
             </properties>
-            <repositories>
-                <repository>
-                    <id>jboss</id>
-                    <url>https://repository.jboss.org/nexus/content/groups/public/</url>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                </repository>
-            </repositories>
             <dependencies>
                 <dependency>
                     <groupId>org.wildfly</groupId>
@@ -290,7 +281,7 @@
             <dependencies>
                 <dependency>
                     <groupId>org.jboss.eap</groupId>
-                    <artifactId>wildfly-galleon-pack</artifactId>
+                    <artifactId>wildfly-ee-galleon-pack</artifactId>
                     <version>${eap.version}</version>
                     <type>zip</type>
                     <scope>provided</scope>

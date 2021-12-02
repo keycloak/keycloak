@@ -162,7 +162,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
     @After
     @Override
-    public void afterAbstractKeycloakTest() {
+    public void afterAbstractKeycloakTest() throws Exception {
         cleanupApacheHttpClient();
 
         super.afterAbstractKeycloakTest();
@@ -362,7 +362,11 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
 
     protected AuthenticationExecutionModel.Requirement updateKerberosAuthExecutionRequirement(AuthenticationExecutionModel.Requirement requirement) {
-        Optional<AuthenticationExecutionInfoRepresentation> kerberosAuthExecutionOpt = testRealmResource()
+        return updateKerberosAuthExecutionRequirement(requirement, testRealmResource());
+    }
+
+    public static AuthenticationExecutionModel.Requirement updateKerberosAuthExecutionRequirement(AuthenticationExecutionModel.Requirement requirement, RealmResource realmResource) {
+        Optional<AuthenticationExecutionInfoRepresentation> kerberosAuthExecutionOpt = realmResource
                 .flows()
                 .getExecutions(DefaultAuthenticationFlows.BROWSER_FLOW)
                 .stream()
@@ -376,7 +380,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
         AuthenticationExecutionModel.Requirement oldRequirement = AuthenticationExecutionModel.Requirement.valueOf(oldRequirementStr);
         kerberosAuthExecution.setRequirement(requirement.name());
 
-        testRealmResource()
+        realmResource
                 .flows()
                 .updateExecutions(DefaultAuthenticationFlows.BROWSER_FLOW, kerberosAuthExecution);
 

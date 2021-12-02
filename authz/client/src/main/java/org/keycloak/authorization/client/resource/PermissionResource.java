@@ -19,6 +19,7 @@ package org.keycloak.authorization.client.resource;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -56,6 +57,33 @@ public class PermissionResource {
     @Deprecated
     public PermissionResponse forResource(PermissionRequest request) {
         return create(request);
+    }
+
+    public Long count(final String resourceId,
+                      final String scopeId,
+                      final String owner,
+                      final String requester,
+                      final Boolean granted,
+                      final Boolean returnNames) {
+        Callable<Long> callable = new Callable<Long>() {
+            @Override
+            public Long call() throws Exception {
+                return http.<Long>get(serverConfiguration.getPermissionEndpoint()+"/ticket/count")
+                        .authorizationBearer(pat.call())
+                        .param("resourceId", resourceId)
+                        .param("scopeId", scopeId)
+                        .param("owner", owner)
+                        .param("requester", requester)
+                        .param("granted", granted == null ? null : granted.toString())
+                        .param("returnNames", returnNames == null ? null : returnNames.toString())
+                        .response().json(new TypeReference<Long>(){}).execute();
+            }
+        };
+        try {
+            return callable.call();
+        } catch (Exception cause) {
+            return Throwables.retryAndWrapExceptionIfNecessary(callable, pat, "Error querying permission ticket count", cause);
+        }
     }
 
     /**

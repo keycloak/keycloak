@@ -45,7 +45,7 @@ public class MapStorageSpi implements Spi {
 
     @Override
     public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return MapStorageProvider.class;
+        return MapStorageProviderFactory.class;
     }
 
 }

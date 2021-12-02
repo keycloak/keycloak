@@ -90,7 +90,7 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
             LDAPTestUtils.updateLDAPPassword(ldapFedProvider, bruce, "Password1");
 
             // Create ldap-portal client
-            ClientModel ldapClient = KeycloakModelUtils.createClient(appRealm, "ldap-portal");
+            ClientModel ldapClient = appRealm.addClient("ldap-portal");
             ldapClient.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
             ldapClient.addRedirectUri("/ldap-portal");
             ldapClient.addRedirectUri("/ldap-portal/*");

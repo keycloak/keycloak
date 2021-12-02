@@ -78,6 +78,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.services.util.BrowserHistoryHelper;
 import org.keycloak.services.util.CacheControlUtil;
@@ -844,7 +845,6 @@ public class LoginActionsService {
 
         return Response.status(302).location(redirect).build();
     }
-
 
     /**
      * OAuth grant page.  You should not invoked this directly!

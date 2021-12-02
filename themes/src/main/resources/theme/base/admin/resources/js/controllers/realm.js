@@ -280,8 +280,10 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, ser
         }
     }
     $scope.realm = angular.copy(realm);
+    $scope.realm.attributes['userProfileEnabled'] = $scope.realm.attributes['userProfileEnabled'] == 'true';
 
     var oldCopy = angular.copy($scope.realm);
+    $scope.realmCopy = oldCopy;
 
     $scope.changed = $scope.create;
 
@@ -309,6 +311,7 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, ser
                     if (Current.realms[i].realm == realmCopy.realm) {
                         Current.realm = Current.realms[i];
                         oldCopy = angular.copy($scope.realm);
+                        $scope.realmCopy = oldCopy;
                     }
                 }
             });
@@ -450,6 +453,11 @@ module.controller('RealmWebAuthnPasswordlessPolicyCtrl', function ($scope, Curre
     };
 
     genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, "/realms/" + realm.realm + "/authentication/webauthn-policy-passwordless");
+});
+
+module.controller('RealmCibaPolicyCtrl', function ($scope, Current, Realm, realm, serverInfo, $http, $route, $location, Dialog, Notifications) {
+
+    genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, "/realms/" + realm.realm + "/authentication/ciba-policy");
 });
 
 module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications) {
@@ -935,16 +943,14 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
 
     $scope.initSamlProvider = function() {
         $scope.nameIdFormats = [
-            /*
-            {
-                format: "urn:oasis:names:tc:SAML:2.0:nameid-format:transient",
-                name: "Transient"
-            },
-            */
             {
                 format: "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent",
                 name: "Persistent"
 
+            },
+            {
+                format: "urn:oasis:names:tc:SAML:2.0:nameid-format:transient",
+                name: "Transient"
             },
             {
                 format: "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
@@ -1008,7 +1014,8 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
             $scope.identityProvider.config.nameIDPolicyFormat = $scope.nameIdFormats[0].format;
             $scope.identityProvider.config.principalType = $scope.principalTypes[0].type;
             $scope.identityProvider.config.signatureAlgorithm = $scope.signatureAlgorithms[1];
-            $scope.identityProvider.config.xmlSigKeyInfoKeyNameTransformer = $scope.xmlKeyNameTranformers[1];
+            $scope.identityProvider.config.xmlSigKeyInfoKeyNameTransformer = $scope.xmlKeyNameTranformers[1];			
+            $scope.identityProvider.config.allowCreate = 'true';
         }
         $scope.identityProvider.config.entityId = $scope.identityProvider.config.entityId || (authUrl + '/realms/' + realm.realm);
     }
@@ -1317,7 +1324,9 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
     $scope.realm.accessCodeLifespanUserAction = TimeUnit2.asUnit(realm.accessCodeLifespanUserAction);
     $scope.realm.actionTokenGeneratedByAdminLifespan = TimeUnit2.asUnit(realm.actionTokenGeneratedByAdminLifespan);
     $scope.realm.actionTokenGeneratedByUserLifespan = TimeUnit2.asUnit(realm.actionTokenGeneratedByUserLifespan);
-    $scope.realm.attributes = realm.attributes
+    $scope.realm.oauth2DeviceCodeLifespan = TimeUnit2.asUnit(realm.oauth2DeviceCodeLifespan);
+    $scope.realm.attributes.parRequestUriLifespan = TimeUnit2.asUnit(realm.attributes.parRequestUriLifespan);
+    $scope.realm.attributes = realm.attributes;
 
     var oldCopy = angular.copy($scope.realm);
     $scope.changed = false;
@@ -1376,6 +1385,8 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
         $scope.realm.accessCodeLifespanLogin = $scope.realm.accessCodeLifespanLogin.toSeconds();
         $scope.realm.actionTokenGeneratedByAdminLifespan = $scope.realm.actionTokenGeneratedByAdminLifespan.toSeconds();
         $scope.realm.actionTokenGeneratedByUserLifespan = $scope.realm.actionTokenGeneratedByUserLifespan.toSeconds();
+        $scope.realm.oauth2DeviceCodeLifespan = $scope.realm.oauth2DeviceCodeLifespan.toSeconds();
+        $scope.realm.attributes.parRequestUriLifespan = $scope.realm.attributes.parRequestUriLifespan.toSeconds();
 
         Realm.update($scope.realm, function () {
             $route.reload();
@@ -1390,6 +1401,480 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
         $scope.actionTokenAttribute.unit = 'Minutes';
     }
 
+    $scope.reset = function() {
+        $route.reload();
+    };
+});
+
+module.controller('RealmUserProfileCtrl', function($scope, Realm, realm, clientScopes, $http, $location, $route, UserProfile, Dialog, Notifications, serverInfo) {
+    $scope.realm = realm;
+    $scope.validatorProviders = serverInfo.componentTypes['org.keycloak.validate.Validator'];
+
+    $scope.isShowAttributes = true;
+    $scope.isShowAttributeGroups = false;
+    $scope.isShowJsonEditor = false;
+
+    UserProfile.get({realm: realm.realm}, function(config) {
+        $scope.config = config;
+        $scope.rawConfig = angular.toJson(config, true);
+    });
+    
+    $scope.isShowAttributes = true;
+    $scope.isShowAttributeGroups = false;
+    $scope.isShowJsonEditor = false;
+    
+    $scope.showAttributes = function() {
+        $route.reload();
+        delete $scope.currentAttributeGroup;
+    }
+
+    $scope.showAttributeGroups = function() {
+        $scope.isShowAttributes = false;
+        $scope.isShowAttributeGroups = true;
+        $scope.isShowJsonEditor = false;
+        delete $scope.currentAttribute;
+    }
+
+    $scope.showJsonEditor = function() {
+        $scope.isShowAttributes = false;
+        $scope.isShowAttributeGroups = false;
+        $scope.isShowJsonEditor = true;
+        delete $scope.currentAttribute;
+        delete $scope.currentAttributeGroup;
+    }
+    
+    $scope.isRequiredRoles = {
+        minimumInputLength: 0,
+        delay: 500,
+        allowClear: true,
+        id: function(e) { return e; },
+        query: function (query) {
+            var expectedRoles = ['user', 'admin'];
+            var roles = [];
+
+            if ('' == query.term.trim()) {
+                roles = expectedRoles;
+            } else {
+                for (var i = 0; i < expectedRoles.length; i++) {
+                    if (expectedRoles[i].indexOf(query.term.trim()) != -1) {
+                        roles.push(expectedRoles[i]);
+                    }
+                }
+            }
+
+            query.callback({results: roles});
+        },
+        formatResult: function(object, container, query) {
+            return object;
+        },
+        formatSelection: function(object, container, query) {
+            return object;
+        }
+    };
+
+    $scope.isRequiredScopes = {
+        minimumInputLength: 1,
+        delay: 500,
+        allowClear: true,
+        query: function (query) {
+            var scopes = [];
+
+            if ('' == query.term.trim()) {
+                scopes = clientScopes;
+            } else {
+                for (var i = 0; i < clientScopes.length; i++) {
+                    if (clientScopes[i].name.indexOf(query.term.trim()) != -1) {
+                        scopes.push(clientScopes[i]);
+                    }
+                }
+            }
+
+            query.callback({results: scopes});
+        },
+        formatResult: function(object, container, query) {
+            return object.name;
+        },
+        formatSelection: function(object, container, query) {
+            return object.name;
+        }
+    };
+
+    $scope.selectorByScopeSelect = {
+        minimumInputLength: 1,
+        delay: 500,
+        allowClear: true,
+        query: function (query) {
+            var scopes = [];
+
+            if ('' == query.term.trim()) {
+                scopes = clientScopes;
+            } else {
+                for (var i = 0; i < clientScopes.length; i++) {
+                    if (clientScopes[i].name.indexOf(query.term.trim()) != -1) {
+                        scopes.push(clientScopes[i]);
+                    }
+                }
+            }
+
+            query.callback({results: scopes});
+        },
+        formatResult: function(object, container, query) {
+            return object.name;
+        },
+        formatSelection: function(object, container, query) {
+            return object.name;
+        }
+    };
+
+    $scope.attributeSelected = false;
+    
+    $scope.showAttributeListing = function() {
+        return !$scope.attributeSelected && $scope.currentAttribute == null && $scope.isShowAttributes;
+    }
+
+    $scope.showAttributeGroupListing = function() {
+        return !$scope.attributeGroupSelected && $scope.currentAttributeGroup == null && $scope.isShowAttributeGroups;
+    }
+    
+    $scope.createAttribute = function() {
+        $scope.isCreateAttribute = true;
+        $scope.currentAttribute = {
+            selector: {
+                scopes: []
+            },
+            required: {
+                roles: [],
+                scopes: []
+            },
+            permissions: {
+                view: [],
+                edit: []
+            }
+        };
+    };
+
+    $scope.createAttributeGroup = function() {
+        $scope.isCreateAttributeGroup = true;
+        $scope.currentAttributeGroup = {};
+    };
+
+	$scope.isNotUsernameOrEmail = function(attributeName) {
+		return attributeName != "username" && attributeName != "email";
+	}; 
+
+	$scope.guiOrderUp = function(index) {
+		$scope.moveAttribute(index, index - 1);
+	};
+
+	$scope.guiOrderDown = function(index) {
+		$scope.moveAttribute(index, index + 1);
+	};
+	
+	$scope.moveAttribute = function(old_index, new_index){
+    	$scope.config.attributes.splice(new_index, 0, $scope.config.attributes.splice(old_index, 1)[0]);
+		$scope.save();
+	}
+
+    $scope.groupOrderUp = function(index) {
+        $scope.moveAttributeGroup(index, index - 1);
+    };
+
+    $scope.groupOrderDown = function(index) {
+        $scope.moveAttributeGroup(index, index + 1);
+    };
+
+    $scope.moveAttributeGroup = function(old_index, new_index){
+        $scope.config.groups.splice(new_index, 0, $scope.config.groups.splice(old_index, 1)[0]);
+        $scope.save(false);
+    }
+
+    $scope.removeAttribute = function(attribute) {
+        Dialog.confirmDelete(attribute.name, 'attribute', function() {
+            let newAttributes = [];
+
+            for (var v of $scope.config.attributes) {
+                if (v != attribute) {
+                    newAttributes.push(v);
+                }
+            }
+
+            $scope.config.attributes = newAttributes;
+            $scope.save();
+        });
+    };
+
+    $scope.removeAttributeGroup = function(attributeGroup) {
+        Dialog.confirmDelete(attributeGroup.name, 'group', function() {
+            let newGroups = [];
+
+            for (var v of $scope.config.groups) {
+                if (v != attributeGroup) {
+                    newGroups.push(v);
+                }
+            }
+
+            $scope.config.groups = newGroups;
+            $scope.save();
+        });
+    };
+
+    $scope.addAttributeAnnotation = function() {
+        if (!$scope.currentAttribute.annotations) {
+            $scope.currentAttribute.annotations = {};
+        }
+        $scope.currentAttribute.annotations[$scope.newAnnotation.key] = $scope.newAnnotation.value;
+        delete $scope.newAnnotation;
+    }
+
+    $scope.removeAttributeAnnotation = function(key) {
+        delete $scope.currentAttribute.annotations[key];
+    }
+
+    $scope.addAttributeGroupAnnotation = function() {
+        if (!$scope.currentAttributeGroup.annotations) {
+            $scope.currentAttributeGroup.annotations = {};
+        }
+        $scope.currentAttributeGroup.annotations[$scope.newAttributeGroupAnnotation.key] = $scope.newAttributeGroupAnnotation.value;
+        delete $scope.newGroupAnnotation;
+    }
+
+    $scope.removeAttributeGroupAnnotation = function(key) {
+        delete $scope.currentAttributeGroup.annotations[key];
+    }
+
+    $scope.editAttribute = function(attribute) {
+        if (attribute.permissions == null) {
+            attribute.permissions = {
+                view: [],
+                edit: []
+            };
+        }
+
+        if (attribute.selector == null) {
+            attribute.selector = {
+                scopes: []
+            };
+        }
+
+        if (attribute.required) {
+            if (attribute.required.roles) {
+                $scope.requiredRoles = attribute.required.roles;
+            }
+            if (attribute.required.scopes) {
+                for (var i = 0; i < attribute.required.scopes.length; i++) {
+                    $scope.requiredScopes.push({
+                        id: attribute.required.scopes[i],
+                        name: attribute.required.scopes[i]
+                    });
+                }
+            }
+        }
+
+        if (attribute.selector && attribute.selector.scopes) {
+            for (var i = 0; i < attribute.selector.scopes.length; i++) {
+                $scope.selectorByScope.push({
+                    id: attribute.selector.scopes[i],
+                    name: attribute.selector.scopes[i]
+                });
+            }
+        }
+
+        $scope.isRequired = attribute.required != null;
+        $scope.canUserView = attribute.permissions.view.includes('user');
+        $scope.canAdminView = attribute.permissions.view.includes('admin');
+        $scope.canUserEdit = attribute.permissions.edit.includes('user');
+        $scope.canAdminEdit = attribute.permissions.edit.includes('admin');
+        $scope.currentAttribute = attribute;
+        $scope.attributeSelected = true;
+    };
+
+    $scope.editAttributeGroup = function(attributeGroup) {
+        $scope.currentAttributeGroup = attributeGroup;
+        $scope.attributeGroupSelected = true;
+    };
+
+    $scope.groupIsReferencedInAnyAttribute = function(group) {
+        for (var currentAttribute of $scope.config.attributes) {
+            if (currentAttribute.group === group.name) {
+                return true
+            }
+        } 
+        return false;
+    }
+    
+    $scope.$watch('isRequired', function() {
+        if ($scope.isRequired) {
+            $scope.currentAttribute.required = {
+                roles: [],
+                scopes: []
+            };
+        } else if ($scope.currentAttribute) {
+            delete $scope.currentAttribute.required;
+        }
+    }, true);
+
+    handlePermission = function(permission, role, allowed) {
+        let attribute = $scope.currentAttribute;
+
+        if (attribute && attribute.permissions) {
+            let roles = [];
+
+            for (let r of attribute.permissions[permission]) {
+                if (r != role) {
+                    roles.push(r);
+                }
+            }
+
+            if (allowed) {
+                roles.push(role);
+            }
+
+            attribute.permissions[permission] = roles;
+        }
+    }
+
+    $scope.$watch('canUserView', function() {
+        handlePermission('view', 'user', $scope.canUserView);
+    }, true);
+
+    $scope.$watch('canAdminView', function() {
+        handlePermission('view', 'admin', $scope.canAdminView);
+    }, true);
+
+    $scope.$watch('canUserEdit', function() {
+        handlePermission('edit', 'user', $scope.canUserEdit);
+    }, true);
+
+    $scope.$watch('canAdminEdit', function() {
+        handlePermission('edit', 'admin', $scope.canAdminEdit);
+    }, true);
+
+    $scope.addValidator = function(validator) {
+        if ($scope.currentAttribute.validations == null) {
+            $scope.currentAttribute.validations = {};
+        }
+
+        let config = {};
+
+        for (let key in validator.config) {
+            let values = validator.config[key];
+
+            if (Array.isArray(values)) {
+                config[key] = values;
+            } else {
+                for (let k in values) {
+                    config[key] = values[k];
+                }
+            }
+        }
+
+        $scope.currentAttribute.validations[validator.id] = config;
+
+        delete $scope.newValidator;
+    };
+
+    $scope.selectValidator = function(validator) {
+        validator.config = {};
+    };
+
+    $scope.cancelAddValidator = function() {
+        delete $scope.newValidator;
+    };
+
+    $scope.removeValidator = function(id) {
+        let newValidators = {};
+
+        for (let v in $scope.currentAttribute.validations) {
+            if (v != id) {
+                newValidators[v] = $scope.currentAttribute.validations[v];
+            }
+        }
+
+        if (newValidators.length == 0) {
+            delete $scope.currentAttribute.validations;
+            return;
+        }
+
+        $scope.currentAttribute.validations = newValidators;
+    };
+
+    $scope.reloadConfigurationFromUserProfile = function () {
+        UserProfile.get({realm: realm.realm}, function(config) {
+            $scope.config = config;
+            $scope.rawConfig = angular.toJson(config, true);
+        });
+    }
+
+    $scope.save = function() {
+        $scope.save(true)
+    }
+    
+    $scope.save = function(reload) {
+        if ($scope.isShowJsonEditor) {
+            $scope.config = JSON.parse($scope.rawConfig);
+        }
+
+        if ($scope.currentAttribute) {
+            if ($scope.isRequired) {
+                $scope.currentAttribute.required.roles = $scope.requiredRoles;
+
+                for (var i = 0; i < $scope.requiredScopes.length; i++) {
+                    $scope.currentAttribute.required.scopes.push($scope.requiredScopes[i].name);
+                }
+            }
+
+            $scope.currentAttribute.selector = {scopes: []};
+
+            for (var i = 0; i < $scope.selectorByScope.length; i++) {
+                $scope.currentAttribute.selector.scopes.push($scope.selectorByScope[i].name);
+            }
+
+            if ($scope.isCreateAttribute) {
+                $scope.config['attributes'].push($scope.currentAttribute);
+            }
+        }
+
+        if ($scope.currentAttributeGroup) {
+            if ($scope.config['groups'] == null) {
+                $scope.config['groups'] = []
+            }
+            if ($scope.isCreateAttributeGroup) {
+                $scope.config['groups'].push($scope.currentAttributeGroup);
+            }
+        }
+
+        UserProfile.update({realm: realm.realm},
+            
+            $scope.config,  function () {
+                $scope.attributeSelected = false;
+                delete $scope.currentAttribute;
+                delete $scope.isCreateAttribute
+                delete $scope.attributeSelected;
+                delete $scope.currentAttributeGroup;
+                delete $scope.isCreateAttributeGroup;
+                delete $scope.attributeGroupSelected;
+                delete $scope.isRequired;
+                delete $scope.canUserView;
+                delete $scope.canAdminView;
+                delete $scope.canUserEdit;
+                delete $scope.canAdminEdit;
+                
+                if (reload) {
+                    $route.reload();
+                } else {
+                    $scope.reloadConfigurationFromUserProfile();
+                }
+                Notifications.success("User Profile configuration has been saved.");
+            });
+    };
+    
+    $scope.cancelEditAttributeGroup = function() {
+        delete $scope.currentAttributeGroup;
+        delete $scope.isCreateAttributeGroup;
+        delete $scope.attributeGroupSelected;
+        $scope.reloadConfigurationFromUserProfile();
+    }
+    
     $scope.reset = function() {
         $route.reload();
     };
@@ -2192,14 +2677,19 @@ module.controller('IdentityProviderMapperListCtrl', function($scope, realm, iden
     $scope.mappers = mappers;
 });
 
-module.controller('IdentityProviderMapperCtrl', function($scope, realm,  identityProvider, mapperTypes, mapper, IdentityProviderMapper, Notifications, Dialog, $location) {
+module.controller('IdentityProviderMapperCtrl', function ($scope, realm, identityProvider, mapperTypes, mapper, IdentityProviderMapper, Notifications, Dialog, ComponentUtils, $location) {
     $scope.realm = realm;
     $scope.identityProvider = identityProvider;
     $scope.create = false;
-    $scope.mapper = angular.copy(mapper);
     $scope.changed = false;
     $scope.mapperType = mapperTypes[mapper.identityProviderMapper];
-    $scope.$watch(function() {
+
+    ComponentUtils.convertAllMultivaluedStringValuesToList($scope.mapperType.properties, mapper.config);
+    ComponentUtils.addLastEmptyValueToMultivaluedLists($scope.mapperType.properties, mapper.config);
+
+    $scope.mapper = angular.copy(mapper);
+
+    $scope.$watch(function () {
         return $location.path();
     }, function() {
         $scope.path = $location.path().substring(1).split("/");
@@ -2212,12 +2702,16 @@ module.controller('IdentityProviderMapperCtrl', function($scope, realm,  identit
     }, true);
 
     $scope.save = function() {
+        let mapperCopy = angular.copy($scope.mapper);
+        ComponentUtils.convertAllListValuesToMultivaluedString($scope.mapperType.properties, mapperCopy.config);
+
         IdentityProviderMapper.update({
             realm : realm.realm,
-            alias: identityProvider.alias,
+            alias : identityProvider.alias,
             mapperId : mapper.id
-        }, $scope.mapper, function() {
+        }, mapperCopy, function () {
             $scope.changed = false;
+            ComponentUtils.addLastEmptyValueToMultivaluedLists($scope.mapperType.properties, $scope.mapper.config);
             mapper = angular.copy($scope.mapper);
             $location.url("/realms/" + realm.realm + '/identity-provider-mappers/' + identityProvider.alias + "/mappers/" + mapper.id);
             Notifications.success("Your changes have been saved.");
@@ -2245,7 +2739,7 @@ module.controller('IdentityProviderMapperCtrl', function($scope, realm,  identit
 
 });
 
-module.controller('IdentityProviderMapperCreateCtrl', function($scope, realm, identityProvider, mapperTypes, IdentityProviderMapper, Notifications, Dialog, $location) {
+module.controller('IdentityProviderMapperCreateCtrl', function ($scope, realm, identityProvider, mapperTypes, IdentityProviderMapper, Notifications, Dialog, ComponentUtils, $location) {
     $scope.realm = realm;
     $scope.identityProvider = identityProvider;
     $scope.create = true;
@@ -2262,11 +2756,15 @@ module.controller('IdentityProviderMapperCreateCtrl', function($scope, realm, id
         $scope.path = $location.path().substring(1).split("/");
     });
 
-    $scope.save = function() {
+    $scope.save = function () {
         $scope.mapper.identityProviderMapper = $scope.mapperType.id;
+        let copyMapper = angular.copy($scope.mapper);
+        ComponentUtils.convertAllListValuesToMultivaluedString($scope.mapperType.properties, copyMapper.config);
+
         IdentityProviderMapper.save({
-            realm : realm.realm, alias: identityProvider.alias
-        }, $scope.mapper, function(data, headers) {
+            realm : realm.realm,
+            alias : identityProvider.alias
+        }, copyMapper, function (data, headers) {
             var l = headers().location;
             var id = l.substring(l.lastIndexOf("/") + 1);
             $location.url("/realms/" + realm.realm + '/identity-provider-mappers/' + identityProvider.alias + "/mappers/" + id);
@@ -2491,7 +2989,6 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
 
         } else if (realm.dockerAuthenticationFlow == $scope.flow.alias) {
             Notifications.error("Cannot remove flow, it is currently being used as the docker authentication flow.");
-
         } else {
             AuthenticationFlows.remove({realm: realm.realm, flow: $scope.flow.id}, function () {
                 $location.url("/realms/" + realm.realm + '/authentication/flows/' + flows[0].alias);
@@ -2957,6 +3454,757 @@ module.controller('ClientRegPolicyDetailCtrl', function ($scope, realm, clientRe
                     Notifications.success("The policy has been updated.");
                 });
         }
+    };
+
+});
+
+module.controller('ClientPoliciesProfilesListCtrl', function($scope, realm, clientProfiles, ClientPoliciesProfiles, Dialog, Notifications, $route, $location) {
+    console.log('ClientPoliciesProfilesListCtrl');
+    $scope.realm = realm;
+    $scope.clientProfiles = clientProfiles;
+
+    $scope.removeClientProfile = function(clientProfile) {
+        Dialog.confirmDelete(clientProfile.name, 'client profile', function() {
+            console.log("Deleting client profile from the JSON: " + clientProfile.name);
+
+            for (var i = 0; i < $scope.clientProfiles.profiles.length; i++) {
+                var currentProfile = $scope.clientProfiles.profiles[i];
+                if (currentProfile.name === clientProfile.name) {
+                    $scope.clientProfiles.profiles.splice(i, 1);
+                    break;
+                }
+            }
+
+            ClientPoliciesProfiles.update({
+                realm: realm.realm,
+            }, $scope.clientProfiles, function () {
+                $route.reload();
+                Notifications.success("The client profile was deleted.");
+            }, function (errorResponse) {
+                $route.reload();
+                var errDetails = (!errorResponse.data.errorMessage) ? "unknown error, please see the server log" : errorResponse.data.errorMessage
+                Notifications.error('Failed to delete client profile: ' + errDetails);
+            });
+        });
+    };
+
+});
+
+module.controller('ClientPoliciesProfilesJsonCtrl', function($scope, realm, clientProfiles, ClientPoliciesProfiles, Dialog, Notifications, $route, $location) {
+    console.log('ClientPoliciesProfilesJsonCtrl');
+    $scope.realm = realm;
+    $scope.clientProfilesString = angular.toJson(clientProfiles, true);
+
+    $scope.save = function() {
+        var clientProfilesObj = null;
+        try {
+            clientProfilesObj = angular.fromJson($scope.clientProfilesString);
+        } catch (e) {
+            Notifications.error("Provided JSON is incorrect: " + e.message);
+            console.log(e);
+            return;
+        }
+        var clientProfilesCompressed = angular.toJson(clientProfilesObj, false);
+
+        ClientPoliciesProfiles.update({
+            realm: realm.realm,
+        }, clientProfilesCompressed,  function () {
+            $route.reload();
+            Notifications.success("The client profiles configuration was updated.");
+        }, function(errorResponse) {
+            var errDetails = (!errorResponse.data.errorMessage) ? "unknown error, please see the server log" : errorResponse.data.errorMessage
+            Notifications.error("Failed to update client profiles: " + errDetails);
+            console.log("Error response when updating client profiles JSON: Status: " + errorResponse.status +
+                    ", statusText: " + errorResponse.statusText + ", data: " + JSON.stringify(errorResponse.data));
+        });
+    };
+
+    $scope.reset = function() {
+        $route.reload();
+    };
+
+});
+
+module.controller('ClientPoliciesProfilesEditCtrl', function($scope, realm, clientProfiles, ClientPoliciesProfiles, Dialog, Notifications, $route, $location) {
+    var targetProfileName = $route.current.params.profileName;
+    $scope.createNew = targetProfileName == null;
+    if ($scope.createNew) {
+        console.log('ClientPoliciesProfilesEditCtrl: creating new profile');
+    } else {
+        console.log('ClientPoliciesProfilesEditCtrl: updating profile ' + targetProfileName);
+    }
+
+    $scope.realm = realm;
+    $scope.editedProfile = null;
+
+    function getProfileByName(profilesArray) {
+        if (!profilesArray) return null;
+        for (var i=0 ; i < profilesArray.length ; i++) {
+            var currentProfile = profilesArray[i];
+            if (targetProfileName === currentProfile.name) {
+                return currentProfile;
+            }
+        }
+    }
+
+    if ($scope.createNew) {
+        $scope.editedProfile = {
+            name: "",
+            executors: []
+        };
+    } else {
+        var globalProfile = false;
+        $scope.editedProfile = getProfileByName(clientProfiles.profiles);
+        if (!$scope.editedProfile) {
+            $scope.editedProfile = getProfileByName(clientProfiles.globalProfiles);
+            globalProfile = true;
+        }
+
+        if ($scope.editedProfile == null) {
+            console.log("Profile of name " + targetProfileName + " not found");
+            throw 'Profile not found';
+        }
+    }
+
+    // needs to be a function because when this controller runs, the permissions might not be loaded yet
+    $scope.isReadOnly = function() {
+        return !$scope.access.manageRealm || globalProfile;
+    }
+
+    $scope.removeExecutor = function(executorIndex) {
+        Dialog.confirmDelete($scope.editedProfile.executors[executorIndex].executor, 'executor', function() {
+            console.log("remove executor of index " + executorIndex);
+
+            // Delete executor
+            $scope.editedProfile.executors.splice(executorIndex, 1);
+
+            ClientPoliciesProfiles.update({
+                realm: realm.realm,
+            }, clientProfiles, function () {
+                Notifications.success("The executor was deleted.");
+            }, function (errorResponse) {
+                $route.reload();
+                var errDetails = (!errorResponse.data.errorMessage) ? "unknown error, please see the server log" : errorResponse.data.errorMessage
+                Notifications.error('Failed to delete executor: ' + errDetails);
+            });
+        });
+    }
+
+    $scope.save = function() {
+        if (!$scope.editedProfile.name || $scope.editedProfile.name === '') {
+            Notifications.error('Name must be provided');
+            return;
+        }
+
+        if ($scope.createNew) {
+            clientProfiles.profiles.push($scope.editedProfile);
+        }
+
+        ClientPoliciesProfiles.update({
+            realm: realm.realm,
+        }, clientProfiles,  function () {
+            if ($scope.createNew) {
+                Notifications.success("The client profile was created.");
+                $location.url('/realms/' + realm.realm + '/client-policies/profiles-update/' + $scope.editedProfile.name);
+            } else {
+                Notifications.success("The client profile was updated.");
+                $location.url('/realms/' + realm.realm + '/client-policies/profiles');
+            }
+        }, function(errorResponse) {
+            var errDetails = (!errorResponse.data.errorMessage) ? "unknown error, please see the server log" : errorResponse.data.errorMessage
+            if ($scope.createNew) {
+                Notifications.error('Failed to create client profile: ' + errDetails);
+            } else {
+                Notifications.error('Failed to update client profile: ' + errDetails);
+            }
+        });
+
+    };
+
+    $scope.back = function() {
+        $location.url('/realms/' + realm.realm + '/client-policies/profiles');
+    };
+
+});
+
+module.controller('ClientPoliciesProfilesEditExecutorCtrl', function($scope, realm, serverInfo, clientProfiles, ClientPoliciesProfiles, ComponentUtils, Dialog, Notifications, $route, $location) {
+    var updatedExecutorIndex = $route.current.params.executorIndex;
+    var targetProfileName = $route.current.params.profileName;
+    $scope.createNew = updatedExecutorIndex == null;
+    if ($scope.createNew) {
+        console.log('ClientPoliciesProfilesEditExecutorCtrl: adding executor to profile ' + targetProfileName);
+    } else {
+        console.log('ClientPoliciesProfilesEditExecutorCtrl: updating executor with index ' + updatedExecutorIndex + ' of profile ' + targetProfileName);
+    }
+    $scope.realm = realm;
+
+    function getProfileByName(profilesArray) {
+        if (!profilesArray) return null;
+        for (var i=0 ; i < profilesArray.length ; i++) {
+            var currentProfile = profilesArray[i];
+            if (targetProfileName === currentProfile.name) {
+                return currentProfile;
+            }
+        }
+    }
+
+    var globalProfile = false;
+    $scope.editedProfile = getProfileByName(clientProfiles.profiles);
+    if (!$scope.editedProfile) {
+        $scope.editedProfile = getProfileByName(clientProfiles.globalProfiles);
+        globalProfile = true;
+    }
+    if ($scope.editedProfile == null) {
+        throw 'Client profile of specified name not found';
+    }
+
+    // needs to be a function because when this controller runs, the permissions might not be loaded yet
+    $scope.isReadOnly = function() {
+        return !$scope.access.manageRealm || globalProfile;
+    }
+
+    $scope.executorTypes = serverInfo.componentTypes['org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider'];
+
+    for (var j=0 ; j < $scope.executorTypes.length ; j++) {
+        var currExecutorType = $scope.executorTypes[j];
+        if (currExecutorType.properties) {
+            console.log("Adjusting executorType: " + currExecutorType.id);
+            ComponentUtils.addMvOptionsToMultivaluedLists(currExecutorType.properties);
+        }
+    }
+
+    function getExecutorByIndex(clientProfile, executorIndex) {
+        if (clientProfile.executors.length <= executorIndex) {
+            console.error('Client profile does not have executor of specified index');
+            $location.path('/notfound');
+            return null;
+        } else {
+            return clientProfile.executors[executorIndex];
+        }
+    }
+
+    if ($scope.createNew) {
+        // make first type the default
+        $scope.executorType = $scope.executorTypes[0];
+        var oldExecutorType = $scope.executorType;
+        initConfig();
+
+        $scope.$watch('executorType', function() {
+            if (!angular.equals($scope.executorType, oldExecutorType)) {
+                oldExecutorType = $scope.executorType;
+                initConfig();
+            }
+        }, true);
+    } else {
+        var exec = getExecutorByIndex($scope.editedProfile, updatedExecutorIndex);
+        if (exec) {
+            // a failsafe in case the configuration was deleted entirely (or set to null) in the JSON view
+            if (!exec.configuration) {
+                exec.configuration = {}
+            }
+
+            $scope.executor = {
+                config: exec.configuration
+            };
+
+            $scope.executorType = null;
+            for (var j=0 ; j < $scope.executorTypes.length ; j++) {
+                var currentExType = $scope.executorTypes[j];
+                if (exec.executor === currentExType.id) {
+                    $scope.executorType = currentExType;
+                    break;
+                }
+            }
+
+            for (var j=0 ; j < $scope.executorType.properties.length ; j++) {
+                // Convert boolean properties from the configuration to strings as expected by the kc-provider-config directive
+                var currentProperty = $scope.executorType.properties[j];
+                if (currentProperty.type === 'boolean') {
+                    $scope.executor.config[currentProperty.name] = ($scope.executor.config[currentProperty.name]) ? "true" : "false";
+                }
+
+                // a workaround for select2 to prevent displaying empty boxes
+                var configProperty = $scope.executor.config[$scope.executorType.properties[j].name];
+                if (Array.isArray(configProperty) && configProperty.length === 0) {
+                    $scope.executor.config[$scope.executorType.properties[j].name] = null
+                }
+
+            }
+        }
+
+    }
+
+    function toDefaultValue(configProperty) {
+        if (configProperty.type === 'boolean') {
+            return (configProperty.defaultValue) ? "true" : "false";
+        }
+
+        if (configProperty.defaultValue !== undefined) {
+            if ((configProperty.type === 'MultivaluedString' || configProperty.type === 'MultivaluedList') && !Array.isArray(configProperty.defaultValue)) {
+                return [configProperty.defaultValue]
+            }
+            return configProperty.defaultValue;
+        } else {
+            return null;
+        }
+    }
+
+    function initConfig() {
+        console.log("Initialized config now. ConfigType is: " + $scope.executorType.id);
+        $scope.executor = {
+            config: {}
+        };
+
+       for (let i = 0; i < $scope.executorType.properties.length; i++) {
+           let configProperty = $scope.executorType.properties[i];
+           $scope.executor.config[configProperty.name] = toDefaultValue(configProperty);
+       }
+    }
+
+    $scope.save = function() {
+        console.log("save: " + $scope.executorType.id);
+
+        var executorName = $scope.executorType.id;
+        if (!$scope.editedProfile.executors) {
+            $scope.editedProfile.executors = [];
+        }
+
+        ComponentUtils.removeLastEmptyValue($scope.executor.config);
+
+        // Convert String properties required by the kc-provider-config directive back to booleans
+        for (var j=0 ; j < $scope.executorType.properties.length ; j++) {
+            var currentProperty = $scope.executorType.properties[j];
+            if (currentProperty.type === 'boolean') {
+                $scope.executor.config[currentProperty.name] = ($scope.executor.config[currentProperty.name] === "true") ? true : false;
+            }
+        }
+
+        if ($scope.createNew) {
+            var selectedExecutor = {
+                executor: $scope.executorType.id,
+                configuration: $scope.executor.config
+            };
+            $scope.editedProfile.executors.push(selectedExecutor);
+        } else {
+            var currentExecutor = getExecutorByIndex($scope.editedProfile, updatedExecutorIndex);
+            if (currentExecutor) {
+                currentExecutor.configuration = $scope.executor.config;
+            }
+         }
+
+        ClientPoliciesProfiles.update({
+            realm: realm.realm,
+        }, clientProfiles,  function () {
+            if ($scope.createNew) {
+                Notifications.success("Executor created successfully");
+            } else {
+                Notifications.success("Executor updated successfully");
+            }
+            $location.url('/realms/' + realm.realm + '/client-policies/profiles-update/' + $scope.editedProfile.name);
+        }, function(errorResponse) {
+            var errDetails = (!errorResponse.data.errorMessage) ? "unknown error, please see the server log" : errorResponse.data.errorMessage
+            if ($scope.createNew) {
+                Notifications.error('Failed to create executor: ' + errDetails);
+            } else {
+                Notifications.error('Failed to update executor: ' + errDetails);
+            }
+        });
+
+    };
+
+    $scope.cancel = function() {
+        $location.url('/realms/' + realm.realm + '/client-policies/profiles-update/' + $scope.editedProfile.name);
+    };
+
+});
+
+module.controller('ClientPoliciesListCtrl', function($scope, realm, clientPolicies, ClientPolicies, Dialog, Notifications, $route, $location) {
+    console.log('ClientPoliciesListCtrl');
+    $scope.realm = realm;
+    $scope.clientPolicies = clientPolicies;
+
+    $scope.removeClientPolicy = function(clientPolicy) {
+        Dialog.confirmDelete(clientPolicy.name, 'client policy', function() {
+            console.log("Deleting client policy from the JSON: " + clientPolicy.name);
+
+            for (var i = 0; i < $scope.clientPolicies.policies.length; i++) {
+                var currentPolicy = $scope.clientPolicies.policies[i];
+                if (currentPolicy.name === clientPolicy.name) {
+                    $scope.clientPolicies.policies.splice(i, 1);
+                    break;
+                }
+            }
+
+            ClientPolicies.update({
+                realm: realm.realm,
+            }, $scope.clientPolicies, function () {
+                $route.reload();
+                Notifications.success("The client policy was deleted.");
+            }, function (errorResponse) {
+                $route.reload();
+                var errDetails = (!errorResponse.data.errorMessage) ? "unknown error, please see the server log" : errorResponse.data.errorMessage
+                Notifications.error('Failed to delete client policy: ' + errDetails);
+            });
+        });
+    };
+
+});
+
+module.controller('ClientPoliciesJsonCtrl', function($scope, realm, clientPolicies, Dialog, Notifications, ClientPolicies, $route, $location) {
+    console.log('ClientPoliciesJsonCtrl');
+    $scope.realm = realm;
+    $scope.clientPoliciesString = angular.toJson(clientPolicies, true);
+
+    $scope.save = function() {
+        var clientPoliciesObj = null;
+        try {
+            var clientPoliciesObj = angular.fromJson($scope.clientPoliciesString);
+        } catch (e) {
+            Notifications.error("Provided JSON is incorrect: " + e.message);
+            console.log(e);
+            return;
+        }
+        var clientPoliciesCompressed = angular.toJson(clientPoliciesObj, false);
+
+        ClientPolicies.update({
+            realm: realm.realm,
+        }, clientPoliciesCompressed,  function () {
+            $route.reload();
+            Notifications.success("The client policies configuration was updated.");
+        }, function(errorResponse) {
+            var errDetails = (!errorResponse.data.errorMessage) ? "unknown error, please see the server log" : errorResponse.data.errorMessage
+            Notifications.error("Failed to update client policies: " + errDetails);
+            console.log("Error response when updating client policies JSON: Status: " + errorResponse.status +
+                    ", statusText: " + errorResponse.statusText + ", data: " + JSON.stringify(errorResponse.data));
+        });
+    };
+
+    $scope.reset = function() {
+        $route.reload();
+    };
+});
+
+module.controller('ClientPoliciesEditCtrl', function($scope, realm, clientProfiles, clientPolicies, ClientPolicies, Dialog, Notifications, $route, $location) {
+    var targetPolicyName = $route.current.params.policyName;
+    $scope.createNew = targetPolicyName == null;
+    if ($scope.createNew) {
+        console.log('ClientPoliciesEditCtrl: creating new policy');
+    } else {
+        console.log('ClientPoliciesEditCtrl: updating policy ' + targetPolicyName);
+    }
+
+    $scope.realm = realm;
+    $scope.clientPolicies = clientPolicies;
+    $scope.clientProfiles = clientProfiles;
+    $scope.editedPolicy = null;
+
+    if ($scope.createNew) {
+        $scope.editedPolicy = {
+            name: "",
+            enabled: true,
+            profiles: [],
+            conditions: []
+        };
+    } else {
+        for (var i=0 ; i < $scope.clientPolicies.policies.length ; i++) {
+            var currentPolicy = $scope.clientPolicies.policies[i];
+            if (targetPolicyName === currentPolicy.name) {
+                $scope.editedPolicy = currentPolicy;
+                break;
+            }
+        }
+
+        if ($scope.editedPolicy == null) {
+            console.log("Policy of name " + targetPolicyName + " not found");
+            throw 'Policy not found';
+        }
+    }
+
+    // needs to be a function because when this controller runs, the permissions might not be loaded yet
+    $scope.isReadOnly = function() {
+        return !$scope.access.manageRealm;
+    }
+
+    $scope.availableProfiles = [];
+    var allClientProfiles = clientProfiles.profiles;
+    if (clientProfiles.globalProfiles) {
+        allClientProfiles = allClientProfiles.concat(clientProfiles.globalProfiles);
+    }
+    for (var k=0 ; k<allClientProfiles.length ; k++) {
+        var profileName = allClientProfiles[k].name;
+        if (!$scope.editedPolicy.profiles || !$scope.editedPolicy.profiles.includes(profileName)) {
+            $scope.availableProfiles.push(profileName);
+        }
+    }
+
+    $scope.removeCondition = function(conditionIndex) {
+        Dialog.confirmDelete($scope.editedPolicy.conditions[conditionIndex].condition, 'condition', function() {
+            console.log("remove condition of index " + conditionIndex);
+
+            // Delete condition
+            $scope.editedPolicy.conditions.splice(conditionIndex, 1);
+
+            ClientPolicies.update({
+                realm: realm.realm,
+            }, $scope.clientPolicies, function () {
+                Notifications.success("The condition was deleted.");
+            }, function (errorResponse) {
+                $route.reload();
+                var errDetails = (!errorResponse.data.errorMessage) ? "unknown error, please see the server log" : errorResponse.data.errorMessage
+                Notifications.error('Failed to delete condition: ' + errDetails);
+            });
+        });
+    }
+
+    $scope.save = function() {
+        if (!$scope.editedPolicy.name || $scope.editedPolicy.name === '') {
+            Notifications.error('Name must be provided');
+            return;
+        }
+
+        if ($scope.createNew) {
+            $scope.clientPolicies.policies.push($scope.editedPolicy);
+        }
+
+        ClientPolicies.update({
+            realm: realm.realm,
+        }, $scope.clientPolicies,  function () {
+            if ($scope.createNew) {
+                Notifications.success("The client policy was created.");
+                $location.url('/realms/' + realm.realm + '/client-policies/policies-update/' + $scope.editedPolicy.name);
+            } else {
+                Notifications.success("The client policy was updated.");
+                $location.url('/realms/' + realm.realm + '/client-policies/policies');
+            }
+        }, function(errorResponse) {
+            var errDetails = (!errorResponse.data.errorMessage) ? "unknown error, please see the server log" : errorResponse.data.errorMessage
+            if ($scope.createNew) {
+                Notifications.error('Failed to create client policy: ' + errDetails);
+            } else {
+                Notifications.error('Failed to update client policy: ' + errDetails);
+            }
+        });
+
+    };
+
+    $scope.back = function() {
+        $location.url('/realms/' + realm.realm + '/client-policies/policies');
+    };
+
+
+    function moveProfileAndUpdatePolicy(arrayFrom, arrayTo, profileName, notificationsMessage) {
+        for (var i=0 ; i<arrayFrom.length ; i++) {
+            if (arrayFrom[i] === profileName) {
+                arrayFrom.splice(i, 1);
+                arrayTo.push(profileName);
+                break;
+            }
+        }
+
+        ClientPolicies.update({
+            realm: realm.realm,
+        }, $scope.clientPolicies,  function () {
+            Notifications.success(notificationsMessage);
+        }, function(errorResponse) {
+            $route.reload();
+            var errDetails = (!errorResponse.data.errorMessage) ? "unknown error, please see the server log" : errorResponse.data.errorMessage
+            Notifications.error('Failed to update profiles of the policy: ' + errDetails);
+        });
+    }
+
+    $scope.addProfile = function(profileName) {
+        console.log("addProfile: " + profileName);
+        moveProfileAndUpdatePolicy($scope.availableProfiles, $scope.editedPolicy.profiles, profileName, "Profile added to the policy");
+    };
+
+    $scope.removeProfile = function(profileName) {
+        console.log("removeProfile: " + profileName);
+        moveProfileAndUpdatePolicy( $scope.editedPolicy.profiles, $scope.availableProfiles, profileName, "Profile removed from the policy");
+    }
+
+});
+
+module.controller('ClientPoliciesEditConditionCtrl', function($scope, realm, serverInfo, clientPolicies, ClientPolicies, Components, ComponentUtils, Dialog, Notifications, $route, $location) {
+    var updatedConditionIndex = $route.current.params.conditionIndex;
+    var targetPolicyName = $route.current.params.policyName;
+    $scope.createNew = updatedConditionIndex == null;
+    if ($scope.createNew) {
+        console.log('ClientPoliciesEditConditionCtrl: adding condition to policy ' + targetPolicyName);
+    } else {
+        console.log('ClientPoliciesEditConditionCtrl: updating condition with index ' + updatedConditionIndex + ' of policy ' + targetPolicyName);
+    }
+    $scope.realm = realm;
+
+    $scope.editedPolicy = null;
+    for (var i=0 ; i < clientPolicies.policies.length ; i++) {
+        var currentPolicy = clientPolicies.policies[i];
+        if (targetPolicyName === currentPolicy.name) {
+            $scope.editedPolicy = currentPolicy;
+            break;
+        }
+    }
+    if ($scope.editedPolicy == null) {
+        throw 'Client policy of specified name not found';
+    }
+
+    // needs to be a function because when this controller runs, the permissions might not be loaded yet
+    $scope.isReadOnly = function() {
+        return !$scope.access.manageRealm;
+    }
+
+    $scope.conditionTypes = serverInfo.componentTypes['org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider'];
+
+    for (var j=0 ; j < $scope.conditionTypes.length ; j++) {
+        var currConditionType = $scope.conditionTypes[j];
+        if (currConditionType.properties) {
+            console.log("Adjusting conditionType: " + currConditionType.id);
+            ComponentUtils.addMvOptionsToMultivaluedLists(currConditionType.properties);
+        }
+    }
+
+    function getConditionByIndex(clientPolicy, conditionIndex) {
+        if (clientPolicy.conditions.length <= conditionIndex) {
+            console.error('Client policy does not have condition of specified index');
+            $location.path('/notfound');
+            return null;
+        } else {
+            return clientPolicy.conditions[conditionIndex];
+        }
+    }
+
+    if ($scope.createNew) {
+        // make first type the default
+        $scope.conditionType = $scope.conditionTypes[0];
+        var oldConditionType = $scope.conditionType;
+        initConfig();
+
+        $scope.$watch('conditionType', function() {
+            if (!angular.equals($scope.conditionType, oldConditionType)) {
+                oldConditionType = $scope.conditionType;
+                initConfig();
+            }
+        }, true);
+    } else {
+        var cond = getConditionByIndex($scope.editedPolicy, updatedConditionIndex);
+        if (cond) {
+            // a failsafe in case the configuration was deleted entirely (or set to null) in the JSON view
+            if (!cond.configuration) {
+                cond.configuration = {}
+            }
+
+            $scope.condition = {
+                config: cond.configuration
+            };
+
+            $scope.conditionType = null;
+            for (var j=0 ; j < $scope.conditionTypes.length ; j++) {
+                var currentCndType = $scope.conditionTypes[j];
+                if (cond.condition === currentCndType.id) {
+                    $scope.conditionType = currentCndType;
+                    break;
+                }
+            }
+
+            for (var j=0 ; j < $scope.conditionType.properties.length ; j++) {
+                // Convert boolean properties from the configuration to strings as expected by the kc-provider-config directive
+                var currentProperty = $scope.conditionType.properties[j];
+                if (currentProperty.type === 'boolean') {
+                    $scope.condition.config[currentProperty.name] = ($scope.condition.config[currentProperty.name]) ? "true" : "false";
+                }
+
+                // a workaround for select2 to prevent displaying empty boxes
+                var configProperty = $scope.condition.config[$scope.conditionType.properties[j].name];
+                if (Array.isArray(configProperty) && configProperty.length === 0) {
+                    $scope.condition.config[$scope.conditionType.properties[j].name] = null
+                }
+
+            }
+        }
+
+    }
+
+    function toDefaultValue(configProperty) {
+        if (configProperty.type === 'boolean') {
+            return (configProperty.defaultValue) ? "true" : "false";
+        }
+
+        if (configProperty.defaultValue !== undefined) {
+            if ((configProperty.type === 'MultivaluedString' || configProperty.type === 'MultivaluedList') && !Array.isArray(configProperty.defaultValue)) {
+                return [configProperty.defaultValue]
+            }
+            return configProperty.defaultValue;
+        } else {
+            return null;
+        }
+    }
+
+    function initConfig() {
+        console.log("Initialized config now. ConfigType is: " + $scope.conditionType.id);
+        $scope.condition = {
+            config: {}
+        };
+
+       for (let i = 0; i < $scope.conditionType.properties.length; i++) {
+           let configProperty = $scope.conditionType.properties[i];
+           $scope.condition.config[configProperty.name] = toDefaultValue(configProperty);
+       }
+    }
+
+
+    $scope.save = function() {
+        console.log("save: " + $scope.conditionType.id);
+
+        var conditionName = $scope.conditionType.id;
+        if (!$scope.editedPolicy.conditions) {
+            $scope.editedPolicy.conditions = [];
+        }
+
+        ComponentUtils.removeLastEmptyValue($scope.condition.config);
+
+        // Convert String properties required by the kc-provider-config directive back to booleans
+        for (var j=0 ; j < $scope.conditionType.properties.length ; j++) {
+            var currentProperty = $scope.conditionType.properties[j];
+            if (currentProperty.type === 'boolean') {
+                $scope.condition.config[currentProperty.name] = ($scope.condition.config[currentProperty.name] === "true") ? true : false;
+            }
+        }
+
+        var selectedCondition;
+        if ($scope.createNew) {
+            var selectedCondition = {
+                condition: $scope.conditionType.id,
+                configuration: $scope.condition.config
+            };
+            $scope.editedPolicy.conditions.push(selectedCondition);
+        } else {
+            var currentCondition = getConditionByIndex($scope.editedPolicy, updatedConditionIndex);
+            if (currentCondition) {
+                currentCondition.configuration = $scope.condition.config;
+            }
+        }
+
+        ClientPolicies.update({
+            realm: realm.realm,
+        }, clientPolicies,  function () {
+            if ($scope.createNew) {
+                Notifications.success("Condition created successfully");
+            } else {
+                Notifications.success("Condition updated successfully");
+            }
+            $location.url('/realms/' + realm.realm + '/client-policies/policies-update/' + $scope.editedPolicy.name);
+        }, function(errorResponse) {
+            var errDetails = (!errorResponse.data.errorMessage) ? "unknown error, please see the server log" : errorResponse.data.errorMessage
+            if ($scope.createNew) {
+                Notifications.error('Failed to create condition: ' + errDetails);
+            } else {
+                Notifications.error('Failed to update condition: ' + errDetails);
+            }
+        });
+
+    };
+
+    $scope.cancel = function() {
+        $location.url('/realms/' + realm.realm + '/client-policies/policies-update/' + $scope.editedPolicy.name);
     };
 
 });

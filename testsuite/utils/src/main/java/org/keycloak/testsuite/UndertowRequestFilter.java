@@ -27,9 +27,16 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 
 import org.keycloak.common.ClientConnection;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.filters.AbstractRequestFilter;
 
 public class UndertowRequestFilter extends AbstractRequestFilter implements Filter {
+
+    private final KeycloakSessionFactory factory;
+
+    public UndertowRequestFilter(KeycloakSessionFactory factory) {
+        this.factory = factory;
+    }
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
@@ -79,6 +86,11 @@ public class UndertowRequestFilter extends AbstractRequestFilter implements Filt
                 return request.getLocalPort();
             }
         };
+    }
+
+    @Override
+    protected KeycloakSessionFactory getSessionFactory() {
+        return this.factory;
     }
 
     @Override

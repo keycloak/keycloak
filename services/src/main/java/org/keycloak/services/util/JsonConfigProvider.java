@@ -22,6 +22,7 @@ import org.keycloak.Config;
 import org.keycloak.common.util.StringPropertyReplacer;
 
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -181,6 +182,11 @@ public class JsonConfigProvider implements Config.ConfigProvider {
         @Override
         public Config.Scope scope(String... path) {
             return new JsonScope(getNode(config, path));
+        }
+
+        @Override
+        public Set<String> getPropertyNames() {
+            throw new UnsupportedOperationException("Not implemented");
         }
 
     }

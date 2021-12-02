@@ -17,11 +17,11 @@
 package org.keycloak.models.map.authSession;
 
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import java.util.Map;
@@ -39,7 +39,7 @@ public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticat
 
     @Override
     public String getId() {
-        return entity.getId().toString();
+        return entity.getId();
     }
 
     @Override
@@ -87,11 +87,14 @@ public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticat
         MapAuthenticationSessionEntity authSessionEntity = new MapAuthenticationSessionEntity();
         authSessionEntity.setClientUUID(client.getId());
 
+        int timestamp = Time.currentTime();
+        authSessionEntity.setTimestamp(timestamp);
+
         String tabId =  generateTabId();
         entity.getAuthenticationSessions().put(tabId, authSessionEntity);
 
         // Update our timestamp when adding new authenticationSession
-        entity.setTimestamp(Time.currentTime());
+        entity.setTimestamp(timestamp);
 
         MapAuthenticationSessionAdapter authSession = new MapAuthenticationSessionAdapter(session, this, tabId, authSessionEntity);
         session.getContext().setAuthenticationSession(authSession);
@@ -102,9 +105,7 @@ public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticat
     public void removeAuthenticationSessionByTabId(String tabId) {
         if (entity.removeAuthenticationSession(tabId) != null) {
             if (entity.getAuthenticationSessions().isEmpty()) {
-                MapRootAuthenticationSessionProvider authenticationSessionProvider =
-                        (MapRootAuthenticationSessionProvider) session.authenticationSessions();
-                authenticationSessionProvider.tx.delete(entity.getId());
+                session.authenticationSessions().removeRootAuthenticationSession(realm, this);
             } else {
                 entity.setTimestamp(Time.currentTime());
             }
@@ -118,10 +119,10 @@ public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticat
     }
 
     public void setUpdated(boolean updated) {
-        entity.updated |= updated;
+        entity.signalUpdated(updated);
     }
 
     private String generateTabId() {
-        return Base64Url.encode(KeycloakModelUtils.generateSecret(8));
+        return Base64Url.encode(SecretGenerator.getInstance().randomBytes(8));
     }
 }

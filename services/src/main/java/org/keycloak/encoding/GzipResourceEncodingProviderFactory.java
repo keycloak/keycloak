@@ -5,6 +5,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.Version;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.platform.Platform;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,7 +52,7 @@ public class GzipResourceEncodingProviderFactory implements ResourceEncodingProv
             return cacheDir;
         }
 
-        File cacheRoot = new File(System.getProperty("java.io.tmpdir"), "kc-gzip-cache");
+        File cacheRoot = new File(Platform.getPlatform().getTmpDirectory(), "kc-gzip-cache");
         File cacheDir = new File(cacheRoot, Version.RESOURCES_VERSION);
 
         if (cacheRoot.isDirectory()) {

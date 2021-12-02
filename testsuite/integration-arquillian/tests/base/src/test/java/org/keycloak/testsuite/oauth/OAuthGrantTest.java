@@ -461,4 +461,48 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         Assert.assertEquals("Email address", displayedScopes.get(1));
     }
 
+
+    // KEYCLOAK-16006 - tests that after revoke consent from single client, the SSO session is still valid and not automatically logged-out
+    @Test
+    public void oauthGrantUserNotLoggedOutAfterConsentRevoke() throws Exception {
+        // Login
+        oauth.clientId(THIRD_PARTY_APP);
+        oauth.doLoginGrant("test-user@localhost", "password");
+
+        // Confirm consent screen
+        grantPage.assertCurrent();
+        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
+        grantPage.accept();
+
+        Assert.assertTrue(oauth.getCurrentQuery().containsKey(OAuth2Constants.CODE));
+
+        EventRepresentation loginEvent = events.expectLogin()
+                .client(THIRD_PARTY_APP)
+                .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
+                .assertEvent();
+        String sessionId = loginEvent.getSessionId();
+
+        // Revoke consent with admin REST API
+        adminClient.realm(REALM_NAME).users().get(loginEvent.getUserId()).revokeConsent(THIRD_PARTY_APP);
+
+        // Make sure that after refresh, consent page is displayed and user doesn't need to re-authenticate. Just accept consent screen again
+        oauth.openLoginForm();
+
+        grantPage.assertCurrent();
+        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
+        grantPage.accept();
+
+        loginEvent = events.expectLogin()
+                .client(THIRD_PARTY_APP)
+                .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
+                .assertEvent();
+
+        //String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+        String sessionId2 = loginEvent.getSessionId();
+        Assert.assertEquals(sessionId, sessionId2);
+
+        // Revert consent
+        adminClient.realm(REALM_NAME).users().get(loginEvent.getUserId()).revokeConsent(THIRD_PARTY_APP);
+    }
+
 }

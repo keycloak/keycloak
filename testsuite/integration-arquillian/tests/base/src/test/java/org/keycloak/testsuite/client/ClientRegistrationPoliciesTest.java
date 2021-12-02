@@ -382,12 +382,14 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         // Add some clientScopes
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName("foo");
+        clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         Response response = realmResource().clientScopes().create(clientScope);
         String fooScopeId = ApiUtil.getCreatedId(response);
         response.close();
 
         clientScope = new ClientScopeRepresentation();
         clientScope.setName("bar");
+        clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         response = realmResource().clientScopes().create(clientScope);
         String barScopeId = ApiUtil.getCreatedId(response);
         response.close();
@@ -436,6 +438,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         // Add some clientScope through Admin REST
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName("foo");
+        clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         Response response = realmResource().clientScopes().create(clientScope);
         String clientScopeId = ApiUtil.getCreatedId(response);
         response.close();
@@ -475,6 +478,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         // Add some clientScope through Admin REST
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName("foo");
+        clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         Response response = realmResource().clientScopes().create(clientScope);
         String clientScopeId = ApiUtil.getCreatedId(response);
         response.close();

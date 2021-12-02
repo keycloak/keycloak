@@ -146,9 +146,15 @@ public class AccountFields extends FieldsBase {
 
         @FindBy(id = "input-error-firstname")
         private WebElement firstNameError;
+        
+        @FindBy(id = "input-error-firstName")
+        private WebElement firstNameDynamicError;
 
         @FindBy(id = "input-error-lastname")
         private WebElement lastNameError;
+        
+        @FindBy(id = "input-error-lastName")
+        private WebElement lastNameDynamicError;
 
         @FindBy(id = "input-error-email")
         private WebElement emailError;
@@ -160,7 +166,11 @@ public class AccountFields extends FieldsBase {
             try {
                 return getTextFromElement(firstNameError);
             } catch (NoSuchElementException e) {
-                return null;
+                try {
+                    return getTextFromElement(firstNameDynamicError);
+                } catch (NoSuchElementException ex) {
+                    return null;
+                }
             }
         }
 
@@ -168,7 +178,11 @@ public class AccountFields extends FieldsBase {
             try {
                 return getTextFromElement(lastNameError);
             } catch (NoSuchElementException e) {
-                return null;
+                try {
+                    return getTextFromElement(lastNameDynamicError);
+                } catch (NoSuchElementException ex) {
+                    return null;
+                }
             }
         }
 

@@ -17,6 +17,10 @@
 
 package org.keycloak.protocol.oidc;
 
+import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
@@ -115,6 +119,16 @@ public class OIDCLoginProtocolService {
         return uriBuilder.path(OIDCLoginProtocolService.class, "auth");
     }
 
+    public static UriBuilder registrationsUrl(UriBuilder baseUriBuilder) {
+        UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
+        return uriBuilder.path(OIDCLoginProtocolService.class, "registrations");
+    }
+
+    public static UriBuilder delegatedUrl(UriInfo uriInfo) {
+        UriBuilder uriBuilder = tokenServiceBaseUrl(uriInfo);
+        return uriBuilder.path(OIDCLoginProtocolService.class, "kcinitBrowserLoginComplete");
+    }
+
     public static UriBuilder tokenUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
         return uriBuilder.path(OIDCLoginProtocolService.class, "token");
@@ -163,7 +177,7 @@ public class OIDCLoginProtocolService {
      * Registration endpoint
      */
     @Path("registrations")
-    public Object registerPage() {
+    public Object registrations() {
         AuthorizationEndpoint endpoint = new AuthorizationEndpoint(realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint.register();
@@ -218,11 +232,14 @@ public class OIDCLoginProtocolService {
         checkSsl();
 
         JWK[] jwks = session.keys().getKeysStream(realm)
-                .filter(k -> k.getStatus().isEnabled() && Objects.equals(k.getUse(), KeyUse.SIG) && k.getPublicKey() != null)
+                .filter(k -> k.getStatus().isEnabled() && k.getPublicKey() != null)
                 .map(k -> {
-                    JWKBuilder b = JWKBuilder.create().kid(k.getKid()).algorithm(k.getAlgorithm());
+                    JWKBuilder b = JWKBuilder.create().kid(k.getKid()).algorithm(k.getAlgorithmOrDefault());
+                    List<X509Certificate> certificates = Optional.ofNullable(k.getCertificateChain())
+                        .filter(certs -> !certs.isEmpty())
+                        .orElseGet(() -> Collections.singletonList(k.getCertificate()));
                     if (k.getType().equals(KeyType.RSA)) {
-                        return b.rsa(k.getPublicKey(), k.getCertificate());
+                        return b.rsa(k.getPublicKey(), certificates, k.getUse());
                     } else if (k.getType().equals(KeyType.EC)) {
                         return b.ec(k.getPublicKey());
                     }

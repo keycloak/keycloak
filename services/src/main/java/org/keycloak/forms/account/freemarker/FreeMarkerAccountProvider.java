@@ -129,8 +129,6 @@ public class FreeMarkerAccountProvider implements AccountProvider {
 
         Locale locale = session.getContext().resolveLocale(user);
         Properties messagesBundle = handleThemeResources(theme, locale, attributes);
-        Map<String, String> localizationTexts = realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag());
-        messagesBundle.putAll(localizationTexts);
 
         URI baseUri = uriInfo.getBaseUri();
         UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
@@ -217,9 +215,10 @@ public class FreeMarkerAccountProvider implements AccountProvider {
      * @return message bundle for other use
      */
     protected Properties handleThemeResources(Theme theme, Locale locale, Map<String, Object> attributes) {
-        Properties messagesBundle;
+        Properties messagesBundle = new Properties();
         try {
-            messagesBundle = theme.getMessages(locale);
+            messagesBundle.putAll(theme.getMessages(locale));
+            messagesBundle.putAll(realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag()));
             attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
         } catch (IOException e) {
             logger.warn("Failed to load messages", e);

@@ -14,12 +14,27 @@
         "provider": "${keycloak.eventsStore.provider:}"
     },
 
+    "deploymentState": {
+        "provider": "${keycloak.deploymentState.provider:jpa}",
+        "map": {
+            "resourcesVersionSeed": "1JZ379bzyOCFA"
+        }
+    },
+
+    "dblock": {
+        "provider": "${keycloak.dblock.provider:jpa}"
+    },
+
     "realm": {
-        "provider": "${keycloak.realm.provider:}"
+        "provider": "${keycloak.realm.provider:jpa}"
     },
 
     "client": {
         "provider": "${keycloak.client.provider:jpa}"
+    },
+
+    "clientScope": {
+        "provider": "${keycloak.clientScope.provider:jpa}"
     },
 
     "group": {
@@ -31,13 +46,26 @@
     },
 
     "authenticationSessions": {
-        "provider": "${keycloak.authSession.provider:infinispan}"
+        "provider": "${keycloak.authSession.provider:infinispan}",
+        "infinispan": {
+            "authSessionsLimit": "${keycloak.authSessions.limit:300}"
+        }
+    },
+
+    "userSessions": {
+        "provider": "${keycloak.userSession.provider:infinispan}"
+    },
+
+    "loginFailure": {
+        "provider": "${keycloak.loginFailure.provider:infinispan}"
     },
 
     "mapStorage": {
-        "provider": "${keycloak.mapStorage.provider:concurrenthashmap}",
+        "provider": "${keycloak.mapStorage.provider:}",
         "concurrenthashmap": {
-            "dir": "${project.build.directory:target}"
+            "dir": "${project.build.directory:target/map}",
+            "keyType.realms": "string", 
+            "keyType.authz-resource-servers": "string"
         }
     },
 
@@ -54,7 +82,7 @@
     },
 
     "authorizationPersister": {
-        "provider": "${keycloak.authorization.provider:}"
+        "provider": "${keycloak.authorization.provider:jpa}"
     },
 
     "theme": {
@@ -96,6 +124,14 @@
         }
     },
 
+    "connectionsHotRod": {
+        "default": {
+            "embedded": "${keycloak.connectionsHotRod.embedded:true}",
+            "embeddedPort": "${keycloak.connectionsHotRod.embeddedPort:11444}",
+            "enableSecurity": "${keycloak.connectionsHotRod.enableSecurity:false}"
+        }
+    },
+
     "scripting": {
     },
 
@@ -113,7 +149,8 @@
     },
 
     "userProfile": {
-        "legacy-user-profile": {
+        "provider": "${keycloak.userProfile.provider:declarative-user-profile}",
+        "declarative-user-profile": {
             "read-only-attributes": [ "deniedFoo", "deniedBar*", "deniedSome/thing", "deniedsome*thing" ],
             "admin-read-only-attributes": [ "deniedSomeAdmin" ]
         }
@@ -137,4 +174,5 @@
             "certificateChainLength": 1
         }
     }
+
 }

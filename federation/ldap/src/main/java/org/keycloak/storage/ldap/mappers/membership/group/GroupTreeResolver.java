@@ -119,9 +119,9 @@ public class GroupTreeResolver {
                 } else if (ignoreMissingGroups) {
                     // Need to remove the missing group
                     iterator.remove();
-                    logger.debug("Group '" + child + "' referenced as member of group '" + group.getGroupName() + "' doesn't exists. Ignoring.");
+                    logger.debug("Group '" + child + "' referenced as member of group '" + group.getGroupName() + "' doesn't exist. Ignoring.");
                 } else {
-                    throw new GroupTreeResolveException("Group '" + child + "' referenced as member of group '" + group.getGroupName() + "' doesn't exists");
+                    throw new GroupTreeResolveException("Group '" + child + "' referenced as member of group '" + group.getGroupName() + "' doesn't exist");
                 }
             }
         }

@@ -57,6 +57,7 @@ import org.keycloak.KeyPairVerifier;
 import org.keycloak.authentication.CredentialRegistrator;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.email.EmailTemplateProvider;
@@ -113,6 +114,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
+import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.ReservedCharValidator;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -249,6 +251,7 @@ public class RealmAdminResource {
             ClientScopeRepresentation rep = new ClientScopeRepresentation();
             rep.setId(clientScope.getId());
             rep.setName(clientScope.getName());
+            rep.setProtocol(clientScope.getProtocol());
             return rep;
         });
     }
@@ -370,7 +373,7 @@ public class RealmAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     public RealmRepresentation getRealm() {
         if (auth.realm().canViewRealm()) {
-            return ModelToRepresentation.toRepresentation(realm, false);
+            return ModelToRepresentation.toRepresentation(session, realm, false);
         } else {
             auth.realm().requireViewRealmNameList();
 
@@ -378,7 +381,7 @@ public class RealmAdminResource {
             rep.setRealm(realm.getName());
 
             if (auth.realm().canViewIdentityProviders()) {
-                RealmRepresentation r = ModelToRepresentation.toRepresentation(realm, false);
+                RealmRepresentation r = ModelToRepresentation.toRepresentation(session, realm, false);
                 rep.setIdentityProviders(r.getIdentityProviders());
                 rep.setIdentityProviderMappers(r.getIdentityProviderMappers());
             }
@@ -580,6 +583,7 @@ public class RealmAdminResource {
      */
     @Path("logout-all")
     @POST
+    @Produces(MediaType.APPLICATION_JSON)
     public GlobalRequestResult logoutAll() {
         auth.users().requireManage();
 
@@ -1206,4 +1210,19 @@ public class RealmAdminResource {
                 .filter(providerId ->  session.getProvider(RequiredActionProvider.class, providerId) instanceof CredentialRegistrator);
     }
 
+    @Path("client-policies/policies")
+    public ClientPoliciesResource getClientPoliciesResource() {
+        ProfileHelper.requireFeature(Profile.Feature.CLIENT_POLICIES);
+        ClientPoliciesResource resource = new ClientPoliciesResource(realm, auth);
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+        return resource;
+    }
+
+    @Path("client-policies/profiles")
+    public ClientProfilesResource getClientProfilesResource() {
+        ProfileHelper.requireFeature(Profile.Feature.CLIENT_POLICIES);
+        ClientProfilesResource resource = new ClientProfilesResource(realm, auth);
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+        return resource;
+    }
 }

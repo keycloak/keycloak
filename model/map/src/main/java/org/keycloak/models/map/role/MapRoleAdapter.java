@@ -39,6 +39,11 @@ public class MapRoleAdapter extends AbstractRoleModel<MapRoleEntity> implements 
     }
 
     @Override
+    public String getId() {
+        return entity.getId();
+    }
+
+    @Override
     public String getName() {
         return entity.getName();
     }
@@ -54,11 +59,6 @@ public class MapRoleAdapter extends AbstractRoleModel<MapRoleEntity> implements 
     }
 
     @Override
-    public String getId() {
-        return entity.getId().toString();
-    }
-
-    @Override
     public void setName(String name) {
         entity.setName(name);
     }
@@ -70,21 +70,27 @@ public class MapRoleAdapter extends AbstractRoleModel<MapRoleEntity> implements 
 
     @Override
     public Stream<RoleModel> getCompositesStream() {
-        LOG.tracef("%% %s(%s).getCompositesStream():%d - %s", entity.getName(), entity.getId().toString(), entity.getCompositeRoles().size(), getShortStackTrace());
+        LOG.tracef("%% %s(%s).getCompositesStream():%d - %s", entity.getName(), entity.getId(), entity.getCompositeRoles().size(), getShortStackTrace());
         return entity.getCompositeRoles().stream()
                 .map(uuid -> session.roles().getRoleById(realm, uuid))
                 .filter(Objects::nonNull);
     }
 
     @Override
+    public Stream<RoleModel> getCompositesStream(String search, Integer first, Integer max) {
+        LOG.tracef("%% (%s).getCompositesStream(%s, %d, %d):%d - %s", this, search, first, max, entity.getCompositeRoles().size(), getShortStackTrace());
+        return session.roles().getRolesStream(realm, entity.getCompositeRoles().stream(), search, first, max);
+    }
+
+    @Override
     public void addCompositeRole(RoleModel role) {
-        LOG.tracef("%s(%s).addCompositeRole(%s(%s))%s", entity.getName(), entity.getId().toString(), role.getName(), role.getId(), getShortStackTrace());
+        LOG.tracef("(%s).addCompositeRole(%s(%s))%s", this, role.getName(), role.getId(), getShortStackTrace());
         entity.addCompositeRole(role.getId());
     }
 
     @Override
     public void removeCompositeRole(RoleModel role) {
-        LOG.tracef("%s(%s).removeCompositeRole(%s(%s))%s", entity.getName(), entity.getId().toString(), role.getName(), role.getId(), getShortStackTrace());
+        LOG.tracef("(%s).removeCompositeRole(%s(%s))%s", this, role.getName(), role.getId(), getShortStackTrace());
         entity.removeCompositeRole(role.getId());
     }
 
@@ -135,7 +141,7 @@ public class MapRoleAdapter extends AbstractRoleModel<MapRoleEntity> implements 
 
     @Override
     public String toString() {
-        return "MapRoleAdapter{" + getId() + '}';
+        return String.format("%s@%08x", getName(), System.identityHashCode(this));
     }
 
 }

@@ -11,7 +11,7 @@ public class PathMatcherTest {
     public void keycloak15833Test() {
         TestingPathMatcher matcher = new TestingPathMatcher();
 
-        Assert.assertNull(matcher.customBuildUriFromTemplate("/api/v1/{clientId}/campaigns/*/excelFiles", "/api/v1/1/contentConnectorConfigs/29/contentConnectorContents", false));
+        Assert.assertEquals("/api/v1/1/campaigns/*/excelFiles", matcher.customBuildUriFromTemplate("/api/v1/{clientId}/campaigns/*/excelFiles", "/api/v1/1/contentConnectorConfigs/29/contentConnectorContents", false));
     }
     
     private static final class TestingPathMatcher extends PathMatcher<Object> {

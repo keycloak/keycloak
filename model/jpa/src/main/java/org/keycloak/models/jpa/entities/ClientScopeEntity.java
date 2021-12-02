@@ -17,7 +17,6 @@
 
 package org.keycloak.models.jpa.entities;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -30,11 +29,10 @@ import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
@@ -47,6 +45,9 @@ import org.hibernate.annotations.Nationalized;
  */
 @Entity
 @Table(name="CLIENT_SCOPE", uniqueConstraints = {@UniqueConstraint(columnNames = {"REALM_ID", "NAME"})})
+@NamedQueries({
+        @NamedQuery(name="getClientScopeIds", query="select scope.id from ClientScopeEntity scope where scope.realmId = :realm")
+})
 public class ClientScopeEntity {
 
     @Id
@@ -60,13 +61,12 @@ public class ClientScopeEntity {
     private String description;
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "clientScope")
     Collection<ProtocolMapperEntity> protocolMappers;
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "REALM_ID")
-    protected RealmEntity realm;
+
+    @Column(name = "REALM_ID")
+    protected String realmId;
 
     @Column(name="PROTOCOL")
     private String protocol;
-
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "clientScope")
     protected Collection<ClientScopeAttributeEntity> attributes;
@@ -76,12 +76,12 @@ public class ClientScopeEntity {
     @CollectionTable(name="CLIENT_SCOPE_ROLE_MAPPING", joinColumns = { @JoinColumn(name="SCOPE_ID")})
     private Set<String> scopeMappingIds = new HashSet<>();
 
-    public RealmEntity getRealm() {
-        return realm;
+    public String getRealmId() {
+        return realmId;
     }
 
-    public void setRealm(RealmEntity realm) {
-        this.realm = realm;
+    public void setRealmId(String realmId) {
+        this.realmId = realmId;
     }
 
     public String getId() {

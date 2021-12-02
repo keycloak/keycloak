@@ -1,3 +1,13 @@
+echo
+echo *** WARNING ***
+echo
+echo ** If the following embed-server command fails, manual intervention is needed.
+echo ** In such case, remove any <extension> and <subsystem> declarations referring
+echo ** to the removed smallrye modules from the standalone-ha.xml file and rerun this script.
+echo ** For details, see Migration Changes section in the Upgrading guide.
+echo ** We apologize for this inconvenience.
+echo
+
 embed-server --server-config=standalone-ha.xml
 
 echo *** Begin Migration ***
@@ -67,7 +77,7 @@ if (outcome == failed) of /extension=org.jboss.as.deployment-scanner/:read-resou
 end-if
 if (outcome == failed) of /subsystem=deployment-scanner/:read-resource
   echo Adding deployment-scanner...
-  /subsystem=deployment-scanner/:add  
+  /subsystem=deployment-scanner/:add
   echo
 end-if
 if (outcome == failed) of /subsystem=deployment-scanner/scanner=default/:read-resource
@@ -79,7 +89,7 @@ end-if
 if (outcome == failed) of /subsystem=infinispan/cache-container=keycloak/distributed-cache=authorization/:read-resource
     # In migration from 3.0.0 to 3.2.0 there is authorization distributed-cache replaced with local-cache
     try
-        echo 
+        echo
         /subsystem=infinispan/cache-container=keycloak/distributed-cache=authorization/:add(mode=SYNC,owners=1)
         echo Added distributed-cache=authorization
     catch
@@ -122,7 +132,7 @@ if (result == undefined) of /subsystem=infinispan/cache-container=keycloak/local
   /subsystem=infinispan/cache-container=keycloak/local-cache=keys/component=expiration/:write-attribute(name=max-idle,value=3600000)
   echo
 end-if
-if (outcome == failed) of /subsystem=keycloak-server/spi=publicKeyStorage/:read-resource  
+if (outcome == failed) of /subsystem=keycloak-server/spi=publicKeyStorage/:read-resource
   echo Adding spi=publicKeyStorage...
   /subsystem=keycloak-server/spi=publicKeyStorage/:add
   /subsystem=keycloak-server/spi=publicKeyStorage/provider=infinispan/:add(properties={minTimeBetweenRequests => "10"},enabled=true)
@@ -151,7 +161,7 @@ end-if
 
 
 # Migrate from 2.4.0 to 2.5.0
-if (result == NONE) of /subsystem=infinispan/cache-container=keycloak/local-cache=realms/component=eviction/:read-attribute(name=strategy)  
+if (result == NONE) of /subsystem=infinispan/cache-container=keycloak/local-cache=realms/component=eviction/:read-attribute(name=strategy)
   echo Adding eviction strategy to keycloak realms cache...
   /subsystem=infinispan/cache-container=keycloak/local-cache=realms/component=eviction/:write-attribute(name=strategy,value=LRU)
   /subsystem=infinispan/cache-container=keycloak/local-cache=realms/component=eviction/:write-attribute(name=max-entries,value=10000)
@@ -174,7 +184,7 @@ if (outcome == success) of /subsystem=infinispan/cache-container=hibernate/local
 end-if
 
 
-# Migrate from 2.5.4 to 3.0.0 
+# Migrate from 2.5.4 to 3.0.0
 if (result == jpa) of /subsystem=keycloak-server/spi=eventsStore/:read-attribute(name=default-provider,include-defaults=false)
    echo Removing default provider for eventsStore
    /subsystem=keycloak-server/spi=eventsStore/:undefine-attribute(name=default-provider)
@@ -259,7 +269,7 @@ if (outcome == failed) of /core-service=management/security-realm=ApplicationRea
     echo Adding keystore to ApplicationRealm...
     /core-service=management/security-realm=ApplicationRealm/server-identity=ssl:add(keystore-path=application.keystore,keystore-relative-to=jboss.server.config.dir,keystore-password=password,alias=server,key-password=password,generate-self-signed-certificate-host=localhost)
     echo
-end-if 
+end-if
 
 if (outcome == failed) of /extension=org.wildfly.extension.elytron/:read-resource
     echo Adding elytron extension...
@@ -339,7 +349,7 @@ if (outcome == success) of /subsystem=jgroups/stack=tcp/protocol=FD/:read-resour
     /subsystem=jgroups/stack=tcp/protocol=FD/:remove
     /subsystem=jgroups/stack=tcp/protocol=FD_ALL/:add
     echo
-end-if   
+end-if
 
 if (result != undefined) of /subsystem=jgroups/stack=tcp/protocol=FD_SOCK/:read-attribute(name=socket-binding)
     echo Unsetting socket-binding from tcp FD_SOCK protocol
@@ -347,7 +357,7 @@ if (result != undefined) of /subsystem=jgroups/stack=tcp/protocol=FD_SOCK/:read-
     /subsystem=jgroups/stack=tcp/protocol=FD_SOCK/:remove
     /subsystem=jgroups/stack=tcp/protocol=FD_SOCK/:add
     echo
-end-if 
+end-if
 
 if (outcome == failed) of /subsystem=undertow/server=default-server/host=default-host/setting=http-invoker/:read-resource
     echo Adding http-invoker to default-host
@@ -401,7 +411,7 @@ if (outcome == success) of /subsystem=jdr/:read-resource
     /extension=org.jboss.as.jdr/:remove
     echo
 end-if
-    
+
 if (outcome == success) of /subsystem=jsf/:read-resource
     echo Removing jsf subsystem and extension
     /subsystem=jsf/:remove
@@ -587,13 +597,13 @@ if (result == NON_XA) of /subsystem=infinispan/cache-container=hibernate/local-c
 end-if
 
 if (result == false) of /subsystem=datasources/data-source=ExampleDS/:read-attribute(name=statistics-enabled)
-    echo Adding statistics-enabled expression to ExampleDS datasource 
+    echo Adding statistics-enabled expression to ExampleDS datasource
     /subsystem=datasources/data-source=ExampleDS/:write-attribute(name=statistics-enabled,value=${wildfly.datasources.statistics-enabled:${wildfly.statistics-enabled:false}})
     echo
 end-if
 
 if (result == false) of /subsystem=datasources/data-source=KeycloakDS/:read-attribute(name=statistics-enabled)
-    echo Adding statistics-enabled expression to KeycloakDS datasource 
+    echo Adding statistics-enabled expression to KeycloakDS datasource
     /subsystem=datasources/data-source=KeycloakDS/:write-attribute(name=statistics-enabled,value=${wildfly.datasources.statistics-enabled:${wildfly.statistics-enabled:false}})
     echo
 end-if
@@ -634,52 +644,10 @@ if (outcome == failed) of /subsystem=weld/:read-resource
     echo
 end-if
 
-if (outcome == failed) of /extension=org.wildfly.extension.microprofile.config-smallrye/:read-resource
-    echo Adding microprofile.config-smallrye extension...
-    /extension=org.wildfly.extension.microprofile.config-smallrye/:add(module=org.wildfly.extension.microprofile.config-smallrye)
-    echo
-end-if
-
-if (outcome == failed) of /subsystem=microprofile-config-smallrye/:read-resource
-    echo Adding microprofile-config-smallrye subsystem
-    /subsystem=microprofile-config-smallrye/:add
-    echo
-end-if
-
-if (outcome == failed) of /extension=org.wildfly.extension.microprofile.health-smallrye/:read-resource
-    echo Adding microprofile.health-smallrye extension...
-    /extension=org.wildfly.extension.microprofile.health-smallrye/:add(module=org.wildfly.extension.microprofile.health-smallrye)
-    echo
-end-if
-
-if (outcome == failed) of /subsystem=microprofile-health-smallrye/:read-resource
-    echo Adding microprofile-health-smallrye subsystem
-    /subsystem=microprofile-health-smallrye/:add
-    /subsystem=microprofile-health-smallrye/:write-attribute(name=security-enabled,value=false)
-    echo
-end-if
-
-if (outcome == failed) of /extension=org.wildfly.extension.microprofile.metrics-smallrye/:read-resource
-    echo Adding microprofile.metrics-smallrye extension...
-    /extension=org.wildfly.extension.microprofile.metrics-smallrye/:add(module=org.wildfly.extension.microprofile.metrics-smallrye)
-    echo
-end-if
-
-if (outcome == failed) of /subsystem=microprofile-metrics-smallrye/:read-resource
-    echo Adding microprofile-metrics-smallrye subsystem
-    /subsystem=microprofile-metrics-smallrye/:add
-    /subsystem=microprofile-metrics-smallrye/:write-attribute(name=security-enabled,value=false)
-    /subsystem=microprofile-metrics-smallrye/:write-attribute(name=exposed-subsystems,value=[*])
-    echo
-end-if
-
-if (result == "Keycloak") of :read-attribute(name=product-name)
-    echo Adding microprofile-metrics-smallrye subsystem prefix attribute to Keycloak
-    /subsystem=microprofile-metrics-smallrye/:write-attribute(name=prefix,value=${wildfly.metrics.prefix:wildfly})
-else
-    echo Adding microprofile-metrics-smallrye subsystem prefix attribute to RH-SSO
-    /subsystem=microprofile-metrics-smallrye/:write-attribute(name=prefix,value=${wildfly.metrics.prefix:jboss})
-end-if
+## KEYCLOAK-16723 / KEYCLOAK-16907:
+##
+## Loading of MicroProfile SmallRye config, health, and metrics extensions & subsystems got removed
+## as part of upgrading to Wildfly 22. See [WFLY-14203], [WFLY-14151], and [WFLY-14108] for details
 
 # Migrate from 6.0.1 to 7.0.0
 if (outcome == success) of /subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:read-resource
@@ -793,6 +761,130 @@ end-if
 if (result != expression "${jboss.mail.server.port:25}") of /socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=mail-smtp:read-attribute(name=port)
     echo Adding port expression to the SMTP configuration of a remote destination outbound socket binding in the mail subsystem
     /socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=mail-smtp:write-attribute(name=port, value=expression "${jboss.mail.server.port:25}")
+    echo
+end-if
+
+# Migrate from 12.0.0 to 13.0.0
+
+## KEYCLOAK-16723 / KEYCLOAK-16907:
+##
+## Based on [WFLY-14203], [WFLY-14151], and [WFLY-14108] remove MicroProfile SmallRye config, health, and metrics if present
+
+if (outcome == success) of /subsystem=microprofile-config-smallrye/:read-resource
+    echo Removing microprofile-config-smallrye subsystem...
+    /subsystem=microprofile-config-smallrye/:remove
+    echo
+end-if
+
+if (outcome == success) of /extension=org.wildfly.extension.microprofile.config-smallrye/:read-resource
+    echo Removing microprofile.config-smallrye extension...
+    /extension=org.wildfly.extension.microprofile.config-smallrye/:remove
+    echo
+end-if
+
+if (outcome == success) of /subsystem=microprofile-health-smallrye/:read-resource
+    echo Removing microprofile-health-smallrye subsystem...
+    /subsystem=microprofile-health-smallrye/:remove
+    echo
+end-if
+
+if (outcome == success) of /extension=org.wildfly.extension.microprofile.health-smallrye/:read-resource
+    echo Removing microprofile.health-smallrye extension...
+    /extension=org.wildfly.extension.microprofile.health-smallrye/:remove
+    echo
+end-if
+
+if (outcome == success) of /subsystem=microprofile-metrics-smallrye/:read-resource
+    echo Removing microprofile-metrics-smallrye subsystem...
+    /subsystem=microprofile-metrics-smallrye/:remove
+    echo
+end-if
+
+if (outcome == success) of /extension=org.wildfly.extension.microprofile.metrics-smallrye/:read-resource
+    echo Removing microprofile.metrics-smallrye extension...
+    /extension=org.wildfly.extension.microprofile.metrics-smallrye/:remove
+    echo
+end-if
+
+## Yet based on [WFLY-14203], [WFLY-14151], and [WFLY-14108] load
+## org.wildfly.extension.health/org.wildfly.extension.metrics extensions & subsystems instead
+
+if (outcome == failed) of /extension=org.wildfly.extension.health:read-resource
+    echo Adding WildFly extension for health...
+    /extension=org.wildfly.extension.health:add(module=org.wildfly.extension.health)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=health:read-resource
+    echo Adding Wildfly subsystem for health...
+    /subsystem=health:add(security-enabled=false)
+    echo
+end-if
+
+if (outcome == failed) of /extension=org.wildfly.extension.metrics:read-resource
+    echo Adding Wildfly extension for base metrics...
+    /extension=org.wildfly.extension.metrics:add(module=org.wildfly.extension.metrics)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=metrics:read-resource
+    echo Adding Wildfly subsystem for base metrics...
+    /subsystem=metrics:add(exposed-subsystems=[*],security-enabled=false)
+    echo
+end-if
+
+if (result == "Keycloak") of :read-attribute(name=product-name)
+    echo Adding base metrics subsystem prefix to Keycloak...
+    /subsystem=metrics:write-attribute(name=prefix,value=${wildfly.metrics.prefix:wildfly})
+    echo
+else
+    echo Adding base metrics subsystem prefix to RH-SSO...
+    /subsystem=metrics:write-attribute(name=prefix,value=${wildfly.metrics.prefix:jboss})
+    echo
+end-if
+
+## Add ability to make use of automatically generated self-signed certificate with Elytron,
+## introduced by WFCORE-5095 in Wildfly Core 14.0.0.Final
+
+if (outcome == failed) of /subsystem=elytron/key-store=applicationKS:read-resource
+    echo Adding key store for the feature of auto-generation of self-signed certificate to Elytron subsystem...
+    /subsystem=elytron/key-store=applicationKS:add(credential-reference={clear-text=password},type=JKS)
+    /subsystem=elytron/key-store=applicationKS:write-attribute(name=path,value=application.keystore)
+    /subsystem=elytron/key-store=applicationKS:write-attribute(name=relative-to,value=jboss.server.config.dir)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=elytron/key-manager=applicationKM:read-resource
+    echo Adding key manager for the feature of auto-generation of self-signed certificate to Elytron subsystem...
+    /subsystem=elytron/key-manager=applicationKM:add(key-store=applicationKS, credential-reference={clear-text=password})
+    /subsystem=elytron/key-manager=applicationKM:write-attribute(name=generate-self-signed-certificate-host,value=localhost)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=elytron/server-ssl-context=applicationSSC:read-resource
+    echo Adding SSL context for the feature of auto-generation of self-signed certificate to Elytron subsystem...
+    /subsystem=elytron/server-ssl-context=applicationSSC:add(key-manager=applicationKM)
+    echo
+end-if
+
+## Convert type of 'hung-task-termination-period' attribute for 'managed-executor-service' from INT to LONG
+if (result == 0) of /subsystem=ee/managed-executor-service=default:read-attribute(name=hung-task-termination-period)
+    echo Setting period for automatic termination of hung tasks for managed executor service to default value (0 miliseconds)
+    /subsystem=ee/managed-executor-service=default:write-attribute(name=hung-task-termination-period,value=0L)
+    echo
+end-if
+
+## Convert type of 'hung-task-termination-period' attribute for 'managed-scheduled-executor-service' from INT to LONG
+if (result == 0) of /subsystem=ee/managed-scheduled-executor-service=default:read-attribute(name=hung-task-termination-period)
+    echo Setting period for automatic termination of hung tasks for managed scheduled executor service to default value (0 miliseconds)
+    /subsystem=ee/managed-scheduled-executor-service=default:write-attribute(name=hung-task-termination-period,value=0L)
+    echo
+end-if
+
+## Set value of JPA default-datasource from empty string to 'undefined'
+if (outcome == success) && (result == "") of /subsystem=jpa:read-attribute(name=default-datasource)
+    echo Setting value of to default-datasource attribute in JPA subsystem to 'undefined'
+    /subsystem=jpa:undefine-attribute(name=default-datasource)
     echo
 end-if
 

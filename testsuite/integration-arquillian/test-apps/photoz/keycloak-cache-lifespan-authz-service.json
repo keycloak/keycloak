@@ -1,0 +1,80 @@
+{
+  "realm": "photoz",
+  "realm-public-key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB",
+  "auth-server-url": "http://localhost:8180/auth",
+  "ssl-required": "external",
+  "resource": "photoz-restful-api",
+  "bearer-only" : true,
+  "credentials": {
+    "jwt": {
+      "client-key-password": "password",
+      "client-keystore-file": "classpath:keystore.jks",
+      "client-keystore-password": "password",
+      "client-key-alias": "secure-portal",
+      "token-timeout": 10,
+      "client-keystore-type": "jks"
+    }
+  },
+  "policy-enforcer": {
+    "enforcement-mode": "PERMISSIVE",
+    "user-managed-access": {},
+    "path-cache": {
+      "lifespan": 25000
+    },
+    "paths": [
+      {
+        "name" : "Album Resource",
+        "path" : "/album",
+        "methods" : [
+          {
+            "method": "GET",
+            "scopes-enforcement-mode" : "DISABLED"
+          }
+        ]
+      },
+      {
+        "name" : "Album Resource",
+        "path" : "/album/{id}/",
+        "methods" : [
+          {
+            "method": "DELETE",
+            "scopes" : ["album:delete"]
+          },
+          {
+            "method": "GET",
+            "scopes" : ["album:view"]
+          }
+        ]
+      },
+      {
+        "path" : "/profile"
+      },
+      {
+        "name" : "Admin Resources",
+        "path" : "/admin/*"
+      },
+      {
+        "name" : "Scope Protected Resource",
+        "path" : "/scope-any",
+        "methods": [
+          {
+            "method": "GET",
+            "scopes": ["scope-a", "scope-b"],
+            "scopes-enforcement-mode": "ANY"
+          }
+        ]
+      },
+      {
+        "name" : "Scope Protected Resource",
+        "path" : "/scope-all",
+        "methods": [
+          {
+            "method": "GET",
+            "scopes": ["scope-a", "scope-b"],
+            "scopes-enforcement-mode": "ALL"
+          }
+        ]
+      }
+    ]
+  }
+}

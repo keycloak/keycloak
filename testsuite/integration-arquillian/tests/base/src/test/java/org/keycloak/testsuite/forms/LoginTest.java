@@ -61,6 +61,7 @@ import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
+import java.io.Closeable;
 import org.openqa.selenium.WebDriver;
 
 import javax.ws.rs.client.Client;
@@ -219,7 +220,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         client.close();
     }
 
-    @AuthServerContainerExclude(value = AuthServerContainerExclude.AuthServer.QUARKUS, details = "Unstable for Quarkus, review later")
+    @AuthServerContainerExclude(value = {AuthServerContainerExclude.AuthServer.REMOTE}, details = "Remote testsuite: max-detail-length is set to zero in standalone.xml, proposed fix - KEYCLOAK-17659")
     @Test
     public void loginWithLongRedirectUri() throws Exception {
         try (AutoCloseable c = new RealmAttributeUpdater(adminClient.realm("test"))
@@ -770,23 +771,28 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     // KEYCLOAK-1037
     @Test
     public void loginExpiredCodeWithExplicitRemoveExpired() {
-        loginPage.open();
-        setTimeOffset(5000);
-        // Explicitly call "removeExpired". Hence authSession won't exist, but will be restarted from the KC_RESTART
-        testingClient.testing().removeExpired("test");
+        getTestingClient().testing().setTestingInfinispanTimeService();
 
-        loginPage.login("login@test.com", "password");
+        try {
+            loginPage.open();
+            setTimeOffset(5000);
+            // Explicitly call "removeExpired". Hence authSession won't exist, but will be restarted from the KC_RESTART
+            testingClient.testing().removeExpired("test");
 
-        //loginPage.assertCurrent();
-        loginPage.assertCurrent();
+            loginPage.login("login@test.com", "password");
 
-        Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
-        setTimeOffset(0);
+            //loginPage.assertCurrent();
+            loginPage.assertCurrent();
 
-        events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
-                .detail(Details.RESTART_AFTER_TIMEOUT, "true")
-                .client((String) null)
-                .assertEvent();
+            Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
+
+            events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
+                    .detail(Details.RESTART_AFTER_TIMEOUT, "true")
+                    .client((String) null)
+                    .assertEvent();
+        } finally {
+            getTestingClient().testing().revertTestingInfinispanTimeService();
+        }
     }
 
     @Test
@@ -834,7 +840,26 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         Assert.assertNotNull(link, thirdParty.getBaseUrl());
     }
 
+    @Test
+    public void loginWithDisabledCookies() {
+        String userId = adminClient.realm("test").users().search("test-user@localhost").get(0).getId();
+        oauth.clientId("test-app");
+        oauth.openLoginForm();
 
+        driver.manage().deleteAllCookies();
+
+
+        // Cookie has been deleted or disabled, the error shown in the UI should be Errors.COOKIE_NOT_FOUND
+        loginPage.login("login@test.com", "password");
+
+        events.expect(EventType.LOGIN_ERROR)
+                .user(new UserRepresentation())
+                .client(new ClientRepresentation())
+                .error(Errors.COOKIE_NOT_FOUND)
+                .assertEvent();
+
+        errorPage.assertCurrent();
+    }
 
     @Test
     public void openLoginFormWithDifferentApplication() throws Exception {
@@ -874,9 +899,10 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     @Test
     @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void loginRememberMeExpiredIdle() throws Exception {
-        setRememberMe(true, 1, null);
-
-        try {
+        try (Closeable c = new RealmAttributeUpdater(adminClient.realm("test"))
+          .setSsoSessionIdleTimeoutRememberMe(1)
+          .setRememberMe(true)
+          .update()) {
             // login form shown after redirect from app
             oauth.clientId("test-app");
             oauth.redirectUri(OAuthClient.APP_ROOT + "/auth");
@@ -896,17 +922,16 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
             // trying to open the account page with an expired idle timeout should redirect back to the login page.
             appPage.openAccount();
             loginPage.assertCurrent();
-        } finally {
-            setRememberMe(false);
         }
     }
 
     @Test
     @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void loginRememberMeExpiredMaxLifespan() throws Exception {
-        setRememberMe(true, null, 1);
-
-        try {
+        try (Closeable c = new RealmAttributeUpdater(adminClient.realm("test"))
+          .setSsoSessionMaxLifespanRememberMe(1)
+          .setRememberMe(true)
+          .update()) {
             // login form shown after redirect from app
             oauth.clientId("test-app");
             oauth.redirectUri(OAuthClient.APP_ROOT + "/auth");
@@ -926,8 +951,6 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
             // trying to open the account page with an expired lifespan should redirect back to the login page.
             appPage.openAccount();
             loginPage.assertCurrent();
-        } finally {
-            setRememberMe(false);
         }
     }
 

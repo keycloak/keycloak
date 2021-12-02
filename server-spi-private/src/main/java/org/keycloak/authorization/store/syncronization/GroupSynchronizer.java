@@ -17,7 +17,7 @@
 
 package org.keycloak.authorization.store.syncronization;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -45,10 +45,11 @@ public class GroupSynchronizer implements Synchronizer<GroupModel.GroupRemovedEv
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
         PolicyStore policyStore = storeFactory.getPolicyStore();
         GroupModel group = event.getGroup();
-        Map<String, String[]> attributes = new HashMap<>();
+        Map<Policy.FilterOption, String[]> attributes = new EnumMap<>(Policy.FilterOption.class);
 
-        attributes.put("type", new String[] {"group"});
-        attributes.put("config:groups", new String[] {group.getId()});
+        attributes.put(Policy.FilterOption.TYPE, new String[] {"group"});
+        attributes.put(Policy.FilterOption.CONFIG, new String[] {"groups", group.getId()});
+        attributes.put(Policy.FilterOption.ANY_OWNER, Policy.FilterOption.EMPTY_FILTER);
 
         List<Policy> search = policyStore.findByResourceServer(attributes, null, -1, -1);
 

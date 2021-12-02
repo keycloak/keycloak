@@ -62,6 +62,7 @@ public final class Constants {
     // KEYCLOAK-7688 Offline Session Max for Offline Token
     // 60 days
     public static final int DEFAULT_OFFLINE_SESSION_MAX_LIFESPAN = 5184000;
+    public static final String DEFAULT_SIGNATURE_ALGORITHM = Algorithm.RS256;
 
     public static final String DEFAULT_WEBAUTHN_POLICY_SIGNATURE_ALGORITHMS = Algorithm.ES256;
     public static final String DEFAULT_WEBAUTHN_POLICY_RP_ENTITY_NAME = "keycloak";
@@ -95,6 +96,12 @@ public final class Constants {
     // Prefix for user attributes used in various "context"data maps
     public static final String USER_ATTRIBUTES_PREFIX = "user.attributes.";
 
+    // Roles already granted by a mapper when updating brokered users.
+    public static final String MAPPER_GRANTED_ROLES = "MAPPER_GRANTED_ROLES";
+
+    // Groups already assigned by a mapper when updating brokered users.
+    public static final String MAPPER_GRANTED_GROUPS = "MAPPER_GRANTED_GROUPS";
+
     // Indication to admin-rest-endpoint that realm keys should be re-generated
     public static final String GENERATE = "GENERATE";
 
@@ -118,4 +125,9 @@ public final class Constants {
      * If {@code #STORAGE_BATCH_ENABLED} is set, indicates the batch size.
      */
     public static final String STORAGE_BATCH_SIZE = "org.keycloak.storage.batch_size";
+
+    // Client Polices Realm Attributes Keys
+    public static final String CLIENT_PROFILES = "client-policies.profiles";
+    public static final String CLIENT_POLICIES = "client-policies.policies";
+
 }

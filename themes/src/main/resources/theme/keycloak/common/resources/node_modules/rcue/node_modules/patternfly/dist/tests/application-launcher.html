@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<!--[if IE 9]><html lang="en-us" class="ie9"><![endif]-->
+<!--[if gt IE 9]><!-->
+<html lang="en-us">
+<!--<![endif]-->
+  <head>
+    <title>Application Launcher - PatternFly</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="../img/favicon.ico">
+    <!-- iPad retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../img/apple-touch-icon-precomposed-152.png">
+    <!-- iPad retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="../img/apple-touch-icon-precomposed-144.png">
+    <!-- iPad non-retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="76x76" href="../img/apple-touch-icon-precomposed-76.png">
+    <!-- iPad non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="../img/apple-touch-icon-precomposed-72.png">
+    <!-- iPhone 6 Plus icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="120x120" href="../img/apple-touch-icon-precomposed-180.png">
+    <!-- iPhone retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../img/apple-touch-icon-precomposed-114.png">
+    <!-- iPhone non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="57x57" href="../img/apple-touch-icon-precomposed-57.png">
+    <link rel="stylesheet" href="../css/patternfly.min.css" >
+    <link rel="stylesheet" href="../css/patternfly-additions.min.css" >
+      <link href="tests.css" rel="stylesheet" media="screen, print">
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="../js/patternfly.min.js"></script>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="page-header">
+        <h1>Application Launcher</h1>
+      </div>
+      <div class="alert alert-warning">
+        <span class="pficon pficon-warning-triangle-o"></span>
+        These examples are included for development testing purposes.  For official documentation, see <a href="https://www.patternfly.org" class="alert-link">https://www.patternfly.org</a> and <a href="http://getbootstrap.com" class="alert-link">http://getbootstrap.com</a>.
+      </div>
+      <hr>
+<h2>Horizontal Nav Bar</h2>
+
+<h3>Grid Menu</h3>
+
+<h4>Icons</h4>
+
+
+<nav class="navbar navbar-default navbar-pf" role="navigation">
+  <div class="navbar-header">
+    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse-1">
+      <span class="sr-only">Toggle navigation</span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+    </button>
+    <a class="navbar-brand" href="/">
+      <img src="..//img/brand.svg" alt="PatternFly Enterprise Application" />
+    </a>
+  </div>
+  <div class="collapse navbar-collapse navbar-collapse-1">
+    <ul class="nav navbar-nav navbar-utility">
+      
+      <li class="applauncher-pf  applauncher-pf-block-list  dropdown">
+  <button class="btn btn-link dropdown-toggle nav-item-iconic" data-toggle="dropdown" href="#">
+    <span class="fa fa-th applauncher-pf-icon" aria-hidden="true"></span>
+    <span class="dropdown-title">
+      <span class="applauncher-pf-title">
+        Application Launcher
+        <span class="caret" aria-hidden="true"></span>
+      </span>
+    </span>
+  </button>
+  <ul class="dropdown-menu" role="menu">
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <i class="applauncher-pf-link-icon pficon pficon-storage-domain" aria-hidden="true"></i>
+        
+        <span class="applauncher-pf-link-title">Recteque</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <i class="applauncher-pf-link-icon pficon pficon-virtual-machine" aria-hidden="true"></i>
+        
+        <span class="applauncher-pf-link-title">Ipsum</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <!-- Placeholder left to maintain spacing -->
+        <i class="applauncher-pf-link-icon" aria-hidden="true"></i>
+        
+        <span class="applauncher-pf-link-title">Suavitate</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <i class="applauncher-pf-link-icon pficon pficon-domain" aria-hidden="true"></i>
+        
+        <span class="applauncher-pf-link-title">Lorem</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <i class="applauncher-pf-link-icon pficon pficon-home" aria-hidden="true"></i>
+        
+        <span class="applauncher-pf-link-title">Home</span>
+      </a>
+    </li>
+  </ul>
+</li>
+
+      
+      <li class="dropdown">
+        <button class="btn btn-link nav-item-iconic" id="horizontalDropdownMenu11" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+          <span title="Help" class="fa pficon-help dropdown-title"></span>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="horizontalDropdownMenu11">
+          <li><a href="#0">Help</a></li>
+          <li><a href="#0">About</a></li>
+        </ul>
+      </li>
+      <li class="dropdown">
+        <button class="btn btn-link dropdown-toggle" data-toggle="dropdown">
+          <span class="pficon pficon-user"></span>
+          <span class="dropdown-title">
+            Brian Johnson <b class="caret"></b>
+          </span>
+        </button>
+        <ul class="dropdown-menu">
+          <li>
+            <a href="#0">Link</a>
+          </li>
+          <li>
+            <a href="#0">Another link</a>
+          </li>
+          <li>
+            <a href="#0">Something else here</a>
+          </li>
+          <li class="divider"></li>
+          <li class="dropdown-submenu">
+            <a tabindex="-1" href="#0">More options</a>
+            <ul class="dropdown-menu">
+              <li>
+                <a href="#0">Link</a>
+              </li>
+              <li>
+                <a href="#0">Another link</a>
+              </li>
+              <li>
+                <a href="#0">Something else here</a>
+              </li>
+              <li class="divider"></li>
+              <li class="dropdown-header">Nav header</li>
+              <li>
+                <a href="#0">Separated link</a>
+              </li>
+              <li class="divider"></li>
+              <li>
+                <a href="#0">One more separated link</a>
+              </li>
+            </ul>
+          </li>
+          <li class="divider"></li>
+          <li>
+            <a href="#0">One more separated link</a>
+          </li>
+        </ul>
+      </li>
+    </ul>
+    <ul class="nav navbar-nav navbar-primary">
+      <li>
+        <a href="#0">First Link</a>
+      </li>
+      <li class="active">
+        <a href="#0">Another Link</a>
+      </li>
+      <li>
+        <a href="#0">And Another</a>
+      </li>
+      <li>
+        <a href="#0">As a General Rule</a>
+      </li>
+      <li>
+        <a href="#0">Five to Seven Links</a>
+      </li>
+      <li>
+        <a href="#0">Is Good</a>
+      </li>
+    </ul>
+  </div>
+</nav>
+
+<h4>No Icons</h4>
+
+
+<nav class="navbar navbar-default navbar-pf" role="navigation">
+  <div class="navbar-header">
+    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse-1">
+      <span class="sr-only">Toggle navigation</span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+    </button>
+    <a class="navbar-brand" href="/">
+      <img src="..//img/brand.svg" alt="PatternFly Enterprise Application" />
+    </a>
+  </div>
+  <div class="collapse navbar-collapse navbar-collapse-1">
+    <ul class="nav navbar-nav navbar-utility">
+      
+      <li class="applauncher-pf  applauncher-pf-block-list  dropdown">
+  <button class="btn btn-link dropdown-toggle nav-item-iconic" data-toggle="dropdown" href="#">
+    <span class="fa fa-th applauncher-pf-icon" aria-hidden="true"></span>
+    <span class="dropdown-title">
+      <span class="applauncher-pf-title">
+        Application Launcher
+        <span class="caret" aria-hidden="true"></span>
+      </span>
+    </span>
+  </button>
+  <ul class="dropdown-menu" role="menu">
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <span class="applauncher-pf-link-title">Recteque</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <span class="applauncher-pf-link-title">Ipsum</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <span class="applauncher-pf-link-title">Suavitate</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <span class="applauncher-pf-link-title">Lorem</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <span class="applauncher-pf-link-title">Home</span>
+      </a>
+    </li>
+  </ul>
+</li>
+
+      
+      <li class="dropdown">
+        <button class="btn btn-link nav-item-iconic" id="horizontalDropdownMenu12" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+          <span title="Help" class="fa pficon-help dropdown-title"></span>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="horizontalDropdownMenu12">
+          <li><a href="#0">Help</a></li>
+          <li><a href="#0">About</a></li>
+        </ul>
+      </li>
+      <li class="dropdown">
+        <button class="btn btn-link dropdown-toggle" data-toggle="dropdown">
+          <span class="pficon pficon-user"></span>
+          <span class="dropdown-title">
+            Brian Johnson <b class="caret"></b>
+          </span>
+        </button>
+        <ul class="dropdown-menu">
+          <li>
+            <a href="#0">Link</a>
+          </li>
+          <li>
+            <a href="#0">Another link</a>
+          </li>
+          <li>
+            <a href="#0">Something else here</a>
+          </li>
+          <li class="divider"></li>
+          <li class="dropdown-submenu">
+            <a tabindex="-1" href="#0">More options</a>
+            <ul class="dropdown-menu">
+              <li>
+                <a href="#0">Link</a>
+              </li>
+              <li>
+                <a href="#0">Another link</a>
+              </li>
+              <li>
+                <a href="#0">Something else here</a>
+              </li>
+              <li class="divider"></li>
+              <li class="dropdown-header">Nav header</li>
+              <li>
+                <a href="#0">Separated link</a>
+              </li>
+              <li class="divider"></li>
+              <li>
+                <a href="#0">One more separated link</a>
+              </li>
+            </ul>
+          </li>
+          <li class="divider"></li>
+          <li>
+            <a href="#0">One more separated link</a>
+          </li>
+        </ul>
+      </li>
+    </ul>
+    <ul class="nav navbar-nav navbar-primary">
+      <li>
+        <a href="#0">First Link</a>
+      </li>
+      <li class="active">
+        <a href="#0">Another Link</a>
+      </li>
+      <li>
+        <a href="#0">And Another</a>
+      </li>
+      <li>
+        <a href="#0">As a General Rule</a>
+      </li>
+      <li>
+        <a href="#0">Five to Seven Links</a>
+      </li>
+      <li>
+        <a href="#0">Is Good</a>
+      </li>
+    </ul>
+  </div>
+</nav>
+
+
+<h3>List Menu</h3>
+
+<h4>Icons</h4>
+
+
+<nav class="navbar navbar-default navbar-pf" role="navigation">
+  <div class="navbar-header">
+    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse-1">
+      <span class="sr-only">Toggle navigation</span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+    </button>
+    <a class="navbar-brand" href="/">
+      <img src="..//img/brand.svg" alt="PatternFly Enterprise Application" />
+    </a>
+  </div>
+  <div class="collapse navbar-collapse navbar-collapse-1">
+    <ul class="nav navbar-nav navbar-utility">
+      
+      <li class="applauncher-pf  dropdown">
+  <button class="btn btn-link dropdown-toggle nav-item-iconic" data-toggle="dropdown" href="#">
+    <span class="fa fa-th applauncher-pf-icon" aria-hidden="true"></span>
+    <span class="dropdown-title">
+      <span class="applauncher-pf-title">
+        Application Launcher
+        <span class="caret" aria-hidden="true"></span>
+      </span>
+    </span>
+  </button>
+  <ul class="dropdown-menu" role="menu">
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <i class="applauncher-pf-link-icon pficon pficon-storage-domain" aria-hidden="true"></i>
+        
+        <span class="applauncher-pf-link-title">Recteque</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <i class="applauncher-pf-link-icon pficon pficon-virtual-machine" aria-hidden="true"></i>
+        
+        <span class="applauncher-pf-link-title">Ipsum</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <!-- Placeholder left to maintain spacing -->
+        <i class="applauncher-pf-link-icon" aria-hidden="true"></i>
+        
+        <span class="applauncher-pf-link-title">Suavitate</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <i class="applauncher-pf-link-icon pficon pficon-domain" aria-hidden="true"></i>
+        
+        <span class="applauncher-pf-link-title">Lorem</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <i class="applauncher-pf-link-icon pficon pficon-home" aria-hidden="true"></i>
+        
+        <span class="applauncher-pf-link-title">Home</span>
+      </a>
+    </li>
+  </ul>
+</li>
+
+      
+      <li class="dropdown">
+        <button class="btn btn-link nav-item-iconic" id="horizontalDropdownMenu13" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+          <span title="Help" class="fa pficon-help dropdown-title"></span>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="horizontalDropdownMenu13">
+          <li><a href="#0">Help</a></li>
+          <li><a href="#0">About</a></li>
+        </ul>
+      </li>
+      <li class="dropdown">
+        <button class="btn btn-link dropdown-toggle" data-toggle="dropdown">
+          <span class="pficon pficon-user"></span>
+          <span class="dropdown-title">
+            Brian Johnson <b class="caret"></b>
+          </span>
+        </button>
+        <ul class="dropdown-menu">
+          <li>
+            <a href="#0">Link</a>
+          </li>
+          <li>
+            <a href="#0">Another link</a>
+          </li>
+          <li>
+            <a href="#0">Something else here</a>
+          </li>
+          <li class="divider"></li>
+          <li class="dropdown-submenu">
+            <a tabindex="-1" href="#0">More options</a>
+            <ul class="dropdown-menu">
+              <li>
+                <a href="#0">Link</a>
+              </li>
+              <li>
+                <a href="#0">Another link</a>
+              </li>
+              <li>
+                <a href="#0">Something else here</a>
+              </li>
+              <li class="divider"></li>
+              <li class="dropdown-header">Nav header</li>
+              <li>
+                <a href="#0">Separated link</a>
+              </li>
+              <li class="divider"></li>
+              <li>
+                <a href="#0">One more separated link</a>
+              </li>
+            </ul>
+          </li>
+          <li class="divider"></li>
+          <li>
+            <a href="#0">One more separated link</a>
+          </li>
+        </ul>
+      </li>
+    </ul>
+    <ul class="nav navbar-nav navbar-primary">
+      <li>
+        <a href="#0">First Link</a>
+      </li>
+      <li class="active">
+        <a href="#0">Another Link</a>
+      </li>
+      <li>
+        <a href="#0">And Another</a>
+      </li>
+      <li>
+        <a href="#0">As a General Rule</a>
+      </li>
+      <li>
+        <a href="#0">Five to Seven Links</a>
+      </li>
+      <li>
+        <a href="#0">Is Good</a>
+      </li>
+    </ul>
+  </div>
+</nav>
+
+
+<h4>No Icons</h4>
+
+
+<nav class="navbar navbar-default navbar-pf" role="navigation">
+  <div class="navbar-header">
+    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse-1">
+      <span class="sr-only">Toggle navigation</span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+    </button>
+    <a class="navbar-brand" href="/">
+      <img src="..//img/brand.svg" alt="PatternFly Enterprise Application" />
+    </a>
+  </div>
+  <div class="collapse navbar-collapse navbar-collapse-1">
+    <ul class="nav navbar-nav navbar-utility">
+      
+      <li class="applauncher-pf  dropdown">
+  <button class="btn btn-link dropdown-toggle nav-item-iconic" data-toggle="dropdown" href="#">
+    <span class="fa fa-th applauncher-pf-icon" aria-hidden="true"></span>
+    <span class="dropdown-title">
+      <span class="applauncher-pf-title">
+        Application Launcher
+        <span class="caret" aria-hidden="true"></span>
+      </span>
+    </span>
+  </button>
+  <ul class="dropdown-menu" role="menu">
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <span class="applauncher-pf-link-title">Recteque</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <span class="applauncher-pf-link-title">Ipsum</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <span class="applauncher-pf-link-title">Suavitate</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <span class="applauncher-pf-link-title">Lorem</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <span class="applauncher-pf-link-title">Home</span>
+      </a>
+    </li>
+  </ul>
+</li>
+
+      
+      <li class="dropdown">
+        <button class="btn btn-link nav-item-iconic" id="horizontalDropdownMenu14" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+          <span title="Help" class="fa pficon-help dropdown-title"></span>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="horizontalDropdownMenu14">
+          <li><a href="#0">Help</a></li>
+          <li><a href="#0">About</a></li>
+        </ul>
+      </li>
+      <li class="dropdown">
+        <button class="btn btn-link dropdown-toggle" data-toggle="dropdown">
+          <span class="pficon pficon-user"></span>
+          <span class="dropdown-title">
+            Brian Johnson <b class="caret"></b>
+          </span>
+        </button>
+        <ul class="dropdown-menu">
+          <li>
+            <a href="#0">Link</a>
+          </li>
+          <li>
+            <a href="#0">Another link</a>
+          </li>
+          <li>
+            <a href="#0">Something else here</a>
+          </li>
+          <li class="divider"></li>
+          <li class="dropdown-submenu">
+            <a tabindex="-1" href="#0">More options</a>
+            <ul class="dropdown-menu">
+              <li>
+                <a href="#0">Link</a>
+              </li>
+              <li>
+                <a href="#0">Another link</a>
+              </li>
+              <li>
+                <a href="#0">Something else here</a>
+              </li>
+              <li class="divider"></li>
+              <li class="dropdown-header">Nav header</li>
+              <li>
+                <a href="#0">Separated link</a>
+              </li>
+              <li class="divider"></li>
+              <li>
+                <a href="#0">One more separated link</a>
+              </li>
+            </ul>
+          </li>
+          <li class="divider"></li>
+          <li>
+            <a href="#0">One more separated link</a>
+          </li>
+        </ul>
+      </li>
+    </ul>
+    <ul class="nav navbar-nav navbar-primary">
+      <li>
+        <a href="#0">First Link</a>
+      </li>
+      <li class="active">
+        <a href="#0">Another Link</a>
+      </li>
+      <li>
+        <a href="#0">And Another</a>
+      </li>
+      <li>
+        <a href="#0">As a General Rule</a>
+      </li>
+      <li>
+        <a href="#0">Five to Seven Links</a>
+      </li>
+      <li>
+        <a href="#0">Is Good</a>
+      </li>
+    </ul>
+  </div>
+</nav>
+
+
+<br>
+<br>
+<h2>Vertical Nav Bar</h2>
+
+<h3>Grid Menu</h3>
+
+<h4>Icons</h4>
+
+
+<nav class="navbar navbar-pf-vertical">
+  <div class="navbar-header">
+    <button type="button" class="navbar-toggle">
+      <span class="sr-only">Toggle navigation</span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+    </button>
+    <a href="/" class="navbar-brand">
+      <img class="navbar-brand-icon" src="..//img/logo-alt.svg" alt=""/><img class="navbar-brand-name" src="..//img/brand-alt.svg" alt="PatternFly Enterprise Application" />
+    </a>
+    
+  </div>
+  <nav class="collapse navbar-collapse">
+    <ul class="nav navbar-nav navbar-right navbar-iconic navbar-utility">
+      
+      <li class="applauncher-pf  applauncher-pf-block-list  dropdown">
+  <button class="btn btn-link dropdown-toggle nav-item-iconic" data-toggle="dropdown" href="#">
+    <span class="fa fa-th applauncher-pf-icon" aria-hidden="true"></span>
+    <span class="dropdown-title">
+      <span class="applauncher-pf-title">
+        Application Launcher
+        <span class="caret" aria-hidden="true"></span>
+      </span>
+    </span>
+  </button>
+  <ul class="dropdown-menu" role="menu">
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <i class="applauncher-pf-link-icon pficon pficon-storage-domain" aria-hidden="true"></i>
+        
+        <span class="applauncher-pf-link-title">Recteque</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <i class="applauncher-pf-link-icon pficon pficon-virtual-machine" aria-hidden="true"></i>
+        
+        <span class="applauncher-pf-link-title">Ipsum</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <!-- Placeholder left to maintain spacing -->
+        <i class="applauncher-pf-link-icon" aria-hidden="true"></i>
+        
+        <span class="applauncher-pf-link-title">Suavitate</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <i class="applauncher-pf-link-icon pficon pficon-domain" aria-hidden="true"></i>
+        
+        <span class="applauncher-pf-link-title">Lorem</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <i class="applauncher-pf-link-icon pficon pficon-home" aria-hidden="true"></i>
+        
+        <span class="applauncher-pf-link-title">Home</span>
+      </a>
+    </li>
+  </ul>
+</li>
+
+      
+      <li class="dropdown">
+        <button class="btn btn-link dropdown-toggle nav-item-iconic" id="dropdownMenu15" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+          <span title="Help" class="fa pficon-help"></span>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenu15">
+          <li><a href="#0">Help</a></li>
+          <li><a href="#0">About</a></li>
+        </ul>
+      </li>
+      <li class="dropdown">
+        <button class="btn btn-link dropdown-toggle nav-item-iconic" id="dropdownMenu25" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+          <span title="Username" class="fa pficon-user"></span>
+          <span class="dropdown-title">
+            Brian Johnson <span class="caret"></span>
+          </span>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenu25">
+          <li><a href="#0">Preferences</a></li>
+          <li><a href="#0">Logout</a></li>
+        </ul>
+      </li>
+    </ul>
+  </nav>
+  
+</nav> <!--/.navbar-->
+
+
+<h4>No Icons</h4>
+
+
+<nav class="navbar navbar-pf-vertical">
+  <div class="navbar-header">
+    <button type="button" class="navbar-toggle">
+      <span class="sr-only">Toggle navigation</span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+    </button>
+    <a href="/" class="navbar-brand">
+      <img class="navbar-brand-icon" src="..//img/logo-alt.svg" alt=""/><img class="navbar-brand-name" src="..//img/brand-alt.svg" alt="PatternFly Enterprise Application" />
+    </a>
+    
+  </div>
+  <nav class="collapse navbar-collapse">
+    <ul class="nav navbar-nav navbar-right navbar-iconic navbar-utility">
+      
+      <li class="applauncher-pf  applauncher-pf-block-list  dropdown">
+  <button class="btn btn-link dropdown-toggle nav-item-iconic" data-toggle="dropdown" href="#">
+    <span class="fa fa-th applauncher-pf-icon" aria-hidden="true"></span>
+    <span class="dropdown-title">
+      <span class="applauncher-pf-title">
+        Application Launcher
+        <span class="caret" aria-hidden="true"></span>
+      </span>
+    </span>
+  </button>
+  <ul class="dropdown-menu" role="menu">
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <span class="applauncher-pf-link-title">Recteque</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <span class="applauncher-pf-link-title">Ipsum</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <span class="applauncher-pf-link-title">Suavitate</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <span class="applauncher-pf-link-title">Lorem</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <span class="applauncher-pf-link-title">Home</span>
+      </a>
+    </li>
+  </ul>
+</li>
+
+      
+      <li class="dropdown">
+        <button class="btn btn-link dropdown-toggle nav-item-iconic" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+          <span title="Help" class="fa pficon-help"></span>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+          <li><a href="#0">Help</a></li>
+          <li><a href="#0">About</a></li>
+        </ul>
+      </li>
+      <li class="dropdown">
+        <button class="btn btn-link dropdown-toggle nav-item-iconic" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+          <span title="Username" class="fa pficon-user"></span>
+          <span class="dropdown-title">
+            Brian Johnson <span class="caret"></span>
+          </span>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenu2">
+          <li><a href="#0">Preferences</a></li>
+          <li><a href="#0">Logout</a></li>
+        </ul>
+      </li>
+    </ul>
+  </nav>
+  
+</nav> <!--/.navbar-->
+
+
+<h3>List Menu</h3>
+
+<h4>Icons</h4>
+
+
+<nav class="navbar navbar-pf-vertical">
+  <div class="navbar-header">
+    <button type="button" class="navbar-toggle">
+      <span class="sr-only">Toggle navigation</span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+    </button>
+    <a href="/" class="navbar-brand">
+      <img class="navbar-brand-icon" src="..//img/logo-alt.svg" alt=""/><img class="navbar-brand-name" src="..//img/brand-alt.svg" alt="PatternFly Enterprise Application" />
+    </a>
+    
+  </div>
+  <nav class="collapse navbar-collapse">
+    <ul class="nav navbar-nav navbar-right navbar-iconic navbar-utility">
+      
+      <li class="applauncher-pf  dropdown">
+  <button class="btn btn-link dropdown-toggle nav-item-iconic" data-toggle="dropdown" href="#">
+    <span class="fa fa-th applauncher-pf-icon" aria-hidden="true"></span>
+    <span class="dropdown-title">
+      <span class="applauncher-pf-title">
+        Application Launcher
+        <span class="caret" aria-hidden="true"></span>
+      </span>
+    </span>
+  </button>
+  <ul class="dropdown-menu" role="menu">
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <i class="applauncher-pf-link-icon pficon pficon-storage-domain" aria-hidden="true"></i>
+        
+        <span class="applauncher-pf-link-title">Recteque</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <i class="applauncher-pf-link-icon pficon pficon-virtual-machine" aria-hidden="true"></i>
+        
+        <span class="applauncher-pf-link-title">Ipsum</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <!-- Placeholder left to maintain spacing -->
+        <i class="applauncher-pf-link-icon" aria-hidden="true"></i>
+        
+        <span class="applauncher-pf-link-title">Suavitate</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <i class="applauncher-pf-link-icon pficon pficon-domain" aria-hidden="true"></i>
+        
+        <span class="applauncher-pf-link-title">Lorem</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <i class="applauncher-pf-link-icon pficon pficon-home" aria-hidden="true"></i>
+        
+        <span class="applauncher-pf-link-title">Home</span>
+      </a>
+    </li>
+  </ul>
+</li>
+
+      
+      <li class="dropdown">
+        <button class="btn btn-link dropdown-toggle nav-item-iconic" id="dropdownMenu17" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+          <span title="Help" class="fa pficon-help"></span>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenu17">
+          <li><a href="#0">Help</a></li>
+          <li><a href="#0">About</a></li>
+        </ul>
+      </li>
+      <li class="dropdown">
+        <button class="btn btn-link dropdown-toggle nav-item-iconic" id="dropdownMenu27" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+          <span title="Username" class="fa pficon-user"></span>
+          <span class="dropdown-title">
+            Brian Johnson <span class="caret"></span>
+          </span>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenu27">
+          <li><a href="#0">Preferences</a></li>
+          <li><a href="#0">Logout</a></li>
+        </ul>
+      </li>
+    </ul>
+  </nav>
+  
+</nav> <!--/.navbar-->
+
+
+<h4>No Icons</h4>
+
+
+<nav class="navbar navbar-pf-vertical">
+  <div class="navbar-header">
+    <button type="button" class="navbar-toggle">
+      <span class="sr-only">Toggle navigation</span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+    </button>
+    <a href="/" class="navbar-brand">
+      <img class="navbar-brand-icon" src="..//img/logo-alt.svg" alt=""/><img class="navbar-brand-name" src="..//img/brand-alt.svg" alt="PatternFly Enterprise Application" />
+    </a>
+    
+  </div>
+  <nav class="collapse navbar-collapse">
+    <ul class="nav navbar-nav navbar-right navbar-iconic navbar-utility">
+      
+      <li class="applauncher-pf  dropdown">
+  <button class="btn btn-link dropdown-toggle nav-item-iconic" data-toggle="dropdown" href="#">
+    <span class="fa fa-th applauncher-pf-icon" aria-hidden="true"></span>
+    <span class="dropdown-title">
+      <span class="applauncher-pf-title">
+        Application Launcher
+        <span class="caret" aria-hidden="true"></span>
+      </span>
+    </span>
+  </button>
+  <ul class="dropdown-menu" role="menu">
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <span class="applauncher-pf-link-title">Recteque</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <span class="applauncher-pf-link-title">Ipsum</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <span class="applauncher-pf-link-title">Suavitate</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <span class="applauncher-pf-link-title">Lorem</span>
+      </a>
+    </li>
+    <li class="applauncher-pf-item" role="presentation">
+      <a class="applauncher-pf-link" href="#" role="menuitem">
+        
+        <span class="applauncher-pf-link-title">Home</span>
+      </a>
+    </li>
+  </ul>
+</li>
+
+      
+      <li class="dropdown">
+        <button class="btn btn-link dropdown-toggle nav-item-iconic" id="dropdownMenu18" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+          <span title="Help" class="fa pficon-help"></span>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenu18">
+          <li><a href="#0">Help</a></li>
+          <li><a href="#0">About</a></li>
+        </ul>
+      </li>
+      <li class="dropdown">
+        <button class="btn btn-link dropdown-toggle nav-item-iconic" id="dropdownMenu28" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+          <span title="Username" class="fa pficon-user"></span>
+          <span class="dropdown-title">
+            Brian Johnson <span class="caret"></span>
+          </span>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenu28">
+          <li><a href="#0">Preferences</a></li>
+          <li><a href="#0">Logout</a></li>
+        </ul>
+      </li>
+    </ul>
+  </nav>
+  
+</nav> <!--/.navbar-->
+
+
+<script>
+  $(document).ready(function() {
+    $('.applauncher-pf .dropdown-toggle').eq(0).click();
+  });
+</script>
+
+    </div><!-- /container -->
+  </body>
+</html>

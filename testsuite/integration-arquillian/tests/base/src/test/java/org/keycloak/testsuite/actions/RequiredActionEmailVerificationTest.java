@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.actions;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionToken;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
@@ -998,5 +999,28 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         } finally {
             setTimeOffset(0);
         }
+    }
+
+    // KEYCLOAK-15170
+    @Test
+    public void changeEmailAddressAfterSendingEmail() throws Exception {
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        verifyEmailPage.assertCurrent();
+
+        assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+        String verificationUrl = getPasswordResetEmailLink(message);
+
+        UserResource user = testRealm().users().get(testUserId);
+        UserRepresentation userRep = user.toRepresentation();
+        userRep.setEmail("vmuzikar@redhat.com");
+        user.update(userRep);
+
+        driver.navigate().to(verificationUrl.trim());
+        errorPage.assertCurrent();
+        assertEquals("The link you clicked is an old stale link and is no longer valid. Maybe you have already verified your email.", errorPage.getError());
     }
 }

@@ -2,6 +2,7 @@ package org.keycloak.services.resources.account;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.common.Profile;
 import org.keycloak.authentication.requiredactions.DeleteAccount;
 import org.keycloak.common.Version;
 import org.keycloak.events.EventStoreProvider;
@@ -44,6 +45,7 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import org.keycloak.services.resources.RealmsResource;
 
@@ -82,16 +84,20 @@ public class AccountConsole {
     @GET
     @NoCache
     public Response getMainPage() throws IOException, FreeMarkerException {
+        UriInfo uriInfo = session.getContext().getUri(UrlType.FRONTEND);
+        URI accountBaseUrl = uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(realm.getName())
+                .path(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).path("/").build(realm);
+
         if (!session.getContext().getUri().getRequestUri().getPath().endsWith("/")) {
-            return Response.status(302).location(session.getContext().getUri().getRequestUriBuilder().path("/").build()).build();
+            UriBuilder redirectUri = session.getContext().getUri().getRequestUriBuilder().uri(accountBaseUrl);
+            return Response.status(302).location(redirectUri.build()).build();
         } else {
             Map<String, Object> map = new HashMap<>();
 
             URI adminBaseUri = session.getContext().getUri(UrlType.ADMIN).getBaseUri();
-            UriInfo uriInfo = session.getContext().getUri(UrlType.FRONTEND);
             URI authUrl = uriInfo.getBaseUri();
-            map.put("authUrl", authUrl.toString());
-            map.put("baseUrl", uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(realm.getName()).path(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).build(realm).toString());
+            map.put("authUrl", authUrl.getPath().endsWith("/") ? authUrl : authUrl + "/");
+            map.put("baseUrl", accountBaseUrl);
             map.put("realm", realm);
             map.put("resourceUrl", Urls.themeRoot(authUrl).getPath() + "/" + Constants.ACCOUNT_MANAGEMENT_CLIENT_ID + "/" + theme.getName());
             map.put("resourceCommonUrl", Urls.themeRoot(adminBaseUri).getPath() + "/common/keycloak");
@@ -124,7 +130,7 @@ public class AccountConsole {
 
             EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
             map.put("isEventsEnabled", eventStore != null && realm.isEventsEnabled());
-            map.put("isAuthorizationEnabled", true);
+            map.put("isAuthorizationEnabled", Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION));
             
             boolean isTotpConfigured = false;
             boolean deleteAccountAllowed = false;

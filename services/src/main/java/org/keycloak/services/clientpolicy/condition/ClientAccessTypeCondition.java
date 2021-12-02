@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,36 +19,48 @@ package org.keycloak.services.clientpolicy.condition;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import org.jboss.logging.Logger;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 
-public class ClientAccessTypeCondition implements ClientPolicyConditionProvider {
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
+public class ClientAccessTypeCondition extends AbstractClientPolicyConditionProvider<ClientAccessTypeCondition.Configuration> {
 
     private static final Logger logger = Logger.getLogger(ClientAccessTypeCondition.class);
 
-    private final KeycloakSession session;
-    private final ComponentModel componentModel;
-
-    public ClientAccessTypeCondition(KeycloakSession session, ComponentModel componentModel) {
-        this.session = session;
-        this.componentModel = componentModel;
+    public ClientAccessTypeCondition(KeycloakSession session) {
+        super(session);
     }
 
     @Override
-    public String getName() {
-        return componentModel.getName();
+    public Class<Configuration> getConditionConfigurationClass() {
+        return Configuration.class;
+    }
+
+    public static class Configuration extends ClientPolicyConditionConfigurationRepresentation {
+
+        protected List<String> type;
+
+        public List<String> getType() {
+            return type;
+        }
+
+        public void setType(List<String> type) {
+            this.type = type;
+        }
     }
 
     @Override
     public String getProviderId() {
-        return componentModel.getProviderId();
+        return ClientAccessTypeConditionFactory.PROVIDER_ID;
     }
 
     @Override
@@ -56,6 +68,7 @@ public class ClientAccessTypeCondition implements ClientPolicyConditionProvider 
         switch (context.getEvent()) {
             case AUTHORIZATION_REQUEST:
             case TOKEN_REQUEST:
+            case SERVICE_ACCOUNT_TOKEN_REQUEST:
             case TOKEN_REFRESH:
             case TOKEN_REVOKE:
             case TOKEN_INTROSPECT:
@@ -79,22 +92,16 @@ public class ClientAccessTypeCondition implements ClientPolicyConditionProvider 
 
     private boolean isClientAccessTypeMatched() {
         final String accessType = getClientAccessType();
+        if (accessType == null) return false;
 
-        List<String> expectedAccessTypes = componentModel.getConfig().get(ClientAccessTypeConditionFactory.TYPE);
-        if (expectedAccessTypes == null) expectedAccessTypes = Collections.emptyList();
+        List<String> expectedAccessTypes = Optional.ofNullable(configuration.getType()).orElse(Collections.emptyList());
 
         if (logger.isTraceEnabled()) {
-            ClientPolicyLogger.log(logger, "client access type = " + accessType);
-            expectedAccessTypes.stream().forEach(i -> ClientPolicyLogger.log(logger, "client access type expected = " + i));
+            logger.tracev("accessType = {0}", accessType);
+            expectedAccessTypes.stream().forEach(i -> logger.tracev("expected accessType = {0}", i));
         }
 
-        boolean isMatched = expectedAccessTypes.stream().anyMatch(i -> i.equals(accessType));
-        if (isMatched) {
-            ClientPolicyLogger.log(logger, "client access type matched.");
-        } else {
-            ClientPolicyLogger.log(logger, "client access type unmatched.");
-        }
-        return isMatched;
+        return expectedAccessTypes.stream().anyMatch(i -> i.equals(accessType));
     }
 
 }

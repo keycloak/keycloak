@@ -109,11 +109,11 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         registeredNodes = new TreeMap<>(model.getRegisteredNodes());
 
         defaultClientScopesIds = new LinkedList<>();
-        for (ClientScopeModel clientScope : model.getClientScopes(true, false).values()) {
+        for (ClientScopeModel clientScope : model.getClientScopes(true).values()) {
             defaultClientScopesIds.add(clientScope.getId());
         }
         optionalClientScopesIds = new LinkedList<>();
-        for (ClientScopeModel clientScope : model.getClientScopes(false, false).values()) {
+        for (ClientScopeModel clientScope : model.getClientScopes(false).values()) {
             optionalClientScopesIds.add(clientScope.getId());
         }
     }

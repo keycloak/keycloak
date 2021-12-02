@@ -255,7 +255,7 @@ public class UserCredentialStoreManager extends AbstractStorageManager<UserStora
             if (model == null || !model.isEnabled()) return UserStorageCredentialConfigured.USER_STORAGE_DISABLED;
 
             CredentialInputValidator validator = getStorageProviderInstance(model, CredentialInputValidator.class);
-            if (validator.supportsCredentialType(type) && validator.isConfiguredFor(realm, user, type)) {
+            if (validator != null && validator.supportsCredentialType(type) && validator.isConfiguredFor(realm, user, type)) {
                 return UserStorageCredentialConfigured.CONFIGURED;
             }
         }

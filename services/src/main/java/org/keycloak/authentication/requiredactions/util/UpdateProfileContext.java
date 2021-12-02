@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.keycloak.userprofile.UserProfileContext;
+
 /**
  * Abstraction, which allows to display updateProfile page in various contexts (Required action of already existing user, or first identity provider
  * login when user doesn't yet exists in Keycloak DB)
@@ -29,6 +31,8 @@ import java.util.stream.Stream;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public interface UpdateProfileContext {
+    
+    UserProfileContext getUserProfileContext();
 
     boolean isEditUsernameAllowed();
 

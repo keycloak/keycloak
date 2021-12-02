@@ -16,8 +16,9 @@
  */
 package org.keycloak.authorization;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
@@ -38,12 +39,12 @@ public class UserManagedPermissionUtil {
         Policy policy = ticket.getPolicy();
 
         if (policy == null) {
-            HashMap<String, String> filter = new HashMap<>();
+            Map<PermissionTicket.FilterOption, String> filter = new EnumMap<>(PermissionTicket.FilterOption.class);
 
-            filter.put(PermissionTicket.OWNER, ticket.getOwner());
-            filter.put(PermissionTicket.REQUESTER, ticket.getRequester());
-            filter.put(PermissionTicket.RESOURCE, ticket.getResource().getId());
-            filter.put(PermissionTicket.POLICY_IS_NOT_NULL, Boolean.TRUE.toString());
+            filter.put(PermissionTicket.FilterOption.OWNER, ticket.getOwner());
+            filter.put(PermissionTicket.FilterOption.REQUESTER, ticket.getRequester());
+            filter.put(PermissionTicket.FilterOption.RESOURCE_ID, ticket.getResource().getId());
+            filter.put(PermissionTicket.FilterOption.POLICY_IS_NOT_NULL, Boolean.TRUE.toString());
 
             List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().find(filter, ticket.getResourceServer().getId(), -1, 1);
 
@@ -72,12 +73,12 @@ public class UserManagedPermissionUtil {
         Policy policy = ticket.getPolicy();
 
         if (policy != null) {
-            HashMap<String, String> filter = new HashMap<>();
+            Map<PermissionTicket.FilterOption, String> filter = new EnumMap<>(PermissionTicket.FilterOption.class);
 
-            filter.put(PermissionTicket.OWNER, ticket.getOwner());
-            filter.put(PermissionTicket.REQUESTER, ticket.getRequester());
-            filter.put(PermissionTicket.RESOURCE, ticket.getResource().getId());
-            filter.put(PermissionTicket.GRANTED, Boolean.TRUE.toString());
+            filter.put(PermissionTicket.FilterOption.OWNER, ticket.getOwner());
+            filter.put(PermissionTicket.FilterOption.REQUESTER, ticket.getRequester());
+            filter.put(PermissionTicket.FilterOption.RESOURCE_ID, ticket.getResource().getId());
+            filter.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
 
             List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().find(filter, ticket.getResourceServer().getId(), -1, -1);
 

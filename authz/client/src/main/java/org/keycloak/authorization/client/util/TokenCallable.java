@@ -33,17 +33,25 @@ public class TokenCallable implements Callable<String> {
     private static Logger log = Logger.getLogger(TokenCallable.class);
     private final String userName;
     private final String password;
+    private final String scope;
     private final Http http;
     private final Configuration configuration;
     private final ServerConfiguration serverConfiguration;
     private AccessTokenResponse tokenResponse;
 
-    public TokenCallable(String userName, String password, Http http, Configuration configuration, ServerConfiguration serverConfiguration) {
+    public TokenCallable(String userName, String password, String scope, Http http, Configuration configuration,
+        ServerConfiguration serverConfiguration) {
         this.userName = userName;
         this.password = password;
+        this.scope = scope;
         this.http = http;
         this.configuration = configuration;
         this.serverConfiguration = serverConfiguration;
+    }
+
+    public TokenCallable(String userName, String password, Http http, Configuration configuration,
+        ServerConfiguration serverConfiguration) {
+        this(userName, password, null, http, configuration, serverConfiguration);
     }
 
     public TokenCallable(Http http, Configuration configuration, ServerConfiguration serverConfiguration) {
@@ -121,12 +129,12 @@ public class TokenCallable implements Callable<String> {
      * @return an {@link AccessTokenResponse}
      */
     AccessTokenResponse resourceOwnerPasswordGrant(String userName, String password) {
-        return this.http.<AccessTokenResponse>post(this.serverConfiguration.getTokenEndpoint())
-                .authentication()
-                .oauth2ResourceOwnerPassword(userName, password)
-                .response()
-                .json(AccessTokenResponse.class)
-                .execute();
+        return resourceOwnerPasswordGrant(userName, password, null);
+    }
+
+    AccessTokenResponse resourceOwnerPasswordGrant(String userName, String password, String scope) {
+        return this.http.<AccessTokenResponse>post(this.serverConfiguration.getTokenEndpoint()).authentication()
+            .oauth2ResourceOwnerPassword(userName, password, scope).response().json(AccessTokenResponse.class).execute();
     }
 
     private AccessTokenResponse refreshToken(String rawRefreshToken) {
@@ -144,6 +152,8 @@ public class TokenCallable implements Callable<String> {
     private AccessTokenResponse obtainTokens() {
         if (userName == null || password == null) {
             return clientCredentialsGrant();
+        } else if (scope != null) {
+            return resourceOwnerPasswordGrant(userName, password, scope);
         } else {
             return resourceOwnerPasswordGrant(userName, password);
         }

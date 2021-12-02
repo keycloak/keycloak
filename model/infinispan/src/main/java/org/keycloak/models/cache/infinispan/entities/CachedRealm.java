@@ -23,17 +23,22 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
+import org.keycloak.models.ParConfig;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.WebAuthnPolicy;
+import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
+import org.keycloak.models.cache.infinispan.LazyLoader;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -43,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -96,6 +102,9 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected int accessCodeLifespan;
     protected int accessCodeLifespanUserAction;
     protected int accessCodeLifespanLogin;
+    protected LazyLoader<RealmModel, OAuth2DeviceConfig> deviceConfig;
+    protected LazyLoader<RealmModel, CibaConfig> cibaConfig;
+    protected LazyLoader<RealmModel, ParConfig> parConfig;
     protected int actionTokenGeneratedByAdminLifespan;
     protected int actionTokenGeneratedByUserLifespan;
     protected int notBefore;
@@ -211,6 +220,9 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         accessTokenLifespan = model.getAccessTokenLifespan();
         accessTokenLifespanForImplicitFlow = model.getAccessTokenLifespanForImplicitFlow();
         accessCodeLifespan = model.getAccessCodeLifespan();
+        deviceConfig = new DefaultLazyLoader<>(OAuth2DeviceConfig::new, null);
+        cibaConfig = new DefaultLazyLoader<>(CibaConfig::new, null);
+        parConfig = new DefaultLazyLoader<>(ParConfig::new, null);
         accessCodeLifespanUserAction = model.getAccessCodeLifespanUserAction();
         accessCodeLifespanLogin = model.getAccessCodeLifespanLogin();
         actionTokenGeneratedByAdminLifespan = model.getActionTokenGeneratedByAdminLifespan();
@@ -485,6 +497,18 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public int getAccessCodeLifespanLogin() {
         return accessCodeLifespanLogin;
+    }
+
+    public OAuth2DeviceConfig getOAuth2DeviceConfig(Supplier<RealmModel> modelSupplier) {
+        return deviceConfig.get(modelSupplier);
+    }
+
+    public CibaConfig getCibaConfig(Supplier<RealmModel> modelSupplier) {
+        return cibaConfig.get(modelSupplier);
+    }
+
+    public ParConfig getParConfig(Supplier<RealmModel> modelSupplier) {
+        return parConfig.get(modelSupplier);
     }
 
     public int getActionTokenGeneratedByAdminLifespan() {

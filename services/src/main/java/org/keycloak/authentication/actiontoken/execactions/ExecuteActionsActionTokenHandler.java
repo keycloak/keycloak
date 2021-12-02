@@ -40,7 +40,7 @@ import javax.ws.rs.core.UriInfo;
  *
  * @author hmlnarik
  */
-public class ExecuteActionsActionTokenHandler extends AbstractActionTokenHander<ExecuteActionsActionToken> {
+public class ExecuteActionsActionTokenHandler extends AbstractActionTokenHandler<ExecuteActionsActionToken> {
 
     public ExecuteActionsActionTokenHandler() {
         super(
@@ -62,7 +62,9 @@ public class ExecuteActionsActionTokenHandler extends AbstractActionTokenHander<
                       tokenContext.getAuthenticationSession().getClient()) != null,
             Errors.INVALID_REDIRECT_URI,
             Messages.INVALID_REDIRECT_URI
-          )
+          ),
+
+          verifyEmail(tokenContext)
         );
     }
 

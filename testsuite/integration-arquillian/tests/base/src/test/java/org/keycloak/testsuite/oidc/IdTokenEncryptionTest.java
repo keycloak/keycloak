@@ -22,13 +22,16 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.AesCbcHmacShaContentEncryptionProvider;
 import org.keycloak.crypto.AesGcmContentEncryptionProvider;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.RsaCekManagementProvider;
+import org.keycloak.jose.JOSEHeader;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwe.JWEException;
+import org.keycloak.jose.jwe.JWEHeader;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
@@ -52,8 +55,10 @@ import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.PrivateKey;
 import java.util.List;
@@ -220,6 +225,10 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
             Map<String, String> keyPair = oidcClientEndpointsResource.getKeysAsPem();
             PrivateKey decryptionKEK = PemUtils.decodePrivateKey(keyPair.get("privateKey"));
 
+            // a nested JWT (signed and encrypted JWT) needs to set "JWT" to its JOSE Header's "cty" field
+            JWEHeader jweHeader = (JWEHeader) getHeader(parts[0]);
+            Assert.assertEquals("JWT", jweHeader.getContentType());
+
             // verify and decrypt JWE
             JWEAlgorithmProvider algorithmProvider = getJweAlgorithmProvider(algAlgorithm);
             JWEEncryptionProvider encryptionProvider = getJweEncryptionProvider(encAlgorithm);
@@ -269,6 +278,15 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
                 break;
         }
         return jweEncryptionProvider;
+    }
+
+    private JOSEHeader getHeader(String base64Header) {
+        try {
+            byte[] decodedHeader = Base64Url.decode(base64Header);
+            return JsonSerialization.readValue(decodedHeader, JWEHeader.class);
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
     }
 
     @Test

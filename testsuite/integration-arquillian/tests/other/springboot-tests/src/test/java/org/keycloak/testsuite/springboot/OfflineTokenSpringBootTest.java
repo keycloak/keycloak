@@ -74,7 +74,7 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
         String accessTokenId = tokenPage.getAccessToken().getId();
         String refreshTokenId = tokenPage.getRefreshToken().getId();
 
-        setAdapterAndServerTimeOffset(9999, SERVLET_URL);
+        setAdapterAndServerTimeOffset(19999, SERVLET_URL);
 
         driver.navigate().to(SERVLET_URL);
         waitForPageToLoad();
@@ -137,12 +137,16 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
                 .client("account").detail(Details.REVOKED_CLIENT, CLIENT_ID).assertEvent();
 
         // Assert refresh doesn't work now (increase time one more time)
-        setAdapterAndServerTimeOffset(9999, SERVLET_URL);
+        setAdapterAndServerTimeOffset(19999, SERVLET_URL);
         driver.navigate().to(SERVLET_URL);
         waitForPageToLoad();
 
         assertCurrentUrlStartsWith(testRealmLoginPage);
+        testRealmLoginPage.form().login(USER_LOGIN, USER_PASSWORD);
+        tokenPage.assertIsCurrent();
+
         setAdapterAndServerTimeOffset(0, SERVLET_URL);
+        driver.navigate().to(logoutPage(SERVLET_URL));
     }
 
     @Test

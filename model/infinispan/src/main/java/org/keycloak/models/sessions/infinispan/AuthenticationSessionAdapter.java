@@ -291,4 +291,18 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
         update();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || !(o instanceof AuthenticationSessionModel)) return false;
+
+        AuthenticationSessionModel that = (AuthenticationSessionModel) o;
+        return that.getTabId().equals(getTabId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getTabId().hashCode();
+    }
+
 }

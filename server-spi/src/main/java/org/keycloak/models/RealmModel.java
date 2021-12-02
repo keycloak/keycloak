@@ -17,19 +17,23 @@
 
 package org.keycloak.models;
 
+import java.util.Comparator;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEvent;
+import org.keycloak.storage.SearchableModelField;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 import org.keycloak.storage.role.RoleStorageProvider;
 import org.keycloak.storage.role.RoleStorageProviderModel;
+import org.keycloak.utils.StringUtil;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -39,6 +43,22 @@ import java.util.stream.Stream;
  * @version $Revision: 1 $
  */
 public interface RealmModel extends RoleContainerModel {
+
+    Comparator<RealmModel> COMPARE_BY_NAME = Comparator.comparing(RealmModel::getName);
+
+    public static class SearchableFields {
+        public static final SearchableModelField<RealmModel> ID                     = new SearchableModelField<>("id", String.class);
+        public static final SearchableModelField<RealmModel> NAME                   = new SearchableModelField<>("name", String.class);
+        /**
+         * Search for realms that have some client initial access set.
+         */
+        public static final SearchableModelField<RealmModel> CLIENT_INITIAL_ACCESS  = new SearchableModelField<>("clientInitialAccess", Boolean.class);
+        /**
+         * Search for realms that have some component with 
+         */
+        public static final SearchableModelField<RealmModel> COMPONENT_PROVIDER_TYPE  = new SearchableModelField<>("componentProviderType", String.class);
+    }
+
     interface RealmCreationEvent extends ProviderEvent {
         RealmModel getCreatedRealm();
         KeycloakSession getKeycloakSession();
@@ -66,6 +86,7 @@ public interface RealmModel extends RoleContainerModel {
         KeycloakSession getKeycloakSession();
     }
 
+    @Override
     String getId();
 
     String getName();
@@ -109,14 +130,29 @@ public interface RealmModel extends RoleContainerModel {
     void setUserManagedAccessAllowed(boolean userManagedAccessAllowed);
 
     void setAttribute(String name, String value);
-    void setAttribute(String name, Boolean value);
-    void setAttribute(String name, Integer value);
-    void setAttribute(String name, Long value);
+    default void setAttribute(String name, Boolean value) {
+        setAttribute(name, value.toString());
+    }
+    default void setAttribute(String name, Integer value) {
+        setAttribute(name, value.toString());
+    }
+    default void setAttribute(String name, Long value) {
+        setAttribute(name, value.toString());
+    }
     void removeAttribute(String name);
     String getAttribute(String name);
-    Integer getAttribute(String name, Integer defaultValue);
-    Long getAttribute(String name, Long defaultValue);
-    Boolean getAttribute(String name, Boolean defaultValue);
+    default Integer getAttribute(String name, Integer defaultValue) {
+        String v = getAttribute(name);
+        return v != null ? Integer.parseInt(v) : defaultValue;
+    }
+    default Long getAttribute(String name, Long defaultValue) {
+        String v = getAttribute(name);
+        return v != null ? Long.parseLong(v) : defaultValue;
+    }
+    default Boolean getAttribute(String name, Boolean defaultValue) {
+        String v = getAttribute(name);
+        return v != null ? Boolean.parseBoolean(v) : defaultValue;
+    }
     Map<String, String> getAttributes();
 
     //--- brute force settings
@@ -212,6 +248,12 @@ public interface RealmModel extends RoleContainerModel {
     int getAccessCodeLifespanUserAction();
 
     void setAccessCodeLifespanUserAction(int seconds);
+
+    OAuth2DeviceConfig getOAuth2DeviceConfig();
+
+    CibaConfig getCibaPolicy();
+
+    ParConfig getParPolicy();
 
     /**
      * This method will return a map with all the lifespans available
@@ -371,7 +413,9 @@ public interface RealmModel extends RoleContainerModel {
      * @return Stream of {@link ClientModel}. Never returns {@code null}.
      */
     Stream<ClientModel> searchClientByClientIdStream(String clientId, Integer firstResult, Integer maxResults);
-    
+
+    Stream<ClientModel> searchClientByAttributes(Map<String, String> attributes, Integer firstResult, Integer maxResults);
+
     void updateRequiredCredentials(Set<String> creds);
 
     Map<String, String> getBrowserSecurityHeaders();
@@ -428,7 +472,7 @@ public interface RealmModel extends RoleContainerModel {
     }
 
     /**
-     * Returns sorted {@link AuthenticationExecutionModel AuthenticationExecutionModel} as a stream.
+     * Returns sorted (according to priority) {@link AuthenticationExecutionModel AuthenticationExecutionModel} as a stream.
      * It should be used with forEachOrdered if the ordering is required.
      * @param flowId {@code String} Id of the flow.
      * @return Sorted stream of {@link AuthenticationExecutionModel}. Never returns {@code null}.
@@ -553,8 +597,24 @@ public interface RealmModel extends RoleContainerModel {
      */
     ComponentModel importComponentModel(ComponentModel model);
 
+    /**
+     * Updates component model. Will call onUpdate() method of ComponentFactory
+     * @param component to be updated
+     */
     void updateComponent(ComponentModel component);
+
+    /**
+     * Removes given component. Will call preRemove() method of ComponentFactory.
+     * Also calls {@code this.removeComponents(component.getId())}.
+     * 
+     * @param component to be removed
+     */
     void removeComponent(ComponentModel component);
+
+    /**
+     * Removes all components with given {@code parentId}
+     * @param parentId {@code String} id of parent
+     */
     void removeComponents(String parentId);
 
     /**
@@ -564,7 +624,6 @@ public interface RealmModel extends RoleContainerModel {
     default List<ComponentModel> getComponents(String parentId, String providerType) {
         return getComponentsStream(parentId, providerType).collect(Collectors.toList());
     }
-
 
     /**
      * Returns stream of ComponentModels for specific parentId and providerType.
@@ -880,27 +939,64 @@ public interface RealmModel extends RoleContainerModel {
     }
 
     /**
-     * Returns client's scopes as a stream.
+     * Returns all client scopes of this realm as a stream.
      * @return Stream of {@link ClientScopeModel}. Never returns {@code null}.
      */
     Stream<ClientScopeModel> getClientScopesStream();
 
+    /**
+     * Creates new client scope with the given name. Internal ID is created automatically.
+     * If given name contains spaces, those are replaced by underscores.
+     * @param name {@code String} name of the client scope.
+     * @return Model of the created client scope.
+     * @throws ModelDuplicateException if client scope with same id or name already exists.
+     */
     ClientScopeModel addClientScope(String name);
 
+    /**
+     * Creates new client scope with the given internal ID and name. 
+     * If given name contains spaces, those are replaced by underscores.
+     * @param id {@code String} id of the client scope.
+     * @param name {@code String} name of the client scope.
+     * @return Model of the created client scope.
+     * @throws ModelDuplicateException if client scope with same id or name already exists.
+     */
     ClientScopeModel addClientScope(String id, String name);
 
+    /**
+     * Removes client scope with given {@code id} from this realm.
+     * @param id of the client scope
+     * @return true if the realm contained the scope and the removal was successful, false otherwise
+     */
     boolean removeClientScope(String id);
 
+    /**
+     * @param id of the client scope
+     * @return Client scope with the given {@code id}, or {@code null} when the scope does not exist.
+     */
     ClientScopeModel getClientScopeById(String id);
 
+    /**
+     * Adds given client scope among default/optional client scopes of this realm. 
+     * The scope will be assigned to each new client.
+     * @param clientScope to be added
+     * @param defaultScope if {@code true} the scope will be added among default client scopes, 
+     * if {@code false} it will be added among optional client scopes
+     */
     void addDefaultClientScope(ClientScopeModel clientScope, boolean defaultScope);
+
+    /**
+     * Removes given client scope from default or optional client scopes of this realm.
+     * @param clientScope to be removed
+     */
     void removeDefaultClientScope(ClientScopeModel clientScope);
 
     /**
-     * Patches the realm-specific localization texts. This method will not delete any text.
+     * Creates or updates the realm-specific localization texts for the given locale.
+     * This method will not delete any text.
      * It updates texts, which are already stored or create new ones if the key does not exist yet.
      */
-    void patchRealmLocalizationTexts(String locale, Map<String, String> localizationTexts);
+    void createOrUpdateRealmLocalizationTexts(String locale, Map<String, String> localizationTexts);
     boolean removeRealmLocalizationTexts(String locale);
     Map<String, Map<String, String>> getRealmLocalizationTexts();
     Map<String, String> getRealmLocalizationTextsByLocale(String locale);
@@ -914,8 +1010,9 @@ public interface RealmModel extends RoleContainerModel {
     }
 
     /**
-     * Returns client's scopes with ability to specify whether default client's scopes are desired.
-     * @param defaultScope {@code boolean} Flag to include default client's scopes.
+     * Returns default client scopes of this realm either default ones or optional ones.
+     * @param defaultScope if {@code true} default client scopes are returned, 
+     * if {@code false} optional client scopes are returned.
      * @return Stream of {@link ClientScopeModel}. Never returns {@code null}.
      */
     Stream<ClientScopeModel> getDefaultClientScopesStream(boolean defaultScope);
@@ -927,4 +1024,10 @@ public interface RealmModel extends RoleContainerModel {
     default void addToDefaultRoles(RoleModel role) {
         getDefaultRole().addCompositeRole(role);
     }
+
+    ClientInitialAccessModel createClientInitialAccessModel(int expiration, int count);
+    ClientInitialAccessModel getClientInitialAccessModel(String id);
+    void removeClientInitialAccessModel(String id);
+    Stream<ClientInitialAccessModel> getClientInitialAccesses();
+    void decreaseRemainingCount(ClientInitialAccessModel clientInitialAccess);
 }

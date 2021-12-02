@@ -17,9 +17,11 @@
 package org.keycloak.storage.client;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.RealmModel;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -92,4 +94,16 @@ public interface ClientLookupProvider {
      * @return Stream of ClientModel or an empty stream if no client is found. Never returns {@code null}.
      */
     Stream<ClientModel> searchClientsByClientIdStream(RealmModel realm, String clientId, Integer firstResult, Integer maxResults);
+
+    Stream<ClientModel> searchClientsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults);
+
+    /**
+     * Return all default scopes (if {@code defaultScope} is {@code true}) or all optional scopes (if {@code defaultScope} is {@code false}) linked with the client
+     *
+     * @param realm Realm
+     * @param client Client
+     * @param defaultScopes if true default scopes, if false optional scopes, are returned
+     * @return map where key is the name of the clientScope, value is particular clientScope. Returns empty map if no scopes linked (never returns null).
+     */
+    Map<String, ClientScopeModel> getClientScopes(RealmModel realm, ClientModel client, boolean defaultScopes);
 }

@@ -47,14 +47,12 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
     private final InfinispanUserSessionProvider provider;
     private AuthenticatedClientSessionEntity entity;
     private final ClientModel client;
-    private final InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx;
     private final InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx;
     private UserSessionModel userSession;
     private boolean offline;
 
     public AuthenticatedClientSessionAdapter(KeycloakSession kcSession, InfinispanUserSessionProvider provider,
                                              AuthenticatedClientSessionEntity entity, ClientModel client, UserSessionModel userSession,
-                                             InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx,
                                              InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx, boolean offline) {
         if (userSession == null) {
             throw new NullPointerException("userSession must not be null");
@@ -65,13 +63,8 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
         this.entity = entity;
         this.userSession = userSession;
         this.client = client;
-        this.userSessionUpdateTx = userSessionUpdateTx;
         this.clientSessionUpdateTx = clientSessionUpdateTx;
         this.offline = offline;
-    }
-
-    private void update(UserSessionUpdateTask task) {
-        userSessionUpdateTx.addTask(userSession.getId(), task);
     }
 
     private void update(ClientSessionUpdateTask task) {
@@ -124,7 +117,7 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
     @Override
     public String getId() {
-        return null;
+        return entity.getId().toString();
     }
 
     @Override

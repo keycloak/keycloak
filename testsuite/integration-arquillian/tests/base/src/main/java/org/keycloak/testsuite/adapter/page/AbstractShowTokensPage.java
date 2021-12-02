@@ -41,6 +41,8 @@ public abstract class AbstractShowTokensPage extends AbstractPageWithInjectedUrl
     @FindBy(id = "accessTokenString")
     private WebElement accessTokenString;
 
+    @FindBy(id = "refreshTokenString")
+    private WebElement refreshTokenString;
 
     public AccessToken getAccessToken() {
         try {
@@ -73,6 +75,16 @@ public abstract class AbstractShowTokensPage extends AbstractPageWithInjectedUrl
             return accessTokenString.getText();
         } catch (NoSuchElementException nsee) {
             log.warn("No accessTokenString element found on the page");
+        }
+
+        return null;
+    }
+
+    public String getRefreshTokenString() {
+        try {
+            return refreshTokenString.getText();
+        } catch (NoSuchElementException nsee) {
+            log.warn("No refreshTokenString element found on the page");
         }
 
         return null;

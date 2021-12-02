@@ -22,9 +22,16 @@ import org.keycloak.provider.Spi;
 import org.keycloak.storage.UserStorageProviderSpi;
 import org.keycloak.storage.federated.UserFederatedStorageProviderSpi;
 import org.keycloak.storage.jpa.JpaUserFederatedStorageProviderFactory;
-import org.keycloak.testsuite.federation.BackwardsCompatibilityUserStorageFactory;
 import com.google.common.collect.ImmutableSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
+import org.keycloak.storage.clientscope.ClientScopeStorageProvider;
+import org.keycloak.storage.clientscope.ClientScopeStorageProviderFactory;
+import org.keycloak.storage.clientscope.ClientScopeStorageProviderModel;
+import org.keycloak.storage.clientscope.ClientScopeStorageProviderSpi;
+import org.keycloak.testsuite.federation.HardcodedClientScopeStorageProviderFactory;
+import org.keycloak.testsuite.model.Config;
 
 /**
  *
@@ -32,19 +39,41 @@ import java.util.Set;
  */
 public class JpaFederation extends KeycloakModelParameters {
 
+    private final AtomicInteger counter = new AtomicInteger();
+
     static final Set<Class<? extends Spi>> ALLOWED_SPIS = ImmutableSet.<Class<? extends Spi>>builder()
       .addAll(Jpa.ALLOWED_SPIS)
       .add(UserStorageProviderSpi.class)
       .add(UserFederatedStorageProviderSpi.class)
+      .add(ClientScopeStorageProviderSpi.class)
 
       .build();
 
     static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = ImmutableSet.<Class<? extends ProviderFactory>>builder()
       .addAll(Jpa.ALLOWED_FACTORIES)
       .add(JpaUserFederatedStorageProviderFactory.class)
+      .add(ClientScopeStorageProviderFactory.class)
       .build();
 
     public JpaFederation() {
         super(ALLOWED_SPIS, ALLOWED_FACTORIES);
+    }
+
+    @Override
+    public <T> Stream<T> getParameters(Class<T> clazz) {
+        if (ClientScopeStorageProviderModel.class.isAssignableFrom(clazz)) {
+            ClientScopeStorageProviderModel federatedStorage = new ClientScopeStorageProviderModel();
+            federatedStorage.setName(HardcodedClientScopeStorageProviderFactory.PROVIDER_ID + ":" + counter.getAndIncrement());
+            federatedStorage.setProviderId(HardcodedClientScopeStorageProviderFactory.PROVIDER_ID);
+            federatedStorage.setProviderType(ClientScopeStorageProvider.class.getName());
+            return Stream.of((T) federatedStorage);
+        } else {
+            return super.getParameters(clazz);
+        }
+    }
+
+    @Override
+    public void updateConfig(Config cf) {
+        Jpa.updateConfigForJpa(cf);
     }
 }

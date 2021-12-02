@@ -185,7 +185,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         AuthenticationExecutionExportRepresentation expected = new AuthenticationExecutionExportRepresentation();
         expected.setFlowAlias("SomeFlow");
         expected.setUserSetupAllowed(false);
-        expected.setAutheticatorFlow(true);
+        expected.setAuthenticatorFlow(true);
         expected.setRequirement("DISABLED");
         expected.setPriority(0);
         compareExecution(expected, execs.get(0));
@@ -194,7 +194,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         expected.setFlowAlias("SomeFlow2");
         expected.setUserSetupAllowed(false);
         expected.setAuthenticator("registration-page-form");
-        expected.setAutheticatorFlow(true);
+        expected.setAuthenticatorFlow(true);
         expected.setRequirement("DISABLED");
         expected.setPriority(1);
         compareExecution(expected, execs.get(1));
@@ -211,7 +211,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         // Check deleting flow second time will fail
         try {
             authMgmtResource.deleteFlow("id-123-notExistent");
-            Assert.fail("Not expected to delete flow, which doesn't exists");
+            Assert.fail("Not expected to delete flow, which doesn't exist");
         } catch (NotFoundException nfe) {
             // Expected
         }

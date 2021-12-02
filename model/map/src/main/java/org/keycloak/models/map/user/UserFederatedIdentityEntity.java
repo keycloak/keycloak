@@ -18,15 +18,15 @@
 package org.keycloak.models.map.user;
 
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.map.common.UpdatableEntity;
 
 import java.util.Objects;
 
-public class UserFederatedIdentityEntity {
+public class UserFederatedIdentityEntity extends UpdatableEntity.Impl {
     private String token;
     private String userId;
     private String identityProvider;
     private String userName;
-    private boolean updated;
     
     private UserFederatedIdentityEntity() {}
 
@@ -80,9 +80,5 @@ public class UserFederatedIdentityEntity {
     public void setUserName(String userName) {
         this.updated |= !Objects.equals(this.userName, userName);
         this.userName = userName;
-    }
-
-    public boolean isUpdated() {
-        return updated;
     }
 }

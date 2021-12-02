@@ -2226,6 +2226,21 @@
     "useTemplateScope" : false,
     "useTemplateMappers" : false
   }, {
+    "clientId": "migration-saml-client",
+    "enabled": true,
+    "fullScopeAllowed": true,
+    "protocol": "saml",
+    "baseUrl": "http://localhost:8080/sales-post",
+    "redirectUris": [
+      "http://localhost:8080/sales-post/*"
+    ],
+    "attributes": {
+      "saml_assertion_consumer_url_post": "http://localhost:8080/sales-post/saml",
+      "saml_single_logout_service_url_post": "http://localhost:8080/sales-post/saml",
+      "saml.authnstatement": "true",
+      "saml_idp_initiated_sso_url_name": "sales-post"
+    }
+  }, {
     "id" : "e6856a02-8f24-48d3-bb06-fae5dddae83e",
     "clientId" : "realm-management",
     "name" : "${client_realm-management}",

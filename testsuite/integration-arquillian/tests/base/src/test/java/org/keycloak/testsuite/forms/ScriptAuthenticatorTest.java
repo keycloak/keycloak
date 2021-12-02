@@ -50,6 +50,8 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
+
 /**
  * Tests for {@link org.keycloak.authentication.authenticators.browser.ScriptBasedAuthenticator}
  *
@@ -69,6 +71,11 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
     private final static String failId = UUID.randomUUID().toString();
 
     public static final String EXECUTION_ID = "scriptAuth";
+
+    @BeforeClass
+    public static void enabled() {
+        ProfileAssume.assumeFeatureEnabled(AUTHORIZATION);
+    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {

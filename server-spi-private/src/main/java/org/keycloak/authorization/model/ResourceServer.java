@@ -20,6 +20,7 @@ package org.keycloak.authorization.model;
 
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
+import org.keycloak.storage.SearchableModelField;
 
 /**
  * Represents a resource server, whose resources are managed and protected. A resource server is basically an existing
@@ -28,6 +29,10 @@ import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public interface ResourceServer {
+
+    public static class SearchableFields {
+        public static final SearchableModelField<ResourceServer> ID = new SearchableModelField<>("id", String.class);
+    }
 
     /**
      * Returns the unique identifier for this instance.

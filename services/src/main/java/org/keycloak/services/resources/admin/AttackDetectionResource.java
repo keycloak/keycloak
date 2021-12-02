@@ -94,7 +94,7 @@ public class AttackDetectionResource {
         if (!realm.isBruteForceProtected()) return data;
 
 
-        UserLoginFailureModel model = session.sessions().getUserLoginFailure(realm, userId);
+        UserLoginFailureModel model = session.loginFailures().getUserLoginFailure(realm, userId);
         if (model == null) return data;
 
         boolean disabled;
@@ -129,9 +129,9 @@ public class AttackDetectionResource {
         } else {
             auth.users().requireManage(user);
         }
-        UserLoginFailureModel model = session.sessions().getUserLoginFailure(realm, userId);
+        UserLoginFailureModel model = session.loginFailures().getUserLoginFailure(realm, userId);
         if (model != null) {
-            session.sessions().removeUserLoginFailure(realm, userId);
+            session.loginFailures().removeUserLoginFailure(realm, userId);
             adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
         }
     }
@@ -147,7 +147,7 @@ public class AttackDetectionResource {
     public void clearAllBruteForce() {
         auth.users().requireManage();
 
-        session.sessions().removeAllUserLoginFailures(realm);
+        session.loginFailures().removeAllUserLoginFailures(realm);
         adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
     }
 

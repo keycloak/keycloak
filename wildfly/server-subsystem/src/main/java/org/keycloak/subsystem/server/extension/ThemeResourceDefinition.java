@@ -58,7 +58,7 @@ public class ThemeResourceDefinition extends SimpleResourceDefinition {
         new SimpleAttributeDefinitionBuilder("cacheThemes", ModelType.BOOLEAN, true)
                 .setAllowExpression(true)
                 .setDefaultValue(new ModelNode(true))
-                .setAllowNull(false)
+                .setRequired(true)
                 .setRestartAllServices()
                 .build();
     
@@ -66,7 +66,7 @@ public class ThemeResourceDefinition extends SimpleResourceDefinition {
         new SimpleAttributeDefinitionBuilder("cacheTemplates", ModelType.BOOLEAN, true)
                 .setAllowExpression(true)
                 .setDefaultValue(new ModelNode(true))
-                .setAllowNull(false)
+                .setRequired(true)
                 .setRestartAllServices()
                 .build();
     

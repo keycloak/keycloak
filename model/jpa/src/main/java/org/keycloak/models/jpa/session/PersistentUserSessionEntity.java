@@ -38,9 +38,23 @@ import java.io.Serializable;
         @NamedQuery(name="updateUserSessionLastSessionRefresh", query="update PersistentUserSessionEntity sess set lastSessionRefresh = :lastSessionRefresh where sess.realmId = :realmId" +
                 " AND sess.offline = :offline AND sess.userSessionId IN (:userSessionIds)"),
         @NamedQuery(name="findUserSessionsCount", query="select count(sess) from PersistentUserSessionEntity sess where sess.offline = :offline"),
-        @NamedQuery(name="findUserSessions", query="select sess from PersistentUserSessionEntity sess where sess.offline = :offline" +
-                " AND (sess.createdOn > :lastCreatedOn OR (sess.createdOn = :lastCreatedOn AND sess.userSessionId > :lastSessionId))" +
-                " order by sess.createdOn,sess.userSessionId")
+        @NamedQuery(name="findUserSessionsOrderedById", query="select sess from PersistentUserSessionEntity sess, RealmEntity realm where realm.id = sess.realmId AND sess.offline = :offline" +
+                " AND sess.userSessionId > :lastSessionId" +
+                " order by sess.userSessionId"),
+        @NamedQuery(name="findUserSession", query="select sess from PersistentUserSessionEntity sess where sess.offline = :offline" +
+                " AND sess.userSessionId = :userSessionId AND sess.realmId = :realmId"),
+        @NamedQuery(name="findUserSessionsByUserId", query="select sess from PersistentUserSessionEntity sess where sess.offline = :offline" +
+                " AND sess.realmId = :realmId AND sess.userId = :userId ORDER BY sess.userSessionId"),
+        @NamedQuery(name="findUserSessionsByClientId", query="SELECT sess FROM PersistentUserSessionEntity sess INNER JOIN PersistentClientSessionEntity clientSess " +
+                " ON sess.userSessionId = clientSess.userSessionId AND clientSess.clientId = :clientId WHERE sess.offline = :offline " +
+                " AND sess.userSessionId = clientSess.userSessionId AND sess.realmId = :realmId ORDER BY sess.userSessionId"),
+        @NamedQuery(name="findUserSessionsCountsByClientId", query="SELECT clientSess.clientId, count(clientSess) " +
+                " FROM PersistentUserSessionEntity sess INNER JOIN PersistentClientSessionEntity clientSess " +
+                " ON sess.userSessionId = clientSess.userSessionId " +
+                // find all available offline user-session for all clients in a realm
+                " WHERE sess.offline = :offline " +
+                " AND sess.userSessionId = clientSess.userSessionId AND sess.realmId = :realmId " +
+                " GROUP BY clientSess.clientId")
 
 })
 @Table(name="OFFLINE_USER_SESSION")

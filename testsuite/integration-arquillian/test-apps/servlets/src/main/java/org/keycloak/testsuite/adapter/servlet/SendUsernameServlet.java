@@ -226,10 +226,10 @@ public class SendUsernameServlet {
                 return output;
             }
 
-            return "SamlSession doesn't exists";
+            return "SamlSession doesn't exist";
         }
 
-        return "Session doesn't exists";
+        return "Session doesn't exist";
     }
 
     private String getRoles() {

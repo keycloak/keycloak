@@ -31,7 +31,7 @@
     </description>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-parent</artifactId>
-    <version>13.0.0-SNAPSHOT</version>
+    <version>16.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <properties>
@@ -49,13 +49,13 @@
         the script continues to work
         -->
 
-        <product.rhsso.version>7.4.0.GA</product.rhsso.version>
+        <product.rhsso.version>7.5.0.GA</product.rhsso.version>
 
         <product.build-time>${timestamp}</product.build-time>
-        <wildfly.version>21.0.2.Final</wildfly.version>
+        <wildfly.version>23.0.2.Final</wildfly.version>
         <wildfly.build-tools.version>1.2.13.Final</wildfly.build-tools.version>
-        <eap.version>7.4.0.CD20-redhat-00001</eap.version>
-        <wildfly.core.version>13.0.3.Final</wildfly.core.version>
+        <eap.version>7.4.0.GA-redhat-00005</eap.version>
+        <wildfly.core.version>15.0.1.Final</wildfly.core.version>
 
         <jboss.as.version>7.2.0.Final</jboss.as.version>
         <jboss.as.subsystem.test.version>7.5.22.Final-redhat-1</jboss.as.subsystem.test.version>
@@ -64,90 +64,101 @@
         <jboss.aesh.version>0.66.19</jboss.aesh.version>
         <aesh.version>2.4</aesh.version>
         <apache.httpcomponents.version>4.5.13</apache.httpcomponents.version>
-        <apache.httpcomponents.httpcore.version>4.4.13</apache.httpcomponents.httpcore.version>
+        <apache.httpcomponents.httpcore.version>4.4.14</apache.httpcomponents.httpcore.version>
         <apache.mime4j.version>0.6</apache.mime4j.version>
         <jboss.dmr.version>1.5.1.Final</jboss.dmr.version>
-        <bouncycastle.version>1.65</bouncycastle.version>
-        <cxf.version>3.3.7</cxf.version>
-        <cxf.jetty.version>3.3.7</cxf.jetty.version>
-        <cxf.jaxrs.version>3.3.7</cxf.jaxrs.version>
-        <cxf.undertow.version>3.3.7</cxf.undertow.version>
+        <bouncycastle.version>1.68</bouncycastle.version>
+        <cxf.version>3.3.10</cxf.version>
+        <cxf.jetty.version>3.3.10</cxf.jetty.version>
+        <cxf.jaxrs.version>3.3.10</cxf.jaxrs.version>
+        <cxf.undertow.version>3.3.10</cxf.undertow.version>
         <dom4j.version>2.1.3</dom4j.version>
         <h2.version>1.4.197</h2.version>
         <jakarta.persistence.version>2.2.3</jakarta.persistence.version>
         <hibernate.core.version>5.3.20.Final</hibernate.core.version>
         <hibernate.c3p0.version>5.3.20.Final</hibernate.c3p0.version>
-        <infinispan.version>11.0.4.Final</infinispan.version>
-        <jackson.version>2.10.5</jackson.version>
+        <infinispan.version>11.0.9.Final</infinispan.version>
+        <infinispan.protostream.processor.version>4.3.4.Final</infinispan.protostream.processor.version>
+        <jackson.version>2.12.1</jackson.version>
         <jackson.databind.version>${jackson.version}</jackson.databind.version>
         <jackson.annotations.version>${jackson.databind.version}</jackson.annotations.version>
         <jakarta.mail.version>1.6.5</jakarta.mail.version>
+        <jboss-jaxrs-api_2.1_spec>2.0.1.Final</jboss-jaxrs-api_2.1_spec>
         <jboss.logging.version>3.4.1.Final</jboss.logging.version>
         <jboss.logging.tools.version>2.2.1.Final</jboss.logging.tools.version>
-        <jboss-jaxrs-api_2.1_spec>2.0.1.Final</jboss-jaxrs-api_2.1_spec>
+        <jboss.marshalling.version>2.0.11.Final</jboss.marshalling.version>
         <jboss-transaction-api_1.3_spec>2.0.0.Final</jboss-transaction-api_1.3_spec>
-        <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
+        <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>2.0.1.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
         <log4j.version>1.2.17</log4j.version>
-        <resteasy.version>3.13.2.Final</resteasy.version>
+        <resteasy.version>3.15.1.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
-        <owasp.html.sanitizer.version>20191001.1</owasp.html.sanitizer.version>
+        <owasp.html.sanitizer.version>20211018.2</owasp.html.sanitizer.version>
         <slf4j-api.version>1.7.30</slf4j-api.version>
         <slf4j.version>1.7.30</slf4j.version>
         <sun.istack.version>3.0.10</sun.istack.version>
         <sun.xml.bind.version>2.3.3-b02</sun.xml.bind.version>
         <javax.xml.bind.jaxb.version>2.4.0-b180830.0359</javax.xml.bind.jaxb.version>
         <sun.xml.ws.version>2.3.1</sun.xml.ws.version>
-        <sun.activation.version>1.2.1</sun.activation.version>
+        <sun.activation.version>1.2.2</sun.activation.version>
         <org.glassfish.jaxb.xsom.version>2.3.3-b02</org.glassfish.jaxb.xsom.version>
-        <undertow.version>2.2.2.Final</undertow.version>
-        <elytron.version>1.13.1.Final</elytron.version>
-        <elytron.undertow-server.version>1.8.0.Final</elytron.undertow-server.version>
+        <undertow.version>2.2.5.Final</undertow.version>
+        <elytron.version>1.15.3.Final</elytron.version>
+        <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <jetty92.version>9.2.4.v20141103</jetty92.version>
-        <jetty93.version>9.3.9.v20160517</jetty93.version>
-        <jetty94.version>9.4.29.v20200521</jetty94.version>
+        <jetty93.version>9.3.29.v20201019</jetty93.version>
+        <jetty94.version>9.4.40.v20210413</jetty94.version>
         <woodstox.version>6.0.3</woodstox.version>
-        <xmlsec.version>2.1.4</xmlsec.version>
+        <xmlsec.version>2.1.6</xmlsec.version>
         <glassfish.json.version>1.1.6</glassfish.json.version>
-        <wildfly.common.version>1.5.2.Final</wildfly.common.version>
+        <wildfly.common.version>1.5.4.Final</wildfly.common.version>
         <ua-parser.version>1.4.3</ua-parser.version>
-        <picketbox.version>5.0.3.Final-redhat-00006</picketbox.version>
-        <google.guava.version>25.0-jre</google.guava.version>
+        <picketbox.version>5.0.3.Final-redhat-00007</picketbox.version>
+        <google.guava.version>30.1-jre</google.guava.version>
 
         <!-- Openshift -->
         <version.com.openshift.openshift-restclient-java>8.0.0.Final</version.com.openshift.openshift-restclient-java>
 
         <!-- Others -->
         <commons-lang.version>2.6</commons-lang.version>
-        <commons-lang3.version>3.10</commons-lang3.version>
-        <commons-io.version>2.6</commons-io.version>
+        <commons-lang3.version>3.11</commons-lang3.version>
+        <commons-io.version>2.7</commons-io.version>
         <apacheds.version>2.0.0.AM26</apacheds.version>
         <apacheds.codec.version>2.0.0</apacheds.codec.version>
         <google.zxing.version>3.4.0</google.zxing.version>
-        <freemarker.version>2.3.29</freemarker.version>
+        <freemarker.version>2.3.31</freemarker.version>
 
         <jetty9.version>${jetty92.version}</jetty9.version>
         <liquibase.version>3.5.5</liquibase.version>
-        <mysql.version>8.0.18</mysql.version>
         <osgi.version>4.2.0</osgi.version>
         <pax.web.version>7.1.0</pax.web.version>
-        <postgresql.version>42.2.8</postgresql.version>
-        <mariadb.version>2.2.4</mariadb.version>
-        <mssql.version>7.4.1.jre8</mssql.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <servlet.api.40.version>2.0.0.Final</servlet.api.40.version>
         <twitter4j.version>4.0.7</twitter4j.version>
         <jna.version>4.1.0</jna.version>
 
+        <!-- Databases -->
+        <mysql.version>8.0.23</mysql.version>
+        <mysql.driver.version>8.0.23</mysql.driver.version>
+        <postgresql.version>13.2</postgresql.version>
+        <postgresql.driver.version>42.2.18</postgresql.driver.version>
+        <mariadb.version>10.3.27</mariadb.version>
+        <mariadb.driver.version>2.7.2</mariadb.driver.version>
+        <mssql.version>2019-CU10-ubuntu-20.04</mssql.version>
+        <mssql.driver.version>9.2.0.jre8</mssql.driver.version>
+
         <!-- Test -->
         <greenmail.version>1.3.1b</greenmail.version>
-        <hamcrest.version>1.3</hamcrest.version>
+        <hamcrest.version>2.2</hamcrest.version>
         <jmeter.version>2.10</jmeter.version>
-        <junit.version>4.12</junit.version>
+        <junit.version>4.13.2</junit.version>
         <picketlink.version>2.7.0.Final</picketlink.version>
         <selenium.version>2.35.0</selenium.version>
         <xml-apis.version>1.4.01</xml-apis.version>
         <subethasmtp.version>3.1.7</subethasmtp.version>
+        <!-- KEYCLOAK-17585 Prevent microprofile-metrics-api upgrades from version "2.3" due to:
+             https://issues.redhat.com/browse/KEYCLOAK-17585?focusedCommentId=16002705&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-16002705
+        -->
         <microprofile-metrics-api.version>2.3</microprofile-metrics-api.version>
 
         <!-- Maven Plugins -->
@@ -159,8 +170,9 @@
         <osgi.bundle.plugin.version>2.3.7</osgi.bundle.plugin.version>
         <wildfly.plugin.version>2.0.1.Final</wildfly.plugin.version>
         <nexus.staging.plugin.version>1.6.5</nexus.staging.plugin.version>
-        <frontend.plugin.version>1.8.0</frontend.plugin.version>
+        <frontend.plugin.version>1.12.0</frontend.plugin.version>
         <docker.maven.plugin.version>0.28.0</docker.maven.plugin.version>
+        <verifier.plugin.version>1.1</verifier.plugin.version>
 
         <!-- Surefire Settings -->
         <surefire.memory.Xms>512m</surefire.memory.Xms>
@@ -183,6 +195,20 @@
         <!-- webauthn support -->
         <webauthn4j.version>0.12.0.RELEASE</webauthn4j.version>
         <org.apache.kerby.kerby-asn1.version>2.0.0</org.apache.kerby.kerby-asn1.version>
+
+        <!-- WildFly Galleon Build related properties -->
+        <org.wildfly.galleon-plugins.version>5.1.3.Final</org.wildfly.galleon-plugins.version>
+        <org.jboss.galleon.version>4.2.8.Final</org.jboss.galleon.version>
+
+        <!-- Galleon -->
+        <galleon.fork.embedded>true</galleon.fork.embedded>
+        <galleon.log.time>true</galleon.log.time>
+        <galleon.offline>true</galleon.offline>
+
+        <!-- Properties that drive the names of various directories produced by and used in the build -->
+        <server.output.dir.prefix>keycloak</server.output.dir.prefix>
+        <!-- Version suffix that is appended to directories. Default is the maven GAV version but this can be edited to use a short form version -->
+        <server.output.dir.version>${project.version}</server.output.dir.version>
 
     </properties>
 
@@ -212,7 +238,7 @@
 
     <issueManagement>
         <system>JIRA</system>
-        <url>http://jira.jboss.com/jira/browse/KEYCLOAK</url>
+        <url>https://github.com/keycloak/keycloak/issues</url>
     </issueManagement>
 
     <developers>
@@ -228,8 +254,7 @@
         </developer>
     </developers>
 
-    <contributors>
-    </contributors>
+    <contributors></contributors>
 
     <modules>
         <module>boms</module>
@@ -502,7 +527,7 @@
             </dependency>
             <dependency>
                 <groupId>org.hamcrest</groupId>
-                <artifactId>hamcrest-all</artifactId>
+                <artifactId>hamcrest</artifactId>
                 <version>${hamcrest.version}</version>
                 <scope>test</scope>
             </dependency>
@@ -680,7 +705,7 @@
             <dependency>
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
-                <version>${mysql.version}</version>
+                <version>${mysql.driver.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -738,6 +763,30 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-galleon-pack</artifactId>
+                <version>${wildfly.version}</version>
+                <type>zip</type>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-galleon-pack</artifactId>
+                <version>${wildfly.version}</version>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>${ee.maven.groupId}</groupId>
+                <artifactId>wildfly-ee-galleon-pack</artifactId>
+                <version>${wildfly.version}</version>
+                <type>zip</type>
+            </dependency>
+            <dependency>
+                <groupId>${ee.maven.groupId}</groupId>
+                <artifactId>wildfly-servlet-galleon-pack</artifactId>
+                <version>${ee.maven.version}</version>
+                <type>zip</type>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly</groupId>
                 <artifactId>wildfly-web-feature-pack</artifactId>
                 <version>${wildfly.version}</version>
                 <type>zip</type>
@@ -769,6 +818,30 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-core-feature-pack-common</artifactId>
+                <type>pom</type>
+                <version>${wildfly.core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-core-feature-pack-ee-8-api</artifactId>
+                <type>pom</type>
+                <version>${wildfly.core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-core-feature-pack-galleon-common</artifactId>
+                <type>pom</type>
+                <version>${wildfly.core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-core-feature-pack-galleon-pruned</artifactId>
+                <type>pom</type>
+                <version>${wildfly.core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-core-feature-pack</artifactId>
                 <type>pom</type>
                 <version>${wildfly.core.version}</version>
@@ -776,6 +849,18 @@
             <dependency>
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-core-feature-pack</artifactId>
+                <type>zip</type>
+                <version>${wildfly.core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-core-galleon-pack</artifactId>
+                <type>pom</type>
+                <version>${wildfly.core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-core-galleon-pack</artifactId>
                 <type>zip</type>
                 <version>${wildfly.core.version}</version>
             </dependency>
@@ -823,6 +908,63 @@
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-jboss-marshalling</artifactId>
                 <version>${infinispan.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-server-core</artifactId>
+                <version>${infinispan.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-server-router</artifactId>
+                <version>${infinispan.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-server-runtime</artifactId>
+                <version>${infinispan.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-server-rest</artifactId>
+                <version>${infinispan.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-client-hotrod</artifactId>
+                <version>${infinispan.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-query-dsl</artifactId>
+                <version>${infinispan.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-remote-query-client</artifactId>
+                <version>${infinispan.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan.protostream</groupId>
+                <artifactId>protostream-processor</artifactId>
+                <scope>provided</scope>
+                <version>${infinispan.protostream.processor.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.marshalling</groupId>
+                <artifactId>jboss-marshalling</artifactId>
+                <version>${jboss.marshalling.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.marshalling</groupId>
+                <artifactId>jboss-marshalling-river</artifactId>
+                <version>${jboss.marshalling.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.liquibase</groupId>
@@ -1151,6 +1293,11 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-model-map-hot-rod</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>launcher</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1248,6 +1395,11 @@
                 <artifactId>keycloak-quarkus-server-app</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-admin-ui</artifactId>
+                <version>16.0.0-SNAPSHOT</version>
+            </dependency>
 
             <!-- Openshift -->
             <dependency>
@@ -1336,12 +1488,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-api-docs-dist</artifactId>
-                <version>${project.version}</version>
-                <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-examples-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>
@@ -1556,6 +1702,59 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+
+            <!-- used in server-dist build while provisioning the distribution -->
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-server-galleon-pack</artifactId>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-server-galleon-pack</artifactId>
+                <version>${project.version}</version>
+                <type>pom</type>
+            </dependency>
+
+            <!-- WildFly Galleon Plugins -->
+            <dependency>
+                <groupId>org.wildfly.galleon-plugins</groupId>
+                <artifactId>wildfly-galleon-plugins</artifactId>
+                <version>${org.wildfly.galleon-plugins.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.jboss.galleon</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.galleon-plugins</groupId>
+                <artifactId>wildfly-config-gen</artifactId>
+                <version>${org.wildfly.galleon-plugins.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.galleon-plugins</groupId>
+                <artifactId>transformer</artifactId>
+                <version>${org.wildfly.galleon-plugins.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -1581,6 +1780,11 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>3.1.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-release-plugin</artifactId>
                     <version>2.5.2</version>
                     <configuration>
@@ -1591,9 +1795,11 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.0.0-M5</version>
                     <configuration>
+                        <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                         <forkMode>once</forkMode>
-                        <argLine>-Djava.awt.headless=true ${surefire.memory.settings}</argLine>
+                        <argLine>-Djava.awt.headless=true ${surefire.memory.settings} -Duser.language=en -Duser.region=US</argLine>
                         <runOrder>alphabetical</runOrder>
                     </configuration>
                 </plugin>
@@ -1640,6 +1846,11 @@
                     </configuration>
                 </plugin>
                 <plugin>
+                    <groupId>org.jboss.galleon</groupId>
+                    <artifactId>galleon-maven-plugin</artifactId>
+                    <version>${org.jboss.galleon.version}</version>
+                </plugin>
+                <plugin>
                     <groupId>com.samaxes.maven</groupId>
                     <artifactId>minify-maven-plugin</artifactId>
                     <version>${minify.plugin.version}</version>
@@ -1653,6 +1864,42 @@
                     <groupId>org.wildfly.build</groupId>
                     <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
                     <version>${wildfly.build-tools.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.wildfly.galleon-plugins</groupId>
+                    <artifactId>wildfly-galleon-maven-plugin</artifactId>
+                    <version>${org.wildfly.galleon-plugins.version}</version>
+                    <dependencies>
+                        <!-- feature-spec-gen uses wildfly-embedded to generate the feature specs, hence the designated wildfly-embedded version must match the pack one -->
+                        <dependency>
+                            <groupId>org.wildfly.core</groupId>
+                            <artifactId>wildfly-embedded</artifactId>
+                            <version>${wildfly.core.version}</version>
+                        </dependency>
+                        <!-- If you add a dependency on wildfly-embedded you need to bring your own transitives -->
+                        <dependency>
+                            <groupId>org.wildfly.common</groupId>
+                            <artifactId>wildfly-common</artifactId>
+                            <version>${wildfly.common.version}</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-verifier-plugin</artifactId>
+                    <version>${verifier.plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>main</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <verificationFile>target/verifier/verifications.xml</verificationFile>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.felix</groupId>
@@ -1700,7 +1947,20 @@
                 <product.default-profile>community</product.default-profile>
                 <apache.httpcomponents.fuse.version>4.5.2</apache.httpcomponents.fuse.version>
                 <apache.httpcomponents.httpcore.fuse.version>4.4.4</apache.httpcomponents.httpcore.fuse.version>
+                <ee.maven.groupId>org.wildfly</ee.maven.groupId>
+                <ee.maven.version>${wildfly.version}</ee.maven.version>
+                <product.filename.version>${project.version}</product.filename.version>
             </properties>
+        </profile>
+
+        <profile>
+            <id>quarkus</id>
+            <activation>
+                <jdk>[11,)</jdk>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
             <modules>
                 <module>quarkus</module>
             </modules>
@@ -1723,6 +1983,12 @@
                 <apache.httpcomponents.fuse.version>4.5.2.redhat-2</apache.httpcomponents.fuse.version>
                 <apache.httpcomponents.httpcore.fuse.version>4.4.4.redhat-2</apache.httpcomponents.httpcore.fuse.version>
                 <product.default-profile>product</product.default-profile>
+                <ee.maven.groupId>org.jboss.eap</ee.maven.groupId>
+                <ee.maven.version>${eap.version}</ee.maven.version>
+                <!-- Properties that drive the names of various directories produced by and used in the build -->
+                <server.output.dir.prefix>${product.name}</server.output.dir.prefix>
+                <!-- Version suffix that is appended to directories. Default is the maven GAV version but this can be edited to use a short form version -->
+                <server.output.dir.version>${product.filename.version}</server.output.dir.version>
             </properties>
             <build>
                 <plugins>

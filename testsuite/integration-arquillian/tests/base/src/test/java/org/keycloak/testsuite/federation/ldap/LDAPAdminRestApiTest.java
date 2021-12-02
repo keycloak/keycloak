@@ -152,7 +152,9 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
         updateUserExpectError(userRes, user);
 
         user.getAttributes().remove(LDAPConstants.LDAP_ID);
-        updateUserExpectError(userRes, user);
+        userRes.update(user);
+        user = userRes.toRepresentation();
+        assertEquals(origLdapId, user.getAttributes().get(LDAPConstants.LDAP_ID));
 
         // Trying to update LDAP_ENTRY_DN should fail
         user.getAttributes().put(LDAPConstants.LDAP_ID, origLdapId);

@@ -20,6 +20,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.admin.AuthorizationService;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Errors;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -34,11 +35,13 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ForbiddenException;
-import org.keycloak.services.clientpolicy.AdminClientRegisterContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.AdminClientRegisterContext;
+import org.keycloak.services.clientpolicy.context.AdminClientRegisteredContext;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.utils.SearchQueryUtils;
 import org.keycloak.validation.ValidationUtil;
 
 import javax.ws.rs.Consumes;
@@ -53,6 +56,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -99,16 +103,23 @@ public class ClientsResource {
     public Stream<ClientRepresentation> getClients(@QueryParam("clientId") String clientId,
                                                  @QueryParam("viewableOnly") @DefaultValue("false") boolean viewableOnly,
                                                  @QueryParam("search") @DefaultValue("false") boolean search,
+                                                 @QueryParam("q") String searchQuery,
                                                  @QueryParam("first") Integer firstResult,
                                                  @QueryParam("max") Integer maxResults) {
+        auth.clients().requireList();
+
         boolean canView = auth.clients().canView();
         Stream<ClientModel> clientModels = Stream.empty();
 
-        if (clientId == null || clientId.trim().equals("")) {
+        if (searchQuery != null) {
+            Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
+            clientModels = canView
+                    ? realm.searchClientByAttributes(attributes, firstResult, maxResults)
+                    : realm.searchClientByAttributes(attributes, -1, -1);
+        } else if (clientId == null || clientId.trim().equals("")) {
             clientModels = canView
                     ? realm.getClientsStream(firstResult, maxResults)
                     : realm.getClientsStream();
-            auth.clients().requireList();
         } else if (search) {
             clientModels = canView
                     ? realm.searchClientByClientIdStream(clientId, firstResult, maxResults)
@@ -121,6 +132,7 @@ public class ClientsResource {
         }
 
         Stream<ClientRepresentation> s = clientModels
+                .filter(c -> { try { c.getClientId(); return true; } catch (Exception ex) { return false; } } )
                 .map(c -> {
                     ClientRepresentation representation = null;
                     if (canView || auth.clients().canView(c)) {
@@ -163,11 +175,7 @@ public class ClientsResource {
 
         try {
             session.clientPolicy().triggerOnEvent(new AdminClientRegisterContext(rep, auth.adminAuth()));
-        } catch (ClientPolicyException cpe) {
-            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
-        }
 
-        try {
             ClientModel clientModel = ClientManager.createClient(session, realm, rep);
 
             if (TRUE.equals(rep.isServiceAccountsEnabled())) {
@@ -180,7 +188,7 @@ public class ClientsResource {
 
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), clientModel.getId()).representation(rep).success();
 
-            if (TRUE.equals(rep.getAuthorizationServicesEnabled())) {
+            if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION) && TRUE.equals(rep.getAuthorizationServicesEnabled())) {
                 AuthorizationService authorizationService = getAuthorizationService(clientModel);
 
                 authorizationService.enable(true);
@@ -200,9 +208,13 @@ public class ClientsResource {
                         Response.Status.BAD_REQUEST);
             });
 
+            session.clientPolicy().triggerOnEvent(new AdminClientRegisteredContext(clientModel, auth.adminAuth()));
+
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(clientModel.getId()).build()).build();
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Client " + rep.getClientId() + " already exists");
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
     }
 

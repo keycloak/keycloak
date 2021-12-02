@@ -17,30 +17,17 @@
 
 package org.keycloak.services.validation;
 
-import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.PasswordPolicy;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.FormMessage;
-import org.keycloak.policy.PasswordPolicyManagerProvider;
-import org.keycloak.policy.PolicyError;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.services.messages.Messages;
-import org.keycloak.userprofile.validation.AttributeValidationResult;
-import org.keycloak.userprofile.validation.UserProfileValidationResult;
+import org.keycloak.userprofile.ValidationException;
 
-import javax.ws.rs.core.MultivaluedMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class Validation {
 
     public static final String FIELD_PASSWORD_CONFIRM = "password-confirm";
     public static final String FIELD_EMAIL = "email";
-    public static final String FIELD_LAST_NAME = "lastName";
-    public static final String FIELD_FIRST_NAME = "firstName";
     public static final String FIELD_PASSWORD = "password";
     public static final String FIELD_USERNAME = "username";
     public static final String FIELD_OTP_CODE = "totp";
@@ -49,85 +36,8 @@ public class Validation {
     // Actually allow same emails like angular. See ValidationTest.testEmailValidation()
     private static final Pattern EMAIL_PATTERN = Pattern.compile("[a-zA-Z0-9!#$%&'*+/=?^_`{|}~.-]+@[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)*");
 
-    public static List<FormMessage> validateRegistrationForm(KeycloakSession session, RealmModel realm, MultivaluedMap<String, String> formData, List<String> requiredCredentialTypes, PasswordPolicy policy) {
-        List<FormMessage> errors = new ArrayList<>();
-
-        if (!realm.isRegistrationEmailAsUsername() && isBlank(formData.getFirst(FIELD_USERNAME))) {
-            addError(errors, FIELD_USERNAME, Messages.MISSING_USERNAME);
-        }
-
-        if (isBlank(formData.getFirst(FIELD_FIRST_NAME))) {
-            addError(errors, FIELD_FIRST_NAME, Messages.MISSING_FIRST_NAME);
-        }
-
-        if (isBlank(formData.getFirst(FIELD_LAST_NAME))) {
-            addError(errors, FIELD_LAST_NAME, Messages.MISSING_LAST_NAME);
-        }
-
-        if (isBlank(formData.getFirst(FIELD_EMAIL))) {
-            addError(errors, FIELD_EMAIL, Messages.MISSING_EMAIL);
-        } else if (!isEmailValid(formData.getFirst(FIELD_EMAIL))) {
-            addError(errors, FIELD_EMAIL, Messages.INVALID_EMAIL);
-        }
-
-        if (requiredCredentialTypes.contains(CredentialRepresentation.PASSWORD)) {
-            if (isBlank(formData.getFirst(FIELD_PASSWORD))) {
-                addError(errors, FIELD_PASSWORD, Messages.MISSING_PASSWORD);
-            } else if (!formData.getFirst(FIELD_PASSWORD).equals(formData.getFirst(FIELD_PASSWORD_CONFIRM))) {
-                addError(errors, FIELD_PASSWORD_CONFIRM, Messages.INVALID_PASSWORD_CONFIRM);
-            }
-        }
-
-        if (formData.getFirst(FIELD_PASSWORD) != null) {
-            PolicyError err = session.getProvider(PasswordPolicyManagerProvider.class).validate(realm.isRegistrationEmailAsUsername() ? formData.getFirst(FIELD_EMAIL) : formData.getFirst(FIELD_USERNAME), formData.getFirst(FIELD_PASSWORD));
-            if (err != null)
-                errors.add(new FormMessage(FIELD_PASSWORD, err.getMessage(), err.getParameters()));
-        }
-        
-        return errors;
-    }
-    
-    private static void addError(List<FormMessage> errors, String field, String message){
-        errors.add(new FormMessage(field, message));
-    }
-
-    public static List<FormMessage> validateUpdateProfileForm(RealmModel realm, MultivaluedMap<String, String> formData) {
-        return validateUpdateProfileForm(realm, formData, realm.isEditUsernameAllowed());
-    }
-    
-    public static List<FormMessage> validateUpdateProfileForm(RealmModel realm, MultivaluedMap<String, String> formData, boolean userNameRequired) {
-        List<FormMessage> errors = new ArrayList<>();
-        
-        if (!realm.isRegistrationEmailAsUsername() && userNameRequired && isBlank(formData.getFirst(FIELD_USERNAME))) {
-            addError(errors, FIELD_USERNAME, Messages.MISSING_USERNAME);
-        }
-
-        if (isBlank(formData.getFirst(FIELD_FIRST_NAME))) {
-            addError(errors, FIELD_FIRST_NAME, Messages.MISSING_FIRST_NAME);
-        }
-
-        if (isBlank(formData.getFirst(FIELD_LAST_NAME))) {
-            addError(errors, FIELD_LAST_NAME, Messages.MISSING_LAST_NAME);
-        }
-
-        if (isBlank(formData.getFirst(FIELD_EMAIL))) {
-            addError(errors, FIELD_EMAIL, Messages.MISSING_EMAIL);
-        } else if (!isEmailValid(formData.getFirst(FIELD_EMAIL))) {
-            addError(errors, FIELD_EMAIL, Messages.INVALID_EMAIL);
-        }
-
-        return errors;
-    }
-    
-    /**
-     * Validate if user object contains all mandatory fields.
-     * 
-     * @param realm user is for
-     * @param user to validate
-     * @return true if user object contains all mandatory values, false if some mandatory value is missing
-     */
-    public static boolean validateUserMandatoryFields(RealmModel realm, UpdateProfileContext user){
-        return!(isBlank(user.getFirstName()) || isBlank(user.getLastName()) || isBlank(user.getEmail()));        
+    private static void addError(List<FormMessage> errors, String field, String message, Object... parameters){
+        errors.add(new FormMessage(field, message, parameters));
     }
 
     /**
@@ -155,12 +65,12 @@ public class Validation {
     }
 
 
-    public static List<FormMessage> getFormErrorsFromValidation(UserProfileValidationResult results) {
-        List<FormMessage> errors = new ArrayList<>();
-        for (AttributeValidationResult result : results.getErrors()) {
-            result.getFailedValidations().forEach(o -> addError(errors, result.getField(), o.getErrorType()));
+    public static List<FormMessage> getFormErrorsFromValidation(List<ValidationException.Error> errors) {
+        List<FormMessage> messages = new ArrayList<>();
+        for (ValidationException.Error error : errors) {
+            addError(messages, error.getAttribute(), error.getMessage(), error.getMessageParameters());
         }
-        return errors;
+        return messages;
 
     }
 }

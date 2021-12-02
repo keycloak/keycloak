@@ -108,7 +108,7 @@ public class LDAPAccountTest extends AbstractAccountTest {
     public void updateProfileWithAttributePresent() {
 
         RealmResource testRealm = adminClient.realm("test");
-        assertEquals("keycloak.v2", testRealm.toRepresentation().getAccountTheme());
+        assertEquals(getAccountThemeName(), testRealm.toRepresentation().getAccountTheme());
 
         UserRepresentation userRepBefore = ApiUtil.findUserByUsername(testRealm,"keycloak-15634");
         assertNull("User should not exist", userRepBefore);

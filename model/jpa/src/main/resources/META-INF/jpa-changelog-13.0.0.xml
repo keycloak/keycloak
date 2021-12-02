@@ -38,4 +38,63 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="map-remove-ri-13.0.0">
+        <dropForeignKeyConstraint baseTableName="DEFAULT_CLIENT_SCOPE" constraintName="FK_R_DEF_CLI_SCOPE_SCOPE"/>
+        <dropForeignKeyConstraint baseTableName="CLIENT_SCOPE_CLIENT" constraintName="FK_C_CLI_SCOPE_SCOPE"/>
+        <dropForeignKeyConstraint baseTableName="CLIENT_SCOPE_CLIENT" constraintName="FK_C_CLI_SCOPE_CLIENT"/>
+        <dropForeignKeyConstraint baseTableName="CLIENT" constraintName="FK_P56CTINXXB9GSK57FO49F9TAC"/>
+        <dropForeignKeyConstraint baseTableName="CLIENT_SCOPE" constraintName="FK_REALM_CLI_SCOPE"/>
+        <dropForeignKeyConstraint baseTableName="KEYCLOAK_GROUP" constraintName="FK_GROUP_REALM"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="13.0.0-KEYCLOAK-17992-drop-constraints">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <!-- sql server needs drop and re-create constraints before modifying data type -->
+            <dbms type="mssql"/>
+        </preConditions>
+        <dropPrimaryKey tableName="CLIENT_SCOPE_CLIENT" constraintName="C_CLI_SCOPE_BIND"/>
+        <dropIndex tableName="CLIENT_SCOPE_CLIENT" indexName="IDX_CLSCOPE_CL"/>
+        <dropIndex tableName="CLIENT_SCOPE_CLIENT" indexName="IDX_CL_CLSCOPE"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="13.0.0-increase-column-size-federated">
+        <modifyDataType newDataType="VARCHAR(255)" tableName="CLIENT_SCOPE_CLIENT" columnName="CLIENT_ID"/>
+        <modifyDataType newDataType="VARCHAR(255)" tableName="CLIENT_SCOPE_CLIENT" columnName="SCOPE_ID"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="13.0.0-KEYCLOAK-17992-recreate-constraints">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <!-- sql server needs drop and re-create constraints before modifying data type -->
+            <dbms type="mssql"/>
+        </preConditions>
+        <addNotNullConstraint tableName="CLIENT_SCOPE_CLIENT" columnName="CLIENT_ID" columnDataType="VARCHAR(255)"/>
+        <addNotNullConstraint tableName="CLIENT_SCOPE_CLIENT" columnName="SCOPE_ID" columnDataType="VARCHAR(255)"/>
+        <addPrimaryKey columnNames="CLIENT_ID, SCOPE_ID" constraintName="C_CLI_SCOPE_BIND" tableName="CLIENT_SCOPE_CLIENT"/>
+        <createIndex indexName="IDX_CLSCOPE_CL" tableName="CLIENT_SCOPE_CLIENT">
+            <column name="CLIENT_ID" type="VARCHAR(255)"/>
+        </createIndex>
+        <createIndex indexName="IDX_CL_CLSCOPE" tableName="CLIENT_SCOPE_CLIENT">
+            <column name="SCOPE_ID" type="VARCHAR(255)"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="json-string-accomodation-fixed">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <changeSetExecuted id="json-string-accomodation" author="keycloak" changeLogFile="META-INF/jpa-changelog-13.0.0.xml"/>
+            </not>
+        </preConditions>
+
+        <addColumn tableName="REALM_ATTRIBUTE">
+            <column name="VALUE_NEW" type="NCLOB" />
+        </addColumn>
+
+        <update tableName="REALM_ATTRIBUTE">
+            <column name="VALUE_NEW" valueComputed="VALUE"/>
+        </update>
+
+        <dropColumn tableName="REALM_ATTRIBUTE" columnName="VALUE"/>
+        <renameColumn tableName="REALM_ATTRIBUTE" oldColumnName="VALUE_NEW" newColumnName="VALUE" columnDataType="NCLOB"/>
+    </changeSet>
+
 </databaseChangeLog>

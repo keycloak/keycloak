@@ -18,7 +18,6 @@
 package org.keycloak.models;
 
 import java.util.Map;
-import org.keycloak.migration.MigrationModel;
 import org.keycloak.provider.Provider;
 
 import java.util.List;
@@ -30,24 +29,36 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface RealmProvider extends Provider /* TODO: Remove in future version */, ClientProvider, GroupProvider, RoleProvider /* up to here */ {
-
-    // Note: The reason there are so many query methods here is for layering a cache on top of an persistent KeycloakSession
-    MigrationModel getMigrationModel();
-    RealmModel createRealm(String name);
-    RealmModel createRealm(String id, String name);
-    RealmModel getRealm(String id);
-    RealmModel getRealmByName(String name);
-
-    ClientScopeModel getClientScopeById(String id, RealmModel realm);
+public interface RealmProvider extends Provider /* TODO: Remove in future version */, ClientProvider, ClientScopeProvider, GroupProvider, RoleProvider /* up to here */ {
 
     /**
-     * @deprecated Use {@link #getRealmsStream() getRealmsStream} instead.
+     * Creates new realm with the given name. The internal ID will be generated automatically.
+     * @param name String name of the realm
+     * @return Model of the created realm.
      */
-    @Deprecated
-    default List<RealmModel> getRealms() {
-        return getRealmsStream().collect(Collectors.toList());
-    }
+    RealmModel createRealm(String name);
+
+    /**
+     * Created new realm with given ID and name.
+     * @param id Internal ID of the realm or {@code null} if one is to be created by the underlying store
+     * @param name String name of the realm
+     * @return Model of the created realm.
+     */
+    RealmModel createRealm(String id, String name);
+
+    /**
+     * Exact search for a realm by its internal ID.
+     * @param id Internal ID of the realm.
+     * @return Model of the realm
+     */
+    RealmModel getRealm(String id);
+
+    /**
+     * Exact search for a realm by its name.
+     * @param name String name of the realm
+     * @return Model of the realm
+     */
+    RealmModel getRealmByName(String name);
 
     /**
      * Returns realms as a stream.
@@ -56,33 +67,27 @@ public interface RealmProvider extends Provider /* TODO: Remove in future versio
     Stream<RealmModel> getRealmsStream();
 
     /**
-     * @deprecated Use {@link #getRealmsWithProviderTypeStream(Class) getRealmsWithProviderTypeStream} instead.
-     */
-    @Deprecated
-    default List<RealmModel> getRealmsWithProviderType(Class<?> type) {
-        return getRealmsWithProviderTypeStream(type).collect(Collectors.toList());
-    }
-
-    /**
-     * Returns realms with the given provider type as a stream.
+     * Returns stream of realms which has component with the given provider type.
      * @param type {@code Class<?>} Type of the provider.
      * @return Stream of {@link RealmModel}. Never returns {@code null}.
      */
     Stream<RealmModel> getRealmsWithProviderTypeStream(Class<?> type);
 
-
+    /**
+     * Removes realm with the given id.
+     * @param id of realm.
+     * @return {@code true} if the realm was successfully removed.
+     */
     boolean removeRealm(String id);
 
-    ClientInitialAccessModel createClientInitialAccessModel(RealmModel realm, int expiration, int count);
-    ClientInitialAccessModel getClientInitialAccessModel(RealmModel realm, String id);
-    void removeClientInitialAccessModel(RealmModel realm, String id);
-
-    /**
-     * @deprecated Use {@link #listClientInitialAccessStream(RealmModel) listClientInitialAccessStream} instead.
-     */
-    @Deprecated
-    default List<ClientInitialAccessModel> listClientInitialAccess(RealmModel realm) {
-        return listClientInitialAccessStream(realm).collect(Collectors.toList());
+    default ClientInitialAccessModel createClientInitialAccessModel(RealmModel realm, int expiration, int count) {
+        return realm.createClientInitialAccessModel(expiration, count);
+    }
+    default ClientInitialAccessModel getClientInitialAccessModel(RealmModel realm, String id) {
+        return realm.getClientInitialAccessModel(id);
+    }
+    default void removeClientInitialAccessModel(RealmModel realm, String id) {
+        realm.removeClientInitialAccessModel(id);
     }
 
     /**
@@ -90,10 +95,18 @@ public interface RealmProvider extends Provider /* TODO: Remove in future versio
      * @param realm {@link RealmModel} The realm where to list client's initial access.
      * @return Stream of {@link ClientInitialAccessModel}. Never returns {@code null}.
      */
-    Stream<ClientInitialAccessModel> listClientInitialAccessStream(RealmModel realm);
+    default Stream<ClientInitialAccessModel> listClientInitialAccessStream(RealmModel realm) {
+        return realm.getClientInitialAccesses();
+    }
 
+    /**
+     * Removes all expired client initial accesses from all realms.
+     */
     void removeExpiredClientInitialAccess();
-    void decreaseRemainingCount(RealmModel realm, ClientInitialAccessModel clientInitialAccess); // Separate provider method to ensure we decrease remainingCount atomically instead of doing classic update
+    
+    default void decreaseRemainingCount(RealmModel realm, ClientInitialAccessModel clientInitialAccess) { // Separate provider method to ensure we decrease remainingCount atomically instead of doing classic update
+        realm.decreaseRemainingCount(clientInitialAccess);
+    }
 
     void saveLocalizationText(RealmModel realm, String locale, String key, String text);
 
@@ -110,6 +123,30 @@ public interface RealmProvider extends Provider /* TODO: Remove in future versio
     // The methods below are going to be removed in future version of Keycloak
     // Sadly, we have to copy-paste the declarations from the respective interfaces
     // including the "default" body to be able to add a note on deprecation
+
+    /**
+     * @deprecated Use {@link #getRealmsStream() getRealmsStream} instead.
+     */
+    @Deprecated
+    default List<RealmModel> getRealms() {
+        return getRealmsStream().collect(Collectors.toList());
+    }
+
+    /**
+     * @deprecated Use {@link #getRealmsWithProviderTypeStream(Class) getRealmsWithProviderTypeStream} instead.
+     */
+    @Deprecated
+    default List<RealmModel> getRealmsWithProviderType(Class<?> type) {
+        return getRealmsWithProviderTypeStream(type).collect(Collectors.toList());
+    }
+
+    /**
+     * @deprecated Use {@link #listClientInitialAccessStream(RealmModel) listClientInitialAccessStream} instead.
+     */
+    @Deprecated
+    default List<ClientInitialAccessModel> listClientInitialAccess(RealmModel realm) {
+        return listClientInitialAccessStream(realm).collect(Collectors.toList());
+    }
 
     /**
      * @deprecated Use the corresponding method from {@link ClientProvider}. */
@@ -170,6 +207,17 @@ public interface RealmProvider extends Provider /* TODO: Remove in future versio
      * @deprecated Use the corresponding method from {@link ClientProvider}. */
     @Override
     long getClientsCount(RealmModel realm);
+
+    /**
+     * @deprecated Use the corresponding method from {@link ClientScopeProvider}. */
+    default ClientScopeModel getClientScopeById(String id, RealmModel realm) {
+        return getClientScopeById(realm, id);
+    }
+
+    /**
+     * @deprecated Use the corresponding method from {@link ClientScopeProvider}. */
+    @Override
+    ClientScopeModel getClientScopeById(RealmModel realm, String id);
 
     //Role-related methods
     /**

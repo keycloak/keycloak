@@ -18,12 +18,12 @@
 <!--  See src/resources/configuration/ReadMe.txt for how the configuration assembly works -->
 <config default-supplement="default">
     <extension-module>org.jboss.as.clustering.infinispan</extension-module>
-    <subsystem xmlns="urn:jboss:domain:infinispan:11.0">
+    <subsystem xmlns="urn:jboss:domain:infinispan:12.0">
         <?CACHE-CONTAINERS?>
     </subsystem>
     <supplement name="default">
         <replacement placeholder="CACHE-CONTAINERS">
-            <cache-container name="keycloak" module="org.keycloak.keycloak-model-infinispan">
+            <cache-container name="keycloak" modules="org.keycloak.keycloak-model-infinispan">
                 <local-cache name="realms">
                     <heap-memory size="10000"/>
                 </local-cache>
@@ -49,12 +49,12 @@
                     <expiration max-idle="-1" interval="300000"/>
                 </local-cache>
             </cache-container>
-            <cache-container name="server" default-cache="default" module="org.wildfly.clustering.server">
+            <cache-container name="server" default-cache="default" modules="org.wildfly.clustering.server">
                 <local-cache name="default">
                     <transaction mode="BATCH"/>
                 </local-cache>
             </cache-container>
-            <cache-container name="web" default-cache="passivation" module="org.wildfly.clustering.web.infinispan">
+            <cache-container name="web" default-cache="passivation" modules="org.wildfly.clustering.web.infinispan">
                 <local-cache name="passivation">
                     <locking isolation="REPEATABLE_READ"/>
                     <transaction mode="BATCH"/>
@@ -66,14 +66,14 @@
                 </local-cache>
                 <local-cache name="routing"/>
             </cache-container>
-            <cache-container name="ejb" aliases="sfsb" default-cache="passivation" module="org.wildfly.clustering.ejb.infinispan">
+            <cache-container name="ejb" aliases="sfsb" default-cache="passivation" modules="org.wildfly.clustering.ejb.infinispan">
                 <local-cache name="passivation">
                     <locking isolation="REPEATABLE_READ"/>
                     <transaction mode="BATCH"/>
                     <file-store passivation="true" purge="false"/>
                 </local-cache>
             </cache-container>
-            <cache-container name="hibernate" module="org.infinispan.hibernate-cache">
+            <cache-container name="hibernate" modules="org.infinispan.hibernate-cache">
                 <local-cache name="entity">
                     <heap-memory size="10000"/>
                     <expiration max-idle="100000"/>
@@ -88,7 +88,7 @@
     </supplement>
     <supplement name="ha">
         <replacement placeholder="CACHE-CONTAINERS">
-            <cache-container name="keycloak" module="org.keycloak.keycloak-model-infinispan">
+            <cache-container name="keycloak" modules="org.keycloak.keycloak-model-infinispan">
                 <transport lock-timeout="60000"/>
                 <local-cache name="realms">
                     <heap-memory size="10000"/>
@@ -96,32 +96,46 @@
                 <local-cache name="users">
                     <heap-memory size="10000"/>
                 </local-cache>
-                <distributed-cache name="sessions" owners="1"/>
-                <distributed-cache name="authenticationSessions" owners="1"/>
-                <distributed-cache name="offlineSessions" owners="1"/>
-                <distributed-cache name="clientSessions" owners="1"/>
-                <distributed-cache name="offlineClientSessions" owners="1"/>
-                <distributed-cache name="loginFailures" owners="1"/>
+                <distributed-cache name="sessions" owners="1">
+                    <expiration lifespan="900000000000000000"/>
+                </distributed-cache>
+                <distributed-cache name="authenticationSessions" owners="1">
+                    <expiration lifespan="900000000000000000"/>
+                </distributed-cache>
+                <distributed-cache name="offlineSessions" owners="1">
+                    <expiration lifespan="900000000000000000"/>
+                </distributed-cache>
+                <distributed-cache name="clientSessions" owners="1">
+                    <expiration lifespan="900000000000000000"/>
+                </distributed-cache>
+                <distributed-cache name="offlineClientSessions" owners="1">
+                    <expiration lifespan="900000000000000000"/>
+                </distributed-cache>
+                <distributed-cache name="loginFailures" owners="1">
+                    <expiration lifespan="900000000000000000"/>
+                </distributed-cache>
                 <local-cache name="authorization">
                     <heap-memory size="10000"/>
                 </local-cache>
-                <replicated-cache name="work"/>
+                <replicated-cache name="work">
+                    <expiration lifespan="900000000000000000"/>
+                </replicated-cache>
                 <local-cache name="keys">
                     <heap-memory size="1000"/>
                     <expiration max-idle="3600000"/>
                 </local-cache>
                 <distributed-cache name="actionTokens" owners="2">
                     <heap-memory size="-1"/>
-                    <expiration max-idle="-1" interval="300000"/>
+                    <expiration max-idle="-1" lifespan="900000000000000000" interval="300000"/>
                 </distributed-cache>
             </cache-container>
-            <cache-container name="server" aliases="singleton cluster" default-cache="default" module="org.wildfly.clustering.server">
+            <cache-container name="server" aliases="singleton cluster" default-cache="default" modules="org.wildfly.clustering.server">
                 <transport lock-timeout="60000"/>
                 <replicated-cache name="default">
                     <transaction mode="BATCH"/>
                 </replicated-cache>
             </cache-container>
-            <cache-container name="web" default-cache="dist" module="org.wildfly.clustering.web.infinispan">
+            <cache-container name="web" default-cache="dist" modules="org.wildfly.clustering.web.infinispan">
                 <transport lock-timeout="60000"/>
                 <replicated-cache name="sso">
                     <locking isolation="REPEATABLE_READ"/>
@@ -134,7 +148,7 @@
                 </distributed-cache>
                 <distributed-cache name="routing"/>
             </cache-container>
-            <cache-container name="ejb" aliases="sfsb" default-cache="dist" module="org.wildfly.clustering.ejb.infinispan">
+            <cache-container name="ejb" aliases="sfsb" default-cache="dist" modules="org.wildfly.clustering.ejb.infinispan">
                 <transport lock-timeout="60000"/>
                 <distributed-cache name="dist">
                     <locking isolation="REPEATABLE_READ"/>
@@ -142,7 +156,7 @@
                     <file-store/>
                 </distributed-cache>
             </cache-container>
-            <cache-container name="hibernate" module="org.infinispan.hibernate-cache">
+            <cache-container name="hibernate" modules="org.infinispan.hibernate-cache">
                 <transport lock-timeout="60000"/>
                 <local-cache name="local-query">
                     <heap-memory size="10000"/>

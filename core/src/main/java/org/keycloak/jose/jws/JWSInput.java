@@ -18,6 +18,7 @@
 package org.keycloak.jose.jws;
 
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.jose.JOSE;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
@@ -27,7 +28,7 @@ import java.nio.charset.StandardCharsets;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class JWSInput {
+public class JWSInput implements JOSE {
     String wireString;
     String encodedHeader;
     String encodedContent;
@@ -88,13 +89,6 @@ public class JWSInput {
 
     public byte[] getSignature() {
         return signature;
-    }
-
-    public boolean verify(String key) {
-        if (header.getAlgorithm().getProvider() == null) {
-            throw new RuntimeException("signing algorithm not supported");
-        }
-        return header.getAlgorithm().getProvider().verify(this, key);
     }
 
     public <T> T readJsonContent(Class<T> type) throws JWSInputException {

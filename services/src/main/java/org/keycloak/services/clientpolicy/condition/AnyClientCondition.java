@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,37 +17,34 @@
 
 package org.keycloak.services.clientpolicy.condition;
 
-import org.jboss.logging.Logger;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 
-public class AnyClientCondition implements ClientPolicyConditionProvider {
-    private static final Logger logger = Logger.getLogger(AnyClientCondition.class);
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
+public class AnyClientCondition extends AbstractClientPolicyConditionProvider<ClientPolicyConditionConfigurationRepresentation> {
 
-    private final KeycloakSession session;
-    private final ComponentModel componentModel;
+    public AnyClientCondition(KeycloakSession session) {
+        super(session);
+    }
 
-    public AnyClientCondition(KeycloakSession session, ComponentModel componentModel) {
-        this.session = session;
-        this.componentModel = componentModel;
+    @Override
+    public Class<ClientPolicyConditionConfigurationRepresentation> getConditionConfigurationClass() {
+        return ClientPolicyConditionConfigurationRepresentation.class;
+    }
+
+    @Override
+    public String getProviderId() {
+        return AnyClientConditionFactory.PROVIDER_ID;
     }
 
     @Override
     public ClientPolicyVote applyPolicy(ClientPolicyContext context) throws ClientPolicyException {
         return ClientPolicyVote.YES;
-    }
-
-    @Override
-    public String getName() {
-        return componentModel.getName();
-    }
-
-    @Override
-    public String getProviderId() {
-        return componentModel.getProviderId();
     }
 
 }

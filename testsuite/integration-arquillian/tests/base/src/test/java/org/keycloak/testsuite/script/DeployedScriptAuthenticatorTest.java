@@ -85,7 +85,6 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
     @BeforeClass
     public static void verifyEnvironment() {
         ContainerAssume.assumeNotAuthServerUndertow();
-        ContainerAssume.assumeNotAuthServerQuarkus();
     }
 
     @Rule
@@ -122,9 +121,9 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
                 .user(okayUser);
     }
 
-    public void configureFlows() {
+    public void configureFlows() throws Exception {
         deployer.deploy(SCRIPT_DEPLOYMENT_NAME);
-
+        reconnectAdminClient();
         if (testContext.isInitialized()) {
             return;
         }
@@ -139,10 +138,10 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
                 .builtIn(false)
                 .build();
 
-        Response createFlowResponse = testRealm().flows().createFlow(scriptBrowserFlow);
+        Response createFlowResponse = adminClient.realm(TEST_REALM_NAME).flows().createFlow(scriptBrowserFlow);
         Assert.assertEquals(201, createFlowResponse.getStatus());
 
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = adminClient.realm(TEST_REALM_NAME).toRepresentation();
         realm.setBrowserFlow(scriptFlow);
         realm.setDirectGrantFlow(scriptFlow);
         testRealm().update(realm);
@@ -175,15 +174,16 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
     }
 
     @After
-    public void onAfter() {
+    public void onAfter() throws Exception {
         deployer.undeploy(SCRIPT_DEPLOYMENT_NAME);
+        reconnectAdminClient();
     }
 
     /**
      * KEYCLOAK-3491
      */
     @Test
-    public void loginShouldWorkWithScriptAuthenticator() {
+    public void loginShouldWorkWithScriptAuthenticator() throws Exception {
         configureFlows();
 
         loginPage.open();
@@ -197,7 +197,7 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
      * KEYCLOAK-3491
      */
     @Test
-    public void loginShouldFailWithScriptAuthenticator() {
+    public void loginShouldFailWithScriptAuthenticator() throws Exception {
         configureFlows();
 
         loginPage.open();

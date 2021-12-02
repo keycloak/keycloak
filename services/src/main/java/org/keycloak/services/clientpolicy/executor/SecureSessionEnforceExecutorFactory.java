@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,18 +21,20 @@ import java.util.Collections;
 import java.util.List;
 
 import org.keycloak.Config.Scope;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public class SecureSessionEnforceExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
-    public static final String PROVIDER_ID = "secure-session-enforce-executor";
+    public static final String PROVIDER_ID = "secure-session";
 
     @Override
-    public ClientPolicyExecutorProvider create(KeycloakSession session, ComponentModel model) {
-        return new SecureSessionEnforceExecutor(session, model);
+    public ClientPolicyExecutorProvider create(KeycloakSession session) {
+        return new SecureSessionEnforceExecutor(session);
     }
 
     @Override
@@ -54,7 +56,7 @@ public class SecureSessionEnforceExecutorFactory implements ClientPolicyExecutor
 
     @Override
     public String getHelpText() {
-        return "To prevent CSRF, it refuses the client's authorization request which lacks nonce in OIDC flow or state in OAuth2 grant.";
+        return "To prevent CSRF, it refuses the client's authorization request which lacks 'nonce' parameter in OIDC flow or 'state' parameter in OAuth2 grant.";
     }
 
     @Override

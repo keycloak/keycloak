@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,24 +23,46 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RoleModel;
+import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 
-public class ClientRolesCondition implements ClientPolicyConditionProvider {
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
+public class ClientRolesCondition extends AbstractClientPolicyConditionProvider<ClientRolesCondition.Configuration> {
+
     private static final Logger logger = Logger.getLogger(ClientRolesCondition.class);
 
-    private final KeycloakSession session;
-    private final ComponentModel componentModel;
+    public ClientRolesCondition(KeycloakSession session) {
+        super(session);
+    }
 
-    public ClientRolesCondition(KeycloakSession session, ComponentModel componentModel) {
-        this.session = session;
-        this.componentModel = componentModel;
+    @Override
+    public Class<Configuration> getConditionConfigurationClass() {
+        return Configuration.class;
+    }
+
+    public static class Configuration extends ClientPolicyConditionConfigurationRepresentation {
+
+        protected List<String> roles;
+
+        public List<String> getRoles() {
+            return roles;
+        }
+
+        public void setRoles(List<String> roles) {
+            this.roles = roles;
+        }
+    }
+
+    @Override
+    public String getProviderId() {
+        return ClientRolesConditionFactory.PROVIDER_ID;
     }
 
     @Override
@@ -48,11 +70,15 @@ public class ClientRolesCondition implements ClientPolicyConditionProvider {
         switch (context.getEvent()) {
             case AUTHORIZATION_REQUEST:
             case TOKEN_REQUEST:
+            case SERVICE_ACCOUNT_TOKEN_REQUEST:
             case TOKEN_REFRESH:
             case TOKEN_REVOKE:
             case TOKEN_INTROSPECT:
             case USERINFO_REQUEST:
             case LOGOUT_REQUEST:
+            case BACKCHANNEL_AUTHENTICATION_REQUEST:
+            case BACKCHANNEL_TOKEN_REQUEST:
+            case PUSHED_AUTHORIZATION_REQUEST:
                 if (isRolesMatched(session.getContext().getClient())) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
             default:
@@ -70,35 +96,16 @@ public class ClientRolesCondition implements ClientPolicyConditionProvider {
         Set<String> clientRoles = client.getRolesStream().map(RoleModel::getName).collect(Collectors.toSet());
 
         if (logger.isTraceEnabled()) {
-            clientRoles.stream().forEach(i -> ClientPolicyLogger.log(logger, "client role assigned = " + i));
-            rolesForMatching.stream().forEach(i -> ClientPolicyLogger.log(logger, "client role for matching = " + i));
+            clientRoles.forEach(i -> logger.tracev("client role assigned = {0}", i));
+            rolesForMatching.forEach(i -> logger.tracev("client role for matching = {0}", i));
         }
 
-        boolean isMatched = rolesForMatching.removeAll(clientRoles);
-        if (isMatched) {
-            ClientPolicyLogger.log(logger, "role matched.");
-        } else {
-            ClientPolicyLogger.log(logger, "role unmatched.");
-        }
-
-        return isMatched;
+        return rolesForMatching.removeAll(clientRoles);  // may change rolesForMatching so that it has needed to be instantiated.
     }
 
     private Set<String> getRolesForMatching() {
-        if (componentModel.getConfig() == null) return null;
-        List<String> roles = componentModel.getConfig().get(ClientRolesConditionFactory.ROLES);
-        if (roles == null) return null;
-        return new HashSet<>(roles);
-    }
-
-    @Override
-    public String getName() {
-        return componentModel.getName();
-    }
-
-    @Override
-    public String getProviderId() {
-        return componentModel.getProviderId();
+        if (configuration.getRoles() == null) return null;
+        return new HashSet<>(configuration.getRoles());
     }
 
 }

@@ -210,6 +210,18 @@
                     <input class="form-control" id="clientSecret" kc-password ng-model="identityProvider.config.clientSecret" ng-required="identityProvider.config.clientAuthMethod != 'private_key_jwt'">
                 </div>
                 <kc-tooltip>{{:: 'client-secret.tooltip' | translate}}</kc-tooltip>
+            </div>            
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="clientAssertionSigningAlg"><span data-ng-show="identityProvider.config.clientAuthMethod == 'private_key_jwt' || identityProvider.config.clientAuthMethod == 'client_secret_jwt'" class="required">*</span> {{:: 'client-assertion-signing-algorithm' | translate}}</label>
+                <div class="col-md-6">
+                    <select class="form-control" id="clientAssertionSigningAlg" ng-required="identityProvider.config.clientAuthMethod == 'private_key_jwt' || identityProvider.config.clientAuthMethod == 'client_secret_jwt'"
+                        ng-model="identityProvider.config.clientAssertionSigningAlg">
+                        <option value=""></option>
+                        <option ng-repeat="provider in serverInfo.listProviderIds('signature')" value="{{provider}}">
+                            {{provider}}</option>
+                    </select>
+                </div>
+                <kc-tooltip>{{:: 'client-assertion-signing-algorithm.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="issuer">{{:: 'issuer' | translate}} </label>
@@ -296,7 +308,7 @@
                 <div class="col-md-6">
                     <input ng-model="identityProvider.config.pkceEnabled" id="pkceEnabled" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
-                <kc-tooltip>{{:: 'identity-provider.pkce-enabled.tooltip' | translate}}</kc-tooltip>
+                <kc-tooltip>{{:: 'pkce-enabled.tooltip' | translate}}</kc-tooltip>
             </div>
 
             <div class="form-group clearfix" data-ng-hide="identityProvider.config.pkceEnabled == 'false'">

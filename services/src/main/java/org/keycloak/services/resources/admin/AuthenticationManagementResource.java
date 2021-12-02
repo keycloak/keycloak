@@ -406,7 +406,7 @@ public class AuthenticationManagementResource {
 
         AuthenticationFlowModel parentFlow = realm.getFlowByAlias(flowAlias);
         if (parentFlow == null) {
-            return ErrorResponse.error("Parent flow doesn't exists", Response.Status.BAD_REQUEST);
+            return ErrorResponse.error("Parent flow doesn't exist", Response.Status.BAD_REQUEST);
         }
         String alias = data.get("alias");
         String type = data.get("type");
@@ -462,7 +462,7 @@ public class AuthenticationManagementResource {
 
         AuthenticationFlowModel parentFlow = realm.getFlowByAlias(flowAlias);
         if (parentFlow == null) {
-            throw new BadRequestException("Parent flow doesn't exists");
+            throw new BadRequestException("Parent flow doesn't exist");
         }
         if (parentFlow.isBuiltIn()) {
             throw new BadRequestException("It is illegal to add execution to a built in flow");

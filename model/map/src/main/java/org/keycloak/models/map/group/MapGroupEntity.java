@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,15 +17,56 @@
 
 package org.keycloak.models.map.group;
 
-import java.util.UUID;
+import org.keycloak.models.map.annotations.GenerateEntityImplementations;
+import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.UpdatableEntity;
 
-public class MapGroupEntity extends AbstractGroupEntity<UUID> {
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-    protected MapGroupEntity() {
-        super();
+@GenerateEntityImplementations(
+        inherits = "org.keycloak.models.map.group.MapGroupEntity.AbstractGroupEntity"
+)
+@DeepCloner.Root
+public interface MapGroupEntity extends UpdatableEntity, AbstractEntity {
+
+    public abstract class AbstractGroupEntity extends UpdatableEntity.Impl implements MapGroupEntity {
+
+        private String id;
+
+        @Override
+        public String getId() {
+            return this.id;
+        }
+
+        @Override
+        public void setId(String id) {
+            if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+            this.id = id;
+            this.updated |= id != null;
+        }
+
     }
 
-    public MapGroupEntity(UUID id, String realmId) {
-        super(id, realmId);
-    }
+    Map<String, List<String>> getAttributes();
+    void setAttributes(Map<String, List<String>> attributes);
+    List<String> getAttribute(String name);
+    void setAttribute(String name, List<String> value);
+    void removeAttribute(String name);
+
+    String getName();
+    void setName(String name);
+
+    String getParentId();
+    void setParentId(String parentId);
+
+    String getRealmId();
+    void setRealmId(String realmId);
+
+    Set<String> getGrantedRoles();
+    void setGrantedRoles(Set<String> grantedRoles);
+    void addGrantedRole(String role);
+    void removeGrantedRole(String role);
 }

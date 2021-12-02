@@ -16,7 +16,6 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.common.Profile;
-import org.keycloak.common.constants.GenericConstants;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -24,13 +23,16 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.LoginPage;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 
 @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class SSSDTest extends AbstractKeycloakTest {
@@ -104,9 +106,9 @@ public class SSSDTest extends AbstractKeycloakTest {
         log.debug("Testing invalid password for user " + username);
 
         profilePage.open();
-        Assert.assertEquals("Browser should be on login page now", "Sign in to " + REALM_NAME, driver.getTitle());
+        assertThat("Browser should be on login page now", driver.getTitle(), is("Sign in to " + REALM_NAME));
         accountLoginPage.login(username, "invalid-password");
-        Assert.assertEquals("Invalid username or password.", accountLoginPage.getInputError());
+        assertThat(accountLoginPage.getInputError(), is("Invalid username or password."));
     }
 
     @Test
@@ -116,10 +118,10 @@ public class SSSDTest extends AbstractKeycloakTest {
         log.debug("Testing disabled user " + username);
 
         profilePage.open();
-        Assert.assertEquals("Browser should be on login page now", "Sign in to " + REALM_NAME, driver.getTitle());
+        assertThat("Browser should be on login page now", driver.getTitle(), is("Sign in to " + REALM_NAME));
         accountLoginPage.login(username, getPassword(username));
 
-        Assert.assertEquals("Invalid username or password.", accountLoginPage.getInputError());
+        assertThat(accountLoginPage.getInputError(), is("Invalid username or password."));
     }
 
     @Test
@@ -129,9 +131,9 @@ public class SSSDTest extends AbstractKeycloakTest {
         log.debug("Testing password for user " + username);
 
         profilePage.open();
-        Assert.assertEquals("Browser should be on login page now", "Sign in to " + REALM_NAME, driver.getTitle());
+        assertThat("Browser should be on login page now", driver.getTitle(), is("Sign in to " + REALM_NAME));
         accountLoginPage.login(username, getPassword(username));
-        Assert.assertTrue(profilePage.isCurrent());
+        assertThat(profilePage.isCurrent(), is(true));
     }
 
     @Test
@@ -140,9 +142,9 @@ public class SSSDTest extends AbstractKeycloakTest {
 
         for (String username : getUsernames()) {
             profilePage.open();
-            Assert.assertEquals("Browser should be on login page now", "Sign in to " + REALM_NAME, driver.getTitle());
+            assertThat("Browser should be on login page now", driver.getTitle(), is("Sign in to " + REALM_NAME));
             accountLoginPage.login(username, getPassword(username));
-            Assert.assertTrue(profilePage.isCurrent());
+            assertThat(profilePage.isCurrent(), is(true));
             verifyUserGroups(username, getGroups(username));
             profilePage.logout();
         }
@@ -153,9 +155,9 @@ public class SSSDTest extends AbstractKeycloakTest {
         log.debug("Testing correct password, but no e-mail provided");
         String username = getUser(NO_EMAIL_USER);
         profilePage.open();
-        Assert.assertEquals("Browser should be on login page now", "Sign in to " + REALM_NAME, driver.getTitle());
+        assertThat("Browser should be on login page now", driver.getTitle(), is("Sign in to " + REALM_NAME));
         accountLoginPage.login(username, getPassword(username));
-        Assert.assertTrue(profilePage.isCurrent());
+        assertThat(profilePage.isCurrent(), is(true));
     }
 
     @Test
@@ -164,32 +166,32 @@ public class SSSDTest extends AbstractKeycloakTest {
 
         profilePage.open();
         String username = getUsername();
-        Assert.assertEquals("Browser should be on login page now", "Sign in to " + REALM_NAME, driver.getTitle());
+        assertThat("Browser should be on login page now", driver.getTitle(), is("Sign in to " + REALM_NAME));
         accountLoginPage.login(username, getPassword(username));
-        Assert.assertTrue(profilePage.isCurrent());
+        assertThat(profilePage.isCurrent(), is(true));
         verifyUserGroups(username, getGroups(username));
 
         int componentsListSize = adminClient.realm(REALM_NAME).components().query().size();
         adminClient.realm(REALM_NAME).components().component(SSSDFederationID).remove();
-        Assert.assertEquals(componentsListSize - 1, adminClient.realm(REALM_NAME).components().query().size());
+        assertThat(adminClient.realm(REALM_NAME).components().query().size(), is(componentsListSize - 1));
     }
 
 
     @Test
-    public void changeReadOnlyProfile() throws Exception {
+    public void changeReadOnlyProfile() {
 
         String username = getUsername();
         profilePage.open();
         accountLoginPage.login(username, getPassword(username));
 
-        Assert.assertEquals(username, profilePage.getUsername());
-        Assert.assertEquals(sssdConfig.getProperty("user." + username + ".firstname"), profilePage.getFirstName());
-        Assert.assertEquals(sssdConfig.getProperty("user." + username + ".lastname"), profilePage.getLastName());
-        Assert.assertEquals(sssdConfig.getProperty("user." + username + ".mail"), profilePage.getEmail());
+        assertThat(profilePage.getUsername(), is(username));
+        assertThat(sssdConfig.getProperty("user." + username + ".firstname"), is(profilePage.getFirstName()));
+        assertThat(sssdConfig.getProperty("user." + username + ".lastname"), is(profilePage.getLastName()));
+        assertThat(sssdConfig.getProperty("user." + username + ".mail"), is(profilePage.getEmail()));
 
         profilePage.updateProfile("New first", "New last", "new@email.com");
 
-        Assert.assertEquals("You can't update your account as it is read-only.", profilePage.getError());
+        assertThat(profilePage.getError(), is("You can't update your account as it is read-only."));
     }
 
     @Test
@@ -199,18 +201,18 @@ public class SSSDTest extends AbstractKeycloakTest {
         accountLoginPage.login(username, getPassword(username));
 
         changePasswordPage.changePassword(getPassword(username), "new-password", "new-password");
-        Assert.assertEquals("You can't update your password as your account is read only.", profilePage.getError());
+        assertThat(profilePage.getError(), is("You can't update your password as your account is read only."));
     }
 
     private void verifyUserGroups(String username, List<String> groups) {
         List<UserRepresentation> users = adminClient.realm(REALM_NAME).users().search(username, 0, 1);
-        Assert.assertTrue("There must be at least one user", users.size() > 0);
-        Assert.assertEquals("Exactly our test user", username, users.get(0).getUsername());
+        assertThat("There must be at least one user", users.size(), greaterThan(0));
+        assertThat("Exactly our test user", users.get(0).getUsername(), is(username));
         List<GroupRepresentation> assignedGroups = adminClient.realm(REALM_NAME).users().get(users.get(0).getId()).groups();
-        Assert.assertEquals("User must have exactly " + groups.size() + " groups", groups.size(), assignedGroups.size());
+        assertThat("User must have exactly " + groups.size() + " groups", assignedGroups.size(), is(groups.size()));
 
         for (GroupRepresentation group : assignedGroups) {
-            Assert.assertTrue(groups.contains(group.getName()));
+            assertThat(groups.contains(group.getName()), is(true));
         }
     }
 

@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oidc.mappers;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.jboss.logging.Logger;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
@@ -59,11 +60,81 @@ public class OIDCAttributeMapperHelper {
     public static final String INCLUDE_IN_USERINFO_LABEL = "includeInUserInfo.label";
     public static final String INCLUDE_IN_USERINFO_HELP_TEXT = "includeInUserInfo.tooltip";
 
+    private static final Logger logger = Logger.getLogger(OIDCAttributeMapperHelper.class);
+
+    /**
+     * Interface for a token property setter in a class T that accept claims.
+     * @param <T> The token class for the property
+     */
+    private static interface PropertySetter<T> {
+        void set(String claim, String mapperName, T token, Object value);
+    }
+
+    /**
+     * Setters for claims in IDToken/AccessToken that will not use the other claims map.
+     */
+    private static final Map<String, PropertySetter<IDToken>> tokenPropertySetters;
+
+    /**
+     * Setters for claims in AccessTokenResponse that will not use the other claims map.
+     */
+    private static final Map<String, PropertySetter<AccessTokenResponse>> responsePropertySetters;
+
+    static {
+        // allowed claims that can be set in the IDToken/AccessToken object
+        Map<String, PropertySetter<IDToken>> tmpToken = new HashMap<>();
+        tmpToken.put("sub", (claim, mapperName, token, value) -> {
+            token.setSubject(value.toString());
+        });
+        tmpToken.put("azp", (claim, mapperName, token, value) -> {
+            token.issuedFor(value.toString());
+        });
+        tmpToken.put("aud", (claim, mapperName, token, value) -> {
+            if (value instanceof Collection) {
+                String[] audiences = ((Collection<?>) value).stream().map(Object::toString).toArray(String[]::new);
+                token.audience(audiences);
+            } else {
+                token.audience(value.toString());
+            }
+        });
+        // not allowed claims that are set by the server and can generate duplicates
+        PropertySetter<IDToken> notAllowedInToken = (claim, mapperName, token, value) -> {
+            logger.warnf("Claim '%s' is non-modifiable in IDToken. Ignoring the assignment for mapper '%s'.", claim, mapperName);
+        };
+        tmpToken.put("jti", notAllowedInToken);
+        tmpToken.put("typ", notAllowedInToken);
+        tmpToken.put("iat", notAllowedInToken);
+        tmpToken.put("exp", notAllowedInToken);
+        tmpToken.put("iss", notAllowedInToken);
+        tmpToken.put("scope", notAllowedInToken);
+        tmpToken.put(IDToken.NONCE, notAllowedInToken);
+        tmpToken.put(IDToken.ACR, notAllowedInToken);
+        tmpToken.put(IDToken.AUTH_TIME, notAllowedInToken);
+        tmpToken.put(IDToken.SESSION_STATE, notAllowedInToken);
+        tokenPropertySetters = Collections.unmodifiableMap(tmpToken);
+
+        // in the AccessTokenResponse do not allow modifications for server assigned properties
+        Map<String, PropertySetter<AccessTokenResponse>> tmpResponse = new HashMap<>();
+        PropertySetter<AccessTokenResponse> notAllowedInResponse = (claim, mapperName, token, value) -> {
+            logger.warnf("Claim '%s' is non-modifiable in AccessTokenResponse. Ignoring the assignment for mapper '%s'.", claim, mapperName);
+        };
+        tmpResponse.put("access_token", notAllowedInResponse);
+        tmpResponse.put("token_type", notAllowedInResponse);
+        tmpResponse.put("session_state", notAllowedInResponse);
+        tmpResponse.put("expires_in", notAllowedInResponse);
+        tmpResponse.put("id_token", notAllowedInResponse);
+        tmpResponse.put("refresh_token", notAllowedInResponse);
+        tmpResponse.put("refresh_expires_in", notAllowedInResponse);
+        tmpResponse.put("not-before-policy", notAllowedInResponse);
+        tmpResponse.put("scope", notAllowedInResponse);
+        responsePropertySetters = Collections.unmodifiableMap(tmpResponse);
+    }
+
     public static Object mapAttributeValue(ProtocolMapperModel mappingModel, Object attributeValue) {
         if (attributeValue == null) return null;
 
         if (attributeValue instanceof Collection) {
-            Collection<Object> valueAsList = (Collection<Object>) attributeValue;
+            Collection<?> valueAsList = (Collection<?>) attributeValue;
             if (valueAsList.isEmpty()) return null;
 
             if (isMultivalued(mappingModel)) {
@@ -100,34 +171,34 @@ public class OIDCAttributeMapperHelper {
                 Boolean booleanObject = getBoolean(attributeValue);
                 if (booleanObject != null) return booleanObject;
                 if (attributeValue instanceof List) {
-                    return transform((List<Boolean>) attributeValue, OIDCAttributeMapperHelper::getBoolean);
+                    return transform((List<?>) attributeValue, OIDCAttributeMapperHelper::getBoolean);
                 }
                 throw new RuntimeException("cannot map type for token claim");
             case "String":
                 if (attributeValue instanceof String) return attributeValue;
                 if (attributeValue instanceof List) {
-                    return transform((List<String>) attributeValue, OIDCAttributeMapperHelper::getString);
+                    return transform((List<?>) attributeValue, OIDCAttributeMapperHelper::getString);
                 }
                 return attributeValue.toString();
             case "long":
                 Long longObject = getLong(attributeValue);
                 if (longObject != null) return longObject;
                 if (attributeValue instanceof List) {
-                    return transform((List<Long>) attributeValue, OIDCAttributeMapperHelper::getLong);
+                    return transform((List<?>) attributeValue, OIDCAttributeMapperHelper::getLong);
                 }
                 throw new RuntimeException("cannot map type for token claim");
             case "int":
                 Integer intObject = getInteger(attributeValue);
                 if (intObject != null) return intObject;
                 if (attributeValue instanceof List) {
-                    return transform((List<Integer>) attributeValue, OIDCAttributeMapperHelper::getInteger);
+                    return transform((List<?>) attributeValue, OIDCAttributeMapperHelper::getInteger);
                 }
                 throw new RuntimeException("cannot map type for token claim");
             case "JSON":
                 JsonNode jsonNodeObject = getJsonNode(attributeValue);
                 if (jsonNodeObject != null) return jsonNodeObject;
                 if (attributeValue instanceof List) {
-                    return transform((List<JsonNode>) attributeValue, OIDCAttributeMapperHelper::getJsonNode);
+                    return transform((List<?>) attributeValue, OIDCAttributeMapperHelper::getJsonNode);
                 }
                 throw new RuntimeException("cannot map type for token claim");
             default:
@@ -159,11 +230,19 @@ public class OIDCAttributeMapperHelper {
     }
     
     private static JsonNode getJsonNode(Object attributeValue) {
-        if (attributeValue instanceof JsonNode) return (JsonNode) attributeValue;
+        if (attributeValue instanceof JsonNode){
+            return (JsonNode) attributeValue;
+        }
+        if (attributeValue instanceof Map) {
+            try {
+                return JsonSerialization.createObjectNode(attributeValue);
+            } catch (Exception ignore) {
+            }
+        }
         if (attributeValue instanceof String) {
             try {
                 return JsonSerialization.readValue(attributeValue.toString(), JsonNode.class);
-            } catch (Exception ex) {
+            } catch (Exception ignore) {
             }
         }
         return null;
@@ -192,22 +271,49 @@ public class OIDCAttributeMapperHelper {
     }
 
     public static void mapClaim(IDToken token, ProtocolMapperModel mappingModel, Object attributeValue) {
-        mapClaim(mappingModel, attributeValue, token.getOtherClaims());
+        mapClaim(token, mappingModel, attributeValue, tokenPropertySetters, token.getOtherClaims());
     }
 
     public static void mapClaim(AccessTokenResponse token, ProtocolMapperModel mappingModel, Object attributeValue) {
-        mapClaim(mappingModel, attributeValue, token.getOtherClaims());
+        mapClaim(token, mappingModel, attributeValue, responsePropertySetters, token.getOtherClaims());
     }
 
-    private static void mapClaim(ProtocolMapperModel mappingModel, Object attributeValue, Map<String, Object> jsonObject) {
+    private static <T> void mapClaim(T token, ProtocolMapperModel mappingModel, Object attributeValue,
+            Map<String, PropertySetter<T>> setters, Map<String, Object> jsonObject) {
         attributeValue = mapAttributeValue(mappingModel, attributeValue);
-        if (attributeValue == null) return;
+        if (attributeValue == null) {
+            return;
+        }
 
         String protocolClaim = mappingModel.getConfig().get(TOKEN_CLAIM_NAME);
         if (protocolClaim == null) {
             return;
         }
+
         List<String> split = splitClaimPath(protocolClaim);
+        if (split.isEmpty()) {
+            return;
+        }
+
+        String firstClaim = split.iterator().next();
+        PropertySetter<T> setter = setters.get(firstClaim);
+        if (setter != null) {
+            // assign using the property setters over the token
+            if (split.size() > 1) {
+                logger.warnf("Claim '%s' contains more than one level in a setter. Ignoring the assignment for mapper '%s'.",
+                        protocolClaim, mappingModel.getName());
+                return;
+            }
+
+            setter.set(protocolClaim, mappingModel.getName(), token, attributeValue);
+            return;
+        }
+
+        // map value to the other claims map
+        mapClaim(split, attributeValue, jsonObject);
+    }
+
+    private static void mapClaim(List<String> split, Object attributeValue, Map<String, Object> jsonObject) {
         final int length = split.size();
         int i = 0;
         for (String component : split) {
@@ -245,7 +351,7 @@ public class OIDCAttributeMapperHelper {
         mapper.setName(name);
         mapper.setProtocolMapper(mapperId);
         mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Map<String, String> config = new HashMap<String, String>();
+        Map<String, String> config = new HashMap<>();
         config.put(ProtocolMapperUtils.USER_ATTRIBUTE, userAttribute);
         config.put(TOKEN_CLAIM_NAME, tokenClaimName);
         config.put(JSON_TYPE, claimType);
@@ -303,7 +409,7 @@ public class OIDCAttributeMapperHelper {
         ProviderConfigProperty property = new ProviderConfigProperty();
         property.setName(JSON_TYPE);
         property.setLabel(JSON_TYPE);
-        List<String> types = new ArrayList(5);
+        List<String> types = new ArrayList<>(5);
         types.add("String");
         types.add("long");
         types.add("int");

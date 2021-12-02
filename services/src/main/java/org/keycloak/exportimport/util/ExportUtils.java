@@ -41,6 +41,7 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.credential.CredentialModel;
@@ -87,7 +88,7 @@ public class ExportUtils {
     }
 
     public static RealmRepresentation exportRealm(KeycloakSession session, RealmModel realm, ExportOptions options, boolean internal) {
-        RealmRepresentation rep = ModelToRepresentation.toRepresentation(realm, internal);
+        RealmRepresentation rep = ModelToRepresentation.toRepresentation(session, realm, internal);
         ModelToRepresentation.exportAuthenticationFlows(realm, rep);
         ModelToRepresentation.exportRequiredActions(realm, rep);
 
@@ -105,12 +106,12 @@ public class ExportUtils {
         List<ClientModel> clients = Collections.emptyList();
 
         if (options.isClientsIncluded()) {
-            clients = realm.getClientsStream().collect(Collectors.toList());
-            List<ClientRepresentation> clientReps = new ArrayList<>();
-            for (ClientModel app : clients) {
-                ClientRepresentation clientRep = exportClient(session, app);
-                clientReps.add(clientRep);
-            }
+            clients = realm.getClientsStream()
+              .filter(c -> { try { c.getClientId(); return true; } catch (Exception ex) { return false; } } )
+              .collect(Collectors.toList());
+            List<ClientRepresentation> clientReps = clients.stream()
+              .map(app -> exportClient(session, app))
+              .collect(Collectors.toList());
             rep.setClients(clientReps);
         }
 
@@ -286,7 +287,9 @@ public class ExportUtils {
     public static ClientRepresentation exportClient(KeycloakSession session, ClientModel client) {
         ClientRepresentation clientRep = ModelToRepresentation.toRepresentation(client, session);
         clientRep.setSecret(client.getSecret());
-        clientRep.setAuthorizationSettings(exportAuthorizationSettings(session,client));
+        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
+            clientRep.setAuthorizationSettings(exportAuthorizationSettings(session, client));
+        }
         return clientRep;
     }
 

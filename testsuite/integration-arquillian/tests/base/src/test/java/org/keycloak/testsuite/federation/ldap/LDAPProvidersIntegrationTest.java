@@ -34,6 +34,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -43,6 +44,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.services.managers.UserStorageSyncManager;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
@@ -58,6 +60,7 @@ import org.keycloak.storage.ldap.mappers.HardcodedLDAPRoleStorageMapper;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPRoleStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
+import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
@@ -1175,5 +1178,56 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         RealmRepresentation realmRepresentation = testRealm().toRepresentation();
         realmRepresentation.setEditUsernameAllowed(allowed);
         testRealm().update(realmRepresentation);
+    }
+
+    @Test
+    public void updateLDAPUsernameTest() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            // Add user to LDAP
+            LDAPObject becky = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), ctx.getRealm(), "beckybecks", "Becky", "Becks", "becky-becks@email.org", null, "123");
+            LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), becky, "Password1");
+        });
+
+        loginSuccessAndLogout("beckybecks", "Password1");
+
+        String origKeycloakUserId = testingClient.server().fetchString(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel testRealm = ctx.getRealm();
+
+            UserModel importedUser = session.userLocalStorage().getUserByUsername(testRealm, "beckybecks");
+
+            // Update user 'beckybecks' in LDAP
+            LDAPObject becky = ctx.getLdapProvider().loadLDAPUserByUsername(testRealm, importedUser.getUsername());
+            // NOTE: Changing LDAP Username directly here
+            String userNameLdapAttributeName = ctx.getLdapProvider().getLdapIdentityStore().getConfig().getUsernameLdapAttribute();
+            becky.setSingleAttribute(userNameLdapAttributeName, "beckyupdated");
+            becky.setSingleAttribute(LDAPConstants.EMAIL, "becky-updated@email.org");
+            ctx.getLdapProvider().getLdapIdentityStore().update(becky);
+            LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), becky, "MyChangedPassword11");
+            return importedUser.getId();
+        });
+
+        loginSuccessAndLogout("beckyupdated", "MyChangedPassword11");
+
+        loginPage.open();
+        loginPage.login("beckybecks", "Password1");
+        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+
+            // The original username is not possible to use as username was changed in LDAP.
+            // However the call to LDAPStorageProvider.loadAndValidateUser shouldn't delete the user just because his username changed in LDAP
+            UserModel user = session.users().getUserByUsername(ctx.getRealm(), "beckybecks");
+            Assert.assertNull(user);
+
+            // Assert user can be found with new username from LDAP. And it is same user as before
+            user = session.users().getUserByUsername(ctx.getRealm(), "beckyupdated");
+            Assert.assertNotNull(user);
+            String newKeycloakUserId = user.getId();
+            // Need to remove double quotes from server response
+            Assert.assertEquals(origKeycloakUserId.replace("\"",""), newKeycloakUserId);
+        });
     }
 }

@@ -147,51 +147,47 @@ class IdentityProviderPermissions implements  IdentityProviderPermissionManageme
 
     @Override
     public boolean canExchangeTo(ClientModel authorizedClient, IdentityProviderModel to) {
-
-        if (!authorizedClient.equals(to)) {
-            ResourceServer server = root.initializeRealmResourceServer();
-            if (server == null) {
-                logger.debug("No resource server set up for target idp");
-                return false;
-            }
-
-            Resource resource =  authz.getStoreFactory().getResourceStore().findByName(getResourceName(to), server.getId());
-            if (resource == null) {
-                logger.debug("No resource object set up for target idp");
-                return false;
-            }
-
-            Policy policy = authz.getStoreFactory().getPolicyStore().findByName(getExchangeToPermissionName(to), server.getId());
-            if (policy == null) {
-                logger.debug("No permission object set up for target idp");
-                return false;
-            }
-
-            Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
-            // if no policies attached to permission then just do default behavior
-            if (associatedPolicies == null || associatedPolicies.isEmpty()) {
-                logger.debug("No policies set up for permission on target idp");
-                return false;
-            }
-
-            Scope scope = exchangeToScope(server);
-            if (scope == null) {
-                logger.debug(TOKEN_EXCHANGE + " not initialized");
-                return false;
-            }
-            ClientModelIdentity identity = new ClientModelIdentity(session, authorizedClient);
-            EvaluationContext context = new DefaultEvaluationContext(identity, session) {
-                @Override
-                public Map<String, Collection<String>> getBaseAttributes() {
-                    Map<String, Collection<String>> attributes = super.getBaseAttributes();
-                    attributes.put("kc.client.id", Arrays.asList(authorizedClient.getClientId()));
-                    return attributes;
-                }
-
-            };
-            return root.evaluatePermission(resource, server, context, scope);
+        ResourceServer server = root.initializeRealmResourceServer();
+        if (server == null) {
+            logger.debug("No resource server set up for target idp");
+            return false;
         }
-        return true;
+
+        Resource resource =  authz.getStoreFactory().getResourceStore().findByName(getResourceName(to), server.getId());
+        if (resource == null) {
+            logger.debug("No resource object set up for target idp");
+            return false;
+        }
+
+        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(getExchangeToPermissionName(to), server.getId());
+        if (policy == null) {
+            logger.debug("No permission object set up for target idp");
+            return false;
+        }
+
+        Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
+        // if no policies attached to permission then just do default behavior
+        if (associatedPolicies == null || associatedPolicies.isEmpty()) {
+            logger.debug("No policies set up for permission on target idp");
+            return false;
+        }
+
+        Scope scope = exchangeToScope(server);
+        if (scope == null) {
+            logger.debug(TOKEN_EXCHANGE + " not initialized");
+            return false;
+        }
+        ClientModelIdentity identity = new ClientModelIdentity(session, authorizedClient);
+        EvaluationContext context = new DefaultEvaluationContext(identity, session) {
+            @Override
+            public Map<String, Collection<String>> getBaseAttributes() {
+                Map<String, Collection<String>> attributes = super.getBaseAttributes();
+                attributes.put("kc.client.id", Arrays.asList(authorizedClient.getClientId()));
+                return attributes;
+            }
+
+        };
+        return root.evaluatePermission(resource, server, context, scope);
     }
 
     @Override

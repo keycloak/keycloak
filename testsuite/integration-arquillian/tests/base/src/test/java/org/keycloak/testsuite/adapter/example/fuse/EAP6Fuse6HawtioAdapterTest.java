@@ -32,7 +32,6 @@ import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -48,7 +47,6 @@ import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.WaitUtils;
 
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -81,6 +79,7 @@ public class EAP6Fuse6HawtioAdapterTest extends AbstractExampleAdapterTest imple
     public static void enabled() {
         Assume.assumeFalse(System.getProperty("os.name").startsWith("Windows"));
         ContainerAssume.assumeNotAppServerSSL();
+        ContainerAssume.assumeAuthServerSSL();
     }
 
     @Before

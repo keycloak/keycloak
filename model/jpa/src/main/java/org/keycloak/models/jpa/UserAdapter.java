@@ -18,6 +18,7 @@
 package org.keycloak.models.jpa;
 
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -316,6 +317,9 @@ public class UserAdapter implements UserModel.Streams, JpaModel<UserEntity> {
 
     @Override
     public void setEmail(String email) {
+        if (ObjectUtil.isBlank(email)) {
+            email = null;
+        }
         email = KeycloakModelUtils.toLowerCaseSafe(email);
         user.setEmail(email, realm.isDuplicateEmailsAllowed());
     }
@@ -442,7 +446,7 @@ public class UserAdapter implements UserModel.Streams, JpaModel<UserEntity> {
 
     @Override
     public void grantRole(RoleModel role) {
-        if (hasRole(role)) return;
+        if (hasDirectRole(role)) return;
         grantRoleImpl(role);
     }
 

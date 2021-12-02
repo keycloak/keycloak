@@ -141,7 +141,9 @@ public class PartialExportTest extends AbstractAdminTest {
 
         // Client secret
         for (ClientRepresentation client: rep.getClients()) {
-            Assert.assertEquals("Client secret masked", ComponentRepresentation.SECRET_VALUE, client.getSecret());
+            if (Boolean.FALSE.equals(client.isPublicClient()) && Boolean.FALSE.equals(client.isBearerOnly())) {
+                Assert.assertEquals("Client secret masked", ComponentRepresentation.SECRET_VALUE, client.getSecret());
+            }
         }
 
         // IdentityProvider clientSecret

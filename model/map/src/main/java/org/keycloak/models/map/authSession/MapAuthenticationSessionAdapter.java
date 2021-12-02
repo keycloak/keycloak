@@ -37,7 +37,7 @@ public class MapAuthenticationSessionAdapter implements AuthenticationSessionMod
     private final KeycloakSession session;
     private final MapRootAuthenticationSessionAdapter parent;
     private final String tabId;
-    private MapAuthenticationSessionEntity entity;
+    private final MapAuthenticationSessionEntity entity;
 
     public MapAuthenticationSessionAdapter(KeycloakSession session, MapRootAuthenticationSessionAdapter parent,
                                            String tabId, MapAuthenticationSessionEntity entity) {

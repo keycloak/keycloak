@@ -18,9 +18,15 @@
 package org.keycloak.representations.idm;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.jboss.logging.Logger;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.util.JsonSerialization;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -32,6 +38,9 @@ import java.util.Set;
  * @version $Revision: 1 $
  */
 public class RealmRepresentation {
+
+    private static final Logger logger = Logger.getLogger(RealmRepresentation.class);
+
     protected String id;
     protected String realm;
     protected String displayName;
@@ -59,6 +68,8 @@ public class RealmRepresentation {
     protected Integer accessCodeLifespanLogin;
     protected Integer actionTokenGeneratedByAdminLifespan;
     protected Integer actionTokenGeneratedByUserLifespan;
+    protected Integer oauth2DeviceCodeLifespan;
+    protected Integer oauth2DevicePollingInterval;
     protected Boolean enabled;
     protected String sslRequired;
     @Deprecated
@@ -138,6 +149,14 @@ public class RealmRepresentation {
     protected Integer webAuthnPolicyPasswordlessCreateTimeout;
     protected Boolean webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister;
     protected List<String> webAuthnPolicyPasswordlessAcceptableAaguids;
+
+    // Client Policies/Profiles
+
+    @JsonProperty("clientProfiles")
+    protected JsonNode clientProfiles;
+
+    @JsonProperty("clientPolicies")
+    protected JsonNode clientPolicies;
 
     protected List<UserRepresentation> users;
     protected List<UserRepresentation> federatedUsers;
@@ -474,6 +493,22 @@ public class RealmRepresentation {
 
     public void setActionTokenGeneratedByAdminLifespan(Integer actionTokenGeneratedByAdminLifespan) {
         this.actionTokenGeneratedByAdminLifespan = actionTokenGeneratedByAdminLifespan;
+    }
+
+    public void setOAuth2DeviceCodeLifespan(Integer oauth2DeviceCodeLifespan) {
+        this.oauth2DeviceCodeLifespan = oauth2DeviceCodeLifespan;
+    }
+
+    public Integer getOAuth2DeviceCodeLifespan() {
+        return oauth2DeviceCodeLifespan;
+    }
+
+    public void setOAuth2DevicePollingInterval(Integer oauth2DevicePollingInterval) {
+        this.oauth2DevicePollingInterval = oauth2DevicePollingInterval;
+    }
+
+    public Integer getOAuth2DevicePollingInterval() {
+        return oauth2DevicePollingInterval;
     }
 
     public Integer getActionTokenGeneratedByUserLifespan() {
@@ -1155,6 +1190,48 @@ public class RealmRepresentation {
         this.webAuthnPolicyPasswordlessAcceptableAaguids = webAuthnPolicyPasswordlessAcceptableAaguids;
     }
 
+    // Client Policies/Profiles
+
+    @JsonIgnore
+    public ClientProfilesRepresentation getParsedClientProfiles() {
+        try {
+            if (clientProfiles == null) return null;
+            return JsonSerialization.mapper.convertValue(clientProfiles, ClientProfilesRepresentation.class);
+        } catch (IllegalArgumentException ioe) {
+            logger.warnf("Failed to deserialize client profiles in the realm %s. Fallback to return empty profiles. Details: %s", realm, ioe.getMessage());
+            return null;
+        }
+    }
+
+    @JsonIgnore
+    public void setParsedClientProfiles(ClientProfilesRepresentation clientProfiles) {
+        if (clientProfiles == null) {
+            this.clientProfiles = null;
+            return;
+        }
+        this.clientProfiles = JsonSerialization.mapper.convertValue(clientProfiles, JsonNode.class);
+    }
+
+    @JsonIgnore
+    public ClientPoliciesRepresentation getParsedClientPolicies() {
+        try {
+            if (clientPolicies == null) return null;
+            return JsonSerialization.mapper.convertValue(clientPolicies, ClientPoliciesRepresentation.class);
+        } catch (IllegalArgumentException ioe) {
+            logger.warnf("Failed to deserialize client policies in the realm %s. Fallback to return empty profiles. Details: %s", realm, ioe.getMessage());
+            return null;
+        }
+    }
+
+    @JsonIgnore
+    public void setParsedClientPolicies(ClientPoliciesRepresentation clientPolicies) {
+        if (clientPolicies == null) {
+            this.clientPolicies = null;
+            return;
+        }
+        this.clientPolicies = JsonSerialization.mapper.convertValue(clientPolicies, JsonNode.class);
+    }
+
     public String getBrowserFlow() {
         return browserFlow;
     }
@@ -1284,5 +1361,10 @@ public class RealmRepresentation {
 
     public Boolean isUserManagedAccessAllowed() {
         return userManagedAccessAllowed;
+    }
+
+    @JsonIgnore
+    public Map<String, String> getAttributesOrEmpty() {
+        return (Map<String, String>) (attributes == null ? Collections.emptyMap() : attributes);
     }
 }

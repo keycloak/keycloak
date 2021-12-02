@@ -16,18 +16,89 @@
  */
 package org.keycloak.models.map.authSession;
 
-import java.util.UUID;
+import org.keycloak.models.map.common.AbstractEntity;
+
+import org.keycloak.models.map.common.UpdatableEntity;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapRootAuthenticationSessionEntity extends AbstractRootAuthenticationSessionEntity<UUID> {
+public class MapRootAuthenticationSessionEntity extends UpdatableEntity.Impl implements AbstractEntity {
 
-    protected MapRootAuthenticationSessionEntity() {
-        super();
+    private String id;
+    private String realmId;
+
+    /**
+     * Flag signalizing that any of the setters has been meaningfully used.
+     */
+    private int timestamp;
+    private Map<String, MapAuthenticationSessionEntity> authenticationSessions = new ConcurrentHashMap<>();
+
+    public MapRootAuthenticationSessionEntity() {}
+
+    public MapRootAuthenticationSessionEntity(String id, String realmId) {
+        this.id = id;
+        this.realmId = realmId;
     }
 
-    public MapRootAuthenticationSessionEntity(UUID id, String realmId) {
-        super(id, realmId);
+    @Override
+    public String getId() {
+        return this.id;
+    }
+
+    @Override
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
+    }
+
+    public String getRealmId() {
+        return realmId;
+    }
+
+    public void setRealmId(String realmId) {
+        this.updated |= !Objects.equals(this.realmId, realmId);
+        this.realmId = realmId;
+    }
+
+    public int getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(int timestamp) {
+        this.updated |= !Objects.equals(this.timestamp, timestamp);
+        this.timestamp = timestamp;
+    }
+
+    public Map<String, MapAuthenticationSessionEntity> getAuthenticationSessions() {
+        return authenticationSessions;
+    }
+
+    public void setAuthenticationSessions(Map<String, MapAuthenticationSessionEntity> authenticationSessions) {
+        this.updated |= !Objects.equals(this.authenticationSessions, authenticationSessions);
+        this.authenticationSessions = authenticationSessions;
+    }
+
+    public MapAuthenticationSessionEntity removeAuthenticationSession(String tabId) {
+        MapAuthenticationSessionEntity entity = this.authenticationSessions.remove(tabId);
+        this.updated |= entity != null;
+        return entity;
+    }
+
+    public void addAuthenticationSession(String tabId, MapAuthenticationSessionEntity entity) {
+        this.updated |= !Objects.equals(this.authenticationSessions.put(tabId, entity), entity);
+    }
+
+    public void clearAuthenticationSessions() {
+        this.updated |= !this.authenticationSessions.isEmpty();
+        this.authenticationSessions.clear();
+    }
+
+    void signalUpdated(boolean updated) {
+        this.updated |= updated;
     }
 }

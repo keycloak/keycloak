@@ -40,6 +40,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
@@ -48,6 +49,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionManageme
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.actions.DummyRequiredActionFactory;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
@@ -68,6 +70,8 @@ import java.util.stream.Collectors;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 
+import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
+
 /**
  * Test that clients can override auth flows
  *
@@ -84,6 +88,11 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected LoginPage loginPage;
+
+    @BeforeClass
+    public static void enabled() {
+        ProfileAssume.assumeFeatureEnabled(AUTHORIZATION);
+    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -112,6 +121,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
             kcinit.setEnabled(true);
             kcinit.addRedirectUri("*");
             kcinit.setPublicClient(true);
+            kcinit.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
             kcinit.removeRole(realm.getRole(OAuth2Constants.OFFLINE_ACCESS));
 
             ClientModel app = realm.addClient(APP);

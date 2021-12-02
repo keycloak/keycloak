@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-testsuite-pom</artifactId>
-        <version>13.0.0-SNAPSHOT</version>
+        <version>16.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     
@@ -38,10 +38,11 @@
         <auth.server.java.home>${java.home}</auth.server.java.home>
         <app.server.java.home>${java.home}</app.server.java.home>
         <app.server>undertow</app.server>
+        <cache.server.java.home>${java.home}</cache.server.java.home>
 
         <!-- Wildfly deprecated versions -->
-        <wildfly.deprecated.version>20.0.1.Final</wildfly.deprecated.version>
-        <wildfly.deprecated.wildfly.core.version>12.0.3.Final</wildfly.deprecated.wildfly.core.version>
+        <wildfly.deprecated.version>21.0.2.Final</wildfly.deprecated.version>
+        <wildfly.deprecated.wildfly.core.version>13.0.3.Final</wildfly.deprecated.wildfly.core.version>
         <wildfly.deprecated.arquillian.wildfly.container>2.2.0.Final</wildfly.deprecated.arquillian.wildfly.container>
 
         <!--component versions-->
@@ -49,7 +50,7 @@
         <!--the version of shrinkwrap_resolver should align with the version in arquillian-bom-->
         <shrinkwrap-resolver.version>3.1.4</shrinkwrap-resolver.version>
         <selenium.version>3.14.0</selenium.version>
-        <arquillian-drone.version>2.5.1</arquillian-drone.version>
+        <arquillian-drone.version>2.5.2</arquillian-drone.version>
         <arquillian-graphene.version>2.3.2</arquillian-graphene.version>
         <arquillian-wildfly-container.version>2.1.1.Final</arquillian-wildfly-container.version>
         <arquillian-wls-container.version>1.0.1.Final</arquillian-wls-container.version>
@@ -457,8 +458,8 @@
                 <!-- for the particular EAP version -->
                 <jdbc.mvn.groupId>mysql</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>mysql-connector-java</jdbc.mvn.artifactId>
-                <jdbc.mvn.version>${mysql.version}</jdbc.mvn.version>
-                <docker.database.image>mysql:8.0.18</docker.database.image>
+                <jdbc.mvn.version>${mysql.driver.version}</jdbc.mvn.version>
+                <docker.database.image>mysql:${mysql.version}</docker.database.image>
                 <docker.database.port>3306</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
                 <docker.database.cmd>mysqld</docker.database.cmd>
@@ -485,29 +486,8 @@
                 <!-- for the particular EAP version -->
                 <jdbc.mvn.groupId>org.postgresql</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>postgresql</jdbc.mvn.artifactId>
-                <jdbc.mvn.version>${postgresql.version}</jdbc.mvn.version>
-                <docker.database.image>postgres:11.5</docker.database.image>
-                <docker.database.port>5432</docker.database.port>
-                <docker.database.skip>false</docker.database.skip>
-                <docker.database.cmd>postgres</docker.database.cmd>
-                <docker.database.wait-for-log-regex>(?si)Ready for start up.*ready [^\n]{0,30}connections</docker.database.wait-for-log-regex>
-            </properties>
-        </profile>
-        <profile>
-            <id>db-postgres10</id>
-            <properties>
-                <keycloak.connectionsJpa.driver>org.postgresql.Driver</keycloak.connectionsJpa.driver>
-                <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
-                <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
-                <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
-                <keycloak.connectionsJpa.url>jdbc:postgresql://${auth.server.db.host}/${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
-                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
-                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
-                <!-- for the particular EAP version -->
-                <jdbc.mvn.groupId>org.postgresql</jdbc.mvn.groupId>
-                <jdbc.mvn.artifactId>postgresql</jdbc.mvn.artifactId>
-                <jdbc.mvn.version>42.2.2</jdbc.mvn.version>
-                <docker.database.image>postgres:10</docker.database.image>
+                <jdbc.mvn.version>${postgresql.driver.version}</jdbc.mvn.version>
+                <docker.database.image>postgres:${postgresql.version}</docker.database.image>
                 <docker.database.port>5432</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
                 <docker.database.cmd>postgres</docker.database.cmd>
@@ -517,20 +497,14 @@
         <profile>
             <id>db-allocator-db-postgres</id>
             <properties>
-                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
-                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
-                <!-- for the particular EAP version -->
-                <jdbc.mvn.groupId>org.postgresql</jdbc.mvn.groupId>
-                <jdbc.mvn.artifactId>postgresql</jdbc.mvn.artifactId>
-                <jdbc.mvn.version>${postgresql.version}</jdbc.mvn.version>
-                <dballocator.type>postgresql115</dballocator.type>
+                <dballocator.type>postgresql132</dballocator.type>
                 <dballocator.skip>false</dballocator.skip>
             </properties>
         </profile>
         <profile>
             <id>db-allocator-db-postgresplus</id>
             <properties>
-                <dballocator.type>postgresplus101</dballocator.type>
+                <dballocator.type>postgresplus131</dballocator.type>
                 <dballocator.skip>false</dballocator.skip>
             </properties>
         </profile>
@@ -547,8 +521,8 @@
                 <!-- for the particular EAP version -->
                 <jdbc.mvn.groupId>org.mariadb.jdbc</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>mariadb-java-client</jdbc.mvn.artifactId>
-                <jdbc.mvn.version>${mariadb.version}</jdbc.mvn.version>
-                <docker.database.image>mariadb:10.1.19</docker.database.image>
+                <jdbc.mvn.version>${mariadb.driver.version}</jdbc.mvn.version>
+                <docker.database.image>mariadb:${mariadb.version}</docker.database.image>
                 <docker.database.port>3306</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
                 <!-- Need to explicitly enable utf8 as it is not the default settings in the mariadb docker image -->
@@ -559,14 +533,14 @@
         <profile>
             <id>db-allocator-db-mariadb</id>
             <properties>
-                <dballocator.type>mariadb_galera_101</dballocator.type>
+                <dballocator.type>mariadb_galera_103</dballocator.type>
                 <dballocator.skip>false</dballocator.skip>
             </properties>
         </profile>
         <profile>
-            <id>db-mssql2017</id>
+            <id>db-mssql</id>
             <properties>
-                <docker.database.image>microsoft/mssql-server-linux:2017-GA</docker.database.image>
+                <docker.database.image>mcr.microsoft.com/mssql/server:${mssql.version}</docker.database.image>
                 <docker.database.port>1433</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
                 <docker.database.postStart>/opt/mssql-tools/bin/sqlcmd -e -U sa -P vEry5tron9Pwd -d master -Q CREATE\ DATABASE\ ${keycloak.connectionsJpa.database}</docker.database.postStart>
@@ -582,13 +556,13 @@
                 <!-- for the particular EAP version -->
                 <jdbc.mvn.groupId>com.microsoft.sqlserver</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>mssql-jdbc</jdbc.mvn.artifactId>
-                <jdbc.mvn.version>${mssql.version}</jdbc.mvn.version>
+                <jdbc.mvn.version>${mssql.driver.version}</jdbc.mvn.version>
             </properties>
         </profile>
         <profile>
-            <id>db-allocator-db-mssql2017</id>
+            <id>db-allocator-db-mssql2019</id>
             <properties>
-                <dballocator.type>mssql2017</dballocator.type>
+                <dballocator.type>mssql2019</dballocator.type>
                 <dballocator.skip>false</dballocator.skip>
             </properties>
         </profile>

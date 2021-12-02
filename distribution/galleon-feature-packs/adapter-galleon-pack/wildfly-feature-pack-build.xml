@@ -14,22 +14,8 @@
   ~ limitations under the License.
   -->
 
-<build xmlns="urn:wildfly:feature-pack-build:3.0" producer="org.keycloak:keycloak-adapter-galleon-pack">
+<build xmlns="urn:wildfly:feature-pack-build:3.1" producer="org.keycloak:keycloak-adapter-galleon-pack">
     <transitive>
-        <dependency group-id="org.wildfly.core" artifact-id="wildfly-core-galleon-pack">
-            <name>org.wildfly.core:wildfly-core-galleon-pack</name>
-            <packages inherit="false">
-                <exclude name="product.conf"/>
-            </packages>
-            <default-configs inherit="false"/>
-        </dependency>
-        <dependency group-id="org.wildfly" artifact-id="wildfly-servlet-galleon-pack">
-            <name>org.wildfly:wildfly-servlet-galleon-pack</name>
-            <packages inherit="false">
-                <exclude name="product.conf"/>
-            </packages>
-            <default-configs inherit="false"/>
-        </dependency>
         <dependency group-id="org.wildfly" artifact-id="wildfly-ee-galleon-pack">
             <name>org.wildfly:wildfly-ee-galleon-pack</name>
             <packages inherit="false">

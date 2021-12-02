@@ -161,6 +161,13 @@ public class GroupAdapter implements GroupModel.Streams {
     }
 
     @Override
+    public boolean hasDirectRole(RoleModel role) {
+        if (isUpdated()) return updated.hasDirectRole(role);
+
+        return cached.getRoleMappings(modelSupplier).contains(role.getId());
+    }
+
+    @Override
     public boolean hasRole(RoleModel role) {
         if (isUpdated()) return updated.hasRole(role);
         if (cached.getRoleMappings(modelSupplier).contains(role.getId())) return true;

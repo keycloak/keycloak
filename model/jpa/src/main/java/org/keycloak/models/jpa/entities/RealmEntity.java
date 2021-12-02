@@ -148,9 +148,6 @@ public class RealmEntity {
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     Collection<UserFederationMapperEntity> userFederationMappers;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<ClientScopeEntity> clientScopes;
-
     @ElementCollection
     @MapKeyColumn(name="NAME")
     @Column(name="VALUE")
@@ -811,17 +808,6 @@ public class RealmEntity {
     public RealmEntity setDockerAuthenticationFlow(String dockerAuthenticationFlow) {
         this.dockerAuthenticationFlow = dockerAuthenticationFlow;
         return this;
-    }
-
-    public Collection<ClientScopeEntity> getClientScopes() {
-        if (clientScopes == null) {
-            clientScopes = new LinkedList<>();
-        }
-        return clientScopes;
-    }
-
-    public void setClientScopes(Collection<ClientScopeEntity> clientScopes) {
-        this.clientScopes = clientScopes;
     }
 
     public void setAllowUserManagedAccess(boolean allowUserManagedAccess) {

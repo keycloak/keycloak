@@ -103,6 +103,8 @@ def upgradeKeycloakToWildflyTag(tag, forceUpdates = False, ssoAdapters = False):
 
         # Subtask - Update main Keycloak pom.xml file
         wu.performMainKeycloakPomFileUpdateTask(wildflyPomFile, wildflyCorePomFile, forceUpdates)
+        # Subtask - Update adapter-galleon-pack pom.xml file if necessary
+        wu.performAdapterGalleonPackPomFileUpdateTask(wildflyCorePomFile, forceUpdates)
         # Subtask - Update Keycloak adapters
         wu.performKeycloakAdapterLicenseFilesUpdateTask(wildflyPomFile, wildflyCorePomFile, forceUpdates)
 

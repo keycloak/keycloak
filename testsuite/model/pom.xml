@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-testsuite-pom</artifactId>
-        <version>13.0.0-SNAPSHOT</version>
+        <version>16.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -24,17 +24,20 @@
         <jdbc.mvn.artifactId>h2</jdbc.mvn.artifactId>
         <jdbc.mvn.version>${h2.version}</jdbc.mvn.version>
         <log4j.configuration>file:${project.build.directory}/dependency/log4j.properties</log4j.configuration>
+        <jacoco.skip>true</jacoco.skip>
+        <keycloak.profile.feature.map_storage>disabled</keycloak.profile.feature.map_storage>
+        <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>true</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
     </properties>
     
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <scope>test</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
+            <artifactId>hamcrest</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -72,7 +75,6 @@
             <version>${jdbc.mvn.version}</version>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-jpa</artifactId>
@@ -90,14 +92,48 @@
             <artifactId>integration-arquillian-testsuite-providers</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-map-hot-rod</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-server-core</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
             <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.7</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                        <configuration>
+                            <append>true</append>
+                            <includes>
+                                <include>org/keycloak/**/*</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <argLine>@{argLine}</argLine>
                     <systemPropertyVariables>
                         <!-- keycloak.model.parameters lists parameter classes from 
                              org.keycloak.model.parameters package and determine enabled providers -->
@@ -108,9 +144,31 @@
                         <keycloak.connectionsJpa.default.password>${keycloak.connectionsJpa.password}</keycloak.connectionsJpa.default.password>
                         <keycloak.connectionsJpa.default.url>${keycloak.connectionsJpa.url}</keycloak.connectionsJpa.default.url>
                         <log4j.configuration>file:${project.build.directory}/test-classes/log4j.properties</log4j.configuration> <!-- for the logging to properly work with tests in the 'other' module -->
+                        <keycloak.profile.feature.map_storage>${keycloak.profile.feature.map_storage}</keycloak.profile.feature.map_storage>
+                        <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase}</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <delete>
+                                    <fileset dir="${project.build.directory}" includes="map-*.json"/>
+                                    <fileset dir="${project.build.directory}" includes="map/**/*.json"/>
+                                </delete>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>                        
         </plugins>
     </build>
     
@@ -126,6 +184,21 @@
             <id>jpa+infinispan</id>
             <properties>
                 <keycloak.model.parameters>Infinispan,Jpa</keycloak.model.parameters>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>jpa+cross-dc-infinispan</id>
+            <properties>
+                <keycloak.model.parameters>CrossDCInfinispan,Jpa</keycloak.model.parameters>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>jpa+infinispan-sessions-preloading-disabled</id>
+            <properties>
+                <keycloak.model.parameters>Infinispan,Jpa</keycloak.model.parameters>
+                <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>false</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
             </properties>
         </profile>
 
@@ -158,6 +231,20 @@
         </profile>
 
         <profile>
+            <id>jpa-federation-file-storage</id>
+            <properties>
+                <keycloak.model.parameters>JpaFederation,TestsuiteUserFileStorage</keycloak.model.parameters>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>jpa-federation-file-storage+infinispan</id>
+            <properties>
+                <keycloak.model.parameters>JpaFederation,TestsuiteUserFileStorage,Infinispan</keycloak.model.parameters>
+            </properties>
+        </profile>
+
+        <profile>
             <id>jpa-federation+ldap</id>
             <properties>
                 <keycloak.model.parameters>JpaFederation,LdapUserStorage</keycloak.model.parameters>
@@ -174,7 +261,24 @@
         <profile>
             <id>map+infinispan</id>
             <properties>
-                <keycloak.model.parameters>Infinispan,Map,ConcurrentHashMapStorage</keycloak.model.parameters>
+                <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
+                <keycloak.model.parameters>Infinispan,Jpa,Map,ConcurrentHashMapStorage</keycloak.model.parameters>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>map</id>
+            <properties>
+                <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
+                <keycloak.model.parameters>Jpa,Map,ConcurrentHashMapStorage</keycloak.model.parameters>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>hot-rod</id>
+            <properties>
+                <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
+                <keycloak.model.parameters>Jpa,Map,HotRodMapStorage</keycloak.model.parameters>
             </properties>
         </profile>
     </profiles>

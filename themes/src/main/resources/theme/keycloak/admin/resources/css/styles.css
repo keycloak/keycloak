@@ -190,6 +190,20 @@ th.w-40 {
     height: 26px;
 }
 
+.select2-container-single {
+    padding: 0;
+    margin: 0;
+}
+
+.select2-container-single .form-group {
+    width: 100%;
+    margin: 0;
+}
+
+.select2-container-single .form-group .input-group {
+    width: 100%;
+}
+
 /*********** html select ********/
 .overflow-select {
     overflow: auto;

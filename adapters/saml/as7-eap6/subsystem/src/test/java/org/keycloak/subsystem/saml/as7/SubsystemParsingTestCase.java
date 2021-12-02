@@ -74,7 +74,7 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
 
     @Before
     public void initialize() throws IOException {
-        this.subsystemTemplate = readResource("keycloak-saml-1.3.xml");
+        this.subsystemTemplate = readResource("keycloak-saml-1.4.xml");
         try {
             DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             this.document = builder.parse(new InputSource(new StringReader(this.subsystemTemplate)));

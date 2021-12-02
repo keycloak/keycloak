@@ -572,16 +572,12 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public List<Scope> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+        public List<Scope> findByResourceServer(Map<Scope.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
             return getScopeStoreDelegate().findByResourceServer(attributes, resourceServerId, firstResult, maxResult);
         }
     }
 
     protected class ResourceCache implements ResourceStore {
-        @Override
-        public Resource create(String name, ResourceServer resourceServer, String owner) {
-            return create(null, name, resourceServer, owner);
-        }
 
         @Override
         public Resource create(String id, String name, ResourceServer resourceServer, String owner) {
@@ -706,7 +702,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public List<Resource> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+        public List<Resource> findByResourceServer(Map<Resource.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
             return getResourceStoreDelegate().findByResourceServer(attributes, resourceServerId, firstResult, maxResult);
         }
 
@@ -962,7 +958,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public List<Policy> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+        public List<Policy> findByResourceServer(Map<Policy.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
             return getPolicyStoreDelegate().findByResourceServer(attributes, resourceServerId, firstResult, maxResult);
         }
 
@@ -1115,6 +1111,11 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
 
     protected class PermissionTicketCache implements PermissionTicketStore {
         @Override
+        public long count(Map<PermissionTicket.FilterOption, String> attributes, String resourceServerId) {
+            return getPermissionTicketStoreDelegate().count(attributes, resourceServerId);
+        }
+
+        @Override
         public PermissionTicket create(String resourceId, String scopeId, String requester, ResourceServer resourceServer) {
             PermissionTicket created = getPermissionTicketStoreDelegate().create(resourceId, scopeId, requester, resourceServer);
             registerPermissionTicketInvalidation(created.getId(), created.getOwner(), created.getRequester(), created.getResource().getId(), created.getResource().getName(), scopeId, created.getResourceServer().getId());
@@ -1188,7 +1189,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public List<PermissionTicket> find(Map<String, String> attributes, String resourceServerId, int firstResult, int maxResult) {
+        public List<PermissionTicket> find(Map<PermissionTicket.FilterOption, String> attributes, String resourceServerId, int firstResult, int maxResult) {
             return getPermissionTicketStoreDelegate().find(attributes, resourceServerId, firstResult, maxResult);
         }
 

@@ -88,16 +88,17 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         if (KeycloakModelUtils.isRealmProviderJpa(session)) {
 
             // Group realms by expiration times. This will be effective if different realms have same/similar event expiration times, which will probably be the case in most environments
-            List<Long> eventExpirations = em.createQuery("select distinct realm.eventsExpiration from RealmEntity realm").getResultList();
+            List<Long> eventExpirations = em.createQuery("select distinct realm.eventsExpiration from RealmEntity realm where realm.eventsExpiration > 0").getResultList();
             for (Long expiration : eventExpirations) {
-                if (expiration > 0) {
-                    int currentNumDeleted = em.createQuery("delete from EventEntity where realmId in (select realm.id from RealmEntity realm where realm.eventsExpiration = :expiration) and time < :eventTime")
-                            .setParameter("expiration", expiration)
-                            .setParameter("eventTime", currentTimeMillis - (expiration * 1000))
-                            .executeUpdate();
-                    logger.tracef("Deleted %d events for the expiration %d", currentNumDeleted, expiration);
-                    numDeleted += currentNumDeleted;
-                }
+                List<String> realmIds = em.createQuery("select realm.id from RealmEntity realm where realm.eventsExpiration = :expiration")
+                        .setParameter("expiration", expiration)
+                        .getResultList();
+                int currentNumDeleted = em.createQuery("delete from EventEntity where realmId in :realmIds and time < :eventTime")
+                        .setParameter("realmIds", realmIds)
+                        .setParameter("eventTime", currentTimeMillis - (expiration * 1000))
+                        .executeUpdate();
+                logger.tracef("Deleted %d events for the expiration %d", currentNumDeleted, expiration);
+                numDeleted += currentNumDeleted;
             }
             logger.debugf("Cleared %d expired events in all realms", numDeleted);
         } else {
@@ -146,7 +147,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
 
     private EventEntity convertEvent(Event event) {
         EventEntity eventEntity = new EventEntity();
-        eventEntity.setId(UUID.randomUUID().toString());
+        eventEntity.setId(event.getId() == null ? UUID.randomUUID().toString() : event.getId());
         eventEntity.setTime(event.getTime());
         eventEntity.setType(event.getType().toString());
         eventEntity.setRealmId(event.getRealmId());
@@ -183,6 +184,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
 
     static Event convertEvent(EventEntity eventEntity) {
         Event event = new Event();
+        event.setId(eventEntity.getId() == null ? UUID.randomUUID().toString() : eventEntity.getId());
         event.setTime(eventEntity.getTime());
         event.setType(EventType.valueOf(eventEntity.getType()));
         event.setRealmId(eventEntity.getRealmId());
@@ -202,7 +204,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
     
     static AdminEventEntity convertAdminEvent(AdminEvent adminEvent, boolean includeRepresentation) {
         AdminEventEntity adminEventEntity = new AdminEventEntity();
-        adminEventEntity.setId(UUID.randomUUID().toString());
+        adminEventEntity.setId(adminEvent.getId() == null ? UUID.randomUUID().toString() : adminEvent.getId());
         adminEventEntity.setTime(adminEvent.getTime());
         adminEventEntity.setRealmId(adminEvent.getRealmId());
         setAuthDetails(adminEventEntity, adminEvent.getAuthDetails());
@@ -223,6 +225,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
 
     static AdminEvent convertAdminEvent(AdminEventEntity adminEventEntity) {
         AdminEvent adminEvent = new AdminEvent();
+        adminEvent.setId(adminEventEntity.getId() == null ? UUID.randomUUID().toString() : adminEventEntity.getId());
         adminEvent.setTime(adminEventEntity.getTime());
         adminEvent.setRealmId(adminEventEntity.getRealmId());
         setAuthDetails(adminEvent, adminEventEntity);

@@ -17,6 +17,8 @@
 
 package org.keycloak.models;
 
+import org.keycloak.component.ComponentModel;
+import org.keycloak.provider.InvalidationHandler;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEventManager;
 import org.keycloak.provider.ProviderFactory;
@@ -24,6 +26,7 @@ import org.keycloak.provider.Spi;
 
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -31,7 +34,8 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface KeycloakSessionFactory extends ProviderEventManager {
+public interface KeycloakSessionFactory extends ProviderEventManager, InvalidationHandler {
+
     KeycloakSession create();
 
     Set<Spi> getSpis();
@@ -41,6 +45,8 @@ public interface KeycloakSessionFactory extends ProviderEventManager {
     <T extends Provider> ProviderFactory<T> getProviderFactory(Class<T> clazz);
 
     <T extends Provider> ProviderFactory<T> getProviderFactory(Class<T> clazz, String id);
+
+    <T extends Provider> ProviderFactory<T> getProviderFactory(Class<T> clazz, String realmId, String componentId, Function<KeycloakSessionFactory, ComponentModel> modelGetter);
 
     /**
      * Returns list of provider factories for the given provider.

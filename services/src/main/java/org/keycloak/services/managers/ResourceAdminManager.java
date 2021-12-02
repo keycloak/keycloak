@@ -214,7 +214,7 @@ public class ResourceAdminManager {
             }
             CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
             UrlEncodedFormEntity formEntity;
-            formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            formEntity = new UrlEncodedFormEntity(parameters);
             post.setEntity(formEntity);
             try (CloseableHttpResponse response = httpClient.execute(post)) {
                 try {
@@ -241,7 +241,8 @@ public class ResourceAdminManager {
 
     public GlobalRequestResult logoutAll(RealmModel realm) {
         realm.setNotBefore(Time.currentTime());
-        Stream<ClientModel> resources = realm.getClientsStream();
+        Stream<ClientModel> resources = realm.getClientsStream()
+          .filter(c -> { try { c.getClientId(); return true; } catch (Exception ex) { return false; } } );
 
         GlobalRequestResult finalResult = new GlobalRequestResult();
         AtomicInteger counter = new AtomicInteger(0);

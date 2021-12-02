@@ -18,6 +18,8 @@
 
 package org.keycloak.authorization.model;
 
+import org.keycloak.storage.SearchableModelField;
+
 /**
  * Represents a scope, which is usually associated with one or more resources in order to define the actions that can be performed
  * or a specific access context.
@@ -25,6 +27,34 @@ package org.keycloak.authorization.model;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public interface Scope {
+
+    public static class SearchableFields {
+        public static final SearchableModelField<Scope> ID = new SearchableModelField<>("id", String.class);
+        public static final SearchableModelField<Scope> NAME = new SearchableModelField<>("name", String.class);
+        public static final SearchableModelField<Scope> RESOURCE_SERVER_ID = new SearchableModelField<>("resourceServerId", String.class);
+    }
+    
+    public static enum FilterOption {
+        ID("id", SearchableFields.ID),
+        NAME("name", SearchableFields.NAME);
+
+        private final String name;
+        private final SearchableModelField<Scope> searchableModelField;
+
+        FilterOption(String name, SearchableModelField<Scope> searchableModelField) {
+            this.name = name;
+            this.searchableModelField = searchableModelField;
+        }
+
+
+        public String getName() {
+            return name;
+        }
+
+        public SearchableModelField<Scope> getSearchableModelField() {
+            return searchableModelField;
+        }
+    }
 
     /**
      * Returns the unique identifier for this instance.

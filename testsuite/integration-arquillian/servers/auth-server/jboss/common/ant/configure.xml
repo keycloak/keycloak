@@ -1,4 +1,4 @@
-<project>
+<project xmlns:if="ant:if">
 
     <property name="cli.tmp.dir" value="${project.build.directory}/cli" />
 
@@ -49,7 +49,9 @@
             <fileset dir="${cli.tmp.dir}" includes="*.cli"/>
         </concat>
         <bin-chmod/>
-        <exec osfamily="unix" dir="${auth.server.home}/bin" executable="./${jboss.cli.executable}" failonerror="true">
+        <!-- Workaround for WFCORE-5335 issue -->
+        <exec osfamily="unix" dir="${auth.server.home}/bin" executable="bash" failonerror="true">
+            <arg value="${jboss.cli.executable}"/>
             <arg value="--file=${cli.tmp.dir}/result.cli"/>
         </exec>
         <exec osfamily="windows" executable="powershell" failonerror="true">
@@ -225,6 +227,15 @@
         <copy todir="${cli.tmp.dir}">
             <resources>
                 <file file="${common.resources}/jboss-cli/cross-dc-setup.cli"/>
+                <file file="${common.resources}/jboss-cli/cross-dc-setup_cache-auth.cli" if:true="${crossdc.cache.auth}" />
+            </resources>
+            <filterset>
+                <filter token="HOTROD_SASL_MECHANISM" value="${hotrod.sasl.mechanism}"/>
+            </filterset>
+        </copy>
+        <copy todir="${auth.server.home}/standalone/configuration">
+            <resources>
+                <file file="${common.resources}/keystore/hotrod-client-truststore.jks"/>
             </resources>
         </copy>
     </target>

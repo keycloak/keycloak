@@ -25,19 +25,30 @@ import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.core.Response.Status;
 
+import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicNameValuePair;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
@@ -113,6 +124,14 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
 
         isTokenDisabled(tokenResponse1, "test-app");
         isTokenEnabled(tokenResponse2, "test-app-scope");
+
+        // Revoke second token and assert no sessions for testUser
+        response = oauth.doTokenRevoke(tokenResponse2.getRefreshToken(), "refresh_token", "password");
+        assertThat(response, Matchers.statusCodeIsHC(Status.OK));
+
+        userSessions = testUser.getUserSessions();
+        assertEquals(0, userSessions.size());
+
     }
 
     @Test
@@ -203,6 +222,22 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
         isTokenDisabled(tokenResponse, "test-app");
     }
 
+    // KEYCLOAK-17300
+    @Test
+    public void testRevokeRequestParamsMoreThanOnce() throws Exception {
+        oauth.clientId("test-app");
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost",
+            "password");
+
+        isTokenEnabled(tokenResponse, "test-app");
+
+        String revokeResponse = doTokenRevokeWithDuplicateParams(tokenResponse.getRefreshToken(), "refresh_token", "password");
+
+        OAuth2ErrorRepresentation errorRep = JsonSerialization.readValue(revokeResponse, OAuth2ErrorRepresentation.class);
+        assertEquals("duplicated parameter", errorRep.getErrorDescription());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, errorRep.getError());
+    }
+
     private AccessTokenResponse login(String clientId, String username, String password) {
         oauth.clientId(clientId);
         oauth.openLoginForm();
@@ -239,5 +274,31 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
                 accessTokenString);
         TokenMetadataRepresentation rep = JsonSerialization.readValue(introspectionResponse, TokenMetadataRepresentation.class);
         assertFalse(rep.isActive());
+    }
+
+    private String doTokenRevokeWithDuplicateParams(String token, String tokenTypeHint, String clientSecret)
+        throws IOException {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            HttpPost post = new HttpPost(oauth.getTokenRevocationUrl());
+
+            List<NameValuePair> parameters = new LinkedList<>();
+            parameters.add(new BasicNameValuePair("token", token));
+            parameters.add(new BasicNameValuePair("token", "foo"));
+            parameters.add(new BasicNameValuePair("token_type_hint", tokenTypeHint));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, oauth.getClientId()));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_SECRET, clientSecret));
+
+            UrlEncodedFormEntity formEntity;
+            try {
+                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+            post.setEntity(formEntity);
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            client.execute(post).getEntity().writeTo(out);
+            return new String(out.toByteArray());
+        }
     }
 }

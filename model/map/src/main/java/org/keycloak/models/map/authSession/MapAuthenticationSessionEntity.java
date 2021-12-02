@@ -32,6 +32,8 @@ public class MapAuthenticationSessionEntity {
 
     private String authUserId;
 
+    private int timestamp;
+
     private String redirectUri;
     private String action;
     private Set<String> clientScopes = new HashSet<>();
@@ -66,6 +68,14 @@ public class MapAuthenticationSessionEntity {
 
     public void setAuthUserId(String authUserId) {
         this.authUserId = authUserId;
+    }
+
+    public int getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(int timestamp) {
+        this.timestamp = timestamp;
     }
 
     public String getRedirectUri() {

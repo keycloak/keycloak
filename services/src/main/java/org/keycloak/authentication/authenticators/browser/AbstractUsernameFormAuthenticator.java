@@ -35,11 +35,11 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.validation.Validation;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
+import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils.getDisabledByBruteForceEventError;
 import static org.keycloak.services.validation.Validation.FIELD_PASSWORD;
 import static org.keycloak.services.validation.Validation.FIELD_USERNAME;
 
@@ -80,11 +80,11 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         return form.createLoginUsernamePassword();
     }
 
-    protected String tempDisabledError() {
+    protected String disabledByBruteForceError() {
         return Messages.INVALID_USER;
     }
 
-    protected String tempDisabledFieldError(){
+    protected String disabledByBruteForceFieldError(){
         return FIELD_USERNAME;
     }
 
@@ -98,7 +98,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
 
     protected void runDefaultDummyHash(AuthenticationFlowContext context) {
         PasswordHashProvider hash = context.getSession().getProvider(PasswordHashProvider.class, PasswordPolicy.HASH_ALGORITHM_DEFAULT);
-        hash.encode("dummypassword", PasswordPolicy.HASH_ITERATIONS_DEFAULT);
+        hash.encode("SlightlyLongerDummyPassword", PasswordPolicy.HASH_ITERATIONS_DEFAULT);
     }
 
     protected void dummyHash(AuthenticationFlowContext context) {
@@ -113,7 +113,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
                 return;
 
             } else {
-                hash.encode("dummypassword", policy.getHashIterations());
+                hash.encode("SlightlyLongerDummyPassword", policy.getHashIterations());
             }
         }
 
@@ -129,6 +129,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
     }
 
     public boolean enabledUser(AuthenticationFlowContext context, UserModel user) {
+        if (isDisabledByBruteForce(context, user)) return false;
         if (!user.isEnabled()) {
             context.getEvent().user(user);
             context.getEvent().error(Errors.USER_DISABLED);
@@ -136,7 +137,6 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
             context.forceChallenge(challengeResponse);
             return false;
         }
-        if (isTemporarilyDisabledByBruteForce(context, user)) return false;
         return true;
     }
 
@@ -213,7 +213,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
             return badPasswordHandler(context, user, clearUser,true);
         }
 
-        if (isTemporarilyDisabledByBruteForce(context, user)) return false;
+        if (isDisabledByBruteForce(context, user)) return false;
 
         if (password != null && !password.isEmpty() && context.getSession().userCredentialManager().isValid(context.getRealm(), user, UserCredentialModel.password(password))) {
             return true;
@@ -239,15 +239,14 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         return false;
     }
 
-    protected boolean isTemporarilyDisabledByBruteForce(AuthenticationFlowContext context, UserModel user) {
-        if (context.getRealm().isBruteForceProtected()) {
-            if (context.getProtector().isTemporarilyDisabled(context.getSession(), context.getRealm(), user)) {
-                context.getEvent().user(user);
-                context.getEvent().error(Errors.USER_TEMPORARILY_DISABLED);
-                Response challengeResponse = challenge(context, tempDisabledError(), tempDisabledFieldError());
-                context.forceChallenge(challengeResponse);
-                return true;
-            }
+    protected boolean isDisabledByBruteForce(AuthenticationFlowContext context, UserModel user) {
+        String bruteForceError = getDisabledByBruteForceEventError(context.getProtector(), context.getSession(), context.getRealm(), user);
+        if (bruteForceError != null) {
+            context.getEvent().user(user);
+            context.getEvent().error(bruteForceError);
+            Response challengeResponse = challenge(context, disabledByBruteForceError(), disabledByBruteForceFieldError());
+            context.forceChallenge(challengeResponse);
+            return true;
         }
         return false;
     }

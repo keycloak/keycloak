@@ -35,6 +35,9 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
+import org.keycloak.protocol.saml.SamlClient;
+import org.keycloak.protocol.saml.SamlConfigAttributes;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.adapters.config.BaseRealmConfig;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -48,6 +51,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+
+import static org.keycloak.models.Constants.defaultClients;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -71,7 +76,6 @@ public class ClientManager {
      * @param session
      * @param realm
      * @param rep
-     * @param addDefaultRoles
      * @return
      */
     public static ClientModel createClient(KeycloakSession session, RealmModel realm, ClientRepresentation rep) {
@@ -93,7 +97,7 @@ public class ClientManager {
 
 
     public boolean removeClient(RealmModel realm, ClientModel client) {
-        if (realm.removeClient(client.getId())) {
+        if (!isInternalClient(realm.getName(), client.getClientId()) && realm.removeClient(client.getId())) {
             UserSessionProvider sessions = realmManager.getSession().sessions();
             if (sessions != null) {
                 sessions.onClientRemoved(realm, client);
@@ -191,13 +195,21 @@ public class ClientManager {
         }
     }
 
-    public void clientIdChanged(ClientModel client, String newClientId) {
+    public void clientIdChanged(ClientModel client, ClientRepresentation newClientRepresentation) {
+        String newClientId = newClientRepresentation.getClientId();
         logger.debugf("Updating clientId from '%s' to '%s'", client.getClientId(), newClientId);
 
         UserModel serviceAccountUser = realmManager.getSession().users().getServiceAccount(client);
         if (serviceAccountUser != null) {
             String username = ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + newClientId;
             serviceAccountUser.setUsername(username);
+        }
+
+        if (SamlProtocol.LOGIN_PROTOCOL.equals(client.getProtocol())) {
+            SamlClient samlClient = new SamlClient(client);
+            samlClient.setArtifactBindingIdentifierFrom(newClientId);
+
+            newClientRepresentation.getAttributes().put(SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER, samlClient.getArtifactBindingIdentifier());
         }
     }
 
@@ -355,4 +367,21 @@ public class ClientManager {
         return authenticator.getAdapterConfiguration(client);
     }
 
+    private boolean isInternalClient(String realmName, String clientId) {
+        if (defaultClients.contains(clientId)) return true;
+
+        if (!"master".equals(realmName)) {
+            return false;
+        }
+
+        final String internalClientSuffix = "-realm";
+
+        if (clientId.endsWith(internalClientSuffix)) {
+            return realmManager.getSession().realms()
+                    .getRealmByName(
+                            clientId.substring(0, clientId.length() - internalClientSuffix.length())) != null;
+        }
+
+        return false;
+    }
 }

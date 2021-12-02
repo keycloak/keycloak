@@ -136,7 +136,7 @@ public class JPAPolicyStore implements PolicyStore {
     }
 
     @Override
-    public List<Policy> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+    public List<Policy> findByResourceServer(Map<Policy.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
         CriteriaBuilder builder = entityManager.getCriteriaBuilder();
         CriteriaQuery<PolicyEntity> querybuilder = builder.createQuery(PolicyEntity.class);
         Root<PolicyEntity> root = querybuilder.from(PolicyEntity.class);
@@ -147,32 +147,45 @@ public class JPAPolicyStore implements PolicyStore {
             predicates.add(builder.equal(root.get("resourceServer").get("id"), resourceServerId));
         }
 
-        attributes.forEach((name, value) -> {
-            if ("permission".equals(name)) {
-                if (Boolean.valueOf(value[0])) {
-                    predicates.add(root.get("type").in("resource", "scope", "uma"));
-                } else {
-                    predicates.add(builder.not(root.get("type").in("resource", "scope", "uma")));
+        attributes.forEach((filterOption, value) -> {
+            switch (filterOption) {
+                case ID:
+                case OWNER:
+                    predicates.add(root.get(filterOption.getName()).in(value));
+                    break;
+                case SCOPE_ID:
+                case RESOURCE_ID:
+                    String[] predicateValues = filterOption.getName().split("\\.");
+                    predicates.add(root.join(predicateValues[0]).get(predicateValues[1]).in(value));
+                    break;
+                case PERMISSION: {
+                    if (Boolean.parseBoolean(value[0])) {
+                        predicates.add(root.get("type").in("resource", "scope", "uma"));
+                    } else {
+                        predicates.add(builder.not(root.get("type").in("resource", "scope", "uma")));
+                    }
                 }
-            } else if ("id".equals(name)) {
-                predicates.add(root.get(name).in(value));
-            } else if ("owner".equals(name)) {
-                predicates.add(root.get(name).in(value));
-            } else if ("owner_is_not_null".equals(name)) {
-                predicates.add(builder.isNotNull(root.get("owner")));
-            } else if ("resource".equals(name)) {
-                predicates.add(root.join("resources").get("id").in(value));
-            } else if ("scope".equals(name)) {
-                predicates.add(root.join("scopes").get("id").in(value));
-            } else if (name.startsWith("config:")) {
-                predicates.add(root.joinMap("config").key().in(name.substring("config:".length())));
-                predicates.add(builder.like(root.joinMap("config").value().as(String.class), "%" + value[0] + "%"));
-            } else {
-                predicates.add(builder.like(builder.lower(root.get(name)), "%" + value[0].toLowerCase() + "%"));
+                    break;
+                case ANY_OWNER:
+                    break;
+                case CONFIG:
+                    if (value.length != 2) {
+                        throw new IllegalArgumentException("Config filter option requires value with two items: [config_name, expected_config_value]");
+                    }
+
+                    predicates.add(root.joinMap("config").key().in(value[0]));
+                    predicates.add(builder.like(root.joinMap("config").value().as(String.class), "%" + value[1] + "%"));
+                    break;
+                case TYPE:
+                case NAME:
+                    predicates.add(builder.like(builder.lower(root.get(filterOption.getName())), "%" + value[0].toLowerCase() + "%"));
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unsupported filter [" + filterOption + "]");
             }
         });
 
-        if (!attributes.containsKey("owner") && !attributes.containsKey("owner_is_not_null")) {
+        if (!attributes.containsKey(Policy.FilterOption.OWNER) && !attributes.containsKey(Policy.FilterOption.ANY_OWNER)) {
             predicates.add(builder.isNull(root.get("owner")));
         }
 
@@ -192,15 +205,6 @@ public class JPAPolicyStore implements PolicyStore {
     }
 
     @Override
-    public List<Policy> findByResource(final String resourceId, String resourceServerId) {
-        List<Policy> result = new LinkedList<>();
-
-        findByResource(resourceId, resourceServerId, result::add);
-
-        return result;
-    }
-
-    @Override
     public void findByResource(String resourceId, String resourceServerId, Consumer<Policy> consumer) {
         TypedQuery<PolicyEntity> query = entityManager.createNamedQuery("findPolicyIdByResource", PolicyEntity.class);
 
@@ -214,15 +218,6 @@ public class JPAPolicyStore implements PolicyStore {
                 .map(entity -> storeFactory.findById(entity.getId(), resourceServerId))
                 .filter(Objects::nonNull))
                 .forEach(consumer::accept);
-    }
-
-    @Override
-    public List<Policy> findByResourceType(final String resourceType, String resourceServerId) {
-        List<Policy> result = new LinkedList<>();
-
-        findByResourceType(resourceType, resourceServerId, result::add);
-
-        return result;
     }
 
     @Override
@@ -260,15 +255,6 @@ public class JPAPolicyStore implements PolicyStore {
         }
 
         return list;
-    }
-
-    @Override
-    public List<Policy> findByScopeIds(List<String> scopeIds, String resourceId, String resourceServerId) {
-        List<Policy> result = new LinkedList<>();
-
-        findByScopeIds(scopeIds, resourceId, resourceServerId, result::add);
-
-        return result;
     }
 
     @Override

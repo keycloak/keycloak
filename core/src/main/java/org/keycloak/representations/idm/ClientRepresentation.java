@@ -51,6 +51,7 @@ public class ClientRepresentation {
     protected Boolean implicitFlowEnabled;
     protected Boolean directAccessGrantsEnabled;
     protected Boolean serviceAccountsEnabled;
+    protected Boolean oauth2DeviceAuthorizationGrantEnabled;
     protected Boolean authorizationServicesEnabled;
     @Deprecated
     protected Boolean directGrantsOnly;

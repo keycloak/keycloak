@@ -68,7 +68,7 @@ public class UserSessionCrossDCManager {
             AuthSessionId authSessionId = asm.decodeAuthSessionId(oldEncodedId);
             String sessionId = authSessionId.getDecodedId();
 
-            // This will remove userSession "locally" if it doesn't exists on remoteCache
+            // This will remove userSession "locally" if it doesn't exist on remoteCache
             kcSession.sessions().getUserSessionWithPredicate(realm, sessionId, false, (UserSessionModel userSession2) -> userSession2 == null);
 
             UserSessionModel userSession = kcSession.sessions().getUserSession(realm, sessionId);

@@ -92,7 +92,7 @@ public class RolePolicyManagementTest extends AbstractPolicyManagementTest {
 
         roles.create(new RoleRepresentation("Client Role B", "desc", false));
 
-        representation.addRole("Client Role A");
+        representation.addRole("resource-server-test/Client Role A");
         representation.addClientRole(clientRep.getClientId(), "Client Role B", true);
 
         assertCreated(authorization, representation);

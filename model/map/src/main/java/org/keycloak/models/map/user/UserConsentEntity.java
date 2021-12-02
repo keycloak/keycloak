@@ -23,6 +23,7 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
+import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.HashSet;
@@ -30,13 +31,12 @@ import java.util.Objects;
 import java.util.Set;
 
 
-public class UserConsentEntity {
+public class UserConsentEntity extends UpdatableEntity.Impl {
 
     private String clientId;
     private final Set<String> grantedClientScopesIds = new HashSet<>();
     private Long createdDate;
     private Long lastUpdatedDate;
-    private boolean updated;
     
     private UserConsentEntity() {}
 
@@ -75,10 +75,6 @@ public class UserConsentEntity {
                 .forEach(model::addGrantedClientScope);
         
         return model;
-    }
-
-    public boolean isUpdated() {
-        return updated;
     }
 
     public String getClientId() {

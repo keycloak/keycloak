@@ -414,52 +414,6 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
     }
 
     @Test
-    public void testMissingStateParameter() {
-        final String IDP_NAME = "github";
-
-        RealmResource realmResource = Optional.ofNullable(realmsResouce().realm(bc.providerRealmName())).orElse(null);
-        assertThat(realmResource, Matchers.notNullValue());
-        final int COUNT_PROVIDERS = Optional.of(realmResource.identityProviders().findAll().size()).orElse(0);
-
-        try {
-            IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
-            idp.setAlias(IDP_NAME);
-            idp.setDisplayName(IDP_NAME);
-            idp.setProviderId(IDP_NAME);
-            idp.setEnabled(true);
-
-            Response response = realmResource.identityProviders().create(idp);
-            assertThat(response, Matchers.notNullValue());
-            assertThat(response.getStatus(), Matchers.is(Response.Status.CREATED.getStatusCode()));
-            assertThat(realmResource.identityProviders().findAll().size(), Matchers.is(COUNT_PROVIDERS + 1));
-            assertThat(ApiUtil.getCreatedId(response), Matchers.notNullValue());
-
-            IdentityProviderRepresentation provider = Optional.ofNullable(realmResource.identityProviders().get(IDP_NAME).toRepresentation()).orElse(null);
-            assertThat(provider, Matchers.notNullValue());
-            assertThat(provider.getProviderId(), Matchers.is(IDP_NAME));
-            assertThat(provider.getAlias(), Matchers.is(IDP_NAME));
-            assertThat(provider.getDisplayName(), Matchers.is(IDP_NAME));
-
-            final String REALM_NAME = Optional.ofNullable(realmResource.toRepresentation().getRealm()).orElse(null);
-            assertThat(REALM_NAME, Matchers.notNullValue());
-
-            final String LINK = oauth.AUTH_SERVER_ROOT + "/realms/" + REALM_NAME + "/broker/" + IDP_NAME + "/endpoint?code=foo123";
-
-            driver.navigate().to(LINK);
-            waitForPage(driver, "sign in to provider", true);
-
-            errorPage.assertCurrent();
-            assertThat(errorPage.getError(), Matchers.is("Missing state parameter in response from identity provider."));
-
-        } finally {
-            IdentityProviderResource resource = Optional.ofNullable(realmResource.identityProviders().get(IDP_NAME)).orElse(null);
-            assertThat(resource, Matchers.notNullValue());
-            resource.remove();
-            assertThat(Optional.of(realmResource.identityProviders().findAll().size()).orElse(0), Matchers.is(COUNT_PROVIDERS));
-        }
-    }
-
-    @Test
     public void testIdPNotFound() {
         final String notExistingIdP = "not-exists";
         final String realmName = Optional.ofNullable(realmsResouce().realm(bc.providerRealmName()).toRepresentation().getRealm()).orElse(null);

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature-group-spec name="infinispan-dist-ejb" xmlns="urn:jboss:galleon:feature-group:1.0">
+
+    <feature spec="subsystem.infinispan">
+
+        <feature spec="subsystem.infinispan.cache-container">
+            <param name="cache-container" value="ejb"/>
+            <param name="modules" value="[org.wildfly.clustering.ejb.infinispan]"/>
+            <param name="default-cache" value="dist"/>
+            <param name="aliases" value="[sfsb]"/>
+            <feature spec="subsystem.infinispan.cache-container.transport.jgroups">
+                <param name="lock-timeout" value="60000"/>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.distributed-cache">
+                <param name="distributed-cache" value="dist"/>
+                <feature spec="subsystem.infinispan.cache-container.distributed-cache.component.locking">
+                    <param name="isolation" value="REPEATABLE_READ"/>
+                </feature>
+                <feature spec="subsystem.infinispan.cache-container.distributed-cache.component.transaction">
+                    <param name="mode" value="BATCH"/>
+                </feature>
+                <feature spec="subsystem.infinispan.cache-container.distributed-cache.store.file">
+                    <unset param="relative-to"/>
+                </feature>
+            </feature>
+        </feature>
+
+    </feature>
+
+</feature-group-spec>
+

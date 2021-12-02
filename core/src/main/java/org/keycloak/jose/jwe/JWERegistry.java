@@ -23,7 +23,10 @@ import java.util.Map;
 import org.keycloak.jose.jwe.alg.AesKeyWrapAlgorithmProvider;
 import org.keycloak.jose.jwe.alg.DirectAlgorithmProvider;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
+import org.keycloak.jose.jwe.alg.RsaKeyEncryption256JWEAlgorithmProvider;
+import org.keycloak.jose.jwe.alg.RsaKeyEncryptionJWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.AesCbcHmacShaEncryptionProvider;
+import org.keycloak.jose.jwe.enc.AesGcmJWEEncryptionProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 
 /**
@@ -45,8 +48,11 @@ class JWERegistry {
         // Provider 'dir' just directly uses encryption keys for encrypt/decrypt content.
         ALG_PROVIDERS.put(JWEConstants.DIR, new DirectAlgorithmProvider());
         ALG_PROVIDERS.put(JWEConstants.A128KW, new AesKeyWrapAlgorithmProvider());
+        ALG_PROVIDERS.put(JWEConstants.RSA_OAEP, new RsaKeyEncryptionJWEAlgorithmProvider("RSA/ECB/OAEPWithSHA-1AndMGF1Padding"));
+        ALG_PROVIDERS.put(JWEConstants.RSA_OAEP_256, new RsaKeyEncryption256JWEAlgorithmProvider("RSA/ECB/OAEPWithSHA-256AndMGF1Padding"));
 
 
+        ENC_PROVIDERS.put(JWEConstants.A256GCM, new AesGcmJWEEncryptionProvider(JWEConstants.A256GCM));
         ENC_PROVIDERS.put(JWEConstants.A128CBC_HS256, new AesCbcHmacShaEncryptionProvider.Aes128CbcHmacSha256Provider());
         ENC_PROVIDERS.put(JWEConstants.A192CBC_HS384, new AesCbcHmacShaEncryptionProvider.Aes192CbcHmacSha384Provider());
         ENC_PROVIDERS.put(JWEConstants.A256CBC_HS512, new AesCbcHmacShaEncryptionProvider.Aes256CbcHmacSha512Provider());

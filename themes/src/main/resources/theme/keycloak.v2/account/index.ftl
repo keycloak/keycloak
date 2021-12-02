@@ -57,7 +57,7 @@
             <#if referrer??>
                 var referrer = '${referrer}';
                 var referrerName = '${referrerName}';
-                var referrerUri = '${referrer_uri?no_esc}';
+                var referrerUri = '${referrer_uri}'.replace('&amp;', '&');
             </#if>
 
             <#if msg??>
@@ -118,7 +118,7 @@
     <body>
 
         <script>
-            const keycloak = Keycloak({
+            var keycloak = Keycloak({
                 authServerUrl: authUrl,
                 realm: realm,
                 clientId: 'account-console'

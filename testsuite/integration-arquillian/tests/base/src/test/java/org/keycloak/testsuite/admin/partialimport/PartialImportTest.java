@@ -40,6 +40,7 @@ import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.AssertAdminEvents;
@@ -65,6 +66,7 @@ import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.partialimport.ResourceType;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 
+import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 import org.keycloak.util.JsonSerialization;
@@ -482,12 +484,16 @@ public class PartialImportTest extends AbstractAuthTest {
                 ClientRepresentation client = clientRsc.toRepresentation();
                 assertTrue(client.getName().startsWith(CLIENT_PREFIX));
                 Assert.assertTrue(client.isServiceAccountsEnabled());
-                Assert.assertTrue(client.getAuthorizationServicesEnabled());
-                AuthorizationResource authRsc = clientRsc.authorization();
-                ResourceServerRepresentation authRep = authRsc.exportSettings();
-                Assert.assertNotNull(authRep);
-                Assert.assertEquals(2, authRep.getResources().size());
-                Assert.assertEquals(3, authRep.getPolicies().size());
+                if (ProfileAssume.isFeatureEnabled(AUTHORIZATION)) {
+                    Assert.assertTrue(client.getAuthorizationServicesEnabled());
+                    AuthorizationResource authRsc = clientRsc.authorization();
+                    ResourceServerRepresentation authRep = authRsc.exportSettings();
+                    Assert.assertNotNull(authRep);
+                    Assert.assertEquals(2, authRep.getResources().size());
+                    Assert.assertEquals(3, authRep.getPolicies().size());
+                } else {
+                    Assert.assertNull(client.getAuthorizationServicesEnabled());
+                }
             } else {
                 UserResource userRsc = testRealmResource().users().get(result.getId());
                 Assert.assertTrue(userRsc.toRepresentation().getUsername().startsWith(

@@ -48,7 +48,7 @@ public class GitLabIdentityProvider extends OIDCIdentityProvider  implements Soc
 	public static final String AUTH_URL = "https://gitlab.com/oauth/authorize";
 	public static final String TOKEN_URL = "https://gitlab.com/oauth/token";
 	public static final String USER_INFO = "https://gitlab.com/api/v4/user";
-	public static final String API_SCOPE = "api";
+	public static final String READ_USER_SCOPE = "read_user";
 
 	public GitLabIdentityProvider(KeycloakSession session, OIDCIdentityProviderConfig config) {
 		super(session, config);
@@ -59,7 +59,7 @@ public class GitLabIdentityProvider extends OIDCIdentityProvider  implements Soc
 		String defaultScope = config.getDefaultScope();
 
 		if (defaultScope.equals(SCOPE_OPENID)) {
-			config.setDefaultScope((API_SCOPE + " " + defaultScope).trim());
+			config.setDefaultScope((READ_USER_SCOPE + " " + defaultScope).trim());
 		}
 	}
 

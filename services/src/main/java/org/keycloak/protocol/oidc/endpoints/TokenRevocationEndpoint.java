@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
@@ -48,11 +49,10 @@ import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.TokenRevokeContext;
+import org.keycloak.services.clientpolicy.context.TokenRevokeContext;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.Cors;
-import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.util.TokenUtil;
 
 /**
@@ -99,6 +99,8 @@ public class TokenRevocationEndpoint {
 
         formParams = request.getDecodedFormParameters();
 
+        checkParameterDuplicated(formParams);
+
         try {
             session.clientPolicy().triggerOnEvent(new TokenRevokeContext(formParams));
         } catch (ClientPolicyException cpe) {
@@ -124,6 +126,11 @@ public class TokenRevocationEndpoint {
         return cors.builder(Response.ok()).build();
     }
 
+    @OPTIONS
+    public Response preflight() {
+        return Cors.add(request, Response.ok()).auth().preflight().allowedMethods("POST", "OPTIONS").build();
+    }
+
     private void checkSsl() {
         if (!session.getContext().getUri().getBaseUri().getScheme().equals("https")
             && realm.getSslRequired().isRequired(clientConnection)) {
@@ -140,7 +147,7 @@ public class TokenRevocationEndpoint {
     }
 
     private void checkClient() {
-        AuthorizeClientUtil.ClientAuthResult clientAuth = AuthorizeClientUtil.authorizeClient(session, event);
+        AuthorizeClientUtil.ClientAuthResult clientAuth = AuthorizeClientUtil.authorizeClient(session, event, cors);
         client = clientAuth.getClient();
 
         event.client(client);
@@ -219,6 +226,14 @@ public class TokenRevocationEndpoint {
         event.user(user);
     }
 
+    private void checkParameterDuplicated(MultivaluedMap<String, String> formParams) {
+        for (String key : formParams.keySet()) {
+            if (formParams.get(key).size() != 1) {
+                throw new CorsErrorResponseException(cors, Errors.INVALID_REQUEST, "duplicated parameter", Response.Status.BAD_REQUEST);
+            }
+        }
+    }
+
     private void revokeClient() {
         session.users().revokeConsentForClient(realm, user.getId(), client.getId());
         if (TokenUtil.TOKEN_TYPE_OFFLINE.equals(token.getType())) {
@@ -228,7 +243,17 @@ public class TokenRevocationEndpoint {
                 .map(userSession -> userSession.getAuthenticatedClientSessionByClient(client.getId()))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList()) // collect to avoid concurrent modification as dettachClientSession removes the user sessions.
-                .forEach(clientSession -> TokenManager.dettachClientSession(session.sessions(), realm, clientSession));
+                .forEach(clientSession -> {
+                    UserSessionModel userSession = clientSession.getUserSession();
+                    TokenManager.dettachClientSession(clientSession);
+
+                    if (userSession != null) {
+                        // TODO: Might need optimization to prevent loading client sessions from cache in getAuthenticatedClientSessions()
+                        if (userSession.getAuthenticatedClientSessions().isEmpty()) {
+                            session.sessions().removeUserSession(realm, userSession);
+                        }
+                    }
+                });
     }
 
     private void revokeAccessToken() {

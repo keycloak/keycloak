@@ -24,6 +24,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.keycloak.testsuite.AssertEvents.isUUID;
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;
@@ -90,6 +91,7 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -124,6 +126,9 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
+
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -160,6 +165,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
                         .secret("secret")
                         .redirectUris("http://localhost:8180/auth/realms/master/app/auth/*", "https://localhost:8543/auth/realms/master/app/auth/*")
                         .publicClient())
+                .testEventListener()
                 .build());
 
         configureSectorIdentifierRedirectUris();
@@ -582,6 +588,8 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         request.addPermission("Sensortest", "sensors:view");
 
+        getTestContext().getTestingClient().testing().clearEventQueue();
+
         try {
             authzClient.authorization(accessToken).authorize(request);
             fail("resource is invalid");
@@ -589,6 +597,13 @@ public class EntitlementAPITest extends AbstractAuthzTest {
             assertEquals(400, HttpResponseException.class.cast(expected.getCause()).getStatusCode());
             assertTrue(HttpResponseException.class.cast(expected.getCause()).toString().contains("invalid_resource"));
         }
+
+        events.expect(EventType.PERMISSION_TOKEN_ERROR).realm(getRealm().toRepresentation().getId()).client(RESOURCE_SERVER_TEST)
+                .session((String) null)
+                .error("invalid_request")
+                .detail("reason", "Resource with id [Sensortest] does not exist.")
+                .user(isUUID())
+                .assertEvent();
     }
 
     @Test

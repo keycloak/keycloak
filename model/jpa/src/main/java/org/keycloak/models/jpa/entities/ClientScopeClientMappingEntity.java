@@ -21,11 +21,8 @@ import java.io.Serializable;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
@@ -36,9 +33,10 @@ import javax.persistence.Table;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @NamedQueries({
-        @NamedQuery(name="clientScopeClientMappingIdsByClient", query="select m.clientScope.id from ClientScopeClientMappingEntity m where m.client = :client and m.defaultScope = :defaultScope"),
-        @NamedQuery(name="deleteClientScopeClientMapping", query="delete from ClientScopeClientMappingEntity where client = :client and clientScope = :clientScope"),
-        @NamedQuery(name="deleteClientScopeClientMappingByClient", query="delete from ClientScopeClientMappingEntity where client = :client")
+        @NamedQuery(name="clientScopeClientMappingIdsByClient", query="select m.clientScopeId from ClientScopeClientMappingEntity m where m.clientId = :clientId and m.defaultScope = :defaultScope"),
+        @NamedQuery(name="deleteClientScopeClientMapping", query="delete from ClientScopeClientMappingEntity where clientId = :clientId and clientScopeId = :clientScopeId"),
+        @NamedQuery(name="deleteClientScopeClientMappingByClient", query="delete from ClientScopeClientMappingEntity where clientId = :clientId"),
+        @NamedQuery(name="deleteClientScopeClientMappingByClientScope", query="delete from ClientScopeClientMappingEntity where clientScopeId = :clientScopeId")
 })
 @Entity
 @Table(name="CLIENT_SCOPE_CLIENT")
@@ -46,32 +44,30 @@ import javax.persistence.Table;
 public class ClientScopeClientMappingEntity {
 
     @Id
-    @ManyToOne(fetch= FetchType.LAZY)
-    @JoinColumn(name = "SCOPE_ID")
-    protected ClientScopeEntity clientScope;
+    @Column(name = "SCOPE_ID")
+    protected String clientScopeId;
 
     @Id
-    @ManyToOne(fetch= FetchType.LAZY)
-    @JoinColumn(name="CLIENT_ID")
-    protected ClientEntity client;
+    @Column(name="CLIENT_ID")
+    protected String clientId;
 
     @Column(name="DEFAULT_SCOPE")
     protected boolean defaultScope;
 
-    public ClientScopeEntity getClientScope() {
-        return clientScope;
+    public String getClientScopeId() {
+        return clientScopeId;
     }
 
-    public void setClientScope(ClientScopeEntity clientScope) {
-        this.clientScope = clientScope;
+    public void setClientScopeId(String clientScopeId) {
+        this.clientScopeId = clientScopeId;
     }
 
-    public ClientEntity getClient() {
-        return client;
+    public String getClientId() {
+        return clientId;
     }
 
-    public void setClient(ClientEntity client) {
-        this.client = client;
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
     }
 
     public boolean isDefaultScope() {
@@ -84,24 +80,24 @@ public class ClientScopeClientMappingEntity {
 
     public static class Key implements Serializable {
 
-        protected ClientScopeEntity clientScope;
+        protected String clientScopeId;
 
-        protected ClientEntity client;
+        protected String clientId;
 
         public Key() {
         }
 
-        public Key(ClientScopeEntity clientScope, ClientEntity client) {
-            this.clientScope = clientScope;
-            this.client = client;
+        public Key(String clientScopeId, String clientId) {
+            this.clientScopeId = clientScopeId;
+            this.clientId = clientId;
         }
 
-        public ClientScopeEntity getClientScope() {
-            return clientScope;
+        public String getClientScopeId() {
+            return clientScopeId;
         }
 
-        public ClientEntity getClient() {
-            return client;
+        public String getClientId() {
+            return clientId;
         }
 
         @Override
@@ -111,16 +107,16 @@ public class ClientScopeClientMappingEntity {
 
             ClientScopeClientMappingEntity.Key key = (ClientScopeClientMappingEntity.Key) o;
 
-            if (clientScope != null ? !clientScope.getId().equals(key.clientScope != null ? key.clientScope.getId() : null) : key.clientScope != null) return false;
-            if (client != null ? !client.getId().equals(key.client != null ? key.client.getId() : null) : key.client != null) return false;
+            if (clientScopeId != null ? !clientScopeId.equals(key.getClientScopeId() != null ? key.getClientScopeId() : null) : key.getClientScopeId() != null) return false;
+            if (clientId != null ? !clientId.equals(key.getClientId() != null ? key.getClientId() : null) : key.getClientId() != null) return false;
 
             return true;
         }
 
         @Override
         public int hashCode() {
-            int result = clientScope != null ? clientScope.getId().hashCode() : 0;
-            result = 31 * result + (client != null ? client.getId().hashCode() : 0);
+            int result = clientScopeId != null ? clientScopeId.hashCode() : 0;
+            result = 31 * result + (clientId != null ? clientId.hashCode() : 0);
             return result;
         }
     }
@@ -133,16 +129,16 @@ public class ClientScopeClientMappingEntity {
 
         ClientScopeClientMappingEntity key = (ClientScopeClientMappingEntity) o;
 
-        if (clientScope != null ? !clientScope.getId().equals(key.clientScope != null ? key.clientScope.getId() : null) : key.clientScope != null) return false;
-        if (client != null ? !client.getId().equals(key.client != null ? key.client.getId() : null) : key.client != null) return false;
+        if (clientScopeId != null ? !clientScopeId.equals(key.getClientScopeId() != null ? key.getClientScopeId() : null) : key.getClientScopeId() != null) return false;
+        if (clientId != null ? !clientId.equals(key.getClientId() != null ? key.getClientId() : null) : key.getClientId() != null) return false;
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        int result = clientScope != null ? clientScope.getId().hashCode() : 0;
-        result = 31 * result + (client != null ? client.getId().hashCode() : 0);
+        int result = clientScopeId != null ? clientScopeId.hashCode() : 0;
+        result = 31 * result + (clientId != null ? clientId.hashCode() : 0);
         return result;
     }
 }

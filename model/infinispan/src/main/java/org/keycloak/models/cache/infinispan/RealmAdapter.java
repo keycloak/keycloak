@@ -29,6 +29,7 @@ import org.keycloak.storage.client.ClientStorageProvider;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
@@ -40,18 +41,20 @@ public class RealmAdapter implements CachedRealmModel {
     protected RealmCacheSession cacheSession;
     protected volatile RealmModel updated;
     protected KeycloakSession session;
+    private final Supplier<RealmModel> modelSupplier;
 
     public RealmAdapter(KeycloakSession session, CachedRealm cached, RealmCacheSession cacheSession) {
         this.cached = cached;
         this.cacheSession = cacheSession;
         this.session = session;
+        this.modelSupplier = this::getRealm;
     }
 
     @Override
     public RealmModel getDelegateForUpdate() {
         if (updated == null) {
             cacheSession.registerRealmInvalidation(cached.getId(), cached.getName());
-            updated = cacheSession.getRealmDelegate().getRealm(cached.getId());
+            updated = modelSupplier.get();
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
         return updated;
@@ -644,6 +647,31 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public OAuth2DeviceConfig getOAuth2DeviceConfig() {
+        if (isUpdated())
+            return updated.getOAuth2DeviceConfig();
+        return cached.getOAuth2DeviceConfig(modelSupplier);
+    }
+
+    @Override
+    public CibaConfig getCibaPolicy() {
+        if (isUpdated()) return updated.getCibaPolicy();
+        return cached.getCibaConfig(modelSupplier);
+    }
+
+    @Override
+    public ParConfig getParPolicy() {
+        if (isUpdated()) return updated.getParPolicy();
+        return cached.getParConfig(modelSupplier);
+    }
+
+    @Override
+    public List<RequiredCredentialModel> getRequiredCredentials() {
+        if (isUpdated()) return updated.getRequiredCredentials();
+        return cached.getRequiredCredentials();
+    }
+
+    @Override
     public void addRequiredCredential(String cred) {
         getDelegateForUpdate();
         updated.addRequiredCredential(cred);
@@ -795,6 +823,11 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Stream<ClientModel> searchClientByClientIdStream(String clientId, Integer firstResult, Integer maxResults) {
         return cacheSession.searchClientsByClientIdStream(this, clientId, firstResult, maxResults);
+    }
+
+    @Override
+    public Stream<ClientModel> searchClientByAttributes(Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+        return cacheSession.searchClientsByAttributes(this, attributes, firstResult, maxResults);
     }
 
     @Override
@@ -1457,7 +1490,7 @@ public class RealmAdapter implements CachedRealmModel {
     public Stream<ClientScopeModel> getClientScopesStream() {
         if (isUpdated()) return updated.getClientScopesStream();
         return cached.getClientScopes().stream().map(scope -> {
-            ClientScopeModel model = cacheSession.getClientScopeById(scope, this);
+            ClientScopeModel model = cacheSession.getClientScopeById(this, scope);
             if (model == null) {
                 throw new IllegalStateException("Cached clientScope not found: " + scope);
             }
@@ -1467,31 +1500,31 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public ClientScopeModel addClientScope(String name) {
-        getDelegateForUpdate();
-        ClientScopeModel app = updated.addClientScope(name);
-        cacheSession.registerClientScopeInvalidation(app.getId());
-        return app;
+        RealmModel realm = getDelegateForUpdate();
+        ClientScopeModel clientScope = updated.addClientScope(name);
+        cacheSession.registerClientScopeInvalidation(clientScope.getId(), realm.getId());
+        return clientScope;
     }
 
     @Override
     public ClientScopeModel addClientScope(String id, String name) {
-        getDelegateForUpdate();
-        ClientScopeModel app =  updated.addClientScope(id, name);
-        cacheSession.registerClientScopeInvalidation(app.getId());
-        return app;
+        RealmModel realm = getDelegateForUpdate();
+        ClientScopeModel clientScope =  updated.addClientScope(id, name);
+        cacheSession.registerClientScopeInvalidation(clientScope.getId(), realm.getId());
+        return clientScope;
     }
 
     @Override
     public boolean removeClientScope(String id) {
-        cacheSession.registerClientScopeInvalidation(id);
-        getDelegateForUpdate();
+        RealmModel realm = getDelegateForUpdate();
+        cacheSession.registerClientScopeInvalidation(id, realm.getId());
         return updated.removeClientScope(id);
     }
 
     @Override
     public ClientScopeModel getClientScopeById(String id) {
         if (isUpdated()) return updated.getClientScopeById(id);
-        return cacheSession.getClientScopeById(id, this);
+        return cacheSession.getClientScopeById(this, id);
     }
 
     @Override
@@ -1511,7 +1544,7 @@ public class RealmAdapter implements CachedRealmModel {
         if (isUpdated()) return updated.getDefaultClientScopesStream(defaultScope);
         List<String> clientScopeIds = defaultScope ? cached.getDefaultDefaultClientScopes() : cached.getOptionalDefaultClientScopes();
         return clientScopeIds.stream()
-                .map(scope -> cacheSession.getClientScopeById(scope, this))
+                .map(scope -> cacheSession.getClientScopeById(this, scope))
                 .filter(Objects::nonNull);
     }
 
@@ -1604,6 +1637,7 @@ public class RealmAdapter implements CachedRealmModel {
         return cached.getComponents().get(id);
     }
 
+    @Override
     public void setAttribute(String name, String value) {
         getDelegateForUpdate();
         updated.setAttribute(name, value);
@@ -1664,9 +1698,9 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public void patchRealmLocalizationTexts(String locale, Map<String, String> localizationTexts) {
+    public void createOrUpdateRealmLocalizationTexts(String locale, Map<String, String> localizationTexts) {
         getDelegateForUpdate();
-        updated.patchRealmLocalizationTexts(locale, localizationTexts);
+        updated.createOrUpdateRealmLocalizationTexts(locale, localizationTexts);
     }
 
     @Override
@@ -1690,6 +1724,36 @@ public class RealmAdapter implements CachedRealmModel {
             localizationTexts = cached.getRealmLocalizationTexts().get(locale);
         }
         return Collections.unmodifiableMap(localizationTexts);
+    }
+
+    private RealmModel getRealm() {
+        return cacheSession.getRealmDelegate().getRealm(cached.getId());
+    }
+
+    @Override
+    public ClientInitialAccessModel createClientInitialAccessModel(int expiration, int count) {
+        getDelegateForUpdate();
+        return updated.createClientInitialAccessModel(expiration, count);
+    }
+
+    @Override
+    public ClientInitialAccessModel getClientInitialAccessModel(String id) {
+        return getDelegateForUpdate().getClientInitialAccessModel(id);
+    }
+
+    @Override
+    public void removeClientInitialAccessModel(String id) {
+        getDelegateForUpdate().removeClientInitialAccessModel(id);
+    }
+
+    @Override
+    public Stream<ClientInitialAccessModel> getClientInitialAccesses() {
+        return getDelegateForUpdate().getClientInitialAccesses();
+    }
+
+    @Override
+    public void decreaseRemainingCount(ClientInitialAccessModel clientInitialAccess) {
+        getDelegateForUpdate().decreaseRemainingCount(clientInitialAccess);
     }
 
     @Override

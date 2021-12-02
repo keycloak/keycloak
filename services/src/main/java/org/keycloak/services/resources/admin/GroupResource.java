@@ -19,6 +19,7 @@ package org.keycloak.services.resources.admin;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import javax.ws.rs.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
@@ -100,10 +101,17 @@ public class GroupResource {
     public Response updateGroup(GroupRepresentation rep) {
         this.auth.groups().requireManage(group);
 
-        boolean exists = siblings().filter(s -> !Objects.equals(s.getId(), group.getId()))
-                .anyMatch(s -> Objects.equals(s.getName(), rep.getName()));
-        if (exists) {
-            return ErrorResponse.exists("Sibling group named '" + rep.getName() + "' already exists.");
+        String groupName = rep.getName();
+        if (ObjectUtil.isBlank(groupName)) {
+            return ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
+        }
+
+        if (!Objects.equals(groupName, group.getName())) {
+            boolean exists = siblings().filter(s -> !Objects.equals(s.getId(), group.getId()))
+                    .anyMatch(s -> Objects.equals(s.getName(), groupName));
+            if (exists) {
+                return ErrorResponse.exists("Sibling group named '" + groupName + "' already exists.");
+            }
         }
         
         updateGroup(rep, group);
@@ -143,6 +151,11 @@ public class GroupResource {
     public Response addChild(GroupRepresentation rep) {
         this.auth.groups().requireManage(group);
 
+        String groupName = rep.getName();
+        if (ObjectUtil.isBlank(groupName)) {
+            return ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
+        }
+
         Response.ResponseBuilder builder = Response.status(204);
         GroupModel child = null;
         if (rep.getId() != null) {
@@ -153,7 +166,7 @@ public class GroupResource {
             realm.moveGroup(child, group);
             adminEvent.operation(OperationType.UPDATE);
         } else {
-            child = realm.createGroup(rep.getName(), group);
+            child = realm.createGroup(groupName, group);
             updateGroup(rep, child);
             URI uri = session.getContext().getUri().getBaseUriBuilder()
                                            .path(session.getContext().getUri().getMatchedURIs().get(2))

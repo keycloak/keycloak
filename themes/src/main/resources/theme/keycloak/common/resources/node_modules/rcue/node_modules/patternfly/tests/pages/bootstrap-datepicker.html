@@ -1,0 +1,79 @@
+---
+alert-message: ', <a href="http://getbootstrap.com" class="alert-link">http://getbootstrap.com</a>, and <a href="http://bootstrap-datepicker.readthedocs.org/en/latest/">http://bootstrap-datepicker.readthedocs.org/en/latest/</a>.'
+categories: [Widgets]
+layout: page
+title: Bootstrap-Datepicker
+resource: true
+url-js-extra: 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.6.4/js/bootstrap-datepicker.min.js'
+---
+      <h2>Readonly Inputs</h2>
+      <p><span class="text-success">Recommended.</span>  To prevent invalid dates, setting the inputs to readonly only allows a date to be input via the date picker widget.</p>
+      <h3>Text Input</h3>
+        {% include widgets/forms/bootstrap-datepicker-text-input.html id="datepicker1" %}
+      <h3>Component</h3>
+        {% include widgets/forms/bootstrap-datepicker.html id="datepicker2" %}
+      <h3>Inline</h3>
+        {% include widgets/forms/bootstrap-datepicker-inline.html id="datepicker3" %}
+      <h3>Range <small>Do not use.  PatternFly-approved design coming in a future update.</small></h3>
+      <div class="input-daterange input-group">
+        <input type="text" class="form-control bootstrap-datepicker" name="start" readonly>
+        <span class="input-group-addon">to</span>
+        <input type="text" class="form-control bootstrap-datepicker" name="end" readonly>
+      </div>
+      <h3>Validation States</h3>
+      <div class="form-group has-success">
+        <label class="control-label" for="boostrap-datepicker-success-readonly">With success</label>
+        <input type="text" class="form-control bootstrap-datepicker input-datepicker" id="boostrap-datepicker-success-readonly" readonly>
+      </div>
+      <div class="form-group has-warning">
+        <label class="control-label" for="boostrap-datepicker-warning-readonly">With warning</label>
+        <input type="text" class="form-control bootstrap-datepicker input-datepicker" id="boostrap-datepicker-warning-readonly" readonly>
+      </div>
+      <div class="form-group has-error">
+        <label class="control-label" for="boostrap-datepicker-error-readonly">With error</label>
+        <input type="text" class="form-control bootstrap-datepicker input-datepicker" id="boostrap-datepicker-error-readonly" readonly>
+      </div>
+      <hr>
+      <h2>Normal Inputs</h2>
+      <p><span class="text-warning">Not recommended.</span>  For comparison only.</p>
+      <h3>Text Input</h3>
+      <input type="text" class="form-control bootstrap-datepicker input-datepicker" id="bdp-text-input">
+      <h3>Component</h3>
+      <div class="input-group date" id="bdp-component">
+        <input type="text" class="form-control bootstrap-datepicker"><span class="input-group-addon"><span class="fa fa-calendar"></span></span>
+      </div>
+      <h3>Inline</h3>
+      <div class="bootstrap-datepicker-inline"></div>
+      <h3>Range <small>Do not use.  PatternFly-approved design coming in a future update.</small></h3>
+      <div class="input-daterange input-group">
+        <input type="text" class="form-control bootstrap-datepicker" name="start">
+        <span class="input-group-addon">to</span>
+        <input type="text" class="form-control bootstrap-datepicker" name="end">
+      </div>
+      <h3>Validation States</h3>
+      <div class="form-group has-success">
+        <label class="control-label" for="boostrap-datepicker-success">With success</label>
+        <input type="text" class="form-control bootstrap-datepicker input-datepicker" id="boostrap-datepicker-success">
+      </div>
+      <div class="form-group has-warning">
+        <label class="control-label" for="boostrap-datepicker-warning">With warning</label>
+        <input type="text" class="form-control bootstrap-datepicker input-datepicker" id="boostrap-datepicker-warning">
+      </div>
+      <div class="form-group has-error">
+        <label class="control-label" for="boostrap-datepicker-error">With error</label>
+        <input type="text" class="form-control bootstrap-datepicker input-datepicker" id="boostrap-datepicker-error">
+      </div>
+      <script>
+        // Initialize Boostrap-Datepicker
+        $('.input-datepicker, .input-group.date, .bootstrap-datepicker-inline').datepicker({
+          autoclose: true,
+          orientation: "top auto",
+          todayBtn: "linked",
+          todayHighlight: true
+        });
+        $('.input-daterange').datepicker({
+          autoclose: true,
+          todayBtn: "linked",
+          todayHighlight: true
+        });
+      </script>

@@ -52,6 +52,7 @@ __all__ = [
     'saveUrlToNamedTemporaryFile'
     'updateAdapterLicenseFile',
     'performMainKeycloakPomFileUpdateTask',
+    'performAdapterGalleonPackPomFileUpdateTask',
     'performKeycloakAdapterLicenseFilesUpdateTask',
     'synchronizeInfinispanSubsystemXmlNamespaceWithWildfly'
 ]
@@ -598,7 +599,10 @@ def mergeTwoGavDictionaries(firstGavDictionary, secondGavDictionary):
 _excludedProperties = [
     # Intentionally avoid Apache DS downgrade from "2.0.0.AM26" to Wildfly's current
     # "2.0.0-M24" version due to recent KEYCLOAK-14162
-    "apacheds.version"
+    "apacheds.version",
+    # KEYCLOAK-17585 Prevent microprofile-metrics-api upgrades from version "2.3" due to:
+    # https://issues.redhat.com/browse/KEYCLOAK-17585?focusedCommentId=16002705&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-16002705
+    "microprofile-metrics-api.version"
 ]
 
 # List of Keycloak specific properties listed in main Keycloak pom.xml file. These entries:
@@ -696,6 +700,7 @@ _keycloakToWildflyProperties = {
     "jackson.version"                                             : "version.com.fasterxml.jackson",
     # Skip "jackson.databind.version" and "jackson.annotations.version" since they are derived from ${jackson.version}" above
     "jakarta.mail.version"                                        : "version.jakarta.mail",
+    "jboss.marshalling.version"                                   : "version.org.jboss.marshalling.jboss-marshalling",
     "jboss.logging.version"                                       : "version.org.jboss.logging.jboss-logging",
     "jboss.logging.tools.version"                                 : "version.org.jboss.logging.jboss-logging-tools",
     "jboss-jaxrs-api_2.1_spec"                                    : "version.org.jboss.spec.javax.ws.jboss-jaxrs-api_2.1_spec",
@@ -804,35 +809,12 @@ def _scanMainKeycloakPomFileForUnknownArtifacts():
             artifactName not in itertools.chain(_excludedProperties, _keycloakSpecificProperties, _keycloakToWildflyProperties.keys())
         )
 
-# Empirical list of artifacts to retrieve from Wildfly-Core's pom.xml rather than from Wildfly's pom.xml
-_wildflyCoreProperties = [
-    "wildfly.build-tools.version",
-    "aesh.version",
-    "apache.httpcomponents.version",
-    "apache.httpcomponents.httpcore.version",
-    "jboss.dmr.version",
-    "jboss.logging.version",
-    "jboss.logging.tools.version",
-    "log4j.version",
-    "slf4j-api.version",
-    "slf4j.version",
-    "javax.xml.bind.jaxb.version",
-    "undertow.version",
-    "elytron.version",
-    "elytron.undertow-server.version",
-    "woodstox.version",
-    "glassfish.json.version",
-    "picketbox.version",
-    "commons-lang.version",
-    "commons-io.version",
-    "junit.version",
-]
 
 def performMainKeycloakPomFileUpdateTask(wildflyPomFile, wildflyCorePomFile, forceUpdates = False):
     """
     Synchronize the versions of artifacts listed as properties in the main
     Keycloak pom.xml file with their counterparts taken from 'wildflyPomFile'
-    and 'wildflyCorePomFile'.
+    or 'wildflyCorePomFile'.
     """
     wildflyXmlTreeRoot = getXmlRoot(wildflyPomFile)
     wildflyCoreXmlTreeRoot = getXmlRoot(wildflyCorePomFile)
@@ -852,12 +834,12 @@ def performMainKeycloakPomFileUpdateTask(wildflyPomFile, wildflyCorePomFile, for
 
         if keycloakElemName == "wildfly.version":
             wildflyElem = getElementsByXPath(wildflyXmlTreeRoot, '/pom:project/pom:version')
-        # Artifact is one of those listed above to be fetched from Wildfly Core's pom.xml
-        elif keycloakElemName in _wildflyCoreProperties:
-            wildflyElem = getPomProperty(wildflyCoreXmlTreeRoot, wildflyElemName)
-        # Otherwise fetch artifact version from Wildfly's pom.xml
         else:
-            wildflyElem = getPomProperty(wildflyXmlTreeRoot, wildflyElemName)
+            # Try to fetch updated artifact version from Wildfly Core's pom.xml first
+            wildflyElem = getPomProperty(wildflyCoreXmlTreeRoot, wildflyElemName)
+            # If not found, fetch it from Wildfly's pom.xml file
+            if not wildflyElem:
+                wildflyElem = getPomProperty(wildflyXmlTreeRoot, wildflyElemName)
 
         if wildflyElem:
             keycloakElem = getPomProperty(keycloakXmlTreeRoot, keycloakElemName)
@@ -886,10 +868,51 @@ def performMainKeycloakPomFileUpdateTask(wildflyPomFile, wildflyCorePomFile, for
                 "Unable to locate element with name: '%s' in '%s' or '%s'" %
                 (wildflyElemName, wildflyPomFile, wildflyCorePomFile)
             )
+            sys.exit(1)
 
     lxml.etree.ElementTree(keycloakXmlTreeRoot).write(mainKeycloakPomPath, encoding = "UTF-8", pretty_print = True, xml_declaration = True)
     stepLogger.info("Done syncing artifact version changes to: '%s'!" % mainKeycloakPomPath.replace(getKeycloakGitRepositoryRoot(), '.'))
     stepLogger.debug("Wrote updated main Keycloak pom.xml file to: '%s'" % mainKeycloakPomPath)
+
+
+def performAdapterGalleonPackPomFileUpdateTask(wildflyCorePomFile, forceUpdates = False):
+    """
+    Synchronize Keycloak's version of 'version.org.wildfly.galleon-plugins' artifact in the adapter Galleon pack
+    with its corresponding version from Wildfly Core
+    """
+    wildflyGalleonMavenPluginProperty = "version.org.wildfly.galleon-plugins"
+
+    wildflyCoreXmlTreeRoot = getXmlRoot(wildflyCorePomFile)
+    wildflyGalleonMavenPluginWildflyCoreElem = getPomProperty(wildflyCoreXmlTreeRoot, wildflyGalleonMavenPluginProperty)
+    wildflyGalleonMavenPluginWildflyCoreVersion = wildflyGalleonMavenPluginWildflyCoreElem[0].text
+
+    # Absolute path to the pom.xml file of the adapter Galleon pack within the repo
+    adapterGalleonPackPomPath = getKeycloakGitRepositoryRoot() + "/distribution/galleon-feature-packs/adapter-galleon-pack/pom.xml"
+    adapterGalleonPackXmlTreeRoot = getXmlRoot(adapterGalleonPackPomPath)
+    wildflyGalleonMavenPluginAdapterGalleonPackElem = getPomProperty(adapterGalleonPackXmlTreeRoot, wildflyGalleonMavenPluginProperty)
+    wildflyGalleonMavenPluginKeycloakVersion = wildflyGalleonMavenPluginAdapterGalleonPackElem[0].text
+
+    taskLogger = getTaskLogger('Update pom.xml of adapter Galleon pack')
+    taskLogger.info('Synchronizing Wildfly Core artifact versions to the pom.xml file of Keycloak adapter Galleon pack...')
+    stepLogger = getStepLogger()
+    if (
+            forceUpdates or
+            compareMavenVersions(wildflyGalleonMavenPluginWildflyCoreVersion, wildflyGalleonMavenPluginKeycloakVersion) > 0
+    ):
+        stepLogger.debug(
+            "Updating version of '%s' artifact to '%s'. Current '%s' version is less than that." %
+            (wildflyGalleonMavenPluginProperty, wildflyGalleonMavenPluginWildflyCoreVersion, wildflyGalleonMavenPluginKeycloakVersion)
+        )
+        wildflyGalleonMavenPluginAdapterGalleonPackElem[0].text = wildflyGalleonMavenPluginWildflyCoreElem[0].text
+        lxml.etree.ElementTree(adapterGalleonPackXmlTreeRoot).write(adapterGalleonPackPomPath, encoding = "UTF-8", pretty_print = True, xml_declaration = True)
+        stepLogger.info("Done syncing artifact version changes to: '%s'!" % adapterGalleonPackPomPath.replace(getKeycloakGitRepositoryRoot(), '.'))
+        stepLogger.debug("Wrote updated pom.xml file to: '%s'" % adapterGalleonPackPomPath)
+    else:
+        stepLogger.debug(
+            "Not updating version of '%s' artifact to '%s'. Current '%s' version is already up2date." %
+            (wildflyGalleonMavenPluginProperty, wildflyGalleonMavenPluginWildflyCoreVersion, wildflyGalleonMavenPluginKeycloakVersion)
+        )
+
 
 #
 # Routing handling necessary updates of various
@@ -921,6 +944,30 @@ def updateAdapterLicenseFile(gavDictionary, xPathPrefix, nameSpace, licenseFile,
             groupIdElem is None or artifactIdElem is None or versionElem is None,
             logger = stepLogger
         )
+        # KEYCLOAK-16202 Per:
+        #
+        # * https://github.com/keycloak/keycloak/pull/7463#discussion_r517346730 and
+        # * https://github.com/keycloak/keycloak/pull/7463#discussion_r517346766
+        #
+        # skip automated updates of versions of "org.apache.httpcomponents:httpclient"
+        # and "org.apache.httpcomponents:httpcore" dependencies in the Fuse adapter
+        # license file(s) as part of the upgrade script run
+        if (
+                'fuse-adapter-zip' in licenseFile and
+                groupIdElem.text == 'org.apache.httpcomponents' and
+                artifactIdElem.text in ['httpclient', 'httpcore']
+        ):
+
+            httpComponentsFuseAdapterSpecificMessage = (
+                "Not updating version of '%s:%s' artifact in the Fuse adapter license file," %
+                 (groupIdElem.text, artifactIdElem.text),
+                " since this adapter can work properly only with a specific,\n\t\tpreviously approved version!"
+                " See '<apache.httpcomponents.fuse.version>' and '<apache.httpcomponents.httpcore.fuse.version>'",
+                " properties in the main Keycloak pom.xml file\n\t\tfor further details."
+            )
+            stepLogger.info(_empty_string.join(httpComponentsFuseAdapterSpecificMessage))
+            continue
+
         currentArtifactVersion = versionElem.text
         gavDictKey = groupIdElem.text + _gav_delimiter + artifactIdElem.text
         try:
@@ -1017,8 +1064,26 @@ def updateAdapterLicenseFile(gavDictionary, xPathPrefix, nameSpace, licenseFile,
                 stepLogger.debug(artifactVersionAlreadyHigherMessage)
 
         except KeyError:
+            # Cover the case when particular Keycloak / RH-SSO dependency isn't present in the GAV
+            # file created from the list of all Maven artifacts used by Wildfly (Core) / JBoss EAP
+            if 'keycloak' in licenseFile:
+                productName = 'Keycloak'
+                parentProductName = 'Wildfly (Core)'
+            elif 'rh-sso' in licenseFile:
+                productName = 'RH-SSO'
+                parentProductName = 'JBoss EAP'
+            else:
+                productName = parentProductName = None
+            _logErrorAndExitIf(
+                "Failed to determine the product name while updating the '%s' license file!" % licenseFile,
+                productName is None,
+                logger = stepLogger
+            )
             # Ignore artifacts not found in the Gav dictionary
-            stepLogger.debug("Skipping '%s' artifact not present in GAV dictionary." % gavDictKey)
+            stepLogger.debug(
+                "Skipping '%s' specific '%s' license dependency since not present in '%s' list of all Maven artifacts!" %
+                (productName, gavDictKey, parentProductName)
+            )
             pass
 
     lxml.etree.ElementTree(licenseFileXmlTreeRoot).write(licenseFile, encoding = "UTF-8", pretty_print = True, xml_declaration = True)

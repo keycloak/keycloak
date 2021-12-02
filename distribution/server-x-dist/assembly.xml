@@ -32,10 +32,6 @@
             <filtered>false</filtered>
         </fileSet>
         <fileSet>
-            <directory>target/unpacked-themes/theme</directory>
-            <outputDirectory>themes</outputDirectory>
-        </fileSet>
-        <fileSet>
             <directory>src/main</directory>
             <outputDirectory></outputDirectory>
             <includes>
@@ -48,6 +44,7 @@
             <includes>
                 <include>*.*</include>
             </includes>
+            <filtered>true</filtered>
         </fileSet>
         <fileSet>
             <directory>src/main/content/bin</directory>
@@ -105,7 +102,7 @@
             <outputDirectory>conf</outputDirectory>
         </file>
         <file>
-            <source>target/keycloak-quarkus-server-app/META-INF/keycloak.properties</source>
+            <source>../../quarkus/runtime/src/main/resources/META-INF/keycloak.properties</source>
             <outputDirectory>conf</outputDirectory>
         </file>
     </files>

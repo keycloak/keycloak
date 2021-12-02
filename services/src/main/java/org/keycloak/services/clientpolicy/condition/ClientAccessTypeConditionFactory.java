@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,15 +22,19 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.keycloak.Config.Scope;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
+/**
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
 public class ClientAccessTypeConditionFactory implements ClientPolicyConditionProviderFactory {
 
-    public static final String PROVIDER_ID = "client-accesstype-condition";
+    public static final String PROVIDER_ID = "client-access-type";
+
     public static final String TYPE = "type";
+
     public static final String TYPE_CONFIDENTIAL = "confidential";
     public static final String TYPE_PUBLIC = "public";
     public static final String TYPE_BEARERONLY = "bearer-only";
@@ -46,8 +50,8 @@ public class ClientAccessTypeConditionFactory implements ClientPolicyConditionPr
     }
 
     @Override
-    public ClientPolicyConditionProvider create(KeycloakSession session, ComponentModel model) {
-        return new ClientAccessTypeCondition(session, model);
+    public ClientPolicyConditionProvider create(KeycloakSession session) {
+        return new ClientAccessTypeCondition(session);
     }
 
     @Override
@@ -69,7 +73,7 @@ public class ClientAccessTypeConditionFactory implements ClientPolicyConditionPr
 
     @Override
     public String getHelpText() {
-        return "It uses the client's access type (confidential, public, bearer-only) to determine whether the policy is applied.";
+        return "It uses the client's access type (confidential, public, bearer-only) to determine whether the policy is applied. Condition is checked during most of OpenID Connect requests (Authorization request, token requests, introspection endpoint request etc).";
     }
 
     @Override

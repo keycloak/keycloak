@@ -18,6 +18,7 @@
 package org.keycloak.models;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.keycloak.common.util.ObjectUtil;
@@ -36,11 +37,23 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
     String PRIVATE_KEY = "privateKey";
     String PUBLIC_KEY = "publicKey";
     String X509CERTIFICATE = "X509Certificate";
+    String LOGO_URI ="logoUri";
+    String POLICY_URI ="policyUri";
+    String TOS_URI ="tosUri";
 
     public static class SearchableFields {
-        public static final SearchableModelField<ClientModel> ID                = new SearchableModelField<>("id", String.class);
-        public static final SearchableModelField<ClientModel> REALM_ID          = new SearchableModelField<>("realmId", String.class);
-        public static final SearchableModelField<ClientModel> CLIENT_ID         = new SearchableModelField<>("clientId", String.class);
+        public static final SearchableModelField<ClientModel> ID                 = new SearchableModelField<>("id", String.class);
+        public static final SearchableModelField<ClientModel> REALM_ID           = new SearchableModelField<>("realmId", String.class);
+        public static final SearchableModelField<ClientModel> CLIENT_ID          = new SearchableModelField<>("clientId", String.class);
+        public static final SearchableModelField<ClientModel> ENABLED            = new SearchableModelField<>("enabled", Boolean.class);
+        public static final SearchableModelField<ClientModel> SCOPE_MAPPING_ROLE = new SearchableModelField<>("scopeMappingRole", String.class);
+        public static final SearchableModelField<ClientModel> ALWAYS_DISPLAY_IN_CONSOLE = new SearchableModelField<>("alwaysDisplayInConsole", Boolean.class);
+
+        /**
+         * Search for attribute value. The parameters is a pair {@code (attribute_name, values...)} where {@code attribute_name}
+         * is always checked for equality, and the value is checked per the operator.
+         */
+        public static final SearchableModelField<ClientModel> ATTRIBUTE          = new SearchableModelField<>("attribute", String[].class);
     }
 
     interface ClientCreationEvent extends ProviderEvent {
@@ -56,6 +69,10 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
     interface ClientRemovedEvent extends ProviderEvent {
         ClientModel getClient();
         KeycloakSession getKeycloakSession();
+    }
+
+    interface ClientProtocolUpdatedEvent extends ProviderEvent {
+        ClientModel getClient();
     }
 
     /**
@@ -180,6 +197,12 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
     boolean isFullScopeAllowed();
     void setFullScopeAllowed(boolean value);
 
+    @Override
+    default boolean hasDirectScope(RoleModel role) {
+        if (getScopeMappingsStream().anyMatch(r -> Objects.equals(r, role))) return true;
+
+        return getRolesStream().anyMatch(r -> Objects.equals(r, role));
+    }
 
     boolean isPublicClient();
     void setPublicClient(boolean flag);
@@ -221,10 +244,9 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
      * Return all default scopes (if 'defaultScope' is true) or all optional scopes (if 'defaultScope' is false) linked with this client
      *
      * @param defaultScope
-     * @param filterByProtocol if true, then just client scopes of same protocol like current client will be returned
      * @return map where key is the name of the clientScope, value is particular clientScope. Returns empty map if no scopes linked (never returns null).
      */
-    Map<String, ClientScopeModel> getClientScopes(boolean defaultScope, boolean filterByProtocol);
+    Map<String, ClientScopeModel> getClientScopes(boolean defaultScope);
 
     /**
      * <p>Returns a {@link ClientScopeModel} associated with this client.

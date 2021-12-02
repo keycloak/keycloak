@@ -85,10 +85,12 @@ public class ScopeMappedResource {
      * Get all scope mappings for the client
      *
      * @return
+     * @deprecated the method is not used neither from admin console or from admin client. It may be removed in future releases.
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Deprecated
     public MappingsRepresentation getScopeMappings() {
         viewPermission.require();
 
@@ -153,7 +155,7 @@ public class ScopeMappedResource {
         }
 
         return realm.getRolesStream()
-                .filter(((Predicate<RoleModel>) scopeContainer::hasScope).negate())
+                .filter(((Predicate<RoleModel>) scopeContainer::hasDirectScope).negate())
                 .filter(auth.roles()::canMapClientScope)
                 .map(ModelToRepresentation::toBriefRepresentation);
     }

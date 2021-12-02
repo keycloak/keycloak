@@ -72,4 +72,18 @@ public interface AdapterHttpClientConfig {
      */
     String getProxyUrl();
 
+    /**
+     * Returns timeout for socket waiting for data in milliseconds.
+     */
+    long getSocketTimeout();
+
+    /**
+     * Returns timeout for establishing the connection with the remote host in milliseconds.
+     */
+    long getConnectionTimeout();
+
+    /**
+     * Returns the connection time-to-live
+     */
+    long getConnectionTTL();
 }
