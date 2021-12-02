@@ -74,8 +74,14 @@
                 <version>${quarkus.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+                <exclusions>
+                    <exclusion>  <!-- declare the exclusion here -->
+                        <groupId>org.apache.maven</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
-            
+
             <!-- Override the dependencies below to use the versions used by Keycloak -->
             <dependency>
                 <groupId>org.infinispan</groupId>
@@ -152,7 +158,7 @@
             </plugins>
         </pluginManagement>
     </build>
-    
+
     <modules>
         <module>runtime</module>
         <module>deployment</module>
@@ -166,5 +172,5 @@
             <url>https://repository.jboss.org/nexus/content/groups/public/</url>
         </repository>
     </repositories>
-    
+
 </project>
