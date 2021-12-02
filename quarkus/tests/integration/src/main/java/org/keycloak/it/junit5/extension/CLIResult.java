@@ -61,6 +61,7 @@ public interface CLIResult extends LaunchResult {
     boolean isDistribution();
 
     default void assertStarted() {
+        assertFalse(getOutput().contains("The delayed handler's queue was overrun and log record(s) were lost (Did you forget to configure logging?)"), () -> "The standard Output:\n" + getOutput() + "should not contain a warning about log queue overrun.");
         assertTrue(getOutput().contains("Listening on:"), () -> "The standard output:\n" + getOutput() + "does include \"Listening on:\"");
         assertNotDevMode();
     }
