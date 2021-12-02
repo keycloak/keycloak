@@ -20,8 +20,10 @@ package org.keycloak.quarkus.runtime.cli.command;
 import static org.keycloak.quarkus.runtime.Environment.getHomePath;
 import static org.keycloak.quarkus.runtime.Environment.isDevMode;
 import static org.keycloak.quarkus.runtime.cli.Picocli.println;
+import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.getAllCliArgs;
 
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.Messages;
 
 import io.quarkus.bootstrap.runner.QuarkusEntryPoint;
 import io.quarkus.bootstrap.runner.RunnerClassLoader;
@@ -29,10 +31,6 @@ import io.quarkus.bootstrap.runner.RunnerClassLoader;
 import io.quarkus.runtime.configuration.ProfileManager;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.List;
 
 @Command(name = Build.NAME,
         header = "Creates a new and optimized server image.",
@@ -94,9 +92,8 @@ public final class Build extends AbstractCommand implements Runnable {
     }
 
     private void exitWithErrorIfDevProfileIsSetAndNotStartDev() {
-        List<String> userInvokedCliArgs = Environment.getUserInvokedCliArgs();
-        if(Environment.isDevProfile() && !userInvokedCliArgs.contains(StartDev.NAME)) {
-            devProfileNotAllowedError(Build.NAME);
+        if (Environment.isDevProfile() && !getAllCliArgs().contains(StartDev.NAME)) {
+            executionError(spec.commandLine(), Messages.devProfileNotAllowedError(NAME));
         }
     }
 
@@ -117,11 +114,7 @@ public final class Build extends AbstractCommand implements Runnable {
     private void cleanTempResources() {
         if (!ProfileManager.getLaunchMode().isDevOrTest()) {
             // only needed for dev/testing purposes
-            try {
-                Files.delete(getHomePath().resolve("quarkus-artifact.properties"));
-            } catch (IOException cause) {
-                throw new RuntimeException("Failed to delete temporary resources", cause);
-            }
+            getHomePath().resolve("quarkus-artifact.properties").toFile().delete();
         }
     }
 }

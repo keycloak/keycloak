@@ -45,4 +45,8 @@ public final class Messages {
     public static void cliExecutionError(CommandLine cmd, String message, Throwable cause) {
         throw new CommandLine.ExecutionException(cmd, message, cause);
     }
+
+    public static String devProfileNotAllowedError(String cmd) {
+        return String.format("You can not '%s' the server using the '%s' configuration profile. Please re-build the server first, using 'kc.sh build' for the default production profile, or using 'kc.sh build --profile=<profile>' with a profile more suitable for production.%n", cmd, Environment.DEV_PROFILE_VALUE);
+    }
 }

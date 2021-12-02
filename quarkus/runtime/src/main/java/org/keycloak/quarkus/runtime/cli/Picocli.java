@@ -21,7 +21,9 @@ import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericB
 import static java.util.Arrays.asList;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_SHORT;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuiltTimeProperty;
+import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.hasOptionValue;
+import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.parseConfigArgs;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuildTimeProperty;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfig;
 import static org.keycloak.quarkus.runtime.Environment.isDevMode;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getRuntimeProperty;
@@ -31,19 +33,16 @@ import static org.keycloak.utils.StringUtil.isNotBlank;
 import static picocli.CommandLine.Model.UsageMessageSpec.SECTION_KEY_COMMAND_LIST;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.keycloak.quarkus.runtime.cli.command.Build;
@@ -51,10 +50,10 @@ import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
 import org.keycloak.common.Profile;
-import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
+import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
+import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.ConfigCategory;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
-import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.Environment;
 
@@ -66,13 +65,10 @@ import picocli.CommandLine.Model.ArgGroupSpec;
 
 public final class Picocli {
 
-    private static final String ARG_SEPARATOR = ";;";
     public static final String ARG_PREFIX = "--";
+    private static final String ARG_KEY_VALUE_SEPARATOR = "=";
     public static final String ARG_SHORT_PREFIX = "-";
     public static final String ARG_PART_SEPARATOR = "-";
-    public static final char ARG_KEY_VALUE_SEPARATOR = '=';
-    public static final Pattern ARG_SPLIT = Pattern.compile(";;");
-    public static final Pattern ARG_KEY_VALUE_SPLIT = Pattern.compile("=");
     public static final String NO_PARAM_LABEL = "none";
 
     private Picocli() {
@@ -95,8 +91,6 @@ public final class Picocli {
                     // force the server image to be set with the dev profile
                     Environment.forceDevProfile();
                 }
-
-                Environment.setUserInvokedCliArgs(cliArgs);
             }
             if (requiresReAugmentation(cmd)) {
                 runReAugmentation(cliArgs, cmd);
@@ -112,20 +106,30 @@ public final class Picocli {
         return cliArgs.contains("--help") || cliArgs.contains("-h") || cliArgs.contains("--help-all");
     }
 
-    private static boolean hasAutoBuildOption(List<String> cliArgs) {
+    public static boolean hasAutoBuildOption(List<String> cliArgs) {
         return cliArgs.contains(AUTO_BUILD_OPTION_LONG) || cliArgs.contains(AUTO_BUILD_OPTION_SHORT);
     }
 
-    private static boolean requiresReAugmentation(CommandLine cmd) {
+    public static boolean requiresReAugmentation(CommandLine cmd) {
         if (hasConfigChanges()) {
-            cmd.getOut().println("Changes detected in configuration. Updating the server image.");
+            Predicate<String> profileOptionMatcher = Main.PROFILE_LONG_NAME::equals;
+            profileOptionMatcher = profileOptionMatcher.or(Main.PROFILE_SHORT_NAME::equals);
+
+            if (hasOptionValue(profileOptionMatcher, "dev") && !ConfigArgsConfigSource.getAllCliArgs().contains(StartDev.NAME)) {
+                return false;
+            }
+
             if(!isDevMode()) {
-                List<String> cliInput = getSanitizedCliInput();
-                cmd.getOut().printf("For an optional runtime and bypass this step, please run the '%s' command prior to starting the server:%n%n\t%s %s %s%n",
-                        Build.NAME,
-                        Environment.getCommand(),
-                        Build.NAME,
-                        String.join(" ", cliInput) + "\n");
+                if (cmd != null) {
+                    cmd.getOut().println("Changes detected in configuration. Updating the server image.");
+                    List<String> cliInput = getSanitizedCliInput();
+                    cmd.getOut()
+                            .printf("For an optional runtime and bypass this step, please run the '%s' command prior to starting the server:%n%n\t%s %s %s%n%n",
+                                    Build.NAME,
+                                    Environment.getCommand(),
+                                    Build.NAME,
+                                    String.join(" ", cliInput) + "\n");
+                }
             }
             return true;
         }
@@ -140,29 +144,15 @@ public final class Picocli {
      * instead of the actual passwords value.
      */
     private static List<String> getSanitizedCliInput() {
-
-        if(Environment.getConfigArgs().isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        List<String> rawCliArgs = asList(ARG_SPLIT.split(Environment.getConfigArgs()));
         List<String> properties = new ArrayList<>();
 
-        if (!rawCliArgs.isEmpty()) {
-            for(String rawCliArg : rawCliArgs) {
-                String rawKey = rawCliArg.split("=")[0];
-                PropertyMapper mapper = PropertyMappers.getMapper(rawKey);
-                String value = rawCliArg.split("=")[1];
-
-                if (mapper != null) {
-                    value = formatValue(
-                            mapper.getFrom(),
-                            value);
-                }
-
-                properties.add(rawKey + "=" + value);
+        parseConfigArgs(new BiConsumer<String, String>() {
+            @Override
+            public void accept(String key, String value) {
+                properties.add(key + "=" + formatValue(key, value));
             }
-        }
+        });
+
         return properties;
     }
 
@@ -190,23 +180,14 @@ public final class Picocli {
     }
 
     private static boolean hasProviderChanges() {
-        File propertiesFile = KeycloakConfigSourceProvider.getPersistedConfigFile().toFile();
+        Map<String, String> persistedProps = PersistedConfigSource.getInstance().getProperties();
         Map<String, File> deployedProviders = Environment.getProviderFiles();
 
-        if (!propertiesFile.exists()) {
+        if (persistedProps.isEmpty()) {
             return !deployedProviders.isEmpty();
         }
 
-        Properties properties = new Properties();
-
-        try (InputStream is = new FileInputStream(propertiesFile)) {
-            properties.load(is);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to load persisted properties", e);
-        }
-
-        Set<String> providerKeys = properties.stringPropertyNames().stream().filter(Picocli::isProviderKey).collect(
-                Collectors.toSet());
+        Set<String> providerKeys = persistedProps.keySet().stream().filter(Picocli::isProviderKey).collect(Collectors.toSet());
 
         if (deployedProviders.size() != providerKeys.size()) {
             return true;
@@ -220,7 +201,7 @@ public final class Picocli {
             }
 
             File file = deployedProviders.get(fileName);
-            String lastModified = properties.getProperty(key);
+            String lastModified = persistedProps.get(key);
 
             if (!lastModified.equals(String.valueOf(file.lastModified()))) {
                 return true;
@@ -232,7 +213,7 @@ public final class Picocli {
 
     private static boolean hasConfigChanges() {
         Optional<String> currentProfile = Optional.ofNullable(Environment.getProfile());
-        Optional<String> persistedProfile = getBuiltTimeProperty("kc.profile");
+        Optional<String> persistedProfile = getBuildTimeProperty("kc.profile");
 
         if (!persistedProfile.orElse("").equals(currentProfile.orElse(""))) {
             return true;
@@ -255,7 +236,7 @@ public final class Picocli {
                 propertyName = propertyName.substring(propertyName.indexOf('.') + 1);
             }
 
-            String persistedValue = getBuiltTimeProperty(propertyName).orElse("");
+            String persistedValue = getBuildTimeProperty(propertyName).orElse("");
             String runtimeValue = getRuntimeProperty(propertyName).orElse(null);
 
             if (runtimeValue == null && isNotBlank(persistedValue)) {
@@ -277,8 +258,7 @@ public final class Picocli {
     }
 
     public static CommandLine createCommandLine(List<String> cliArgs) {
-        CommandSpec spec = CommandSpec.forAnnotatedObject(new Main())
-                .name(Environment.getCommand());
+        CommandSpec spec = CommandSpec.forAnnotatedObject(new Main(), new DefaultFactory()).name(Environment.getCommand());
 
         for (CommandLine subCommand : spec.subcommands().values()) {
             CommandSpec subCommandSpec = subCommand.getCommandSpec();
@@ -290,64 +270,18 @@ public final class Picocli {
                     .build());
         }
 
-        boolean isStartCommand = cliArgs.size() == 1 && cliArgs.contains(Start.NAME);
-
-        // avoid unnecessary processing when starting the server
-        if (!isStartCommand) {
-            addOption(spec, Start.NAME, hasAutoBuildOption(cliArgs));
-            addOption(spec, StartDev.NAME, true);
-            addOption(spec, Build.NAME, true);
-        }
+        addOption(spec, Start.NAME, hasAutoBuildOption(cliArgs));
+        addOption(spec, StartDev.NAME, true);
+        addOption(spec, Build.NAME, true);
 
         CommandLine cmd = new CommandLine(spec);
 
         cmd.setExecutionExceptionHandler(new ExecutionExceptionHandler());
 
-        if (!isStartCommand) {
-            cmd.setHelpFactory(new HelpFactory());
-            cmd.getHelpSectionMap().put(SECTION_KEY_COMMAND_LIST, new SubCommandListRenderer());
-        }
+        cmd.setHelpFactory(new HelpFactory());
+        cmd.getHelpSectionMap().put(SECTION_KEY_COMMAND_LIST, new SubCommandListRenderer());
 
         return cmd;
-    }
-
-    public static String parseConfigArgs(List<String> argsList) {
-        StringBuilder options = new StringBuilder();
-        Iterator<String> iterator = argsList.iterator();
-        boolean expectValue = false;
-        List<String> ignoredArgs = asList("--verbose", "-v", "--help", "-h", AUTO_BUILD_OPTION_LONG, AUTO_BUILD_OPTION_SHORT);
-
-        while (iterator.hasNext()) {
-            String key = iterator.next();
-
-            // TODO: ignore properties for providers for now, need to fetch them from the providers, otherwise CLI will complain about invalid options
-            // change this once we are able to obtain properties from providers
-            if (key.startsWith("--spi")) {
-                iterator.remove();
-            }
-
-            if (ignoredArgs.contains(key)) {
-                continue;
-            }
-
-            if (key.startsWith(ARG_PREFIX)) {
-                if (options.length() > 0) {
-                    options.append(ARG_SEPARATOR);
-                }
-
-                options.append(key);
-
-                if (key.indexOf(ARG_KEY_VALUE_SEPARATOR) == -1) {
-                    // values can be set using spaces (e.g.: --option <value>)
-                    expectValue = true;
-                }
-            } else if (expectValue) {
-                options.append(ARG_KEY_VALUE_SEPARATOR).append(key);
-                expectValue = false;
-            }
-        }
-
-        return options.toString();
     }
 
     private static void addOption(CommandSpec spec, String command, boolean includeBuildTime) {
@@ -442,5 +376,37 @@ public final class Picocli {
 
     public static String normalizeKey(String key) {
         return replaceNonAlphanumericByUnderscores(key).replace('_', '.');
+    }
+
+    public static List<String> parseArgs(String[] rawArgs) {
+        if (rawArgs.length == 0) {
+            return List.of();
+        }
+
+        // makes sure cli args are available to the config source
+        ConfigArgsConfigSource.setCliArgs(rawArgs);
+        List<String> args = new ArrayList<>(List.of(rawArgs));
+        Iterator<String> iterator = args.iterator();
+
+        while (iterator.hasNext()) {
+            String arg = iterator.next();
+
+            if (arg.startsWith("--spi")) {
+                // TODO: ignore properties for providers for now, need to fetch them from the providers, otherwise CLI will complain about invalid options
+                // change this once we are able to obtain properties from providers
+                iterator.remove();
+
+                if (!arg.contains(ARG_KEY_VALUE_SEPARATOR)) {
+                    String next = iterator.next();
+
+                    if (!next.startsWith("--")) {
+                        // ignore the value if the arg is using space as separator
+                        iterator.remove();
+                    }
+                }
+            }
+        }
+
+        return args;
     }
 }

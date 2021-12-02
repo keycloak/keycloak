@@ -17,24 +17,38 @@
 
 package org.keycloak.it.cli.dist;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.keycloak.it.cli.StartCommandTest;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.condition.DisabledIf;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.RawDistOnly;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 
-@DistributionTest
-public class StartCommandDistTest extends StartCommandTest {
+@DistributionTest(reInstall = DistributionTest.ReInstall.NEVER)
+@RawDistOnly(reason = "Containers are immutable")
+@TestMethodOrder(OrderAnnotation.class)
+public class BuildAndStartDistTest {
 
     @Test
-    @Launch({ "-pf=dev", "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false" })
-    void failIfAutoBuildUsingDevProfile(LaunchResult result) {
-        assertTrue(result.getErrorOutput().contains("ERROR: You can not 'start' the server using the 'dev' configuration profile. Please re-build the server first, using 'kc.sh build' for the default production profile, or using 'kc.sh build --profile=<profile>' with a profile more suitable for production."),
-                () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
-        assertEquals(4, result.getErrorStream().size());
+    @Launch({ "build", "--http-enabled=true", "--hostname-strict=false", "--cluster=local" })
+    @Order(1)
+    void firstYouBuild(LaunchResult result) {
+    }
+
+    @Test
+    @Launch({ "start" })
+    @Order(2)
+    void thenYouStart(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertStarted();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,24 +15,15 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.cli.command;
+package org.keycloak.quarkus.runtime.cli;
 
-import static org.keycloak.quarkus.runtime.Messages.cliExecutionError;
+import picocli.CommandLine.IFactory;
 
-import picocli.CommandLine;
-import picocli.CommandLine.Model.CommandSpec;
-import picocli.CommandLine.Spec;
+public class DefaultFactory implements IFactory {
 
-public abstract class AbstractCommand {
-
-    @Spec
-    protected CommandSpec spec;
-
-    protected void executionError(CommandLine cmd, String message) {
-        executionError(cmd, message, null);
-    }
-
-    protected void executionError(CommandLine cmd, String message, Throwable cause) {
-        cliExecutionError(cmd, message, cause);
+    @Override
+    public <K> K create(Class<K> cls) throws Exception {
+        // picocli tries different approaches for creating instances, this is what we need
+        return cls.getDeclaredConstructor().newInstance();
     }
 }

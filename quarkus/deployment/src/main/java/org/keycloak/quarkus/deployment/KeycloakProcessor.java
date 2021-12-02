@@ -17,7 +17,7 @@
 
 package org.keycloak.quarkus.deployment;
 
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfigValue;
+import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.CLI_ARGS;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
 import static org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX;
 import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
@@ -25,22 +25,16 @@ import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvi
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.AUTHENTICATORS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.MAPPERS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.POLICIES;
-import static org.keycloak.quarkus.runtime.Environment.CLI_ARGS;
 import static org.keycloak.quarkus.runtime.Environment.getProviderFiles;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.persistence.Entity;
 import javax.persistence.spi.PersistenceUnitTransactionType;
-import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -56,12 +50,11 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.stream.Collectors;
 
 import io.quarkus.agroal.spi.JdbcDataSourceBuildItem;
-import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.deployment.IsDevelopment;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
+import io.quarkus.deployment.builditem.GeneratedResourceBuildItem;
 import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
 import io.quarkus.deployment.builditem.LaunchModeBuildItem;
@@ -77,7 +70,6 @@ import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
-import org.infinispan.commons.util.FileLookupFactory;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.DotName;
@@ -86,6 +78,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.Config;
+import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.integration.jaxrs.QuarkusKeycloakApplication;
 import org.keycloak.authentication.AuthenticatorSpi;
 import org.keycloak.authentication.authenticators.browser.DeployedScriptAuthenticatorFactory;
@@ -118,7 +111,6 @@ import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.vertx.http.deployment.FilterBuildItem;
 
-import org.keycloak.quarkus.runtime.storage.infinispan.CacheInitializer;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
 import org.keycloak.representations.provider.ScriptProviderMetadata;
 import org.keycloak.quarkus.runtime.integration.web.NotFoundHandler;
@@ -275,12 +267,9 @@ class KeycloakProcessor {
     /**
      * <p>Make the build time configuration available at runtime so that the server can run without having to specify some of
      * the properties again.
-     *
-     * @param recorder the recorder
      */
-    @Record(ExecutionTime.STATIC_INIT)
     @BuildStep(onlyIf = isReAugmentation.class)
-    void setBuildTimeProperties(KeycloakRecorder recorder) {
+    void persistBuildTimeProperties(BuildProducer<GeneratedResourceBuildItem> resources) {
         Properties properties = new Properties();
 
         for (String name : getPropertyNames()) {
@@ -299,62 +288,11 @@ class KeycloakProcessor {
             properties.put(String.format("kc.provider.file.%s.last-modified", jar.getName()), String.valueOf(jar.lastModified()));
         }
 
-        File file = KeycloakConfigSourceProvider.getPersistedConfigFile().toFile();
-
-        if (file.exists()) {
-            file.delete();
-        }
-
-        try (FileOutputStream fos = new FileOutputStream(file)) {
-            properties.store(fos, " Auto-generated, DO NOT change this file");
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to generate persisted.properties file", e);
-        }
-    }
-
-    @Record(ExecutionTime.RUNTIME_INIT)
-    @BuildStep
-    void configureInfinispan(KeycloakRecorder recorder, BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItems) {
-        String pathPrefix;
-        String homeDir = Environment.getHomeDir();
-
-        if (homeDir == null) {
-            pathPrefix = "";
-        } else {
-            pathPrefix = homeDir + "/conf/";
-        }
-
-        String configFile = getConfigValue("kc.spi.connections-infinispan.quarkus.config-file").getValue();
-
-        if (configFile != null) {
-            Path configPath = Paths.get(pathPrefix + configFile);
-            String path;
-
-            if (configPath.toFile().exists()) {
-                path = configPath.toFile().getAbsolutePath();
-            } else {
-                path = configPath.getFileName().toString();
-            }
-
-            InputStream url = FileLookupFactory.newInstance().lookupFile(path, KeycloakProcessor.class.getClassLoader());
-
-            if (url == null) {
-                throw new IllegalArgumentException("Could not load cluster configuration file at [" + configPath + "]");
-            }
-
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(url))) {
-                String config = reader.lines().collect(Collectors.joining("\n"));
-
-                syntheticBeanBuildItems.produce(SyntheticBeanBuildItem.configure(CacheInitializer.class)
-                        .scope(ApplicationScoped.class)
-                        .unremovable()
-                        .setRuntimeInit()
-                        .runtimeValue(recorder.createCacheInitializer(config)).done());
-            } catch (Exception cause) {
-                throw new RuntimeException("Failed to read clustering configuration from [" + url + "]", cause);
-            }
-        } else {
-            throw new IllegalArgumentException("Option 'configFile' needs to be specified");
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            properties.store(outputStream, " Auto-generated, DO NOT change this file");
+            resources.produce(new GeneratedResourceBuildItem(PersistedConfigSource.PERSISTED_PROPERTIES, outputStream.toByteArray()));
+        } catch (Exception cause) {
+            throw new RuntimeException("Failed to persist configuration", cause);
         }
     }
 
