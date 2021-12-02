@@ -46,9 +46,6 @@ import org.keycloak.testsuite.arquillian.SuiteContext;
 public class KeycloakQuarkusServerDeployableContainer implements DeployableContainer<KeycloakQuarkusConfiguration> {
 
     private static final Logger log = Logger.getLogger(KeycloakQuarkusServerDeployableContainer.class);
-    public static final String CONF_PERSISTED_PROPERTIES_FILENAME = "data/generated/persisted.properties";
-    public static final String SPI_PROVIDER_PROPERTY_PREFIX = "kc.spi-";
-    public static final String SPI_PROVIDER_PROPERTY_SUFFIX = "-provider";
 
     private KeycloakQuarkusConfiguration configuration;
     private Process container;
@@ -127,23 +124,6 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
     @Override
     public void undeploy(Descriptor descriptor) throws DeploymentException {
 
-    }
-
-    /**
-     * Get the currently configured default provider for the passed spi.
-     * 
-     * @param spi the spi to get the current default provider for (dash-cased)
-     * @return the current configured provider or null if not configured
-     */
-    public String getCurrentlyConfiguredSpiProviderFor(String spi) {
-        try {
-            File persistedPropertiesFile = configuration.getProvidersPath().resolve(CONF_PERSISTED_PROPERTIES_FILENAME).toFile();
-            Properties props = new Properties();
-            props.load(new FileInputStream(persistedPropertiesFile));
-            return props.get(SPI_PROVIDER_PROPERTY_PREFIX + spi + SPI_PROVIDER_PROPERTY_SUFFIX).toString().trim();
-        } catch (IOException e) {
-            return null;
-        }
     }
 
     private Process startContainer() throws IOException {

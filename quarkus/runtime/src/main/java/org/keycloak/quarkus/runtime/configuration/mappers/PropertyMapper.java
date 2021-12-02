@@ -30,8 +30,8 @@ public class PropertyMapper {
     static PropertyMapper IDENTITY = new PropertyMapper(null, null, null, null, null,
             false,null, null, false,Collections.emptyList(),null, true) {
         @Override
-        public ConfigValue getOrDefault(String name, ConfigSourceInterceptorContext context, ConfigValue current) {
-            return current;
+        public ConfigValue getConfigValue(String name, ConfigSourceInterceptorContext context) {
+            return context.proceed(name);
         }
     };
 
@@ -80,11 +80,11 @@ public class PropertyMapper {
         return value;
     }
 
-    ConfigValue getOrDefault(ConfigSourceInterceptorContext context, ConfigValue current) {
-        return getOrDefault(null, context, current);        
+    ConfigValue getConfigValue(ConfigSourceInterceptorContext context) {
+        return getConfigValue(to, context);
     }
 
-    ConfigValue getOrDefault(String name, ConfigSourceInterceptorContext context, ConfigValue current) {
+    ConfigValue getConfigValue(String name, ConfigSourceInterceptorContext context) {
         String from = this.from;
 
         if (to != null && to.endsWith(".")) {
@@ -92,7 +92,7 @@ public class PropertyMapper {
             from = name.replace(to.substring(0, to.lastIndexOf('.')), from.substring(0, from.lastIndexOf('.')));
         }
 
-        // try to obtain the value for the property we want to map
+        // try to obtain the value for the property we want to map first
         ConfigValue config = context.proceed(from);
 
         if (config == null) {
@@ -107,28 +107,18 @@ public class PropertyMapper {
                     if (value != null) {
                         return value;
                     }
+
+                    return parentValue;
                 }
             }
 
-            // if not defined, return the current value from the property as a default if the property is not explicitly set
-            if (defaultValue == null
-                    || (current != null && !current.getConfigSourceName().equalsIgnoreCase("default values"))) {
-                if (defaultValue == null && mapper != null) {
-                    String value = current == null ? null : current.getValue();
-                    return ConfigValue.builder().withName(to).withValue(mapper.apply(value, context)).build();
-                }
-                return current;
-            }
+            ConfigValue current = context.proceed(name);
 
-            if (mapper != null) {
+            if (current == null) {
                 return transformValue(defaultValue, context);
             }
-            
-            return ConfigValue.builder().withName(to).withValue(defaultValue).build();
-        }
 
-        if (mapFrom != null) {
-            return config;
+            return current;
         }
 
         if (config.getName().equals(name)) {
@@ -139,7 +129,7 @@ public class PropertyMapper {
 
         // we always fallback to the current value from the property we are mapping
         if (value == null) {
-            return current;
+            return context.proceed(name);
         }
 
         return value;

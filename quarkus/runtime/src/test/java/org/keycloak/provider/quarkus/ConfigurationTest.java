@@ -19,7 +19,7 @@ package org.keycloak.provider.quarkus;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.quarkus.runtime.Environment.CLI_ARGS;
+import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.CLI_ARGS;
 
 import java.io.File;
 import java.lang.reflect.Field;

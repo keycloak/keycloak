@@ -17,12 +17,13 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
 import static org.keycloak.quarkus.runtime.Environment.setProfile;
 import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuiltTimeProperty;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getRawPersistedProperty;
 
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.Messages;
+
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
@@ -51,23 +52,25 @@ public final class Start extends AbstractStartCommand implements Runnable {
 
     @Override
     protected void doBeforeRun() {
-        checkIfProfileIsNotDev();
+        devProfileNotAllowedError();
     }
 
-    /**
-     * Checks if the profile provided by either the current argument, the system environment or the persisted properties is dev.
-     * Fails with an error when dev profile is used for the start command, or continues with the found profile if its not the dev profile.
-     */
-    private void checkIfProfileIsNotDev() {
-        List<String> currentCliArgs = spec.commandLine().getParseResult().expandedArgs();
+    private void devProfileNotAllowedError() {
+        if (isDevProfileNotAllowed(spec.commandLine().getParseResult().expandedArgs())) {
+            executionError(spec.commandLine(), Messages.devProfileNotAllowedError(NAME));
+        }
+    }
 
+    public static boolean isDevProfileNotAllowed(List<String> currentCliArgs) {
         Optional<String> currentProfile = Optional.ofNullable(Environment.getProfile());
-        Optional<String> persistedProfile = getBuiltTimeProperty("kc.profile");
+        Optional<String> persistedProfile = getRawPersistedProperty("kc.profile");
 
         setProfile(currentProfile.orElse(persistedProfile.orElse("prod")));
 
-        if (isDevProfile() && (!currentCliArgs.contains(AUTO_BUILD_OPTION_LONG) || !currentCliArgs.contains(AUTO_BUILD_OPTION_SHORT))) {
-            devProfileNotAllowedError(Start.NAME);
+        if (Environment.isDevProfile() && (!currentCliArgs.contains(AUTO_BUILD_OPTION_LONG) || !currentCliArgs.contains(AUTO_BUILD_OPTION_SHORT))) {
+            return true;
         }
+
+        return false;
     }
 }

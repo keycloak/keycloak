@@ -17,7 +17,7 @@
 
 package org.keycloak.quarkus.runtime;
 
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuiltTimeProperty;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuildTimeProperty;
 
 import java.util.List;
 import java.util.Map;
@@ -85,10 +85,10 @@ public class KeycloakRecorder {
                     feature = "kc.features";
                 }
 
-                Optional<String> value = getBuiltTimeProperty(feature);
+                Optional<String> value = getBuildTimeProperty(feature);
 
                 if (value.isEmpty()) {
-                    value = getBuiltTimeProperty(feature.replaceAll("\\.features\\.", "\\.features-"));
+                    value = getBuildTimeProperty(feature.replaceAll("\\.features\\.", "\\.features-"));
                 }
                 
                 if (value.isPresent()) {

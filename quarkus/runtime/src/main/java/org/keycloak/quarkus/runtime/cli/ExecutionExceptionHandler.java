@@ -38,7 +38,7 @@ public final class ExecutionExceptionHandler implements CommandLine.IExecutionEx
     private Logger logger;
     private boolean verbose;
 
-    ExecutionExceptionHandler() {}
+    public ExecutionExceptionHandler() {}
 
     @Override
     public int handleExecutionException(Exception cause, CommandLine cmd, ParseResult parseResult) {

@@ -17,21 +17,27 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
+import static java.util.Arrays.asList;
 import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
-import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_KEY_VALUE_SPLIT;
-import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
-import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_SPLIT;
+import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_SHORT_PREFIX;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_LONG;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_SHORT;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getMappedPropertyName;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import org.jboss.logging.Logger;
 
 import io.smallrye.config.PropertiesConfigSource;
-import org.keycloak.quarkus.runtime.Environment;
+
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
@@ -49,12 +55,46 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
 
     private static final Logger log = Logger.getLogger(ConfigArgsConfigSource.class);
 
+    public static final String CLI_ARGS = "kc.config.args";
+    private static final String ARG_SEPARATOR = ";;";
+    private static final Pattern ARG_SPLIT = Pattern.compile(";;");
+    private static final Pattern ARG_KEY_VALUE_SPLIT = Pattern.compile("=");
+    private static final ConfigArgsConfigSource INSTANCE = new ConfigArgsConfigSource();
+    private static List<String> IGNORED_ARGS;
+
     private final boolean alwaysParseArgs;
+
+    public static ConfigArgsConfigSource getInstance() {
+        return INSTANCE;
+    }
 
     ConfigArgsConfigSource() {
         // higher priority over default Quarkus config sources
         super(parseArgument(), "CliConfigSource", 500);
         alwaysParseArgs = isTestLaunchMode();
+    }
+
+    public static void setCliArgs(String[] args) {
+        System.setProperty(CLI_ARGS, String.join(ARG_SEPARATOR, args));
+    }
+
+    /**
+     * Reads the previously set system property for the originally command.
+     * Use the System variable, when you trigger other command executions internally, but need a reference to the
+     * actually invoked command.
+     *
+     * @return the invoked command from the CLI, or empty List if not set.
+     */
+    public static List<String> getAllCliArgs() {
+        if(System.getProperty(CLI_ARGS) == null) {
+            return Collections.emptyList();
+        }
+
+        return List.of(System.getProperty(CLI_ARGS).split(ARG_SEPARATOR));
+    }
+
+    private static String getRawConfigArgs() {
+        return System.getProperty(CLI_ARGS, "");
     }
 
     @Override
@@ -75,31 +115,93 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
     }
 
     private static Map<String, String> parseArgument() {
-        String args = Environment.getConfigArgs();
+        // init here because the class might be loaded by CL without init
+        IGNORED_ARGS = asList("--verbose", "-v", "--help", "-h", AUTO_BUILD_OPTION_LONG, AUTO_BUILD_OPTION_SHORT);
+        String rawArgs = getRawConfigArgs();
         
-        if (args == null || "".equals(args.trim())) {
+        if (rawArgs == null || "".equals(rawArgs.trim())) {
             log.trace("No command-line arguments provided");
             return Collections.emptyMap();
         }
-        
+
         Map<String, String> properties = new HashMap<>();
 
-        for (String arg : ARG_SPLIT.split(args)) {
-            if (!arg.startsWith(ARG_PREFIX)) {
-                throw new IllegalArgumentException("Invalid argument format [" + arg + "], arguments must start with '--'");
+        parseConfigArgs(new BiConsumer<String, String>() {
+            @Override
+            public void accept(String key, String value) {
+                key = NS_KEYCLOAK_PREFIX + key.substring(2);
+
+                log.tracef("Adding property [%s=%s] from command-line", key, value);
+                properties.put(key, value);
+
+                String mappedPropertyName = getMappedPropertyName(key);
+
+                properties.put(mappedPropertyName, value);
+
+                PropertyMapper mapper = PropertyMappers.getMapper(mappedPropertyName);
+
+                if (mapper != null) {
+                    properties.put(mapper.getFrom(), value);
+                }
+
+                // to make lookup easier, we normalize the key
+                properties.put(Picocli.normalizeKey(key), value);
+            }
+        });
+
+        return properties;
+    }
+
+    public static boolean hasOptionValue(Predicate<String> keyMatcher, String expectedValue) {
+        AtomicBoolean result = new AtomicBoolean();
+
+        parseConfigArgs(new BiConsumer<String, String>() {
+            @Override
+            public void accept(String key, String value) {
+                if (keyMatcher.test(key) && expectedValue.equals(value)) {
+                    result.set(true);
+                }
+            }
+        });
+
+        return result.get();
+    }
+
+    public static void parseConfigArgs(BiConsumer<String, String> cliArgConsumer) {
+        String rawArgs = getRawConfigArgs();
+
+        if (rawArgs == null || "".equals(rawArgs.trim())) {
+            log.trace("No command-line arguments provided");
+            return;
+        }
+
+        String[] args = ARG_SPLIT.split(rawArgs);
+
+        for (int i = 0; i < args.length; i++) {
+            String arg = args[i];
+
+            if (IGNORED_ARGS.contains(arg)) {
+                continue;
+            }
+
+            if (!arg.startsWith(ARG_SHORT_PREFIX)) {
+                continue;
             }
 
             String[] keyValue = ARG_KEY_VALUE_SPLIT.split(arg);
             String key = keyValue[0];
-            
+
             if ("".equals(key.trim())) {
                 throw new IllegalArgumentException("Invalid argument key");
             }
-            
+
             String value;
-            
+
             if (keyValue.length == 1) {
-                continue;
+                if (args.length <= i + 1) {
+                    continue;
+                }
+                value = args[i + 1];
             } else if (keyValue.length == 2) {
                 // the argument has a simple value. Eg.: key=pair
                 value = keyValue[1];
@@ -107,26 +209,8 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
                 // to support cases like --db-url=jdbc:mariadb://localhost/kc?a=1
                 value = arg.substring(key.length() + 1);
             }
-            
-            key = NS_KEYCLOAK_PREFIX + key.substring(2);
 
-            log.tracef("Adding property [%s=%s] from command-line", key, value);
-            properties.put(key, value);
-
-            String mappedPropertyName = getMappedPropertyName(key);
-
-            properties.put(mappedPropertyName, value);
-
-            PropertyMapper mapper = PropertyMappers.getMapper(mappedPropertyName);
-
-            if (mapper != null) {
-                properties.put(mapper.getFrom(), value);
-            }
-
-            // to make lookup easier, we normalize the key
-            properties.put(Picocli.normalizeKey(key), value);
+            cliArgConsumer.accept(key, value);
         }
-        
-        return properties;
     }
 }

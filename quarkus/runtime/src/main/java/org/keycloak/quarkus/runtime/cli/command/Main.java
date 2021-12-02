@@ -68,6 +68,9 @@ import picocli.CommandLine.Option;
         })
 public final class Main {
 
+    public static final String PROFILE_SHORT_NAME = "-pf";
+    public static final String PROFILE_LONG_NAME = "--profile";
+
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
@@ -94,7 +97,7 @@ public final class Main {
         exceptionHandler.setVerbose(verbose);
     }
 
-    @Option(names = {"-pf", "--profile"},
+    @Option(names = { PROFILE_SHORT_NAME, PROFILE_LONG_NAME },
             description = "Set the profile. Use 'dev' profile to enable development mode.")
     public void setProfile(String profile) {
         Environment.setProfile(profile);
