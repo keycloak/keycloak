@@ -35,6 +35,8 @@ public class StartCommandDistTest extends StartCommandTest {
     void failIfAutoBuildUsingDevProfile(LaunchResult result) {
         assertTrue(result.getErrorOutput().contains("ERROR: You can not 'start' the server using the 'dev' configuration profile. Please re-build the server first, using 'kc.sh build' for the default production profile, or using 'kc.sh build --profile=<profile>' with a profile more suitable for production."),
                 () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
-        assertEquals(4, result.getErrorStream().size());
+        String errorString = "";
+        for (String s: result.getErrorStream()) { errorString += s + "\n"; }
+        assertEquals(4, errorString.split("\n").length);
     }
 }
