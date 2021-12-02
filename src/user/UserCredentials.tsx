@@ -243,9 +243,13 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
   }, [selectedCredential.credentialData]);
 
   const saveUserLabel = async () => {
+    const credentialToEdit = userCredentials.find(
+      (credential) => credential.id === editedUserCredential.id
+    );
+
     const userLabelFormValue = getValues1();
 
-    if (Object.keys(editedUserCredential).length === 0) {
+    if (!credentialToEdit) {
       return;
     }
 
@@ -253,17 +257,18 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
       await adminClient.users.updateCredentialLabel(
         {
           id: user.id!,
-          credentialId: editedUserCredential.id!,
+          credentialId: credentialToEdit.id!,
         },
         userLabelFormValue.userLabel || ""
       );
       refresh();
       addAlert(t("updateCredentialUserLabelSuccess"), AlertVariant.success);
-      setIsUserLabelEdit(false);
+      setEditedUserCredential({});
     } catch (error) {
       addError(t("updateCredentialUserLabelError"), error);
-      setIsUserLabelEdit(false);
     }
+
+    setIsUserLabelEdit(false);
   };
 
   return (
@@ -475,7 +480,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
             </Tr>
           </Thead>
           <Tbody>
-            <Tr key={"key"}>
+            <Tr>
               {userCredentials.map((credential) => (
                 <>
                   <Td
@@ -506,11 +511,9 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
                               />
                               <div className="kc-userLabel-actionBtns">
                                 <Button
-                                  key={"key-acceptBtn"}
                                   variant="link"
                                   className="kc-editUserLabel-acceptBtn"
                                   onClick={() => {
-                                    setEditedUserCredential(credential);
                                     handleSubmit1(saveUserLabel)();
                                     setIsUserLabelEdit(false);
                                   }}
@@ -518,7 +521,6 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
                                   icon={<CheckIcon />}
                                 />
                                 <Button
-                                  key={"key-cancelBtn"}
                                   variant="link"
                                   className="kc-editUserLabel-cancelBtn"
                                   onClick={() => setIsUserLabelEdit(false)}
@@ -531,10 +533,12 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
                             <>
                               {credential.userLabel ?? ""}
                               <Button
-                                key={"key"}
                                 variant="link"
                                 className="kc-editUserLabel-btn"
-                                onClick={() => setIsUserLabelEdit(true)}
+                                onClick={() => {
+                                  setEditedUserCredential(credential);
+                                  setIsUserLabelEdit(true);
+                                }}
                                 data-testid="editUserLabelBtn"
                                 icon={<PencilAltIcon />}
                               />
