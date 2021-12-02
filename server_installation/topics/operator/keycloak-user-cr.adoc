@@ -23,6 +23,9 @@ spec:
     email: "user@example.com"
     enabled: True
     emailVerified: False
+    credentials:
+      - type: "password"
+        value: "12345"
     realmRoles:
       - "offline_access"
     clientRoles:
@@ -70,8 +73,10 @@ image:images/realm_user.png[]
 
 .Results
 
-After a user is created, the Operator creates a Secret containing the both username and password using the
-following naming pattern: `credential-<realm name>-<username>-<namespace>`. Here's an example:
+After a user is created, the Operator creates a Secret using the
+following naming pattern: `credential-<realm name>-<username>-<namespace>` , containing the username and, if it has been specified in the credentials attribute, the password. If no password is specified Keycloak will create a random one, but it won't be populated in this Secret.
+
+Here's an example:
 
 .`KeycloakUser` Secret
 ```yaml
