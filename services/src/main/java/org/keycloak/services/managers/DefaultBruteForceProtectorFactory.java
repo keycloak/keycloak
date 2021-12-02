@@ -26,7 +26,11 @@ import org.keycloak.models.KeycloakSessionFactory;
  * @version $Revision: 1 $
  */
 public class DefaultBruteForceProtectorFactory implements BruteForceProtectorFactory {
-    DefaultBruteForceProtector protector;
+    protected DefaultBruteForceProtector protector;
+
+    protected void initProtector(KeycloakSessionFactory factory) {
+        protector = new DefaultBruteForceProtector(factory);
+    }
 
     @Override
     public BruteForceProtector create(KeycloakSession session) {
@@ -40,7 +44,7 @@ public class DefaultBruteForceProtectorFactory implements BruteForceProtectorFac
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        protector = new DefaultBruteForceProtector(factory);
+        initProtector(factory);
         protector.start();
 
     }
