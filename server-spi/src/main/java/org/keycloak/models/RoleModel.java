@@ -117,4 +117,8 @@ public interface RoleModel {
     Stream<String> getAttributeStream(String name);
 
     Map<String, List<String>> getAttributes();
+
+    void addParentRole(RoleModel role);
+
+    Stream<RoleModel> getParentsStream();
 }

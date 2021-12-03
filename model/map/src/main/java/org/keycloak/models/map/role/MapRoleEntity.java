@@ -66,4 +66,9 @@ public interface MapRoleEntity extends AbstractEntity, UpdatableEntity, EntityWi
     void setCompositeRoles(Set<String> compositeRoles);
     void addCompositeRole(String roleId);
     void removeCompositeRole(String roleId);
+    
+    public Set<String> getParentRoles();
+    public void setParentRoles(Set<String> parentRoles);
+    public void addParentRole(String roleId);
+    public void removeParentRole(String roleId);
 }

@@ -187,6 +187,16 @@ public class HardcodedRoleStorageProvider implements RoleStorageProvider {
         public void removeAttribute(String name) {
             throw new ReadOnlyException("role is read only");
         }
+
+        @Override
+        public void addParentRole(RoleModel role) {
+            throw new ReadOnlyException("role is read only");
+        }
+
+        @Override
+        public Stream<RoleModel> getParentsStream() {
+            return Stream.empty();
+        }
     }
 
 
