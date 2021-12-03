@@ -27,6 +27,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.JsonWebToken;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -77,6 +78,9 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
         return true;
     }
 
+    @Override
+    protected void processAccessTokenResponse(BrokeredIdentityContext context, AccessTokenResponse response) {
+    }
 
     @Override
     public boolean isIssuer(String issuer, MultivaluedMap<String, String> params) {

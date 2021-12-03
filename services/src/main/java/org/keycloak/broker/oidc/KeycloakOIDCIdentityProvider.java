@@ -62,13 +62,6 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
         return new KeycloakEndpoint(callback, realm, event);
     }
 
-    @Override
-    protected void processAccessTokenResponse(BrokeredIdentityContext context, AccessTokenResponse response) {
-        // Don't verify audience on accessToken as it may not be there. It was verified on IDToken already
-        JsonWebToken access = validateToken(response.getToken(), true);
-        context.getContextData().put(VALIDATED_ACCESS_TOKEN, access);
-    }
-
     protected class KeycloakEndpoint extends OIDCEndpoint {
         public KeycloakEndpoint(AuthenticationCallback callback, RealmModel realm, EventBuilder event) {
             super(callback, realm, event);
