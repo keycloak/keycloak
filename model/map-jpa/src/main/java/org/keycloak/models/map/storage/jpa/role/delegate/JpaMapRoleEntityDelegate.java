@@ -24,8 +24,12 @@ import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleCompositeEntityKey
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity;
 
 import javax.persistence.EntityManager;
+import javax.persistence.FetchType;
+import javax.persistence.ManyToMany;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
+
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -44,6 +48,7 @@ public class JpaMapRoleEntityDelegate extends MapRoleEntityDelegate {
     private final JpaRoleEntity original;
 
     private Set<String> compositeRoles;
+    private Set<String> parentRoles;
 
     @Override
     public void setId(String id) {
@@ -112,6 +117,24 @@ public class JpaMapRoleEntityDelegate extends MapRoleEntityDelegate {
         if (compositeRoles != null) {
             compositeRoles.remove(roleId);
         }
+    }
+    
+    @Override
+    public Set<String> getParentRoles() {
+        return new HashSet<String>();
+    }
+
+    @Override
+    public void setParentRoles(Set<String> parentRoles) {
+    }
+
+    @Override
+    public void addParentRole(String roleId) {
+    }
+
+    @Override
+    public void removeParentRole(String roleId) {
+        
     }
 
 }

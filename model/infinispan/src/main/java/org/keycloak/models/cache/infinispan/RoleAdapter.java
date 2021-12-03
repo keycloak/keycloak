@@ -44,6 +44,7 @@ public class RoleAdapter implements RoleModel {
     protected RealmCacheSession cacheSession;
     protected RealmModel realm;
     protected Set<RoleModel> composites;
+    protected Set<RoleModel> parents;
     private final Supplier<RoleModel> modelSupplier;
 
     public RoleAdapter(CachedRole cached, RealmCacheSession session, RealmModel realm) {
@@ -56,8 +57,16 @@ public class RoleAdapter implements RoleModel {
     protected void getDelegateForUpdate() {
         if (updated == null) {
             cacheSession.registerRoleInvalidation(cached.getId(), cached.getName(), getContainerId());
+            
             updated = modelSupplier.get();
             if (updated == null) throw new IllegalStateException("Not found in database");
+        }
+    }
+    
+    protected void invalidateComposites() {
+        for (String roleId : cached.getComposites()) {
+            RoleModel role = realm.getRoleById(roleId);
+            cacheSession.registerRoleInvalidation(role.getId(), role.getName(), role.getContainerId());
         }
     }
 
@@ -121,6 +130,7 @@ public class RoleAdapter implements RoleModel {
     @Override
     public void removeCompositeRole(RoleModel role) {
         getDelegateForUpdate();
+        invalidateComposites();
         updated.removeCompositeRole(role);
     }
 
@@ -149,6 +159,31 @@ public class RoleAdapter implements RoleModel {
         if (isUpdated()) return updated.getCompositesStream(search, first, max);
 
         return cacheSession.getRoleDelegate().getRolesStream(realm, cached.getComposites().stream(), search, first, max);
+    }
+    
+    @Override
+    public void addParentRole(RoleModel role) {
+        getDelegateForUpdate();
+        updated.addParentRole(role);
+    }
+    
+    @Override
+    public Stream<RoleModel> getParentsStream() {
+        if (isUpdated()) return updated.getParentsStream();
+
+        if (parents == null) {
+            parents = new HashSet<>();
+            for (String id : cached.getParents()) {
+                RoleModel role = realm.getRoleById(id);
+                if (role == null) {
+                    cacheSession.clear();
+                    continue;
+                }
+                parents.add(role);
+            }
+        }
+
+        return parents.stream();
     }
 
     @Override
@@ -248,5 +283,4 @@ public class RoleAdapter implements RoleModel {
     public int hashCode() {
         return getId().hashCode();
     }
-
 }

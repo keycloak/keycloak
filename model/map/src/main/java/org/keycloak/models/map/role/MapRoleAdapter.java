@@ -96,6 +96,22 @@ public class MapRoleAdapter extends AbstractRoleModel<MapRoleEntity> implements 
         LOG.tracef("(%s).removeCompositeRole(%s(%s))%s", this, role.getName(), role.getId(), getShortStackTrace());
         entity.removeCompositeRole(role.getId());
     }
+    
+    @Override
+    public Stream<RoleModel> getParentsStream() {
+        Set<String> parentRoles = entity.getParentRoles() == null ? Collections.emptySet() : entity.getParentRoles();
+        LOG.tracef("%% %s(%s).getParentsStream():%d - %s", entity.getName(), entity.getId(), parentRoles.size(), getShortStackTrace());
+        return parentRoles.stream()
+                .map(uuid -> session.roles().getRoleById(realm, uuid))
+                .filter(Objects::nonNull);
+    }
+
+    @Override
+    public void addParentRole(RoleModel role) {
+        LOG.tracef("(%s).addParentRole(%s(%s))%s", this, role.getName(), role.getId(), getShortStackTrace());
+        entity.addParentRole(role.getId());
+        
+    }
 
     @Override
     public boolean isClientRole() {

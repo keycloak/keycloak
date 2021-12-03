@@ -17,6 +17,24 @@
 
 package org.keycloak.testsuite.admin.client;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.ws.rs.core.Response;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,9 +44,11 @@ import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.AdminEventPaths;
 
 import java.util.ArrayList;
@@ -335,6 +355,14 @@ public class ClientRolesTest extends AbstractClientTest {
                     
             rolesRsc.create(role);
             assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId,roleName), role, ResourceType.CLIENT_ROLE);  
+            
+            // we have to update the role to set the attributes because
+            // the add role endpoint only care about name and description
+            RoleResource roleToUpdate = rolesRsc.get(roleName);
+            role.setId(roleToUpdate.toRepresentation().getId());
+            
+            roleToUpdate.update(role);
+            assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientRoleResourcePath(clientDbId,roleName), role, ResourceType.CLIENT_ROLE);  
         }
         
         List<RoleRepresentation> roles = rolesRsc.list(false);
@@ -352,10 +380,106 @@ public class ClientRolesTest extends AbstractClientTest {
             role.setAttributes(attributes);
                     
             rolesRsc.create(role);
-            assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId,roleName), role, ResourceType.CLIENT_ROLE);
+            assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(clientDbId,roleName), role, ResourceType.CLIENT_ROLE);  
+            
+            // we have to update the role to set the attributes because
+            // the add role endpoint only care about name and description
+            RoleResource roleToUpdate = rolesRsc.get(roleName);
+            role.setId(roleToUpdate.toRepresentation().getId());
+            
+            roleToUpdate.update(role);
+            assertAdminEvents.assertEvent(getRealmId(), OperationType.UPDATE, AdminEventPaths.clientRoleResourcePath(clientDbId,roleName), role, ResourceType.CLIENT_ROLE);         
         }
         
         List<RoleRepresentation> roles = rolesRsc.list();
         assertNull(roles.get(0).getAttributes());
+    }
+
+    @Test
+    public void testParents() {
+        String roleAName = "role-parent-a";
+        RoleRepresentation roleA = makeRole(roleAName);
+        rolesRsc.create(roleA);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE,
+                AdminEventPaths.clientRoleResourcePath(clientDbId, roleAName), roleA, ResourceType.CLIENT_ROLE);
+
+        String roleBName = "role-parent-b";
+        RoleRepresentation roleB = makeRole(roleBName);
+        rolesRsc.create(roleB);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE,
+                AdminEventPaths.clientRoleResourcePath(clientDbId, roleBName), roleB, ResourceType.CLIENT_ROLE);
+
+        String roleCName = "role-parent-c";
+        RoleRepresentation roleC = makeRole(roleCName);
+        testRealmResource().roles().create(roleC);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.roleResourcePath(roleCName),
+                roleC, ResourceType.REALM_ROLE);
+
+        // We define A composite with B and C
+        List<RoleRepresentation> l = new LinkedList<>();
+        l.add(rolesRsc.get(roleBName).toRepresentation());
+        l.add(testRealmResource().roles().get(roleCName).toRepresentation());
+        rolesRsc.get(roleAName).addComposites(l);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE,
+                AdminEventPaths.clientRoleResourceCompositesPath(clientDbId, roleAName), l, ResourceType.CLIENT_ROLE);
+
+        // We define B composite with A and C
+        List<RoleRepresentation> lb = new LinkedList<>();
+        lb.add(rolesRsc.get(roleAName).toRepresentation());
+        lb.add(testRealmResource().roles().get(roleCName).toRepresentation());
+        rolesRsc.get(roleBName).addComposites(lb);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE,
+                AdminEventPaths.clientRoleResourceCompositesPath(clientDbId, roleBName), lb, ResourceType.CLIENT_ROLE);
+
+        // So C should have two "parents" which are A and B and C is not composit itself
+
+        assertFalse(testRealmResource().roles().get(roleCName).toRepresentation().isComposite());
+        Set<RoleRepresentation> parentsOfC = testRealmResource().roles().get(roleCName).getParentsRoles();
+
+        assertEquals(2, parentsOfC.size());
+        Assert.assertNames(parentsOfC, roleAName, roleBName);
+        
+        // Now we unassign A and C from B to test the cache
+        rolesRsc.get(roleBName).deleteComposites(lb);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.DELETE,
+                AdminEventPaths.clientRoleResourceCompositesPath(clientDbId, roleBName), lb, ResourceType.CLIENT_ROLE);
+        
+        //So C should have one "parent" which is A
+        Set<RoleRepresentation> parentsOfCAfterCache = testRealmResource().roles().get(roleCName).getParentsRoles();
+
+        assertEquals(1, parentsOfCAfterCache.size());
+        Assert.assertNames(parentsOfCAfterCache, roleAName);
+        
+    }
+    
+    @Test
+    public void testGetParentsAfterDeletetionOfAParentRole() {
+        String roleAName = "role-direct";
+        RoleRepresentation roleA = makeRole(roleAName);
+        rolesRsc.create(roleA);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE,
+                AdminEventPaths.clientRoleResourcePath(clientDbId, roleAName), roleA, ResourceType.CLIENT_ROLE); 
+        
+        String roleBName = "role-indrect";
+        RoleRepresentation roleB = makeRole(roleBName);
+        rolesRsc.create(roleB);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE,
+                AdminEventPaths.clientRoleResourcePath(clientDbId, roleBName), roleB, ResourceType.CLIENT_ROLE);
+        
+        // We define B with direct A as composite role
+        List<RoleRepresentation> l = new LinkedList<>();
+        l.add(rolesRsc.get(roleAName).toRepresentation());
+        rolesRsc.get(roleBName).addComposites(l);
+        assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE,
+                AdminEventPaths.clientRoleResourceCompositesPath(clientDbId, roleBName), l, ResourceType.CLIENT_ROLE);
+        
+        Set<RoleRepresentation> parentsOfAAfterCache = rolesRsc.get(roleAName).getParentsRoles();
+        assertEquals(1, parentsOfAAfterCache.size());
+        Assert.assertNames(parentsOfAAfterCache, roleBName);
+        
+        rolesRsc.get(roleBName).remove();
+        
+        Set<RoleRepresentation> parentsOfAAfterRemoveCache = rolesRsc.get(roleAName).getParentsRoles();
+        assertEquals(0, parentsOfAAfterRemoveCache.size());
     }
 }
