@@ -530,8 +530,6 @@ Then run the WebAuthn tests as above with the additional system property for spe
 ```
 
 **Warning:** Please, be aware the WebAuthn tests are still in a development phase and there is a high chance those tests will not be stable.
-At this moment, we need to use our custom packages in order to provide support for the WebAuthn testing, 
-because the original ones are not still compatible with required Selenium 4. 
 
 ## Social Login
 The social login tests require setup of all social networks including an example social user. These details can't be
