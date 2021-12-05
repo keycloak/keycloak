@@ -47,7 +47,7 @@ import picocli.CommandLine.Mixin;
         },
         footerHeading = "Examples:",
         footer = "  Optimize the server based on a profile configuration:%n%n"
-                + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} --profile=prod ${COMMAND-NAME}%n%n"
+                + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} --profile=prod ${COMMAND-NAME} %n%n"
                 + "  Change database settings:%n%n"
                 + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --db=postgres [--db-url][--db-username][--db-password]%n%n"
                 + "  Enable a feature:%n%n"

@@ -22,10 +22,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.cli.StartCommandTest;
+import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 @DistributionTest
 public class StartCommandDistTest extends StartCommandTest {
@@ -43,5 +45,13 @@ public class StartCommandDistTest extends StartCommandTest {
     void failNoHostnameNotSet(LaunchResult result) {
         assertTrue(result.getErrorOutput().contains("ERROR: Strict hostname resolution configured but no hostname was set"),
                 () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
+    }
+
+    @Test
+    @Launch({ "start", "--auto-build", "--db-password=secret", "--https-key-store-password=secret"})
+    void testStartWithAutoBuildDoesntShowCredentialsInConsole(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        assertTrue(cliResult.getOutput().contains("--db-password=" + PropertyMappers.VALUE_MASK));
+        assertTrue(cliResult.getOutput().contains("--https-key-store-password=" + PropertyMappers.VALUE_MASK));
     }
 }

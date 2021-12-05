@@ -19,22 +19,14 @@ package org.keycloak.it.junit5.extension;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.util.Arrays;
 import java.util.List;
-
-import org.keycloak.quarkus.runtime.cli.Picocli;
-
+import org.approvaltests.Approvals;
 import io.quarkus.test.junit.main.LaunchResult;
-import picocli.CommandLine;
 
 public interface CLIResult extends LaunchResult {
 
-    static Object create(List<String> outputStream, List<String> errStream, int exitCode, boolean distribution) {
+    static Object create(List<String> outputStream, List<String> errStream, int exitCode) {
         return new CLIResult() {
             @Override
             public List<String> getOutputStream() {
@@ -50,15 +42,8 @@ public interface CLIResult extends LaunchResult {
             public int exitCode() {
                 return exitCode;
             }
-
-            @Override
-            public boolean isDistribution() {
-                return distribution;
-            }
         };
     }
-
-    boolean isDistribution();
 
     default void assertStarted() {
         assertFalse(getOutput().contains("The delayed handler's queue was overrun and log record(s) were lost (Did you forget to configure logging?)"), () -> "The standard Output:\n" + getOutput() + "should not contain a warning about log queue overrun.");
@@ -81,31 +66,10 @@ public interface CLIResult extends LaunchResult {
                 () -> "The Error Output:\n " + getErrorOutput() + "\ndoesn't contains " + msg);
     }
 
-    default void assertHelp(String command) {
-        if (command == null) {
-            fail("No command provided");
-        }
-
-        CommandLine cmd = Picocli.createCommandLine(Arrays.asList(command, "--help"));
-
-        if (isDistribution()) {
-            cmd.setCommandName("kc.sh");
-        }
-
-        try (
-                ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-                PrintStream printStream = new PrintStream(outStream, true)
-        ) {
-            if ("kc.sh".equals(command)) {
-                cmd.usage(printStream);
-            } else {
-                cmd.getSubcommands().get(command).usage(printStream);
-            }
-
-            // not very reliable, we should be comparing the output with some static reference to the help message.
-            assertTrue(getOutput().trim().equals(outStream.toString().trim()),
-                    () -> "The Output:\n " + getOutput() + "\ndoesnt't contains " + outStream.toString().trim());
-        } catch (IOException cause) {
+    default void assertHelp() {
+        try {
+            Approvals.verify(getOutput());
+        } catch (Exception cause) {
             throw new RuntimeException("Failed to assert help", cause);
         }
     }
