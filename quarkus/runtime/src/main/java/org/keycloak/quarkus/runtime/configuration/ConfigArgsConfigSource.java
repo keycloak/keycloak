@@ -34,8 +34,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-import org.jboss.logging.Logger;
-
 import io.smallrye.config.PropertiesConfigSource;
 
 import org.keycloak.quarkus.runtime.cli.Picocli;
@@ -52,8 +50,6 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
  * <p>Each argument is going to be mapped to its corresponding configuration property by prefixing the key with the {@link MicroProfileConfigProvider#NS_KEYCLOAK} namespace. 
  */
 public class ConfigArgsConfigSource extends PropertiesConfigSource {
-
-    private static final Logger log = Logger.getLogger(ConfigArgsConfigSource.class);
 
     public static final String CLI_ARGS = "kc.config.args";
     private static final String ARG_SEPARATOR = ";;";
@@ -120,7 +116,6 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
         String rawArgs = getRawConfigArgs();
         
         if (rawArgs == null || "".equals(rawArgs.trim())) {
-            log.trace("No command-line arguments provided");
             return Collections.emptyMap();
         }
 
@@ -131,7 +126,6 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
             public void accept(String key, String value) {
                 key = NS_KEYCLOAK_PREFIX + key.substring(2);
 
-                log.tracef("Adding property [%s=%s] from command-line", key, value);
                 properties.put(key, value);
 
                 String mappedPropertyName = getMappedPropertyName(key);
@@ -171,7 +165,6 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
         String rawArgs = getRawConfigArgs();
 
         if (rawArgs == null || "".equals(rawArgs.trim())) {
-            log.trace("No command-line arguments provided");
             return;
         }
 

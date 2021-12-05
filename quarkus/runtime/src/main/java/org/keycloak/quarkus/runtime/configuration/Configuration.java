@@ -29,6 +29,7 @@ import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigProviderResolver;
 
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
@@ -39,17 +40,12 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
  */
 public final class Configuration {
 
-    private static volatile SmallRyeConfig CONFIG;
-
     private Configuration() {
 
     }
 
     public static synchronized SmallRyeConfig getConfig() {
-        if (CONFIG == null) {
-            CONFIG = (SmallRyeConfig) SmallRyeConfigProviderResolver.instance().getConfig();
-        }
-        return CONFIG;
+        return (SmallRyeConfig) ConfigProviderResolver.instance().getConfig();
     }
 
     public static Optional<String> getBuildTimeProperty(String name) {

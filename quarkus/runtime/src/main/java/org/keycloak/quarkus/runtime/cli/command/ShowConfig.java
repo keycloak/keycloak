@@ -45,6 +45,7 @@ import picocli.CommandLine.Parameters;
         description = "%nPrint out the current configuration.")
 public final class ShowConfig extends AbstractCommand implements Runnable {
 
+    public static final String NAME = "show-config";
     @Parameters(
             paramLabel = "filter",
             defaultValue = "none",

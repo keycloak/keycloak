@@ -83,12 +83,6 @@ public final class Environment {
     }
 
     public static String getCommand() {
-        String homeDir = getHomeDir();
-
-        if (homeDir == null) {
-            return "java -jar $KEYCLOAK_HOME/lib/quarkus-run.jar";
-        }
-
         if (isWindows()) {
             return "kc.bat";
         }
@@ -183,6 +177,6 @@ public final class Environment {
     }
 
     public static boolean isDistribution() {
-        return Environment.getCommand().startsWith("kc.");
+        return getHomeDir() != null;
     }
 }

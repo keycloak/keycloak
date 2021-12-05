@@ -17,14 +17,15 @@
 
 package org.keycloak.it.cli;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.CLITest;
-import org.keycloak.quarkus.runtime.cli.command.Main;
+import org.keycloak.quarkus.runtime.cli.command.Build;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
+import org.keycloak.quarkus.runtime.cli.command.Start;
+import org.keycloak.quarkus.runtime.cli.command.StartDev;
 
 @CLITest
 public class HelpCommandTest {
@@ -33,34 +34,56 @@ public class HelpCommandTest {
     @Launch({})
     void testDefaultToHelp(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertHelp("kc.sh");
+        cliResult.assertHelp();
     }
 
     @Test
     @Launch({ "--help" })
-    void testHelpCommand(LaunchResult result) {
+    void testHelp(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertHelp("kc.sh");
+        cliResult.assertHelp();
     }
 
     @Test
-    @Launch({ "start", "--help" })
-    void testStartHelpCommand(LaunchResult result) {
+    @Launch({ "-h" })
+    void testHelpShort(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertHelp("start");
+        cliResult.assertHelp();
     }
 
     @Test
-    @Launch({ "start-dev", "--help" })
-    void testStartDevCommand(LaunchResult result) {
+    @Launch({ Start.NAME, "--help" })
+    void testStartHelp(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertHelp("start-dev");
+        cliResult.assertHelp();
     }
 
     @Test
-    @Launch({ "build", "--help" })
-    void testBuildCommand(LaunchResult result) {
+    @Launch({ StartDev.NAME, "--help" })
+    void testStartDevHelp(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertHelp("build");
+        cliResult.assertHelp();
     }
+
+    @Test
+    @Launch({ StartDev.NAME, "--help-all" })
+    void testStartDevHelpAll(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertHelp();
+    }
+
+    @Test
+    @Launch({ Build.NAME, "--help" })
+    void testBuildHelp(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertHelp();
+    }
+
+    @Test
+    @Launch({ Build.NAME, "--help-all" })
+    void testBuildHelpAll(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertHelp();
+    }
+
 }

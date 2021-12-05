@@ -43,14 +43,11 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import org.apache.commons.io.FileUtils;
-import org.jboss.logging.Logger;
 
 import io.quarkus.bootstrap.util.ZipUtils;
 import org.keycloak.common.Version;
 
 public final class RawKeycloakDistribution implements KeycloakDistribution {
-
-    private static final Logger LOGGER = Logger.getLogger(RawKeycloakDistribution.class);
 
     private Process keycloak;
     private int exitCode = -1;
@@ -164,7 +161,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
                 connection.connect();
 
                 if (connection.getResponseCode() == 200) {
-                    LOGGER.infof("Keycloak is ready at %s", contextRoot);
                     break;
                 }
             } catch (Exception ignore) {
