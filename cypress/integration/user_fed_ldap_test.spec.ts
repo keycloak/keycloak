@@ -128,10 +128,7 @@ describe("User Fed LDAP tests", () => {
     providersPage.clickExistingCard(firstLdapName);
     providersPage.selectCacheType(newPolicy);
 
-    expect(cy.contains(newLdapDay).should("exist"));
-    expect(cy.contains(newLdapHour).should("exist"));
-    expect(cy.contains(newLdapMinute).should("exist"));
-    expect(cy.contains(defaultLdapMinute).should("not.exist"));
+    providersPage.verifyChangedHourInput(newLdapHour, defaultLdapHour);
 
     sidebarPage.goToUserFederation();
   });

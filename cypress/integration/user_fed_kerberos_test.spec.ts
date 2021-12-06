@@ -88,20 +88,18 @@ describe("User Fed Kerberos tests", () => {
   it("Change existing Kerberos provider and click button to cancel", () => {
     providersPage.clickExistingCard(firstKerberosName);
     providersPage.selectCacheType(newPolicy);
+
     providersPage.changeCacheTime("day", defaultKerberosDay);
     providersPage.changeCacheTime("hour", defaultKerberosHour);
     providersPage.changeCacheTime("minute", defaultKerberosMinute);
+
     providersPage.cancel(provider);
     cy.wait(1000);
 
     providersPage.clickExistingCard(firstKerberosName);
     providersPage.selectCacheType(newPolicy);
 
-    expect(cy.contains(newKerberosDay).should("exist"));
-    expect(cy.contains(newKerberosHour).should("exist"));
-    expect(cy.contains(newKerberosMinute).should("exist"));
-    expect(cy.contains(defaultKerberosMinute).should("not.exist"));
-
+    providersPage.verifyChangedHourInput(newKerberosHour, defaultKerberosHour);
     sidebarPage.goToUserFederation();
   });
 

@@ -28,6 +28,8 @@ const configurePlugins: Cypress.PluginConfig = (on) => {
       }),
     ],
   };
+  const _ = require("lodash");
+  const del = require("del");
 
   on(
     "file:preprocessor",
@@ -36,6 +38,18 @@ const configurePlugins: Cypress.PluginConfig = (on) => {
       webpackOptions,
     })
   );
+  on("after:spec", (spec, results) => {
+    if (results?.video) {
+      // Do we have failures for any retry attempts?
+      const failures = _.some(results.tests, (test: any) => {
+        return _.some(test.attempts, { state: "failed" });
+      });
+      if (!failures) {
+        // delete the video if the spec passed and no tests retried
+        return del(results.video);
+      }
+    }
+  });
 };
 
 export default configurePlugins;

@@ -11,6 +11,6 @@
       },
     "defaultCommandTimeout": 10000,
     "videoCompression": false,
-    "numTestsKeptInMemory": 0,
+    "numTestsKeptInMemory": 30,
     "videoUploadOnPasses": false
 }

@@ -30,6 +30,7 @@
     "@patternfly/react-icons": "^4.26.4",
     "@patternfly/react-table": "^4.44.4",
     "dagre": "^0.8.5",
+    "del": "^6.0.0",
     "file-saver": "^2.0.5",
     "i18next": "^21.5.4",
     "lodash": "^4.17.20",

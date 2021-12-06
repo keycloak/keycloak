@@ -190,6 +190,7 @@ export default class RealmSettingsPage {
   private addExecutorSaveBtn = "addExecutor-saveBtn";
   private availablePeriodExecutorFld = "available-period";
   private editExecutor = "editExecutor";
+
   private listingPage = new ListingPage();
   private addCondition = "addCondition";
   private addConditionDrpDwn = ".pf-c-select__toggle";
@@ -766,7 +767,8 @@ export default class RealmSettingsPage {
   shouldCancelEditingExecutor() {
     cy.get(this.clientProfileTwo).click();
     cy.findByTestId(this.editExecutor).first().click();
-    cy.get('a[data-testid="addExecutor-cancelBtn"]').click();
+
+    cy.findByTestId(this.addExecutorCancelBtn).click();
     cy.get('ul[class*="pf-c-data-list"]').should(
       "have.text",
       "secure-ciba-signed-authn-req"

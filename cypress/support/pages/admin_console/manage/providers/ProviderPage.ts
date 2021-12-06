@@ -101,6 +101,14 @@ export default class ProviderPage {
     return this;
   }
 
+  verifyChangedHourInput(expected: string, unexpected: string) {
+    expect(cy.get(this.cacheHourInput).contains(expected).should("exist"));
+    expect(
+      cy.get(this.cacheHourInput).contains(unexpected).should("not.exist")
+    );
+    return this;
+  }
+
   deleteCardFromCard(card: string) {
     cy.get(`[data-testid=${card}-dropdown]`).click();
     cy.get('[data-testid="card-delete"]').click();
