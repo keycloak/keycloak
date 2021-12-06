@@ -27,7 +27,9 @@ import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
+import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
 import org.keycloak.testsuite.util.UIUtils;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnPolicyPage;
 import org.keycloak.testsuite.webauthn.updaters.AbstractWebAuthnRealmUpdater;
 import org.keycloak.testsuite.webauthn.utils.PropertyRequirement;
@@ -65,6 +67,7 @@ public abstract class AbstractWebAuthnPolicySettingsTest extends AbstractConsole
 
     @Before
     public void navigateToPolicy() {
+        driver.manage().window().maximize();
         getPolicyPage().navigateTo();
         waitForPageToLoad();
         getPolicyPage().assertCurrent();
@@ -110,6 +113,7 @@ public abstract class AbstractWebAuthnPolicySettingsTest extends AbstractConsole
 
         getPolicyPage().setRpEntityName("newEntityName");
         getPolicyPage().clickSaveButton();
+        AbstractPatternFlyAlert.waitUntilHidden();
 
         rpEntityName = getPolicyPage().getRpEntityName();
         assertThat(rpEntityName, notNullValue());
@@ -117,6 +121,7 @@ public abstract class AbstractWebAuthnPolicySettingsTest extends AbstractConsole
 
         getPolicyPage().setRpEntityName("");
         getPolicyPage().clickSaveButton();
+        AbstractPatternFlyAlert.waitUntilHidden();
 
         rpEntityName = getPolicyPage().getRpEntityName();
         assertThat(rpEntityName, notNullValue());
@@ -128,6 +133,7 @@ public abstract class AbstractWebAuthnPolicySettingsTest extends AbstractConsole
 
         getPolicyPage().setRpEntityId("rpId123");
         getPolicyPage().clickSaveButton();
+        AbstractPatternFlyAlert.waitUntilHidden();
 
         rpEntityId = getPolicyPage().getRpEntityId();
         assertThat(rpEntityId, notNullValue());
