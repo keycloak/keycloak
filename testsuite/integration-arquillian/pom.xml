@@ -50,13 +50,13 @@
         <!--the version of shrinkwrap_resolver should align with the version in arquillian-bom-->
         <shrinkwrap-resolver.version>3.1.4</shrinkwrap-resolver.version>
         <selenium.version>3.14.0</selenium.version>
-        <arquillian-drone.version>2.5.4</arquillian-drone.version>
-        <arquillian-graphene.version>2.3.2</arquillian-graphene.version>
-        <arquillian-wildfly-container.version>2.1.1.Final</arquillian-wildfly-container.version>
+        <arquillian-drone.version>2.5.5</arquillian-drone.version>
+        <arquillian-graphene.version>2.5.4</arquillian-graphene.version>
+        <arquillian-wildfly-container.version>3.0.1.Final</arquillian-wildfly-container.version>
         <arquillian-wls-container.version>1.0.1.Final</arquillian-wls-container.version>
         <arquillian-jetty9-container.version>1.0.0.CR3</arquillian-jetty9-container.version>
         <arquillian-container-karaf.version>2.2.0.Final</arquillian-container-karaf.version>
-        <arquillian-infinispan-container.version>1.2.0.Beta2</arquillian-infinispan-container.version>
+        <arquillian-infinispan-container.version>1.2.0.Beta3</arquillian-infinispan-container.version>
         <arquillian-tomcat7-container-version>1.1.0.Final</arquillian-tomcat7-container-version>
         <arquillian-tomcat8-container-version>1.1.0.Final</arquillian-tomcat8-container-version>
         <arquillian-tomcat9-container-version>1.1.0.Final</arquillian-tomcat9-container-version>
