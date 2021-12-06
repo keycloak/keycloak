@@ -3,6 +3,7 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
+  Divider,
   Dropdown,
   DropdownItem,
   DropdownPosition,
@@ -99,7 +100,10 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
   const refresh = () => setKey(key + 1);
   const [open, setOpen] = useState(false);
   const [openSaveConfirm, setOpenSaveConfirm] = useState(false);
-  const [kebabOpen, setKebabOpen] = useState(false);
+  const [kebabOpen, setKebabOpen] = useState({
+    status: false,
+    rowKey: "",
+  });
   const adminClient = useAdminClient();
   const form = useForm<CredentialsForm>({
     defaultValues: credFormDefaultValues,
@@ -121,9 +125,12 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
     useState<CredentialRepresentation>({});
   const [isResetPassword, setIsResetPassword] = useState(false);
   const [showData, setShowData] = useState(false);
-  const [isUserLabelEdit, setIsUserLabelEdit] = useState(false);
   const [editedUserCredential, setEditedUserCredential] =
     useState<CredentialRepresentation>({});
+  const [isUserLabelEdit, setIsUserLabelEdit] = useState<{
+    status: boolean;
+    rowKey: string;
+  }>();
 
   useFetch(
     () => adminClient.users.getCredentials({ id: user.id! }),
@@ -131,6 +138,10 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
       setUserCredentials(credentials);
     },
     [key]
+  );
+
+  const passwordTypeFinder = userCredentials.find(
+    (credential) => credential.type === "password"
   );
 
   const passwordWatcher = useWatch<CredentialsForm["password"]>({
@@ -192,7 +203,9 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
         setOpenSaveConfirm(false);
       } catch (error) {
         addError(
-          isResetPassword ? t("resetPasswordError") : t("savePasswordError"),
+          isResetPassword
+            ? "users:resetPasswordError"
+            : "users:savePasswordError",
           error
         );
       }
@@ -218,7 +231,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
         addAlert(t("deleteCredentialsSuccess"), AlertVariant.success);
         setKey((key) => key + 1);
       } catch (error) {
-        addError(t("deleteCredentialsError"), error);
+        addError("users:deleteCredentialsError", error);
       }
     },
   });
@@ -265,10 +278,13 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
       addAlert(t("updateCredentialUserLabelSuccess"), AlertVariant.success);
       setEditedUserCredential({});
     } catch (error) {
-      addError(t("updateCredentialUserLabelError"), error);
+      addError("users:updateCredentialUserLabelError", error);
     }
 
-    setIsUserLabelEdit(false);
+    setIsUserLabelEdit({
+      status: false,
+      rowKey: credentialToEdit.id!,
+    });
   };
 
   return (
@@ -459,6 +475,23 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
           </Table>
         </DisplayDialog>
       )}
+      {userCredentials.length !== 0 && passwordTypeFinder === undefined && (
+        <>
+          <Button
+            key={`confirmSaveBtn-table-${user.id}`}
+            className="setPasswordBtn-table"
+            data-testid="setPasswordBtn-table"
+            variant="primary"
+            form="userCredentials-form"
+            onClick={() => {
+              setOpen(true);
+            }}
+          >
+            {t("savePassword")}
+          </Button>
+          <Divider />
+        </>
+      )}
       {userCredentials.length !== 0 ? (
         <TableComposable aria-label="password-data-table" variant={"compact"}>
           <Thead>
@@ -480,15 +513,18 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
             </Tr>
           </Thead>
           <Tbody>
-            <Tr>
-              {userCredentials.map((credential) => (
+            {userCredentials.map((credential) => (
+              <Tr key={`table-${credential.id}`}>
                 <>
                   <Td
                     draggableRow={{
                       id: `draggable-row-${credential.id}`,
                     }}
                   />
-                  <Td key={`${credential}`} dataLabel={`columns-${credential}`}>
+                  <Td
+                    key={`table-item-${credential.id}`}
+                    dataLabel={`columns-${credential.id}`}
+                  >
                     {credential.type?.charAt(0).toUpperCase()! +
                       credential.type?.slice(1)}
                   </Td>
@@ -499,7 +535,8 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
                         className="kc-userLabel-row"
                       >
                         <div className="kc-form-group-userLabel">
-                          {isUserLabelEdit ? (
+                          {isUserLabelEdit?.status &&
+                          isUserLabelEdit.rowKey === credential.id ? (
                             <>
                               <TextInput
                                 name="userLabel"
@@ -511,19 +548,29 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
                               />
                               <div className="kc-userLabel-actionBtns">
                                 <Button
+                                  key={`editUserLabel-accept-${credential.id}`}
                                   variant="link"
                                   className="kc-editUserLabel-acceptBtn"
                                   onClick={() => {
                                     handleSubmit1(saveUserLabel)();
-                                    setIsUserLabelEdit(false);
+                                    setIsUserLabelEdit({
+                                      status: false,
+                                      rowKey: credential.id!,
+                                    });
                                   }}
                                   data-testid="editUserLabel-acceptBtn"
                                   icon={<CheckIcon />}
                                 />
                                 <Button
+                                  key={`editUserLabel-cancel-${credential.id}`}
                                   variant="link"
                                   className="kc-editUserLabel-cancelBtn"
-                                  onClick={() => setIsUserLabelEdit(false)}
+                                  onClick={() =>
+                                    setIsUserLabelEdit({
+                                      status: false,
+                                      rowKey: credential.id!,
+                                    })
+                                  }
                                   data-testid="editUserLabel-cancelBtn"
                                   icon={<TimesIcon />}
                                 />
@@ -533,11 +580,15 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
                             <>
                               {credential.userLabel ?? ""}
                               <Button
+                                key={`editUserLabel-${credential.id}`}
                                 variant="link"
                                 className="kc-editUserLabel-btn"
                                 onClick={() => {
                                   setEditedUserCredential(credential);
-                                  setIsUserLabelEdit(true);
+                                  setIsUserLabelEdit({
+                                    status: true,
+                                    rowKey: credential.id!,
+                                  });
                                 }}
                                 data-testid="editUserLabelBtn"
                                 icon={<PencilAltIcon />}
@@ -561,24 +612,39 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
                       {t("showDataBtn")}
                     </Button>
                   </Td>
-                  <Td>
-                    <Button
-                      variant="secondary"
-                      data-testid="resetPasswordBtn"
-                      onClick={resetPassword}
-                    >
-                      {t("resetPasswordBtn")}
-                    </Button>
-                  </Td>
+                  {credential.type === "password" ? (
+                    <Td>
+                      <Button
+                        variant="secondary"
+                        data-testid="resetPasswordBtn"
+                        onClick={resetPassword}
+                      >
+                        {t("resetPasswordBtn")}
+                      </Button>
+                    </Td>
+                  ) : (
+                    <Td />
+                  )}
                   <Td>
                     <Dropdown
                       isPlain
                       position={DropdownPosition.right}
                       toggle={
-                        <KebabToggle onToggle={(open) => setKebabOpen(open)} />
+                        <KebabToggle
+                          onToggle={(status) =>
+                            setKebabOpen({
+                              status,
+                              rowKey: credential.id!,
+                            })
+                          }
+                        />
                       }
-                      isOpen={kebabOpen}
-                      onSelect={() => setSelectedCredential(credential)}
+                      isOpen={
+                        kebabOpen.status && kebabOpen.rowKey === credential.id
+                      }
+                      onSelect={() => {
+                        setSelectedCredential(credential);
+                      }}
                       dropdownItems={[
                         <DropdownItem
                           key={`delete-dropdown-item-${credential.id}`}
@@ -586,7 +652,10 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
                           component="button"
                           onClick={() => {
                             toggleDeleteDialog();
-                            setKebabOpen(false);
+                            setKebabOpen({
+                              status: false,
+                              rowKey: credential.id!,
+                            });
                           }}
                         >
                           {t("deleteBtn")}
@@ -595,8 +664,8 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
                     />
                   </Td>
                 </>
-              ))}
-            </Tr>
+              </Tr>
+            ))}
           </Tbody>
         </TableComposable>
       ) : (
