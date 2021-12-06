@@ -16,7 +16,7 @@
         <selenium.version>4.0.0</selenium.version>
         <graphene.webdriver.version>3.0.0-alpha.1</graphene.webdriver.version>
         <htmlunit.driver.version>3.55.0</htmlunit.driver.version>
-        <arquillian.drone.version>3.0.0-alpha.1</arquillian.drone.version>
+        <arquillian.drone.version>3.0.0-alpha.2</arquillian.drone.version>
     </properties>
 
     <dependencies>
