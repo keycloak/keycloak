@@ -106,6 +106,7 @@ export default function ClientScopeForm() {
 
   const save = async (clientScopes: ClientScopeDefaultOptionalType) => {
     try {
+      clientScopes.name = clientScopes.name?.trim();
       clientScopes.attributes = convertFormValuesToObject(
         clientScopes.attributes!
       );
