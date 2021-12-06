@@ -509,8 +509,8 @@ The support for the Virtual Authenticators came from Selenium 4.
 
 #### Run all WebAuthN tests
 ```
-mvn -f testsuite/integration-arquillian/tests/other/webauthn/pom.xml clean test \
-    -Dbrowser=chrome
+mvn -f testsuite/integration-arquillian/tests/other/pom.xml clean test \
+    -Dbrowser=chrome -Pwebauthn
 ```
 
 #### Troubleshooting
