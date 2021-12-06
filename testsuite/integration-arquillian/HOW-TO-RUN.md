@@ -529,6 +529,9 @@ Then run the WebAuthn tests as above with the additional system property for spe
 -DchromeDriverVersion=77.0.3865.40
 ```
 
+**For Windows**: Probably, you encounter issues with execution those tests on the Windows platform due to Chrome Driver is not available.
+In this case, please define the path to the local Chrome Driver by adding this property `-Dwebdriver.chrome.driver=C:/path/to/chromedriver.exe`.
+
 **Warning:** Please, be aware the WebAuthn tests are still in a development phase and there is a high chance those tests will not be stable.
 
 ## Social Login
