@@ -31,6 +31,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -41,13 +42,16 @@ import static org.hamcrest.Matchers.notNullValue;
 public class DefaultTreeNodeTest {
 
     private class Node extends DefaultTreeNode<Node> {
+
         public Node() {
             super(treeProperties);
         }
+
         public Node(String id) {
             super(treeProperties);
             setId(id);
         }
+
         public Node(Node parent, String id) {
             super(treeProperties);
             setId(id);
@@ -55,7 +59,7 @@ public class DefaultTreeNodeTest {
         }
 
         @Override
-        public String toString() {
+        public String getLabel() {
             return this.getId() == null ? "Node:" + System.identityHashCode(this) : this.getId();
         }
     }
@@ -68,6 +72,7 @@ public class DefaultTreeNodeTest {
     private static final Integer VALUE_3 = 12345;
 
     public Map<String, Object> treeProperties = new HashMap<>();
+
     {
         treeProperties.put(KEY_1, VALUE_1);
         treeProperties.put(KEY_2, VALUE_2);
@@ -330,85 +335,168 @@ public class DefaultTreeNodeTest {
 
     @Test
     public void testDfs() {
-        Node root =                                 new Node("1");
-        Node child11 =       new Node(root, "1.1");
-        Node child12 =                                         new Node(root, "1.2");
+        Node root = new Node("1");
+        Node child11 = new Node(root, "1.1");
+        Node child12 = new Node(root, "1.2");
         Node child111 = new Node(child11, "1.1.1");
-        Node child112 =          new Node(child11, "1.1.2");
-        Node child121 =                                 new Node(child12, "1.2.1");
-        Node child122 =                                             new Node(child12, "1.2.2");
-        Node child123 =                                                         new Node(child12, "1.2.3");
-        Node child1121 =          new Node(child112, "1.1.2.1");
+        Node child112 = new Node(child11, "1.1.2");
+        Node child121 = new Node(child12, "1.2.1");
+        Node child122 = new Node(child12, "1.2.2");
+        Node child123 = new Node(child12, "1.2.3");
+        Node child1121 = new Node(child112, "1.1.2.1");
 
         List<Node> res = new LinkedList<>();
-        assertThat(root.findFirstDfs(n -> { res.add(n); return false; }), is(Optional.empty()));
+        assertThat(root.findFirstDfs(n -> {
+            res.add(n);
+            return false;
+        }), is(Optional.empty()));
         assertThat(res, contains(root, child11, child111, child112, child1121, child12, child121, child122, child123));
 
         res.clear();
-        assertThat(root.findFirstDfs(n -> { res.add(n); return n == child12; }), is(Optional.of(child12)));
+        assertThat(root.findFirstDfs(n -> {
+            res.add(n);
+            return n == child12;
+        }), is(Optional.of(child12)));
         assertThat(res, contains(root, child11, child111, child112, child1121, child12));
     }
 
     @Test
     public void testDfsBottommost() {
-        Node root =                                 new Node("1");
-        Node child11 =       new Node(root, "1.1");
-        Node child12 =                                         new Node(root, "1.2");
-        Node child13 =                                                                                  new Node(root, "1.3");
+        Node root = new Node("1");
+        Node child11 = new Node(root, "1.1");
+        Node child12 = new Node(root, "1.2");
+        Node child13 = new Node(root, "1.3");
         Node child111 = new Node(child11, "1.1.1");
-        Node child112 =          new Node(child11, "1.1.2");
-        Node child121 =                                 new Node(child12, "1.2.1");
-        Node child122 =                                             new Node(child12, "1.2.2");
-        Node child123 =                                                         new Node(child12, "1.2.3");
-        Node child1121 =          new Node(child112, "1.1.2.1");
-        Node child131 =                                                                             new Node(child13, "1.3.1");
-        Node child132 =                                                                                      new Node(child13, "1.3.2");
+        Node child112 = new Node(child11, "1.1.2");
+        Node child121 = new Node(child12, "1.2.1");
+        Node child122 = new Node(child12, "1.2.2");
+        Node child123 = new Node(child12, "1.2.3");
+        Node child1121 = new Node(child112, "1.1.2.1");
+        Node child131 = new Node(child13, "1.3.1");
+        Node child132 = new Node(child13, "1.3.2");
 
         List<Node> res = new LinkedList<>();
-        assertThat(root.findFirstBottommostDfs(n -> { res.add(n); return false; }), is(Optional.empty()));
+        assertThat(root.findFirstBottommostDfs(n -> {
+            res.add(n);
+            return false;
+        }), is(Optional.empty()));
         assertThat(res, contains(root, child11, child111, child112, child1121, child12, child121, child122, child123, child13, child131, child132));
 
         res.clear();
-        assertThat(root.findFirstBottommostDfs(n -> { res.add(n); return n == child12; }), is(Optional.of(child12)));
+        assertThat(root.findFirstBottommostDfs(n -> {
+            res.add(n);
+            return n == child12;
+        }), is(Optional.of(child12)));
         assertThat(res, contains(root, child11, child111, child112, child1121, child12, child121, child122, child123));
 
         res.clear();
-        assertThat(root.findFirstBottommostDfs(n -> { res.add(n); return n.getId().startsWith("1.1.2"); }), is(Optional.of(child1121)));
+        assertThat(root.findFirstBottommostDfs(n -> {
+            res.add(n);
+            return n.getId().startsWith("1.1.2");
+        }), is(Optional.of(child1121)));
         assertThat(res, contains(root, child11, child111, child112, child1121));
     }
 
     @Test
     public void testBfs() {
-        Node root =                                 new Node("1");
-        Node child11 =       new Node(root, "1.1");
-        Node child12 =                                         new Node(root, "1.2");
+        Node root = new Node("1");
+        Node child11 = new Node(root, "1.1");
+        Node child12 = new Node(root, "1.2");
         Node child111 = new Node(child11, "1.1.1");
-        Node child112 =          new Node(child11, "1.1.2");
-        Node child121 =                                 new Node(child12, "1.2.1");
-        Node child122 =                                             new Node(child12, "1.2.2");
-        Node child123 =                                                         new Node(child12, "1.2.3");
-        Node child1121 =          new Node(child112, "1.1.2.1");
+        Node child112 = new Node(child11, "1.1.2");
+        Node child121 = new Node(child12, "1.2.1");
+        Node child122 = new Node(child12, "1.2.2");
+        Node child123 = new Node(child12, "1.2.3");
+        Node child1121 = new Node(child112, "1.1.2.1");
 
         List<Node> res = new LinkedList<>();
-        assertThat(root.findFirstBfs(n -> { res.add(n); return false; }), is(Optional.empty()));
+        assertThat(root.findFirstBfs(n -> {
+            res.add(n);
+            return false;
+        }), is(Optional.empty()));
         assertThat(res, contains(root, child11, child12, child111, child112, child121, child122, child123, child1121));
 
         res.clear();
-        assertThat(root.findFirstBfs(n -> { res.add(n); return n == child12; }), is(Optional.of(child12)));
+        assertThat(root.findFirstBfs(n -> {
+            res.add(n);
+            return n == child12;
+        }), is(Optional.of(child12)));
         assertThat(res, contains(root, child11, child12));
     }
 
     @Test
-    public void testPathToRoot() {
-        Node root =                                 new Node("1");
-        Node child11 =       new Node(root, "1.1");
-        Node child12 =                                         new Node(root, "1.2");
+    public void testWalkBfs() {
+        Node root = new Node("1");
+        Node child11 = new Node(root, "1.1");
+        Node child12 = new Node(root, "1.2");
         Node child111 = new Node(child11, "1.1.1");
-        Node child112 =          new Node(child11, "1.1.2");
-        Node child121 =                                 new Node(child12, "1.2.1");
-        Node child122 =                                             new Node(child12, "1.2.2");
-        Node child123 =                                                         new Node(child12, "1.2.3");
-        Node child1121 =          new Node(child112, "1.1.2.1");
+        Node child112 = new Node(child11, "1.1.2");
+        Node child121 = new Node(child12, "1.2.1");
+        Node child122 = new Node(child12, "1.2.2");
+        Node child123 = new Node(child12, "1.2.3");
+        Node child1121 = new Node(child112, "1.1.2.1");
+
+        List<Node> res = new LinkedList<>();
+        root.walkBfs(res::add);
+        assertThat(res, contains(root, child11, child12, child111, child112, child121, child122, child123, child1121));
+    }
+
+    @Test
+    public void testWalkDfs() {
+        Node root = new Node("1");
+        Node child11 = new Node(root, "1.1");
+        Node child12 = new Node(root, "1.2");
+        Node child111 = new Node(child11, "1.1.1");
+        Node child112 = new Node(child11, "1.1.2");
+        Node child121 = new Node(child12, "1.2.1");
+        Node child122 = new Node(child12, "1.2.2");
+        Node child123 = new Node(child12, "1.2.3");
+        Node child1121 = new Node(child112, "1.1.2.1");
+
+        List<Node> uponEntry = new LinkedList<>();
+        List<Node> afterChildren = new LinkedList<>();
+        root.walkDfs(uponEntry::add, afterChildren::add);
+        assertThat(uponEntry, contains(root, child11, child111, child112, child1121, child12, child121, child122, child123));
+        assertThat(afterChildren, contains(child111, child1121, child112, child11, child121, child122, child123, child12, root));
+    }
+
+    @Test
+    public void testForEachParent() {
+        Node root = new Node("1");
+        Node child11 = new Node(root, "1.1");
+        Node child12 = new Node(root, "1.2");
+        Node child111 = new Node(child11, "1.1.1");
+        Node child112 = new Node(child11, "1.1.2");
+        Node child121 = new Node(child12, "1.2.1");
+        Node child122 = new Node(child12, "1.2.2");
+        Node child123 = new Node(child12, "1.2.3");
+        Node child1121 = new Node(child112, "1.1.2.1");
+
+        List<Node> res = new LinkedList<>();
+        res.clear();
+        root.forEachParent(res::add);
+        assertThat(res, empty());
+
+        res.clear();
+        child1121.forEachParent(res::add);
+        assertThat(res, contains(child112, child11, root));
+
+        res.clear();
+        child123.forEachParent(res::add);
+        assertThat(res, contains(child12, root));
+    }
+
+    @Test
+    public void testPathToRoot() {
+        Node root = new Node("1");
+        Node child11 = new Node(root, "1.1");
+        Node child12 = new Node(root, "1.2");
+        Node child111 = new Node(child11, "1.1.1");
+        Node child112 = new Node(child11, "1.1.2");
+        Node child121 = new Node(child12, "1.2.1");
+        Node child122 = new Node(child12, "1.2.2");
+        Node child123 = new Node(child12, "1.2.3");
+        Node child1121 = new Node(child112, "1.1.2.1");
 
         assertThat(child1121.getPathToRoot(PathOrientation.TOP_FIRST), contains(root, child11, child112, child1121));
         assertThat(child123.getPathToRoot(PathOrientation.TOP_FIRST), contains(root, child12, child123));
@@ -417,6 +505,13 @@ public class DefaultTreeNodeTest {
         assertThat(child1121.getPathToRoot(PathOrientation.BOTTOM_FIRST), contains(child1121, child112, child11, root));
         assertThat(child123.getPathToRoot(PathOrientation.BOTTOM_FIRST), contains(child123, child12, root));
         assertThat(root.getPathToRoot(PathOrientation.BOTTOM_FIRST), contains(root));
+    }
+
+    @Test
+    public void testToStringStackOverflow() {
+        Node n = new Node("1");
+        n.setNodeProperty("prop", n);
+        assertThat(n.toString().length(), lessThan(255));
     }
 
     private void assertTreeProperties(Node node) {
