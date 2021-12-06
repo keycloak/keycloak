@@ -81,6 +81,8 @@ const UsersTabs = () => {
   };
 
   const save = async (user: UserRepresentation) => {
+    user.username = user.username?.trim();
+
     try {
       if (id) {
         await adminClient.users.update({ id }, user);
@@ -99,7 +101,7 @@ const UsersTabs = () => {
         history.push(toUser({ id: createdUser.id, realm, tab: "settings" }));
       }
     } catch (error) {
-      addError("userCreateError", error);
+      addError("users:userCreateError", error);
     }
   };
 

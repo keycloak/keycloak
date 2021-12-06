@@ -51,6 +51,7 @@ export default function NewClientForm() {
     try {
       const newClient = await adminClient.clients.create({
         ...client,
+        clientId: client.clientId?.trim(),
         attributes,
       });
       addAlert(t("createSuccess"), AlertVariant.success);

@@ -274,6 +274,9 @@ export default function ClientDetails() {
           webOrigins,
           attributes,
         };
+
+        newClient.clientId = newClient.clientId?.trim();
+
         await adminClient.clients.update({ id: clientId }, newClient);
         setupForm(newClient);
         setClient(newClient);

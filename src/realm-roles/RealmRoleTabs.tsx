@@ -120,6 +120,9 @@ export default function RealmRoleTabs() {
       }
       const { attributes, ...rest } = values;
       let roleRepresentation: RoleRepresentation = rest;
+
+      roleRepresentation.name = roleRepresentation.name?.trim();
+
       if (id) {
         if (attributes) {
           roleRepresentation.attributes = arrayToAttributes(attributes);

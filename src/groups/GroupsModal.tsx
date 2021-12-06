@@ -38,6 +38,8 @@ export const GroupsModal = ({
   });
 
   const submitForm = async (group: GroupRepresentation) => {
+    group.name = group.name?.trim();
+
     try {
       if (!id) {
         await adminClient.groups.create(group);
