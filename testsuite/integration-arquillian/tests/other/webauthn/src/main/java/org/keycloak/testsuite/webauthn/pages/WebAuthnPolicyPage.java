@@ -25,6 +25,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.console.page.authentication.Authentication;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.console.page.idp.mappers.MultivaluedStringProperty;
+import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
 import org.keycloak.testsuite.webauthn.utils.PropertyRequirement;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
@@ -36,6 +37,7 @@ import java.util.function.Supplier;
 
 import static org.keycloak.testsuite.util.UIUtils.getTextInputValue;
 import static org.keycloak.testsuite.util.UIUtils.setTextInputValue;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
@@ -98,7 +100,7 @@ public class WebAuthnPolicyPage extends Authentication {
     }
 
     public void setRpEntityName(String entityName) {
-        waitUntilElement(checkElement(() -> rpEntityName)).is().present();
+        waitUntilElement(checkElement(() -> rpEntityName)).is().clickable();
         setTextInputValue(rpEntityName, entityName);
     }
 
@@ -118,7 +120,7 @@ public class WebAuthnPolicyPage extends Authentication {
     }
 
     public void setRpEntityId(String id) {
-        waitUntilElement(checkElement(() -> rpEntityId)).is().present();
+        waitUntilElement(checkElement(() -> rpEntityId)).is().clickable();
         setTextInputValue(rpEntityId, id);
     }
 
@@ -201,7 +203,7 @@ public class WebAuthnPolicyPage extends Authentication {
     }
 
     public void setTimeout(Integer time) {
-        waitUntilElement(checkElement(() -> timeout)).is().present();
+        waitUntilElement(checkElement(() -> timeout)).is().clickable();
         setTextInputValue(timeout, time == null ? "0" : String.valueOf(time));
     }
 
@@ -224,11 +226,13 @@ public class WebAuthnPolicyPage extends Authentication {
     public void clickSaveButton() {
         waitUntilElement(checkElement(() -> saveButton)).is().clickable();
         saveButton.click();
+        waitForPageToLoad();
     }
 
     public void clickCancelButton() {
         waitUntilElement(checkElement(() -> cancelButton)).is().clickable();
         cancelButton.click();
+        waitForPageToLoad();
     }
 
     public boolean isSaveButtonEnabled() {
