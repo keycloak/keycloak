@@ -119,4 +119,8 @@ public class ComponentModelScope implements Scope {
         throw new UnsupportedOperationException("Not implemented");
     }
 
+    public ComponentModel getComponentModel() {
+        return componentConfig;
+    }
+
 }
