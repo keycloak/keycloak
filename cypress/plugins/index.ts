@@ -2,6 +2,7 @@
 // @ts-ignore
 import webpackPreprocessor from "@cypress/webpack-batteries-included-preprocessor";
 import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin";
+import fs from "fs";
 import path from "path";
 
 // ***********************************************************
@@ -28,8 +29,6 @@ const configurePlugins: Cypress.PluginConfig = (on) => {
       }),
     ],
   };
-  const _ = require("lodash");
-  const del = require("del");
 
   on(
     "file:preprocessor",
@@ -39,15 +38,18 @@ const configurePlugins: Cypress.PluginConfig = (on) => {
     })
   );
   on("after:spec", (spec, results) => {
-    if (results?.video) {
-      // Do we have failures for any retry attempts?
-      const failures = _.some(results.tests, (test: any) => {
-        return _.some(test.attempts, { state: "failed" });
-      });
-      if (!failures) {
-        // delete the video if the spec passed and no tests retried
-        return del(results.video);
-      }
+    if (!results.video) {
+      return;
+    }
+
+    // Do we have failures for any retry attempts?
+    const failures = results.tests.some(({ attempts }) =>
+      attempts.some(({ state }) => state === "failed")
+    );
+
+    // delete the video if the spec passed and no tests retried
+    if (!failures) {
+      fs.rmSync(results.video);
     }
   });
 };
