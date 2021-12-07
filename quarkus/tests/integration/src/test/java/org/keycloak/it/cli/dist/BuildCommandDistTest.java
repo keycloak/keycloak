@@ -51,8 +51,6 @@ class BuildCommandDistTest {
                 () -> "The Error Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
         assertTrue(result.getErrorOutput().contains("For more details run the same command passing the '--verbose' option. Also you can use '--help' to see the details about the usage of the particular command."),
                 () -> "The Error Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
-        String errorString = "";
-        for (String s: result.getErrorStream()) { errorString += s + "\n"; }
-        assertEquals(4, errorString.split("\n").length);
+        assertEquals(4, result.getErrorStream().size());
     }
 }
