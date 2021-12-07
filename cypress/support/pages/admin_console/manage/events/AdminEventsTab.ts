@@ -66,7 +66,7 @@ export default class AdminEventsTab {
     cy.findByTestId(this.searchAdminEventDrpDwnBtn).click();
     cy.findByTestId(this.resourcePathInputFld).type("events/test");
     cy.findByTestId(this.searchEventsBtn).click();
-    cy.get(this.adminEventsTabTitle).contains("No events logged");
+    cy.get(this.adminEventsTabTitle).contains("No search results");
   }
 
   shouldCheckAuthDialogOpensAndIsNotEmpty() {

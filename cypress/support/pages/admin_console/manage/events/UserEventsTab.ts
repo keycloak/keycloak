@@ -68,6 +68,6 @@ export default class UserEventsTab {
     cy.findByTestId(this.searchEventDrpDwnBtn).click();
     cy.findByTestId(this.userIdInputFld).type("test");
     cy.findByTestId(this.searchEventsBtn).click();
-    cy.get(this.userEventsTabTitle).contains("No events logged");
+    cy.get(this.userEventsTabTitle).contains("No search results");
   }
 }

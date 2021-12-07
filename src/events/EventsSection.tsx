@@ -468,6 +468,7 @@ export default function EventsSection() {
                     instructions={t("emptyEventsInstructions")}
                   />
                 }
+                isSearching={Object.keys(activeFilters).length > 0}
               />
             </div>
           </Tab>

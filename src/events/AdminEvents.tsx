@@ -629,6 +629,7 @@ export const AdminEvents = () => {
             instructions={t("emptyEventsInstructions")}
           />
         }
+        isSearching={Object.keys(activeFilters).length > 0}
       />
     </>
   );
