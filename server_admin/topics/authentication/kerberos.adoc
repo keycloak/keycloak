@@ -128,7 +128,7 @@ When you install https://www.docker.com/[docker], run a docker image with the Fr
 
 ===== ApacheDS testing Kerberos server
 
-For quick testing and unit tests, use a simple http://directory.apache.org/apacheds/[ApacheDS] Kerberos server. You must build {project_name} from the source and then run the Kerberos server with the maven-exec-plugin from our test suite. See details
+For quick testing and unit tests, use a simple https://directory.apache.org/apacheds/[ApacheDS] Kerberos server. You must build {project_name} from the source and then run the Kerberos server with the maven-exec-plugin from our test suite. See details
 https://github.com/keycloak/keycloak/blob/main/docs/tests.md#kerberos-server[here].
 endif::[]
 
