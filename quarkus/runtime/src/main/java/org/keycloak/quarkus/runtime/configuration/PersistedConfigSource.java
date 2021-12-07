@@ -17,13 +17,18 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import io.smallrye.config.PropertiesConfigSource;
 import org.keycloak.quarkus.runtime.Environment;
@@ -35,7 +40,7 @@ import org.keycloak.quarkus.runtime.Environment;
 public final class PersistedConfigSource extends PropertiesConfigSource {
 
     public static final String NAME = "PersistedConfigSource";
-    public static final String PERSISTED_PROPERTIES = "/META-INF/keycloak-persisted.properties";
+    public static final String PERSISTED_PROPERTIES = "META-INF/keycloak-persisted.properties";
     private static final PersistedConfigSource INSTANCE = new PersistedConfigSource();
 
     private PersistedConfigSource() {
@@ -91,17 +96,30 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
     }
 
     private static InputStream loadPersistedConfig() {
-        URL resource = Thread.currentThread().getContextClassLoader().getResource(PERSISTED_PROPERTIES);
+        Path homePath = Environment.getHomePath();
 
-        if (resource == null) {
+        if (homePath == null) {
             return null;
         }
 
-        try {
-            return resource.openStream();
-        } catch (Exception cause) {
-            throw new RuntimeException("Failed to resolve persisted propertied file", cause);
-        }
-    }
+        File configFile = homePath.resolve("lib").resolve("quarkus").resolve("generated-bytecode.jar").toFile();
 
+        if (!configFile.exists()) {
+            return null;
+        }
+
+        try (ZipInputStream is = new ZipInputStream(new FileInputStream(configFile))) {
+            ZipEntry entry;
+
+            while ((entry = is.getNextEntry()) != null) {
+                if (entry.getName().equals(PERSISTED_PROPERTIES)) {
+                    return new ByteArrayInputStream(is.readAllBytes());
+                }
+            }
+        } catch (Exception cause) {
+            throw new RuntimeException("Failed to load persisted properties from " + configFile, cause);
+        }
+
+        return null;
+    }
 }
