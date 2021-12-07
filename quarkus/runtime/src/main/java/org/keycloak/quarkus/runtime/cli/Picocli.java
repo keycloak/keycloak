@@ -45,6 +45,7 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
+import io.quarkus.runtime.Quarkus;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.cli.command.Start;
@@ -77,7 +78,11 @@ public final class Picocli {
     public static void parseAndRun(List<String> cliArgs) {
         CommandLine cmd = createCommandLine(cliArgs);
 
-        runReAugmentationIfNeeded(cliArgs, cmd);
+        if (Boolean.getBoolean("kc.config.rebuild-and-exit")) {
+            runReAugmentationIfNeeded(cliArgs, cmd);
+            Quarkus.asyncExit(cmd.getCommandSpec().exitCodeOnSuccess());
+            return;
+        }
 
         cmd.execute(cliArgs.toArray(new String[0]));
     }
@@ -95,10 +100,6 @@ public final class Picocli {
             if (requiresReAugmentation(cmd)) {
                 runReAugmentation(cliArgs, cmd);
             }
-        }
-
-        if (Boolean.getBoolean("kc.config.rebuild-and-exit")) {
-            System.exit(cmd.getCommandSpec().exitCodeOnSuccess());
         }
     }
 
