@@ -74,7 +74,7 @@ image:images/realm_user.png[]
 .Results
 
 After a user is created, the Operator creates a Secret using the
-following naming pattern: `credential-<realm name>-<username>-<namespace>` , containing the username and, if it has been specified in the credentials attribute, the password.
+following naming pattern: `credential-<realm name>-<username>-<namespace>`, containing the username and, if it has been specified in the CR `credentials` attribute, the password.
 
 Here's an example:
 
