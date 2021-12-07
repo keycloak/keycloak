@@ -3,7 +3,8 @@ const expect = chai.expect;
 export default class GroupDetailPage {
   private groupNamesColumn = '[data-label="Group name"] > a';
   private memberTab = "members";
-  private memberNameColumn = 'tbody > tr > [data-label="Name"]';
+  private memberNameColumn =
+    '[data-testid="members-table"] > tbody > tr > [data-label="Name"]';
   private includeSubGroupsCheck = "includeSubGroupsCheck";
   private addMembers = "addMember";
   private addMember = "add";

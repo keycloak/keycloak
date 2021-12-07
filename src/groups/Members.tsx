@@ -115,6 +115,7 @@ export const Members = () => {
         />
       )}
       <KeycloakDataTable
+        data-testid="members-table"
         key={`${id}${key}${includeSubGroup}`}
         loader={loader}
         ariaLabelKey="groups:members"

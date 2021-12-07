@@ -25,6 +25,7 @@ import { GroupAttributes } from "./GroupAttributes";
 import { GroupsModal } from "./GroupsModal";
 import { toGroups } from "./routes/Groups";
 import { toGroupsSearch } from "./routes/GroupsSearch";
+import { GroupRoleMapping } from "./GroupRoleMapping";
 
 import "./GroupsSection.css";
 
@@ -165,6 +166,13 @@ export default function GroupsSection() {
               title={<TabTitleText>{t("common:attributes")}</TabTitleText>}
             >
               <GroupAttributes />
+            </Tab>
+            <Tab
+              eventKey={3}
+              data-testid="role-mapping-tab"
+              title={<TabTitleText>{t("roleMapping")}</TabTitleText>}
+            >
+              <GroupRoleMapping id={id!} name={currentGroup().name!} />
             </Tab>
           </Tabs>
         )}

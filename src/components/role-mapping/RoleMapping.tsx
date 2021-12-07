@@ -113,6 +113,25 @@ export const RoleMapping = ({
     onConfirm: async () => {
       try {
         switch (type) {
+          case "group":
+            await Promise.all(
+              selected.map((row) => {
+                const role = { id: row.role.id!, name: row.role.name! };
+                if (row.client) {
+                  return adminClient.groups.delClientRoleMappings({
+                    id,
+                    clientUniqueId: row.client!.id!,
+                    roles: [role],
+                  });
+                } else {
+                  return adminClient.groups.delRealmRoleMappings({
+                    id,
+                    roles: [role],
+                  });
+                }
+              })
+            );
+            break;
           case "service-account":
             await Promise.all(
               selected.map((row) => {

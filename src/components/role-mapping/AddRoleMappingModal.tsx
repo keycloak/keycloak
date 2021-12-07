@@ -23,7 +23,7 @@ import { FilterIcon } from "@patternfly/react-icons";
 import { Row, ServiceRole } from "./RoleMapping";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 
-export type MappingType = "service-account" | "client-scope" | "role";
+export type MappingType = "service-account" | "client-scope" | "role" | "group";
 
 type AddRoleMappingModalProps = {
   id: string;
@@ -71,6 +71,14 @@ export const AddRoleMappingModal = ({
             let roles: RoleRepresentation[] = [];
 
             switch (type) {
+              case "group":
+                roles =
+                  await adminClient.groups.listAvailableClientRoleMappings({
+                    id: id,
+                    clientUniqueId: client.id!,
+                  });
+                break;
+
               case "service-account":
                 roles = await adminClient.users.listAvailableClientRoleMappings(
                   {
@@ -131,6 +139,12 @@ export const AddRoleMappingModal = ({
     let availableRoles: RoleRepresentation[] = [];
 
     switch (type) {
+      case "group":
+        availableRoles =
+          await adminClient.groups.listAvailableRealmRoleMappings({
+            id,
+          });
+        break;
       case "service-account":
         availableRoles = await adminClient.users.listAvailableRealmRoleMappings(
           {
@@ -168,6 +182,13 @@ export const AddRoleMappingModal = ({
           let clientAvailableRoles: RoleRepresentation[] = [];
 
           switch (type) {
+            case "group":
+              clientAvailableRoles =
+                await adminClient.groups.listAvailableClientRoleMappings({
+                  id,
+                  clientUniqueId: client.id!,
+                });
+              break;
             case "service-account":
               clientAvailableRoles =
                 await adminClient.users.listAvailableClientRoleMappings({

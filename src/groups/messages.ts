@@ -62,5 +62,6 @@ export default {
     attributes: "Attributes",
     groupUpdated: "Group updated",
     groupUpdateError: "Error updating group {error}",
+    roleMapping: "Role mapping",
   },
 };
