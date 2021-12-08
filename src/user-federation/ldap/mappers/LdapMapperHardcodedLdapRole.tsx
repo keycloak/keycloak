@@ -51,6 +51,7 @@ export const LdapMapperHardcodedLdapRole = ({
         <AddRoleMappingModal
           id=""
           type="role"
+          isLDAPmapper
           onAssign={selectRoles}
           isRadio={true}
           onClose={() => setShowAssign(false)}
