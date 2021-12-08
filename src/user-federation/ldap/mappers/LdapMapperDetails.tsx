@@ -71,21 +71,11 @@ export default function LdapMapperDetails() {
   );
 
   const setupForm = (mapper: ComponentRepresentation) => {
-    Object.entries(mapper).map((entry) => {
-      if (entry[0] === "config") {
-        convertToFormValues(entry[1], "config", form.setValue);
-      } else {
-        form.setValue(entry[0], entry[1]);
-      }
-    });
+    convertToFormValues(mapper, form.setValue);
   };
 
   const save = async (mapper: ComponentRepresentation) => {
-    let config = {};
-    if (mapper.config !== undefined) {
-      config = convertFormValuesToObject(mapper.config);
-    }
-    const map = { ...mapper, config };
+    const map = convertFormValuesToObject(mapper);
 
     try {
       if (mapperId) {

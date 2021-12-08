@@ -48,8 +48,8 @@ export const SamlSignature = () => {
 
   const { control, watch } = useFormContext<ClientForm>();
 
-  const signDocs = watch("attributes.saml-server-signature");
-  const signAssertion = watch("attributes.saml-assertion-signature");
+  const signDocs = watch("attributes.saml.server.signature");
+  const signAssertion = watch("attributes.saml.assertion.signature");
 
   return (
     <FormAccess
@@ -57,9 +57,9 @@ export const SamlSignature = () => {
       role="manage-clients"
       className="keycloak__capability-config__form"
     >
-      <Toggle name="attributes.saml-server-signature" label="signDocuments" />
+      <Toggle name="attributes.saml.server.signature" label="signDocuments" />
       <Toggle
-        name="attributes.saml-assertion-signature"
+        name="attributes.saml.assertion.signature"
         label="signAssertions"
       />
       {(signDocs === "true" || signAssertion === "true") && (
@@ -78,7 +78,7 @@ export const SamlSignature = () => {
             }
           >
             <Controller
-              name="attributes.saml-signature-algorithm"
+              name="attributes.saml.signature.algorithm"
               defaultValue={SIGNATURE_ALGORITHMS[0]}
               Key
               control={control}
@@ -120,7 +120,7 @@ export const SamlSignature = () => {
             }
           >
             <Controller
-              name="attributes.saml-server-signature-keyinfo-xmlSigKeyInfoKeyNameTransformer"
+              name="attributes.saml.server.signature.keyinfo.xmlSigKeyInfoKeyNameTransformer"
               defaultValue={KEYNAME_TRANSFORMER[0]}
               control={control}
               render={({ onChange, value }) => (

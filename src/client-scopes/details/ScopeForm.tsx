@@ -40,7 +40,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const { t: tc } = useTranslation("clients");
   const { register, control, handleSubmit, errors, setValue } =
     useForm<ClientScopeRepresentation>({
-      defaultValues: { attributes: { "display-on-consent-screen": "true" } },
+      defaultValues: { attributes: { "display.on.consent.screen": "true" } },
     });
   const { realm } = useRealm();
 
@@ -51,16 +51,11 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
 
   const displayOnConsentScreen = useWatch({
     control,
-    name: "attributes.display-on-consent-screen",
+    name: "attributes.display.on.consent.screen",
   });
 
   useEffect(() => {
-    Object.entries(clientScope).map((entry) => {
-      if (entry[0] === "attributes") {
-        convertToFormValues(entry[1], "attributes", setValue);
-      }
-      setValue(entry[0], entry[1]);
-    });
+    convertToFormValues(clientScope, setValue);
   }, [clientScope]);
 
   return (
@@ -213,7 +208,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         fieldId="kc-display.on.consent.screen"
       >
         <Controller
-          name="attributes.display-on-consent-screen"
+          name="attributes.display.on.consent.screen"
           control={control}
           defaultValue="true"
           render={({ onChange, value }) => (
@@ -243,7 +238,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
             ref={register}
             type="text"
             id="kc-consent-screen-text"
-            name="attributes.consent-screen-text"
+            name="attributes.consent.screen.text"
           />
         </FormGroup>
       )}
@@ -260,7 +255,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         fieldId="includeInTokenScope"
       >
         <Controller
-          name="attributes.include-in-token-scope"
+          name="attributes.include.in.token.scope"
           control={control}
           defaultValue="true"
           render={({ onChange, value }) => (
@@ -286,7 +281,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         fieldId="kc-gui-order"
       >
         <Controller
-          name="attributes.gui-order"
+          name="attributes.gui.order"
           defaultValue={1}
           control={control}
           render={({ onChange, value }) => {

@@ -33,7 +33,7 @@ import type { EditClientPolicyConditionParams } from "./routes/EditCondition";
 import {
   convertToMultiline,
   toValue,
-} from "../components/multi-line-input/MultiLineInput";
+} from "../components/multi-line-input/multi-line-convert";
 import {
   COMPONENTS,
   isValidComponentType,

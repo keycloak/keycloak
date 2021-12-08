@@ -27,19 +27,12 @@ import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import {
-  convertToMultiline,
-  MultiLine,
-  MultiLineInput,
-  toValue,
-} from "../../components/multi-line-input/MultiLineInput";
+import type { MultiLine } from "../../components/multi-line-input/multi-line-convert";
+import type { KeyValueType } from "../../components/attribute-form/attribute-convert";
+import { convertFormValuesToObject, convertToFormValues } from "../../util";
+import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { toClient } from "../routes/Client";
 import { ScopePicker } from "./ScopePicker";
-import {
-  arrayToAttributes,
-  attributesToArray,
-  KeyValueType,
-} from "../../components/attribute-form/attribute-convert";
 import { AttributeInput } from "../../components/attribute-input/AttributeInput";
 
 import "./resource-details.css";
@@ -75,15 +68,7 @@ export default function ResourceDetails() {
   const history = useHistory();
 
   const setupForm = (resource: ResourceRepresentation = {}) => {
-    Object.entries(resource).forEach(([key, value]) => {
-      if (key === "uris") {
-        setValue("uris", convertToMultiline(value));
-      } else if (key === "attributes") {
-        setValue("attributes", attributesToArray(value));
-      } else {
-        setValue(key, value);
-      }
-    });
+    convertToFormValues(resource, setValue, ["uris"]);
   };
 
   useFetch(
@@ -113,12 +98,7 @@ export default function ResourceDetails() {
   );
 
   const save = async (submitted: SubmittedResource) => {
-    const { attributes, uris, ...rest } = submitted;
-    const resource = {
-      ...rest,
-      attributes: arrayToAttributes(attributes),
-      uris: toValue(uris),
-    };
+    const resource = convertFormValuesToObject(submitted, ["uris"]);
 
     try {
       if (resourceId) {

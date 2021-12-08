@@ -35,7 +35,7 @@ export const LdapMapperUserAttribute = ({
           type="text"
           id="kc-user-model-attribute"
           data-testid="mapper-userModelAttribute-fld"
-          name="config.user-model-attribute[0]"
+          name="config.user.model.attribute[0]"
           ref={form.register}
         />
       </FormGroup>
@@ -56,7 +56,7 @@ export const LdapMapperUserAttribute = ({
           type="text"
           id="kc-ldap-attribute"
           data-testid="mapper-ldapAttribute-fld"
-          name="config.ldap-attribute[0]"
+          name="config.ldap.attribute[0]"
           ref={form.register}
         />
       </FormGroup>
@@ -73,7 +73,7 @@ export const LdapMapperUserAttribute = ({
         hasNoPaddingTop
       >
         <Controller
-          name="config.read-only"
+          name="config.read.only"
           defaultValue={
             mapperType === "user-attribute-ldap-mapper" ? ["true"] : ["false"]
           }
@@ -103,7 +103,7 @@ export const LdapMapperUserAttribute = ({
         hasNoPaddingTop
       >
         <Controller
-          name="config.always-read-value-from-ldap"
+          name="config.always.read.value.from.ldap"
           defaultValue={["false"]}
           control={form.control}
           render={({ onChange, value }) => (
@@ -131,7 +131,7 @@ export const LdapMapperUserAttribute = ({
         hasNoPaddingTop
       >
         <Controller
-          name="config.is-mandatory-in-ldap"
+          name="config.is.mandatory.in.ldap"
           defaultValue={["false"]}
           control={form.control}
           render={({ onChange, value }) => (
@@ -161,7 +161,7 @@ export const LdapMapperUserAttribute = ({
           type="text"
           id="kc-attribute-default-value"
           data-testid="mapper-attributeDefaultValue-fld"
-          name="config.attribute-default-value[0]"
+          name="config.attribute.default.value[0]"
           ref={form.register}
         />
       </FormGroup>
@@ -178,7 +178,7 @@ export const LdapMapperUserAttribute = ({
         hasNoPaddingTop
       >
         <Controller
-          name="config.is-binary-attribute"
+          name="config.is.binary.attribute"
           defaultValue={["false"]}
           control={form.control}
           render={({ onChange, value }) => (
@@ -207,12 +207,12 @@ export const LdapMapperUserAttribute = ({
           hasNoPaddingTop
         >
           <Controller
-            name="config.is-der-formatted"
+            name="config.is.der.formatted"
             defaultValue={["false"]}
             control={form.control}
             render={({ onChange, value }) => (
               <Switch
-                id={"kc-der-formatted"}
+                id="kc-der-formatted"
                 isDisabled={false}
                 onChange={(value) => onChange([`${value}`])}
                 isChecked={value[0] === "true"}

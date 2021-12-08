@@ -100,23 +100,23 @@ export const SamlConfig = () => {
         />
       </FormGroup>
       <Toggle
-        name="attributes.saml_force_name_id_format"
+        name="attributes.saml.force.name.id.format"
         label="forceNameIdFormat"
       />
       <Toggle
-        name="attributes.saml-force-post-binding"
+        name="attributes.saml.force.post.binding"
         label="forcePostBinding"
       />
       <Toggle
-        name="attributes.saml-artifact-binding"
+        name="attributes.saml.artifact.binding"
         label="forceArtifactBinding"
       />
       <Toggle
-        name="attributes.saml-onetimeuse-condition"
+        name="attributes.saml.onetimeuse.condition"
         label="includeOneTimeUseCondition"
       />
       <Toggle
-        name="attributes.saml-server-signature-keyinfo-ext"
+        name="attributes.saml.server.signature.keyinfo.ext"
         label="optimizeLookup"
       />
     </FormAccess>

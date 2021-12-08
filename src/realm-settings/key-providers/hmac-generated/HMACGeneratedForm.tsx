@@ -90,23 +90,7 @@ export const HMACGeneratedForm = ({
 
   const setupForm = (component: ComponentRepresentation) => {
     form.reset();
-    Object.entries(component).map(([key, value]) => {
-      if (
-        key === "config" &&
-        component.config?.secretSize &&
-        component.config.active &&
-        component.config.algorithm
-      ) {
-        form.setValue("config.secretSize", value.secretSize[0]);
-
-        form.setValue("config.active", value.active[0]);
-
-        form.setValue("config.algorithm", value.active[0]);
-
-        convertToFormValues(value, "config", form.setValue);
-      }
-      form.setValue(key, value);
-    });
+    convertToFormValues(component, form.setValue);
   };
 
   useFetch(

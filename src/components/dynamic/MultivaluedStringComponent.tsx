@@ -5,7 +5,6 @@ import { FormGroup } from "@patternfly/react-core";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import type { ComponentProps } from "./components";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
-import { convertToHyphens } from "../../util";
 
 export const MultiValuedStringComponent = ({
   name,
@@ -23,7 +22,7 @@ export const MultiValuedStringComponent = ({
       fieldId={name!}
     >
       <MultiLineInput
-        name={`config.${convertToHyphens(name!)}`}
+        name={`config.${name}`}
         aria-label={name}
         addButtonLabel={t("addMultivaluedLabel", {
           fieldLabel: t(label!).toLowerCase(),

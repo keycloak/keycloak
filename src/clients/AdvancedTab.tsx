@@ -104,9 +104,7 @@ export const AdvancedTab = ({
   const resetFields = (names: string[]) => {
     const values: { [name: string]: string } = {};
     for (const name of names) {
-      values[`attributes.${name}`] = attributes
-        ? attributes[name.replace(/-/g, ".")] || ""
-        : "";
+      values[`attributes.${name}`] = attributes?.[name];
     }
     reset(values);
   };
@@ -385,7 +383,9 @@ export const AdvancedTab = ({
                 control={control}
                 save={() => save()}
                 reset={() =>
-                  convertToFormValues(attributes, "attributes", setValue)
+                  convertToFormValues(attributes, (key, value) =>
+                    setValue(`attributes.${key}`, value)
+                  )
                 }
               />
             </>
@@ -399,7 +399,9 @@ export const AdvancedTab = ({
                 control={control}
                 save={() => save()}
                 reset={() =>
-                  convertToFormValues(attributes, "attributes", setValue)
+                  convertToFormValues(attributes, (key, value) =>
+                    setValue(`attributes.${key}`, value)
+                  )
                 }
               />
             </>
@@ -414,7 +416,7 @@ export const AdvancedTab = ({
               control={control}
               save={() => save()}
               reset={() =>
-                resetFields(["exclude-session-state-from-auth-response"])
+                resetFields(["exclude.session.state.from.auth.response"])
               }
             />
           </>
@@ -429,10 +431,10 @@ export const AdvancedTab = ({
             save={() => save()}
             reset={() => {
               resetFields([
-                "saml-assertion-lifespan",
-                "access-token-lifespan",
-                "tls-client-certificate-bound-access-tokens",
-                "pkce-code-challenge-method",
+                "saml.assertion.lifespan",
+                "access.token.lifespan",
+                "tls.client.certificate.bound.access.tokens",
+                "pkce.code.challenge.method",
               ]);
             }}
           />

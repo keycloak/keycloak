@@ -12,7 +12,7 @@ export const LdapMapperMsadUserAccount = ({
   form,
 }: LdapMapperMsadUserAccountProps) => {
   const { t } = useTranslation("user-federation");
-  const helpText = useTranslation("user-federation-help").t;
+  const { t: helpText } = useTranslation("user-federation-help");
 
   return (
     <FormGroup
@@ -28,7 +28,7 @@ export const LdapMapperMsadUserAccount = ({
       hasNoPaddingTop
     >
       <Controller
-        name="config.ldap-password-policy-hints-enabled"
+        name="config.ldap.password.policy.hints.enabled"
         defaultValue={["false"]}
         control={form.control}
         render={({ onChange, value }) => (

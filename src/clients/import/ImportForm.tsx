@@ -34,7 +34,7 @@ export default function ImportForm() {
 
   const { addAlert, addError } = useAlerts();
 
-  const handleFileChange = (obj: object) => {
+  const handleFileChange = (obj?: object) => {
     const defaultClient = {
       protocol: "",
       clientId: "",
@@ -42,13 +42,7 @@ export default function ImportForm() {
       description: "",
     };
 
-    Object.entries(obj || defaultClient).forEach((entries) => {
-      if (entries[0] === "attributes") {
-        convertToFormValues(entries[1], "attributes", form.setValue);
-      } else {
-        setValue(entries[0], entries[1]);
-      }
-    });
+    convertToFormValues(obj || defaultClient, setValue);
     setImported(obj || defaultClient);
   };
 
@@ -56,8 +50,7 @@ export default function ImportForm() {
     try {
       const newClient = await adminClient.clients.create({
         ...imported,
-        ...client,
-        attributes: convertFormValuesToObject(client.attributes || {}),
+        ...convertFormValuesToObject(client),
       });
       addAlert(t("clientImportSuccess"), AlertVariant.success);
       history.push(

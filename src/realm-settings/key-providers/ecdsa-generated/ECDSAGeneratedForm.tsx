@@ -88,20 +88,7 @@ export const ECDSAGeneratedForm = ({
 
   const setupForm = (component: ComponentRepresentation) => {
     form.reset();
-    Object.entries(component).map(([key, value]) => {
-      if (
-        key === "config" &&
-        component.config?.ecdsaEllipticCurveKey &&
-        component.config.active
-      ) {
-        form.setValue("config.secretSize", value.ecdsaEllipticCurveKey[0]);
-
-        form.setValue("config.active", value.active[0]);
-
-        convertToFormValues(value, "config", form.setValue);
-      }
-      form.setValue(key, value);
-    });
+    convertToFormValues(component, form.setValue);
   };
 
   useFetch(

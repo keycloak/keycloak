@@ -10,7 +10,6 @@ import {
 
 import { HelpItem } from "../help-enabler/HelpItem";
 import type { ComponentProps } from "./components";
-import { convertToHyphens } from "../../util";
 
 export const MultiValuedListComponent = ({
   name,
@@ -32,7 +31,7 @@ export const MultiValuedListComponent = ({
       fieldId={name!}
     >
       <Controller
-        name={`config.${convertToHyphens(name!)}`}
+        name={`config.${name}`}
         control={control}
         defaultValue={defaultValue ? [defaultValue] : []}
         render={({ onChange, value }) => (

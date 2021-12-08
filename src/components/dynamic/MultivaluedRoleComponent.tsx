@@ -11,10 +11,9 @@ import {
 
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import type { ComponentProps } from "./components";
-import type { MultiLine } from "../multi-line-input/MultiLineInput";
+import type { MultiLine } from "../multi-line-input/multi-line-convert";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { HelpItem } from "../help-enabler/HelpItem";
-import { convertToHyphens } from "../../util";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
 
 export const MultivaluedRoleComponent = ({
@@ -24,7 +23,7 @@ export const MultivaluedRoleComponent = ({
 }: ComponentProps) => {
   const { t } = useTranslation("dynamic");
   const { whoAmI } = useWhoAmI();
-  const fieldName = `config.${convertToHyphens(name!)}`;
+  const fieldName = `config.${name}`;
 
   const adminClient = useAdminClient();
   const { control } = useFormContext();

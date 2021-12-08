@@ -34,7 +34,7 @@ export const LdapMapperFullNameAttribute = ({
           defaultValue="cn"
           id="kc-full-name-attribute"
           data-testid="mapper-fullNameAttribute-fld"
-          name="config.ldap-full-name-attribute[0]"
+          name="config.ldap.full.name.attribute[0]"
           ref={form.register}
         />
       </FormGroup>
@@ -51,7 +51,7 @@ export const LdapMapperFullNameAttribute = ({
         hasNoPaddingTop
       >
         <Controller
-          name="config.read-only"
+          name="config.read.only"
           defaultValue={["true"]}
           control={form.control}
           render={({ onChange, value }) => (
@@ -79,7 +79,7 @@ export const LdapMapperFullNameAttribute = ({
         hasNoPaddingTop
       >
         <Controller
-          name="config.write-only"
+          name="config.write.only"
           defaultValue={["false"]}
           control={form.control}
           render={({ onChange, value }) => (

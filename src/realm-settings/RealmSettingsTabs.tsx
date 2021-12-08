@@ -49,7 +49,6 @@ import { toRealmSettings } from "./routes/RealmSettings";
 import { LocalizationTab } from "./LocalizationTab";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { UserRegistration } from "./UserRegistration";
-import { DEFAULT_LOCALE } from "../i18n";
 import { toDashboard } from "../dashboard/routes/Dashboard";
 import environment from "../environment";
 import { UserProfileTab } from "./UserProfileTab";
@@ -188,15 +187,7 @@ export const RealmSettingsTabs = ({
   };
 
   const setupForm = (r: RealmRepresentation = realm) => {
-    Object.entries(r).map(([key, value]) => {
-      if (key === "attributes") {
-        convertToFormValues(value, "attributes", setValue);
-      } else if (key === "supportedLocales" && value?.length === 0) {
-        setValue(key, [DEFAULT_LOCALE]);
-      } else {
-        setValue(key, value);
-      }
-    });
+    convertToFormValues(r, setValue);
     resetForm(getValues());
   };
 
@@ -206,18 +197,13 @@ export const RealmSettingsTabs = ({
 
   const save = async (realm: RealmRepresentation) => {
     try {
-      const attributes = Object.fromEntries(
-        Object.entries(
-          convertFormValuesToObject(realm.attributes, true)
-        ).filter(([, v]) => v !== "")
-      );
+      realm = convertFormValuesToObject(realm);
 
       await adminClient.realms.update(
         { realm: realmName },
         {
           ...realm,
           id: realmName,
-          attributes,
         }
       );
       setupForm(realm);

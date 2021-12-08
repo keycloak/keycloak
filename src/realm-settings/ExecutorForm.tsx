@@ -77,12 +77,7 @@ export default function ExecutorForm() {
       );
 
       if (profileExecutor) {
-        Object.entries(profileExecutor).map(([key, value]) => {
-          if (key === "configuration") {
-            convertToFormValues(value, "config", setValue);
-          }
-          setValue(key, value);
-        });
+        convertToFormValues(profileExecutor, setValue);
       }
     },
     []

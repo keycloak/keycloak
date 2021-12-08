@@ -248,7 +248,7 @@ export const CapabilityConfig = ({
             hasNoPaddingTop
           >
             <Controller
-              name="attributes.saml-encrypt"
+              name="attributes.saml.encrypt"
               control={control}
               defaultValue="false"
               render={({ onChange, value }) => (
@@ -276,7 +276,7 @@ export const CapabilityConfig = ({
             hasNoPaddingTop
           >
             <Controller
-              name="attributes.saml-client-signature"
+              name="attributes.saml.client.signature"
               control={control}
               defaultValue="false"
               render={({ onChange, value }) => (

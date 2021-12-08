@@ -38,12 +38,12 @@ export type KeyTypes = typeof KEYS[number];
 
 const KEYS_MAPPING: { [key in KeyTypes]: { [index: string]: string } } = {
   "saml.signing": {
-    name: "attributes.saml-client-signature",
+    name: "attributes.saml.client.signature",
     title: "signingKeysConfig",
     key: "clientSignature",
   },
   "saml.encryption": {
-    name: "attributes.saml-encrypt",
+    name: "attributes.saml.encrypt",
     title: "encryptionKeysConfig",
     key: "encryptAssertions",
   },

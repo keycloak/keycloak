@@ -115,12 +115,7 @@ export default function MappingDetails() {
       setConfig(config);
       setMapping(mapping);
       if (data) {
-        Object.entries(data).map(([key, value]) => {
-          if (key === "config") {
-            convertToFormValues(value, "config", setValue);
-          }
-          setValue(key, value);
-        });
+        convertToFormValues(data, setValue);
       }
     },
     []
@@ -153,10 +148,9 @@ export default function MappingDetails() {
   });
 
   const save = async (formMapping: ProtocolMapperRepresentation) => {
-    const configAttributes = convertFormValuesToObject(formMapping.config);
     const key = isUpdating ? "Updated" : "Created";
     try {
-      const mapping = { ...formMapping, ...config, config: configAttributes };
+      const mapping = { ...config, ...convertFormValuesToObject(formMapping) };
       if (isUpdating) {
         isOnClientScope
           ? await adminClient.clientScopes.updateProtocolMapper(

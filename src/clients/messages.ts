@@ -127,7 +127,7 @@ export default {
     createError: "Could not create client: '{{error}}'",
     clientImportError: "Could not import client: {{error}}",
     clientSaveSuccess: "Client successfully updated",
-    clientSaveError: "Client could not be updated:",
+    clientSaveError: "Client could not be updated: {{error}}",
     clientImportSuccess: "Client imported successfully",
     clientDelete: "Delete {{clientId}} ?",
     clientDeletedSuccess: "The client has been deleted",

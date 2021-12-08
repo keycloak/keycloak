@@ -100,10 +100,6 @@ export const FineGrainOpenIdConnect = ({
     </SelectOption>
   ));
 
-  const selectOptionToString = (value: string, options: JSX.Element[]) => {
-    const selectOption = options.find((s) => s.props.value === value);
-    return selectOption?.props.children || selectOption?.props.value;
-  };
   return (
     <FormAccess role="manage-clients" isHorizontal>
       <FormGroup
@@ -118,7 +114,7 @@ export const FineGrainOpenIdConnect = ({
         }
       >
         <Controller
-          name="attributes.access-token-signed-response-alg"
+          name="attributes.access.token.signed.response.alg"
           defaultValue=""
           control={control}
           render={({ onChange, value }) => (
@@ -131,7 +127,7 @@ export const FineGrainOpenIdConnect = ({
                 onChange(value);
                 setAccessTokenOpen(false);
               }}
-              selections={[selectOptionToString(value, keyOptions)]}
+              selections={value}
             >
               {keyOptions}
             </Select>
@@ -150,7 +146,7 @@ export const FineGrainOpenIdConnect = ({
         }
       >
         <Controller
-          name="attributes.id-token-signed-response-alg"
+          name="attributes.id.token.signed.response.alg"
           defaultValue=""
           control={control}
           render={({ onChange, value }) => (
@@ -163,7 +159,7 @@ export const FineGrainOpenIdConnect = ({
                 onChange(value);
                 setIdTokenOpen(false);
               }}
-              selections={[selectOptionToString(value, keyOptions)]}
+              selections={value}
             >
               {keyOptions}
             </Select>
@@ -182,7 +178,7 @@ export const FineGrainOpenIdConnect = ({
         }
       >
         <Controller
-          name="attributes.id-token-encrypted-response-alg"
+          name="attributes.id.token.encrypted.response.alg"
           defaultValue=""
           control={control}
           render={({ onChange, value }) => (
@@ -195,7 +191,7 @@ export const FineGrainOpenIdConnect = ({
                 onChange(value);
                 setIdTokenKeyManagementOpen(false);
               }}
-              selections={[selectOptionToString(value, cekManagementOptions)]}
+              selections={value}
             >
               {cekManagementOptions}
             </Select>
@@ -214,7 +210,7 @@ export const FineGrainOpenIdConnect = ({
         }
       >
         <Controller
-          name="attributes.id-token-encrypted-response-enc"
+          name="attributes.id.token.encrypted.response.enc"
           defaultValue=""
           control={control}
           render={({ onChange, value }) => (
@@ -227,7 +223,7 @@ export const FineGrainOpenIdConnect = ({
                 onChange(value);
                 setIdTokenContentOpen(false);
               }}
-              selections={[selectOptionToString(value, contentOptions)]}
+              selections={value}
             >
               {contentOptions}
             </Select>
@@ -246,7 +242,7 @@ export const FineGrainOpenIdConnect = ({
         }
       >
         <Controller
-          name="attributes.user-info-response-signature-alg"
+          name="attributes.user.info.response.signature.alg"
           defaultValue=""
           control={control}
           render={({ onChange, value }) => (
@@ -259,7 +255,7 @@ export const FineGrainOpenIdConnect = ({
                 onChange(value);
                 setUserInfoSignedResponseOpen(false);
               }}
-              selections={[selectOptionToString(value, signatureOptions)]}
+              selections={value}
             >
               {signatureOptions}
             </Select>
@@ -291,7 +287,7 @@ export const FineGrainOpenIdConnect = ({
                 onChange(value);
                 setRequestObjectSignatureOpen(false);
               }}
-              selections={[selectOptionToString(value, requestObjectOptions)]}
+              selections={value}
             >
               {requestObjectOptions}
             </Select>
@@ -310,7 +306,7 @@ export const FineGrainOpenIdConnect = ({
         }
       >
         <Controller
-          name="attributes.request-object-required"
+          name="attributes.request.object.required"
           defaultValue=""
           control={control}
           render={({ onChange, value }) => (
@@ -323,9 +319,7 @@ export const FineGrainOpenIdConnect = ({
                 onChange(value);
                 setRequestObjectRequiredOpen(false);
               }}
-              selections={[
-                selectOptionToString(value, requestObjectRequiredOptions),
-              ]}
+              selections={value}
             >
               {requestObjectRequiredOptions}
             </Select>

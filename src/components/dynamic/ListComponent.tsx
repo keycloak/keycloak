@@ -10,7 +10,6 @@ import {
 
 import type { ComponentProps } from "./components";
 import { HelpItem } from "../help-enabler/HelpItem";
-import { convertToHyphens } from "../../util";
 
 export const ListComponent = ({
   name,
@@ -32,7 +31,7 @@ export const ListComponent = ({
       fieldId={name!}
     >
       <Controller
-        name={`config.${convertToHyphens(name!)}`}
+        name={`config.${name}`}
         data-testid={name}
         defaultValue={defaultValue || ""}
         control={control}

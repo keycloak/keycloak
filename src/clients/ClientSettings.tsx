@@ -43,7 +43,7 @@ export const ClientSettings = ({
   const loginThemes = useServerInfo().themes!["login"];
   const consentRequired = watch("consentRequired");
   const displayOnConsentScreen: string = watch(
-    "attributes.display-on-consent-screen"
+    "attributes.display.on.consent.screen"
   );
   const protocol = watch("protocol");
 
@@ -250,7 +250,7 @@ export const ClientSettings = ({
           hasNoPaddingTop
         >
           <Controller
-            name="attributes.display-on-consent-screen"
+            name="attributes.display.on.consent.screen"
             defaultValue={false}
             control={control}
             render={({ onChange, value }) => (
@@ -278,7 +278,7 @@ export const ClientSettings = ({
         >
           <TextArea
             id="kc-consent-screen-text"
-            name="attributes.consent-screen-text"
+            name="attributes.consent.screen.text"
             ref={register}
             isDisabled={!(consentRequired && displayOnConsentScreen === "true")}
           />

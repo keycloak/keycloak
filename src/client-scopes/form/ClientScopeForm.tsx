@@ -107,9 +107,9 @@ export default function ClientScopeForm() {
   const save = async (clientScopes: ClientScopeDefaultOptionalType) => {
     try {
       clientScopes.name = clientScopes.name?.trim();
-      clientScopes.attributes = convertFormValuesToObject(
-        clientScopes.attributes!
-      );
+      clientScopes = convertFormValuesToObject(
+        clientScopes
+      ) as ClientScopeDefaultOptionalType;
 
       if (id) {
         await adminClient.clientScopes.update({ id }, clientScopes);

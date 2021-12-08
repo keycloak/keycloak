@@ -44,15 +44,10 @@ export default function NewClientForm() {
   const methods = useForm<ClientRepresentation>({ defaultValues: client });
 
   const save = async () => {
-    const attributes = client.attributes
-      ? convertFormValuesToObject(client.attributes)
-      : undefined;
-
     try {
       const newClient = await adminClient.clients.create({
-        ...client,
+        ...convertFormValuesToObject(client),
         clientId: client.clientId?.trim(),
-        attributes,
       });
       addAlert(t("createSuccess"), AlertVariant.success);
       history.push(
@@ -65,15 +60,21 @@ export default function NewClientForm() {
 
   const forward = async (onNext?: () => void) => {
     if (await methods.trigger()) {
-      setClient({ ...client, ...methods.getValues() });
+      setClient({
+        ...client,
+        ...convertFormValuesToObject(methods.getValues()),
+      });
       setShowCapabilityConfig(true);
       onNext?.();
     }
   };
 
   const back = () => {
-    setClient({ ...client, ...methods.getValues() });
-    methods.reset({ ...client, ...methods.getValues() });
+    setClient({ ...client, ...convertFormValuesToObject(methods.getValues()) });
+    methods.reset({
+      ...client,
+      ...convertFormValuesToObject(methods.getValues()),
+    });
   };
 
   const onGoToStep = (newStep: { id?: string | number }) => {

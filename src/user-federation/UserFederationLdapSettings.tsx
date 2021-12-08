@@ -21,7 +21,6 @@ import { LdapSettingsConnection } from "./ldap/LdapSettingsConnection";
 import { LdapSettingsSearching } from "./ldap/LdapSettingsSearching";
 
 import { useRealm } from "../context/realm-context/RealmContext";
-import { convertToFormValues } from "../util";
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 
 import { Controller, useForm } from "react-hook-form";
@@ -220,22 +219,16 @@ export default function UserFederationLdapSettings() {
   );
 
   const setupForm = (component: ComponentRepresentation) => {
-    Object.entries(component).map((entry) => {
-      if (entry[0] === "config") {
-        form.setValue(
-          "config.periodicChangedUsersSync",
-          entry[1].changedSyncPeriod[0] !== "-1"
-        );
+    form.reset({ ...component });
+    form.setValue(
+      "config.periodicChangedUsersSync",
+      component.config?.["changedSyncPeriod"][0] !== "-1"
+    );
 
-        form.setValue(
-          "config.periodicFullSync",
-          entry[1].fullSyncPeriod[0] !== "-1"
-        );
-
-        convertToFormValues(entry[1], "config", form.setValue);
-      }
-      form.setValue(entry[0], entry[1]);
-    });
+    form.setValue(
+      "config.periodicFullSync",
+      component.config?.["fullSyncPeriod"][0] !== "-1"
+    );
   };
 
   const removeImportedUsers = async () => {

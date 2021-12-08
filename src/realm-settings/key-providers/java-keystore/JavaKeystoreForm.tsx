@@ -88,33 +88,7 @@ export const JavaKeystoreForm = ({
 
   const setupForm = (component: ComponentRepresentation) => {
     form.reset();
-    Object.entries(component).map(([key, value]) => {
-      if (
-        key === "config" &&
-        component.config?.secretSize &&
-        component.config.active &&
-        component.config.algorithm &&
-        component.config.keystore &&
-        component.config.keystorePassword &&
-        component.config.keyAlias &&
-        component.config.keyPassword
-      ) {
-        form.setValue("config.secretSize", value.secretSize[0]);
-
-        form.setValue("config.active", value.active[0]);
-
-        form.setValue("config.algorithm", value.algorithm[0]);
-
-        form.setValue("config.keystore", value.keystore[0]);
-
-        form.setValue("config.keyAlias", value.keyAlias[0]);
-
-        form.setValue("config.keyPassword", value.keyPassword[0]);
-
-        convertToFormValues(value, "config", form.setValue);
-      }
-      form.setValue(key, value);
-    });
+    convertToFormValues(component, form.setValue);
   };
 
   useFetch(

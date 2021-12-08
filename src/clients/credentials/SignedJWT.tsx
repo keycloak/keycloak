@@ -33,7 +33,7 @@ export const SignedJWT = () => {
       }
     >
       <Controller
-        name="attributes.token-endpoint-auth-signing-alg"
+        name="attributes.token.endpoint.auth.signing.alg"
         defaultValue=""
         control={control}
         render={({ onChange, value }) => (

@@ -1,10 +1,22 @@
-import type { IFormatter, IFormatterValueType } from "@patternfly/react-table";
+import { cloneDeep } from "lodash";
+import { useTranslation } from "react-i18next";
 import FileSaver from "file-saver";
-import _ from "lodash";
+import type { IFormatter, IFormatterValueType } from "@patternfly/react-table";
+import { unflatten, flatten } from "flat";
+
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type { ProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
-import { useTranslation } from "react-i18next";
+
+import {
+  arrayToAttributes,
+  attributesToArray,
+  KeyValueType,
+} from "./components/attribute-form/attribute-convert";
+import {
+  convertToMultiline,
+  toValue,
+} from "./components/multi-line-input/multi-line-convert";
 
 export const sortProviders = (providers: {
   [index: string]: ProviderRepresentation;
@@ -34,7 +46,7 @@ const sortProvider = (
 };
 
 export const exportClient = (client: ClientRepresentation): void => {
-  const clientCopy = _.cloneDeep(client);
+  const clientCopy = cloneDeep(client);
   delete clientCopy.id;
 
   if (clientCopy.protocolMappers) {
@@ -54,49 +66,59 @@ export const exportClient = (client: ClientRepresentation): void => {
 export const toUpperCase = <T extends string>(name: T) =>
   (name.charAt(0).toUpperCase() + name.slice(1)) as Capitalize<T>;
 
-export const convertToHyphens = (s: string) => {
-  return s.replaceAll(".", "-");
+const isAttributesObject = (value: any) => {
+  return (
+    Object.values(value).filter(
+      (value) => Array.isArray(value) && value.length === 1
+    ).length !== 0
+  );
 };
+
+const isAttributeArray = (value: any) => {
+  if (!Array.isArray(value)) {
+    return false;
+  }
+  return value.filter((e) => e.key && e.value).length !== 0;
+};
+
+const isEmpty = (obj: any) => Object.keys(obj).length === 0;
 
 export const convertToFormValues = (
   obj: any,
-  prefix: string,
-  setValue: (name: string, value: any) => void
+  setValue: (name: string, value: any) => void,
+  multiline?: string[]
 ) => {
-  return Object.keys(obj).map((key) => {
-    const newKey = convertToHyphens(key);
-    setValue(prefix + "." + newKey, obj[key]);
+  Object.entries(obj).map(([key, value]) => {
+    if (key === "attributes" && isAttributesObject(value)) {
+      setValue(key, attributesToArray(value as Record<string, string[]>));
+    } else if (key === "config" || key === "attributes") {
+      setValue(key, !isEmpty(value) ? unflatten(value) : undefined);
+    } else if (multiline?.includes(key)) {
+      setValue(key, convertToMultiline(value as string[]));
+    } else {
+      setValue(key, value);
+    }
   });
 };
 
-export const flatten = (
-  obj: Record<string, any> | undefined,
-  path = ""
-): {} => {
-  if (!(obj instanceof Object)) return { [path.replace(/\.$/g, "")]: obj };
-
-  return Object.keys(obj).reduce((output, key) => {
-    return obj instanceof Array
-      ? {
-          ...output,
-          ...flatten(obj[key as unknown as number], path + "[" + key + "]."),
-        }
-      : { ...output, ...flatten(obj[key], path + key + ".") };
-  }, {});
-};
-
-export const convertFormValuesToObject = (
-  obj: any,
-  firstInstanceOnly?: boolean
-) => {
-  const keyValues = Object.keys(obj).map((key) => {
-    const newKey = firstInstanceOnly
-      ? key.replace(/-/, ".")
-      : key.replace(/-/g, ".");
-    return { [newKey]: obj[key] };
+export function convertFormValuesToObject<T>(
+  obj: T,
+  multiline: string[] | undefined = []
+): Omit<T, typeof multiline[number] | "attributes" | "config"> {
+  const result: any = {};
+  Object.entries(obj).map(([key, value]) => {
+    if (isAttributeArray(value)) {
+      result[key] = arrayToAttributes(value as KeyValueType[]);
+    } else if (multiline.includes(key)) {
+      result[key] = toValue(value);
+    } else if (key === "config" || key === "attributes") {
+      result[key] = flatten(value as Record<string, any>, { safe: true });
+    } else {
+      result[key] = value;
+    }
   });
-  return Object.assign({}, ...keyValues);
-};
+  return result;
+}
 
 export const emptyFormatter =
   (): IFormatter => (data?: IFormatterValueType) => {

@@ -13,7 +13,7 @@ import {
 } from "@patternfly/react-core";
 import { InfoCircleIcon } from "@patternfly/react-icons";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import _ from "lodash";
+import _, { cloneDeep } from "lodash";
 import React, { useMemo, useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -25,11 +25,7 @@ import {
 } from "../components/confirm-dialog/ConfirmDialog";
 import { DownloadDialog } from "../components/download-dialog/DownloadDialog";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
-import {
-  convertToMultiline,
-  MultiLine,
-  toValue,
-} from "../components/multi-line-input/MultiLineInput";
+import type { MultiLine } from "../components/multi-line-input/multi-line-convert";
 import {
   ViewHeader,
   ViewHeaderBadge,
@@ -219,18 +215,7 @@ export default function ClientDetails() {
   });
 
   const setupForm = (client: ClientRepresentation) => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { redirectUris, webOrigins, ...formValues } = client;
-    form.reset(formValues);
-    Object.entries(client).map((entry) => {
-      if (entry[0] === "redirectUris" || entry[0] === "webOrigins") {
-        form.setValue(entry[0], convertToMultiline(entry[1]));
-      } else if (entry[0] === "attributes") {
-        convertToFormValues(entry[1], "attributes", form.setValue);
-      } else {
-        form.setValue(entry[0], entry[1]);
-      }
-    });
+    convertToFormValues(client, form.setValue, ["redirectUris", "webOrigins"]);
   };
 
   useFetch(
@@ -239,7 +224,7 @@ export default function ClientDetails() {
       if (!fetchedClient) {
         throw new Error(t("common:notFound"));
       }
-      setClient(fetchedClient);
+      setClient(cloneDeep(fetchedClient));
       setupForm(fetchedClient);
     },
     [clientId]
@@ -260,19 +245,15 @@ export default function ClientDetails() {
         toggleChangeAuthenticatorOpen();
         return;
       }
-      const redirectUris = toValue(form.getValues()["redirectUris"]);
-      const webOrigins = toValue(form.getValues()["webOrigins"]);
-      const attributes = convertFormValuesToObject(
-        form.getValues()["attributes"]
-      );
+      const submittedClient = convertFormValuesToObject(form.getValues(), [
+        "redirectUris",
+        "webOrigins",
+      ]);
 
       try {
         const newClient: ClientRepresentation = {
           ...client,
-          ...form.getValues(),
-          redirectUris,
-          webOrigins,
-          attributes,
+          ...submittedClient,
         };
 
         newClient.clientId = newClient.clientId?.trim();
@@ -282,7 +263,7 @@ export default function ClientDetails() {
         setClient(newClient);
         addAlert(t(messageKey), AlertVariant.success);
       } catch (error) {
-        addError("client:clientSaveError", error);
+        addError("clients:clientSaveError", error);
       }
     }
   };

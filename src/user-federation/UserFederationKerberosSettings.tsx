@@ -12,7 +12,6 @@ import {
 import { KerberosSettingsRequired } from "./kerberos/KerberosSettingsRequired";
 import { SettingsCache } from "./shared/SettingsCache";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { convertToFormValues } from "../util";
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 
 import { Controller, useForm } from "react-hook-form";
@@ -107,16 +106,7 @@ export default function UserFederationKerberosSettings() {
   );
 
   const setupForm = (component: ComponentRepresentation) => {
-    Object.entries(component).map((entry) => {
-      form.setValue(
-        "config.allowPasswordAuthentication",
-        component.config?.allowPasswordAuthentication
-      );
-      if (entry[0] === "config") {
-        convertToFormValues(entry[1], "config", form.setValue);
-      }
-      form.setValue(entry[0], entry[1]);
-    });
+    form.reset({ ...component });
   };
 
   const save = async (component: ComponentRepresentation) => {

@@ -20,7 +20,7 @@ export const X509 = () => {
       }
       helperTextInvalid={t("common:required")}
       validated={
-        errors.attributes?.["x509-subjectdn"]
+        errors.attributes?.["x509.subjectdn"]
           ? ValidatedOptions.error
           : ValidatedOptions.default
       }
@@ -30,9 +30,9 @@ export const X509 = () => {
         ref={register({ required: true })}
         type="text"
         id="kc-subject"
-        name="attributes.x509-subjectdn"
+        name="attributes.x509.subjectdn"
         validated={
-          errors.attributes?.["x509-subjectdn"]
+          errors.attributes?.["x509.subjectdn"]
             ? ValidatedOptions.error
             : ValidatedOptions.default
         }
