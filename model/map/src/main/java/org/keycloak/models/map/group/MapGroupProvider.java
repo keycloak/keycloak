@@ -197,7 +197,9 @@ public class MapGroupProvider implements GroupProvider {
             throw new ModelDuplicateException("Group with name '" + name + "' in realm " + realm.getName() + " already exists for requested parent" );
         }
 
-        MapGroupEntity entity = new MapGroupEntity(id, realm.getId());
+        MapGroupEntity entity = new MapGroupEntityImpl();
+        entity.setId(id);
+        entity.setRealmId(realm.getId());
         entity.setName(name);
         entity.setParentId(toParent == null ? null : toParent.getId());
         if (id != null && tx.read(id) != null) {

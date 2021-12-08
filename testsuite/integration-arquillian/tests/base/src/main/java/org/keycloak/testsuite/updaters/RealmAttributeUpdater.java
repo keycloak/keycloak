@@ -92,4 +92,9 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         rep.setVerifyEmail(value);
         return this;
     }
+
+    public RealmAttributeUpdater setBrowserFlow(String browserFlow) {
+        rep.setBrowserFlow(browserFlow);
+        return this;
+    }
 }

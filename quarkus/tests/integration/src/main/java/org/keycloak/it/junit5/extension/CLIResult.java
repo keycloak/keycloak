@@ -61,20 +61,24 @@ public interface CLIResult extends LaunchResult {
     boolean isDistribution();
 
     default void assertStarted() {
-        assertTrue(getOutput().contains("Listening on:"));
+        assertFalse(getOutput().contains("The delayed handler's queue was overrun and log record(s) were lost (Did you forget to configure logging?)"), () -> "The standard Output:\n" + getOutput() + "should not contain a warning about log queue overrun.");
+        assertTrue(getOutput().contains("Listening on:"), () -> "The standard output:\n" + getOutput() + "does include \"Listening on:\"");
         assertNotDevMode();
     }
 
     default void assertNotDevMode() {
-        assertFalse(getOutput().contains("Running the server in dev mode."));
+        assertFalse(getOutput().contains("Running the server in dev mode."),
+                () -> "The standard output:\n" + getOutput() + "does include the Start Dev output");
     }
 
     default void assertStartedDevMode() {
-        assertTrue(getOutput().contains("Running the server in dev mode."));
+        assertTrue(getOutput().contains("Running the server in dev mode."),
+                () -> "The standard output:\n" + getOutput() + "doesn't include the Start Dev output");
     }
 
     default void assertError(String msg) {
-        assertTrue(getErrorOutput().contains(msg));
+        assertTrue(getErrorOutput().contains(msg),
+                () -> "The Error Output:\n " + getErrorOutput() + "\ndoesn't contains " + msg);
     }
 
     default void assertHelp(String command) {
@@ -99,7 +103,8 @@ public interface CLIResult extends LaunchResult {
             }
 
             // not very reliable, we should be comparing the output with some static reference to the help message.
-            assertTrue(getOutput().equals(outStream.toString().trim()));
+            assertTrue(getOutput().trim().equals(outStream.toString().trim()),
+                    () -> "The Output:\n " + getOutput() + "\ndoesnt't contains " + outStream.toString().trim());
         } catch (IOException cause) {
             throw new RuntimeException("Failed to assert help", cause);
         }

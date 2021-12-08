@@ -36,11 +36,6 @@
     <description>Test modules that depend on the Base TestSuite.
         This POM contains common configuration for submodules.</description>
 
-    <modules>
-        <module>adapters</module>
-        <module>sssd</module>
-    </modules>
-
     <build>
         <pluginManagement>
             <plugins>
@@ -120,6 +115,12 @@
             </dependencies>
         </profile>
         <profile>
+            <id>adapters</id>
+            <modules>
+                <module>adapters</module>
+            </modules>
+        </profile>
+        <profile>
             <id>clean-start</id>
             <modules>
                 <module>clean-start</module>
@@ -150,6 +151,12 @@
             </modules>
         </profile>
         <profile>
+            <id>sssd</id>
+            <modules>
+                <module>sssd</module>
+            </modules>
+        </profile>
+        <profile>
             <id>base-ui</id>
             <modules>
                 <module>base-ui</module>
@@ -159,6 +166,13 @@
             <id>springboot</id>
             <modules>
                 <module>springboot-tests</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>webauthn</id>
+            <modules>
+                <module>console</module>
+                <module>webauthn</module>
             </modules>
         </profile>
     </profiles>

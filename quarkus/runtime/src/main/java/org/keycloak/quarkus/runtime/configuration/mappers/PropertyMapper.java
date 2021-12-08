@@ -22,6 +22,7 @@ import java.util.function.BiFunction;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
+import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 public class PropertyMapper {
@@ -29,8 +30,8 @@ public class PropertyMapper {
     static PropertyMapper IDENTITY = new PropertyMapper(null, null, null, null, null,
             false,null, null, false,Collections.emptyList(),null, true) {
         @Override
-        public ConfigValue getOrDefault(String name, ConfigSourceInterceptorContext context, ConfigValue current) {
-            return current;
+        public ConfigValue getConfigValue(String name, ConfigSourceInterceptorContext context) {
+            return context.proceed(name);
         }
     };
 
@@ -46,6 +47,8 @@ public class PropertyMapper {
     private final ConfigCategory category;
     private final String paramLabel;
     private final boolean hidden;
+    private String cliFormat;
+
 
     PropertyMapper(String from, String to, String defaultValue, BiFunction<String, ConfigSourceInterceptorContext, String> mapper,
             String mapFrom, boolean buildTime, String description, String paramLabel, boolean mask, Iterable<String> expectedValues,
@@ -62,6 +65,7 @@ public class PropertyMapper {
         this.expectedValues = expectedValues == null ? Collections.emptyList() : expectedValues;
         this.category = category != null ? category : ConfigCategory.GENERAL;
         this.hidden = hidden;
+        setCliFormat(this.from);
     }
 
     public static PropertyMapper.Builder builder(String fromProp, String toProp) {
@@ -76,11 +80,11 @@ public class PropertyMapper {
         return value;
     }
 
-    ConfigValue getOrDefault(ConfigSourceInterceptorContext context, ConfigValue current) {
-        return getOrDefault(null, context, current);        
+    ConfigValue getConfigValue(ConfigSourceInterceptorContext context) {
+        return getConfigValue(to, context);
     }
 
-    ConfigValue getOrDefault(String name, ConfigSourceInterceptorContext context, ConfigValue current) {
+    ConfigValue getConfigValue(String name, ConfigSourceInterceptorContext context) {
         String from = this.from;
 
         if (to != null && to.endsWith(".")) {
@@ -88,7 +92,7 @@ public class PropertyMapper {
             from = name.replace(to.substring(0, to.lastIndexOf('.')), from.substring(0, from.lastIndexOf('.')));
         }
 
-        // try to obtain the value for the property we want to map
+        // try to obtain the value for the property we want to map first
         ConfigValue config = context.proceed(from);
 
         if (config == null) {
@@ -103,28 +107,18 @@ public class PropertyMapper {
                     if (value != null) {
                         return value;
                     }
+
+                    return parentValue;
                 }
             }
 
-            // if not defined, return the current value from the property as a default if the property is not explicitly set
-            if (defaultValue == null
-                    || (current != null && !current.getConfigSourceName().equalsIgnoreCase("default values"))) {
-                if (defaultValue == null && mapper != null) {
-                    String value = current == null ? null : current.getValue();
-                    return ConfigValue.builder().withName(to).withValue(mapper.apply(value, context)).build();
-                }
-                return current;
-            }
+            ConfigValue current = context.proceed(name);
 
-            if (mapper != null) {
+            if (current == null) {
                 return transformValue(defaultValue, context);
             }
-            
-            return ConfigValue.builder().withName(to).withValue(defaultValue).build();
-        }
 
-        if (mapFrom != null) {
-            return config;
+            return current;
         }
 
         if (config.getName().equals(name)) {
@@ -135,7 +129,7 @@ public class PropertyMapper {
 
         // we always fallback to the current value from the property we are mapping
         if (value == null) {
-            return current;
+            return context.proceed(name);
         }
 
         return value;
@@ -163,6 +157,26 @@ public class PropertyMapper {
         return hidden;
     }
 
+    public boolean isBuildTime() {
+        return buildTime;
+    }
+
+    public String getTo() {
+        return to;
+    }
+
+    public String getParamLabel() {
+        return paramLabel;
+    }
+
+    public String getCliFormat() {
+        return cliFormat;
+    }
+
+    boolean isMask() {
+        return mask;
+    }
+
     private ConfigValue transformValue(String value, ConfigSourceInterceptorContext context) {
         if (value == null) {
             return null;
@@ -181,20 +195,8 @@ public class PropertyMapper {
         return null;
     }
 
-    public boolean isBuildTime() {
-        return buildTime;
-    }
-
-    boolean isMask() {
-        return mask;
-    }
-
-    public String getTo() {
-        return to;
-    }
-
-    public String getParamLabel() {
-        return paramLabel;
+    private void setCliFormat(String from) {
+        cliFormat = Picocli.ARG_PREFIX + PropertyMappers.toCLIFormat(from).substring(3);
     }
 
     public static class Builder {

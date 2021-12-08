@@ -17,8 +17,7 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import static java.lang.Boolean.parseBoolean;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuiltTimeProperty;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuildTimeProperty;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfigValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.canonicalFormat;
@@ -119,7 +118,7 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
         String profile = Environment.getProfile();
 
         if (profile == null) {
-            return getBuiltTimeProperty("quarkus.profile").orElse(null);
+            return getBuildTimeProperty("quarkus.profile").orElse(null);
         }
 
         return profile;

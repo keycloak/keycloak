@@ -19,8 +19,11 @@ package org.keycloak.testsuite.admin;
 
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -536,6 +539,8 @@ public class ClientTest extends AbstractAdminTest {
         List<UserSessionRepresentation> offlineUserSessions = realm.clients().get(id).getOfflineUserSessions(0, 100);
         assertEquals(1, offlineUserSessions.size());
         assertEquals("testuser", offlineUserSessions.get(0).getUsername());
+        org.hamcrest.MatcherAssert.assertThat(offlineUserSessions.get(0).getLastAccess(),
+            allOf(greaterThan(Time.currentTimeMillis() - 10000L), lessThan(Time.currentTimeMillis())));
 
         userSessions = realm.users().get(userId).getOfflineSessions(id);
         assertEquals("There should be one offline session", 1, userSessions.size());

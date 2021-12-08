@@ -92,9 +92,6 @@ public interface MapClientEntity extends AbstractEntity, UpdatableEntity {
     void removeAttribute(String name);
     void setAttribute(String name, List<String> values);
 
-    Map<String, String> getAuthFlowBindings();
-    void setAuthFlowBindings(Map<String, String> authFlowBindings);
-
     String getAuthenticationFlowBindingOverride(String binding);
     Map<String, String> getAuthenticationFlowBindingOverrides();
     void removeAuthenticationFlowBindingOverride(String binding);

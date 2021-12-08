@@ -36,12 +36,10 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
-import org.keycloak.testsuite.WebAuthnAssume;
 import org.keycloak.testsuite.admin.Users;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.auth.page.login.OTPSetup;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
-import org.keycloak.testsuite.pages.webauthn.WebAuthnRegisterPage;
 import org.keycloak.testsuite.ui.account2.page.AbstractLoggedInPage;
 import org.keycloak.testsuite.ui.account2.page.SigningInPage;
 
@@ -52,7 +50,6 @@ import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
 import static org.keycloak.models.UserModel.RequiredAction.CONFIGURE_TOTP;
@@ -78,8 +75,7 @@ public class SigningInTest extends BaseAccountPageTest {
     @Page
     private OTPSetup otpSetupPage;
 
-    @Page
-    private WebAuthnRegisterPage webAuthnRegisterPage;
+
 
     private SigningInPage.CredentialType passwordCredentialType;
     private SigningInPage.CredentialType otpCredentialType;
@@ -253,69 +249,6 @@ public class SigningInTest extends BaseAccountPageTest {
     }
 
     @Test
-    public void twoFactorWebAuthnTest() {
-        testWebAuthn(false);
-    }
-
-    @Test
-    public void passwordlessWebAuthnTest() {
-        testWebAuthn(true);
-    }
-
-    private void testWebAuthn(boolean passwordless) {
-        testContext.setTestRealmReps(emptyList());
-
-        WebAuthnAssume.assumeChrome(driver); // we need some special flags to be able to register security key
-
-        SigningInPage.CredentialType credentialType;
-        final String expectedHelpText;
-        final String providerId;
-
-        if (passwordless) {
-            credentialType = webAuthnPwdlessCredentialType;
-            expectedHelpText = "Use your security key for passwordless sign in.";
-            providerId = WebAuthnPasswordlessRegisterFactory.PROVIDER_ID;
-        }
-        else {
-            credentialType = webAuthnCredentialType;
-            expectedHelpText = "Use your security key to sign in.";
-            providerId = WebAuthnRegisterFactory.PROVIDER_ID;
-        }
-
-        assertFalse(credentialType.isSetUp());
-        // no way to simulate registration cancellation
-
-        assertTrue("Set up link for \"" + credentialType.getType() + "\" is not visible", credentialType.isSetUpLinkVisible());
-        assertEquals("Security Key", credentialType.getTitle());
-        assertEquals(expectedHelpText, credentialType.getHelpText());
-
-        final String label1 = "WebAuthn is convenient";
-        final String label2 = "but not yet widely adopted";
-
-        SigningInPage.UserCredential webAuthn1 = addWebAuthnCredential(label1, passwordless);
-        assertTrue(credentialType.isSetUp());
-        assertEquals(1, credentialType.getUserCredentialsCount());
-        assertUserCredential(label1, true, webAuthn1);
-
-        SigningInPage.UserCredential webAuthn2 = addWebAuthnCredential(label2, passwordless);
-        assertEquals(2, credentialType.getUserCredentialsCount());
-        assertUserCredential(label2, true, webAuthn2);
-
-        RequiredActionProviderRepresentation requiredAction = new RequiredActionProviderRepresentation();
-        requiredAction.setEnabled(false);
-        testRealmResource().flows().updateRequiredAction(providerId, requiredAction);
-
-        refreshPageAndWaitForLoad();
-
-        assertFalse("Set up link for \"" + credentialType.getType() + "\" is visible", credentialType.isSetUpLinkVisible());
-        assertFalse("Not set up link for \"" + credentialType.getType() + "\" is visible", credentialType.isNotSetUpLabelVisible());
-        assertTrue("Title for \"" + credentialType.getType() + "\" is not visible", credentialType.isTitleVisible());
-        assertEquals(2, credentialType.getUserCredentialsCount());
-
-        testRemoveCredential(webAuthn1);
-    }
-
-    @Test
     public void setUpLinksTest() {
         testSetUpLink(otpCredentialType, CONFIGURE_TOTP.name());
         testSetUpLink(webAuthnCredentialType, WebAuthnRegisterFactory.PROVIDER_ID);
@@ -349,18 +282,6 @@ public class SigningInTest extends BaseAccountPageTest {
         signingInPage.assertCurrent();
 
         return getNewestUserCredential(otpCredentialType);
-    }
-
-    private SigningInPage.UserCredential addWebAuthnCredential(String label, boolean passwordless) {
-        SigningInPage.CredentialType credentialType = passwordless ? webAuthnPwdlessCredentialType : webAuthnCredentialType;
-
-        credentialType.clickSetUpLink();
-        webAuthnRegisterPage.confirmAIA();
-        webAuthnRegisterPage.registerWebAuthnCredential(label);
-        waitForPageToLoad();
-        signingInPage.assertCurrent();
-
-        return getNewestUserCredential(credentialType);
     }
 
     private SigningInPage.UserCredential getNewestUserCredential(SigningInPage.CredentialType credentialType) {
