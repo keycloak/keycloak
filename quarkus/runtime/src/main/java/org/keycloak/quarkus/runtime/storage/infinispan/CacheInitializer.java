@@ -17,45 +17,77 @@
 
 package org.keycloak.quarkus.runtime.storage.infinispan;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
-import org.infinispan.configuration.parsing.ParserRegistry;
-import org.infinispan.jboss.marshalling.core.JBossUserMarshaller;
 import org.infinispan.manager.DefaultCacheManager;
-import org.keycloak.Config;
+import org.jboss.logging.Logger;
 
-public class CacheInitializer {
+public class CacheInitializer implements Callable<DefaultCacheManager> {
 
-    private final String config;
+    private final ConfigurationBuilderHolder config;
+    private DefaultCacheManager cacheManager;
+    private Future<DefaultCacheManager> cacheManagerFuture;
+    private ExecutorService executor;
+    private boolean terminated;
 
-    public CacheInitializer(String config) {
+    public CacheInitializer(ConfigurationBuilderHolder config) {
         this.config = config;
+        this.executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                return new Thread(r, "keycloak-cache-init");
+            }
+        });
+        this.cacheManagerFuture = executor.submit(this);
     }
 
-    public DefaultCacheManager getCacheManager(Config.Scope config) {
-        try {
-            ConfigurationBuilderHolder builder = new ParserRegistry().parse(this.config);
+    @Override
+    public DefaultCacheManager call() {
+        // eagerly starts caches
+        return new DefaultCacheManager(config, true);
+    }
 
-            if (builder.getNamedConfigurationBuilders().get("sessions").clustering().cacheMode().isClustered()) {
-                configureTransportStack(config, builder);
+    public DefaultCacheManager getCacheManager() {
+        if (cacheManager == null) {
+            if (terminated) {
+                return null;
             }
 
-            // For Infinispan 10, we go with the JBoss marshalling.
-            // TODO: This should be replaced later with the marshalling recommended by infinispan. Probably protostream.
-            // See https://infinispan.org/docs/stable/titles/developing/developing.html#marshalling for the details
-            builder.getGlobalConfigurationBuilder().serialization().marshaller(new JBossUserMarshaller());
-
-            return new DefaultCacheManager(builder, false);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            try {
+                // for now, we don't have any explicit property for setting the cache start timeout
+                return cacheManager = cacheManagerFuture.get(Integer.getInteger("kc.cluster.cache.start-timeout", 120), TimeUnit.SECONDS);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to bootstrap cache manager", e);
+            } finally {
+                shutdownExecutor();
+            }
         }
+
+        return cacheManager;
     }
 
-    private void configureTransportStack(Config.Scope config, ConfigurationBuilderHolder builder) {
-        String transportStack = config.get("stack");
-
-        if (transportStack != null) {
-            builder.getGlobalConfigurationBuilder().transport().defaultTransport()
-                    .addProperty("configurationFile", "default-configs/default-jgroups-" + transportStack + ".xml");
+    private void shutdownExecutor() {
+        if (executor != null) {
+            executor.shutdown();
+            try {
+                if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+                    executor.shutdownNow();
+                    if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+                        Logger.getLogger(CacheInitializer.class).warn("Cache init thread pool not terminated");
+                    }
+                }
+            } catch (Exception cause) {
+                executor.shutdownNow();
+            } finally {
+                executor = null;
+                cacheManagerFuture = null;
+                terminated = true;
+            }
         }
     }
 }

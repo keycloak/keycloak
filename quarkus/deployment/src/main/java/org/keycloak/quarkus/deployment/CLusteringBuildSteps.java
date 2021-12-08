@@ -34,14 +34,17 @@ import org.keycloak.quarkus.runtime.storage.infinispan.CacheInitializer;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
+import io.quarkus.deployment.annotations.Consume;
 import io.quarkus.deployment.annotations.ExecutionTime;
 import io.quarkus.deployment.annotations.Record;
+import io.quarkus.deployment.builditem.ShutdownContextBuildItem;
 
 public class CLusteringBuildSteps {
 
+    @Consume(KeycloakSessionFactoryPreInitBuildItem.class)
     @Record(ExecutionTime.RUNTIME_INIT)
     @BuildStep
-    void configureInfinispan(KeycloakRecorder recorder, BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItems) {
+    void configureInfinispan(KeycloakRecorder recorder, BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItems, ShutdownContextBuildItem shutdownContext) {
         String pathPrefix;
         String homeDir = Environment.getHomeDir();
 
@@ -76,7 +79,7 @@ public class CLusteringBuildSteps {
                         .scope(ApplicationScoped.class)
                         .unremovable()
                         .setRuntimeInit()
-                        .runtimeValue(recorder.createCacheInitializer(config)).done());
+                        .runtimeValue(recorder.createCacheInitializer(config, shutdownContext)).done());
             } catch (Exception cause) {
                 throw new RuntimeException("Failed to read clustering configuration from [" + url + "]", cause);
             }

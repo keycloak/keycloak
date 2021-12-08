@@ -28,20 +28,29 @@ import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest
-public class StartCommandDistTest extends StartCommandTest {
+public class ClusterConfigDistTest {
 
     @Test
-    @Launch({ "-pf=dev", "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false" })
-    void failIfAutoBuildUsingDevProfile(LaunchResult result) {
-        assertTrue(result.getErrorOutput().contains("ERROR: You can not 'start' the server using the 'dev' configuration profile. Please re-build the server first, using 'kc.sh build' for the default production profile, or using 'kc.sh build --profile=<profile>' with a profile more suitable for production."),
-                () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
-        assertEquals(4, result.getErrorStream().size());
+    @Launch({ "start-dev", "--cluster=default" })
+    void changeClusterSetting(LaunchResult result) {
+        assertTrue(result.getOutput().contains("Received new cluster view"));
     }
 
     @Test
-    @Launch({ "start", "--http-enabled=true" })
-    void failNoHostnameNotSet(LaunchResult result) {
-        assertTrue(result.getErrorOutput().contains("ERROR: Strict hostname resolution configured but no hostname was set"),
-                () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
+    @Launch({ "start-dev", "--cluster=invalid" })
+    void failInvalidClusterConfig(LaunchResult result) {
+        assertTrue(result.getErrorOutput().contains("ERROR: Could not load cluster configuration file"));
+    }
+
+    @Test
+    @Launch({ "start-dev", "--cluster=default", "--cluster-stack=kubernetes" })
+    void failMisConfiguredClusterStack(LaunchResult result) {
+        assertTrue(result.getOutput().contains("ERROR: dns_query can not be null or empty"));
+    }
+
+    @Test
+    @Launch({ "start-dev", "--cluster-stack=invalid" })
+    void failInvalidClusterStack(LaunchResult result) {
+        assertTrue(result.getErrorOutput().contains("Invalid value for option '--cluster-stack': invalid. Expected values are: tcp, udp, kubernetes, ec2, azure, google"));
     }
 }

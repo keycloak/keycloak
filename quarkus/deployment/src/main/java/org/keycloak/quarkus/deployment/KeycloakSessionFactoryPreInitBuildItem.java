@@ -15,20 +15,13 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.storage.infinispan;
+package org.keycloak.quarkus.deployment;
 
-import org.keycloak.cluster.ManagedCacheManagerProvider;
-import org.keycloak.Config;
-
-import io.quarkus.arc.Arc;
+import io.quarkus.builder.item.SimpleBuildItem;
 
 /**
- * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
+ * A symbolic build item that can be consumed by other build steps when the {@link org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory}
+ * is pre-initialized.
  */
-public final class QuarkusCacheManagerProvider implements ManagedCacheManagerProvider {
-
-    @Override
-    public <C> C getCacheManager(Config.Scope config) {
-        return (C) Arc.container().instance(CacheInitializer.class).get().getCacheManager();
-    }
+public final class KeycloakSessionFactoryPreInitBuildItem extends SimpleBuildItem {
 }
