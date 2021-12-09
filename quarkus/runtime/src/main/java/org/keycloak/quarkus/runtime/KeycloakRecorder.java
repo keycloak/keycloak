@@ -23,7 +23,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.jboss.logging.Logger;
+import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
+import org.infinispan.configuration.parsing.ParserRegistry;
+import org.infinispan.jboss.marshalling.core.JBossUserMarshaller;
+import org.infinispan.manager.DefaultCacheManager;
 import org.keycloak.common.Profile;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
@@ -32,9 +35,10 @@ import org.keycloak.quarkus.runtime.storage.database.liquibase.KeycloakLogger;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
-import org.keycloak.quarkus.runtime.storage.infinispan.CacheInitializer;
+import org.keycloak.quarkus.runtime.storage.infinispan.CacheManagerFactory;
 
 import io.quarkus.runtime.RuntimeValue;
+import io.quarkus.runtime.ShutdownContext;
 import io.quarkus.runtime.annotations.Recorder;
 import liquibase.logging.LogFactory;
 import liquibase.servicelocator.ServiceLocator;
@@ -100,7 +104,52 @@ public class KeycloakRecorder {
         });
     }
 
-    public RuntimeValue<CacheInitializer> createCacheInitializer(String config) {
-        return new RuntimeValue<>(new CacheInitializer(config));
+    public RuntimeValue<CacheManagerFactory> createCacheInitializer(String config, ShutdownContext shutdownContext) {
+        try {
+            ConfigurationBuilderHolder builder = new ParserRegistry().parse(config);
+
+            if (builder.getNamedConfigurationBuilders().get("sessions").clustering().cacheMode().isClustered()) {
+                configureTransportStack(builder);
+            }
+
+            // For Infinispan 10, we go with the JBoss marshalling.
+            // TODO: This should be replaced later with the marshalling recommended by infinispan. Probably protostream.
+            // See https://infinispan.org/docs/stable/titles/developing/developing.html#marshalling for the details
+            builder.getGlobalConfigurationBuilder().serialization().marshaller(new JBossUserMarshaller());
+            CacheManagerFactory cacheManagerFactory = new CacheManagerFactory(builder);
+
+            shutdownContext.addShutdownTask(new Runnable() {
+                @Override
+                public void run() {
+                    DefaultCacheManager cacheManager = cacheManagerFactory.getOrCreate();
+
+                    if (cacheManager != null) {
+                        cacheManager.stop();
+                    }
+                }
+            });
+
+            return new RuntimeValue<>(cacheManagerFactory);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void configureTransportStack(ConfigurationBuilderHolder builder) {
+        String transportStack = Configuration.getRawValue("kc.cluster-stack");
+
+        if (transportStack != null) {
+            builder.getGlobalConfigurationBuilder().transport().defaultTransport()
+                    .addProperty("configurationFile", "default-configs/default-jgroups-" + transportStack + ".xml");
+        }
+    }
+
+    public void registerShutdownHook(ShutdownContext shutdownContext) {
+        shutdownContext.addShutdownTask(new Runnable() {
+            @Override
+            public void run() {
+                QuarkusKeycloakSessionFactory.getInstance().close();
+            }
+        });
     }
 }

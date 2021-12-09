@@ -37,13 +37,6 @@ public class StartCommandTest {
     }
 
     @Test
-    @Launch({ "start", "--http-enabled=true" })
-    void failNoHostnameNotSet(LaunchResult result) {
-        assertTrue(result.getOutput().contains("ERROR: Strict hostname resolution configured but no hostname was set"),
-                () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
-    }
-
-    @Test
     @Launch({ "--profile=dev", "start" })
     void failUsingDevProfile(LaunchResult result) {
         assertTrue(result.getErrorOutput().contains("ERROR: You can not 'start' the server using the 'dev' configuration profile. Please re-build the server first, using 'kc.sh build' for the default production profile, or using 'kc.sh build --profile=<profile>' with a profile more suitable for production."),
