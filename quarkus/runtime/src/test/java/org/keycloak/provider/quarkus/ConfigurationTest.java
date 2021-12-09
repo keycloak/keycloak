@@ -313,17 +313,17 @@ public class ConfigurationTest {
     @Test
     public void testClusterConfig() {
         // Cluster enabled by default, but disabled for the "dev" profile
-        Assert.assertEquals("cluster-default.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
+        Assert.assertEquals("cache-ispn.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
 
         // If explicitly set, then it is always used regardless of the profile
         System.clearProperty(Environment.PROFILE);
-        System.setProperty(CLI_ARGS, "--cluster=foo");
+        System.setProperty(CLI_ARGS, "--cache=cluster-foo.xml");
 
         Assert.assertEquals("cluster-foo.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
         System.setProperty(Environment.PROFILE, "dev");
         Assert.assertEquals("cluster-foo.xml", initConfig("connectionsInfinispan", "quarkus").get("configFile"));
 
-        System.setProperty(CLI_ARGS, "--cluster-stack=foo");
+        System.setProperty(CLI_ARGS, "--cache-stack=foo");
         Assert.assertEquals("foo", initConfig("connectionsInfinispan", "quarkus").get("stack"));
     }
 

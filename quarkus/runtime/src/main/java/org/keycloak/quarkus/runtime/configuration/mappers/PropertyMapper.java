@@ -101,6 +101,15 @@ public class PropertyMapper {
                 String parentKey = MicroProfileConfigProvider.NS_KEYCLOAK + "." + mapFrom;
                 ConfigValue parentValue = context.proceed(parentKey);
 
+                if (parentValue == null) {
+                    // parent value not explicitly set, try to resolve the default value set to the parent property
+                    PropertyMapper parentMapper = PropertyMappers.getMapper(parentKey);
+
+                    if (parentMapper != null) {
+                        parentValue = ConfigValue.builder().withValue(parentMapper.getDefaultValue()).build();
+                    }
+                }
+
                 if (parentValue != null) {
                     ConfigValue value = transformValue(parentValue.getValue(), context);
 

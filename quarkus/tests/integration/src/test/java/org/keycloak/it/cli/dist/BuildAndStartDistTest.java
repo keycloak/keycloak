@@ -39,7 +39,7 @@ import io.quarkus.test.junit.main.LaunchResult;
 public class BuildAndStartDistTest {
 
     @Test
-    @Launch({ "build", "--http-enabled=true", "--hostname-strict=false", "--cluster=local" })
+    @Launch({ "build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(1)
     void firstYouBuild(LaunchResult result) {
     }
