@@ -139,7 +139,7 @@ public class KeycloakRecorder {
     }
 
     private void configureTransportStack(ConfigurationBuilderHolder builder) {
-        String transportStack = Configuration.getRawValue("kc.cluster-stack");
+        String transportStack = Configuration.getRawValue("kc.cache-stack");
 
         if (transportStack != null) {
             builder.getGlobalConfigurationBuilder().transport().defaultTransport()

@@ -94,11 +94,7 @@
             <filtered>true</filtered>
         </file>
         <file>
-            <source>target/keycloak-quarkus-server/cluster-local.xml</source>
-            <outputDirectory>conf</outputDirectory>
-        </file>
-        <file>
-            <source>target/keycloak-quarkus-server/cluster-default.xml</source>
+            <source>target/keycloak-quarkus-server/cache-ispn.xml</source>
             <outputDirectory>conf</outputDirectory>
         </file>
         <file>
