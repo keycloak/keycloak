@@ -13,7 +13,7 @@
     "copy-pf-resources": "npm run move-app-css && npm run copy-base-css && npm run copy-fonts && npm run copy-pficon",
     "move-app-css": "shx mkdir -p ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles && shx mv app.css ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles",
     "copy-base-css": "shx mkdir -p ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles && shx cp node_modules/@patternfly/react-core/dist/styles/base.css ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles",
-    "copy-fonts": "shx mkdir -p ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles/assets/fonts/overpass-webfont && shx cp node_modules/@patternfly/react-core/dist/styles/assets/fonts/overpass-webfont/overpass*.woff2 ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles/assets/fonts/overpass-webfont",
+    "copy-fonts": "shx mkdir -p ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles/assets/fonts && shx cp -r node_modules/@patternfly/react-core/dist/styles/assets/fonts/* ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles/assets/fonts/",
     "copy-pficon": "shx mkdir -p ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles/assets/pficon && shx cp node_modules/@patternfly/react-core/dist/styles/assets/pficon/pficon.woff2 ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles/assets/pficon"
   },
   "keywords": [],
