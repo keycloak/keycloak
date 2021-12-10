@@ -500,18 +500,6 @@
             </licenses>
         </other>
         <other>
-            <description>Zocial</description>
-            <locations>
-                <directory>themes/keycloak/common/resources/lib/zocial</directory>
-            </locations>
-            <licenses>
-                <license>
-                    <name>MIT License</name>
-                    <url>https://raw.githubusercontent.com/smcllns/css-social-buttons/547237515694d05eaa38aeae3fb4d2eb4dee1ac9/README.md</url>
-                </license>
-            </licenses>
-        </other>
-        <other>
             <description>rfc4648.js</description>
             <locations>
                 <file>services/src/main/resources/theme-resources/resources/base64url.js</file>
