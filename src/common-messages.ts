@@ -81,6 +81,7 @@ export default {
     clients: "Clients",
     clientScopes: "Client scopes",
     realmRoles: "Realm roles",
+    clientRoles: "Client roles",
     users: "Users",
     groups: "Groups",
     sessions: "Sessions",

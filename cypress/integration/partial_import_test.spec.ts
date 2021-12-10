@@ -59,12 +59,12 @@ describe("Partial import test", () => {
     modal.importButton().should("be.disabled");
 
     // verify resource counts
-    modal.userCount().contains("1 users");
-    modal.groupCount().contains("1 groups");
-    modal.clientCount().contains("1 clients");
-    modal.idpCount().contains("1 identity providers");
-    modal.realmRolesCount().contains("2 realm roles");
-    modal.clientRolesCount().contains("1 client roles");
+    modal.userCount().contains("1 Users");
+    modal.groupCount().contains("1 Groups");
+    modal.clientCount().contains("1 Clients");
+    modal.idpCount().contains("1 Identity providers");
+    modal.realmRolesCount().contains("2 Realm roles");
+    modal.clientRolesCount().contains("1 Client roles");
 
     // import button should disable when switching realms
     modal.usersCheckbox().click();
@@ -72,23 +72,36 @@ describe("Partial import test", () => {
     modal.selectRealm("realm2");
     modal.importButton().should("be.disabled");
 
-    modal.clientCount().contains("2 clients");
+    modal.clientCount().contains("2 Clients");
+
+    modal.clientsCheckbox().click();
+    modal.importButton().click();
+
+    cy.contains("2 records added");
+    cy.contains("customer-portal");
+    cy.contains("customer-portal2");
   });
 
-  it("Displays user options after realmless import", () => {
+  it("Displays user options after realmless import and does the import", () => {
     modal.open();
 
     modal.typeResourceFile("client-only.json");
 
     modal.realmSelector().should("not.exist");
 
-    modal.clientCount().contains("1 clients");
+    modal.clientCount().contains("1 Clients");
 
-    modal.userCount().should("not.exist");
-    modal.groupCount().should("not.exist");
-    modal.idpCount().should("not.exist");
-    modal.realmRolesCount().should("not.exist");
-    modal.clientRolesCount().should("not.exist");
+    modal.usersCheckbox().should("not.exist");
+    modal.groupsCheckbox().should("not.exist");
+    modal.idpCheckbox().should("not.exist");
+    modal.realmRolesCheckbox().should("not.exist");
+    modal.clientRolesCheckbox().should("not.exist");
+
+    modal.clientsCheckbox().click();
+    modal.importButton().click();
+
+    cy.contains("One record added");
+    cy.contains("customer-portal");
   });
 
   // Unfortunately, the PatternFly FileUpload component does not create an id for the clear button.  So we can't easily test that function right now.

@@ -30,36 +30,52 @@ export default class GroupModal {
     return cy.findByTestId("cancel-button");
   }
 
-  groupsCheckbox() {
-    return cy.findByTestId("groups-checkbox");
-  }
-
   usersCheckbox() {
     return cy.findByTestId("users-checkbox");
   }
 
+  clientsCheckbox() {
+    return cy.findByTestId("clients-checkbox");
+  }
+
+  groupsCheckbox() {
+    return cy.findByTestId("groups-checkbox");
+  }
+
+  idpCheckbox() {
+    return cy.findByTestId("identityProviders-checkbox");
+  }
+
+  realmRolesCheckbox() {
+    return cy.findByTestId("realmRoles-checkbox");
+  }
+
+  clientRolesCheckbox() {
+    return cy.findByTestId("clientRoles-checkbox");
+  }
+
   userCount() {
-    return cy.findByTestId("users-count");
+    return this.usersCheckbox().get("label");
   }
 
   clientCount() {
-    return cy.findByTestId("clients-count");
+    return this.clientsCheckbox().get("label");
   }
 
   groupCount() {
-    return cy.findByTestId("groups-count");
+    return this.groupsCheckbox().get("label");
   }
 
   idpCount() {
-    return cy.findByTestId("identityProviders-count");
+    return this.idpCheckbox().get("label");
   }
 
   realmRolesCount() {
-    return cy.findByTestId("realmRoles-count");
+    return this.realmRolesCheckbox().get("label");
   }
 
   clientRolesCount() {
-    return cy.findByTestId("clientRoles-count");
+    return this.clientRolesCheckbox().get("label");
   }
 
   realmSelector() {

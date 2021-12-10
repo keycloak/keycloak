@@ -743,9 +743,23 @@ export default {
     selectIfResourceExists:
       "If a resource already exists, specify what should be done",
     import: "Import",
+    resourcesToImport: "Resources to import",
+    importFail: "Import failed: {{error}}",
     FAIL: "Fail import",
     SKIP: "Skip",
     OVERWRITE: "Overwrite",
+    added: "Added",
+    skipped: "Skipped",
+    overwritten: "Overwritten",
+    importAdded_zero: "No records added.",
+    importAdded_one: "One record added.",
+    importAdded_other: "{{count}} records added.",
+    importOverwritten_zero: "No records overwritten.",
+    importOverwritten_one: "One record overwritten.",
+    importOverwritten_other: "{{count}} records overwritten.",
+    importSkipped_zero: "No records skipped.",
+    importSkipped_one: "One record skipped.",
+    importSkipped_other: "{{count}} records skipped.",
   },
   "partial-export": {
     partialExportHeaderText:

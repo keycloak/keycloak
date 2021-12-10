@@ -74,8 +74,6 @@
         }
       ],
       "client": {
-        "database-service": [],
-        "admin-client": [],
         "realm-management": [
           {
             "id": "3b939f75-d013-4096-8462-48aa39261293",
@@ -101,7 +99,7 @@
         "secret": "password"
       },
       {
-        "clientId": "customer-portal",
+        "clientId": "customer-portal2",
         "enabled": true,
         "adminUrl": "/customer-portal",
         "baseUrl": "/customer-portal",
