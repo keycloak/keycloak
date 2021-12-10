@@ -14,7 +14,7 @@ export default {
           "Name of stored user attribute which is the name of an attribute within the UserModel.attribute map.",
       },
       clientRoleMapping: {
-        client: {
+        clientId: {
           label: "Client ID",
           tooltip:
             "Client ID for role mappings. Just client roles of this client will be added to the token. If this is unset, client roles of all clients will be added to the token.",

@@ -12,7 +12,7 @@ export const BooleanComponent = ({
   helpText,
   defaultValue,
 }: ComponentProps) => {
-  const { t } = useTranslation("client-scopes");
+  const { t } = useTranslation("dynamic");
   const { control } = useFormContext();
 
   return (
