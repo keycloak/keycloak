@@ -35,7 +35,7 @@
     <packaging>pom</packaging>
 
     <properties>
-        <quarkus.version>2.5.1.Final</quarkus.version>
+        <quarkus.version>2.6.0.CR1</quarkus.version>
 
         <!--
         Performing a Wildfly upgrade? Run the:

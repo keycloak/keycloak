@@ -42,10 +42,11 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+
+import io.quarkus.fs.util.ZipUtils;
 import org.apache.commons.io.FileUtils;
 import org.jboss.logging.Logger;
 
-import io.quarkus.bootstrap.util.ZipUtils;
 import org.keycloak.common.Version;
 
 public final class RawKeycloakDistribution implements KeycloakDistribution {
