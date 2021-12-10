@@ -110,7 +110,7 @@ export const ClientScopes = ({
 
     const filter =
       searchType === "name" ? nameFilter(search) : typeFilter(searchTypeType);
-    return rows.filter(filter).slice(first, max);
+    return rows.filter(filter).slice(first, Number(first) + Number(max));
   };
 
   const TypeSelector = (scope: Row) => (

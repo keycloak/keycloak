@@ -100,7 +100,7 @@ export default function ClientScopesSection() {
       })
       .filter(filter)
       .sort((a, b) => a.name!.localeCompare(b.name!, whoAmI.getLocale()))
-      .slice(first, max);
+      .slice(first, Number(first) + Number(max));
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({

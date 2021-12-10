@@ -6,6 +6,7 @@ import CreateClientScopePage from "../support/pages/admin_console/manage/client_
 import { keycloakBefore } from "../support/util/keycloak_before";
 import RoleMappingTab from "../support/pages/admin_console/manage/RoleMappingTab";
 import ModalUtils from "../support/util/ModalUtils";
+import AdminClient from "../support/util/AdminClient";
 
 let itemId = "client_scope_crud";
 const loginPage = new LoginPage();
@@ -16,6 +17,48 @@ const createClientScopePage = new CreateClientScopePage();
 const modalUtils = new ModalUtils();
 
 describe("Client Scopes test", () => {
+  describe("Client Scope list items ", () => {
+    const clientScopeName = "client-scope-test";
+    const clientScope = {
+      name: clientScopeName,
+      description: "",
+      protocol: "openid-connect",
+      attributes: {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true",
+        "gui.order": "1",
+        "consent.screen.text": "",
+      },
+    };
+
+    before(async () => {
+      const client = new AdminClient();
+      for (let i = 0; i < 5; i++) {
+        clientScope.name = clientScopeName + i;
+        await client.createClientScope(clientScope);
+      }
+    });
+
+    beforeEach(() => {
+      keycloakBefore();
+      loginPage.logIn();
+      sidebarPage.goToClientScopes();
+    });
+
+    after(async () => {
+      const client = new AdminClient();
+      for (let i = 0; i < 5; i++) {
+        await client.deleteClientScope(clientScopeName + i);
+      }
+    });
+
+    it("should show items on next page are more than 11", () => {
+      listingPage.showNextPageTableItems();
+
+      cy.get(listingPage.tableRowItem).its("length").should("be.gt", 1);
+    });
+  });
+
   describe("Client Scope creation", () => {
     beforeEach(() => {
       keycloakBefore();

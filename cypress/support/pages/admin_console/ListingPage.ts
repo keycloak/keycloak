@@ -10,6 +10,23 @@ export default class ListingPage {
     ".pf-c-page__main .pf-c-toolbar__content-section .pf-m-primary:visible";
   private importBtn =
     ".pf-c-page__main .pf-c-toolbar__content-section .pf-m-link";
+  private previousPageBtn =
+    "div[class=pf-c-pagination__nav-control] button[data-action=previous]:visible";
+  private nextPageBtn =
+    "div[class=pf-c-pagination__nav-control] button[data-action=next]:visible";
+  public tableRowItem = "tbody tr[data-ouia-component-type]:visible";
+
+  showPreviousPageTableItems() {
+    cy.get(this.previousPageBtn).first().click();
+
+    return this;
+  }
+
+  showNextPageTableItems() {
+    cy.get(this.nextPageBtn).first().click();
+
+    return this;
+  }
 
   goToCreateItem() {
     cy.get(this.createBtn).click();

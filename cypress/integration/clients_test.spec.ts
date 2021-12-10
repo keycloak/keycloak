@@ -10,6 +10,7 @@ import InitialAccessTokenTab from "../support/pages/admin_console/manage/clients
 import { keycloakBefore } from "../support/util/keycloak_before";
 import RoleMappingTab from "../support/pages/admin_console/manage/RoleMappingTab";
 import KeysTab from "../support/pages/admin_console/manage/clients/KeysTab";
+import ClientScopesTab from "../support/pages/admin_console/manage/clients/ClientScopesTab";
 
 let itemId = "client_crud";
 const loginPage = new LoginPage();
@@ -20,6 +21,62 @@ const createClientPage = new CreateClientPage();
 const modalUtils = new ModalUtils();
 
 describe("Clients test", () => {
+  describe("Client details - Client scopes subtab", () => {
+    const clientScopesTab = new ClientScopesTab();
+    const client = new AdminClient();
+    const clientId = "client-scopes-subtab-test";
+    const clientScopeName = "client-scope-test";
+    const clientScope = {
+      name: clientScopeName,
+      description: "",
+      protocol: "openid-connect",
+      attributes: {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true",
+        "gui.order": "1",
+        "consent.screen.text": "",
+      },
+    };
+
+    before(async () => {
+      client.createClient({
+        clientId,
+        protocol: "openid-connect",
+        publicClient: false,
+      });
+      for (let i = 0; i < 5; i++) {
+        clientScope.name = clientScopeName + i;
+        await client.createClientScope(clientScope);
+        await client.addDefaultClientScopeInClient(
+          clientScopeName + i,
+          clientId
+        );
+      }
+    });
+
+    beforeEach(() => {
+      keycloakBefore();
+      loginPage.logIn();
+      sidebarPage.goToClients();
+      cy.intercept("/auth/admin/realms/master/clients/*").as("fetchClient");
+      listingPage.searchItem(clientId).goToItemDetails(clientId);
+      cy.wait("@fetchClient");
+      clientScopesTab.goToTab();
+    });
+
+    after(async () => {
+      client.deleteClient(clientId);
+      for (let i = 0; i < 5; i++) {
+        await client.deleteClientScope(clientScopeName + i);
+      }
+    });
+
+    it("should show items on next page are more than 11", () => {
+      listingPage.showNextPageTableItems();
+      cy.get(listingPage.tableRowItem).its("length").should("be.gt", 1);
+    });
+  });
+
   describe("Client creation", () => {
     beforeEach(() => {
       keycloakBefore();
