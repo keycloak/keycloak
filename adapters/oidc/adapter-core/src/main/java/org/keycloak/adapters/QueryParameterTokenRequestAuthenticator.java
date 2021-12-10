@@ -41,6 +41,7 @@ public class QueryParameterTokenRequestAuthenticator extends BearerTokenRequestA
         tokenString = null;
         tokenString = getAccessTokenFromQueryParameter(exchange);
         if (tokenString == null || tokenString.trim().isEmpty()) {
+            log.debug("Token is not present in query");
             challenge = challengeResponse(exchange, OIDCAuthenticationError.Reason.NO_QUERY_PARAMETER_ACCESS_TOKEN, null, null);
             return AuthOutcome.NOT_ATTEMPTED;
         }
