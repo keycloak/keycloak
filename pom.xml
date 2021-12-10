@@ -245,14 +245,8 @@
 
     <developers>
         <developer>
-            <id>patriot1burke</id>
-            <name>Bill Burke</name>
-            <email>bburke@redhat.co</email>
-            <organization>Red Hat</organization>
-            <roles>
-                <role>project-owner</role>
-            </roles>
-            <timezone>-5</timezone>
+            <id>keycloak</id>
+            <name>Keycloak Team</name>
         </developer>
     </developers>
 
