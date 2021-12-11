@@ -280,7 +280,10 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, ser
         }
     }
     $scope.realm = angular.copy(realm);
-    $scope.realm.attributes['userProfileEnabled'] = $scope.realm.attributes['userProfileEnabled'] == 'true';
+    
+    if ($scope.realm.attributes != null) {
+    	$scope.realm.attributes['userProfileEnabled'] = $scope.realm.attributes['userProfileEnabled'] == 'true';
+    }
 
     var oldCopy = angular.copy($scope.realm);
     $scope.realmCopy = oldCopy;
