@@ -20,7 +20,6 @@ package org.keycloak.it.cli.dist;
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.Matchers.containsString;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.DistributionTest;
 
@@ -37,7 +36,6 @@ public class MetricsDistTest {
                 .body(containsString("base_gc_total"));
     }
 
-    @Disabled("https://github.com/keycloak/keycloak/pull/8878")
     @Test
     @Launch({ "start-dev", "--http-relative-path=/auth", "--metrics-enabled=true" })
     void testMetricsEndpointUsingRelativePath() {

@@ -52,24 +52,28 @@ public final class Configuration {
         return CONFIG;
     }
 
-    public static Optional<String> getBuiltTimeProperty(String name) {
-        String value = KeycloakConfigSourceProvider.PERSISTED_CONFIG_SOURCE.getValue(name);
+    public static Optional<String> getBuildTimeProperty(String name) {
+        Optional<String> value = getRawPersistedProperty(name);
 
-        if (value == null) {
-            value = KeycloakConfigSourceProvider.PERSISTED_CONFIG_SOURCE.getValue(getMappedPropertyName(name));
+        if (value.isEmpty()) {
+            value = getRawPersistedProperty(getMappedPropertyName(name));
         }
 
-        if (value == null) {
+        if (value.isEmpty()) {
             String profile = Environment.getProfile();
 
             if (profile == null) {
                 profile = getConfig().getRawValue(Environment.PROFILE);
             }
 
-            value = KeycloakConfigSourceProvider.PERSISTED_CONFIG_SOURCE.getValue("%" + profile + "." + name);
+            value = getRawPersistedProperty("%" + profile + "." + name);
         }
 
-        return Optional.ofNullable(value);
+        return value;
+    }
+
+    public static Optional<String> getRawPersistedProperty(String name) {
+        return Optional.ofNullable(PersistedConfigSource.getInstance().getValue(name));
     }
 
     public static String getRawValue(String propertyName) {

@@ -30,6 +30,13 @@ import io.quarkus.test.junit.main.LaunchResult;
 public class HelpCommandTest {
 
     @Test
+    @Launch({})
+    void testDefaultToHelp(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertHelp("kc.sh");
+    }
+
+    @Test
     @Launch({ "--help" })
     void testHelpCommand(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;

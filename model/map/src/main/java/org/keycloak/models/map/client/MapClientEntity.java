@@ -17,9 +17,9 @@
 package org.keycloak.models.map.client;
 
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.EntityWithAttributes;
 import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -36,7 +36,7 @@ import org.keycloak.models.map.common.DeepCloner;
   inherits = "org.keycloak.models.map.client.MapClientEntity.AbstractClientEntity"
 )
 @DeepCloner.Root
-public interface MapClientEntity extends AbstractEntity, UpdatableEntity {
+public interface MapClientEntity extends AbstractEntity, UpdatableEntity, EntityWithAttributes {
 
     public abstract class AbstractClientEntity extends UpdatableEntity.Impl implements MapClientEntity {
 
@@ -86,14 +86,6 @@ public interface MapClientEntity extends AbstractEntity, UpdatableEntity {
     Set<String> getWebOrigins();
     void removeWebOrigin(String webOrigin);
     void setWebOrigins(Set<String> webOrigins);
-
-    default List<String> getAttribute(String name) { return getAttributes() == null ? null : getAttributes().get(name); }
-    Map<String, List<String>> getAttributes();
-    void removeAttribute(String name);
-    void setAttribute(String name, List<String> values);
-
-    Map<String, String> getAuthFlowBindings();
-    void setAuthFlowBindings(Map<String, String> authFlowBindings);
 
     String getAuthenticationFlowBindingOverride(String binding);
     Map<String, String> getAuthenticationFlowBindingOverrides();

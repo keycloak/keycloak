@@ -17,13 +17,16 @@
 
 package org.keycloak.quarkus.runtime;
 
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuiltTimeProperty;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuildTimeProperty;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -34,13 +37,11 @@ import org.apache.commons.lang3.SystemUtils;
 public final class Environment {
 
     public static final String IMPORT_EXPORT_MODE = "import_export";
-    public static final String CLI_ARGS = "kc.config.args";
     public static final String PROFILE ="kc.profile";
     public static final String ENV_PROFILE ="KC_PROFILE";
     public static final String DATA_PATH = "/data";
     public static final String DEFAULT_THEMES_PATH = "/themes";
     public static final String DEV_PROFILE_VALUE = "dev";
-    public static final String USER_INVOKED_CLI_COMMAND = "picocli.invoked.command";
     public static final String LAUNCH_MODE = "kc.launch.mode";
 
     private Environment() {}
@@ -95,33 +96,6 @@ public final class Environment {
         return "kc.sh";
     }
 
-    /**
-     * Sets the originally invoked cli args. Useful to verify the originally invoked command
-     * when calling another cli command internally (e.g. start-dev calls build internally)
-     */
-    public static void setUserInvokedCliArgs(List<String> cliArgs) {
-        System.setProperty(USER_INVOKED_CLI_COMMAND, String.join(",", cliArgs));
-    }
-
-    /**
-     * Reads the previously set system property for the originally command.
-     * Use the System variable, when you trigger other command executions internally, but need a reference to the
-     * actually invoked command.
-     *
-     * @return the invoked command from the CLI, or empty List if not set.
-     */
-    public static List<String> getUserInvokedCliArgs() {
-        if(System.getProperty(USER_INVOKED_CLI_COMMAND) == null) {
-            return Collections.emptyList();
-        }
-
-        return List.of(System.getProperty(USER_INVOKED_CLI_COMMAND).split(","));
-    }
-
-    public static String getConfigArgs() {
-        return System.getProperty(CLI_ARGS, "");
-    }
-
     public static String getProfile() {
         String profile = System.getProperty(PROFILE);
         
@@ -156,7 +130,7 @@ public final class Environment {
             return true;
         }
 
-        return DEV_PROFILE_VALUE.equals(getBuiltTimeProperty(PROFILE).orElse(null));
+        return DEV_PROFILE_VALUE.equals(getBuildTimeProperty(PROFILE).orElse(null));
     }
 
     public static boolean isDevProfile(){

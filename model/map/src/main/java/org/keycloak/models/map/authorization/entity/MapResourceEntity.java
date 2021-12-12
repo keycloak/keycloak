@@ -19,6 +19,7 @@ package org.keycloak.models.map.authorization.entity;
 
 import org.keycloak.models.map.common.AbstractEntity;
 
+import org.keycloak.models.map.common.EntityWithAttributes;
 import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,7 +28,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-public class MapResourceEntity extends UpdatableEntity.Impl implements AbstractEntity {
+public class MapResourceEntity extends UpdatableEntity.Impl implements AbstractEntity, EntityWithAttributes {
     
     private String id;
     private String name;
@@ -156,23 +157,29 @@ public class MapResourceEntity extends UpdatableEntity.Impl implements AbstractE
         return policyIds;
     }
 
+    @Override
     public Map<String, List<String>> getAttributes() {
         return attributes;
     }
 
+    @Override
+    public void setAttributes(Map<String, List<String>> attributes) {
+        this.updated |= ! Objects.equals(this.attributes, attributes);
+        this.attributes.clear();
+        this.attributes.putAll(attributes);
+    }
+
+    @Override
     public List<String> getAttribute(String name) {
         return attributes.get(name);
     }
 
-    public String getSingleAttribute(String name) {
-        List<String> attributeValues = attributes.get(name);
-        return  attributeValues == null || attributeValues.isEmpty() ? null : attributeValues.get(0);
-    }
-
+    @Override
     public void setAttribute(String name, List<String> value) {
         this.updated |= !Objects.equals(this.attributes.put(name, value), value);
     }
 
+    @Override
     public void removeAttribute(String name) {
         this.updated |= this.attributes.remove(name) != null;
     }

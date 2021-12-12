@@ -1,0 +1,5 @@
+= Keycloak server guide
+
+<#list ctx.serverGuides as guide>
+include::${guide}[leveloffset=+1]
+</#list>

@@ -1,0 +1,30 @@
+<#macro guide title summary includedOptions="">
+:title: ${title}
+:summary: ${summary}
+
+[[${ctx.getAnchor(title)}]]
+= {title}
+
+{summary}
+
+<#nested>
+
+<#if includedOptions?has_content>
+== Relevant options
+
+|===
+|Key|CLI|ENV|Description|Default|Values
+<#list ctx.options.getOptions(includedOptions) as option>
+|${option.key}
+|${option.keyCli}
+|${option.keyEnv}
+|${option.description}
+|${option.defaultValue!}
+|${option.expectedValues?join(", ")}
+<#if option?has_next>
+
+</#if>
+</#list>
+|===
+</#if>
+</#macro>

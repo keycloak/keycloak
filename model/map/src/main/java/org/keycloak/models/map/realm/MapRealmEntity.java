@@ -30,6 +30,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.EntityWithAttributes;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.realm.entity.MapAuthenticationExecutionEntity;
 import org.keycloak.models.map.realm.entity.MapAuthenticationFlowEntity;
@@ -43,7 +44,7 @@ import org.keycloak.models.map.realm.entity.MapRequiredActionProviderEntity;
 import org.keycloak.models.map.realm.entity.MapRequiredCredentialEntity;
 import org.keycloak.models.map.realm.entity.MapWebAuthnPolicyEntity;
 
-public class MapRealmEntity extends UpdatableEntity.Impl implements AbstractEntity {
+public class MapRealmEntity extends UpdatableEntity.Impl implements AbstractEntity, EntityWithAttributes {
 
     private String id;
     private String name;
@@ -669,20 +670,31 @@ public class MapRealmEntity extends UpdatableEntity.Impl implements AbstractEnti
         this.webAuthnPolicyPasswordless = webAuthnPolicyPasswordless;
     }
 
+    @Override
     public void setAttribute(String name, List<String> values) {
         this.updated |= ! Objects.equals(this.attributes.put(name, values), values);
     }
 
+    @Override
     public void removeAttribute(String name) {
         this.updated |= attributes.remove(name) != null;
     }
 
+    @Override
     public List<String> getAttribute(String name) {
         return attributes.getOrDefault(name, Collections.EMPTY_LIST);
     }
 
+    @Override
     public Map<String, List<String>> getAttributes() {
         return attributes;
+    }
+
+    @Override
+    public void setAttributes(Map<String, List<String>> attributes) {
+        this.attributes.clear();
+        this.attributes.putAll(attributes);
+        this.updated = true;
     }
 
     public void addDefaultClientScope(String scopeId) {

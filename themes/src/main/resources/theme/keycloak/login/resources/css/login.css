@@ -1,3 +1,10 @@
+/* Patternfly CSS places a "bg-login.jpg" as the background on this ".login-pf" class.
+   This clashes with the "keycloak-bg.png' background defined on the body below.
+   Therefore the Patternfly background must be set to none. */
+.login-pf {
+    background: none;
+}
+
 .login-pf body {
     background: url("../img/keycloak-bg.png") no-repeat center center fixed;
     background-size: cover;
@@ -206,14 +213,6 @@ a#kc-current-locale-link::after {
 
 #kc-logo {
     width: 100%;
-}
-
-#kc-logo-wrapper {
-    background-image: url(../img/keycloak-logo-2.png);
-    background-repeat: no-repeat;
-    height: 63px;
-    width: 300px;
-    margin: 62px auto 0;
 }
 
 div.kc-logo-text {
@@ -526,14 +525,6 @@ ul#kc-totp-supported-apps {
         text-align: right;
         z-index: 9999;
     }
-
-    #kc-logo-wrapper {
-        background-size: 100px 21px;
-        height: 21px;
-        width: 100px;
-        margin: 20px 0 0 20px;
-    }
-
 }
 
 @media (min-height: 646px) {

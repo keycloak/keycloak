@@ -3,6 +3,7 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 import java.util.Collection;
@@ -32,14 +33,13 @@ public final class PropertyMappers {
 
     public static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
         PropertyMapper mapper = MAPPERS.getOrDefault(name, PropertyMapper.IDENTITY);
-        ConfigValue configValue = mapper
-                .getOrDefault(name, context, context.proceed(name));
+        ConfigValue configValue = mapper.getConfigValue(name, context);
 
         if (configValue == null) {
             Optional<String> prefixedMapper = getPrefixedMapper(name);
 
             if (prefixedMapper.isPresent()) {
-                return MAPPERS.get(prefixedMapper.get()).getOrDefault(name, context, configValue);
+                return MAPPERS.get(prefixedMapper.get()).getConfigValue(name, context);
             }
         } else {
             configValue.withName(mapper.getTo());
@@ -76,7 +76,7 @@ public final class PropertyMappers {
 
         return isBuildTimeProperty
                 && !"kc.version".equals(name)
-                && !Environment.CLI_ARGS.equals(name)
+                && !ConfigArgsConfigSource.CLI_ARGS.equals(name)
                 && !"kc.home.dir".equals(name)
                 && !"kc.config.file".equals(name)
                 && !Environment.PROFILE.equals(name)

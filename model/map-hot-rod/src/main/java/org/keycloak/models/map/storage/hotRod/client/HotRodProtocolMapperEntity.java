@@ -18,16 +18,15 @@
 package org.keycloak.models.map.storage.hotRod.client;
 
 import org.infinispan.protostream.annotations.ProtoField;
-import org.keycloak.models.map.client.MapProtocolMapperEntity;
+import org.keycloak.models.map.annotations.GenerateHotRodEntityImplementation;
+import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
 import org.keycloak.models.map.storage.hotRod.common.HotRodPair;
 
-import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-public class HotRodProtocolMapperEntity implements MapProtocolMapperEntity {
+@GenerateHotRodEntityImplementation(implementInterface = "org.keycloak.models.map.client.MapProtocolMapperEntity")
+public class HotRodProtocolMapperEntity implements AbstractHotRodEntity {
     @ProtoField(number = 1)
     public String id;
     @ProtoField(number = 2)
@@ -41,73 +40,15 @@ public class HotRodProtocolMapperEntity implements MapProtocolMapperEntity {
 //    @ProtoField(number = 5)
 //    public String consentText;
     @ProtoField(number = 5)
-    public Set<HotRodPair<String, String>> config = new LinkedHashSet<>();
-    
-    private boolean updated;
+    public Set<HotRodPair<String, String>> config;
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        HotRodProtocolMapperEntity entity = (HotRodProtocolMapperEntity) o;
-
-        return id.equals(entity.id);
+        return HotRodProtocolMapperEntityDelegate.entityEquals(this, o);
     }
 
     @Override
     public int hashCode() {
-        return id.hashCode();
-    }
-
-    @Override
-    public String getId() {
-        return id;
-    }
-
-    @Override
-    public void setId(String id) {
-        updated |= !Objects.equals(this.id, id);
-        this.id = id;
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public void setName(String name) {
-        updated |= !Objects.equals(this.name, name);
-        this.name = name;
-    }
-
-    @Override
-    public String getProtocolMapper() {
-        return protocolMapper;
-    }
-
-    @Override
-    public void setProtocolMapper(String protocolMapper) {
-        updated |= !Objects.equals(this.protocolMapper, protocolMapper);
-        this.protocolMapper = protocolMapper;
-    }
-
-    @Override
-    public Map<String, String> getConfig() {
-        return config.stream().collect(Collectors.toMap(HotRodPair::getFirst, HotRodPair::getSecond));
-    }
-
-    @Override
-    public void setConfig(Map<String, String> config) {
-        updated |= !Objects.equals(this.config, config);
-        this.config.clear();
-
-        config.entrySet().stream().map(entry -> new HotRodPair<>(entry.getKey(), entry.getValue())).forEach(this.config::add);
-    }
-
-    @Override
-    public boolean isUpdated() {
-        return updated;
+        return HotRodProtocolMapperEntityDelegate.entityHashCode(this);
     }
 }

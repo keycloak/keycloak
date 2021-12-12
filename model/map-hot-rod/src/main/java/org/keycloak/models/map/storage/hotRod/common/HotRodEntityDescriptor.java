@@ -17,35 +17,34 @@
 
 package org.keycloak.models.map.storage.hotRod.common;
 
-import java.util.List;
-import java.util.stream.Stream;
+import org.keycloak.models.map.storage.ModelEntityUtil;
 
-public class HotRodEntityDescriptor<EntityType> {
+import java.util.function.Function;
+
+public class HotRodEntityDescriptor<E, D extends HotRodEntityDelegate<E>> {
     private final Class<?> modelTypeClass;
-    private final Class<EntityType> entityTypeClass;
-    private final List<Class<?>> hotRodClasses;
-    private final String cacheName;
+    private final Class<E> entityTypeClass;
+    private final Function<E, D> hotRodDelegateProvider;
 
-    public HotRodEntityDescriptor(Class<?> modelTypeClass, Class<EntityType> entityTypeClass, List<Class<?>> hotRodClasses, String cacheName) {
+    public HotRodEntityDescriptor(Class<?> modelTypeClass, Class<E> entityTypeClass, Function<E, D> hotRodDelegateProvider) {
         this.modelTypeClass = modelTypeClass;
         this.entityTypeClass = entityTypeClass;
-        this.hotRodClasses = hotRodClasses;
-        this.cacheName = cacheName;
+        this.hotRodDelegateProvider = hotRodDelegateProvider;
     }
 
     public Class<?> getModelTypeClass() {
         return modelTypeClass;
     }
 
-    public Class<EntityType> getEntityTypeClass() {
+    public Class<E> getEntityTypeClass() {
         return entityTypeClass;
     }
 
-    public Stream<Class<?>> getHotRodClasses() {
-        return hotRodClasses.stream();
+    public String getCacheName() {
+        return ModelEntityUtil.getModelName(modelTypeClass);
     }
 
-    public String getCacheName() {
-        return cacheName;
+    public Function<E, D> getHotRodDelegateProvider() {
+        return hotRodDelegateProvider;
     }
 }
