@@ -31,30 +31,36 @@ if "%KEY%" == "" (
     goto MAIN
 )
 if "%KEY%" == "--debug" (
-    set "DEBUG_MODE=true"
-    set "DEBUG_PORT_VAR=%~2"
-    if "%DEBUG_PORT_VAR%" == "" (
-       set DEBUG_PORT_VAR=8787
-    )
-    shift
-    shift
-    goto READ-ARGS
+  set "DEBUG_MODE=true"
+  set "DEBUG_PORT_VAR=%~2"
+  if "%DEBUG_PORT_VAR%" == "" (
+     set DEBUG_PORT_VAR=8787
+  )
+  shift
+  shift
+  goto READ-ARGS
 )
-if not "%KEY:~0,2%"=="--" if "%KEY:~0,1%"=="-" (
-    set "SERVER_OPTS=%SERVER_OPTS% %KEY%=%~2"
-    shift
+if "%KEY%" == "start-dev" (
+  set "CONFIG_ARGS=%CONFIG_ARGS% --profile=dev %KEY% --auto-build"
+  shift
+  shift
+  goto READ-ARGS
+)
+if not "%KEY:~0,2%"=="--" if "%KEY:~0,2%"=="-D" (
+  set "SERVER_OPTS=%SERVER_OPTS% %KEY%=%~2"
+  shift
 )
 if not "%KEY:~0,2%"=="--" if not "%KEY:~0,1%"=="-" (
-    set "CONFIG_ARGS=%CONFIG_ARGS% %KEY%"
+  set "CONFIG_ARGS=%CONFIG_ARGS% %KEY%"
 )
-if "%KEY:~0,2%"=="--" (
-    if "%~2"=="" (
-        set "CONFIG_ARGS=%CONFIG_ARGS% %KEY%"
-    ) else (
-        set "CONFIG_ARGS=%CONFIG_ARGS% %KEY%=%~2%"
-    )
+if "%KEY:~0,2%"=="--" if not "%KEY:~0,2%"=="-D" if "%KEY:~0,1%"=="-" (
+  if "%~2"=="" (
+    set "CONFIG_ARGS=%CONFIG_ARGS% %KEY%"
+  ) else (
+    set "CONFIG_ARGS=%CONFIG_ARGS% %KEY% %~2%"
+  )
 
-    shift
+  shift
 )
 shift
 goto READ-ARGS
@@ -103,8 +109,18 @@ if "x%JAVA_HOME%" == "x" (
   )
 )
 
-set "CLASSPATH_OPTS=%DIRNAME%..\lib\quarkus-run.jar;%DIRNAME%..\lib\lib\main\*.*"
+set "CLASSPATH_OPTS=%DIRNAME%..\lib\quarkus-run.jar"
 
-"%JAVA%" %JAVA_OPTS% -Dkc.home.dir="%DIRNAME%.." -Djboss.server.config.dir="%DIRNAME%..\conf" -Dkeycloak.theme.dir="%DIRNAME%..\themes" %SERVER_OPTS% -cp "%CLASSPATH_OPTS%" io.quarkus.bootstrap.runner.QuarkusEntryPoint %CONFIG_ARGS%
+set "JAVA_RUN_OPTS=%JAVA_OPTS% -Dkc.home.dir="%DIRNAME%.." -Djboss.server.config.dir="%DIRNAME%..\conf" -Dkeycloak.theme.dir="%DIRNAME%..\themes" %SERVER_OPTS% -cp "%CLASSPATH_OPTS%" io.quarkus.bootstrap.runner.QuarkusEntryPoint %CONFIG_ARGS%"
+
+SetLocal EnableDelayedExpansion
+
+set "AUTO_BUILD_OPTION=auto-build"
+
+if not "!CONFIG_ARGS:%AUTO_BUILD_OPTION%=!"=="!CONFIG_ARGS!" (
+  %JAVA% -Dkc.config.rebuild-and-exit=true %JAVA_RUN_OPTS%
+)
+
+"%JAVA%" %JAVA_RUN_OPTS%
 
 :END

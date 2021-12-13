@@ -35,6 +35,7 @@
     <packaging>pom</packaging>
 
     <properties>
+        <quarkus.version>2.5.1.Final</quarkus.version>
 
         <!--
         Performing a Wildfly upgrade? Run the:
@@ -79,6 +80,7 @@
         <hibernate.c3p0.version>5.3.20.Final</hibernate.c3p0.version>
         <infinispan.version>11.0.9.Final</infinispan.version>
         <infinispan.protostream.processor.version>4.3.4.Final</infinispan.protostream.processor.version>
+        <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
         <jackson.version>2.12.1</jackson.version>
         <jackson.databind.version>${jackson.version}</jackson.databind.version>
         <jackson.annotations.version>${jackson.databind.version}</jackson.annotations.version>
@@ -261,6 +263,7 @@
         <module>common</module>
         <module>core</module>
         <module>dependencies</module>
+        <module>docs</module>
         <module>server-spi</module>
         <module>server-spi-private</module>
         <module>saml-core-api</module>
