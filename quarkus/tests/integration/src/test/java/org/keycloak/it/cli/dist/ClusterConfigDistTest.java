@@ -81,6 +81,6 @@ public class ClusterConfigDistTest {
     }
 
     private boolean isClustered(LaunchResult result) {
-        return result.getOutput().contains("Received new cluster view");
+        return result.getOutput().contains("Starting JGroups channel `ISPN`");
     }
 }
