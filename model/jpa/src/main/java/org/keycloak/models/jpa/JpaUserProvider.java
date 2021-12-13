@@ -813,6 +813,12 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
                     }
                     break;
                 case USERNAME:
+                    if (Boolean.valueOf(attributes.getOrDefault(UserModel.EXACT, Boolean.FALSE.toString()))) {
+                        predicates.add(builder.equal(root.get(key), value.toLowerCase()));
+                    } else {
+                        predicates.add(builder.like(root.get(key), "%" + value.toLowerCase() + "%"));
+                    }
+                    break;
                 case FIRST_NAME:
                 case LAST_NAME:
                 case EMAIL:
