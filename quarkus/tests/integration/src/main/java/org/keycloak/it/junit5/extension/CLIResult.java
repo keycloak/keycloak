@@ -109,4 +109,8 @@ public interface CLIResult extends LaunchResult {
             throw new RuntimeException("Failed to assert help", cause);
         }
     }
+
+    default void assertMessage(String message) {
+        assertTrue(getOutput().contains(message));
+    }
 }
