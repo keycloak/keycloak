@@ -669,7 +669,7 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
 
             switch (key) {
                 case UserModel.USERNAME:
-                    restrictions.add(qb.like(from.get("username"), "%" + value + "%"));
+                    restrictions.add(qb.like(from.get("username"), "%" + value.toLowerCase() + "%"));
                     break;
                 case UserModel.FIRST_NAME:
                     restrictions.add(qb.like(from.get("firstName"), "%" + value + "%"));
@@ -718,7 +718,7 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
 
             switch (key) {
                 case UserModel.USERNAME:
-                    restrictions.add(qb.like(from.get("user").get("username"), "%" + value + "%"));
+                    restrictions.add(qb.like(from.get("user").get("username"), "%" + value.toLowerCase() + "%"));
                     break;
                 case UserModel.FIRST_NAME:
                     restrictions.add(qb.like(from.get("user").get("firstName"), "%" + value + "%"));
