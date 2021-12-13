@@ -49,14 +49,11 @@ import static org.keycloak.services.validation.Validation.FIELD_USERNAME;
  */
 public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuthenticator {
 
-    private static final Logger logger = Logger.getLogger(AbstractUsernameFormAuthenticator.class);
-
     public static final String REGISTRATION_FORM_ACTION = "registration_form";
     public static final String ATTEMPTED_USERNAME = "ATTEMPTED_USERNAME";
 
     @Override
     public void action(AuthenticationFlowContext context) {
-
     }
 
     protected Response challenge(AuthenticationFlowContext context, String error) {
@@ -105,18 +102,14 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         PasswordPolicy policy = context.getRealm().getPasswordPolicy();
         if (policy == null) {
             runDefaultDummyHash(context);
-            return;
         } else {
             PasswordHashProvider hash = context.getSession().getProvider(PasswordHashProvider.class, policy.getHashAlgorithm());
             if (hash == null) {
                 runDefaultDummyHash(context);
-                return;
-
             } else {
                 hash.encode("SlightlyLongerDummyPassword", policy.getHashIterations());
             }
         }
-
     }
 
     public void testInvalidUser(AuthenticationFlowContext context, UserModel user) {
@@ -129,7 +122,9 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
     }
 
     public boolean enabledUser(AuthenticationFlowContext context, UserModel user) {
-        if (isDisabledByBruteForce(context, user)) return false;
+        if (isDisabledByBruteForce(context, user)) {
+            return false;
+        }
         if (!user.isEnabled()) {
             context.getEvent().user(user);
             context.getEvent().error(Errors.USER_DISABLED);
@@ -139,7 +134,6 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         }
         return true;
     }
-
 
     public boolean validateUserAndPassword(AuthenticationFlowContext context, MultivaluedMap<String, String> inputData)  {
         context.clearUser();
@@ -161,7 +155,6 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
             context.failureChallenge(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return null;
         }
-
         // remove leading and trailing whitespace
         username = username.trim();
 
@@ -182,7 +175,6 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
             }
             return user;
         }
-
         testInvalidUser(context, user);
         return user;
     }
@@ -209,30 +201,29 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
 
     public boolean validatePassword(AuthenticationFlowContext context, UserModel user, MultivaluedMap<String, String> inputData, boolean clearUser) {
         String password = inputData.getFirst(CredentialRepresentation.PASSWORD);
+
         if (password == null || password.isEmpty()) {
             return badPasswordHandler(context, user, clearUser,true);
         }
-
-        if (isDisabledByBruteForce(context, user)) return false;
-
-        if (password != null && !password.isEmpty() && context.getSession().userCredentialManager().isValid(context.getRealm(), user, UserCredentialModel.password(password))) {
-            return true;
-        } else {
-            return badPasswordHandler(context, user, clearUser,false);
+        if (isDisabledByBruteForce(context, user)) {
+            return false;
         }
+        if (context.getSession().userCredentialManager().isValid(context.getRealm(), user, UserCredentialModel.password(password))) {
+            return true;
+        }
+        return badPasswordHandler(context, user, clearUser,false);
     }
 
     // Set up AuthenticationFlowContext error.
-    private boolean badPasswordHandler(AuthenticationFlowContext context, UserModel user, boolean clearUser,boolean isEmptyPassword) {
+    private boolean badPasswordHandler(AuthenticationFlowContext context, UserModel user, boolean clearUser, boolean isEmptyPassword) {
         context.getEvent().user(user);
         context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
         Response challengeResponse = challenge(context, getDefaultChallengeMessage(context), FIELD_PASSWORD);
-        if(isEmptyPassword) {
+        if (isEmptyPassword) {
             context.forceChallenge(challengeResponse);
-        }else{
+        } else {
             context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
         }
-
         if (clearUser) {
             context.clearUser();
         }
