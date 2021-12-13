@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Tab, Tabs, TabTitleText } from "@patternfly/react-core";
 
 import { PasswordPolicy } from "./PasswordPolicy";
+import { OtpPolicy } from "./OtpPolicy";
 
 export const Policies = () => {
   const { t } = useTranslation("authentication");
@@ -24,7 +25,9 @@ export const Policies = () => {
         id="otpPolicy"
         eventKey={2}
         title={<TabTitleText>{t("otpPolicy")}</TabTitleText>}
-      ></Tab>
+      >
+        <OtpPolicy />
+      </Tab>
       <Tab
         id="webauthnPolicy"
         eventKey={3}

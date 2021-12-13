@@ -15,6 +15,22 @@ export default {
     updatePasswordPolicyError:
       "Could not update the password policies: '{{error}}'",
     addPolicy: "Add policy",
+    otpType: "OTP type",
+    policyType: {
+      totp: "Time based",
+      hotp: "Counter based",
+    },
+    otpHashAlgorithm: "OTP hash algorithm",
+    otpPolicyDigits: "Number of digits",
+    lookAhead: "Look ahead window",
+    otpPolicyPeriod: "OTP Token period",
+    otpPolicyPeriodErrorHint:
+      "Value needs to be between 1 second and 2 minutes",
+    initialCounter: "Initial counter",
+    initialCounterErrorHint: "Value needs to be between 1 and 120",
+    supportedActions: "Supported actions",
+    updateOtpSuccess: "OTP policy successfully updated",
+    updateOtpError: "Could not update OTP policy: {{error}}",
     flowName: "Flow name",
     searchForFlow: "Search for flow",
     usedBy: "Used by",
