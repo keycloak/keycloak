@@ -64,7 +64,7 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
             return value;
         }
 
-        return null;
+        return super.getValue(propertyName.replace('-', '.'));
     }
 
     private static Map<String, String> readProperties() {
