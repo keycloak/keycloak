@@ -29,8 +29,9 @@ final class DatabasePropertyMappers {
                         .transformer((db, context) -> Database.getDriver(db).orElse(Database.getDriver("h2-file").get()))
                         .hidden(true)
                         .build(),
-                builder().from("db").
-                        to("quarkus.datasource.db-kind")
+                builder().from("db-kind")
+                        .mapFrom("db")
+                        .to("quarkus.datasource.db-kind")
                         .isBuildTimeProperty(true)
                         .transformer(toDatabaseKind())
                         .description("The database vendor. Possible values are: " + String.join(", ", Database.getAliases()))

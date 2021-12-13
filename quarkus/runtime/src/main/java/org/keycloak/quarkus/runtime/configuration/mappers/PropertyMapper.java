@@ -130,7 +130,8 @@ public class PropertyMapper {
             return current;
         }
 
-        if (config.getName().equals(name)) {
+        if (config.getName().equals(from)) {
+            // this is an explicit setting for this value
             return config;
         }
 

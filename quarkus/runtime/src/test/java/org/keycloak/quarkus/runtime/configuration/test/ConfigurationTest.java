@@ -254,6 +254,19 @@ public class ConfigurationTest {
     }
 
     @Test
+    public void testDatabaseDriverSetExplicitly() {
+        System.setProperty(CLI_ARGS, "--db=mssql" + ARG_SEPARATOR + "--db-url=jdbc:sqlserver://localhost/keycloak");
+        System.setProperty("kc.db-driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver");
+        System.setProperty("kc.db-tx-type", "enabled");
+        assertTrue(System.getProperty(CLI_ARGS, "").contains("mssql"));
+        SmallRyeConfig config = createConfig();
+        assertEquals("jdbc:sqlserver://localhost/keycloak", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals("mssql", config.getConfigValue("quarkus.datasource.db-kind").getValue());        
+        assertEquals("com.microsoft.sqlserver.jdbc.SQLServerDriver", config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
+        assertEquals("enabled", config.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
+    }
+    
+    @Test
     public void testDefaultDbPropertiesGetApplied() {
         System.setProperty(CLI_ARGS, "--db=postgres" + ARG_SEPARATOR + "--db-url-host=myhost" + ARG_SEPARATOR + "--db-url-database=kcdb" + ARG_SEPARATOR + "--db-url-properties=?foo=bar");
         SmallRyeConfig config = createConfig();
