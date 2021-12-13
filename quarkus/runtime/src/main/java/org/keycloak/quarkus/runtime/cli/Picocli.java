@@ -36,6 +36,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -305,12 +306,12 @@ public final class Picocli {
                 .order(ConfigCategory.FEATURE.getOrder())
                 .validate(false);
 
-        Set<String> featuresExpectedValues = Arrays.stream(Profile.Type.values()).map(type -> type.name().toLowerCase()).collect(Collectors.toSet());
+        String previewName = Profile.Type.PREVIEW.name().toLowerCase();
 
         featureGroupBuilder.addArg(OptionSpec.builder(new String[] {"-ft", "--features"})
-                .description("Enables a group of features. Possible values are: " + String.join(",", featuresExpectedValues))
-                .paramLabel("feature")
-                .completionCandidates(featuresExpectedValues)
+                .description("Enables all tech preview features.")
+                .paramLabel(previewName)
+                .completionCandidates(Collections.singleton(previewName))
                 .parameterConsumer(PropertyMapperParameterConsumer.INSTANCE)
                 .type(String.class)
                 .build());
