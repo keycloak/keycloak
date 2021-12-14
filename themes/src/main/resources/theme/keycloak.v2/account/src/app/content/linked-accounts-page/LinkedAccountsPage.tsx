@@ -24,6 +24,7 @@ import {
     DataListItemCells,
     DataListCell,
     DataListItemRow,
+    Divider,
     Label,
     PageSection,
     PageSectionVariants,
@@ -135,6 +136,7 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
                             <Title headingLevel="h2" size='2xl'>
                                 <Msg msgKey='linkedLoginProviders'/>
                             </Title>
+                            <Divider className="pf-u-mt-lg" />
                             <DataList id="linked-idps" aria-label='foo'>
                                 {this.makeRows(this.state.linkedAccounts, true)}
                             </DataList>

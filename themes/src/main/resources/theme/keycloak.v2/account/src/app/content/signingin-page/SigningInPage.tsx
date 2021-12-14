@@ -30,6 +30,8 @@ import {
     EmptyStateBody,
     Stack,
     StackItem,
+    Split,
+    SplitItem,
     Title,
     Dropdown,
     DropdownPosition,
@@ -148,11 +150,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         return (
             <ContentPage title="signingIn"
                 introMessage="signingInSubMessage">
-                <PageSection isFilled variant={PageSectionVariants.light}>
-                    <Stack hasGutter>
-                        {this.renderCategories()}
-                    </Stack>
-                </PageSection>
+                {this.renderCategories()}
             </ContentPage>
         );
     }
@@ -160,13 +158,9 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
     private renderCategories(): React.ReactNode {
         return (<> {
             Array.from(this.state.credentialContainers.keys()).map(category => (
-                <StackItem key={category}>
-                    <Card>
-                        <DataList aria-label='foo'>
-                            {this.renderTypes(category!)}
-                        </DataList>
-                    </Card>
-                </StackItem>
+                <PageSection key={category}>
+                    {this.renderTypes(category!)}
+                </PageSection>
             ))
 
         }</>)
@@ -175,15 +169,17 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
     private renderTypes(category: CredCategory): React.ReactNode {
       
       let credTypeMap:CredTypeMap = this.state.credentialContainers.get(category);
+      
       // this.state.credentialContainers.get(category)!
         return (
         <KeycloakContext.Consumer> 
         { keycloak => (
             <>{
+              
             Array.from(credTypeMap.keys()).map((credType: CredType, index: number, typeArray: string[]) => ([
                 this.renderCredTypeTitle(credTypeMap.get(credType)!, keycloak!, category),
                 this.renderUserCredentials(credTypeMap, credType, keycloak!),
-                this.renderEmptyRow(credTypeMap.get(credType)!.type, index === typeArray.length - 1)
+
             ]))
             }</>
         )}
@@ -209,24 +205,25 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         const removeable: boolean = credContainer.removeable;
         const type: string = credContainer.type;
         const displayName: string = credContainer.displayName;
-
         if (!userCredentials || userCredentials.length === 0) {
             const localizedDisplayName = Msg.localize(displayName);
             return (
-                <DataListItem key='no-credentials-list-item' aria-labelledby='no-credentials-list-item'>
-                    <DataListItemRow key='no-credentials-list-item-row'>
-                        <DataListItemCells
-                                    dataListCells={[
-                                        <DataListCell key={'no-credentials-cell-0'}/>,
-                                        <EmptyState id={`${type}-not-set-up`} key={'no-credentials-cell-1'} variant={EmptyStateVariant.xs}>
-                                            <EmptyStateBody>
-                                                <Msg msgKey='notSetUp' params={[localizedDisplayName]}/>
-                                            </EmptyStateBody>
-                                        </EmptyState>,
-                                        <DataListCell key={'no-credentials-cell-2'}/>
-                                    ]}/>
-                    </DataListItemRow>
-                </DataListItem>
+                <DataList>
+                    <DataListItem key='no-credentials-list-item' aria-labelledby='no-credentials-list-item'>
+                        <DataListItemRow key='no-credentials-list-item-row' className="pf-u-align-items-center">
+                            <DataListItemCells
+                                        dataListCells={[
+                                            <DataListCell key={'no-credentials-cell-0'}/>,
+                                            <EmptyState id={`${type}-not-set-up`} key={'no-credentials-cell-1'} variant={EmptyStateVariant.xs}>
+                                                <EmptyStateBody>
+                                                    <Msg msgKey='notSetUp' params={[localizedDisplayName]}/>
+                                                </EmptyStateBody>
+                                            </EmptyState>,
+                                            <DataListCell key={'no-credentials-cell-2'}/>
+                                        ]}/>
+                        </DataListItemRow>
+                    </DataListItem>
+                </DataList>
             );
         }
 
@@ -245,8 +242,9 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         return (
             <React.Fragment key='userCredentials'> {
                 userCredentials.map(credential => (
+                  <DataList>
                     <DataListItem id={`${SigningInPage.credElementId(type, credential.id, 'row')}`} key={'credential-list-item-' + credential.id} aria-labelledby={'credential-list-item-' + credential.userLabel}>
-                        <DataListItemRow key={'userCredentialRow-' + credential.id}>
+                        <DataListItemRow key={'userCredentialRow-' + credential.id} className="pf-u-align-items-center">
                             <DataListItemCells dataListCells={this.credentialRowCells(credential, type)}/>
 
                             <CredentialAction credential={credential}
@@ -255,6 +253,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
                                               credRemover={this.handleRemove}/>
                         </DataListItemRow>
                     </DataListItem>
+                  </DataList>
                 ))
             }
             </React.Fragment>)
@@ -264,7 +263,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         const credRowCells: React.ReactNode[] = [];
         credRowCells.push(<DataListCell id={`${SigningInPage.credElementId(type, credential.id, 'label')}`} key={'userLabel-' + credential.id}>{credential.userLabel}</DataListCell>);
         if (credential.strCreatedDate) {
-            credRowCells.push(<DataListCell id={`${SigningInPage.credElementId(type, credential.id, 'created-at')}`} key={'created-' + credential.id}><strong><Msg msgKey='credentialCreatedAt'/>: </strong>{credential.strCreatedDate}</DataListCell>);
+            credRowCells.push(<DataListCell id={`${SigningInPage.credElementId(type, credential.id, 'created-at')}`} key={'created-' + credential.id}><strong class="pf-u-mr-md"><Msg msgKey='credentialCreatedAt'/> </strong>{credential.strCreatedDate}</DataListCell>);
             credRowCells.push(<DataListCell key={'spacer-' + credential.id}/>);
         }
 
@@ -278,70 +277,61 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         if (credContainer.createAction) {
             setupAction = new AIACommand(keycloak, credContainer.createAction);
         }
+
         const credContainerDisplayName: string = Msg.localize(credContainer.displayName);
         return (
             <React.Fragment key={'credTypeTitle-' + credContainer.type}>
-                <DataListItem aria-labelledby={'type-datalistitem-' + credContainer.type}>
+                <Title id={`${category}-categ-title`} headingLevel="h2" size="2xl">
+                    <Msg msgKey={category}/>
+                </Title>
 
-                      <CardTitle>
-                        <Title id={`${category}-categ-title`} headingLevel="h2" size="2xl">
-                            <strong><Msg msgKey={category}/></strong>
+            
+                <Split className="pf-u-mt-lg pf-u-mb-lg">
+                    <SplitItem>
+                        <Title headingLevel="h3" size='xl' className="pf-u-mb-md">
+                            <strong id={`${credContainer.type}-cred-title`}><Msg msgKey={credContainer.displayName}/></strong>
                         </Title>
-                      </CardTitle>
-
-                    <DataListItemRow key={'credTitleRow-' + credContainer.type}>
-                        <DataListItemCells
-                            dataListCells={[
-                                <DataListCell width={5} key={'credTypeTitle-' + credContainer.type}>
-                                    <Title headingLevel="h3" size='xl'>
-                                        <strong id={`${credContainer.type}-cred-title`}><Msg msgKey={credContainer.displayName}/></strong>
-                                    </Title>
-                                    <span id={`${credContainer.type}-cred-help`}>
-                                        {credContainer.helptext && <Msg msgKey={credContainer.helptext}/>}
+                        
+                        <span id={`${credContainer.type}-cred-help`}>
+                            {credContainer.helptext && <Msg msgKey={credContainer.helptext}/>}
+                        </span>
+                    </SplitItem>
+                    
+                    
+                    <SplitItem isFilled>
+                        {credContainer.createAction && 
+                            <div id={'mob-setUpAction-' + credContainer.type} class="pf-u-display-none-on-lg pf-u-float-right">
+                                <Dropdown
+                                    isPlain
+                                    position={DropdownPosition.right}
+                                    toggle={<KebabToggle onToggle={isOpen => {
+                                        credContainer.open = isOpen;
+                                        this.setState({ credentialContainers: new Map(this.state.credentialContainers) });
+                                    }} />}
+                                    isOpen={credContainer.open}
+                                    dropdownItems={[
+                                        <button id={`mob-${credContainer.type}-set-up`} className="pf-c-button pf-m-link" type="button" onClick={() => setupAction.execute()}>
+                                            <span className="pf-c-button__icon">
+                                                <i className="fas fa-plus-circle" aria-hidden="true"></i>
+                                            </span>
+                                            <Msg msgKey='setUpNew' params={[credContainerDisplayName]} />
+                                        </button>]}
+                                />
+                            </div>
+                        }
+                        {credContainer.createAction && 
+                            <div id={'setUpAction-' + credContainer.type} class="pf-u-display-none pf-u-display-inline-flex-on-lg pf-u-float-right">
+                                <button id={`${credContainer.type}-set-up`} className="pf-c-button pf-m-link" type="button" onClick={()=> setupAction.execute()}>
+                                    <span className="pf-c-button__icon">
+                                        <i className="fas fa-plus-circle" aria-hidden="true"></i>
                                     </span>
-                                </DataListCell>,
-
-                            ]}/>
-                        {credContainer.createAction &&
-                        <DataListAction
-                            aria-labelledby='create'
-                            aria-label='create action'
-                            id={'mob-setUpAction-' + credContainer.type}
-                            visibility={{ lg: 'hidden' }}
-                        >
-                            <Dropdown
-                                isPlain
-                                position={DropdownPosition.right}
-                                toggle={<KebabToggle onToggle={isOpen => {
-                                    credContainer.open = isOpen;
-                                    this.setState({ credentialContainers: new Map(this.state.credentialContainers) });
-                                }} />}
-                                isOpen={credContainer.open}
-                                dropdownItems={[
-                                    <button id={`mob-${credContainer.type}-set-up`} className="pf-c-button pf-m-link" type="button" onClick={() => setupAction.execute()}>
-                                        <span className="pf-c-button__icon">
-                                            <i className="fas fa-plus-circle" aria-hidden="true"></i>
-                                        </span>
-                                        <Msg msgKey='setUpNew' params={[credContainerDisplayName]} />
-                                    </button>]}
-                            />
-                        </DataListAction>}
-                        {credContainer.createAction &&
-                        <DataListAction
-                            aria-labelledby='create'
-                            aria-label='create action'
-                            id={'setUpAction-' + credContainer.type}
-                            visibility={{ default: 'visible', sm: 'hidden', lg: 'visible' }}
-                        >
-                            <button id={`${credContainer.type}-set-up`} className="pf-c-button pf-m-link" type="button" onClick={()=> setupAction.execute()}>
-                                <span className="pf-c-button__icon">
-                                    <i className="fas fa-plus-circle" aria-hidden="true"></i>
-                                </span>
-                                <Msg msgKey='setUpNew' params={[credContainerDisplayName]}/>
-                            </button>
-                        </DataListAction>}
-                    </DataListItemRow>
-                </DataListItem>
+                                    <Msg msgKey='setUpNew' params={[credContainerDisplayName]}/>
+                                </button>
+                            </div>
+                        }
+                    </SplitItem>
+                  </Split>
+                
             </React.Fragment>
         )
     }
@@ -359,7 +349,7 @@ class CredentialAction extends React.Component<CredentialActionProps> {
         if (this.props.updateAction) {
             return (
                 <DataListAction aria-labelledby='foo' aria-label='foo action' id={'updateAction-' + this.props.credential.id}>
-                    <Button id={`${SigningInPage.credElementId(this.props.credential.type, this.props.credential.id, 'update')}`} variant='primary'onClick={()=> this.props.updateAction.execute()}><Msg msgKey='update'/></Button>
+                    <Button variant='secondary' id={`${SigningInPage.credElementId(this.props.credential.type, this.props.credential.id, 'update')}`} onClick={()=> this.props.updateAction.execute()}><Msg msgKey='update'/></Button>
                 </DataListAction>
             )
         }
@@ -369,6 +359,7 @@ class CredentialAction extends React.Component<CredentialActionProps> {
             return (
                 <DataListAction aria-labelledby='foo' aria-label='foo action' id={'removeAction-' + this.props.credential.id }>
                     <ContinueCancelModal buttonTitle='remove'
+                                        buttonVariant='danger'
                                         buttonId={`${SigningInPage.credElementId(this.props.credential.type, this.props.credential.id, 'remove')}`}
                                         modalTitle={Msg.localize('removeCred', [userLabel])}
                                         modalMessage={Msg.localize('stopUsingCred', [userLabel])}

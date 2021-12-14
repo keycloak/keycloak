@@ -134,6 +134,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
         introMessage="Manage your application permissions."
       >
         <PageSection isFilled variant={PageSectionVariants.light}>
+
           <Stack hasGutter>
             <DataList id="applications-list" aria-label={Msg.localize('applicationsPageTitle')} isCompact>
               <DataListItem id="applications-list-header" aria-labelledby="Columns names">
@@ -164,7 +165,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
               {this.state.applications.map((application: Application, appIndex: number) => {
                 return (
                   <DataListItem id={this.elementId("client-id", application)} key={'application-' + appIndex} aria-labelledby="applications-list" isExpanded={this.state.isRowOpen[appIndex]}>
-                    <DataListItemRow>
+                    <DataListItemRow className="pf-u-align-items-center">
                       <DataListToggle
                         onClick={() => this.onToggle(appIndex)}
                         isExpanded={this.state.isRowOpen[appIndex]}
@@ -172,9 +173,10 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                         aria-controls={this.elementId("expandable", application)}
                       />
                       <DataListItemCells
+                        className="pf-u-align-items-center"
                         dataListCells={[
                           <DataListCell id={this.elementId('name', application)} width={2} key={'app-' + appIndex}>
-                            <Button component="a" variant="link" onClick={() => window.open(application.effectiveUrl)}>
+                            <Button className="pf-u-pl-0" component="a" variant="link" onClick={() => window.open(application.effectiveUrl)}>
                               {application.clientName || application.clientId} <ExternalLinkAltIcon/>
                             </Button>
                           </DataListCell>,
@@ -188,7 +190,9 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                         ]}
                       />
                   </DataListItemRow>
+                  
                   <DataListContent
+                    className="pf-u-pl-4xl"
                     hasNoPadding={false}
                     aria-label={Msg.localize('applicationDetails')}
                     id={this.elementId("expandable", application)}

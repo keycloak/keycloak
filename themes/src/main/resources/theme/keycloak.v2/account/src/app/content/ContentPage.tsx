@@ -42,7 +42,7 @@ export class ContentPage extends React.Component<ContentPageProps> {
             <React.Fragment>
             <ContentAlert />
 
-            <PageSection variant={PageSectionVariants.light}>
+            <PageSection variant={PageSectionVariants.light} className="pf-u-pb-xs">
               <Split>
                 <SplitItem isFilled>
                   <TextContent>
