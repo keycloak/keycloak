@@ -82,8 +82,8 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
       .genericCloner(Serialization::from)
       .constructorDC(MapClientEntityImpl.class,         MapClientEntityImpl::new)
       .constructor(MapProtocolMapperEntity.class,       MapProtocolMapperEntityImpl::new)
-      .constructor(MapGroupEntityImpl.class,            MapGroupEntityImpl::new)
-      .constructor(MapRoleEntityImpl.class,             MapRoleEntityImpl::new)
+      .constructorDC(MapGroupEntityImpl.class,          MapGroupEntityImpl::new)
+      .constructorDC(MapRoleEntityImpl.class,           MapRoleEntityImpl::new)
       .build();
 
     private static final Map<String, StringKeyConvertor> KEY_CONVERTORS = new HashMap<>();
