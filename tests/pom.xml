@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <properties>
-        <version.log4j>2.15.0</version.log4j>
+        <version.log4j>2.16.0</version.log4j>
     </properties>
 
     <build>
