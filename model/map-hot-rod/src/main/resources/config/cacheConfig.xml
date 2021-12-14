@@ -6,5 +6,8 @@
         <distributed-cache name="clients" mode="SYNC">
             <encoding media-type="application/x-protostream"/>
         </distributed-cache>
+        <distributed-cache name="groups" mode="SYNC">
+            <encoding media-type="application/x-protostream"/>
+        </distributed-cache>
     </cache-container>
 </infinispan>

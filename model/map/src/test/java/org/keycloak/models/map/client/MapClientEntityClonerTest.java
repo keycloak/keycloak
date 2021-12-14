@@ -29,6 +29,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.keycloak.models.map.common.DeepCloner.DUMB_CLONER;
 
 /**
  *
@@ -80,6 +81,42 @@ public class MapClientEntityClonerTest {
     @Test
     public void testCloneToExistingInstance() {
         MapClientEntity newInstance = CLONER.newInstance(MapClientEntity.class);
+        newInstance.setId("my-id");
+        newInstance.setClientId("a-client-id");
+        newInstance.setAttribute("attr", Arrays.asList("aa", "bb", "cc"));
+        MapProtocolMapperEntity pmm = new MapProtocolMapperEntityImpl();
+        pmm.setId("pmm-id");
+        pmm.setConfig(new HashMap<>());
+        pmm.getConfig().put("key1", "value1");
+        pmm.getConfig().put("key2", "value2");
+        newInstance.setProtocolMapper("pmm-id", pmm);
+        newInstance.setAttribute("attr", Arrays.asList("aa", "bb", "cc"));
+
+        MapClientEntity clonedInstance = CLONER.newInstance(MapClientEntity.class);
+        assertThat(CLONER.deepCloneNoId(newInstance, clonedInstance), sameInstance(clonedInstance));
+        assertThat(clonedInstance, instanceOf(MapClientEntityImpl.class));
+        clonedInstance.setId("my-id2");
+        assertThat(clonedInstance.getId(), is("my-id2"));
+        assertThat(clonedInstance.getClientId(), is("a-client-id"));
+
+        assertThat(clonedInstance.getAttributes(), not(sameInstance(newInstance.getAttributes())));
+        assertThat(clonedInstance.getAttributes().keySet(), containsInAnyOrder("attr"));
+        assertThat(clonedInstance.getAttributes().get("attr"), contains("aa", "bb", "cc"));
+        assertThat(clonedInstance.getAttributes().get("attr"), not(sameInstance(newInstance.getAttributes().get("attr"))));
+
+        assertThat(clonedInstance.getProtocolMappers(), not(sameInstance(newInstance.getProtocolMappers())));
+        assertThat(clonedInstance.getProtocolMapper("pmm-id"), not(sameInstance(newInstance.getProtocolMapper("pmm-id"))));
+        assertThat(clonedInstance.getProtocolMapper("pmm-id"), equalTo(newInstance.getProtocolMapper("pmm-id")));
+        assertThat(clonedInstance.getProtocolMapper("pmm-id").getConfig(), not(sameInstance(newInstance.getProtocolMapper("pmm-id").getConfig())));
+        assertThat(clonedInstance.getProtocolMapper("pmm-id").getConfig(), equalTo(newInstance.getProtocolMapper("pmm-id").getConfig()));
+
+        assertThat(clonedInstance.getAuthenticationFlowBindingOverrides(), nullValue());
+        assertThat(clonedInstance.getRegistrationToken(), nullValue());
+    }
+
+    @Test
+    public void testCloneToExistingInstanceDumb() {
+        MapClientEntity newInstance = new MapClientEntityImpl();
         newInstance.setId("my-id");
         newInstance.setClientId("a-client-id");
         newInstance.setAttribute("attr", Arrays.asList("aa", "bb", "cc"));

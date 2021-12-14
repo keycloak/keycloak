@@ -53,11 +53,15 @@ import java.util.jar.JarFile;
 
 import io.quarkus.agroal.spi.JdbcDataSourceBuildItem;
 import io.quarkus.deployment.IsDevelopment;
+import io.quarkus.deployment.IsNormal;
+import io.quarkus.deployment.IsTest;
+import io.quarkus.deployment.annotations.Consume;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.GeneratedResourceBuildItem;
 import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
 import io.quarkus.deployment.builditem.LaunchModeBuildItem;
+import io.quarkus.deployment.builditem.RuntimeConfigSetupCompleteBuildItem;
 import io.quarkus.deployment.builditem.StaticInitConfigSourceProviderBuildItem;
 import io.quarkus.hibernate.orm.deployment.AdditionalJpaModelBuildItem;
 import io.quarkus.hibernate.orm.deployment.HibernateOrmConfig;
@@ -65,6 +69,7 @@ import io.quarkus.hibernate.orm.deployment.PersistenceXmlDescriptorBuildItem;
 import io.quarkus.resteasy.server.common.deployment.ResteasyDeploymentCustomizerBuildItem;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.smallrye.health.runtime.SmallRyeHealthHandler;
+import io.quarkus.vertx.http.deployment.NonApplicationRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.RouteBuildItem;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
@@ -115,7 +120,6 @@ import org.keycloak.representations.provider.ScriptProviderDescriptor;
 import org.keycloak.representations.provider.ScriptProviderMetadata;
 import org.keycloak.quarkus.runtime.integration.web.NotFoundHandler;
 import org.keycloak.services.ServicesLogger;
-import org.keycloak.quarkus.runtime.services.health.KeycloakMetricsHandler;
 import org.keycloak.theme.FolderThemeProviderFactory;
 import org.keycloak.transaction.JBossJtaTransactionManagerLookup;
 import org.keycloak.quarkus.runtime.Environment;
@@ -130,6 +134,7 @@ class KeycloakProcessor {
 
     private static final String JAR_FILE_SEPARATOR = "!/";
     private static final String DEFAULT_HEALTH_ENDPOINT = "/health";
+    private static final String DEFAULT_METRICS_ENDPOINT = "/metrics";
     private static final Map<String, Function<ScriptProviderMetadata, ProviderFactory>> DEPLOYEABLE_SCRIPT_PROVIDERS = new HashMap<>();
     private static final String KEYCLOAK_SCRIPTS_JSON_PATH = "META-INF/keycloak-scripts.json";
 
@@ -230,9 +235,10 @@ class KeycloakProcessor {
      *
      * @param recorder
      */
+    @Consume(RuntimeConfigSetupCompleteBuildItem.class)
     @Record(ExecutionTime.RUNTIME_INIT)
     @BuildStep
-    void configureProviders(KeycloakRecorder recorder) {
+    KeycloakSessionFactoryPreInitBuildItem configureProviders(KeycloakRecorder recorder) {
         Profile.setInstance(recorder.createProfile());
         Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories = new HashMap<>();
         Map<Class<? extends Provider>, String> defaultProviders = new HashMap<>();
@@ -252,6 +258,8 @@ class KeycloakProcessor {
         }
 
         recorder.configSessionFactory(factories, defaultProviders, preConfiguredProviders, Environment.isRebuild());
+
+        return new KeycloakSessionFactoryPreInitBuildItem();
     }
 
     /**
@@ -259,16 +267,21 @@ class KeycloakProcessor {
      *
      * @param configSources
      */
-    @BuildStep
+    @BuildStep(onlyIfNot = IsIntegrationTest.class )
     void configureConfigSources(BuildProducer<StaticInitConfigSourceProviderBuildItem> configSources) {
         configSources.produce(new StaticInitConfigSourceProviderBuildItem(KeycloakConfigSourceProvider.class.getName()));
+    }
+
+    @BuildStep(onlyIf = IsIntegrationTest.class)
+    void prepareTestEnvironment(BuildProducer<StaticInitConfigSourceProviderBuildItem> configSources) {
+        configSources.produce(new StaticInitConfigSourceProviderBuildItem("org.keycloak.quarkus.runtime.configuration.test.TestKeycloakConfigSourceProvider"));
     }
 
     /**
      * <p>Make the build time configuration available at runtime so that the server can run without having to specify some of
      * the properties again.
      */
-    @BuildStep(onlyIf = isReAugmentation.class)
+    @BuildStep(onlyIf = IsReAugmentation.class)
     void persistBuildTimeProperties(BuildProducer<GeneratedResourceBuildItem> resources) {
         Properties properties = new Properties();
 
@@ -339,14 +352,16 @@ class KeycloakProcessor {
      *
      * @param routes
      */
+    @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
-    void initializeMetrics(BuildProducer<RouteBuildItem> routes) {
+    void initializeMetrics(KeycloakRecorder recorder, BuildProducer<RouteBuildItem> routes, NonApplicationRootPathBuildItem nonAppRootPath) {
         Handler<RoutingContext> healthHandler;
         Handler<RoutingContext> metricsHandler;
 
         if (isMetricsEnabled()) {
             healthHandler = new SmallRyeHealthHandler();
-            metricsHandler = new KeycloakMetricsHandler();
+            String rootPath = nonAppRootPath.getNormalizedHttpRootPath();
+            metricsHandler = recorder.createMetricsHandler(rootPath.concat(DEFAULT_METRICS_ENDPOINT).replace("//", "/"));
         } else {
             healthHandler = new NotFoundHandler();
             metricsHandler = new NotFoundHandler();
@@ -355,7 +370,7 @@ class KeycloakProcessor {
         routes.produce(RouteBuildItem.builder().route(DEFAULT_HEALTH_ENDPOINT).handler(healthHandler).build());
         routes.produce(RouteBuildItem.builder().route(DEFAULT_HEALTH_ENDPOINT.concat("/live")).handler(healthHandler).build());
         routes.produce(RouteBuildItem.builder().route(DEFAULT_HEALTH_ENDPOINT.concat("/ready")).handler(healthHandler).build());
-        routes.produce(RouteBuildItem.builder().route(KeycloakMetricsHandler.DEFAULT_METRICS_ENDPOINT).handler(metricsHandler).build());
+        routes.produce(RouteBuildItem.builder().route(DEFAULT_METRICS_ENDPOINT).handler(metricsHandler).build());
     }
 
     @BuildStep

@@ -82,6 +82,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         WebAuthnPolicy policy = getWebAuthnPolicy(context);
         String rpId = getRpID(context);
         form.setAttribute(WebAuthnConstants.RP_ID, rpId);
+        form.setAttribute(WebAuthnConstants.CREATE_TIMEOUT, policy.getCreateTimeout());
 
         UserModel user = context.getUser();
         boolean isUserIdentified = false;

@@ -112,7 +112,7 @@ public class IckleQueryOperators {
             operands = new HashSet<>(Arrays.asList(values));
         }
 
-        return C + "." + modelField + " IN (" + operands.stream()
+        return operands.isEmpty() ? "false" : C + "." + modelField + " IN (" + operands.stream()
                 .map(operand -> {
                     String namedParam = findAvailableNamedParam(parameters.keySet(), modelField);
                     parameters.put(namedParam, operand);
@@ -149,9 +149,13 @@ public class IckleQueryOperators {
         return (modelFieldName, values, parameters) -> {
             if (values.length != 1) throw new RuntimeException("Invalid arguments, expected (" + modelFieldName + "), got: " + Arrays.toString(values));
 
-            String namedParameter = findAvailableNamedParam(parameters.keySet(), modelFieldName);
+            if (values[0] == null && op.equals(ModelCriteriaBuilder.Operator.EQ)) {
+                return C + "." + modelFieldName + " IS NULL";
+            }
 
+            String namedParameter = findAvailableNamedParam(parameters.keySet(), modelFieldName);
             parameters.put(namedParameter, values[0]);
+
             return C + "." + modelFieldName + " " + IckleQueryOperators.operatorToString(op) + " :" + namedParameter;
         };
     }

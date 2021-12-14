@@ -46,6 +46,9 @@ public class WebAuthnRegisterPage extends AbstractPage {
     @FindBy(id = "cancelWebAuthnAIA")
     private WebElement cancelAIAButton;
 
+    @FindBy(id = "kc-page-title")
+    private WebElement formTitle;
+
     public void clickRegister() {
         WaitUtils.waitUntilElement(registerButton).is().clickable();
         registerButton.click();
@@ -58,7 +61,7 @@ public class WebAuthnRegisterPage extends AbstractPage {
     }
 
     public void registerWebAuthnCredential(String authenticatorLabel) {
-        // label edit after registering authenicator by .create()
+        // label edit after registering authenticator by .create()
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(60));
         Alert promptDialog = wait.until(ExpectedConditions.alertIsPresent());
 
@@ -68,9 +71,8 @@ public class WebAuthnRegisterPage extends AbstractPage {
         promptDialog.accept();
     }
 
-    private boolean isAIA() {
+    public boolean isAIA() {
         try {
-            registerButton.getText();
             cancelAIAButton.getText();
             return true;
         } catch (NoSuchElementException e) {
@@ -78,13 +80,20 @@ public class WebAuthnRegisterPage extends AbstractPage {
         }
     }
 
-    public boolean isCurrent() {
+    public String getFormTitle() {
         try {
-            registerButton.getText();
-            return driver.getPageSource().contains("navigator.credentials.create");
+            WaitUtils.waitUntilElement(formTitle).is().present();
+            return formTitle.getText();
         } catch (NoSuchElementException e) {
-            return false;
+            return null;
         }
+    }
+
+    @Override
+    public boolean isCurrent() {
+        final String formTitle = getFormTitle();
+        return formTitle != null && formTitle.equals("Security Key Registration") &&
+                driver.getPageSource().contains("navigator.credentials.create");
     }
 
     @Override

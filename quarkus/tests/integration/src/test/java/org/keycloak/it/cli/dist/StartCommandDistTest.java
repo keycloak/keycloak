@@ -22,10 +22,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.cli.StartCommandTest;
+import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 @DistributionTest
 public class StartCommandDistTest extends StartCommandTest {
@@ -36,5 +38,20 @@ public class StartCommandDistTest extends StartCommandTest {
         assertTrue(result.getErrorOutput().contains("ERROR: You can not 'start' the server using the 'dev' configuration profile. Please re-build the server first, using 'kc.sh build' for the default production profile, or using 'kc.sh build --profile=<profile>' with a profile more suitable for production."),
                 () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
         assertEquals(4, result.getErrorStream().size());
+    }
+
+    @Test
+    @Launch({ "start", "--http-enabled=true" })
+    void failNoHostnameNotSet(LaunchResult result) {
+        assertTrue(result.getErrorOutput().contains("ERROR: Strict hostname resolution configured but no hostname was set"),
+                () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
+    }
+
+    @Test
+    @Launch({ "start", "--auto-build", "--db-password=secret", "--https-key-store-password=secret"})
+    void testStartWithAutoBuildDoesntShowCredentialsInConsole(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        assertTrue(cliResult.getOutput().contains("--db-password=" + PropertyMappers.VALUE_MASK));
+        assertTrue(cliResult.getOutput().contains("--https-key-store-password=" + PropertyMappers.VALUE_MASK));
     }
 }

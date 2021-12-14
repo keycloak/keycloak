@@ -22,20 +22,29 @@ import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.keycloak.models.map.storage.hotRod.client.HotRodAttributeEntity;
 import org.keycloak.models.map.storage.hotRod.client.HotRodClientEntity;
 import org.keycloak.models.map.storage.hotRod.client.HotRodProtocolMapperEntity;
+import org.keycloak.models.map.storage.hotRod.group.HotRodGroupEntity;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
 @AutoProtoSchemaBuilder(
         includeClasses = {
-                HotRodAttributeEntity.class,
+                // Clients
                 HotRodClientEntity.class,
+                HotRodAttributeEntity.class,
                 HotRodProtocolMapperEntity.class,
+
+                // Groups
+                HotRodGroupEntity.class,
+
+                // Common
                 HotRodPair.class
         },
         schemaFileName = "KeycloakHotRodMapStorage.proto",
         schemaFilePath = "proto/",
-        schemaPackageName = "org.keycloak.models.map.storage.hotrod")
+        schemaPackageName = ProtoSchemaInitializer.HOT_ROD_ENTITY_PACKAGE)
 public interface ProtoSchemaInitializer extends GeneratedSchema {
+        String HOT_ROD_ENTITY_PACKAGE = "kc";
+
         ProtoSchemaInitializer INSTANCE = new ProtoSchemaInitializerImpl();
 }

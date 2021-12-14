@@ -70,6 +70,8 @@ public final class Main {
 
     public static final String PROFILE_SHORT_NAME = "-pf";
     public static final String PROFILE_LONG_NAME = "--profile";
+    public static final String CONFIG_FILE_SHORT_NAME = "-cf";
+    public static final String CONFIG_FILE_LONG_NAME = "--config-file";
 
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
@@ -103,7 +105,7 @@ public final class Main {
         Environment.setProfile(profile);
     }
 
-    @Option(names = { "-cf", "--config-file" },
+    @Option(names = { CONFIG_FILE_SHORT_NAME, CONFIG_FILE_LONG_NAME },
             arity = "1",
             description = "Set the path to a configuration file. By default, configuration properties are read from the \"keycloak.properties\" file in the \"conf\" directory.",
             paramLabel = "file")

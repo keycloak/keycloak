@@ -1298,12 +1298,12 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     private String checkTokenExchange(boolean shouldPass) throws Exception {
         testingClient.server().run(FineGrainAdminUnitTest::setupTokenExchange);
         oauth.realm("master");
-        oauth.clientId("kcinit");
+        oauth.clientId("tokenexclient");
         String exchanged = null;
         String token = oauth.doGrantAccessTokenRequest("password", "admin", "admin").getAccessToken();
         Assert.assertNotNull(token);
         try {
-            exchanged = oauth.doTokenExchange("master", token, "admin-cli", "kcinit", "password").getAccessToken();
+            exchanged = oauth.doTokenExchange("master", token, "admin-cli", "tokenexclient", "password").getAccessToken();
         } catch (AssertionError e) {
             log.info("Error message is expected from oauth: " + e.getMessage());
         }
@@ -1316,17 +1316,17 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
     private static void setupTokenExchange(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("master");
-        ClientModel client = session.clients().getClientByClientId(realm, "kcinit");
+        ClientModel client = session.clients().getClientByClientId(realm, "tokenexclient");
         if (client != null) {
             return;
         }
 
-        ClientModel kcinit = realm.addClient("kcinit");
-        kcinit.setEnabled(true);
-        kcinit.addRedirectUri("http://localhost:*");
-        kcinit.setPublicClient(false);
-        kcinit.setSecret("password");
-        kcinit.setDirectAccessGrantsEnabled(true);
+        ClientModel tokenexclient = realm.addClient("tokenexclient");
+        tokenexclient.setEnabled(true);
+        tokenexclient.addRedirectUri("http://localhost:*");
+        tokenexclient.setPublicClient(false);
+        tokenexclient.setSecret("password");
+        tokenexclient.setDirectAccessGrantsEnabled(true);
 
         // permission for client to client exchange to "target" client
         ClientModel adminCli = realm.getClientByClientId(ConfigUtil.DEFAULT_CLIENT);
@@ -1334,7 +1334,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         management.clients().setPermissionsEnabled(adminCli, true);
         ClientPolicyRepresentation clientRep = new ClientPolicyRepresentation();
         clientRep.setName("to");
-        clientRep.addClient(kcinit.getId());
+        clientRep.addClient(tokenexclient.getId());
         ResourceServer server = management.realmResourceServer();
         Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(clientRep, server);
         management.clients().exchangeToPermission(adminCli).addAssociatedPolicy(clientPolicy);

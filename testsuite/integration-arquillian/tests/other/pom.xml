@@ -32,7 +32,7 @@
     <packaging>pom</packaging>
 
     <name>Other Tests Modules</name>
-    
+
     <description>Test modules that depend on the Base TestSuite.
         This POM contains common configuration for submodules.</description>
 
@@ -172,6 +172,7 @@
             <id>webauthn</id>
             <modules>
                 <module>console</module>
+                <module>base-ui</module>
                 <module>webauthn</module>
             </modules>
         </profile>
