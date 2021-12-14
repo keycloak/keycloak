@@ -62,7 +62,7 @@ export const RealmSettingsTokensTab = ({
   const offlineSessionMaxEnabled = useWatch({
     control,
     name: "offlineSessionMaxLifespanEnabled",
-    defaultValue: realm?.offlineSessionMaxLifespanEnabled,
+    defaultValue: realm.offlineSessionMaxLifespanEnabled,
   });
 
   return (
@@ -82,8 +82,7 @@ export const RealmSettingsTokensTab = ({
             labelIcon={
               <HelpItem
                 helpText="realm-settings-help:defaultSigAlg"
-                forLabel={t("defaultSigAlg")}
-                forID={t("common:helpLabel", { label: t("algorithm") })}
+                fieldLabelId="realm-settings:algorithm"
               />
             }
           >
@@ -137,9 +136,7 @@ export const RealmSettingsTokensTab = ({
             labelIcon={
               <HelpItem
                 helpText="realm-settings-help:revokeRefreshToken"
-                forLabel={t("revokeRefreshToken")}
-                forID="revokeRefreshToken"
-                id="revokeRefreshToken"
+                fieldLabelId="realm-settings:revokeRefreshToken"
               />
             }
           >
@@ -165,8 +162,7 @@ export const RealmSettingsTokensTab = ({
             labelIcon={
               <HelpItem
                 helpText="realm-settings-help:refreshTokenMaxReuse"
-                forLabel={t("refreshTokenMaxReuse")}
-                forID="refreshTokenMaxReuse"
+                fieldLabelId="realm-settings:refreshTokenMaxReuse"
               />
             }
             fieldId="refreshTokenMaxReuse"
@@ -205,14 +201,12 @@ export const RealmSettingsTokensTab = ({
             label={t("accessTokenLifespan")}
             fieldId="accessTokenLifespan"
             helperText={`It is recommended for this value to be shorter than the SSO session idle timeout: ${interpolateTimespan(
-              forHumans(realm?.ssoSessionIdleTimeout!)
+              forHumans(realm.ssoSessionIdleTimeout!)
             )}`}
             labelIcon={
               <HelpItem
                 helpText="realm-settings-help:accessTokenLifespan"
-                forLabel={t("accessTokenLifespan")}
-                forID="accessTokenLifespan"
-                id="accessTokenLifespan"
+                fieldLabelId="realm-settings:accessTokenLifespan"
               />
             }
           >
@@ -224,9 +218,7 @@ export const RealmSettingsTokensTab = ({
               render={({ onChange, value }) => (
                 <TimeSelector
                   validated={
-                    value > realm?.ssoSessionIdleTimeout!
-                      ? "warning"
-                      : "default"
+                    value > realm.ssoSessionIdleTimeout! ? "warning" : "default"
                   }
                   className="kc-access-token-lifespan"
                   data-testid="access-token-lifespan-input"
@@ -245,9 +237,7 @@ export const RealmSettingsTokensTab = ({
             labelIcon={
               <HelpItem
                 helpText="realm-settings-help:accessTokenLifespanImplicitFlow"
-                forLabel={t("accessTokenLifespanImplicitFlow")}
-                forID="accessTokenLifespanImplicitFlow"
-                id="accessTokenLifespanImplicitFlow"
+                fieldLabelId="realm-settings:accessTokenLifespanImplicitFlow"
               />
             }
           >
@@ -273,9 +263,7 @@ export const RealmSettingsTokensTab = ({
             labelIcon={
               <HelpItem
                 helpText="realm-settings-help:clientLoginTimeout"
-                forLabel={t("clientLoginTimeout")}
-                forID="clientLoginTimeout"
-                id="clientLoginTimeout"
+                fieldLabelId="realm-settings:clientLoginTimeout"
               />
             }
           >
@@ -304,9 +292,7 @@ export const RealmSettingsTokensTab = ({
               labelIcon={
                 <HelpItem
                   helpText="realm-settings-help:offlineSessionMax"
-                  forLabel={t("offlineSessionMax")}
-                  forID="offlineSessionMax"
-                  id="offlineSessionMax"
+                  fieldLabelId="realm-settings:offlineSessionMax"
                 />
               }
             >
@@ -346,9 +332,7 @@ export const RealmSettingsTokensTab = ({
             labelIcon={
               <HelpItem
                 helpText="realm-settings-help:userInitiatedActionLifespan"
-                forLabel={t("userInitiatedActionLifespan")}
-                forID="userInitiatedActionLifespan"
-                id="userInitiatedActionLifespan"
+                fieldLabelId="realm-settings:userInitiatedActionLifespan"
               />
             }
           >
@@ -375,9 +359,7 @@ export const RealmSettingsTokensTab = ({
             labelIcon={
               <HelpItem
                 helpText="realm-settings-help:defaultAdminInitiatedActionLifespan"
-                forLabel={t("defaultAdminInitiated")}
-                forID="defaultAdminInitiated"
-                id="defaultAdminInitiated"
+                fieldLabelId="realm-settings:defaultAdminInitiated"
               />
             }
           >

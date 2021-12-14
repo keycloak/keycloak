@@ -180,8 +180,7 @@ export const RealmSettingsEmailTab = ({
               labelIcon={
                 <HelpItem
                   helpText="realm-settings-help:fromDisplayName"
-                  forLabel={t("authentication")}
-                  forID={t(`common:helpLabel`, { label: t("authentication") })}
+                  fieldLabelId="realm-settings:authentication"
                 />
               }
             >
@@ -217,10 +216,7 @@ export const RealmSettingsEmailTab = ({
               labelIcon={
                 <HelpItem
                   helpText="realm-settings-help:replyToDisplayName"
-                  forLabel={t("replyToDisplayName")}
-                  forID={t(`common:helpLabel`, {
-                    label: t("replyToDisplayName"),
-                  })}
+                  fieldLabelId="realm-settings:replyToDisplayName"
                 />
               }
             >
@@ -238,8 +234,7 @@ export const RealmSettingsEmailTab = ({
               labelIcon={
                 <HelpItem
                   helpText="realm-settings-help:envelopeFrom"
-                  forLabel={t("envelopeFrom")}
-                  forID={t(`common:helpLabel`, { label: t("envelopeFrom") })}
+                  fieldLabelId="realm-settings:envelopeFrom"
                 />
               }
             >
@@ -371,8 +366,7 @@ export const RealmSettingsEmailTab = ({
                   labelIcon={
                     <HelpItem
                       helpText="realm-settings-help:password"
-                      forLabel={t("password")}
-                      forID={t(`common:helpLabel`, { label: t("password") })}
+                      fieldLabelId="realm-settings:password"
                     />
                   }
                 >

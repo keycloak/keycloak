@@ -81,12 +81,8 @@ export const RolesList = ({
           {role.name}{" "}
         </Link>
         <HelpItem
-          helpText={t("defaultRole")}
-          forLabel={t("defaultRole")}
-          forID={t("common:helpLabel", {
-            label: t("defaultRole"),
-          })}
-          id="default-role-help-icon"
+          helpText={`${messageBundle}:defaultRole`}
+          fieldLabelId="defaultRole"
         />
       </>
     );

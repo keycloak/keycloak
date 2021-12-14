@@ -27,8 +27,7 @@ export const SignedJWT = () => {
       labelIcon={
         <HelpItem
           helpText="clients-help:signature-algorithm"
-          forLabel={t("signatureAlgorithm")}
-          forID="kc-signature-algorithm"
+          fieldLabelId="clients:signatureAlgorithm"
         />
       }
     >

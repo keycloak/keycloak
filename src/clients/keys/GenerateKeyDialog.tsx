@@ -48,8 +48,7 @@ export const KeyForm = ({
         labelIcon={
           <HelpItem
             helpText="clients-help:archiveFormat"
-            forLabel={t("archiveFormat")}
-            forID="archiveFormat"
+            fieldLabelId="clients:archiveFormat"
           />
         }
         fieldId="archiveFormat"
@@ -88,8 +87,7 @@ export const KeyForm = ({
           labelIcon={
             <HelpItem
               helpText="clients-help:importFile"
-              forLabel={t("importFile")}
-              forID="importFile"
+              fieldLabelId="clients:importFile"
             />
           }
           fieldId="importFile"

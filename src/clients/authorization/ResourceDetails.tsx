@@ -195,8 +195,7 @@ export default function ResourceDetails() {
               labelIcon={
                 <HelpItem
                   helpText="clients-help:owner"
-                  forLabel={t("owner")}
-                  forID={t(`common:helpLabel`, { label: t("owner") })}
+                  fieldLabelId="clients:owner"
                 />
               }
             >
@@ -208,8 +207,7 @@ export default function ResourceDetails() {
               labelIcon={
                 <HelpItem
                   helpText="clients-help:resourceName"
-                  forLabel={t("name")}
-                  forID={t(`common:helpLabel`, { label: t("name") })}
+                  fieldLabelId="name"
                 />
               }
               helperTextInvalid={t("common:required")}
@@ -235,8 +233,7 @@ export default function ResourceDetails() {
               labelIcon={
                 <HelpItem
                   helpText="clients-help:displayName"
-                  forLabel={t("name")}
-                  forID={t(`common:helpLabel`, { label: t("name") })}
+                  fieldLabelId="name"
                 />
               }
             >
@@ -246,11 +243,7 @@ export default function ResourceDetails() {
               label={t("type")}
               fieldId="type"
               labelIcon={
-                <HelpItem
-                  helpText="clients-help:type"
-                  forLabel={t("type")}
-                  forID={t(`common:helpLabel`, { label: t("type") })}
-                />
+                <HelpItem helpText="clients-help:type" fieldLabelId="type" />
               }
             >
               <TextInput id="type" name="type" ref={register} />
@@ -261,8 +254,7 @@ export default function ResourceDetails() {
               labelIcon={
                 <HelpItem
                   helpText="clients-help:uris"
-                  forLabel={t("uris")}
-                  forID={t(`common:helpLabel`, { label: t("uris") })}
+                  fieldLabelId="clients:uris"
                 />
               }
             >
@@ -279,8 +271,7 @@ export default function ResourceDetails() {
               labelIcon={
                 <HelpItem
                   helpText="clients-help:iconUri"
-                  forLabel={t("iconUri")}
-                  forID={t(`common:helpLabel`, { label: t("iconUri") })}
+                  fieldLabelId="clients:iconUri"
                 />
               }
             >
@@ -292,10 +283,7 @@ export default function ResourceDetails() {
               labelIcon={
                 <HelpItem
                   helpText="clients-help:ownerManagedAccess"
-                  forLabel={t("ownerManagedAccess")}
-                  forID={t(`common:helpLabel`, {
-                    label: t("ownerManagedAccess"),
-                  })}
+                  fieldLabelId="clients:ownerManagedAccess"
                 />
               }
               fieldId="ownerManagedAccess"
@@ -322,10 +310,7 @@ export default function ResourceDetails() {
               labelIcon={
                 <HelpItem
                   helpText="clients-help:resourceAttribute"
-                  forLabel={t("resourceAttribute")}
-                  forID={t(`common:helpLabel`, {
-                    label: t("resourceAttribute"),
-                  })}
+                  fieldLabelId="clients:resourceAttribute"
                 />
               }
               fieldId="resourceAttribute"

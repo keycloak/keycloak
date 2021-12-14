@@ -300,9 +300,8 @@ export default function ClientProfileForm() {
                   <Text className="kc-executors" component={TextVariants.h1}>
                     {t("executors")}
                     <HelpItem
-                      helpText={t("realm-settings:executorsHelpText")}
-                      forLabel={t("executorsHelpItem")}
-                      forID={t("executors")}
+                      helpText="realm-settings:executorsHelpText"
+                      fieldLabelId="realm-settings:executors"
                     />
                   </Text>
                 </FlexItem>
@@ -375,10 +374,7 @@ export default function ClientProfileForm() {
                                     <HelpItem
                                       key={type.id}
                                       helpText={type.helpText}
-                                      forLabel={t("executorTypeTextHelpText")}
-                                      forID={t(`common:helpLabel`, {
-                                        label: t("executorTypeTextHelpText"),
-                                      })}
+                                      fieldLabelId="realm-settings:executorTypeTextHelpText"
                                     />
                                     <Button
                                       variant="link"
@@ -455,10 +451,7 @@ export default function ClientProfileForm() {
                                     <HelpItem
                                       key={type.id}
                                       helpText={type.helpText}
-                                      forLabel={t("executorTypeTextHelpText")}
-                                      forID={t(`common:helpLabel`, {
-                                        label: t("executorTypeTextHelpText"),
-                                      })}
+                                      fieldLabelId="realm-settings:executorTypeTextHelpText"
                                     />
                                   ))}
                               </DataListCell>,

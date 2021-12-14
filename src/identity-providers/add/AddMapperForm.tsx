@@ -52,10 +52,8 @@ export const AddMapperForm = ({
         label={t("common:name")}
         labelIcon={
           <HelpItem
-            id="name-help-icon"
             helpText="identity-providers-help:addIdpMapperName"
-            forLabel={t("common:name")}
-            forID={t(`common:helpLabel`, { label: t("common:name") })}
+            fieldLabelId="name"
           />
         }
         fieldId="kc-name"
@@ -83,8 +81,7 @@ export const AddMapperForm = ({
         labelIcon={
           <HelpItem
             helpText="identity-providers-help:syncModeOverride"
-            forLabel={t("syncModeOverride")}
-            forID={t(`common:helpLabel`, { label: t("syncModeOverride") })}
+            fieldLabelId="identity-providers:syncModeOverride"
           />
         }
         fieldId="syncMode"
@@ -136,8 +133,7 @@ export const AddMapperForm = ({
                 ? `identity-providers-help:oidcAttributeImporter`
                 : `identity-providers-help:${mapperType}`
             }
-            forLabel={t("mapperType")}
-            forID={t(`common:helpLabel`, { label: t("mapperType") })}
+            fieldLabelId="identity-providers:mapperType"
           />
         }
         fieldId="identityProviderMapper"

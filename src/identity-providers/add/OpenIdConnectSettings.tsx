@@ -68,8 +68,7 @@ export const OpenIdConnectSettings = () => {
             labelIcon={
               <HelpItem
                 helpText="identity-providers-help:importConfig"
-                forLabel={t("importConfig")}
-                forID="kc-import-config"
+                fieldLabelId="identity-providers:importConfig"
               />
             }
             validated={errors.discoveryError ? "error" : "default"}

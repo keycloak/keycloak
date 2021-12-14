@@ -128,8 +128,7 @@ export const RSAGeneratedForm = ({
           labelIcon={
             <HelpItem
               helpText="client-scopes-help:mapperName"
-              forLabel={t("common:name")}
-              forID={t("common:helpLabel", { label: t("common:name") })}
+              fieldLabelId="client-scopes:providerId"
             />
           }
           fieldId="id"
@@ -156,8 +155,7 @@ export const RSAGeneratedForm = ({
         labelIcon={
           <HelpItem
             helpText="client-scopes-help:mapperName"
-            forLabel={t("common:name")}
-            forID={t("common:helpLabel", { label: t("common:name") })}
+            fieldLabelId="name"
           />
         }
         fieldId="name"
@@ -172,18 +170,16 @@ export const RSAGeneratedForm = ({
             name="name"
             control={form.control}
             defaultValue={providerType}
-            render={({ onChange, value }) => {
-              return (
-                <TextInput
-                  id="name"
-                  type="text"
-                  aria-label={t("consoleDisplayName")}
-                  value={value}
-                  onChange={(value) => onChange(value)}
-                  data-testid="display-name-input"
-                />
-              );
-            }}
+            render={({ onChange, value }) => (
+              <TextInput
+                id="name"
+                type="text"
+                aria-label={t("consoleDisplayName")}
+                value={value}
+                onChange={(value) => onChange(value)}
+                data-testid="display-name-input"
+              />
+            )}
           />
         )}
         {editMode && (
@@ -206,9 +202,8 @@ export const RSAGeneratedForm = ({
         fieldId="kc-enabled"
         labelIcon={
           <HelpItem
-            helpText={t("realm-settings-help:enabled")}
-            forLabel={t("enabled")}
-            forID={t("common:helpLabel", { label: t("enabled") })}
+            helpText="realm-settings-help:enabled"
+            fieldLabelId="enabled"
           />
         }
       >
@@ -236,8 +231,7 @@ export const RSAGeneratedForm = ({
         labelIcon={
           <HelpItem
             helpText="realm-settings-help:active"
-            forLabel={t("active")}
-            forID={t("common:helpLabel", { label: t("active") })}
+            fieldLabelId="realm-settings:active"
           />
         }
       >
@@ -267,8 +261,7 @@ export const RSAGeneratedForm = ({
         labelIcon={
           <HelpItem
             helpText="realm-settings-help:secretSize"
-            forLabel={t("secretSize")}
-            forID={t("common:helpLabel", { label: t("secretSize") })}
+            fieldLabelId="realm-settings:secretSize"
           />
         }
       >
@@ -307,8 +300,7 @@ export const RSAGeneratedForm = ({
         labelIcon={
           <HelpItem
             helpText="realm-settings-help:algorithm"
-            forLabel={t("algorithm")}
-            forID={t("common:helpLabel", { label: t("algorithm") })}
+            fieldLabelId="realm-settings:algorithm"
           />
         }
       >

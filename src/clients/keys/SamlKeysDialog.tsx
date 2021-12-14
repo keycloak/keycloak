@@ -190,8 +190,7 @@ export const SamlKeysDialog = ({
             labelIcon={
               <HelpItem
                 helpText="clients-help:certificate"
-                forLabel={t("certificate")}
-                forID="certificate"
+                fieldLabelId="clients:certificate"
               />
             }
           >

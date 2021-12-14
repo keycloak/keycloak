@@ -12,16 +12,14 @@ export const LdapMapperMsadUserAccount = ({
   form,
 }: LdapMapperMsadUserAccountProps) => {
   const { t } = useTranslation("user-federation");
-  const { t: helpText } = useTranslation("user-federation-help");
 
   return (
     <FormGroup
       label={t("passwordPolicyHintsEnabled")}
       labelIcon={
         <HelpItem
-          helpText={helpText("passwordPolicyHintsEnabledHelp")}
-          forLabel={t("passwordPolicyHintsEnabled")}
-          forID="kc-pw-policy-hints-enabled"
+          helpText="user-federation-help:passwordPolicyHintsEnabledHelp"
+          fieldLabelId="user-federation:passwordPolicyHintsEnabled"
         />
       }
       fieldId="kc-der-formatted"

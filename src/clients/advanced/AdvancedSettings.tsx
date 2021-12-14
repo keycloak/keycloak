@@ -40,8 +40,7 @@ export const AdvancedSettings = ({
           labelIcon={
             <HelpItem
               helpText="clients-help:assertionLifespan"
-              forLabel={t("assertionLifespan")}
-              forID={t(`common:helpLabel`, { label: t("assertionLifespan") })}
+              fieldLabelId="clients:assertionLifespan"
             />
           }
         >
@@ -76,8 +75,7 @@ export const AdvancedSettings = ({
             labelIcon={
               <HelpItem
                 helpText="clients-help:oAuthMutual"
-                forLabel={t("oAuthMutual")}
-                forID={t(`common:helpLabel`, { label: t("oAuthMutual") })}
+                fieldLabelId="clients:oAuthMutual"
               />
             }
           >
@@ -103,10 +101,7 @@ export const AdvancedSettings = ({
             labelIcon={
               <HelpItem
                 helpText="clients-help:keyForCodeExchange"
-                forLabel={t("keyForCodeExchange")}
-                forID={t(`common:helpLabel`, {
-                  label: t("keyForCodeExchange"),
-                })}
+                fieldLabelId="clients:keyForCodeExchange"
               />
             }
           >

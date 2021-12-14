@@ -57,8 +57,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         labelIcon={
           <HelpItem
             helpText={th("ssoServiceUrl")}
-            forLabel={t("ssoServiceUrl")}
-            forID="kc-sso-service-url"
+            fieldLabelId="identity-providers:ssoServiceUrl"
           />
         }
         fieldId="kc-sso-service-url"
@@ -89,8 +88,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         labelIcon={
           <HelpItem
             helpText={th("singleLogoutServiceUrl")}
-            forLabel={t("singleLogoutServiceUrl")}
-            forID="single-logout-service-url"
+            fieldLabelId="identity-providers:singleLogoutServiceUrl"
           />
         }
         fieldId="single-logout-service-url"
@@ -119,8 +117,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         labelIcon={
           <HelpItem
             helpText={th("nameIdPolicyFormat")}
-            forLabel={t("nameIdPolicyFormat")}
-            forID="kc-nameIdPolicyFormat"
+            fieldLabelId="identity-providers:nameIdPolicyFormat"
           />
         }
         fieldId="kc-nameIdPolicyFormat"
@@ -198,8 +195,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         labelIcon={
           <HelpItem
             helpText={th("principalType")}
-            forLabel={t("principalType")}
-            forID="kc-principalType"
+            fieldLabelId="identity-providers:principalType"
           />
         }
         fieldId="kc-principalType"
@@ -253,8 +249,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           labelIcon={
             <HelpItem
               helpText={th("principalAttribute")}
-              forLabel={t("principalAttribute")}
-              forID="principalAttribute"
+              fieldLabelId="identity-providers:principalAttribute"
             />
           }
           fieldId="principalAttribute"
@@ -305,8 +300,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
             labelIcon={
               <HelpItem
                 helpText={th("signatureAlgorithm")}
-                forLabel={t("signatureAlgorithm")}
-                forID="kc-signatureAlgorithm"
+                fieldLabelId="identity-providers:signatureAlgorithm"
               />
             }
             fieldId="kc-signatureAlgorithm"
@@ -344,8 +338,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
             labelIcon={
               <HelpItem
                 helpText={th("samlSignatureKeyName")}
-                forLabel={t("samlSignatureKeyName")}
-                forID="kc-samlSignatureKeyName"
+                fieldLabelId="identity-providers:samlSignatureKeyName"
               />
             }
             fieldId="kc-samlSignatureKeyName"
@@ -423,8 +416,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         labelIcon={
           <HelpItem
             helpText={th("allowedClockSkew")}
-            forLabel={t("allowedClockSkew")}
-            forID="allowedClockSkew"
+            fieldLabelId="identity-providers:allowedClockSkew"
           />
         }
         fieldId="allowedClockSkew"
@@ -446,8 +438,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         labelIcon={
           <HelpItem
             helpText={th("attributeConsumingServiceIndex")}
-            forLabel={t("attributeConsumingServiceIndex")}
-            forID="attributeConsumingServiceIndex"
+            fieldLabelId="identity-providers:attributeConsumingServiceIndex"
           />
         }
         fieldId="attributeConsumingServiceIndex"
@@ -469,8 +460,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         labelIcon={
           <HelpItem
             helpText={th("attributeConsumingServiceName")}
-            forLabel={t("attributeConsumingServiceName")}
-            forID="attributeConsumingServiceName"
+            fieldLabelId="identity-providers:attributeConsumingServiceName"
           />
         }
         fieldId="attributeConsumingServiceName"

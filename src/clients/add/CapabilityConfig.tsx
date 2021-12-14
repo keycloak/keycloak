@@ -48,8 +48,7 @@ export const CapabilityConfig = ({
             labelIcon={
               <HelpItem
                 helpText="clients-help:authentication"
-                forLabel={t("authentication")}
-                forID={t(`common:helpLabel`, { label: t("authentication") })}
+                fieldLabelId="clients:authentication"
               />
             }
           >
@@ -83,8 +82,7 @@ export const CapabilityConfig = ({
             labelIcon={
               <HelpItem
                 helpText="clients-help:authorization"
-                forLabel={t("authorization")}
-                forID={t(`common:helpLabel`, { label: t("authorization") })}
+                fieldLabelId="clients:authorization"
               />
             }
           >
@@ -134,10 +132,7 @@ export const CapabilityConfig = ({
                       />
                       <HelpItem
                         helpText="clients-help:standardFlow"
-                        forLabel={t("standardFlow")}
-                        forID={t(`common:helpLabel`, {
-                          label: t("standardFlow"),
-                        })}
+                        fieldLabelId="clients:standardFlow"
                       />
                     </InputGroup>
                   )}
@@ -160,10 +155,7 @@ export const CapabilityConfig = ({
                       />
                       <HelpItem
                         helpText="clients-help:directAccess"
-                        forLabel={t("directAccess")}
-                        forID={t(`common:helpLabel`, {
-                          label: t("directAccess"),
-                        })}
+                        fieldLabelId="clients:directAccess"
                       />
                     </InputGroup>
                   )}
@@ -186,10 +178,7 @@ export const CapabilityConfig = ({
                       />
                       <HelpItem
                         helpText="clients-help:implicitFlow"
-                        forLabel={t("implicitFlow")}
-                        forID={t(`common:helpLabel`, {
-                          label: t("implicitFlow"),
-                        })}
+                        fieldLabelId="clients:implicitFlow"
                       />
                     </InputGroup>
                   )}
@@ -218,10 +207,7 @@ export const CapabilityConfig = ({
                       />
                       <HelpItem
                         helpText="clients-help:serviceAccount"
-                        forLabel={t("serviceAccount")}
-                        forID={t(`common:helpLabel`, {
-                          label: t("serviceAccount"),
-                        })}
+                        fieldLabelId="clients:serviceAccount"
                       />
                     </InputGroup>
                   )}
@@ -237,10 +223,7 @@ export const CapabilityConfig = ({
             labelIcon={
               <HelpItem
                 helpText="clients-help:encryptAssertions"
-                forLabel={t("encryptAssertions")}
-                forID={t(`common:helpLabel`, {
-                  label: t("encryptAssertions"),
-                })}
+                fieldLabelId="clients:encryptAssertions"
               />
             }
             label={t("encryptAssertions")}
@@ -267,8 +250,7 @@ export const CapabilityConfig = ({
             labelIcon={
               <HelpItem
                 helpText="clients-help:clientSignature"
-                forLabel={t("clientSignature")}
-                forID={t(`common:helpLabel`, { label: t("clientSignature") })}
+                fieldLabelId="clients:clientSignature"
               />
             }
             label={t("clientSignature")}

@@ -295,19 +295,8 @@ export default function AddMapper() {
                         ? "identity-providers-help:attributes"
                         : "identity-providers-help:claims"
                     }
-                    forLabel={
-                      isSAMLAdvancedAttrToRole
-                        ? t("common:attributes")
-                        : t("common:claims")
-                    }
-                    forID={
-                      isSAMLAdvancedAttrToRole
-                        ? t(`common:helpLabel`, {
-                            label: t("attributes"),
-                          })
-                        : t(`common:helpLabel`, {
-                            label: t("claim"),
-                          })
+                    fieldLabelId={
+                      isSAMLAdvancedAttrToRole ? "attributes" : "claims"
                     }
                   />
                 }
@@ -326,10 +315,7 @@ export default function AddMapper() {
                 labelIcon={
                   <HelpItem
                     helpText="identity-providers-help:regexAttributeValues"
-                    forLabel={t("regexAttributeValues")}
-                    forID={t(`common:helpLabel`, {
-                      label: t("regexAttributeValues"),
-                    })}
+                    fieldLabelId="identity-providers:regexAttributeValues"
                   />
                 }
                 fieldId="regexAttributeValues"
@@ -363,12 +349,8 @@ export default function AddMapper() {
                 label={t("template")}
                 labelIcon={
                   <HelpItem
-                    id="target-help-icon"
                     helpText="identity-providers-help:template"
-                    forLabel={t("template")}
-                    forID={t(`common:helpLabel`, {
-                      label: t("template"),
-                    })}
+                    fieldLabelId="identity-providers:template"
                   />
                 }
                 fieldId="kc-user-session-attribute"
@@ -397,12 +379,8 @@ export default function AddMapper() {
                 label={t("target")}
                 labelIcon={
                   <HelpItem
-                    id="user-session-attribute-help-icon"
                     helpText="identity-providers-help:target"
-                    forLabel={t("target")}
-                    forID={t(`common:helpLabel`, {
-                      label: t("target"),
-                    })}
+                    fieldLabelId="identity-providers:target"
                   />
                 }
                 fieldId="kc-target"
@@ -461,12 +439,8 @@ export default function AddMapper() {
                 }
                 labelIcon={
                   <HelpItem
-                    id="user-session-attribute-help-icon"
                     helpText="identity-providers-help:userSessionAttribute"
-                    forLabel={t("userSessionAttribute")}
-                    forID={t(`common:helpLabel`, {
-                      label: t("userSessionAttribute"),
-                    })}
+                    fieldLabelId="identity-providers:userSessionAttribute"
                   />
                 }
                 fieldId="kc-user-session-attribute"
@@ -503,18 +477,12 @@ export default function AddMapper() {
                 }
                 labelIcon={
                   <HelpItem
-                    id="user-session-attribute-value-help-icon"
                     helpText="identity-providers-help:userAttributeValue"
-                    forLabel={
+                    fieldLabelId={
                       isHardcodedUserSessionAttribute
-                        ? t("userSessionAttributeValue")
-                        : t("userAttributeValue")
+                        ? "identity-providers:userSessionAttributeValue"
+                        : "identity-providers:userAttributeValue"
                     }
-                    forID={t(`common:helpLabel`, {
-                      label: isHardcodedUserSessionAttribute
-                        ? t("userSessionAttributeValue")
-                        : t("userAttributeValue"),
-                    })}
                   />
                 }
                 fieldId="kc-user-session-attribute-value"
@@ -555,12 +523,8 @@ export default function AddMapper() {
                     label={t("mapperAttributeName")}
                     labelIcon={
                       <HelpItem
-                        id="user-session-attribute-help-icon"
                         helpText="identity-providers-help:attributeName"
-                        forLabel={t("mapperAttributeName")}
-                        forID={t(`common:helpLabel`, {
-                          label: t("mapperAttributeName"),
-                        })}
+                        fieldLabelId="identity-providers:mapperAttributeName"
                       />
                     }
                     fieldId="kc-attribute-name"
@@ -589,12 +553,8 @@ export default function AddMapper() {
                     label={t("mapperAttributeFriendlyName")}
                     labelIcon={
                       <HelpItem
-                        id="mapper-attribute-friendly-name"
                         helpText="identity-providers-help:friendlyName"
-                        forLabel={t("mapperAttributeFriendlyName")}
-                        forID={t(`common:helpLabel`, {
-                          label: t("mapperAttributeFriendlyName"),
-                        })}
+                        fieldLabelId="identity-providers:mapperAttributeFriendlyName"
                       />
                     }
                     fieldId="kc-friendly-name"
@@ -627,12 +587,8 @@ export default function AddMapper() {
                   label={t("claim")}
                   labelIcon={
                     <HelpItem
-                      id="claim"
                       helpText="identity-providers-help:claim"
-                      forLabel={t("claim")}
-                      forID={t(`common:helpLabel`, {
-                        label: t("claim"),
-                      })}
+                      fieldLabelId="identity-providers:claim"
                     />
                   }
                   fieldId="kc-friendly-name"
@@ -666,20 +622,12 @@ export default function AddMapper() {
                 }
                 labelIcon={
                   <HelpItem
-                    id={
-                      isOIDCclaimToRole
-                        ? "claim-value-help-icon"
-                        : "user-attribute-name-help-icon"
-                    }
                     helpText={
                       isOIDCclaimToRole
                         ? "identity-providers-help:claimValue"
                         : "identity-providers-help:userAttributeName"
                     }
-                    forLabel={t("mapperUserAttributeName")}
-                    forID={t(`common:helpLabel`, {
-                      label: t("mapperUserAttributeName"),
-                    })}
+                    fieldLabelId="identity-providers:mapperUserAttributeName"
                   />
                 }
                 fieldId="kc-user-attribute-name"
@@ -725,12 +673,8 @@ export default function AddMapper() {
                 label={t("socialProfileJSONFieldPath")}
                 labelIcon={
                   <HelpItem
-                    id="social-profile-JSON-field-path-help-icon"
                     helpText="identity-providers-help:socialProfileJSONFieldPath"
-                    forLabel={t("socialProfileJSONFieldPath")}
-                    forID={t(`common:helpLabel`, {
-                      label: t("socialProfileJSONFieldPath"),
-                    })}
+                    fieldLabelId="identity-providers:socialProfileJSONFieldPath"
                   />
                 }
                 fieldId="kc-social-profile-JSON-field-path"
@@ -759,12 +703,8 @@ export default function AddMapper() {
                 label={t("mapperUserAttributeName")}
                 labelIcon={
                   <HelpItem
-                    id="user-attribute-name-help-icon"
                     helpText="identity-providers-help:socialUserAttributeName"
-                    forLabel={t("mapperUserAttributeName")}
-                    forID={t(`common:helpLabel`, {
-                      label: t("mapperUserAttributeName"),
-                    })}
+                    fieldLabelId="identity-providers:mapperUserAttributeName"
                   />
                 }
                 fieldId="kc-user-session-attribute-value"
@@ -800,12 +740,8 @@ export default function AddMapper() {
               label={t("common:role")}
               labelIcon={
                 <HelpItem
-                  id="name-help-icon"
                   helpText="identity-providers-help:role"
-                  forLabel={t("identity-providers-help:role")}
-                  forID={t(`identity-providers:helpLabel`, {
-                    label: t("role"),
-                  })}
+                  fieldLabelId="role"
                 />
               }
               fieldId="kc-role"

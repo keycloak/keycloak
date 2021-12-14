@@ -9,7 +9,6 @@ import { useAdminClient } from "../../context/auth/AdminClient";
 
 export const RedirectUrl = ({ id }: { id: string }) => {
   const { t } = useTranslation("identity-providers");
-  const { t: th } = useTranslation("identity-providers-help");
 
   const adminClient = useAdminClient();
   const { realm } = useRealm();
@@ -20,9 +19,8 @@ export const RedirectUrl = ({ id }: { id: string }) => {
       label={t("redirectURI")}
       labelIcon={
         <HelpItem
-          helpText={th("redirectURI")}
-          forLabel={t("redirectURI")}
-          forID="kc-redirect-uri"
+          helpText="identity-providers-help:redirectURI"
+          fieldLabelId="identity-providers:redirectURI"
         />
       }
       fieldId="kc-redirect-uri"

@@ -12,7 +12,6 @@ export const LdapMapperFullNameAttribute = ({
   form,
 }: LdapMapperFullNameAttributeProps) => {
   const { t } = useTranslation("user-federation");
-  const helpText = useTranslation("user-federation-help").t;
 
   return (
     <>
@@ -20,9 +19,8 @@ export const LdapMapperFullNameAttribute = ({
         label={t("ldapFullNameAttribute")}
         labelIcon={
           <HelpItem
-            helpText={helpText("ldapFullNameAttributeHelp")}
-            forLabel={t("ldapFullNameAttribute")}
-            forID="kc-full-name-attribute"
+            helpText="user-federation-help:ldapFullNameAttributeHelp"
+            fieldLabelId="user-federation:ldapFullNameAttribute"
           />
         }
         fieldId="kc-full-name-attribute"
@@ -42,9 +40,8 @@ export const LdapMapperFullNameAttribute = ({
         label={t("readOnly")}
         labelIcon={
           <HelpItem
-            helpText={helpText("fullNameLdapReadOnlyHelp")}
-            forLabel={t("readOnly")}
-            forID="kc-read-only"
+            helpText="user-federation-help:fullNameLdapReadOnlyHelp"
+            fieldLabelId="user-federation:readOnly"
           />
         }
         fieldId="kc-read-only"
@@ -70,9 +67,8 @@ export const LdapMapperFullNameAttribute = ({
         label={t("writeOnly")}
         labelIcon={
           <HelpItem
-            helpText={helpText("fullNameLdapWriteOnlyHelp")}
-            forLabel={t("writeOnly")}
-            forID="kc-write-only"
+            helpText="user-federation-help:fullNameLdapWriteOnlyHelp"
+            fieldLabelId="user-federation:writeOnly"
           />
         }
         fieldId="kc-read-only"

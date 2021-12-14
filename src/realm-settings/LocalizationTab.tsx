@@ -185,8 +185,7 @@ export const LocalizationTab = ({
             labelIcon={
               <HelpItem
                 helpText="realm-settings-help:internationalization"
-                forLabel={t("internationalization")}
-                forID="kc-internationalization"
+                fieldLabelId="realm-settings:internationalization"
               />
             }
           >

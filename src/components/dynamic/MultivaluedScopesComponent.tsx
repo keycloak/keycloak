@@ -49,8 +49,7 @@ export const MultivaluedScopesComponent = ({
       labelIcon={
         <HelpItem
           helpText={t("realm-settings-help:clientScopesConditionTooltip")}
-          forLabel={t("clientScopes")}
-          forID={name!}
+          fieldLabelId="realm-settings:clientScopesCondition"
         />
       }
       fieldId={name!}

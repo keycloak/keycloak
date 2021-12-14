@@ -105,8 +105,7 @@ export const RSAGeneratedModal = ({
           labelIcon={
             <HelpItem
               helpText="realm-settings-help:displayName"
-              forLabel={t("loginTheme")}
-              forID="kc-console-display-name"
+              fieldLabelId="realm-settings:loginTheme"
             />
           }
         >
@@ -131,9 +130,8 @@ export const RSAGeneratedModal = ({
           fieldId="kc-enabled"
           labelIcon={
             <HelpItem
-              helpText={t("realm-settings-help:enabled")}
-              forLabel={t("enabled")}
-              forID="kc-enabled"
+              helpText="realm-settings:realm-settings-help:enabled"
+              fieldLabelId="enabled"
             />
           }
         >
@@ -165,8 +163,7 @@ export const RSAGeneratedModal = ({
           labelIcon={
             <HelpItem
               helpText="realm-settings-help:active"
-              forLabel={t("active")}
-              forID="kc-active"
+              fieldLabelId="realm-settings:active"
             />
           }
         >
@@ -200,8 +197,7 @@ export const RSAGeneratedModal = ({
               labelIcon={
                 <HelpItem
                   helpText="realm-settings-help:algorithm"
-                  forLabel={t("algorithm")}
-                  forID="kc-algorithm"
+                  fieldLabelId="realm-settings:algorithm"
                 />
               }
             >
@@ -244,8 +240,7 @@ export const RSAGeneratedModal = ({
               labelIcon={
                 <HelpItem
                   helpText="realm-settings-help:AESKeySize"
-                  forLabel={t("AESKeySize")}
-                  forID="kc-aes-key-size"
+                  fieldLabelId="realm-settings:AESKeySize"
                 />
               }
             >

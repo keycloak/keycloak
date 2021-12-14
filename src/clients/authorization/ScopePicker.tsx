@@ -54,8 +54,7 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
       labelIcon={
         <HelpItem
           helpText="clients-help:scopes"
-          forLabel={t("scopes")}
-          forID={t(`common:helpLabel`, { label: t("scopes") })}
+          fieldLabelId="clients:scopes"
         />
       }
       fieldId="scopes"

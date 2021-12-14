@@ -130,8 +130,7 @@ export const RSAForm = ({
           labelIcon={
             <HelpItem
               helpText="client-scopes-help:mapperName"
-              forLabel={t("common:name")}
-              forID={t("common:helpLabel", { label: t("common:name") })}
+              fieldLabelId="realm-settings:providerId"
             />
           }
           fieldId="id"
@@ -158,8 +157,7 @@ export const RSAForm = ({
         labelIcon={
           <HelpItem
             helpText="client-scopes-help:mapperName"
-            forLabel={t("common:name")}
-            forID={t("common:helpLabel", { label: t("common:name") })}
+            fieldLabelId="name"
           />
         }
         fieldId="name"
@@ -210,8 +208,7 @@ export const RSAForm = ({
         labelIcon={
           <HelpItem
             helpText={t("realm-settings-help:enabled")}
-            forLabel={t("enabled")}
-            forID={t("common:helpLabel", { label: t("enabled") })}
+            fieldLabelId="enabled"
           />
         }
       >
@@ -239,8 +236,7 @@ export const RSAForm = ({
         labelIcon={
           <HelpItem
             helpText="realm-settings-help:active"
-            forLabel={t("active")}
-            forID={t("common:helpLabel", { label: t("active") })}
+            fieldLabelId="active"
           />
         }
       >
@@ -270,8 +266,7 @@ export const RSAForm = ({
         labelIcon={
           <HelpItem
             helpText="realm-settings-help:algorithm"
-            forLabel={t("algorithm")}
-            forID={t("common:helpLabel", { label: t("algorithm") })}
+            fieldLabelId="realm-settings:algorithm"
           />
         }
       >
@@ -310,8 +305,7 @@ export const RSAForm = ({
         labelIcon={
           <HelpItem
             helpText="realm-settings-help:privateRSAKey"
-            forLabel={t("privateRSAKey")}
-            forID={t("common:helpLabel", { label: t("privateRSAKey") })}
+            fieldLabelId="realm-settings:privateRSAKey"
           />
         }
       >
@@ -340,8 +334,7 @@ export const RSAForm = ({
         labelIcon={
           <HelpItem
             helpText="realm-settings-help:x509Certificate"
-            forLabel={t("x509Certificate")}
-            forID={t("common:helpLabel", { label: t("x509Certificate") })}
+            fieldLabelId="realm-settings:x509Certificate"
           />
         }
       >

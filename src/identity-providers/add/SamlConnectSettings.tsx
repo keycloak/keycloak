@@ -67,8 +67,7 @@ export const SamlConnectSettings = () => {
         labelIcon={
           <HelpItem
             helpText="identity-providers-help:serviceProviderEntityId"
-            forLabel={t("serviceProviderEntityId")}
-            forID="kc-service-provider-entity-id"
+            fieldLabelId="identity-providers:serviceProviderEntityId"
           />
         }
       >
@@ -90,8 +89,7 @@ export const SamlConnectSettings = () => {
             labelIcon={
               <HelpItem
                 helpText="identity-providers-help:importConfig"
-                forLabel={t("importConfig")}
-                forID="kc-import-config"
+                fieldLabelId="identity-providers:importConfig"
               />
             }
             validated={errors.discoveryError ? "error" : "default"}

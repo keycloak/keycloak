@@ -42,10 +42,7 @@ export const RealmSettingsLoginTab = ({
             labelIcon={
               <HelpItem
                 helpText={t("userRegistrationHelpText")}
-                forLabel={t("userRegistration")}
-                forID={t(`common:helpLabel`, {
-                  label: t("userRegistration"),
-                })}
+                fieldLabelId="realm-settings:userRegistration"
               />
             }
             hasNoPaddingTop
@@ -74,9 +71,8 @@ export const RealmSettingsLoginTab = ({
             fieldId="kc-forgot-pw"
             labelIcon={
               <HelpItem
-                helpText={t("forgotPasswordHelpText")}
-                forLabel={t("forgotPassword")}
-                forID={t(`common:helpLabel`, { label: t("forgotPassword") })}
+                helpText="realm-settings:forgotPasswordHelpText"
+                fieldLabelId="realm-settings:forgotPassword"
               />
             }
             hasNoPaddingTop
@@ -105,9 +101,8 @@ export const RealmSettingsLoginTab = ({
             fieldId="kc-remember-me"
             labelIcon={
               <HelpItem
-                helpText={t("rememberMeHelpText")}
-                forLabel={t("rememberMe")}
-                forID={t(`common:helpLabel`, { label: t("rememberMe") })}
+                helpText="realm-settings:rememberMeHelpText"
+                fieldLabelId="realm-settings:rememberMe"
               />
             }
             hasNoPaddingTop
@@ -140,9 +135,8 @@ export const RealmSettingsLoginTab = ({
             fieldId="kc-email-as-username"
             labelIcon={
               <HelpItem
-                helpText={t("emailAsUsernameHelpText")}
-                forLabel={t("emailAsUsername")}
-                forID={t(`common:helpLabel`, { label: t("emailAsUsername") })}
+                helpText="realm-settings:emailAsUsernameHelpText"
+                fieldLabelId="realm-settings:emailAsUsername"
               />
             }
             hasNoPaddingTop
@@ -175,9 +169,8 @@ export const RealmSettingsLoginTab = ({
             fieldId="kc-login-with-email"
             labelIcon={
               <HelpItem
-                helpText={t("loginWithEmailHelpText")}
-                forLabel={t("loginWithEmail")}
-                forID={t(`common:helpLabel`, { label: t("loginWithEmail") })}
+                helpText="realm-settings:loginWithEmailHelpText"
+                fieldLabelId="realm-settings:loginWithEmail"
               />
             }
             hasNoPaddingTop
@@ -206,9 +199,8 @@ export const RealmSettingsLoginTab = ({
             fieldId="kc-duplicate-emails"
             labelIcon={
               <HelpItem
-                helpText={t("duplicateEmailsHelpText")}
-                forLabel={t("duplicateEmails")}
-                forID={t(`common:helpLabel`, { label: t("duplicateEmails") })}
+                helpText="realm-settings:duplicateEmailsHelpText"
+                fieldLabelId="realm-settings:duplicateEmails"
               />
             }
             hasNoPaddingTop
@@ -249,9 +241,8 @@ export const RealmSettingsLoginTab = ({
             fieldId="kc-verify-email"
             labelIcon={
               <HelpItem
-                helpText={t("verifyEmailHelpText")}
-                forLabel={t("verifyEmail")}
-                forID={t(`common:helpLabel`, { label: t("verifyEmail") })}
+                helpText="realm-settings:verifyEmailHelpText"
+                fieldLabelId="realm-settings:verifyEmail"
               />
             }
             hasNoPaddingTop

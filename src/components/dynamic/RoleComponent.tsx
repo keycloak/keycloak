@@ -123,7 +123,7 @@ export const RoleComponent = ({ name, label, helpText }: ComponentProps) => {
     <FormGroup
       label={t(label!)}
       labelIcon={
-        <HelpItem helpText={t(helpText!)} forLabel={name!} forID={name!} />
+        <HelpItem helpText={t(helpText!)} fieldLabelId={`dynamic:${label}`} />
       }
       validated={errors[fieldName] ? "error" : "default"}
       helperTextInvalid={t("common:required")}

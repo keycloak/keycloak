@@ -124,8 +124,7 @@ export const RSAModal = ({
           labelIcon={
             <HelpItem
               helpText="realm-settings-help:displayName"
-              forLabel={t("loginTheme")}
-              forID="kc-console-display-name"
+              fieldLabelId="realm-settings:consoleDisplayName"
             />
           }
         >
@@ -151,8 +150,7 @@ export const RSAModal = ({
           labelIcon={
             <HelpItem
               helpText={t("realm-settings-help:enabled")}
-              forLabel={t("enabled")}
-              forID="kc-enabled"
+              fieldLabelId="enabled"
             />
           }
         >
@@ -184,8 +182,7 @@ export const RSAModal = ({
           labelIcon={
             <HelpItem
               helpText="realm-settings-help:active"
-              forLabel={t("active")}
-              forID="kc-active"
+              fieldLabelId="realm-settings:active"
             />
           }
         >
@@ -219,8 +216,7 @@ export const RSAModal = ({
               labelIcon={
                 <HelpItem
                   helpText="realm-settings-help:algorithm"
-                  forLabel={t("algorithm")}
-                  forID="kc-algorithm"
+                  fieldLabelId="realm-settings:algorithm"
                 />
               }
             >
@@ -262,8 +258,7 @@ export const RSAModal = ({
               labelIcon={
                 <HelpItem
                   helpText="realm-settings-help:privateRSAKey"
-                  forLabel={t("privateRSAKey")}
-                  forID="kc-rsa-key"
+                  fieldLabelId="realm-settings:privateRSAKey"
                 />
               }
             >
@@ -292,8 +287,7 @@ export const RSAModal = ({
               labelIcon={
                 <HelpItem
                   helpText="realm-settings-help:x509Certificate"
-                  forLabel={t("x509Certificate")}
-                  forID="kc-x509-certificatw"
+                  fieldLabelId="realm-settings:x509Certificate"
                 />
               }
             >

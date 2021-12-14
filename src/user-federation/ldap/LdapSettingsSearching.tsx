@@ -25,7 +25,7 @@ export const LdapSettingsSearching = ({
   showSectionDescription = false,
 }: LdapSettingsSearchingProps) => {
   const { t } = useTranslation("user-federation");
-  const helpText = useTranslation("user-federation-help").t;
+  const { t: helpText } = useTranslation("user-federation-help");
 
   const [isSearchScopeDropdownOpen, setIsSearchScopeDropdownOpen] =
     useState(false);
@@ -46,9 +46,8 @@ export const LdapSettingsSearching = ({
           label={t("editMode")}
           labelIcon={
             <HelpItem
-              helpText={helpText("editModeLdapHelp")}
-              forLabel={t("editMode")}
-              forID="kc-edit-mode"
+              helpText="user-federation-help:editModeLdapHelp"
+              fieldLabelId="user-federation:editMode"
             />
           }
           fieldId="kc-edit-mode"
@@ -93,9 +92,8 @@ export const LdapSettingsSearching = ({
           label={t("usersDN")}
           labelIcon={
             <HelpItem
-              helpText={helpText("usersDNHelp")}
-              forLabel={t("usersDN")}
-              forID="kc-console-users-dn"
+              helpText="user-federation-help:usersDNHelp"
+              fieldLabelId="user-federation:usersDn"
             />
           }
           fieldId="kc-console-users-dn"
@@ -123,9 +121,8 @@ export const LdapSettingsSearching = ({
           label={t("usernameLdapAttribute")}
           labelIcon={
             <HelpItem
-              helpText={helpText("usernameLdapAttributeHelp")}
-              forLabel={t("usernameLdapAttribute")}
-              forID="kc-username-ldap-attribute"
+              helpText="user-federation-help:usernameLdapAttributeHelp"
+              fieldLabelId="user-federation:usernameLdapAttribute"
             />
           }
           fieldId="kc-username-ldap-attribute"
@@ -155,9 +152,8 @@ export const LdapSettingsSearching = ({
           label={t("rdnLdapAttribute")}
           labelIcon={
             <HelpItem
-              helpText={helpText("rdnLdapAttributeHelp")}
-              forLabel={t("rdnLdapAttribute")}
-              forID="kc-rdn-ldap-attribute"
+              helpText="user-federation-help:rdnLdapAttributeHelp"
+              fieldLabelId="user-federation:rdnLdapAttribute"
             />
           }
           fieldId="kc-rdn-ldap-attribute"
@@ -187,9 +183,8 @@ export const LdapSettingsSearching = ({
           label={t("uuidLdapAttribute")}
           labelIcon={
             <HelpItem
-              helpText={helpText("uuidLdapAttributeHelp")}
-              forLabel={t("uuidLdapAttribute")}
-              forID="kc-uuid-ldap-attribute"
+              helpText="user-federation-help:uuidLdapAttributeHelp"
+              fieldLabelId="user-federation:uuidLdapAttribute"
             />
           }
           fieldId="kc-uuid-ldap-attribute"
@@ -219,9 +214,8 @@ export const LdapSettingsSearching = ({
           label={t("userObjectClasses")}
           labelIcon={
             <HelpItem
-              helpText={helpText("userObjectClassesHelp")}
-              forLabel={t("userObjectClasses")}
-              forID="kc-user-object-classes"
+              helpText="user-federation-help:userObjectClassesHelp"
+              fieldLabelId="user-federation:userObjectClasses"
             />
           }
           fieldId="kc-user-object-classes"
@@ -251,9 +245,8 @@ export const LdapSettingsSearching = ({
           label={t("userLdapFilter")}
           labelIcon={
             <HelpItem
-              helpText={helpText("userLdapFilterHelp")}
-              forLabel={t("userLdapFilter")}
-              forID="kc-user-ldap-filter"
+              helpText="user-federation-help:userLdapFilterHelp"
+              fieldLabelId="user-federation:userLdapFilter"
             />
           }
           fieldId="kc-user-ldap-filter"
@@ -280,9 +273,8 @@ export const LdapSettingsSearching = ({
           label={t("searchScope")}
           labelIcon={
             <HelpItem
-              helpText={helpText("searchScopeHelp")}
-              forLabel={t("searchScope")}
-              forID="kc-search-scope"
+              helpText="user-federation-help:searchScopeHelp"
+              fieldLabelId="user-federation:searchScope"
             />
           }
           fieldId="kc-search-scope"
@@ -320,9 +312,8 @@ export const LdapSettingsSearching = ({
           label={t("readTimeout")}
           labelIcon={
             <HelpItem
-              helpText={helpText("readTimeoutHelp")}
-              forLabel={t("readTimeout")}
-              forID="kc-read-timeout"
+              helpText="user-federation-help:readTimeoutHelp"
+              fieldLabelId="user-federation:readTimeout"
             />
           }
           fieldId="kc-read-timeout"
@@ -339,9 +330,8 @@ export const LdapSettingsSearching = ({
           label={t("pagination")}
           labelIcon={
             <HelpItem
-              helpText={helpText("paginationHelp")}
-              forLabel={t("pagination")}
-              forID="kc-console-pagination"
+              helpText="user-federation-help:paginationHelp"
+              fieldLabelId="user-federation:pagination"
             />
           }
           fieldId="kc-console-pagination"

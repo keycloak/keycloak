@@ -25,8 +25,7 @@ export const Toggle = ({ name, label }: { name: string; label: string }) => {
       labelIcon={
         <HelpItem
           helpText={t(`clients-help:${label}`)}
-          forLabel={t(label)}
-          forID={label}
+          fieldLabelId={`clients:${label}`}
         />
       }
     >
@@ -66,8 +65,7 @@ export const SamlConfig = () => {
         labelIcon={
           <HelpItem
             helpText="clients-help:nameIdFormat"
-            forLabel={t("nameIdFormat")}
-            forID={t("common:helpLabel", { label: t("nameIdFormat") })}
+            fieldLabelId="clients:nameIdFormat"
           />
         }
       >

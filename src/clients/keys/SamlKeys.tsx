@@ -82,8 +82,7 @@ const KeySection = ({
             labelIcon={
               <HelpItem
                 helpText={`clients-help:${key}`}
-                forLabel={t(key)}
-                forID={t(`common:helpLabel`, { label: t(key) })}
+                fieldLabelId={`clients:${key}`}
               />
             }
             label={t(key)}

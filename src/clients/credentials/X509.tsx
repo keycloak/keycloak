@@ -14,8 +14,7 @@ export const X509 = () => {
       labelIcon={
         <HelpItem
           helpText="clients-help:subject"
-          forLabel={t("subject")}
-          forID="kc-subject"
+          fieldLabelId="clients:subject"
         />
       }
       helperTextInvalid={t("common:required")}

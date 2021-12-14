@@ -13,6 +13,8 @@ export default {
     alias: "Name of the configuration",
     otpType:
       "totp is Time-Based One Time Password. 'hotp' is a counter base one time password in which the server keeps a counter to hash against.",
+    webAuthnPolicyRpEntityName:
+      "Human-readable server name as WebAuthn Relying Party",
     otpHashAlgorithm:
       "What hashing algorithm should be used to generate the OTP.",
     otpPolicyDigits: "How many digits should the OTP have?",

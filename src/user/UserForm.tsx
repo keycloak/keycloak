@@ -206,8 +206,7 @@ export const UserForm = ({
         labelIcon={
           <HelpItem
             helpText="users-help:emailVerified"
-            forLabel={t("emailVerified")}
-            forID={t(`common:helpLabel`, { label: t("emailVerified") })}
+            fieldLabelId="users:emailVerified"
           />
         }
       >
@@ -263,8 +262,7 @@ export const UserForm = ({
           labelIcon={
             <HelpItem
               helpText="users-help:temporaryLocked"
-              forLabel={t("temporaryLocked")}
-              forID={t(`common:helpLabel`, { label: t("temporaryLocked") })}
+              fieldLabelId="users:temporaryLocked"
             />
           }
         >
@@ -286,11 +284,7 @@ export const UserForm = ({
         label={t("common:enabled")}
         fieldId="kc-enabled"
         labelIcon={
-          <HelpItem
-            helpText="users-help:disabled"
-            forLabel={t("enabled")}
-            forID={t(`common:helpLabel`, { label: t("enabled") })}
-          />
+          <HelpItem helpText="users-help:disabled" fieldLabelId="enabled" />
         }
       >
         <Controller
@@ -317,8 +311,7 @@ export const UserForm = ({
         labelIcon={
           <HelpItem
             helpText="users-help:requiredUserActions"
-            forLabel={t("requiredUserActions")}
-            forID={t(`common:helpLabel`, { label: t("requiredUserActions") })}
+            fieldLabelId="users:requiredUserActions"
           />
         }
       >
@@ -362,11 +355,7 @@ export const UserForm = ({
           validated={errors.requiredActions ? "error" : "default"}
           helperTextInvalid={t("common:required")}
           labelIcon={
-            <HelpItem
-              helpText="users-help:groups"
-              forLabel={t("common:groups")}
-              forID={t(`common:helpLabel`, { label: t("common:groups") })}
-            />
+            <HelpItem helpText="users-help:groups" fieldLabelId="groups" />
           }
         >
           <Controller

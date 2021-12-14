@@ -106,8 +106,7 @@ JavaKeystoreModalProps) => {
           labelIcon={
             <HelpItem
               helpText="realm-settings-help:displayName"
-              forLabel={t("loginTheme")}
-              forID="kc-console-display-name"
+              fieldLabelId="realm-settings:consoleDisplayName"
             />
           }
         >
@@ -133,8 +132,7 @@ JavaKeystoreModalProps) => {
           labelIcon={
             <HelpItem
               helpText={t("realm-settings-help:enabled")}
-              forLabel={t("enabled")}
-              forID="kc-enabled"
+              fieldLabelId="enabled"
             />
           }
         >
@@ -166,8 +164,7 @@ JavaKeystoreModalProps) => {
           labelIcon={
             <HelpItem
               helpText="realm-settings-help:active"
-              forLabel={t("active")}
-              forID="kc-active"
+              fieldLabelId="realm-settings:active"
             />
           }
         >
@@ -201,8 +198,7 @@ JavaKeystoreModalProps) => {
               labelIcon={
                 <HelpItem
                   helpText="realm-settings-help:algorithm"
-                  forLabel={t("algorithm")}
-                  forID="kc-email-theme"
+                  fieldLabelId="realm-settings:algorithm"
                 />
               }
             >
@@ -248,8 +244,7 @@ JavaKeystoreModalProps) => {
               labelIcon={
                 <HelpItem
                   helpText="realm-settings-help:keystore"
-                  forLabel={t("keystore")}
-                  forID="kc-keystore"
+                  fieldLabelId="realm-settings:keystore"
                 />
               }
             >
@@ -274,8 +269,7 @@ JavaKeystoreModalProps) => {
               labelIcon={
                 <HelpItem
                   helpText="realm-settings-help:keystorePassword"
-                  forLabel={t("keystorePassword")}
-                  forID="kc-keystore-password"
+                  fieldLabelId="realm-settings:keystorePassword"
                 />
               }
             >
@@ -300,8 +294,7 @@ JavaKeystoreModalProps) => {
               labelIcon={
                 <HelpItem
                   helpText="realm-settings-help:keyAlias"
-                  forLabel={t("keyAlias")}
-                  forID="kc-key-alias"
+                  fieldLabelId="realm-settings:keyAlias"
                 />
               }
             >
@@ -326,8 +319,7 @@ JavaKeystoreModalProps) => {
               labelIcon={
                 <HelpItem
                   helpText="realm-settings-help:keyPassword"
-                  forLabel={t("keyPassword")}
-                  forID="kc-key-password"
+                  fieldLabelId="realm-settings:keyPassword"
                 />
               }
             >

@@ -21,7 +21,7 @@ export const BooleanComponent = ({
       label={t(label!)}
       fieldId={name!}
       labelIcon={
-        <HelpItem helpText={t(helpText!)} forLabel={t(label!)} forID={name!} />
+        <HelpItem helpText={t(helpText!)} fieldLabelId={`dynamic:${label}`} />
       }
     >
       <Controller

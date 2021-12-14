@@ -44,7 +44,6 @@ export default function LdapMapperDetails() {
   const history = useHistory();
   const { realm } = useRealm();
   const { t } = useTranslation("user-federation");
-  const helpText = useTranslation("user-federation-help").t;
   const { addAlert, addError } = useAlerts();
 
   const [isMapperDropdownOpen, setIsMapperDropdownOpen] = useState(false);
@@ -137,9 +136,8 @@ export default function LdapMapperDetails() {
             label={t("common:name")}
             labelIcon={
               <HelpItem
-                helpText={helpText("nameHelp")}
-                forLabel={t("common:name")}
-                forID="kc-ldap-mapper-name"
+                helpText="user-federation-help:nameHelp"
+                fieldLabelId="name"
               />
             }
             fieldId="kc-ldap-mapper-name"
@@ -183,9 +181,8 @@ export default function LdapMapperDetails() {
               label={t("common:mapperType")}
               labelIcon={
                 <HelpItem
-                  helpText={helpText("mapperTypeHelp")}
-                  forLabel={t("common:mapperType")}
-                  forID="kc-ldap-mapper-type"
+                  helpText="user-federation-help:mapperTypeHelp"
+                  fieldLabelId="mapperType"
                 />
               }
               fieldId="kc-ldap-mapper-type"
@@ -206,9 +203,8 @@ export default function LdapMapperDetails() {
               label={t("common:mapperType")}
               labelIcon={
                 <HelpItem
-                  helpText={helpText("mapperTypeHelp")}
-                  forLabel={t("common:mapperType")}
-                  forID="kc-providerId"
+                  helpText="user-federation-help:mapperTypeHelp"
+                  fieldLabelId="mapperType"
                 />
               }
               fieldId="kc-providerId"

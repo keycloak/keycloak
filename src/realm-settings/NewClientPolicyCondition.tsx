@@ -227,15 +227,12 @@ export default function NewClientPolicyCondition() {
               <HelpItem
                 helpText={
                   conditionType
-                    ? t(
-                        `realm-settings-help:${camelCase(
-                          conditionType.replace(/-/g, " ")
-                        )}`
-                      )
-                    : t("anyClient")
+                    ? `realm-settings-help:${camelCase(
+                        conditionType.replace(/-/g, " ")
+                      )}`
+                    : "realm-settings:anyClient"
                 }
-                forLabel={t("conditionType")}
-                forID="conditionType"
+                fieldLabelId="realm-settings:conditionType"
               />
             }
           >

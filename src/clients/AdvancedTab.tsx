@@ -196,8 +196,7 @@ export const AdvancedTab = ({
               labelIcon={
                 <HelpItem
                   helpText="clients-help:notBefore"
-                  forLabel={t("notBefore")}
-                  forID={t(`common:helpLabel`, { label: t("notBefore") })}
+                  fieldLabelId="clients:notBefore"
                 />
               }
             >
@@ -256,10 +255,7 @@ export const AdvancedTab = ({
               labelIcon={
                 <HelpItem
                   helpText="clients-help:nodeReRegistrationTimeout"
-                  forLabel={t("nodeReRegistrationTimeout")}
-                  forID={t(`common:helpLabel`, {
-                    label: t("nodeReRegistrationTimeout"),
-                  })}
+                  fieldLabelId="clients:nodeReRegistrationTimeout"
                 />
               }
             >

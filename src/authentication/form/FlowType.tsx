@@ -24,8 +24,7 @@ export const FlowType = () => {
       labelIcon={
         <HelpItem
           helpText="authentication-help:topLevelFlowType"
-          forLabel={t("flowType")}
-          forID="flowType"
+          fieldLabelId="authentication:flowType"
         />
       }
       fieldId="flowType"

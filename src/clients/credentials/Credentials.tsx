@@ -142,8 +142,7 @@ export const Credentials = ({ clientId, save }: CredentialsProps) => {
               labelIcon={
                 <HelpItem
                   helpText="clients-help:client-authenticator-type"
-                  forLabel={t("clientAuthenticator")}
-                  forID="kc-client-authenticator-type"
+                  fieldLabelId="clients:clientAuthenticator"
                 />
               }
             >
@@ -210,8 +209,7 @@ export const Credentials = ({ clientId, save }: CredentialsProps) => {
               labelIcon={
                 <HelpItem
                   helpText="clients-help:registration-access-token"
-                  forLabel={t("registrationAccessToken")}
-                  forID="kc-access-token"
+                  fieldLabelId="clients:registrationAccessToken"
                 />
               }
             >

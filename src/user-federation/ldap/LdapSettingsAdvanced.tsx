@@ -18,7 +18,7 @@ export const LdapSettingsAdvanced = ({
   showSectionDescription = false,
 }: LdapSettingsAdvancedProps) => {
   const { t } = useTranslation("user-federation");
-  const helpText = useTranslation("user-federation-help").t;
+  const { t: helpText } = useTranslation("user-federation-help");
 
   return (
     <>
@@ -35,9 +35,8 @@ export const LdapSettingsAdvanced = ({
           label={t("enableLdapv3Password")}
           labelIcon={
             <HelpItem
-              helpText={helpText("enableLdapv3PasswordHelp")}
-              forLabel={t("enableLdapv3Password")}
-              forID="kc-enable-ldapv3-password"
+              helpText="users-federation-help:enableLdapv3PasswordHelp"
+              fieldLabelId="users-federation:enableLdapv3Password"
             />
           }
           fieldId="kc-enable-ldapv3-password"
@@ -64,9 +63,8 @@ export const LdapSettingsAdvanced = ({
           label={t("validatePasswordPolicy")}
           labelIcon={
             <HelpItem
-              helpText={helpText("validatePasswordPolicyHelp")}
-              forLabel={t("validatePasswordPolicy")}
-              forID="kc-validate-password-policy"
+              helpText="users-federation-help:validatePasswordPolicyHelp"
+              fieldLabelId="users-federation:validatePasswordPolicy"
             />
           }
           fieldId="kc-validate-password-policy"
@@ -93,9 +91,8 @@ export const LdapSettingsAdvanced = ({
           label={t("trustEmail")}
           labelIcon={
             <HelpItem
-              helpText={helpText("trustEmailHelp")}
-              forLabel={t("trustEmail")}
-              forID="kc-trust-email"
+              helpText="users-federation-help:trustEmailHelp"
+              fieldLabelId="users-federation:trustEmail"
             />
           }
           fieldId="kc-trust-email"

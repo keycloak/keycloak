@@ -31,8 +31,7 @@ export const FineGrainSamlEndpointConfig = ({
         labelIcon={
           <HelpItem
             helpText="clients-help:assertionConsumerServicePostBindingURL"
-            forLabel={t("assertionConsumerServicePostBindingURL")}
-            forID="assertionConsumerServicePostBindingURL"
+            fieldLabelId="clients:assertionConsumerServicePostBindingURL"
           />
         }
       >
@@ -49,8 +48,7 @@ export const FineGrainSamlEndpointConfig = ({
         labelIcon={
           <HelpItem
             helpText="clients-help:assertionConsumerServiceRedirectBindingURL"
-            forLabel={t("assertionConsumerServiceRedirectBindingURL")}
-            forID="assertionConsumerServiceRedirectBindingURL"
+            fieldLabelId="clients:assertionConsumerServiceRedirectBindingURL"
           />
         }
       >
@@ -67,8 +65,7 @@ export const FineGrainSamlEndpointConfig = ({
         labelIcon={
           <HelpItem
             helpText="clients-help:logoutServicePostBindingURL"
-            forLabel={t("logoutServicePostBindingURL")}
-            forID="logoutServicePostBindingURL"
+            fieldLabelId="clients:logoutServicePostBindingURL"
           />
         }
       >
@@ -85,8 +82,7 @@ export const FineGrainSamlEndpointConfig = ({
         labelIcon={
           <HelpItem
             helpText="clients-help:logoutServiceRedirectBindingURL"
-            forLabel={t("logoutServiceRedirectBindingURL")}
-            forID="logoutServiceRedirectBindingURL"
+            fieldLabelId="clients:logoutServiceRedirectBindingURL"
           />
         }
       >
@@ -103,8 +99,7 @@ export const FineGrainSamlEndpointConfig = ({
         labelIcon={
           <HelpItem
             helpText="clients-help:logoutServiceArtifactBindingUrl"
-            forLabel={t("logoutServiceArtifactBindingUrl")}
-            forID="logoutServiceArtifactBindingUrl"
+            fieldLabelId="clients:logoutServiceArtifactBindingUrl"
           />
         }
       >
@@ -121,8 +116,7 @@ export const FineGrainSamlEndpointConfig = ({
         labelIcon={
           <HelpItem
             helpText="clients-help:artifactBindingUrl"
-            forLabel={t("artifactBindingUrl")}
-            forID="artifactBindingUrl"
+            fieldLabelId="clients:artifactBindingUrl"
           />
         }
       >
@@ -139,8 +133,7 @@ export const FineGrainSamlEndpointConfig = ({
         labelIcon={
           <HelpItem
             helpText="clients-help:artifactResolutionService"
-            forLabel={t("artifactResolutionService")}
-            forID="artifactResolutionService"
+            fieldLabelId="clients:artifactResolutionService"
           />
         }
       >

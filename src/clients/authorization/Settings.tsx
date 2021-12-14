@@ -69,8 +69,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
           labelIcon={
             <HelpItem
               helpText="clients-help:import"
-              forLabel={t("import")}
-              forID={t(`common:helpLabel`, { label: t("import") })}
+              fieldLabelId="clients:import"
             />
           }
         >
@@ -84,8 +83,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
           labelIcon={
             <HelpItem
               helpText="clients-help:policyEnforcementMode"
-              forLabel={t("policyEnforcementMode")}
-              forID="policyEnforcementMode"
+              fieldLabelId="clients:policyEnforcementMode"
             />
           }
           fieldId="policyEnforcementMode"
@@ -119,8 +117,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
           labelIcon={
             <HelpItem
               helpText="clients-help:decisionStrategy"
-              forLabel={t("decisionStrategy")}
-              forID="decisionStrategy"
+              fieldLabelId="clients:decisionStrategy"
             />
           }
           fieldId="decisionStrategy"
@@ -155,9 +152,8 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
           fieldId="allowRemoteResourceManagement"
           labelIcon={
             <HelpItem
-              helpText={t("allowRemoteResourceManagement")}
-              forLabel={t("allowRemoteResourceManagement")}
-              forID={"allowRemoteResourceManagement"}
+              helpText="clients-help:allowRemoteResourceManagement"
+              fieldLabelId="clients:allowRemoteResourceManagement"
             />
           }
         >

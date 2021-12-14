@@ -25,7 +25,7 @@ export const SettingsCache = ({
   showSectionDescription = false,
 }: SettingsCacheProps) => {
   const { t } = useTranslation("user-federation");
-  const helpText = useTranslation("user-federation-help").t;
+  const { t: helpText } = useTranslation("user-federation-help");
 
   const [isCachePolicyDropdownOpen, setIsCachePolicyDropdownOpen] =
     useState(false);
@@ -96,9 +96,8 @@ export const SettingsCache = ({
           label={t("cachePolicy")}
           labelIcon={
             <HelpItem
-              helpText={helpText("cachePolicyHelp")}
-              forLabel={t("cachePolicy")}
-              forID="kc-cache-policy"
+              helpText="user-federation-help:cachePolicyHelp"
+              fieldLabelId="user-federation:cachePolicy"
             />
           }
           fieldId="kc-cache-policy"
@@ -137,9 +136,8 @@ export const SettingsCache = ({
             label={t("evictionDay")}
             labelIcon={
               <HelpItem
-                helpText={helpText("evictionDayHelp")}
-                forLabel={t("evictionDay")}
-                forID="kc-eviction-day"
+                helpText="user-federation-help:evictionDayHelp"
+                fieldLabelId="user-federation:evictionDay"
               />
             }
             isRequired
@@ -198,9 +196,8 @@ export const SettingsCache = ({
               label={t("evictionHour")}
               labelIcon={
                 <HelpItem
-                  helpText={helpText("evictionHourHelp")}
-                  forLabel={t("evictionHour")}
-                  forID="kc-eviction-hour"
+                  helpText="user-federation-help:evictionHourHelp"
+                  fieldLabelId="user-federation:evictionHour"
                 />
               }
               isRequired
@@ -233,9 +230,8 @@ export const SettingsCache = ({
               label={t("evictionMinute")}
               labelIcon={
                 <HelpItem
-                  helpText={helpText("evictionMinuteHelp")}
-                  forLabel={t("evictionMinute")}
-                  forID="kc-eviction-minute"
+                  helpText="user-federation-help:evictionMinuteHelp"
+                  fieldLabelId="user-federation:evictionMinute"
                 />
               }
               isRequired
@@ -273,9 +269,8 @@ export const SettingsCache = ({
             label={t("maxLifespan")}
             labelIcon={
               <HelpItem
-                helpText={helpText("maxLifespanHelp")}
-                forLabel={t("maxLifespan")}
-                forID="kc-max-lifespan"
+                helpText="user-federation-help:maxLifespanHelp"
+                fieldLabelId="user-federation:maxLifespan"
               />
             }
             fieldId="kc-max-lifespan"

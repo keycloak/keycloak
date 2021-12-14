@@ -31,7 +31,6 @@ export const LdapMapperHardcodedLdapRole = ({
   form,
 }: LdapMapperHardcodedLdapRoleProps) => {
   const { t } = useTranslation("user-federation");
-  const helpText = useTranslation("user-federation-help").t;
   const [showAssign, setShowAssign] = useState(false);
 
   const selectRoles = async (rows: Row[]) => {
@@ -62,9 +61,8 @@ export const LdapMapperHardcodedLdapRole = ({
         label={t("common:role")}
         labelIcon={
           <HelpItem
-            helpText={helpText("roleHelp")}
-            forLabel={t("common:role")}
-            forID="kc-role"
+            helpText="user-federation-help:roleHelp"
+            fieldLabelId="role"
           />
         }
         fieldId="kc-role"

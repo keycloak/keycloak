@@ -95,11 +95,7 @@ export const AddSubFlowModal = ({
           }
           isRequired
           labelIcon={
-            <HelpItem
-              helpText="authentication-help:name"
-              forLabel={t("name")}
-              forID="name"
-            />
+            <HelpItem helpText="authentication-help:name" fieldLabelId="name" />
           }
         >
           <TextInput
@@ -119,8 +115,7 @@ export const AddSubFlowModal = ({
           labelIcon={
             <HelpItem
               helpText="authentication-help:description"
-              forLabel={t("common:description")}
-              forID="description"
+              fieldLabelId="description"
             />
           }
         >
@@ -137,8 +132,7 @@ export const AddSubFlowModal = ({
           labelIcon={
             <HelpItem
               helpText="authentication-help:flowType"
-              forLabel={t("flowType")}
-              forID="flowType"
+              fieldLabelId="authentication:flowType"
             />
           }
           fieldId="flowType"
@@ -180,8 +174,7 @@ export const AddSubFlowModal = ({
             labelIcon={
               <HelpItem
                 helpText="authentication-help:flowType"
-                forLabel={t("flowType")}
-                forID="flowType"
+                fieldLabelId="authentication:flowType"
               />
             }
             fieldId="flowType"

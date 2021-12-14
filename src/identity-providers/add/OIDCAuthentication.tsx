@@ -20,7 +20,6 @@ const clientAuthenticationTypes = [
 
 export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
   const { t } = useTranslation("identity-providers");
-  const { t: th } = useTranslation("identity-providers-help");
 
   const { control } = useFormContext();
   const [openClientAuth, setOpenClientAuth] = useState(false);
@@ -36,9 +35,8 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
         label={t("clientAuthentication")}
         labelIcon={
           <HelpItem
-            helpText={th("clientAuthentication")}
-            forLabel={t("clientAuthentication")}
-            forID="clientAuthentication"
+            helpText="identity-providers-help:clientAuthentication"
+            fieldLabelId="identity-providers:clientAuthentication"
           />
         }
         fieldId="clientAuthentication"

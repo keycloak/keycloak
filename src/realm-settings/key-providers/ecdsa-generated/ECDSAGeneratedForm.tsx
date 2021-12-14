@@ -122,8 +122,7 @@ export const ECDSAGeneratedForm = ({
           labelIcon={
             <HelpItem
               helpText="client-scopes-help:mapperName"
-              forLabel={t("common:name")}
-              forID={t("common:helpLabel", { label: t("common:name") })}
+              fieldLabelId="client-scopes:providerId"
             />
           }
           fieldId="id"
@@ -150,8 +149,7 @@ export const ECDSAGeneratedForm = ({
         labelIcon={
           <HelpItem
             helpText="client-scopes-help:mapperName"
-            forLabel={t("common:name")}
-            forID={t("common:helpLabel", { label: t("common:name") })}
+            fieldLabelId="name"
           />
         }
         fieldId="name"
@@ -201,8 +199,7 @@ export const ECDSAGeneratedForm = ({
         labelIcon={
           <HelpItem
             helpText={t("realm-settings-help:enabled")}
-            forLabel={t("enabled")}
-            forID={t("common:helpLabel", { label: t("enabled") })}
+            fieldLabelId="enabled"
           />
         }
       >
@@ -230,8 +227,7 @@ export const ECDSAGeneratedForm = ({
         labelIcon={
           <HelpItem
             helpText="realm-settings-help:active"
-            forLabel={t("active")}
-            forID={t("common:helpLabel", { label: t("active") })}
+            fieldLabelId="realm-settings:active"
           />
         }
       >
@@ -261,8 +257,7 @@ export const ECDSAGeneratedForm = ({
         labelIcon={
           <HelpItem
             helpText="realm-settings-help:ellipticCurve"
-            forLabel={t("ellipticCurve")}
-            forID={t("common:helpLabel", { label: t("ellipticCurve") })}
+            fieldLabelId="realm-settings:ellipticCurve"
           />
         }
       >

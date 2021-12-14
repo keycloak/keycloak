@@ -46,7 +46,7 @@ export default {
     serverInfo: "Server info",
     realmInfo: "Realm info",
     help: "Help",
-    helpLabel: "More help for {{label}}",
+    helpLabel: "More help for '{{label}}'",
     helpEnabled: "Help on",
     helpDisabled: "Help off",
     documentation: "Documentation",

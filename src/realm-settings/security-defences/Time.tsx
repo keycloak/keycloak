@@ -23,8 +23,7 @@ export const Time = ({
       labelIcon={
         <HelpItem
           helpText={`realm-settings-help:${name}`}
-          forLabel={t(name)}
-          forID={name}
+          fieldLabelId={`realm-settings:${name}`}
         />
       }
       validated={

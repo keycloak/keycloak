@@ -504,9 +504,8 @@ export default function NewClientPolicyForm() {
                   <Text className="kc-conditions" component={TextVariants.h1}>
                     {t("conditions")}
                     <HelpItem
-                      helpText={t("realm-settings-help:conditions")}
-                      forLabel={t("conditionsHelpItem")}
-                      forID={t("conditions")}
+                      helpText="realm-settings:realm-settings-help:conditions"
+                      fieldLabelId="realm-settings:conditions"
                     />
                   </Text>
                 </FlexItem>
@@ -570,10 +569,7 @@ export default function NewClientPolicyForm() {
                                     <>
                                       <HelpItem
                                         helpText={type.helpText}
-                                        forLabel={t("conditionTypeHelpText")}
-                                        forID={t(`common:helpLabel`, {
-                                          label: t("conditionTypeHelpText"),
-                                        })}
+                                        fieldLabelId={condition.condition}
                                       />
                                       <Button
                                         variant="link"
@@ -625,9 +621,8 @@ export default function NewClientPolicyForm() {
                   >
                     {t("clientProfiles")}
                     <HelpItem
-                      helpText={t("realm-settings-help:clientProfiles")}
-                      forLabel={t("clientProfilesHelpItem")}
-                      forID={t("clientProfiles")}
+                      helpText="realm-settings-help:clientProfiles"
+                      fieldLabelId="realm-settings:clientProfiles"
                     />
                   </Text>
                 </FlexItem>
@@ -677,10 +672,7 @@ export default function NewClientPolicyForm() {
                                           (profile) => type === profile.name
                                         )?.description
                                       }
-                                      forLabel={profile}
-                                      forID={t(`common:helpLabel`, {
-                                        label: profile,
-                                      })}
+                                      fieldLabelId={profile}
                                     />
                                     <Button
                                       variant="link"

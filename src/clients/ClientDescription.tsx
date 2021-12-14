@@ -20,11 +20,7 @@ export const ClientDescription = () => {
     <FormAccess role="manage-clients" unWrap>
       <FormGroup
         labelIcon={
-          <HelpItem
-            helpText="clients-help:clientId"
-            forLabel={t("common:clientId")}
-            forID="kc-client-id"
-          />
+          <HelpItem helpText="clients-help:clientId" fieldLabelId="clientId" />
         }
         label={t("common:clientId")}
         fieldId="kc-client-id"
@@ -46,11 +42,7 @@ export const ClientDescription = () => {
       </FormGroup>
       <FormGroup
         labelIcon={
-          <HelpItem
-            helpText="clients-help:clientName"
-            forLabel={t("common:name")}
-            forID="kc-name"
-          />
+          <HelpItem helpText="clients-help:clientName" fieldLabelId="name" />
         }
         label={t("common:name")}
         fieldId="kc-name"
@@ -61,8 +53,7 @@ export const ClientDescription = () => {
         labelIcon={
           <HelpItem
             helpText="clients-help:description"
-            forLabel={t("common:description")}
-            forID="kc-description"
+            fieldLabelId="description"
           />
         }
         label={t("common:description")}

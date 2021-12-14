@@ -25,11 +25,7 @@ export const NameDescription = () => {
         }
         isRequired
         labelIcon={
-          <HelpItem
-            helpText="authentication-help:name"
-            forLabel={t("common:name")}
-            forID="kc-name"
-          />
+          <HelpItem helpText="authentication-help:name" fieldLabelId="name" />
         }
       >
         <TextInput
@@ -49,8 +45,7 @@ export const NameDescription = () => {
         labelIcon={
           <HelpItem
             helpText="authentication-help:description"
-            forLabel={t("common:description")}
-            forID="kc-description"
+            fieldLabelId="description"
           />
         }
         validated={

@@ -105,9 +105,8 @@ export const LdapSettingsConnection = ({
           label={t("connectionURL")}
           labelIcon={
             <HelpItem
-              helpText={helpText("consoleDisplayConnectionUrlHelp")}
-              forLabel={t("connectionURL")}
-              forID="kc-console-connection-url"
+              helpText="users-federation-help:consoleDisplayConnectionUrlHelp"
+              fieldLabelId="users-federation:connectionURL"
             />
           }
           fieldId="kc-console-connection-url"
@@ -136,9 +135,8 @@ export const LdapSettingsConnection = ({
           label={t("enableStartTls")}
           labelIcon={
             <HelpItem
-              helpText={helpText("enableStartTlsHelp")}
-              forLabel={t("enableStartTls")}
-              forID="kc-enable-start-tls"
+              helpText="users-federation-help:enableStartTlsHelp"
+              fieldLabelId="users-federation:enableStartTls"
             />
           }
           fieldId="kc-enable-start-tls"
@@ -165,9 +163,8 @@ export const LdapSettingsConnection = ({
           label={t("useTruststoreSpi")}
           labelIcon={
             <HelpItem
-              helpText={helpText("useTruststoreSpiHelp")}
-              forLabel={t("useTruststoreSpi")}
-              forID="kc-use-truststore-spi"
+              helpText="users-federation-help:useTruststoreSpiHelp"
+              fieldLabelId="users-federation:useTruststoreSpi"
             />
           }
           fieldId="kc-use-truststore-spi"
@@ -200,9 +197,8 @@ export const LdapSettingsConnection = ({
           label={t("connectionPooling")}
           labelIcon={
             <HelpItem
-              helpText={helpText("connectionPoolingHelp")}
-              forLabel={t("connectionPooling")}
-              forID="kc-connection-pooling"
+              helpText="users-federation-help:connectionPoolingHelp"
+              fieldLabelId="users-federation:connectionPooling"
             />
           }
           fieldId="kc-connection-pooling"
@@ -228,9 +224,8 @@ export const LdapSettingsConnection = ({
           label={t("connectionTimeout")}
           labelIcon={
             <HelpItem
-              helpText={helpText("connectionTimeoutHelp")}
-              forLabel={t("connectionTimeout")}
-              forID="kc-console-connection-timeout"
+              helpText="users-federation-help:connectionTimeoutHelp"
+              fieldLabelId="users-federation:consoleTimeout"
             />
           }
           fieldId="kc-console-connection-timeout"
@@ -256,9 +251,8 @@ export const LdapSettingsConnection = ({
           label={t("bindType")}
           labelIcon={
             <HelpItem
-              helpText={helpText("bindTypeHelp")}
-              forLabel={t("bindType")}
-              forID="kc-bind-type"
+              helpText="users-federation-help:bindTypeHelp"
+              fieldLabelId="users-federation:bindType"
             />
           }
           fieldId="kc-bind-type"
@@ -297,9 +291,8 @@ export const LdapSettingsConnection = ({
               label={t("bindDn")}
               labelIcon={
                 <HelpItem
-                  helpText={helpText("bindDnHelp")}
-                  forLabel={t("bindDn")}
-                  forID="kc-console-bind-dn"
+                  helpText="users-federation-help:bindDnHelp"
+                  fieldLabelId="users-federation:bindDn"
                 />
               }
               fieldId="kc-console-bind-dn"
@@ -323,9 +316,8 @@ export const LdapSettingsConnection = ({
               label={t("bindCredentials")}
               labelIcon={
                 <HelpItem
-                  helpText={helpText("bindCredentialsHelp")}
-                  forLabel={t("bindCredentials")}
-                  forID="kc-console-bind-credentials"
+                  helpText="users-federation-help:bindCredentialsHelp"
+                  fieldLabelId="users-federation:bindCredentials"
                 />
               }
               fieldId="kc-console-bind-credentials"

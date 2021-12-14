@@ -6,18 +6,14 @@ import { useHelp } from "./HelpHeader";
 
 type HelpItemProps = {
   helpText: string | ReactNode;
-  forLabel: string;
-  forID: string;
+  fieldLabelId: string;
   noVerticalAlign?: boolean;
   unWrap?: boolean;
-  id?: string;
 };
 
 export const HelpItem = ({
   helpText,
-  forLabel,
-  forID,
-  id,
+  fieldLabelId,
   noVerticalAlign = true,
   unWrap = false,
 }: HelpItemProps) => {
@@ -30,10 +26,11 @@ export const HelpItem = ({
       <>
         {!unWrap && (
           <button
-            id={id}
-            aria-label={t(`helpLabel`, { label: forLabel })}
+            data-testid={`help-label-${t(fieldLabelId)
+              .toLowerCase()
+              .replace(/\s/g, "-")}`}
+            aria-label={t("helpLabel", { label: t(fieldLabelId) })}
             onClick={(e) => e.preventDefault()}
-            aria-describedby={forID}
             className="pf-c-form__group-label-help"
           >
             <HelpIcon noVerticalAlign={noVerticalAlign} />

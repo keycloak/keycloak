@@ -12,7 +12,6 @@ export const LdapMapperHardcodedAttribute = ({
   form,
 }: LdapMapperHardcodedAttributeProps) => {
   const { t } = useTranslation("user-federation");
-  const helpText = useTranslation("user-federation-help").t;
 
   return (
     <>
@@ -20,9 +19,8 @@ export const LdapMapperHardcodedAttribute = ({
         label={t("userModelAttributeName")}
         labelIcon={
           <HelpItem
-            helpText={helpText("userModelAttributeNameHelp")}
-            forLabel={t("userModelAttributeName")}
-            forID="kc-user-model-attribute"
+            helpText="user-federation-help:userModelAttributeNameHelp"
+            fieldLabelId="user-federation:userModelAttributeName"
           />
         }
         fieldId="kc-user-model-attribute"
@@ -41,9 +39,8 @@ export const LdapMapperHardcodedAttribute = ({
         label={t("attributeValue")}
         labelIcon={
           <HelpItem
-            helpText={helpText("attributeValueHelp")}
-            forLabel={t("attributeValue")}
-            forID="kc-attribute-value"
+            helpText="user-federation-help:attributeValueHelp"
+            fieldLabelId="user-federation:attributeValue"
           />
         }
         fieldId="kc-attribute-value"

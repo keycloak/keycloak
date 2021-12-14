@@ -38,8 +38,7 @@ export const Certificate = ({ keyInfo, plain = false }: CertificateProps) => {
             labelIcon={
               <HelpItem
                 helpText="clients-help:certificate"
-                forLabel={t("certificate")}
-                forID={id}
+                fieldLabelId={`clients:${id}`}
               />
             }
           >

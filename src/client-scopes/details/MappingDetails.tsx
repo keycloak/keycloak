@@ -213,8 +213,7 @@ export default function MappingDetails() {
             labelIcon={
               <HelpItem
                 helpText="client-scopes-help:mapperName"
-                forLabel={t("common:name")}
-                forID="name"
+                fieldLabelId="name"
               />
             }
             fieldId="name"

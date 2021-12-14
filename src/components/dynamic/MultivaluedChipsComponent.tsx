@@ -49,7 +49,7 @@ export const MultivaluedChipsComponent = ({
     <FormGroup
       label={t(label!)}
       labelIcon={
-        <HelpItem helpText={t(helpText!)} forLabel={label!} forID={name!} />
+        <HelpItem helpText={t(helpText!)} fieldLabelId={`dynamic:${label}`} />
       }
       fieldId={name!}
     >

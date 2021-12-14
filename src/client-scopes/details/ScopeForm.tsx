@@ -63,12 +63,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
       <FormGroup
         label={t("common:name")}
         labelIcon={
-          <HelpItem
-            id="name-help-icon"
-            helpText="client-scopes-help:name"
-            forLabel={t("common:name")}
-            forID={t(`common:helpLabel`, { label: t("common:name") })}
-          />
+          <HelpItem helpText="client-scopes-help:name" fieldLabelId="name" />
         }
         fieldId="kc-name"
         isRequired
@@ -92,8 +87,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         labelIcon={
           <HelpItem
             helpText="client-scopes-help:description"
-            forLabel={t("common:description")}
-            forID={t(`common:helpLabel`, { label: t("common:description") })}
+            fieldLabelId="description"
           />
         }
         fieldId="kc-description"
@@ -121,8 +115,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         labelIcon={
           <HelpItem
             helpText="client-scopes-help:type"
-            forLabel={t("type")}
-            forID={t(`common:helpLabel`, { label: t("type") })}
+            fieldLabelId="client-scopes:type"
           />
         }
         fieldId="type"
@@ -154,8 +147,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           labelIcon={
             <HelpItem
               helpText="client-scopes-help:protocol"
-              forLabel="protocol"
-              forID={t(`common:helpLabel`, { label: t("protocol") })}
+              fieldLabelId="client-scopes:protocol"
             />
           }
           fieldId="kc-protocol"
@@ -199,10 +191,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         labelIcon={
           <HelpItem
             helpText="client-scopes-help:displayOnConsentScreen"
-            forLabel={t("displayOnConsentScreen")}
-            forID={t(`common:helpLabel`, {
-              label: t("displayOnConsentScreen"),
-            })}
+            fieldLabelId="client-scopes:displayOnConsentScreen"
           />
         }
         fieldId="kc-display.on.consent.screen"
@@ -228,8 +217,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           labelIcon={
             <HelpItem
               helpText="client-scopes-help:consentScreenText"
-              forLabel={t("consentScreenText")}
-              forID={t(`common:helpLabel`, { label: t("consentScreenText") })}
+              fieldLabelId="client-scopes:consentScreenText"
             />
           }
           fieldId="kc-consent-screen-text"
@@ -248,8 +236,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         labelIcon={
           <HelpItem
             helpText="client-scopes-help:includeInTokenScope"
-            forLabel={t("includeInTokenScope")}
-            forID={t(`common:helpLabel`, { label: t("includeInTokenScope") })}
+            fieldLabelId="client-scopes:includeInTokenScope"
           />
         }
         fieldId="includeInTokenScope"
@@ -274,8 +261,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         labelIcon={
           <HelpItem
             helpText="client-scopes-help:guiOrder"
-            forLabel={t("guiOrder")}
-            forID={t(`common:helpLabel`, { label: t("guiOrder") })}
+            fieldLabelId="client-scopes:guiOrder"
           />
         }
         fieldId="kc-gui-order"

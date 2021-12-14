@@ -122,8 +122,7 @@ export const AESGeneratedForm = ({
           labelIcon={
             <HelpItem
               helpText="client-scopes-help:mapperName"
-              forLabel={t("common:name")}
-              forID="name"
+              fieldLabelId="name"
             />
           }
           fieldId="id"
@@ -150,8 +149,7 @@ export const AESGeneratedForm = ({
         labelIcon={
           <HelpItem
             helpText="client-scopes-help:mapperName"
-            forLabel={t("common:name")}
-            forID="name"
+            fieldLabelId="name"
           />
         }
         fieldId="name"
@@ -202,8 +200,7 @@ export const AESGeneratedForm = ({
         labelIcon={
           <HelpItem
             helpText={t("realm-settings-help:enabled")}
-            forLabel={t("enabled")}
-            forID="kc-enabled"
+            fieldLabelId="enabled"
           />
         }
       >
@@ -235,8 +232,7 @@ export const AESGeneratedForm = ({
         labelIcon={
           <HelpItem
             helpText="realm-settings-help:active"
-            forLabel={t("active")}
-            forID="kc-active"
+            fieldLabelId="realm-settings:active"
           />
         }
       >
@@ -270,8 +266,7 @@ export const AESGeneratedForm = ({
         labelIcon={
           <HelpItem
             helpText="realm-settings-help:AESKeySize"
-            forLabel={t("AESKeySize")}
-            forID="kc-aes-key-size"
+            fieldLabelId="realm-settings:AESKeySize"
           />
         }
       >

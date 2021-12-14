@@ -30,8 +30,7 @@ export const GeneralSettings = () => {
         labelIcon={
           <HelpItem
             helpText="clients-help:clientType"
-            forLabel={t("clientType")}
-            forID={t(`common:helpLabel`, { label: t("clientType") })}
+            fieldLabelId="clients:clientType"
           />
         }
       >

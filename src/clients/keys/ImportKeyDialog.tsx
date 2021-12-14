@@ -92,8 +92,7 @@ export const ImportKeyDialog = ({
           labelIcon={
             <HelpItem
               helpText="clients-help:archiveFormat"
-              forLabel={t("archiveFormat")}
-              forID="archiveFormat"
+              fieldLabelId="clients:archiveFormat"
             />
           }
           fieldId="archiveFormat"

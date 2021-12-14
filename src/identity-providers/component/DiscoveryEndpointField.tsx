@@ -69,8 +69,7 @@ export const DiscoveryEndpointField = ({
         labelIcon={
           <HelpItem
             helpText="identity-providers-help:useDiscoveryEndpoint"
-            forLabel={t("useDiscoveryEndpoint")}
-            forID="kc-discovery-endpoint-switch"
+            fieldLabelId="identity-providers:discoveryEndpoint"
           />
         }
       >
@@ -89,8 +88,7 @@ export const DiscoveryEndpointField = ({
           labelIcon={
             <HelpItem
               helpText="identity-providers-help:discoveryEndpoint"
-              forLabel={t("discoveryEndpoint")}
-              forID="kc-discovery-endpoint"
+              fieldLabelId="identity-providers:discoveryEndpoint"
             />
           }
           validated={

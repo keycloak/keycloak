@@ -22,8 +22,7 @@ export const StoreSettings = ({
         labelIcon={
           <HelpItem
             helpText="clients-help:keyAlias"
-            forLabel={t("keyAlias")}
-            forID="keyAlias"
+            fieldLabelId="clients:keyAlias"
           />
         }
       >
@@ -42,8 +41,7 @@ export const StoreSettings = ({
           labelIcon={
             <HelpItem
               helpText="clients-help:keyPassword"
-              forLabel={t("keyPassword")}
-              forID="keyPassword"
+              fieldLabelId="clients:keyPassword"
             />
           }
         >
@@ -61,8 +59,7 @@ export const StoreSettings = ({
         labelIcon={
           <HelpItem
             helpText="clients-help:storePassword"
-            forLabel={t("storePassword")}
-            forID="storePassword"
+            fieldLabelId="clients:storePassword"
           />
         }
       >

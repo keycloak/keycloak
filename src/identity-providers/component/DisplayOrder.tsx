@@ -7,7 +7,6 @@ import { HelpItem } from "../../components/help-enabler/HelpItem";
 
 export const DisplayOrder = () => {
   const { t } = useTranslation("identity-providers");
-  const { t: th } = useTranslation("identity-providers-help");
 
   const { control } = useFormContext();
 
@@ -16,9 +15,8 @@ export const DisplayOrder = () => {
       label={t("displayOrder")}
       labelIcon={
         <HelpItem
-          helpText={th("displayOrder")}
-          forLabel={t("displayOrder")}
-          forID="kc-display-order"
+          helpText="identity-providers-help:displayOrder"
+          fieldLabelId="identity-providers:displayOrder"
         />
       }
       fieldId="kc-display-order"

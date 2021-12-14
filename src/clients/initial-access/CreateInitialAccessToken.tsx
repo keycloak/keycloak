@@ -73,8 +73,7 @@ export default function CreateInitialAccessToken() {
             labelIcon={
               <HelpItem
                 helpText="clients-help:expiration"
-                forLabel={t("expiration")}
-                forID="expiration"
+                fieldLabelId="clients:expiration"
               />
             }
           >
@@ -98,8 +97,7 @@ export default function CreateInitialAccessToken() {
             labelIcon={
               <HelpItem
                 helpText="clients-help:count"
-                forLabel={t("count")}
-                forID="count"
+                fieldLabelId="clients:count"
               />
             }
           >

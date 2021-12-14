@@ -12,7 +12,6 @@ import type { IdentityProviderParams } from "../routes/IdentityProvider";
 
 export const SamlGeneralSettings = ({ id }: { id: string }) => {
   const { t } = useTranslation("identity-providers");
-  const { t: th } = useTranslation("identity-providers-help");
   const { tab } = useParams<IdentityProviderParams>();
 
   const { register, errors } = useFormContext();
@@ -25,9 +24,8 @@ export const SamlGeneralSettings = ({ id }: { id: string }) => {
         label={t("alias")}
         labelIcon={
           <HelpItem
-            helpText={th("alias")}
-            forLabel={t("alias")}
-            forID="alias"
+            helpText="identity-providers-help:alias"
+            fieldLabelId="identity-providers:alias"
           />
         }
         fieldId="alias"

@@ -40,8 +40,7 @@ const LoginFlow = ({
       labelIcon={
         <HelpItem
           helpText={`identity-providers-help:${label}`}
-          forLabel={t(label)}
-          forID={label}
+          fieldLabelId={`identity-providers:${label}`}
         />
       }
       fieldId={label}
@@ -146,8 +145,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
         labelIcon={
           <HelpItem
             helpText="identity-providers-help:syncMode"
-            forLabel={t("syncMode")}
-            forID="syncMode"
+            fieldLabelId="identity-providers:syncMode"
           />
         }
         fieldId="syncMode"

@@ -19,8 +19,7 @@ export const FormGroupField: FunctionComponent<FormGroupFieldProps> = ({
       labelIcon={
         <HelpItem
           helpText={`identity-providers-help:${label}`}
-          forLabel={t(label)}
-          forID={label}
+          fieldLabelId={`identity-providers:${label}`}
         />
       }
     >

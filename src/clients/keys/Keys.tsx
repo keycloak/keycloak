@@ -131,8 +131,7 @@ export const Keys = ({ clientId, save }: KeysProps) => {
               labelIcon={
                 <HelpItem
                   helpText="clients-help:useJwksUrl"
-                  forLabel={t("useJwksUrl")}
-                  forID={t(`common:helpLabel`, { label: t("useJwksUrl") })}
+                  fieldLabelId="clients:useJwksUrl"
                 />
               }
             >
@@ -165,8 +164,7 @@ export const Keys = ({ clientId, save }: KeysProps) => {
                 labelIcon={
                   <HelpItem
                     helpText="clients-help:jwksUrl"
-                    forLabel={t("jwksUrl")}
-                    forID="jwksUrl"
+                    fieldLabelId="clients:jwksUrl"
                   />
                 }
               >

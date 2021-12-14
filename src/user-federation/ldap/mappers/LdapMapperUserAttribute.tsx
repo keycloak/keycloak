@@ -14,7 +14,6 @@ export const LdapMapperUserAttribute = ({
   mapperType,
 }: LdapMapperUserAttributeProps) => {
   const { t } = useTranslation("user-federation");
-  const helpText = useTranslation("user-federation-help").t;
 
   return (
     <>
@@ -22,9 +21,8 @@ export const LdapMapperUserAttribute = ({
         label={t("userModelAttribute")}
         labelIcon={
           <HelpItem
-            helpText={helpText("userModelAttributeHelp")}
-            forLabel={t("userModelAttribute")}
-            forID="kc-user-model-attribute"
+            helpText="user-federation-help:userModelAttributeHelp"
+            fieldLabelId="user-federation:userModelAttribute"
           />
         }
         fieldId="kc-user-model-attribute"
@@ -43,9 +41,8 @@ export const LdapMapperUserAttribute = ({
         label={t("ldapAttribute")}
         labelIcon={
           <HelpItem
-            helpText={helpText("ldapAttributeHelp")}
-            forLabel={t("ldapAttribute")}
-            forID="kc-ldap-attribute"
+            helpText="user-federation:ldapAttributeHelp"
+            fieldLabelId="user-federation:ldapAttribute"
           />
         }
         fieldId="kc-ldap-attribute"
@@ -64,9 +61,8 @@ export const LdapMapperUserAttribute = ({
         label={t("readOnly")}
         labelIcon={
           <HelpItem
-            helpText={helpText("readOnlyHelp")}
-            forLabel={t("readOnly")}
-            forID="kc-read-only"
+            helpText="user-federation-help:readOnlyHelp"
+            fieldLabelId="user-federation:readOnly"
           />
         }
         fieldId="kc-read-only"
@@ -94,9 +90,8 @@ export const LdapMapperUserAttribute = ({
         label={t("alwaysReadValueFromLdap")}
         labelIcon={
           <HelpItem
-            helpText={helpText("alwaysReadValueFromLdapHelp")}
-            forLabel={t("alwaysReadValueFromLdap")}
-            forID="kc-always-read-value"
+            helpText="user-federation:alwaysReadValueFromLdapHelp"
+            fieldLabelId="user-federation:alwaysReadValueFromLdap"
           />
         }
         fieldId="kc-always-read-value"
@@ -122,9 +117,8 @@ export const LdapMapperUserAttribute = ({
         label={t("isMandatoryInLdap")}
         labelIcon={
           <HelpItem
-            helpText={helpText("isMandatoryInLdapHelp")}
-            forLabel={t("isMandatoryInLdap")}
-            forID="kc-is-mandatory"
+            helpText="user-federation-help:isMandatoryInLdapHelp"
+            fieldLabelId="user-federation:isMandatoryInLdap"
           />
         }
         fieldId="kc-is-mandatory"
@@ -150,9 +144,8 @@ export const LdapMapperUserAttribute = ({
         label={t("attributeDefaultValue")}
         labelIcon={
           <HelpItem
-            helpText={helpText("attributeDefaultValueHelp")}
-            forLabel={t("attributeDefaultValue")}
-            forID="kc-attribute-default-value"
+            helpText="user-federation-help:attributeDefaultValueHelp"
+            fieldLabelId="user-federation:attributeDefaultValue"
           />
         }
         fieldId="kc-attribute-default-value"
@@ -169,9 +162,8 @@ export const LdapMapperUserAttribute = ({
         label={t("isBinaryAttribute")}
         labelIcon={
           <HelpItem
-            helpText={helpText("isBinaryAttributeHelp")}
-            forLabel={t("isBinaryAttribute")}
-            forID="kc-is-binary"
+            helpText="user-federation-help:isBinaryAttributeHelp"
+            fieldLabelId="user-federation:isBinaryAttribute"
           />
         }
         fieldId="kc-is-binary"
@@ -198,9 +190,8 @@ export const LdapMapperUserAttribute = ({
           label={t("derFormatted")}
           labelIcon={
             <HelpItem
-              helpText={helpText("derFormattedHelp")}
-              forLabel={t("derFormatted")}
-              forID="kc-der-formatted"
+              helpText="user-federation-help:derFormattedHelp"
+              fieldLabelId="user-federation:derFormatted"
             />
           }
           fieldId="kc-der-formatted"

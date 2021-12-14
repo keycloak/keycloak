@@ -123,8 +123,7 @@ export const JavaKeystoreForm = ({
           labelIcon={
             <HelpItem
               helpText="client-scopes-help:mapperName"
-              forLabel={t("common:name")}
-              forID={t("common:helpLabel", { label: t("common:name") })}
+              fieldLabelId="realm-settings:providerId"
             />
           }
           fieldId="id"
@@ -151,8 +150,7 @@ export const JavaKeystoreForm = ({
         labelIcon={
           <HelpItem
             helpText="client-scopes-help:mapperName"
-            forLabel={t("common:name")}
-            forID={t("common:helpLabel", { label: t("common:name") })}
+            fieldLabelId="name"
           />
         }
         fieldId="name"
@@ -203,8 +201,7 @@ export const JavaKeystoreForm = ({
         labelIcon={
           <HelpItem
             helpText={t("realm-settings-help:enabled")}
-            forLabel={t("enabled")}
-            forID={t("common:helpLabel", { label: t("enabled") })}
+            fieldLabelId="realm-settings:enabled"
           />
         }
       >
@@ -232,8 +229,7 @@ export const JavaKeystoreForm = ({
         labelIcon={
           <HelpItem
             helpText="realm-settings-help:active"
-            forLabel={t("active")}
-            forID={t("common:helpLabel", { label: t("active") })}
+            fieldLabelId="realm-settings:active"
           />
         }
       >
@@ -263,8 +259,7 @@ export const JavaKeystoreForm = ({
         labelIcon={
           <HelpItem
             helpText="realm-settings-help:algorithm"
-            forLabel={t("algorithm")}
-            forID={t("common:helpLabel", { label: t("algorithm") })}
+            fieldLabelId="realm-settings:algorithm"
           />
         }
       >
@@ -304,8 +299,7 @@ export const JavaKeystoreForm = ({
         labelIcon={
           <HelpItem
             helpText="realm-settings-help:keystore"
-            forLabel={t("keystore")}
-            forID="kc-keystore"
+            fieldLabelId="realm-settings:keystore"
           />
         }
       >
@@ -330,8 +324,7 @@ export const JavaKeystoreForm = ({
         labelIcon={
           <HelpItem
             helpText="realm-settings-help:keystorePassword"
-            forLabel={t("keystorePassword")}
-            forID={t("common:helpLabel", { label: t("keystorePassword") })}
+            fieldLabelId="realm-settings:keystorePassword"
           />
         }
       >
@@ -356,8 +349,7 @@ export const JavaKeystoreForm = ({
         labelIcon={
           <HelpItem
             helpText="realm-settings-help:keyAlias"
-            forLabel={t("keyAlias")}
-            forID={t("common:helpLabel", { label: t("keyAlias") })}
+            fieldLabelId="realm-settings:keyAlias"
           />
         }
       >
@@ -382,8 +374,7 @@ export const JavaKeystoreForm = ({
         labelIcon={
           <HelpItem
             helpText="realm-settings-help:keyPassword"
-            forLabel={t("keyPassword")}
-            forID={t("common:helpLabel", { label: t("keyPassword") })}
+            fieldLabelId="realm-settings:keyPassword"
           />
         }
       >

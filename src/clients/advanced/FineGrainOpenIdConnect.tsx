@@ -108,8 +108,7 @@ export const FineGrainOpenIdConnect = ({
         labelIcon={
           <HelpItem
             helpText="clients-help:accessTokenSignatureAlgorithm"
-            forLabel={t("accessTokenSignatureAlgorithm")}
-            forID="accessTokenSignatureAlgorithm"
+            fieldLabelId="clients:accessTokenSignatureAlgorithm"
           />
         }
       >
@@ -140,8 +139,7 @@ export const FineGrainOpenIdConnect = ({
         labelIcon={
           <HelpItem
             helpText="clients-help:idTokenSignatureAlgorithm"
-            forLabel={t("idTokenSignatureAlgorithm")}
-            forID="idTokenSignatureAlgorithm"
+            fieldLabelId="clients:idTokenSignatureAlgorithm"
           />
         }
       >
@@ -172,8 +170,7 @@ export const FineGrainOpenIdConnect = ({
         labelIcon={
           <HelpItem
             helpText="clients-help:idTokenEncryptionKeyManagementAlgorithm"
-            forLabel={t("idTokenEncryptionKeyManagementAlgorithm")}
-            forID="idTokenEncryptionKeyManagementAlgorithm"
+            fieldLabelId="clients:idTokenEncryptionKeyManagementAlgorithm"
           />
         }
       >
@@ -204,8 +201,7 @@ export const FineGrainOpenIdConnect = ({
         labelIcon={
           <HelpItem
             helpText="clients-help:idTokenEncryptionContentEncryptionAlgorithm"
-            forLabel={t("idTokenEncryptionContentEncryptionAlgorithm")}
-            forID="idTokenEncryptionContentEncryptionAlgorithm"
+            fieldLabelId="clients:idTokenEncryptionContentEncryptionAlgorithm"
           />
         }
       >
@@ -236,8 +232,7 @@ export const FineGrainOpenIdConnect = ({
         labelIcon={
           <HelpItem
             helpText="clients-help:userInfoSignedResponseAlgorithm"
-            forLabel={t("userInfoSignedResponseAlgorithm")}
-            forID="userInfoSignedResponseAlgorithm"
+            fieldLabelId="clients:userInfoSignedResponseAlgorithm"
           />
         }
       >
@@ -268,8 +263,7 @@ export const FineGrainOpenIdConnect = ({
         labelIcon={
           <HelpItem
             helpText="clients-help:requestObjectSignatureAlgorithm"
-            forLabel={t("requestObjectSignatureAlgorithm")}
-            forID="requestObjectSignatureAlgorithm"
+            fieldLabelId="clients:requestObjectSignatureAlgorithm"
           />
         }
       >
@@ -300,8 +294,7 @@ export const FineGrainOpenIdConnect = ({
         labelIcon={
           <HelpItem
             helpText="clients-help:requestObjectRequired"
-            forLabel={t("requestObjectRequired")}
-            forID="requestObjectRequired"
+            fieldLabelId="clients:requestObjectRequired"
           />
         }
       >

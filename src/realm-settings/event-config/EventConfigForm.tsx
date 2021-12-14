@@ -56,8 +56,7 @@ export const EventConfigForm = ({
         labelIcon={
           <HelpItem
             helpText={`realm-settings-help:save-${type}-events`}
-            forLabel={t("saveEvents")}
-            forID={t(`common:helpLabel`, { label: t("saveEvents") })}
+            fieldLabelId="realm-settings:saveEvents"
           />
         }
       >
@@ -93,10 +92,7 @@ export const EventConfigForm = ({
               labelIcon={
                 <HelpItem
                   helpText="realm-settings-help:includeRepresentation"
-                  forLabel={t("includeRepresentation")}
-                  forID={t(`common:helpLabel`, {
-                    label: t("includeRepresentation"),
-                  })}
+                  fieldLabelId="realm-settings:includeRepresentation"
                 />
               }
             >
@@ -124,8 +120,7 @@ export const EventConfigForm = ({
               labelIcon={
                 <HelpItem
                   helpText="realm-settings-help:expiration"
-                  forLabel={t("expiration")}
-                  forID={t(`common:helpLabel`, { label: t("expiration") })}
+                  fieldLabelId="realm-settings:expiration"
                 />
               }
             >
@@ -166,10 +161,7 @@ export const EventConfigForm = ({
         labelIcon={
           <HelpItem
             helpText={`realm-settings-help:${type}-clearEvents`}
-            forLabel={
-              type === "user" ? t("clearUserEvents") : t("clearAdminEvents")
-            }
-            forID={`clear-${type}-events`}
+            fieldLabelId={`realm-settings:clear-${type}-events`}
           />
         }
       >

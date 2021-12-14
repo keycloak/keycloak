@@ -12,16 +12,14 @@ export const LdapMapperHardcodedLdapGroup = ({
   form,
 }: LdapMapperHardcodedLdapGroupProps) => {
   const { t } = useTranslation("user-federation");
-  const helpText = useTranslation("user-federation-help").t;
 
   return (
     <FormGroup
       label={t("group")}
       labelIcon={
         <HelpItem
-          helpText={helpText("groupHelp")}
-          forLabel={t("group")}
-          forID="kc-group"
+          helpText="user-federation-help:groupHelp"
+          fieldLabelId="user-federation:group"
         />
       }
       fieldId="kc-group"

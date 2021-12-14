@@ -171,18 +171,12 @@ export default function ExecutorForm() {
               executors.length > 0 && executors[0].helpText! !== "" ? (
                 <HelpItem
                   helpText={executors[0].helpText}
-                  forLabel={t("executorTypeHelpText")}
-                  forID={t(`common:helpLabel`, {
-                    label: t("executorTypeHelpText"),
-                  })}
+                  fieldLabelId="realm-settings:executorTypeHelpText"
                 />
               ) : editMode ? (
                 <HelpItem
                   helpText={profileExecutorType?.helpText}
-                  forLabel={t("executorTypeHelpText")}
-                  forID={t(`common:helpLabel`, {
-                    label: t("executorTypeHelpText"),
-                  })}
+                  fieldLabelId="realm-settings:executorTypeHelpText"
                 />
               ) : undefined
             }

@@ -80,8 +80,7 @@ export const ClientSettings = ({
           labelIcon={
             <HelpItem
               helpText="clients-help:rootUrl"
-              forLabel={t("rootUrl")}
-              forID="kc-root-url"
+              fieldLabelId="clients:rootUrl"
             />
           }
         >
@@ -98,8 +97,7 @@ export const ClientSettings = ({
           labelIcon={
             <HelpItem
               helpText="clients-help:validRedirectURIs"
-              forLabel={t("validRedirectUri")}
-              forID={t(`common:helpLabel`, { label: t("validRedirectUri") })}
+              fieldLabelId="clients:validRedirectUri"
             />
           }
         >
@@ -115,8 +113,7 @@ export const ClientSettings = ({
           labelIcon={
             <HelpItem
               helpText="clients-help:homeURL"
-              forLabel={t("homeURL")}
-              forID={t(`common:helpLabel`, { label: t("homeURL") })}
+              fieldLabelId="clients:homeURL"
             />
           }
         >
@@ -133,8 +130,7 @@ export const ClientSettings = ({
           labelIcon={
             <HelpItem
               helpText="clients-help:webOrigins"
-              forLabel={t("webOrigins")}
-              forID={t(`common:helpLabel`, { label: t("webOrigins") })}
+              fieldLabelId="clients:webOrigins"
             />
           }
         >
@@ -150,8 +146,7 @@ export const ClientSettings = ({
           labelIcon={
             <HelpItem
               helpText="clients-help:adminURL"
-              forLabel={t("adminURL")}
-              forID="kc-admin-url"
+              fieldLabelId="clients:adminURL"
             />
           }
         >
@@ -169,8 +164,7 @@ export const ClientSettings = ({
           labelIcon={
             <HelpItem
               helpText="clients-help:loginTheme"
-              forLabel={t("loginTheme")}
-              forID="loginTheme"
+              fieldLabelId="clients:loginTheme"
             />
           }
           fieldId="loginTheme"
@@ -215,8 +209,7 @@ export const ClientSettings = ({
           labelIcon={
             <HelpItem
               helpText="clients-help:consentRequired"
-              forLabel={t("consentRequired")}
-              forID="kc-consent-switch"
+              fieldLabelId="clients:consentRequired"
             />
           }
           fieldId="kc-consent"
@@ -242,8 +235,7 @@ export const ClientSettings = ({
           labelIcon={
             <HelpItem
               helpText="clients-help:displayOnClient"
-              forLabel={t("displayOnClient")}
-              forID="kc-display-on-client-switch"
+              fieldLabelId="clients:displayOnClient"
             />
           }
           fieldId="kc-display-on-client"
@@ -270,8 +262,7 @@ export const ClientSettings = ({
           labelIcon={
             <HelpItem
               helpText="clients-help:consentScreenText"
-              forLabel={t("consentScreenText")}
-              forID="kc-consent-screen-text"
+              fieldLabelId="clients:consentScreenText"
             />
           }
           fieldId="kc-consent-screen-text"

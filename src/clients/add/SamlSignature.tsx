@@ -70,10 +70,7 @@ export const SamlSignature = () => {
             labelIcon={
               <HelpItem
                 helpText="clients-help:signatureAlgorithm"
-                forLabel={t("signatureAlgorithm")}
-                forID={t("common:helpLabel", {
-                  label: t("signatureAlgorithm"),
-                })}
+                fieldLabelId="clients:signatureAlgorithm"
               />
             }
           >
@@ -112,10 +109,7 @@ export const SamlSignature = () => {
             labelIcon={
               <HelpItem
                 helpText="clients-help:signatureKeyName"
-                forLabel={t("signatureKeyName")}
-                forID={t("common:helpLabel", {
-                  label: t("signatureKeyName"),
-                })}
+                fieldLabelId="clients:signatureKeyName"
               />
             }
           >
@@ -153,10 +147,7 @@ export const SamlSignature = () => {
             labelIcon={
               <HelpItem
                 helpText="clients-help:canonicalization"
-                forLabel={t("canonicalization")}
-                forID={t("common:helpLabel", {
-                  label: t("canonicalization"),
-                })}
+                fieldLabelId="clients:canonicalization"
               />
             }
           >

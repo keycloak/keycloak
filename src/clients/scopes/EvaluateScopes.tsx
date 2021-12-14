@@ -255,8 +255,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             labelIcon={
               <HelpItem
                 helpText="clients-help:scopeParameter"
-                forLabel={t("scopeParameter")}
-                forID="scopeParameter"
+                fieldLabelId="clients:scopeParameter"
               />
             }
           >
@@ -300,8 +299,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             labelIcon={
               <HelpItem
                 helpText="clients-help:user"
-                forLabel={t("user")}
-                forID="user"
+                fieldLabelId="clients:user"
               />
             }
           >
@@ -388,8 +386,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
                 <TabTitleText>
                   {t("effectiveProtocolMappers")}{" "}
                   <HelpItem
-                    forID="effectiveProtocolMappers"
-                    forLabel={t("effectiveProtocolMappers")}
+                    fieldLabelId="clients:effectiveProtocolMappers"
                     helpText="clients-help:effectiveProtocolMappers"
                     noVerticalAlign={false}
                     unWrap
@@ -406,8 +403,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
                 <TabTitleText>
                   {t("effectiveRoleScopeMappings")}{" "}
                   <HelpItem
-                    forID="effectiveRoleScopeMappings"
-                    forLabel={t("effectiveRoleScopeMappings")}
+                    fieldLabelId="clients:effectiveRoleScopeMappings"
                     helpText="clients-help:effectiveRoleScopeMappings"
                     noVerticalAlign={false}
                     unWrap
@@ -424,8 +420,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
                 <TabTitleText>
                   {t("generatedAccessToken")}{" "}
                   <HelpItem
-                    forID="generatedAccessToken"
-                    forLabel={t("generatedAccessToken")}
+                    fieldLabelId="clients:generatedAccessToken"
                     helpText="clients-help:generatedAccessToken"
                     noVerticalAlign={false}
                     unWrap

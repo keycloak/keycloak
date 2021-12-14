@@ -52,7 +52,7 @@ export const ClientSelectComponent = ({
     <FormGroup
       label={t(label!)}
       labelIcon={
-        <HelpItem helpText={t(helpText!)} forLabel={t(label!)} forID={name!} />
+        <HelpItem helpText={t(helpText!)} fieldLabelId={`dynamic:${label}`} />
       }
       fieldId={name!}
     >

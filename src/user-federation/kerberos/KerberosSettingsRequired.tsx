@@ -30,7 +30,7 @@ export const KerberosSettingsRequired = ({
   showSectionDescription = false,
 }: KerberosSettingsRequiredProps) => {
   const { t } = useTranslation("user-federation");
-  const helpText = useTranslation("user-federation-help").t;
+  const { t: helpText } = useTranslation("user-federation-help");
 
   const adminClient = useAdminClient();
   const { realm } = useRealm();
@@ -64,22 +64,14 @@ export const KerberosSettingsRequired = ({
           label={t("consoleDisplayName")}
           labelIcon={
             <HelpItem
-              helpText={helpText("consoleDisplayNameHelp")}
-              forLabel={t("consoleDisplayName")}
-              forID="kc-console-display-name"
+              helpText="users-federation-help:consoleDisplayNameHelp"
+              fieldLabelId="users-federation:consoleDisplayName"
             />
           }
           fieldId="kc-console-display-name"
           isRequired
         >
           {/* These hidden fields are required so data object written back matches data retrieved */}
-          {/* <TextInput
-            hidden
-            type="text"
-            id="kc-console-id"
-            name="id"
-            ref={form.register}
-          /> */}
           <TextInput
             hidden
             type="text"
@@ -127,9 +119,8 @@ export const KerberosSettingsRequired = ({
           label={t("kerberosRealm")}
           labelIcon={
             <HelpItem
-              helpText={helpText("kerberosRealmHelp")}
-              forLabel={t("kerberosRealm")}
-              forID="kc-kerberos-realm"
+              helpText="users-federation-help:kerberosRealmHelp"
+              fieldLabelId="users-federation:kc-kerberos-realm"
             />
           }
           fieldId="kc-kerberos-realm"
@@ -159,9 +150,8 @@ export const KerberosSettingsRequired = ({
           label={t("serverPrincipal")}
           labelIcon={
             <HelpItem
-              helpText={helpText("serverPrincipalHelp")}
-              forLabel={t("serverPrincipal")}
-              forID="kc-server-principal"
+              helpText="users-federation-help:serverPrincipalHelp"
+              fieldLabelId="users-federation:serverPrincipal"
             />
           }
           fieldId="kc-server-principal"
@@ -191,9 +181,8 @@ export const KerberosSettingsRequired = ({
           label={t("keyTab")}
           labelIcon={
             <HelpItem
-              helpText={helpText("keyTabHelp")}
-              forLabel={t("keyTab")}
-              forID="kc-key-tab"
+              helpText="users-federation-help:keyTabHelp"
+              fieldLabelId="users-federation:keyTab"
             />
           }
           fieldId="kc-key-tab"
@@ -221,9 +210,8 @@ export const KerberosSettingsRequired = ({
           label={t("debug")}
           labelIcon={
             <HelpItem
-              helpText={helpText("debugHelp")}
-              forLabel={t("debug")}
-              forID="kc-debug"
+              helpText="users-federation-help:debugHelp"
+              fieldLabelId="users-federation:debug"
             />
           }
           fieldId="kc-debug"
@@ -250,9 +238,8 @@ export const KerberosSettingsRequired = ({
           label={t("allowPasswordAuthentication")}
           labelIcon={
             <HelpItem
-              helpText={helpText("allowPasswordAuthenticationHelp")}
-              forLabel={t("allowPasswordAuthentication")}
-              forID="kc-allow-password-authentication"
+              helpText="users-federation-help:allowPasswordAuthenticationHelp"
+              fieldLabelId="users-federation:allowPasswordAuthentication"
             />
           }
           fieldId="kc-allow-password-authentication"
@@ -279,9 +266,8 @@ export const KerberosSettingsRequired = ({
             label={t("editMode")}
             labelIcon={
               <HelpItem
-                helpText={helpText("editModeKerberosHelp")}
-                forLabel={t("editMode")}
-                forID="kc-edit-mode"
+                helpText="users-federation-help:editModeKerberosHelp"
+                fieldLabelId="users-federation:editMode"
               />
             }
             isRequired
@@ -320,9 +306,8 @@ export const KerberosSettingsRequired = ({
           label={t("updateFirstLogin")}
           labelIcon={
             <HelpItem
-              helpText={helpText("updateFirstLoginHelp")}
-              forLabel={t("updateFirstLogin")}
-              forID="kc-update-first-login"
+              helpText="users-federation-help:updateFirstLoginHelp"
+              fieldLabelId="users-federation:updateFirstLogin"
             />
           }
           fieldId="kc-update-first-login"

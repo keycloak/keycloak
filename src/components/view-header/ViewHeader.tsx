@@ -124,16 +124,13 @@ export const ViewHeader = ({
                       className="pf-u-mr-lg"
                       isChecked={isEnabled}
                       onChange={(value) => {
-                        if (onToggle) {
-                          onToggle(value);
-                        }
+                        onToggle(value);
                       }}
                     />
                     {helpTextKey && (
                       <HelpItem
                         helpText={t(helpTextKey)}
-                        forLabel={t("common:enabled")}
-                        forID={`${titleKey}-switch`}
+                        fieldLabelId={`${titleKey}-switch`}
                       />
                     )}
                   </ToolbarItem>

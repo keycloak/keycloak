@@ -24,8 +24,7 @@ export const ReqAuthnConstraints = () => {
         labelIcon={
           <HelpItem
             helpText="identity-providers-help:comparison"
-            forLabel={t("comparison")}
-            forID="comparison"
+            fieldLabelId="identity-providers:comparison"
           />
         }
         fieldId="comparison"

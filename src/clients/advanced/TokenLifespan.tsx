@@ -51,10 +51,7 @@ export const TokenLifespan = ({
       labelIcon={
         <HelpItem
           helpText={`clients-help:${id}`}
-          forLabel={t(id)}
-          forID={t(`common:helpLabel`, {
-            label: t(id),
-          })}
+          fieldLabelId={`clients:${id}`}
         />
       }
     >

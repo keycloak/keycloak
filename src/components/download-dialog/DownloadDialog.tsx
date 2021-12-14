@@ -116,8 +116,7 @@ export const DownloadDialog = ({
               labelIcon={
                 <HelpItem
                   helpText={t("clients-help:downloadType")}
-                  forLabel={t("clients:formatOption")}
-                  forID="type"
+                  fieldLabelId="clients:formatOption"
                 />
               }
             >
@@ -155,8 +154,7 @@ export const DownloadDialog = ({
                 labelIcon={
                   <HelpItem
                     helpText={t("clients-help:details")}
-                    forLabel={t("details")}
-                    forID="details"
+                    fieldLabelId="clients:details"
                   />
                 }
               >

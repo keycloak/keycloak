@@ -29,7 +29,7 @@ export const LdapSettingsGeneral = ({
   vendorEdit = false,
 }: LdapSettingsGeneralProps) => {
   const { t } = useTranslation("user-federation");
-  const helpText = useTranslation("user-federation-help").t;
+  const { t: helpText } = useTranslation("user-federation-help");
 
   const adminClient = useAdminClient();
   const { realm } = useRealm();
@@ -107,9 +107,8 @@ export const LdapSettingsGeneral = ({
           label={t("consoleDisplayName")}
           labelIcon={
             <HelpItem
-              helpText={helpText("consoleDisplayNameHelp")}
-              forLabel={t("consoleDisplayName")}
-              forID="kc-console-display-name"
+              helpText="users-federation-help:consoleDisplayNameHelp"
+              fieldLabelId="users-federation:consoleDisplayName"
             />
           }
           fieldId="kc-console-display-name"
@@ -162,9 +161,8 @@ export const LdapSettingsGeneral = ({
           label={t("vendor")}
           labelIcon={
             <HelpItem
-              helpText={helpText("vendorHelp")}
-              forLabel={t("vendor")}
-              forID="kc-vendor"
+              helpText="users-federation-help:vendorHelp"
+              fieldLabelId="users-federation:vendor"
             />
           }
           fieldId="kc-vendor"

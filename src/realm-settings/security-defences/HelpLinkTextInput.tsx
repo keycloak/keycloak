@@ -30,8 +30,7 @@ export const HelpLinkTextInput = ({
               <FormattedLink href={url} title={t("common:learnMore")} />
             </Trans>
           }
-          forLabel={t(name)}
-          forID={name}
+          fieldLabelId={name}
         />
       }
     >

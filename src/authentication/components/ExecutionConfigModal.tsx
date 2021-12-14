@@ -144,8 +144,7 @@ export const ExecutionConfigModal = ({
               labelIcon={
                 <HelpItem
                   helpText="authentication-help:alias"
-                  forLabel={t("alias")}
-                  forID="alias"
+                  fieldLabelId="authentication:alias"
                 />
               }
             >
@@ -163,7 +162,7 @@ export const ExecutionConfigModal = ({
                 }
               />
             </FormGroup>
-            {configDescription?.properties?.map((property) => (
+            {configDescription.properties?.map((property) => (
               <FormGroup
                 key={property.name}
                 label={property.label}
@@ -171,8 +170,7 @@ export const ExecutionConfigModal = ({
                 labelIcon={
                   <HelpItem
                     helpText={property.helpText}
-                    forLabel={property.name!}
-                    forID={property.name!}
+                    fieldLabelId={property.name!}
                   />
                 }
               >

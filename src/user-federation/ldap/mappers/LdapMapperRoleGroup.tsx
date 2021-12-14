@@ -26,7 +26,6 @@ export const LdapMapperRoleGroup = ({
   type,
 }: LdapMapperRoleGroupProps) => {
   const { t } = useTranslation("user-federation");
-  const helpText = useTranslation("user-federation-help").t;
   const adminClient = useAdminClient();
   const [isMbAttTypeDropdownOpen, setIsMbAttTypeDropdownOpen] = useState(false);
   const [isModeDropdownOpen, setIsModeDropdownOpen] = useState(false);
@@ -86,13 +85,12 @@ export const LdapMapperRoleGroup = ({
         label={isRole ? t("ldapRolesDn") : t("ldapGroupsDn")}
         labelIcon={
           <HelpItem
-            helpText={
-              isRole
-                ? helpText("ldapRolesDnHelp")
-                : helpText("ldapGroupsDnHelp")
-            }
-            forLabel={isRole ? t("ldapRolesDN") : t("ldapGroupsDN")}
-            forID="kc-ldap-dn"
+            helpText={`user-federation-help:${
+              isRole ? "ldapRolesDnHelp" : "ldapGroupsDnHelp"
+            }`}
+            fieldLabelId={`user-federation:${
+              isRole ? "ldapRolesDn" : "ldapGroupsDn"
+            }`}
           />
         }
         fieldId="kc-ldap-dn"
@@ -122,15 +120,15 @@ export const LdapMapperRoleGroup = ({
         }
         labelIcon={
           <HelpItem
-            helpText={
-              isRole
-                ? helpText("roleNameLdapAttributeHelp")
-                : helpText("groupNameLdapAttributeHelp")
-            }
-            forLabel={
-              isRole ? t("roleNameLdapAttribute") : t("groupNameLdapAttribute")
-            }
-            forID="kc-name-attribute"
+            helpText={`user-federation-help:
+              ${
+                isRole
+                  ? "roleNameLdapAttributeHelp"
+                  : "groupNameLdapAttributeHelp"
+              }`}
+            fieldLabelId={`user-federation:${
+              isRole ? "roleNameLdapAttribute" : "groupNameLdapAttribute"
+            }`}
           />
         }
         fieldId="kc-name-attribute"
@@ -154,13 +152,12 @@ export const LdapMapperRoleGroup = ({
         label={isRole ? t("roleObjectClasses") : t("groupObjectClasses")}
         labelIcon={
           <HelpItem
-            helpText={
-              isRole
-                ? helpText("roleObjectClassesHelp")
-                : helpText("groupObjectClassesHelp")
-            }
-            forLabel={isRole ? t("roleObjectClasses") : t("groupObjectClasses")}
-            forID="kc-object-classes"
+            helpText={`user-federation-help:
+              ${isRole ? "roleObjectClassesHelp" : "groupObjectClassesHelp"}
+            `}
+            fieldLabelId={`user-federation:${
+              isRole ? "roleObjectClasses" : "groupObjectClasses"
+            }`}
           />
         }
         fieldId="kc-object-classes"
@@ -186,9 +183,8 @@ export const LdapMapperRoleGroup = ({
             label={t("preserveGroupInheritance")}
             labelIcon={
               <HelpItem
-                helpText={helpText("preserveGroupInheritanceHelp")}
-                forLabel={t("preserveGroupInheritance")}
-                forID="kc-preserve-inheritance"
+                helpText="user-federation-help:preserveGroupInheritanceHelp"
+                fieldLabelId="user-federation:preserveGroupInheritance"
               />
             }
             fieldId="kc-preserve-inheritance"
@@ -214,9 +210,8 @@ export const LdapMapperRoleGroup = ({
             label={t("ignoreMissingGroups")}
             labelIcon={
               <HelpItem
-                helpText={helpText("ignoreMissingGroupsHelp")}
-                forLabel={t("ignoreMissingGroups")}
-                forID="kc-ignore-missing"
+                helpText="user-federation-help:ignoreMissingGroupsHelp"
+                fieldLabelId="user-federation:ignoreMissingGroups"
               />
             }
             fieldId="kc-ignore-missing"
@@ -244,9 +239,8 @@ export const LdapMapperRoleGroup = ({
         label={t("membershipLdapAttribute")}
         labelIcon={
           <HelpItem
-            helpText={helpText("membershipLdapAttributeHelp")}
-            forLabel={t("membershipLdapAttribute")}
-            forID="kc-membership-ldap-attribute"
+            helpText="user-federation-help:membershipLdapAttributeHelp"
+            fieldLabelId="user-federation:membershipLdapAttribute"
           />
         }
         fieldId="kc-membership-ldap-attribute"
@@ -266,9 +260,8 @@ export const LdapMapperRoleGroup = ({
         label={t("membershipAttributeType")}
         labelIcon={
           <HelpItem
-            helpText={helpText("membershipAttributeTypeHelp")}
-            forLabel={t("membershipAttributeType")}
-            forID="kc-membership-attribute-type"
+            helpText="user-federation-help:membershipAttributeTypeHelp"
+            fieldLabelId="user-federation:membershipAttributeType"
           />
         }
         fieldId="kc-membership-attribute-type"
@@ -305,9 +298,8 @@ export const LdapMapperRoleGroup = ({
         label={t("membershipUserLdapAttribute")}
         labelIcon={
           <HelpItem
-            helpText={helpText("membershipUserLdapAttributeHelp")}
-            forLabel={t("membershipUserLdapAttribute")}
-            forID="kc-membership-user-ldap-attribute"
+            helpText="user-federation-help:membershipUserLdapAttributeHelp"
+            fieldLabelId="user-federation:membershipUserLdapAttribute"
           />
         }
         fieldId="kc-membership-user-ldap-attribute"
@@ -327,9 +319,8 @@ export const LdapMapperRoleGroup = ({
         label={t("ldapFilter")}
         labelIcon={
           <HelpItem
-            helpText={helpText("ldapFilterHelp")}
-            forLabel={t("ldapFilter")}
-            forID="kc-ldap-filter"
+            helpText="user-federation:ldapFilterHelp"
+            fieldLabelId="user-federation:ldapFilter"
           />
         }
         fieldId="kc-ldap-filter"
@@ -350,9 +341,8 @@ export const LdapMapperRoleGroup = ({
         label={t("mode")}
         labelIcon={
           <HelpItem
-            helpText={helpText("modeHelp")}
-            forLabel={t("mode")}
-            forID="kc-mode"
+            helpText="user-federation-help:modeHelp"
+            fieldLabelId="user-federation:mode"
           />
         }
         fieldId="kc-mode"
@@ -391,9 +381,8 @@ export const LdapMapperRoleGroup = ({
           label={t("userRolesRetrieveStrategy")}
           labelIcon={
             <HelpItem
-              helpText={helpText("userRolesRetrieveStrategyHelp")}
-              forLabel={t("userRolesRetrieveStrategy")}
-              forID="kc-user-retrieve-strategy"
+              helpText="user-federation-help:userRolesRetrieveStrategyHelp"
+              fieldLabelId="user-federation:userRolesRetrieveStrategy"
             />
           }
           fieldId="kc-user-retrieve-strategy"
@@ -441,9 +430,8 @@ export const LdapMapperRoleGroup = ({
           label={t("userGroupsRetrieveStrategy")}
           labelIcon={
             <HelpItem
-              helpText={helpText("userGroupsRetrieveStrategyHelp")}
-              forLabel={t("userGroupsRetrieveStrategy")}
-              forID="kc-user-retrieve-strategy"
+              helpText="user-federation-help:userGroupsRetrieveStrategyHelp"
+              fieldLabelId="user-federation:userGroupsRetrieveStrategy"
             />
           }
           fieldId="kc-user-retrieve-strategy"
@@ -491,9 +479,8 @@ export const LdapMapperRoleGroup = ({
         label={t("memberofLdapAttribute")}
         labelIcon={
           <HelpItem
-            helpText={helpText("memberofLdapAttributeHelp")}
-            forLabel={t("memberofLdapAttribute")}
-            forID="kc-member-of-attribute"
+            helpText="user-federation-help:memberofLdapAttributeHelp"
+            fieldLabelId="user-federation:memberofLdapAttribute"
           />
         }
         fieldId="kc-member-of-attribute"
@@ -515,9 +502,8 @@ export const LdapMapperRoleGroup = ({
             label={t("useRealmRolesMapping")}
             labelIcon={
               <HelpItem
-                helpText={helpText("useRealmRolesMappingHelp")}
-                forLabel={t("useRealmRolesMapping")}
-                forID="kc-use-realm-roles"
+                helpText="user-federation-help:useRealmRolesMappingHelp"
+                fieldLabelId="user-federation:useRealmRolesMapping"
               />
             }
             fieldId="kc-use-realm-roles"
@@ -543,9 +529,8 @@ export const LdapMapperRoleGroup = ({
             label={t("common:clientId")}
             labelIcon={
               <HelpItem
-                helpText={helpText("clientIdHelp")}
-                forLabel={t("common:clientId")}
-                forID="kc-client-id"
+                helpText="user-federation-help:clientIdHelp"
+                fieldLabelId="clientId"
               />
             }
             fieldId="kc-client-id"
@@ -585,9 +570,8 @@ export const LdapMapperRoleGroup = ({
             label={t("mappedGroupAttributes")}
             labelIcon={
               <HelpItem
-                helpText={helpText("mappedGroupAttributesHelp")}
-                forLabel={t("mappedGroupAttributes")}
-                forID="kc-mapped-attributes"
+                helpText="user-federation-help:mappedGroupAttributesHelp"
+                fieldLabelId="user-federation:mappedGroupAttributes"
               />
             }
             fieldId="kc-mapped-attributes"
@@ -604,9 +588,8 @@ export const LdapMapperRoleGroup = ({
             label={t("dropNonexistingGroupsDuringSync")}
             labelIcon={
               <HelpItem
-                helpText={helpText("dropNonexistingGroupsDuringSyncHelp")}
-                forLabel={t("dropNonexistingGroupsDuringSync")}
-                forID="kc-drop-nonexisting"
+                helpText="user-federation-help:dropNonexistingGroupsDuringSyncHelp"
+                fieldLabelId="user-federation:dropNonexistingGroupsDuringSync"
               />
             }
             fieldId="kc-drop-nonexisting"
@@ -632,9 +615,8 @@ export const LdapMapperRoleGroup = ({
             label={t("groupsPath")}
             labelIcon={
               <HelpItem
-                helpText={helpText("groupsPathHelp")}
-                forLabel={t("groupsPath")}
-                forID="kc-path"
+                helpText="user-federation-help:groupsPathHelp"
+                fieldLabelId="user-federation:groupsPath"
               />
             }
             fieldId="kc-path"
