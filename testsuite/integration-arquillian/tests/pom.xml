@@ -1497,6 +1497,7 @@
                             <configuration>
                                 <systemPropertyVariables>
                                     <keycloak.client.map.storage.provider>hotrod</keycloak.client.map.storage.provider>
+                                    <keycloak.group.map.storage.provider>hotrod</keycloak.group.map.storage.provider>
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>

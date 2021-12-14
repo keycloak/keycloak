@@ -24,7 +24,9 @@ public class TestClassProvider {
             "/org/jboss/arquillian",
             "/org/jboss/shrinkwrap",
             "/org/jboss/jandex",
-            "/org/openqa/selenium"
+            "/org/openqa/selenium",
+            "/com/webauthn4j",
+            "/com/fasterxml/jackson/dataformat/cbor"
     };
 
     private Undertow server;

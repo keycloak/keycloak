@@ -22,8 +22,10 @@ import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.map.group.MapGroupEntity;
 import org.keycloak.models.map.storage.hotRod.client.HotRodClientEntity;
 import org.keycloak.models.map.storage.hotRod.client.HotRodClientEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.client.HotRodProtocolMapperEntityDelegate;
@@ -34,6 +36,8 @@ import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDescriptor;
 import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionProvider;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
+import org.keycloak.models.map.storage.hotRod.group.HotRodGroupEntity;
+import org.keycloak.models.map.storage.hotRod.group.HotRodGroupEntityDelegate;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 import java.util.HashMap;
@@ -45,8 +49,9 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
     private static final Logger LOG = Logger.getLogger(HotRodMapStorageProviderFactory.class);
 
     private final static DeepCloner CLONER = new DeepCloner.Builder()
-            .constructorDC(MapClientEntity.class,         HotRodClientEntityDelegate::new)
-            .constructor(MapProtocolMapperEntity.class,   HotRodProtocolMapperEntityDelegate::new)
+            .constructorDC(MapClientEntity.class,           HotRodClientEntityDelegate::new)
+            .constructor(MapProtocolMapperEntity.class,     HotRodProtocolMapperEntityDelegate::new)
+            .constructor(MapGroupEntity.class,              HotRodGroupEntityDelegate::new)
             .build();
 
     public static final Map<Class<?>, HotRodEntityDescriptor<?, ?>> ENTITY_DESCRIPTOR_MAP = new HashMap<>();
@@ -56,6 +61,12 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
                 new HotRodEntityDescriptor<>(ClientModel.class,
                         HotRodClientEntity.class,
                         HotRodClientEntityDelegate::new));
+
+        // Groups descriptor
+        ENTITY_DESCRIPTOR_MAP.put(GroupModel.class,
+                new HotRodEntityDescriptor<>(GroupModel.class,
+                        HotRodGroupEntity.class,
+                        HotRodGroupEntityDelegate::new));
     }
 
     @Override
@@ -95,6 +106,6 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
 
     @Override
     public String getHelpText() {
-        return "HotRod client storage";
+        return "HotRod map storage";
     }
 }

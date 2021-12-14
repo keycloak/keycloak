@@ -31,7 +31,7 @@ public class SimpleDelegateProvider<T extends UpdatableEntity> implements Delega
     }
 
     @Override
-    public T getDelegate(boolean isRead, Object field) {
+    public T getDelegate(boolean isRead, Object field, Object... parameters) {
         return this.delegate;
     }
 

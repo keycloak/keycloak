@@ -17,10 +17,14 @@
 
 package org.keycloak.testsuite.webauthn.authenticators;
 
+import org.apache.http.util.Args;
 import org.hamcrest.CoreMatchers;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.virtualauthenticator.HasVirtualAuthenticator;
 import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
+
+import java.io.Closeable;
+import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -31,7 +35,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public class VirtualAuthenticatorManager {
     private final HasVirtualAuthenticator driver;
-    private KcVirtualAuthenticator actualAuthenticator;
+    private KcVirtualAuthenticator currentAuthenticator;
 
     public VirtualAuthenticatorManager(WebDriver driver) {
         assertThat("Driver must support Virtual Authenticators", driver, CoreMatchers.instanceOf(HasVirtualAuthenticator.class));
@@ -39,18 +43,20 @@ public class VirtualAuthenticatorManager {
     }
 
     public KcVirtualAuthenticator useAuthenticator(VirtualAuthenticatorOptions options) {
-        this.actualAuthenticator = new KcVirtualAuthenticator(driver.addVirtualAuthenticator(options), options);
-        return actualAuthenticator;
+        if (options == null) return null;
+
+        this.currentAuthenticator = new KcVirtualAuthenticator(driver.addVirtualAuthenticator(options), options);
+        return currentAuthenticator;
     }
 
-    public KcVirtualAuthenticator getActualAuthenticator() {
-        return actualAuthenticator;
+    public KcVirtualAuthenticator getCurrent() {
+        return currentAuthenticator;
     }
 
     public void removeAuthenticator() {
-        if (actualAuthenticator != null) {
-            driver.removeVirtualAuthenticator(actualAuthenticator.getAuthenticator());
-            this.actualAuthenticator = null;
+        if (currentAuthenticator != null) {
+            driver.removeVirtualAuthenticator(currentAuthenticator.getAuthenticator());
+            this.currentAuthenticator = null;
         }
     }
 }

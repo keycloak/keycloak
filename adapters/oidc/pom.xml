@@ -34,7 +34,6 @@
         <module>adapter-core</module>
         <module>installed</module>
         <module>fuse7</module>
-        <module>kcinit</module>
         <module>jaxrs-oauth-client</module>
         <module>jetty</module>
         <module>js</module>

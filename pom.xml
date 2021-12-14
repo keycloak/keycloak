@@ -35,7 +35,7 @@
     <packaging>pom</packaging>
 
     <properties>
-        <quarkus.version>2.5.1.Final</quarkus.version>
+        <quarkus.version>2.5.2.Final</quarkus.version>
 
         <!--
         Performing a Wildfly upgrade? Run the:
@@ -245,14 +245,8 @@
 
     <developers>
         <developer>
-            <id>patriot1burke</id>
-            <name>Bill Burke</name>
-            <email>bburke@redhat.co</email>
-            <organization>Red Hat</organization>
-            <roles>
-                <role>project-owner</role>
-            </roles>
-            <timezone>-5</timezone>
+            <id>keycloak</id>
+            <name>Keycloak Team</name>
         </developer>
     </developers>
 
@@ -1643,17 +1637,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-client-cli-dist</artifactId>
-                <version>${project.version}</version>
-                <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>kcinit</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>kcinit-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>

@@ -20,11 +20,15 @@ package org.keycloak.testsuite.webauthn;
 import org.junit.After;
 import org.junit.Before;
 import org.keycloak.common.Profile;
+import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
 import org.keycloak.testsuite.webauthn.authenticators.UseVirtualAuthenticators;
 import org.keycloak.testsuite.webauthn.authenticators.VirtualAuthenticatorManager;
+import org.keycloak.testsuite.webauthn.updaters.AbstractWebAuthnRealmUpdater;
+import org.keycloak.testsuite.webauthn.updaters.PasswordLessRealmAttributeUpdater;
+import org.keycloak.testsuite.webauthn.updaters.WebAuthnRealmAttributeUpdater;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
 
@@ -36,18 +40,22 @@ import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
 @EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
 public abstract class AbstractWebAuthnVirtualTest extends AbstractTestRealmKeycloakTest implements UseVirtualAuthenticators {
 
-    private VirtualAuthenticatorManager virtualAuthenticatorsManager;
+    protected static final String ALL_ZERO_AAGUID = "00000000-0000-0000-0000-000000000000";
+    protected static final String ALL_ONE_AAGUID = "11111111-1111-1111-1111-111111111111";
+
+    private VirtualAuthenticatorManager virtualAuthenticatorManager;
 
     @Before
     @Override
     public void setUpVirtualAuthenticator() {
-        this.virtualAuthenticatorsManager = createDefaultVirtualManager(driver, getDefaultAuthenticatorOptions());
+        this.virtualAuthenticatorManager = createDefaultVirtualManager(driver, getDefaultAuthenticatorOptions());
         clearEventQueue();
     }
 
     @After
+    @Override
     public void removeVirtualAuthenticator() {
-        virtualAuthenticatorsManager.removeAuthenticator();
+        virtualAuthenticatorManager.removeAuthenticator();
         clearEventQueue();
     }
 
@@ -55,12 +63,24 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractTestRealmKeycl
         return DefaultVirtualAuthOptions.DEFAULT.getOptions();
     }
 
-    public VirtualAuthenticatorManager getDefaultVirtualAuthManager() {
-        return virtualAuthenticatorsManager;
+    public VirtualAuthenticatorManager getVirtualAuthManager() {
+        return virtualAuthenticatorManager;
     }
 
-    public void setDefaultVirtualAuthManager(VirtualAuthenticatorManager manager) {
-        this.virtualAuthenticatorsManager = manager;
+    public void setVirtualAuthManager(VirtualAuthenticatorManager manager) {
+        this.virtualAuthenticatorManager = manager;
+    }
+
+    public AbstractWebAuthnRealmUpdater getWebAuthnRealmUpdater() {
+        return isPasswordless() ? new PasswordLessRealmAttributeUpdater(testRealm()) : new WebAuthnRealmAttributeUpdater(testRealm());
+    }
+
+    public String getCredentialType() {
+        return isPasswordless() ? WebAuthnCredentialModel.TYPE_PASSWORDLESS : WebAuthnCredentialModel.TYPE_TWOFACTOR;
+    }
+
+    public boolean isPasswordless() {
+        return false;
     }
 
     protected void clearEventQueue() {

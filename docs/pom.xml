@@ -29,8 +29,19 @@
     <artifactId>keycloak-docs-parent</artifactId>
     <packaging>pom</packaging>
 
-    <modules>
-        <module>maven-plugin</module>
-        <module>guides</module>
-    </modules>
+    <profiles>
+        <profile>
+            <id>quarkus</id>
+            <activation>
+                <jdk>[11,)</jdk>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <modules>
+                <module>maven-plugin</module>
+                <module>guides</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

@@ -19,7 +19,9 @@ package org.keycloak.models.map.storage.tree;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 /**
  * Interface representing a node in a tree that has ID.
@@ -166,4 +168,29 @@ public interface TreeNode<Self extends TreeNode<? extends Self>> {
      * @return
      */
     List<Self> getPathToRoot(PathOrientation orientation);
+
+    /**
+     * Returns a stream of the nodes laying on the path from this node (exclusive) to the root of the tree (inclusive).
+     * @return
+     */
+    Stream<Self> getParentsStream();
+
+    /**
+     * Calls the given {@code visitor} on each node laying on the path from this node (exclusive) to the root of the tree (inclusive).
+     * @param visitor
+     */
+    void forEachParent(Consumer<Self> visitor);
+
+    /**
+     * Walks the tree with the given visitor in depth-first search manner.
+     * @param visitorUponEntry Visitor called upon entry of the node. May be {@code null}, in that case no action is performed.
+     * @param visitorAfterChildrenVisited Visitor called before exit of the node. May be {@code null}, in that case no action is performed.
+     */
+    void walkDfs(Consumer<Self> visitorUponEntry, Consumer<Self> visitorAfterChildrenVisited);
+
+    /**
+     * Walks the tree with the given visitor in breadth-first search manner.
+     * @param visitor
+     */
+    void walkBfs(Consumer<Self> visitor);
 }
