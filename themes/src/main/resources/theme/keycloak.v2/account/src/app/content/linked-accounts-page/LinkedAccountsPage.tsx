@@ -28,6 +28,8 @@ import {
     Label,
     PageSection,
     PageSectionVariants,
+    Split,
+    SplitItem,
     Stack,
     StackItem,
     Title,
@@ -37,18 +39,10 @@ import {
 import {
     BitbucketIcon,
     CubeIcon,
-    FacebookIcon,
-    GithubIcon,
     GitlabIcon,
-    GoogleIcon,
-    InstagramIcon,
     LinkIcon,
-    LinkedinIcon,
-    MicrosoftIcon,
     OpenshiftIcon,
     PaypalIcon,
-    StackOverflowIcon,
-    TwitterIcon,
     UnlinkIcon
 } from '@patternfly/react-icons';
 
@@ -133,19 +127,18 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
                 <PageSection isFilled variant={PageSectionVariants.light}>
                     <Stack hasGutter>
                         <StackItem>
-                            <Title headingLevel="h2" size='2xl'>
+                            <Title headingLevel="h2" className="pf-u-mb-lg" size='xl'>
                                 <Msg msgKey='linkedLoginProviders'/>
                             </Title>
-                            <Divider className="pf-u-mt-lg" />
-                            <DataList id="linked-idps" aria-label='foo'>
+                            <DataList id="linked-idps" aria-label='linked-idps'>
                                 {this.makeRows(this.state.linkedAccounts, true)}
                             </DataList>
                         </StackItem>
                         <StackItem>
-                            <Title headingLevel="h2" size='2xl'>
+                            <Title headingLevel="h2" className="pf-u-mt-xl pf-u-mb-lg" size='xl'>
                                 <Msg msgKey='unlinkedLoginProviders'/>
                             </Title>
-                            <DataList id="unlinked-idps" aria-label='foo'>
+                            <DataList id="unlinked-idps" aria-label='unlinked-idps'>
                                 {this.makeRows(this.state.unLinkedAccounts, false)}
                             </DataList>
                         </StackItem>
@@ -167,7 +160,7 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
             <DataListItem key='emptyItem' aria-labelledby="empty-item">
                 <DataListItemRow key='emptyRow'>
                     <DataListItemCells dataListCells={[
-                        <DataListCell key='empty'><strong>{isEmptyMessage}</strong></DataListCell>
+                        <DataListCell key='empty'>{isEmptyMessage}</DataListCell>
                     ]}/>
                 </DataListItemRow>
             </DataListItem>
@@ -187,11 +180,24 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
                         <DataListItemRow key={account.providerName}>
                             <DataListItemCells
                                 dataListCells={[
-                                    <DataListCell key='idp'><Stack><StackItem isFilled>{this.findIcon(account)}</StackItem><StackItem id={`${account.providerAlias}-idp-name`} isFilled><h2><strong>{account.displayName}</strong></h2></StackItem></Stack></DataListCell>,
-                                    <DataListCell key='label'><Stack><StackItem isFilled/><StackItem id={`${account.providerAlias}-idp-label`} isFilled>{this.label(account)}</StackItem></Stack></DataListCell>,
-                                    <DataListCell key='username' width={5}><Stack><StackItem isFilled/><StackItem id={`${account.providerAlias}-idp-username`} isFilled>{account.linkedUsername}</StackItem></Stack></DataListCell>,
+                                    <DataListCell key='idp'>
+                                        <Split>
+                                            <SplitItem className="pf-u-mr-sm">{this.findIcon(account)}</SplitItem>
+                                            <SplitItem className="pf-u-my-xs" isFilled><span id={`${account.providerAlias}-idp-name`}>{account.displayName}</span></SplitItem>
+                                        </Split>
+                                    </DataListCell>,
+                                    <DataListCell key='label'>
+                                        <Split>
+                                            <SplitItem className="pf-u-my-xs" isFilled><span id={`${account.providerAlias}-idp-label`}>{this.label(account)}</span></SplitItem>
+                                        </Split>
+                                    </DataListCell>,
+                                    <DataListCell key='username' width={5}>
+                                        <Split>
+                                            <SplitItem className="pf-u-my-xs" isFilled><span id={`${account.providerAlias}-idp-username`}>{account.linkedUsername}</span></SplitItem>
+                                        </Split>
+                                    </DataListCell>,
                                 ]}/>
-                            <DataListAction aria-labelledby='foo' aria-label='foo action' id='setPasswordAction'>
+                            <DataListAction aria-labelledby='account-link-buttons' aria-label='account-link-buttons action' id='setPasswordAction'>
                                 {isLinked && <Button id={`${account.providerAlias}-idp-unlink`} variant='link' onClick={() => this.unLinkAccount(account)}><UnlinkIcon size='sm'/> <Msg msgKey='unLink'/></Button>}
                                 {!isLinked && <Button id={`${account.providerAlias}-idp-link`} variant='link' onClick={() => this.linkAccount(account)}><LinkIcon size='sm'/> <Msg msgKey='link'/></Button>}
                             </DataListAction>
@@ -214,20 +220,13 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
 
     private findIcon(account: LinkedAccount): React.ReactNode {
         const socialIconId = `${account.providerAlias}-idp-icon-social`;
-        if (account.providerName.toLowerCase().includes('github')) return (<GithubIcon id={socialIconId} size='xl'/>);
-        if (account.providerName.toLowerCase().includes('linkedin')) return (<LinkedinIcon id={socialIconId} size='xl'/>);
-        if (account.providerName.toLowerCase().includes('facebook')) return (<FacebookIcon id={socialIconId} size='xl'/>);
-        if (account.providerName.toLowerCase().includes('google')) return (<GoogleIcon id={socialIconId} size='xl'/>);
-        if (account.providerName.toLowerCase().includes('instagram')) return (<InstagramIcon id={socialIconId} size='xl'/>);
-        if (account.providerName.toLowerCase().includes('microsoft')) return (<MicrosoftIcon id={socialIconId} size='xl'/>);
-        if (account.providerName.toLowerCase().includes('bitbucket')) return (<BitbucketIcon id={socialIconId} size='xl'/>);
-        if (account.providerName.toLowerCase().includes('twitter')) return (<TwitterIcon id={socialIconId} size='xl'/>);
-        if (account.providerName.toLowerCase().includes('openshift')) return (<OpenshiftIcon id={socialIconId} size='xl'/>);
-        if (account.providerName.toLowerCase().includes('gitlab')) return (<GitlabIcon id={socialIconId} size='xl'/>);
-        if (account.providerName.toLowerCase().includes('paypal')) return (<PaypalIcon id={socialIconId} size='xl'/>);
-        if (account.providerName.toLowerCase().includes('stackoverflow')) return (<StackOverflowIcon id={socialIconId} size='xl'/>);
+        if (account.providerName.toLowerCase().includes('bitbucket')) return (<BitbucketIcon id={socialIconId} size='lg'/>);
+        if (account.providerName.toLowerCase().includes('openshift')) return (<div className="idp-icon-social" id="openshift-idp-icon-social" />);
+        if (account.providerName.toLowerCase().includes('gitlab')) return (<GitlabIcon id={socialIconId} size='lg'/>);
+        if (account.providerName.toLowerCase().includes('paypal')) return (<PaypalIcon id={socialIconId} size='lg'/>);
+        if (account.providerName) return (<div className="idp-icon-social" id={socialIconId}/>)
 
-        return (<CubeIcon id={`${account.providerAlias}-idp-icon-default`} size='xl'/>);
+        return (<CubeIcon id={`${account.providerAlias}-idp-icon-default`} size='lg'/>);
     }
 
 };
