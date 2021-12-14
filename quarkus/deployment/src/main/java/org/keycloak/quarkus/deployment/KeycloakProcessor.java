@@ -53,6 +53,8 @@ import java.util.jar.JarFile;
 
 import io.quarkus.agroal.spi.JdbcDataSourceBuildItem;
 import io.quarkus.deployment.IsDevelopment;
+import io.quarkus.deployment.IsNormal;
+import io.quarkus.deployment.IsTest;
 import io.quarkus.deployment.annotations.Consume;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.GeneratedResourceBuildItem;
@@ -265,9 +267,14 @@ class KeycloakProcessor {
      *
      * @param configSources
      */
-    @BuildStep
+    @BuildStep(onlyIf = IsNormal.class)
     void configureConfigSources(BuildProducer<StaticInitConfigSourceProviderBuildItem> configSources) {
         configSources.produce(new StaticInitConfigSourceProviderBuildItem(KeycloakConfigSourceProvider.class.getName()));
+    }
+
+    @BuildStep(onlyIf = IsTest.class)
+    void prepareTestEnvironment(BuildProducer<StaticInitConfigSourceProviderBuildItem> configSources) {
+        configSources.produce(new StaticInitConfigSourceProviderBuildItem("org.keycloak.quarkus.runtime.configuration.test.TestKeycloakConfigSourceProvider"));
     }
 
     /**

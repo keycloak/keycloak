@@ -18,7 +18,6 @@
 package org.keycloak.quarkus.runtime.configuration;
 
 import static java.util.Arrays.asList;
-import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_SHORT_PREFIX;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_SHORT;
@@ -58,16 +57,13 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
     private static final ConfigArgsConfigSource INSTANCE = new ConfigArgsConfigSource();
     private static List<String> IGNORED_ARGS;
 
-    private final boolean alwaysParseArgs;
-
     public static ConfigArgsConfigSource getInstance() {
         return INSTANCE;
     }
 
-    ConfigArgsConfigSource() {
+    protected ConfigArgsConfigSource() {
         // higher priority over default Quarkus config sources
         super(parseArgument(), "CliConfigSource", 500);
-        alwaysParseArgs = isTestLaunchMode();
     }
 
     public static void setCliArgs(String[] args) {
@@ -96,11 +92,6 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
     @Override
     public String getValue(String propertyName) {
         Map<String, String> properties = getProperties();
-
-        if (alwaysParseArgs) {
-            properties = parseArgument();
-        }
-
         String value = properties.get(propertyName);
 
         if (value != null) {
