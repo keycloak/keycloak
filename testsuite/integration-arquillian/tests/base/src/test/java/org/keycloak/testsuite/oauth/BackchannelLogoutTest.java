@@ -11,6 +11,7 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -33,6 +34,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.broker.AbstractNestedBrokerTest;
 import org.keycloak.testsuite.broker.NestedBrokerConfiguration;
 import org.keycloak.testsuite.broker.OidcBackchannelLogoutBrokerConfiguration;
+import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.CredentialBuilder;
 import org.keycloak.testsuite.util.LogoutTokenUtil;
 import org.keycloak.testsuite.util.Matchers;
@@ -54,6 +56,11 @@ import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
 
 public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
+
+    @BeforeClass
+    public static void enabled() {
+        ContainerAssume.assumeNotAuthServerQuarkus(); // see BackchannelLogoutOnQuarkusTest
+    }
 
     public static final String ACCOUNT_CLIENT_NAME = "account";
     public static final String BROKER_CLIENT_ID = "brokerapp";

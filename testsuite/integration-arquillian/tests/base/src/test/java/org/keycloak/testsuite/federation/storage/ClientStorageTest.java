@@ -20,6 +20,7 @@ package org.keycloak.testsuite.federation.storage;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -48,6 +49,7 @@ import org.keycloak.testsuite.federation.HardcodedClientStorageProviderFactory;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.TokenUtil;
@@ -85,6 +87,12 @@ import org.keycloak.testsuite.util.AdminClientUtil;
  */
 @AuthServerContainerExclude(AuthServer.REMOTE)
 public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
+
+    @BeforeClass
+    public static void enabled() {
+        ContainerAssume.assumeNotAuthServerQuarkus(); // see ClientStorageOnQuarkusTest
+    }
+
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
