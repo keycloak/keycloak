@@ -27,8 +27,6 @@ export type AssociatedRolesModalProps = {
   toggleDialog: () => void;
   onConfirm: (newReps: RoleRepresentation[]) => void;
   omitComposites?: boolean;
-  isRadio?: boolean;
-  isMapperId?: boolean;
 };
 
 type FilterType = "roles" | "clients";
@@ -38,8 +36,6 @@ export const AssociatedRolesModal = ({
   toggleDialog,
   onConfirm,
   omitComposites,
-  isRadio,
-  isMapperId,
 }: AssociatedRolesModalProps) => {
   const { t } = useTranslation("roles");
   const [name, setName] = useState("");
@@ -112,7 +108,7 @@ export const AssociatedRolesModal = ({
   useFetch(
     async () => {
       const [role, compositeRoles] = await Promise.all([
-        !isMapperId ? adminClient.roles.findOneById({ id }) : undefined,
+        adminClient.roles.findOneById({ id }),
         !omitComposites ? adminClient.roles.getCompositeRoles({ id }) : [],
       ]);
 
@@ -181,7 +177,6 @@ export const AssociatedRolesModal = ({
         loader={filterType === "roles" ? loader : clientRolesLoader}
         ariaLabelKey="roles:roleList"
         searchPlaceholderKey="roles:searchFor"
-        isRadio={isRadio}
         isPaginated={filterType === "roles"}
         isRowDisabled={(r) => compositeRoles.some((o) => o.name === r.name)}
         searchTypeComponent={

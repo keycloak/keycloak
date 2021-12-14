@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
@@ -19,12 +19,17 @@ import { useRealm } from "../../context/realm-context/RealmContext";
 import { HelpItem } from "../help-enabler/HelpItem";
 import type { ComponentProps } from "./components";
 
+const RealmClient = (realm: string): ClientRepresentation => ({
+  name: "realmRoles",
+  clientId: realm,
+});
+
 export const RoleComponent = ({ name, label, helpText }: ComponentProps) => {
   const { t } = useTranslation("dynamic");
 
   const adminClient = useAdminClient();
   const { realm } = useRealm();
-  const { control, errors } = useFormContext();
+  const { control, errors, getValues } = useFormContext();
 
   const [roleOpen, setRoleOpen] = useState(false);
   const [clientsOpen, setClientsOpen] = useState(false);
@@ -51,30 +56,29 @@ export const RoleComponent = ({ name, label, helpText }: ComponentProps) => {
           (await adminClient.clients.listRoles({ id: client.id! })).length > 0
       );
 
-      filteredClients.map(
-        (client) =>
-          (client.toString = function () {
-            return this.clientId!;
-          })
-      );
       return filteredClients;
     },
     (filteredClients) => setClients(filteredClients),
     []
   );
 
+  useEffect(() => {
+    const value = getValues(fieldName);
+    const [client, role] = value?.includes(".")
+      ? value.split(".")
+      : ["", value || ""];
+    if (client) {
+      setSelectedClient(clients?.find((c) => c.clientId === client));
+    } else {
+      setSelectedClient(RealmClient(realm));
+    }
+    setSelectedRole({ name: role });
+  }, [clients, getValues]);
+
   const createSelectGroup = (clients: ClientRepresentation[]) => {
     return [
       <SelectGroup key="role" label={t("roleGroup")}>
-        <SelectOption
-          key="realmRoles"
-          value={
-            {
-              name: "realmRoles",
-              toString: () => t("realmRoles"),
-            } as ClientRepresentation
-          }
-        >
+        <SelectOption key="realmRoles" value={RealmClient(realm)}>
           {realm}
         </SelectOption>
       </SelectGroup>,
@@ -133,75 +137,76 @@ export const RoleComponent = ({ name, label, helpText }: ComponentProps) => {
         name={fieldName}
         defaultValue=""
         control={control}
-        rules={{ required: true }}
-        render={({ onChange, value }) => {
-          const [client, role] = value?.split(".") || ["", ""];
-          return (
-            <Split hasGutter>
-              <SplitItem>
-                {clients && (
-                  <Select
-                    toggleId={name!}
-                    data-testid={name}
-                    onToggle={() => setClientsOpen(!clientsOpen)}
-                    isOpen={clientsOpen}
-                    variant={SelectVariant.typeahead}
-                    typeAheadAriaLabel={t("selectASourceOfRoles")}
-                    placeholderText={t("selectASourceOfRoles")}
-                    isGrouped
-                    onFilter={(evt) => {
-                      const textInput = evt?.target.value || "";
-                      if (textInput === "") {
-                        return createSelectGroup(clients);
-                      } else {
-                        return createSelectGroup(
-                          clients.filter((client) =>
-                            client
-                              .name!.toLowerCase()
-                              .includes(textInput.toLowerCase())
-                          )
-                        );
-                      }
-                    }}
-                    selections={selectedClient || client}
-                    onClear={() => onClear(onChange)}
-                    onSelect={(_, value) => {
-                      setSelectedClient(value as ClientRepresentation);
-                      setClientsOpen(false);
-                    }}
-                  >
-                    {createSelectGroup(clients)}
-                  </Select>
-                )}
-              </SplitItem>
-              <SplitItem>
+        render={({ onChange }) => (
+          <Split hasGutter>
+            <SplitItem>
+              {clients && (
                 <Select
-                  onToggle={(isExpanded) => setRoleOpen(isExpanded)}
-                  isOpen={roleOpen}
+                  toggleId={`group-${name}`}
+                  onToggle={() => setClientsOpen(!clientsOpen)}
+                  isOpen={clientsOpen}
                   variant={SelectVariant.typeahead}
-                  placeholderText={
-                    selectedClient?.name !== "realmRoles"
-                      ? t("clientRoles")
-                      : t("selectARole")
-                  }
-                  isDisabled={!selectedClient && !role}
-                  typeAheadAriaLabel={t("selectARole")}
-                  selections={selectedRole?.name || role}
-                  onSelect={(_, value) => {
-                    const role = value as RoleRepresentation;
-                    setSelectedRole(role);
-                    onChange(`${selectedClient?.clientId}.${role.name}`);
-                    setRoleOpen(false);
+                  typeAheadAriaLabel={t("selectASourceOfRoles")}
+                  placeholderText={t("selectASourceOfRoles")}
+                  isGrouped
+                  onFilter={(evt) => {
+                    const textInput = evt?.target.value || "";
+                    if (textInput === "") {
+                      return createSelectGroup(clients);
+                    } else {
+                      return createSelectGroup(
+                        clients.filter((client) =>
+                          client
+                            .name!.toLowerCase()
+                            .includes(textInput.toLowerCase())
+                        )
+                      );
+                    }
                   }}
-                  maxHeight={200}
+                  selections={selectedClient?.clientId}
                   onClear={() => onClear(onChange)}
+                  onSelect={(_, value) => {
+                    onClear(onChange);
+                    setSelectedClient(value as ClientRepresentation);
+                    setClientsOpen(false);
+                  }}
                 >
-                  {roleSelectOptions()}
+                  {createSelectGroup(clients)}
                 </Select>
-              </SplitItem>
-            </Split>
-          );
-        }}
+              )}
+            </SplitItem>
+            <SplitItem>
+              <Select
+                toggleId={`role-${name}`}
+                onToggle={(isExpanded) => setRoleOpen(isExpanded)}
+                isOpen={roleOpen}
+                variant={SelectVariant.typeahead}
+                placeholderText={
+                  selectedClient?.name !== "realmRoles"
+                    ? t("clientRoles")
+                    : t("selectARole")
+                }
+                isDisabled={!selectedClient}
+                typeAheadAriaLabel={t("selectARole")}
+                selections={selectedRole?.name}
+                onSelect={(_, value) => {
+                  const role = value as RoleRepresentation;
+                  setSelectedRole(role);
+                  onChange(
+                    selectedClient?.name === "realmRoles"
+                      ? role.name
+                      : `${selectedClient?.clientId}.${role.name}`
+                  );
+                  setRoleOpen(false);
+                }}
+                maxHeight={200}
+                onClear={() => onClear(onChange)}
+              >
+                {roleSelectOptions()}
+              </Select>
+            </SplitItem>
+          </Split>
+        )}
       />
     </FormGroup>
   );

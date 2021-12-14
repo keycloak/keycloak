@@ -30,8 +30,6 @@ export default {
     addMapperExplain:
       "If you want more fine-grain control, you can create protocol mapper on this client",
     realmRoles: "Realm roles",
-    clientRoles: "Client roles",
-    selectASourceOfRoles: "Select a source of roles",
     newRoleName: "New role name",
     searchClientByName: "Search client by name",
     clients: "Clients",
@@ -50,8 +48,6 @@ export default {
     predefinedMappingDescription:
       "Choose one of the predefined mappings from this table",
     mappingTable: "Table with predefined mapping",
-    roleGroup: "Use a realm role from:",
-    clientGroup: "Use a client role from:",
     scope: "Scope",
     roleMappingUpdatedSuccess: "Role mapping updated",
     roleMappingUpdatedError: "Could not update role mapping {{error}}",

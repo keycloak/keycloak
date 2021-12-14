@@ -2,6 +2,11 @@ export default {
   dynamic: {
     addMultivaluedLabel: "Add {{fieldLabel}}",
     selectARole: "Select a role",
+    selectASourceOfRoles: "Select a source of roles",
+    clientRoles: "Client roles",
+    roleGroup: "Use a realm role from:",
+    clientGroup: "Use a client role from:",
+    selectGroup: "Select group",
     usermodel: {
       prop: {
         label: "Property",

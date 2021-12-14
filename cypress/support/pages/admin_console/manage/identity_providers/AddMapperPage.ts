@@ -7,28 +7,26 @@ export default class AddMapperPage {
 
   private mapperNameInput = "#kc-name";
   private mapperRoleInput = "mapper-role-input";
-  private attributeName = "attribute-name";
-  private attributeFriendlyName = "attribute-friendly-name";
+  private attribute = "user.attribute";
+  private attributeName = "attribute.name";
+  private attributeFriendlyName = "attribute.friendly.name";
   private attributeValue = "attribute-value";
   private claimInput = "claim";
   private claimValueInput = "claim-value-input";
-  private socialProfileJSONfieldPath = "social-profile-JSON-field-path";
-  private userAttribute = "user-attribute";
-  private userAttributeName = "user-attribute-name";
-  private userAttributeValue = "user-attribute-value";
-  private userSessionAttribute = "user-session-attribute";
-  private userSessionAttributeValue = "user-session-attribute-value";
+  private socialProfileJSONfieldPath = "jsonField";
+  private userAttribute = "attribute";
+  private userAttributeName = "userAttribute";
+  private userAttributeValue = "attribute.value";
+  private userSessionAttribute = "attribute";
+  private userSessionAttributeValue = "attribute.value";
   private newMapperSaveButton = "new-mapper-save-button";
-  private regexAttributeValuesSwitch = "regex-values-switch";
+  private regexAttributeValuesSwitch = "are.attribute.values.regex";
   private syncmodeSelectToggle = "#syncMode";
   private attributesKeyInput = 'input[name="config.attributes[0].key"]';
   private attributesValueInput = 'input[name="config.attributes[0].value"]';
   private template = "template";
   private target = "#target";
   private targetDropdown = "#target-dropdown";
-  private selectRoleButton = "select-role-button";
-  private radio = "[type=radio]";
-  private addAssociatedRolesModalButton = "add-associated-roles-button";
 
   goToMappersTab() {
     cy.findByTestId(this.mappersTab).click();
@@ -91,14 +89,16 @@ export default class AddMapperPage {
   }
 
   addRoleToMapperForm() {
-    const load = "/auth/admin/realms/master/roles";
-    cy.intercept(load).as("load");
-
-    cy.get(this.radio).eq(0).check();
-
-    cy.findByTestId(this.addAssociatedRolesModalButton).contains("Add").click();
-
-    cy.findByTestId(this.mapperRoleInput).should("have.value", "admin");
+    cy.get("#group-role-select-typeahead")
+      .click()
+      .get(".pf-c-select__menu-item")
+      .first()
+      .click();
+    cy.get("#role-role-select-typeahead")
+      .click()
+      .get(".pf-c-select__menu-item")
+      .first()
+      .click();
 
     return this;
   }
@@ -115,7 +115,7 @@ export default class AddMapperPage {
     cy.get(this.idpMapperSelectToggle).click();
 
     cy.findByTestId(this.idpMapperSelect)
-      .contains("Advanced Attribute To Role")
+      .contains("Advanced Attribute to Role")
       .click();
 
     cy.get(this.attributesKeyInput).clear();
@@ -125,8 +125,6 @@ export default class AddMapperPage {
     cy.get(this.attributesValueInput).type("value");
 
     this.toggleSwitch(this.regexAttributeValuesSwitch);
-
-    cy.findByTestId(this.selectRoleButton).click();
 
     this.addRoleToMapperForm();
 
@@ -153,9 +151,7 @@ export default class AddMapperPage {
     cy.findByTestId(this.template).clear();
     cy.findByTestId(this.template).type("Template");
 
-    cy.get(this.target).click();
-
-    cy.get(this.targetDropdown).contains("LOCAL").click();
+    cy.get(this.target).click().parent().contains("BROKER_ID").click();
 
     this.saveNewMapper();
 
@@ -211,8 +207,7 @@ export default class AddMapperPage {
     cy.findByTestId(this.attributeFriendlyName).clear();
     cy.findByTestId(this.attributeFriendlyName).type("attribute friendly name");
 
-    cy.findByTestId(this.userAttributeName).clear();
-    cy.findByTestId(this.userAttributeName).type("user attribute name");
+    cy.findByTestId(this.attribute).clear().type("user attribute name");
 
     this.saveNewMapper();
 
@@ -234,11 +229,8 @@ export default class AddMapperPage {
       .contains("Attribute Importer")
       .click();
 
-    cy.findByTestId(this.claimInput).clear();
-    cy.findByTestId(this.claimInput).type("claim");
-
-    cy.findByTestId(this.userAttributeName).clear();
-    cy.findByTestId(this.userAttributeName).type("user attribute name");
+    cy.findByTestId(this.claimInput).clear().type("claim");
+    cy.findByTestId(this.attribute).clear().type("user attribute name");
 
     this.saveNewMapper();
 
@@ -258,9 +250,7 @@ export default class AddMapperPage {
 
     cy.findByTestId(this.idpMapperSelect).contains("Hardcoded Role").click();
 
-    cy.findByTestId(this.mapperRoleInput).clear();
-    cy.findByTestId(this.mapperRoleInput).type("admin");
-
+    this.addRoleToMapperForm();
     this.saveNewMapper();
 
     return this;
@@ -281,13 +271,11 @@ export default class AddMapperPage {
       .contains("Hardcoded Attribute")
       .click();
 
-    cy.findByTestId(this.userAttribute).clear();
-    cy.findByTestId(this.userAttribute).type("user session attribute");
+    cy.findByTestId(this.userAttribute).clear().type("user session attribute");
 
-    cy.findByTestId(this.userAttributeValue).clear();
-    cy.findByTestId(this.userAttributeValue).type(
-      "user session attribute value"
-    );
+    cy.findByTestId(this.userAttributeValue)
+      .clear()
+      .type("user session attribute value");
 
     this.saveNewMapper();
 
@@ -306,11 +294,10 @@ export default class AddMapperPage {
     cy.get(this.idpMapperSelectToggle).click();
 
     cy.findByTestId(this.idpMapperSelect)
-      .contains("SAML Attribute To Role")
+      .contains("SAML Attribute to Role")
       .click();
 
-    cy.findByTestId(this.mapperRoleInput).clear();
-    cy.findByTestId(this.mapperRoleInput).type("admin");
+    this.addRoleToMapperForm();
 
     this.saveNewMapper();
 
@@ -324,9 +311,7 @@ export default class AddMapperPage {
 
     cy.findByTestId(this.template).type("_edited");
 
-    cy.get(this.target).click();
-
-    cy.get(this.targetDropdown).contains("BROKER_ID").click();
+    cy.get(this.target).click().parent().contains("BROKER_USERNAME").click();
 
     this.saveNewMapper();
 
@@ -408,19 +393,14 @@ export default class AddMapperPage {
 
     cy.get(this.idpMapperSelectToggle).click();
 
-    cy.findByTestId(this.idpMapperSelect).contains("Claim To Role").click();
+    cy.findByTestId(this.idpMapperSelect).contains("Claim to Role").click();
 
-    cy.get(this.attributesKeyInput).clear();
-    cy.get(this.attributesKeyInput).type("key");
+    cy.findByTestId("attribute-key-input").clear().type("key");
+    cy.findByTestId("attribute-value-input").clear().type("value");
 
-    cy.get(this.attributesValueInput).clear();
-    cy.get(this.attributesValueInput).type("value");
+    this.toggleSwitch("are.claim.values.regex");
 
-    this.toggleSwitch(this.regexAttributeValuesSwitch);
-
-    cy.findByTestId(this.mapperRoleInput).clear();
-    cy.findByTestId(this.mapperRoleInput).type("admin");
-
+    this.addRoleToMapperForm();
     this.saveNewMapper();
 
     return this;

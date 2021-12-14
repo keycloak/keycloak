@@ -128,7 +128,7 @@ describe("Identity provider test", () => {
       masthead.checkNotificationMessage(createMapperSuccessMsg, true);
     });
 
-    it.skip("should edit Username Template Importer mapper", () => {
+    it("should edit Username Template Importer mapper", () => {
       sidebarPage.goToIdentityProviders();
       listingPage.goToItemDetails(samlProviderName);
       addMapperPage.goToMappersTab();

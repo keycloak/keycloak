@@ -5,10 +5,12 @@ import { StringComponent } from "./StringComponent";
 import { BooleanComponent } from "./BooleanComponent";
 import { ListComponent } from "./ListComponent";
 import { RoleComponent } from "./RoleComponent";
+import { MapComponent } from "./MapComponent";
 import { ScriptComponent } from "./ScriptComponent";
 import { ClientSelectComponent } from "./ClientSelectComponent";
 import { MultiValuedStringComponent } from "./MultivaluedStringComponent";
 import { MultiValuedListComponent } from "./MultivaluedListComponent";
+import { GroupComponent } from "./GroupComponent";
 
 export type ComponentProps = Omit<ConfigPropertyRepresentation, "type">;
 const ComponentTypes = [
@@ -17,6 +19,8 @@ const ComponentTypes = [
   "List",
   "Role",
   "Script",
+  "Map",
+  "Group",
   "MultivaluedList",
   "ClientList",
   "MultivaluedString",
@@ -32,6 +36,8 @@ export const COMPONENTS: {
   List: ListComponent,
   Role: RoleComponent,
   Script: ScriptComponent,
+  Map: MapComponent,
+  Group: GroupComponent,
   ClientList: ClientSelectComponent,
   MultivaluedList: MultiValuedListComponent,
   MultivaluedString: MultiValuedStringComponent,
