@@ -248,8 +248,9 @@ class SigningInPage extends React.Component<
         if (!userCredentialMetadatas || userCredentialMetadatas.length === 0) {
             const localizedDisplayName = Msg.localize(displayName);
             return (
+              <DataList aria-label="user credentials">
                 <DataListItem key='no-credentials-list-item' aria-labelledby='no-credentials-list-item'>
-                    <DataListItemRow key='no-credentials-list-item-row'>
+                    <DataListItemRow key='no-credentials-list-item-row' className="pf-u-align-items-center">
                         <DataListItemCells
                             dataListCells={[
                                 <DataListCell key={'no-credentials-cell-0'}/>,
@@ -262,6 +263,7 @@ class SigningInPage extends React.Component<
                             ]}/>
                     </DataListItemRow>
                 </DataListItem>
+              </DataList>
             );
         }
 
@@ -281,8 +283,9 @@ class SigningInPage extends React.Component<
         return (
             <React.Fragment key='userCredentialMetadatas'> {
                 userCredentialMetadatas.map(credentialMetadata => (
+                  <DataList aria-label="user credential">
                     <DataListItem id={`${SigningInPage.credElementId(type, credentialMetadata.credential.id, 'row')}`} key={'credential-list-item-' + credentialMetadata.credential.id} aria-labelledby={'credential-list-item-' + credentialMetadata.credential.userLabel}>
-                        <DataListItemRow key={'userCredentialRow-' + credentialMetadata.credential.id}>
+                        <DataListItemRow key={'userCredentialRow-' + credentialMetadata.credential.id} className="pf-u-align-items-center">
                             <DataListItemCells dataListCells={this.credentialRowCells(credentialMetadata, type)}/>
                             <CredentialAction
                                 credential={credentialMetadata.credential}
@@ -292,6 +295,7 @@ class SigningInPage extends React.Component<
                             />
                         </DataListItemRow>
                     </DataListItem>
+                  </DataList>
                 ))
             }
             </React.Fragment>)
@@ -516,6 +520,7 @@ class CredentialAction extends React.Component<CredentialActionProps> {
             return (
                 <DataListAction aria-labelledby='foo' aria-label='foo action' id={'removeAction-' + this.props.credential.id }>
                     <ContinueCancelModal buttonTitle='remove'
+                        buttonVariant='danger'
                         buttonId={`${SigningInPage.credElementId(this.props.credential.type, this.props.credential.id, 'remove')}`}
                         modalTitle={Msg.localize('removeCred', [userLabel])}
                         modalMessage={Msg.localize('stopUsingCred', [userLabel])}
