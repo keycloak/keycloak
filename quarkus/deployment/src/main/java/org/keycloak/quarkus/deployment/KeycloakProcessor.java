@@ -267,12 +267,12 @@ class KeycloakProcessor {
      *
      * @param configSources
      */
-    @BuildStep(onlyIf = IsNormal.class)
+    @BuildStep(onlyIfNot = IsIntegrationTest.class )
     void configureConfigSources(BuildProducer<StaticInitConfigSourceProviderBuildItem> configSources) {
         configSources.produce(new StaticInitConfigSourceProviderBuildItem(KeycloakConfigSourceProvider.class.getName()));
     }
 
-    @BuildStep(onlyIf = IsTest.class)
+    @BuildStep(onlyIf = IsIntegrationTest.class)
     void prepareTestEnvironment(BuildProducer<StaticInitConfigSourceProviderBuildItem> configSources) {
         configSources.produce(new StaticInitConfigSourceProviderBuildItem("org.keycloak.quarkus.runtime.configuration.test.TestKeycloakConfigSourceProvider"));
     }
@@ -281,7 +281,7 @@ class KeycloakProcessor {
      * <p>Make the build time configuration available at runtime so that the server can run without having to specify some of
      * the properties again.
      */
-    @BuildStep(onlyIf = isReAugmentation.class)
+    @BuildStep(onlyIf = IsReAugmentation.class)
     void persistBuildTimeProperties(BuildProducer<GeneratedResourceBuildItem> resources) {
         Properties properties = new Properties();
 
