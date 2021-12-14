@@ -91,17 +91,17 @@ public class ComponentModel implements Serializable {
 
     public int get(String key, int defaultValue) {
         String s = get(key);
-        return s != null ? Integer.parseInt(s) : defaultValue;
+        return s != null ? Integer.valueOf(s) : defaultValue;
     }
 
     public long get(String key, long defaultValue) {
         String s = get(key);
-        return s != null ? Long.parseLong(s) : defaultValue;
+        return s != null ? Long.valueOf(s) : defaultValue;
     }
 
     public boolean get(String key, boolean defaultValue) {
         String s = get(key);
-        return s != null ? Boolean.parseBoolean(s) : defaultValue;
+        return s != null ? Boolean.valueOf(s) : defaultValue;
     }
 
     public void put(String key, String value) {

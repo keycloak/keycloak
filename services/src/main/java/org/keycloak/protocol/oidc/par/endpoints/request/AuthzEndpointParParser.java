@@ -95,7 +95,7 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
     @Override
     protected Integer getIntParameter(String paramName) {
         String paramVal = requestParams.get(paramName);
-        return paramVal == null ? null : Integer.parseInt(paramVal);
+        return paramVal == null ? null : Integer.valueOf(paramVal);
     }
 
     public String getInvalidRequestMessage() {
