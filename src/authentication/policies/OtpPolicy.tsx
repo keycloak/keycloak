@@ -89,8 +89,7 @@ export const OtpPolicy = () => {
           labelIcon={
             <HelpItem
               helpText="authentication-help:otpType"
-              forLabel={t("otpType")}
-              forID={t(`common:helpLabel`, { label: t("otpType") })}
+              fieldLabelId="authentication:otpType"
             />
           }
           fieldId="otpType"
@@ -124,8 +123,7 @@ export const OtpPolicy = () => {
           labelIcon={
             <HelpItem
               helpText="authentication-help:otpHashAlgorithm"
-              forLabel={t("otpHashAlgorithm")}
-              forID={t(`common:helpLabel`, { label: t("otpHashAlgorithm") })}
+              fieldLabelId="authentication:otpHashAlgorithm"
             />
           }
           fieldId="otpHashAlgorithm"
@@ -165,8 +163,7 @@ export const OtpPolicy = () => {
           labelIcon={
             <HelpItem
               helpText="authentication-help:otpPolicyDigits"
-              forLabel={t("otpPolicyDigits")}
-              forID={t(`common:helpLabel`, { label: t("otpPolicyDigits") })}
+              fieldLabelId="authentication:otpPolicyDigits"
             />
           }
           fieldId="otpPolicyDigits"
@@ -200,8 +197,7 @@ export const OtpPolicy = () => {
           labelIcon={
             <HelpItem
               helpText="authentication-help:lookAhead"
-              forLabel={t("lookAhead")}
-              forID={t(`common:helpLabel`, { label: t("lookAhead") })}
+              fieldLabelId="authentication:lookAhead"
             />
           }
           fieldId="lookAhead"
@@ -240,8 +236,7 @@ export const OtpPolicy = () => {
             labelIcon={
               <HelpItem
                 helpText="authentication-help:otpPolicyPeriod"
-                forLabel={t("otpPolicyPeriod")}
-                forID={t(`common:helpLabel`, { label: t("otpPolicyPeriod") })}
+                fieldLabelId="authentication:otpPolicyPeriod"
               />
             }
           >
@@ -272,8 +267,7 @@ export const OtpPolicy = () => {
             labelIcon={
               <HelpItem
                 helpText="authentication-help:initialCounter"
-                forLabel={t("initialCounter")}
-                forID={t(`common:helpLabel`, { label: t("initialCounter") })}
+                fieldLabelId="authentication:initialCounter"
               />
             }
           >
@@ -310,8 +304,7 @@ export const OtpPolicy = () => {
           labelIcon={
             <HelpItem
               helpText="authentication-help:supportedActions"
-              forLabel={t("supportedActions")}
-              forID={t(`common:helpLabel`, { label: t("supportedActions") })}
+              fieldLabelId="authentication:supportedActions"
             />
           }
         >
