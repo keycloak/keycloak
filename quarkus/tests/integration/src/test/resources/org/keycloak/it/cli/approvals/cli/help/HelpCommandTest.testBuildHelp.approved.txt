@@ -96,8 +96,6 @@ Vault:
 --vault-file-path <dir>
                      If set, secrets can be obtained by reading the content of files within the
                        given path.
---vault-hashicorp-paths <paths>
-                     A set of one or more paths that should be used when looking up secrets.
 
 Examples:
 

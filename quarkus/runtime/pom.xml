@@ -79,10 +79,6 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-smallrye-metrics</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-vault</artifactId>
-        </dependency>
 
         <!-- CLI -->
         <dependency>

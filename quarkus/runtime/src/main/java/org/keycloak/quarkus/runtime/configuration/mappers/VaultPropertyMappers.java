@@ -1,3 +1,20 @@
+/*
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 final class VaultPropertyMappers {
@@ -12,17 +29,6 @@ final class VaultPropertyMappers {
                         .to("kc.spi.vault.files-plaintext.dir")
                         .description("If set, secrets can be obtained by reading the content of files within the given path.")
                         .paramLabel("dir")
-                        .build(),
-                builder()
-                        .from("vault.hashicorp.")
-                        .to("quarkus.vault.")
-                        .description("If set, secrets can be obtained from Hashicorp Vault.")
-                        .build(),
-                builder()
-                        .from("vault.hashicorp.paths")
-                        .to("kc.spi.vault.hashicorp.paths")
-                        .description("A set of one or more paths that should be used when looking up secrets.")
-                        .paramLabel("paths")
                         .build()
         };
     }
