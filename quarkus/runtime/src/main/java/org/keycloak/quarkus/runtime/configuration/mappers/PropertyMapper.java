@@ -121,10 +121,15 @@ public class PropertyMapper {
                 }
             }
 
+            if (defaultValue != null) {
+                return transformValue(defaultValue, context);
+            }
+
+            // now tries any defaults from quarkus
             ConfigValue current = context.proceed(name);
 
-            if (current == null) {
-                return transformValue(defaultValue, context);
+            if (current != null) {
+                return transformValue(current.getValue(), context);
             }
 
             return current;

@@ -41,6 +41,7 @@ import io.quarkus.test.junit.QuarkusMainTestExtension;
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import org.keycloak.quarkus.runtime.configuration.KeycloakPropertiesConfigSource;
+import org.keycloak.quarkus.runtime.configuration.test.TestConfigArgsConfigSource;
 
 public class CLITestExtension extends QuarkusMainTestExtension {
 
@@ -96,6 +97,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         System.getProperties().remove(KeycloakPropertiesConfigSource.KEYCLOAK_CONFIG_FILE_PROP);
         System.getProperties().remove(Environment.PROFILE);
         System.getProperties().remove("quarkus.profile");
+        TestConfigArgsConfigSource.setCliArgs(new String[0]);
     }
 
     @Override
