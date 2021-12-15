@@ -44,6 +44,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jboss.logging.Logger;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
+import org.keycloak.models.map.user.MapUserConsentEntity;
+import org.keycloak.models.map.user.MapUserConsentEntityImpl;
+import org.keycloak.models.map.user.MapUserCredentialEntity;
+import org.keycloak.models.map.user.MapUserCredentialEntityImpl;
+import org.keycloak.models.map.user.MapUserEntityImpl;
+import org.keycloak.models.map.user.MapUserFederatedIdentityEntity;
+import org.keycloak.models.map.user.MapUserFederatedIdentityEntityImpl;
 import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -80,10 +87,14 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
 
     private final static DeepCloner CLONER = new DeepCloner.Builder()
       .genericCloner(Serialization::from)
-      .constructor(MapClientEntityImpl.class,         MapClientEntityImpl::new)
-      .constructor(MapProtocolMapperEntity.class,     MapProtocolMapperEntityImpl::new)
-      .constructor(MapGroupEntityImpl.class,          MapGroupEntityImpl::new)
-      .constructor(MapRoleEntityImpl.class,           MapRoleEntityImpl::new)
+      .constructor(MapClientEntityImpl.class,                       MapClientEntityImpl::new)
+      .constructor(MapProtocolMapperEntity.class,                   MapProtocolMapperEntityImpl::new)
+      .constructor(MapGroupEntityImpl.class,                        MapGroupEntityImpl::new)
+      .constructor(MapRoleEntityImpl.class,                         MapRoleEntityImpl::new)
+      .constructor(MapUserEntityImpl.class,                         MapUserEntityImpl::new)
+      .constructor(MapUserCredentialEntityImpl.class,               MapUserCredentialEntityImpl::new)
+      .constructor(MapUserFederatedIdentityEntityImpl.class,        MapUserFederatedIdentityEntityImpl::new)
+      .constructor(MapUserConsentEntityImpl.class,                  MapUserConsentEntityImpl::new)
       .build();
 
     private static final Map<String, StringKeyConvertor> KEY_CONVERTORS = new HashMap<>();
