@@ -14,30 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.common.delegate;
-
-import org.keycloak.models.map.common.EntityField;
-import org.keycloak.models.map.common.UpdatableEntity;
+package org.keycloak.models.map.storage.tree;
 
 /**
  *
  * @author hmlnarik
  */
-public class SimpleDelegateProvider<T extends UpdatableEntity> implements DelegateProvider<T> {
+public final class TreeProperties {
 
-    private final T delegate;
+    public static final String MODEL_CLASS = "model-class";
+    public static final String DEFAULT_STORE_CREATE = "default-create";
+    public static final String DEFAULT_STORE_READ = "default-read";
 
-    public SimpleDelegateProvider(T delegate) {
-        this.delegate = delegate;
-    }
-
-    @Override
-    public T getDelegate(boolean isRead, Enum<? extends EntityField<T>> field, Object... parameters) {
-        return this.delegate;
-    }
-
-    @Override
-    public boolean isUpdated() {
-        return this.delegate.isUpdated();
-    }
 }
