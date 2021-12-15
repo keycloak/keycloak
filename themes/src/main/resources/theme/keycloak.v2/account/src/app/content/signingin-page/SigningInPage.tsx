@@ -532,7 +532,7 @@ class CredentialAction extends React.Component<CredentialActionProps> {
                         )}`}
                         onClick={() => this.props.updateAction.execute()}
                     >
-                        <Msg msgKey="changePassword" />
+                        <Msg msgKey="update" />
                     </Button>
                 </DataListAction>
             );
