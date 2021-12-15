@@ -30,6 +30,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.CrossDCTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.InitialDcState;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.OAuthClient;
 import java.util.Set;
 import org.hamcrest.Matchers;
@@ -142,45 +143,42 @@ public class SessionsPreloadCrossDCTest extends AbstractAdminCrossDCTest {
     @Test
     public void loginFailuresPreloadTest() throws Exception {
         // Enable brute force protector
-        RealmRepresentation realmRep = getAdminClientForStartedNodeInDc(0).realms().realm("test").toRepresentation();
-        realmRep.setBruteForceProtected(true);
-        getAdminClientForStartedNodeInDc(0).realms().realm("test").update(realmRep);
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(getAdminClientForStartedNodeInDc(0).realms().realm("test"))
+                .updateWith(r -> r.setBruteForceProtected(true))
+                .updateWith(r -> r.setQuickLoginCheckMilliSeconds(20L))  // This is necessary so user is not locked out for too fast consecutive login attempts; when user is locked out failure count stops increasing
+                .update()
+        ) {
+            String userId = ApiUtil.findUserByUsername(getAdminClientForStartedNodeInDc(0).realms().realm("test"), "test-user@localhost").getId();
 
-        String userId = ApiUtil.findUserByUsername(getAdminClientForStartedNodeInDc(0).realms().realm("test"), "test-user@localhost").getId();
+            int loginFailuresBefore = (Integer) getAdminClientForStartedNodeInDc(0).realm("test").attackDetection().bruteForceUserStatus(userId).get("numFailures");
+            log.infof("loginFailuresBefore: %d", loginFailuresBefore);
 
-        int loginFailuresBefore = (Integer) getAdminClientForStartedNodeInDc(0).realm("test").attackDetection().bruteForceUserStatus(userId).get("numFailures");
-        log.infof("loginFailuresBefore: %d", loginFailuresBefore);
+            // Create initial brute force records
+            for (int i = 0; i < SESSIONS_COUNT; i++) {
+                OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "bad-password");
+                Assert.assertNull(response.getAccessToken());
+                Assert.assertNotNull(response.getError());
+            }
 
-        // Create initial brute force records
-        for (int i=0 ; i<SESSIONS_COUNT ; i++) {
-            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "bad-password");
-            Assert.assertNull(response.getAccessToken());
-            Assert.assertNotNull(response.getError());
+            // Start 2nd DC.
+            CrossDCTestEnricher.startAuthServerBackendNode(DC.SECOND, 0);
+            enableLoadBalancerNode(DC.SECOND, 0);
+
+            Retry.execute(() -> {
+                // Ensure loginFailures are loaded in both 1st DC and 2nd DC
+                Set<String> keys1 = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME).enumerateKeys();
+                Set<String> keys2 = getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME).enumerateKeys();
+                int loginFailures1 = (Integer) getAdminClientForStartedNodeInDc(0).realm("test").attackDetection().bruteForceUserStatus(userId).get("numFailures");
+                int loginFailures2 = (Integer) getAdminClientForStartedNodeInDc(1).realm("test").attackDetection().bruteForceUserStatus(userId).get("numFailures");
+                log.infof("keys1: %d, keys2: %d, loginFailures1: %d, loginFailures2: %d", keys1, keys2, loginFailures1, loginFailures2);
+                Assert.assertThat(keys1, Matchers.equalTo(keys2));
+                Assert.assertEquals(loginFailuresBefore + SESSIONS_COUNT, loginFailures1);
+                Assert.assertEquals(loginFailuresBefore + SESSIONS_COUNT, loginFailures2);
+            }, 3, 400);
+
+            // On DC2 sessions were preloaded from remoteCache
+            Assert.assertTrue(getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.WORK_CACHE_NAME).contains("distributed::remoteCacheLoad::loginFailures"));
         }
-
-        // Start 2nd DC.
-        CrossDCTestEnricher.startAuthServerBackendNode(DC.SECOND, 0);
-        enableLoadBalancerNode(DC.SECOND, 0);
-
-        Retry.execute(() -> {
-            // Ensure loginFailures are loaded in both 1st DC and 2nd DC
-            Set<String> keys1 = getTestingClientForStartedNodeInDc(0).testing().cache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME).enumerateKeys();
-            Set<String> keys2 = getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME).enumerateKeys();
-            int loginFailures1 = (Integer) getAdminClientForStartedNodeInDc(0).realm("test").attackDetection().bruteForceUserStatus(userId).get("numFailures");
-            int loginFailures2 = (Integer) getAdminClientForStartedNodeInDc(1).realm("test").attackDetection().bruteForceUserStatus(userId).get("numFailures");
-            log.infof("keys1: %d, keys2: %d, loginFailures1: %d, loginFailures2: %d", keys1, keys2, loginFailures1, loginFailures2);
-            Assert.assertThat(keys1, Matchers.equalTo(keys2));
-            Assert.assertEquals(loginFailuresBefore + SESSIONS_COUNT, loginFailures1);
-            Assert.assertEquals(loginFailuresBefore + SESSIONS_COUNT, loginFailures2);
-        }, 3, 400);
-
-        // On DC2 sessions were preloaded from remoteCache
-        Assert.assertTrue(getTestingClientForStartedNodeInDc(1).testing().cache(InfinispanConnectionProvider.WORK_CACHE_NAME).contains("distributed::remoteCacheLoad::loginFailures"));
-
-        // Disable brute force protector
-        realmRep = getAdminClientForStartedNodeInDc(0).realms().realm("test").toRepresentation();
-        realmRep.setBruteForceProtected(true);
-        getAdminClientForStartedNodeInDc(0).realms().realm("test").update(realmRep);
     }
 
 
