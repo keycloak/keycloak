@@ -136,3 +136,8 @@ server/
 /assets
 **/cypress.env.json
 cypress/downloads/
+
+# IntelliJ #
+
+*.iml
+.idea

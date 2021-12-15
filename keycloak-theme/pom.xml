@@ -22,6 +22,11 @@
     <artifactId>keycloak-admin-ui</artifactId>
     <version>16.0.0-SNAPSHOT</version>
     <name>Keycloak Administration UI</name>
+    <description>Keycloak Administration UI</description>
+    
+    <properties>
+        <nexus.staging.plugin.version>1.6.5</nexus.staging.plugin.version>
+    </properties>
 
     <licenses>
         <license>
@@ -30,6 +35,21 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
+    
+    <url>http://keycloak.org</url>    
+    
+    <scm>
+        <connection>scm:git:git://github.com/keycloak/keycloak-admin-ui.git</connection>
+        <developerConnection>scm:git:git@github.com:keycloak/keycloak-admin-ui.git</developerConnection>
+        <url>https://github.com/keycloak/keycloak-admin-ui/tree/master/</url>
+    </scm>    
+    
+    <developers>
+        <developer>
+            <id>keycloak</id>
+            <name>Keycloak Team</name>
+        </developer>
+    </developers>
 
     <distributionManagement>
         <repository>
@@ -38,8 +58,44 @@
             <url>https://maven.pkg.github.com/keycloak/keycloak-admin-ui</url>
         </repository>
     </distributionManagement>
+    
+    <profiles>
+        <profile>
+            <id>nexus-staging</id>
+            <distributionManagement>
+                <repository>
+                    <id>jboss-releases-repository</id>
+                    <name>JBoss Releases Repository</name>
+                    <url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/</url>
+                </repository>
+            </distributionManagement>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.sonatype.plugins</groupId>
+                    <artifactId>nexus-staging-maven-plugin</artifactId>
+                    <version>${nexus.staging.plugin.version}</version>
+                    <extensions>true</extensions>
+                    <configuration>
+                        <nexusUrl>https://repository.jboss.org/nexus</nexusUrl>
+                        <serverId>jboss-releases-repository</serverId>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        
         <plugins>
             <plugin>
                 <artifactId>maven-clean-plugin</artifactId>

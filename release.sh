@@ -7,7 +7,7 @@ echo "--------------------------------------------------------------------------
 echo "Building:"
 echo ""
 
-mvn --file=./keycloak-theme/pom.xml -DretryFailedDeploymentCount=10 -DautoReleaseAfterClose=true clean deploy
+mvn --file=./keycloak-theme/pom.xml -Pnexus-staging -DretryFailedDeploymentCount=10 -DautoReleaseAfterClose=true clean deploy
 
 echo "------------------------------------------------------------------------------------------------------------"
 echo "Create tag:"
