@@ -248,7 +248,7 @@ class SigningInPage extends React.Component<
         if (!userCredentialMetadatas || userCredentialMetadatas.length === 0) {
             const localizedDisplayName = Msg.localize(displayName);
             return (
-              <DataList aria-label="user credentials">
+              <DataList aria-label="no-credentials-list-item">
                 <DataListItem key='no-credentials-list-item' aria-labelledby='no-credentials-list-item'>
                     <DataListItemRow key='no-credentials-list-item-row' className="pf-u-align-items-center">
                         <DataListItemCells
@@ -535,4 +535,4 @@ class CredentialAction extends React.Component<CredentialActionProps> {
 }
 
 const SigningInPageWithRouter = withRouter(SigningInPage);
-export { SigningInPageWithRouter as SigningInPage};
+export { SigningInPageWithRouter as SigningInPage };
