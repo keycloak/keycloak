@@ -92,11 +92,11 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
 
   return (
     <Modal
-      aria-labelledby={t("chooseAMapperType")}
+      aria-labelledby={t("addPredefinedMappers")}
       variant={ModalVariant.medium}
       header={
         <TextContent>
-          <Text component={TextVariants.h1}>{t("chooseAMapperType")}</Text>
+          <Text component={TextVariants.h1}>{t("addPredefinedMappers")}</Text>
           <Text>{t("predefinedMappingDescription")}</Text>
         </TextContent>
       }
@@ -138,7 +138,7 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
             props.onConfirm(mapper!);
             props.toggleDialog();
           }}
-          aria-label={t("chooseAMapperType")}
+          aria-label={t("addPredefinedMappers")}
           isCompact
         >
           <DataListItem aria-labelledby="headerName" id="header">
@@ -179,12 +179,21 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
           variant={TableVariant.compact}
           cells={header}
           onSelect={(_, isSelected, rowIndex) => {
-            rows[rowIndex].selected = isSelected;
-            setRows([...rows]);
+            if (rowIndex === -1) {
+              setRows(
+                rows.map((row) => ({
+                  ...row,
+                  selected: isSelected,
+                }))
+              );
+            } else {
+              rows[rowIndex].selected = isSelected;
+              setRows([...rows]);
+            }
           }}
-          canSelectAll={false}
+          canSelectAll
           rows={rows}
-          aria-label={t("chooseAMapperType")}
+          aria-label={t("addPredefinedMappers")}
         >
           <TableHeader />
           <TableBody />
