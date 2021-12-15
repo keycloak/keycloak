@@ -77,4 +77,8 @@ public interface CLIResult extends LaunchResult {
     default void assertMessage(String message) {
         assertTrue(getOutput().contains(message));
     }
+
+    default void assertBuild() {
+        assertMessage("Server configuration updated and persisted");
+    }
 }

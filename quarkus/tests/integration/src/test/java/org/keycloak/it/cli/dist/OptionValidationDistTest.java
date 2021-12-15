@@ -15,29 +15,22 @@
  * limitations under the License.
  */
 
-package org.keycloak.it.cli;
+package org.keycloak.it.cli.dist;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.CLITest;
+import org.keycloak.it.junit5.extension.DistributionTest;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
-import io.quarkus.test.junit.main.QuarkusMainLauncher;
 
-@CLITest
-public class OptionValidationTest {
-
-    @Test
-    @Launch({"build", "--db"})
-    public void failMissingOptionValue(LaunchResult result) {
-        Assertions.assertTrue(result.getErrorOutput().contains("Missing required value for option '--db' (vendor). Expected values are: h2-file, h2-mem, mariadb, mssql, mssql-2012, mysql, oracle, postgres, postgres-95"));
-    }
+@DistributionTest
+public class OptionValidationDistTest {
 
     @Test
-    @Launch({"build", "--db", "foo", "bar"})
-    public void failMultipleOptionValue(LaunchResult result) {
-        Assertions.assertTrue(result.getErrorOutput().contains("Option '--db' expects a single value (vendor) Expected values are: h2-file, h2-mem, mariadb, mssql, mssql-2012, mysql, oracle, postgres, postgres-95"));
+    @Launch({"build", "--db=invalid"})
+    public void failInvalidOptionValue(LaunchResult result) {
+        Assertions.assertTrue(result.getErrorOutput().contains("Invalid value for option '--db': invalid. Expected values are: h2-file, h2-mem, mariadb, mssql, mssql-2012, mysql, oracle, postgres, postgres-95"));
     }
 }

@@ -23,10 +23,11 @@ final class DatabasePropertyMappers {
                         .transformer((db, context) -> Database.getDialect(db).orElse(Database.getDialect("h2-file").get()))
                         .hidden(true)
                         .build(),
-                builder().from("db-driver")
+                builder().from("db.driver")
                         .mapFrom("db")
+                        .defaultValue(Database.getDriver("h2-file").get())
                         .to("quarkus.datasource.jdbc.driver")
-                        .transformer((db, context) -> Database.getDriver(db).orElse(Database.getDriver("h2-file").get()))
+                        .transformer((db, context) -> Database.getDriver(db).orElse(db))
                         .hidden(true)
                         .build(),
                 builder().from("db").
@@ -37,10 +38,9 @@ final class DatabasePropertyMappers {
                         .paramLabel("vendor")
                         .expectedValues(asList(Database.getAliases()))
                         .build(),
-                builder().from("db-tx-type")
-                        .mapFrom("db")
+                builder().from("db.tx-type")
+                        .defaultValue("xa")
                         .to("quarkus.datasource.jdbc.transactions")
-                        .transformer((db, context) -> "xa")
                         .hidden(true)
                         .build(),
                 builder().from("db.url")
