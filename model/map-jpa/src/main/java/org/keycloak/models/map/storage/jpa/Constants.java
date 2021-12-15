@@ -14,10 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.keycloak.models.map.storage.jpa;
 
-package org.keycloak.models.map.storage.jpa.liquibase;
-
-import org.keycloak.provider.ProviderFactory;
-
-public interface MapLiquibaseConnectionProviderFactory extends ProviderFactory<MapLiquibaseConnectionProvider> {
+public interface Constants {
+    public static final Integer SUPPORTED_VERSION_CLIENT = 1;
 }

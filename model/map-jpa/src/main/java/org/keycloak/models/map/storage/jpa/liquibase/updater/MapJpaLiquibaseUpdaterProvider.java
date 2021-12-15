@@ -15,8 +15,9 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.map.storage.jpa.liquibase;
+package org.keycloak.models.map.storage.jpa.liquibase.updater;
 
+import org.keycloak.models.map.storage.jpa.liquibase.connection.MapLiquibaseConnectionProvider;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;

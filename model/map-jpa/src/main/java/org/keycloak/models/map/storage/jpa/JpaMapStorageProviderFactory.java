@@ -14,20 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage.jpa.client;
+package org.keycloak.models.map.storage.jpa;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Function;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
 import javax.sql.DataSource;
 import org.hibernate.cfg.AvailableSettings;
 import org.jboss.logging.Logger;
@@ -41,40 +42,49 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.map.storage.jpa.client.entity.JpaClientEntity;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.dblock.DBLockManager;
 import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntityImpl;
 import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
+import org.keycloak.models.map.storage.jpa.client.JpaClientMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterProvider;
+import static org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterProvider.Status.VALID;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
-public class JpaClientMapStorageProviderFactory implements 
+public class JpaMapStorageProviderFactory implements 
         AmphibianProviderFactory<MapStorageProvider>,
         MapStorageProviderFactory,
         EnvironmentDependentProviderFactory {
 
-    final static DeepCloner CLONER = new DeepCloner.Builder()
-            .constructor(JpaClientEntity.class,               JpaClientEntity::new)
-            .constructor(MapProtocolMapperEntity.class,       MapProtocolMapperEntityImpl::new)
-            .build();
-
-    public static final String PROVIDER_ID = "jpa-client-map-storage";
+    public static final String PROVIDER_ID = "jpa-map-storage";
 
     private volatile EntityManagerFactory emf;
-
-    private static final Logger logger = Logger.getLogger(JpaClientMapStorageProviderFactory.class);
-
     private Config.Scope config;
+    private static final Logger logger = Logger.getLogger(JpaMapStorageProviderFactory.class);
+
+    public final static DeepCloner CLONER = new DeepCloner.Builder()
+            //client
+            .constructor(JpaClientEntity.class,                 JpaClientEntity::new)
+            .constructor(MapProtocolMapperEntity.class,         MapProtocolMapperEntityImpl::new)
+            .build();
+
+    private static final Map<Class<?>, Function<EntityManager, MapKeycloakTransaction>> MODEL_TO_TX = new HashMap<>();
+    static {
+        MODEL_TO_TX.put(ClientModel.class, JpaClientMapKeycloakTransaction::new);
+    }
+
+    public MapKeycloakTransaction createTransaction(Class<?> modelType, EntityManager em) {
+        return MODEL_TO_TX.get(modelType).apply(em);
+    }
 
     @Override
     public MapStorageProvider create(KeycloakSession session) {
-        lazyInit(session);
-
-        return new JpaClientMapStorageProvider(emf.createEntityManager());
+        lazyInit();
+        return new JpaMapStorageProvider(this, session, emf.createEntityManager());
     }
 
     @Override
@@ -93,7 +103,7 @@ public class JpaClientMapStorageProviderFactory implements
 
     @Override
     public String getHelpText() {
-        return "JPA Client Map Storage";
+        return "JPA Map Storage";
     }
 
     @Override
@@ -108,15 +118,15 @@ public class JpaClientMapStorageProviderFactory implements
         }
     }
 
-    private void lazyInit(KeycloakSession session) {
+    private void lazyInit() {
         if (emf == null) {
             synchronized (this) {
                 if (emf == null) {
-                    logger.debugf("Initializing JPA connections%s", StackUtil.getShortStackTrace());
+                    logger.debugf("Initializing JPA connections %s", StackUtil.getShortStackTrace());
 
                     Map<String, Object> properties = new HashMap<>();
 
-                    String unitName = "keycloak-client-store";
+                    String unitName = config.get("persistenceUnitName", "keycloak-jpa-default");
 
                     String dataSource = config.get("dataSource");
                     if (dataSource != null) {
@@ -155,66 +165,37 @@ public class JpaClientMapStorageProviderFactory implements
                         logger.warn("Concurrent requests may not be reliable with transaction level lower than TRANSACTION_REPEATABLE_READ.");
                     }
 
-
-                    Connection connection = getConnection();
-                    try {
-                        printOperationalInfo(connection);
-
-                        customChanges(connection, schema, session, session.getProvider(MapJpaUpdaterProvider.class));
-
-                        logger.trace("Creating EntityManagerFactory");
-                        Collection<ClassLoader> classLoaders = new ArrayList<>();
-                        if (properties.containsKey(AvailableSettings.CLASSLOADERS)) {
-                            classLoaders.addAll((Collection<ClassLoader>) properties.get(AvailableSettings.CLASSLOADERS));
-                        }
-                        classLoaders.add(getClass().getClassLoader());
-                        properties.put(AvailableSettings.CLASSLOADERS, classLoaders);
-                        this.emf = JpaUtils.createEntityManagerFactory(session, unitName, properties, false);
-                        logger.trace("EntityManagerFactory created");
-
-                    } finally {
-                        // Close after creating EntityManagerFactory to prevent in-mem databases from closing
-                        if (connection != null) {
-                            try {
-                                connection.close();
-                            } catch (SQLException e) {
-                                logger.warn("Can't close connection", e);
-                            }
-                        }
-                    }
+                    logger.trace("Creating EntityManagerFactory");
+                    this.emf = Persistence.createEntityManagerFactory(unitName, properties);
+                    logger.trace("EntityManagerFactory created");
                 }
             }
         }
     }
 
-    private void customChanges(Connection connection, String schema, KeycloakSession session, MapJpaUpdaterProvider updater) {
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession lockSession) -> {
-            DBLockManager dbLockManager = new DBLockManager(lockSession);
-            DBLockProvider dbLock2 = dbLockManager.getDBLock();
-            dbLock2.waitForLock(DBLockProvider.Namespace.DATABASE);
-            try {
-                updater.update(ClientModel.class, connection, schema);
-            } finally {
-                dbLock2.releaseLock();
-            }
-        });
-    }
+    public void validateAndUpdateSchema(KeycloakSession session, Class<?> modelType) {
+        Connection connection = getConnection();
 
-    private void printOperationalInfo(Connection connection) {
         try {
-            HashMap<String, String> operationalInfo = new LinkedHashMap<>();
-            DatabaseMetaData md = connection.getMetaData();
-            operationalInfo.put("databaseUrl", md.getURL());
-            operationalInfo.put("databaseUser", md.getUserName());
-            operationalInfo.put("databaseProduct", md.getDatabaseProductName() + " " + md.getDatabaseProductVersion());
-            operationalInfo.put("databaseDriver", md.getDriverName() + " " + md.getDriverVersion());
+            if (logger.isDebugEnabled()) printOperationalInfo(connection);
 
-            logger.infof("Database info: %s", operationalInfo.toString());
-        } catch (SQLException e) {
-            logger.warn("Unable to prepare operational info due database exception: " + e.getMessage());
+            MapJpaUpdaterProvider updater = session.getProvider(MapJpaUpdaterProvider.class);
+            MapJpaUpdaterProvider.Status status = updater.validate(modelType, connection, config.get("schema"));
+
+            if (! status.equals(VALID)) {
+                update(modelType, connection, session);
+            }
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    logger.warn("Can't close connection", e);
+                }
+            }
         }
     }
-    
+
     private Connection getConnection() {
         try {
             String dataSourceLookup = config.get("dataSource");
@@ -231,5 +212,33 @@ public class JpaClientMapStorageProviderFactory implements
         } catch (ClassNotFoundException | SQLException | NamingException e) {
             throw new RuntimeException("Failed to connect to database", e);
         }
+    }
+
+    private void printOperationalInfo(Connection connection) {
+        try {
+            HashMap<String, String> operationalInfo = new LinkedHashMap<>();
+            DatabaseMetaData md = connection.getMetaData();
+            operationalInfo.put("databaseUrl", md.getURL());
+            operationalInfo.put("databaseUser", md.getUserName());
+            operationalInfo.put("databaseProduct", md.getDatabaseProductName() + " " + md.getDatabaseProductVersion());
+            operationalInfo.put("databaseDriver", md.getDriverName() + " " + md.getDriverVersion());
+
+            logger.debugf("Database info: %s", operationalInfo.toString());
+        } catch (SQLException e) {
+            logger.warn("Unable to prepare operational info due database exception: " + e.getMessage());
+        }
+    }
+
+    private void update(Class<?> modelType, Connection connection, KeycloakSession session) {
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession lockSession) -> {
+            // TODO locking tables based on modelType: https://github.com/keycloak/keycloak/issues/9388
+            DBLockProvider dbLock = session.getProvider(DBLockProvider.class);
+            dbLock.waitForLock(DBLockProvider.Namespace.DATABASE);
+            try {
+                session.getProvider(MapJpaUpdaterProvider.class).update(modelType, connection, config.get("schema"));
+            } finally {
+                dbLock.releaseLock();
+            }
+        });
     }
 }

@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.models.map.storage.jpa.liquibase.DefaultLiquibaseConnectionProviderFactory
+org.keycloak.models.map.storage.jpa.liquibase.connection.DefaultLiquibaseConnectionProviderFactory

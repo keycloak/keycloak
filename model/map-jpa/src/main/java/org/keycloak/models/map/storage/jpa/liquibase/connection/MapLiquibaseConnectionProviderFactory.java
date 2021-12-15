@@ -15,33 +15,9 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.map.storage.jpa.liquibase;
+package org.keycloak.models.map.storage.jpa.liquibase.connection;
 
-import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.Spi;
 
-public class MapLiquibaseConnectionSpi implements Spi {
-
-    public final static String SPI_NAME = "mapLiquibaseConnection";
-
-    @Override
-    public boolean isInternal() {
-        return true;
-    }
-
-    @Override
-    public String getName() {
-        return SPI_NAME;
-    }
-
-    @Override
-    public Class<? extends Provider> getProviderClass() {
-        return MapLiquibaseConnectionProvider.class;
-    }
-
-    @Override
-    public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return MapLiquibaseConnectionProviderFactory.class;
-    }
+public interface MapLiquibaseConnectionProviderFactory extends ProviderFactory<MapLiquibaseConnectionProvider> {
 }
