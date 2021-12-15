@@ -34,10 +34,10 @@ import org.keycloak.models.map.client.MapClientEntityDelegate;
 import org.keycloak.models.map.common.StringKeyConvertor.UUIDKey;
 import org.keycloak.models.map.storage.jpa.client.delegate.JpaClientDelegateProvider;
 import org.keycloak.models.map.storage.jpa.client.entity.JpaClientEntity;
-import static org.keycloak.models.map.storage.jpa.client.JpaClientMapStorage.SUPPORTED_VERSION;
-import static org.keycloak.models.map.storage.jpa.client.JpaClientMapStorageProviderFactory.CLONER;
+import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.CLONER;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.QueryParameters;
+import static org.keycloak.models.map.storage.jpa.Constants.SUPPORTED_VERSION_CLIENT;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 public class JpaClientMapKeycloakTransaction extends JpaKeycloakTransaction implements MapKeycloakTransaction<MapClientEntity, ClientModel> {
@@ -52,7 +52,7 @@ public class JpaClientMapKeycloakTransaction extends JpaKeycloakTransaction impl
         if (mapEntity.getId() == null) {
             jpaEntity.setId(UUIDKey.INSTANCE.yieldNewUniqueKey().toString());
         }
-        jpaEntity.setEntityVersion(SUPPORTED_VERSION);
+        jpaEntity.setEntityVersion(SUPPORTED_VERSION_CLIENT);
         em.persist(jpaEntity);
         return jpaEntity;
     }

@@ -22,15 +22,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import org.keycloak.models.map.storage.jpa.client.JpaClientMapStorage;
 import org.keycloak.models.map.storage.jpa.client.entity.JpaClientMetadata;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.migration.JpaClientMigration;
+import static org.keycloak.models.map.storage.jpa.Constants.SUPPORTED_VERSION_CLIENT;
 
 public class JpaEntityMigration {
 
     static final Map<Class<?>, BiFunction<ObjectNode, Integer, ObjectNode>> MIGRATIONS = new HashMap<>();
     static {
-        MIGRATIONS.put(JpaClientMetadata.class, (tree, entityVersion) -> migrateTreeTo(entityVersion, JpaClientMapStorage.SUPPORTED_VERSION, tree, JpaClientMigration.MIGRATORS));
+        MIGRATIONS.put(JpaClientMetadata.class, (tree, entityVersion) -> migrateTreeTo(entityVersion, SUPPORTED_VERSION_CLIENT, tree, JpaClientMigration.MIGRATORS));
     }
 
     private static ObjectNode migrateTreeTo(int entityVersion, Integer supportedVersion, ObjectNode node, List<Function<ObjectNode, ObjectNode>> migrators) {
