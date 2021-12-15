@@ -31,6 +31,17 @@ import java.util.stream.Stream;
 public interface UserCredentialStore extends Provider {
     void updateCredential(RealmModel realm, UserModel user, CredentialModel cred);
     CredentialModel createCredential(RealmModel realm, UserModel user, CredentialModel cred);
+
+    /**
+     * Removes credential with the {@code id} for the {@code user}.
+     *
+     * @param realm realm.
+     * @param user user
+     * @param id id
+     * @return {@code true} if the credential was removed, {@code false} otherwise
+     *
+     * TODO: Make this method return Boolean so that store can return "I don't know" answer, this can be used for example in async stores
+     */
     boolean removeStoredCredential(RealmModel realm, UserModel user, String id);
     CredentialModel getStoredCredentialById(RealmModel realm, UserModel user, String id);
 
