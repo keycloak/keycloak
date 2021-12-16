@@ -24,13 +24,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.UserModel;
+import org.keycloak.storage.ReadOnlyException;
 
 /**
  * <p>The default implementation for {@link UserProfile}. Should be reused as much as possible by the different implementations
@@ -42,14 +42,16 @@ import org.keycloak.models.UserModel;
  */
 public final class DefaultUserProfile implements UserProfile {
 
+    protected final UserProfileMetadata metadata;
     private final Function<Attributes, UserModel> userSupplier;
     private final Attributes attributes;
     private final KeycloakSession session;
     private boolean validated;
     private UserModel user;
 
-    public DefaultUserProfile(Attributes attributes, Function<Attributes, UserModel> userCreator, UserModel user,
+    public DefaultUserProfile(UserProfileMetadata metadata, Attributes attributes, Function<Attributes, UserModel> userCreator, UserModel user,
             KeycloakSession session) {
+        this.metadata = metadata;
         this.userSupplier = userCreator;
         this.attributes = attributes;
         this.user = user;
@@ -58,7 +60,7 @@ public final class DefaultUserProfile implements UserProfile {
 
     @Override
     public void validate() {
-        ValidationException validationException = new ValidationException(session, user);
+        ValidationException validationException = new ValidationException();
 
         for (String attributeName : attributes.nameSet()) {
             this.attributes.validate(attributeName, validationException);
@@ -87,7 +89,7 @@ public final class DefaultUserProfile implements UserProfile {
     }
 
     @Override
-    public void update(boolean removeAttributes, BiConsumer<String, UserModel>... changeListener) {
+    public void update(boolean removeAttributes, AttributeChangeListener... changeListener) {
         if (!validated) {
             validate();
         }
@@ -95,7 +97,7 @@ public final class DefaultUserProfile implements UserProfile {
         updateInternal(user, removeAttributes, changeListener);
     }
 
-    private UserModel updateInternal(UserModel user, boolean removeAttributes, BiConsumer<String, UserModel>... changeListener) {
+    private UserModel updateInternal(UserModel user, boolean removeAttributes, AttributeChangeListener... changeListener) {
         if (user == null) {
             throw new RuntimeException("No user model provided for persisting changes");
         }
@@ -113,8 +115,13 @@ public final class DefaultUserProfile implements UserProfile {
 
                 if (currentValue.size() != updatedValue.size() || !currentValue.containsAll(updatedValue)) {
                     user.setAttribute(name, updatedValue);
-                    for (BiConsumer<String, UserModel> listener : changeListener) {
-                        listener.accept(name, user);
+                    
+                    if(UserModel.EMAIL.equals(name) && metadata.getContext().isResetEmailVerified()) {
+                        user.setEmailVerified(false);
+                    }
+                    
+                    for (AttributeChangeListener listener : changeListener) {
+                        listener.onChange(name, user, currentValue);
                     }
                 }
             }
@@ -131,12 +138,18 @@ public final class DefaultUserProfile implements UserProfile {
                     if (this.attributes.isReadOnly(attr)) {
                         continue;
                     }
+                    
+                    List<String> currentValue = user.getAttributeStream(attr).filter(Objects::nonNull).collect(Collectors.toList());
                     user.removeAttribute(attr);
+                    
+                    for (AttributeChangeListener listener : changeListener) {
+                        listener.onChange(attr, user, currentValue);
+                    }
                 }
             }
-        } catch (ModelException me) {
-            // some client code relies on this exception to react to exceptions from the storage
-            throw me;
+        } catch (ModelException | ReadOnlyException e) {
+            // some client code relies on these exceptions to react to exceptions from the storage
+            throw e;
         } catch (Exception cause) {
             throw new RuntimeException("Unexpected error when persisting user profile", cause);
         }

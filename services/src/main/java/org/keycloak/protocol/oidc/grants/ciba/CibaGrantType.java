@@ -26,6 +26,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -44,18 +45,22 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.grants.ciba.channel.CIBAAuthenticationRequest;
+import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.context.BackchannelTokenRequestContext;
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.CibaRootEndpoint;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.utils.ProfileHelper;
+
+import java.util.Map;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -71,6 +76,24 @@ public class CibaGrantType {
     public static final String AUTH_REQ_ID = "auth_req_id";
     public static final String CLIENT_NOTIFICATION_TOKEN = "client_notification_token";
     public static final String REQUESTED_EXPIRY = "requested_expiry";
+    public static final String USER_CODE = "user_code";
+
+    public static final String REQUEST = OIDCLoginProtocol.REQUEST_PARAM;
+    public static final String REQUEST_URI = OIDCLoginProtocol.REQUEST_URI_PARAM;
+    /**
+     * Prefix used to store additional params from the original authentication callback response into {@link AuthenticationSessionModel} note to be available later in Authenticators, RequiredActions etc. Prefix is used to
+     * prevent collisions with internally used notes.
+     *
+     * @see AuthenticationSessionModel#getClientNote(String)
+     */
+    public static final String ADDITIONAL_CALLBACK_PARAMS_PREFIX = "ciba_callback_response_param_";
+    /**
+     * Prefix used to store additional params from the backchannel authentication request into {@link AuthenticationSessionModel} note to be available later in Authenticators, RequiredActions etc. Prefix is used to
+     * prevent collisions with internally used notes.
+     *
+     * @see AuthenticationSessionModel#getClientNote(String)
+     */
+    public static final String ADDITIONAL_BACKCHANNEL_REQ_PARAMS_PREFIX = "ciba_backchannel_request_param_";
 
     public static UriBuilder authorizationUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = OIDCLoginProtocolService.tokenServiceBaseUrl(baseUriBuilder);
@@ -129,6 +152,14 @@ public class CibaGrantType {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Invalid Auth Req ID", Response.Status.BAD_REQUEST);
         }
 
+        request.setClient(client);
+        try {
+            session.clientPolicy().triggerOnEvent(new BackchannelTokenRequestContext(request, formParams));
+        } catch (ClientPolicyException cpe) {
+            event.error(cpe.getError());
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
+
         OAuth2DeviceTokenStoreProvider store = session.getProvider(OAuth2DeviceTokenStoreProvider.class);
         OAuth2DeviceCodeModel deviceCode = store.getByDeviceCode(realm, request.getId());
 
@@ -155,7 +186,7 @@ public class CibaGrantType {
 
         if (deviceCode.isDenied()) {
             logDebug("denied.", request);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "not authorized", Response.Status.FORBIDDEN);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "not authorized", Response.Status.BAD_REQUEST);
         }
 
         // get corresponding Authentication Channel Result entry
@@ -164,7 +195,7 @@ public class CibaGrantType {
             throw new CorsErrorResponseException(cors, OAuthErrorException.AUTHORIZATION_PENDING, "The authorization request is still pending as the end-user hasn't yet been authenticated.", Response.Status.BAD_REQUEST);
         }
 
-        UserSessionModel userSession = createUserSession(request);
+        UserSessionModel userSession = createUserSession(request, deviceCode.getAdditionalParams());
         UserModel user = userSession.getUser();
 
         store.removeDeviceCode(realm, request.getId());
@@ -183,11 +214,14 @@ public class CibaGrantType {
         ClientSessionContext clientSessionCtx = DefaultClientSessionContext
                 .fromClientSessionAndClientScopes(userSession.getAuthenticatedClientSessionByClient(client.getId()), TokenManager.getRequestedClientScopes(scopeParam, client), session);
 
+        int authTime = Time.currentTime();
+        userSession.setNote(AuthenticationManager.AUTH_TIME, String.valueOf(authTime));
+
         return tokenEndpoint.createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true);
 
     }
 
-    private UserSessionModel createUserSession(CIBAAuthenticationRequest request) {
+    private UserSessionModel createUserSession(CIBAAuthenticationRequest request, Map<String, String> additionalParams) {
         RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm);
         // here Client Model of CD(Consumption Device) needs to be used to bind its Client Session with User Session.
         AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(client);
@@ -196,6 +230,16 @@ public class CibaGrantType {
         authSession.setAction(AuthenticatedClientSessionModel.Action.AUTHENTICATE.name());
         authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
         authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, request.getScope());
+        if (additionalParams != null) {
+            for (String paramName : additionalParams.keySet()) {
+                authSession.setClientNote(ADDITIONAL_CALLBACK_PARAMS_PREFIX + paramName, additionalParams.get(paramName));
+            }
+        }
+        if (request.getOtherClaims() != null) {
+            for (String paramName : request.getOtherClaims().keySet()) {
+                authSession.setClientNote(ADDITIONAL_BACKCHANNEL_REQ_PARAMS_PREFIX + paramName, request.getOtherClaims().get(paramName).toString());
+            }
+        }
 
         UserModel user = session.users().getUserById(realm, request.getSubject());
 

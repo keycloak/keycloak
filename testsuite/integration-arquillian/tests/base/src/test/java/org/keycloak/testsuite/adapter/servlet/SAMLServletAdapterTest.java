@@ -139,7 +139,6 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.adapter.page.*;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.auth.page.login.Login;
@@ -1590,8 +1589,6 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         client.close();
     }
 
-    @AuthServerContainerExclude(value = AuthServerContainerExclude.AuthServer.QUARKUS, details =
-            "Exclude Quarkus because when running on Java 9+ you get CNF exceptions due to the fact that javax.xml.soap was removed (as well as other JEE modules). Need to discuss how we are going to solve this for both main dist and Quarkus")
     @Test
     public void testSuccessfulEcpFlow() throws Exception {
         Response authnRequestResponse = AdminClientUtil.createResteasyClient().target(ecpSPPage.toString()).request()
@@ -1682,8 +1679,6 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         Assert.assertThat(resourceResponse.readEntity(String.class), containsString("pedroigor"));
     }
 
-    @AuthServerContainerExclude(value = AuthServerContainerExclude.AuthServer.QUARKUS, details =
-    "Exclude Quarkus because when running on Java 9+ you get CNF exceptions due to the fact that javax.xml.soap was removed (as well as other JEE modules). Need to discuss how we are going to solve this for both main dist and Quarkus")
     @Test
     public void testInvalidCredentialsEcpFlow() throws Exception {
         Response authnRequestResponse = AdminClientUtil.createResteasyClient().target(ecpSPPage.toString()).request()

@@ -145,7 +145,12 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
         BrokeredIdentityContext brokerContext = (BrokeredIdentityContext) this.attributes.get(IDENTITY_PROVIDER_BROKER_CONTEXT);
         String idpAlias = brokerContext.getIdpConfig().getAlias();
+        String idpDisplayName = brokerContext.getIdpConfig().getDisplayName();
         idpAlias = ObjectUtil.capitalize(idpAlias);
+
+        if (idpDisplayName != null) {
+            idpAlias = ObjectUtil.capitalize(idpDisplayName);
+        }
 
         attributes.put("identityProviderContext", brokerContext);
         attributes.put("identityProviderAlias", idpAlias);
@@ -207,9 +212,9 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
             Theme theme = getTheme();
             Locale locale = session.getContext().resolveLocale(user);
             attributes.put("locale", locale);
-            Properties rb = theme.getMessages(locale);
-            Map<String, String> localizationTexts = realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag());
-            rb.putAll(localizationTexts);
+            Properties rb = new Properties();
+            rb.putAll(theme.getMessages(locale));
+            rb.putAll(realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag()));
             attributes.put("msg", new MessageFormatterMethod(locale, rb));
             attributes.put("properties", theme.getProperties());
             String subject = new MessageFormat(rb.getProperty(subjectKey, subjectKey), locale).format(subjectAttributes.toArray());

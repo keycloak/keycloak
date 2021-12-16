@@ -27,6 +27,9 @@ import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.jose.JOSEParser;
+import org.keycloak.jose.JOSE;
+import org.keycloak.jose.jwe.JWE;
 import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
@@ -47,8 +50,17 @@ import org.keycloak.representations.LogoutToken;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.Key;
+import java.security.PrivateKey;
+import java.util.Comparator;
+import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 public class DefaultTokenManager implements TokenManager {
 
@@ -103,17 +115,69 @@ public class DefaultTokenManager implements TokenManager {
     }
 
     @Override
-    public <T> T decodeClientJWT(String token, ClientModel client, Class<T> clazz) {
-        if (token == null) {
+    public <T> T decodeClientJWT(String jwt, ClientModel client, BiConsumer<JOSE, ClientModel> jwtValidator, Class<T> clazz) {
+        if (jwt == null) {
             return null;
         }
+
+        JOSE joseToken = JOSEParser.parse(jwt);
+
+        jwtValidator.accept(joseToken, client);
+
+        if (joseToken instanceof JWE) {
+            try {
+                Optional<KeyWrapper> activeKey;
+                String kid = joseToken.getHeader().getKeyId();
+                Stream<KeyWrapper> keys = session.keys().getKeysStream(session.getContext().getRealm());
+
+                if (kid == null) {
+                    activeKey = keys.filter(k -> KeyUse.ENC.equals(k.getUse()) && k.getPublicKey() != null)
+                            .sorted(Comparator.comparingLong(KeyWrapper::getProviderPriority).reversed())
+                            .findFirst();
+                } else {
+                    activeKey = keys
+                            .filter(k -> KeyUse.ENC.equals(k.getUse()) && k.getKid().equals(kid)).findAny();
+                }
+
+                JWE jwe = JWE.class.cast(joseToken);
+                Key privateKey = activeKey.map(KeyWrapper::getPrivateKey)
+                        .orElseThrow(() -> new RuntimeException("Could not find private key for decrypting token"));
+
+                jwe.getKeyStorage().setDecryptionKey(privateKey);
+
+                byte[] content = jwe.verifyAndDecodeJwe().getContent();
+
+                try {
+                    JOSE jws = JOSEParser.parse(new String(content));
+
+                    if (jws instanceof JWSInput) {
+                        jwtValidator.accept(jws, client);
+                        return verifyJWS(client, clazz, (JWSInput) jws);
+                    }
+                } catch (Exception ignore) {
+                    // try to decrypt content as is
+                }
+
+                return JsonSerialization.readValue(content, clazz);
+            } catch (IOException cause) {
+                throw new RuntimeException("Failed to deserialize JWT", cause);
+            } catch (JWEException cause) {
+                throw new RuntimeException("Failed to decrypt JWT", cause);
+            }
+        }
+
+        return verifyJWS(client, clazz, (JWSInput) joseToken);
+    }
+
+    private <T> T verifyJWS(ClientModel client, Class<T> clazz, JWSInput jws) {
         try {
-            JWSInput jws = new JWSInput(token);
-
             String signatureAlgorithm = jws.getHeader().getAlgorithm().name();
-
             ClientSignatureVerifierProvider signatureProvider = session.getProvider(ClientSignatureVerifierProvider.class, signatureAlgorithm);
+
             if (signatureProvider == null) {
+                if (jws.getHeader().getAlgorithm().equals(org.keycloak.jose.jws.Algorithm.none)) {
+                    return jws.readJsonContent(clazz);
+                }
                 return null;
             }
 
@@ -139,6 +203,8 @@ public class DefaultTokenManager implements TokenManager {
                 return getSignatureAlgorithm(OIDCConfigAttributes.ID_TOKEN_SIGNED_RESPONSE_ALG);
             case USERINFO:
                 return getSignatureAlgorithm(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG);
+            case AUTHORIZATION_RESPONSE:
+                return getSignatureAlgorithm(OIDCConfigAttributes.AUTHORIZATION_SIGNED_RESPONSE_ALG);
             default:
                 throw new RuntimeException("Unknown token type");
         }
@@ -211,6 +277,8 @@ public class DefaultTokenManager implements TokenManager {
             case ID:
             case LOGOUT:
                 return getCekManagementAlgorithm(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ALG);
+            case AUTHORIZATION_RESPONSE:
+                return getCekManagementAlgorithm(OIDCConfigAttributes.AUTHORIZATION_ENCRYPTED_RESPONSE_ALG);
             default:
                 return null;
         }
@@ -232,6 +300,8 @@ public class DefaultTokenManager implements TokenManager {
             case ID:
             case LOGOUT:
                 return getEncryptAlgorithm(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ENC);
+            case AUTHORIZATION_RESPONSE:
+                return getEncryptAlgorithm(OIDCConfigAttributes.AUTHORIZATION_ENCRYPTED_RESPONSE_ENC);
             default:
                 return null;
         }

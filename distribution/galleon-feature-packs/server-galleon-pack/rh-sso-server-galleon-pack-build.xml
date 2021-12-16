@@ -1,0 +1,77 @@
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2021, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<build xmlns="urn:wildfly:feature-pack-build:3.1" producer="sso@maven(org.jboss.universe:product-universe):current">
+    <transitive>
+        <dependency group-id="org.jboss.eap" artifact-id="wildfly-ee-galleon-pack">
+            <name>org.wildfly:wildfly-ee-galleon-pack</name>
+            <packages inherit="false">
+                <include name="docs.examples"/>
+                <exclude name="product.conf"/>
+            </packages>
+            <default-configs inherit="false"/>
+        </dependency>
+    </transitive>
+    <dependencies>
+        <dependency group-id="org.jboss.eap" artifact-id="wildfly-ee-galleon-pack">
+            <name>org.wildfly:wildfly-ee-galleon-pack</name>
+            <packages inherit="false">
+                <include name="docs.examples"/>
+                <exclude name="product.conf"/>
+            </packages>
+            <default-configs inherit="false"/>
+        </dependency>
+    </dependencies>
+    <default-packages>
+        <package name="modules.all"/>
+        <package name="docs.licenses"/>
+        <package name="docs-examples"/>
+        <package name="root"/>
+        <package name="welcome-content-keycloak"/>
+    </default-packages>
+    <package-schemas>
+        <group name="org.keycloak"/>
+    </package-schemas>
+
+    <config name="standalone.xml" model="standalone"/>
+    <config name="standalone-ha.xml" model="standalone"/>
+    <config name="domain.xml" model="domain"/>
+    <config name="host.xml" model="host"/>
+    <config name="host-master.xml" model="host"/>
+    <config name="host-slave.xml" model="host"/>
+
+    <plugins>
+        <plugin artifact="org.wildfly.galleon-plugins:wildfly-galleon-plugins"/>
+    </plugins>
+
+    <generate-feature-specs>
+        <extensions>
+            <standalone>
+                <extension>org.keycloak.keycloak-server-subsystem</extension>
+            </standalone>
+            <domain>
+                <extension>org.keycloak.keycloak-server-subsystem</extension>
+            </domain>
+        </extensions>
+    </generate-feature-specs>
+
+</build>

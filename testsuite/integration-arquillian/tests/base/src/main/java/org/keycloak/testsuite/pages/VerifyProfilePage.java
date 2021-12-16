@@ -75,6 +75,26 @@ public class VerifyProfilePage extends AbstractPage {
 
         update(firstName, lastName);
     }
+    
+    public void updateEmail(String email, String firstName, String lastName) {
+        
+        emailInput.clear();
+        if (emailInput != null) {
+            emailInput.sendKeys(email);
+        }
+        
+        firstNameInput.clear();
+        if (firstName != null) {
+            firstNameInput.sendKeys(firstName);
+        }
+
+        lastNameInput.clear();
+        if (lastName != null) {
+            lastNameInput.sendKeys(lastName);
+        }
+
+        submitButton.click();
+    }
 
     public String getAlertError() {
         try {
@@ -82,6 +102,10 @@ public class VerifyProfilePage extends AbstractPage {
         } catch (NoSuchElementException e) {
             return null;
         }
+    }
+    
+    public String getLabelForField(String fieldId) {
+        return driver.findElement(By.cssSelector("label[for="+fieldId+"]")).getText();
     }
 
     public String getFirstName() {

@@ -660,6 +660,12 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public ParConfig getParPolicy() {
+        if (isUpdated()) return updated.getParPolicy();
+        return cached.getParConfig(modelSupplier);
+    }
+
+    @Override
     public List<RequiredCredentialModel> getRequiredCredentials() {
         if (isUpdated()) return updated.getRequiredCredentials();
         return cached.getRequiredCredentials();
@@ -1692,9 +1698,9 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public void patchRealmLocalizationTexts(String locale, Map<String, String> localizationTexts) {
+    public void createOrUpdateRealmLocalizationTexts(String locale, Map<String, String> localizationTexts) {
         getDelegateForUpdate();
-        updated.patchRealmLocalizationTexts(locale, localizationTexts);
+        updated.createOrUpdateRealmLocalizationTexts(locale, localizationTexts);
     }
 
     @Override

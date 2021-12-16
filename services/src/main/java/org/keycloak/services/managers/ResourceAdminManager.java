@@ -214,7 +214,7 @@ public class ResourceAdminManager {
             }
             CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
             UrlEncodedFormEntity formEntity;
-            formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            formEntity = new UrlEncodedFormEntity(parameters);
             post.setEntity(formEntity);
             try (CloseableHttpResponse response = httpClient.execute(post)) {
                 try {

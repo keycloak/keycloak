@@ -16,7 +16,10 @@
  */
 package org.keycloak.models.map.storage.chm;
 
+import org.keycloak.models.map.common.StringKeyConvertor;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -28,25 +31,32 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jboss.logging.Logger;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
-import org.keycloak.models.map.storage.MapModelCriteriaBuilder;
-import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
+import org.keycloak.models.map.storage.QueryParameters;
+import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder.UpdatePredicatesFunc;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
+import org.keycloak.storage.SearchableModelField;
 
-public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>, M> implements MapKeycloakTransaction<K, V, M> {
+public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & UpdatableEntity, M> implements MapKeycloakTransaction<V, M> {
 
     private final static Logger log = Logger.getLogger(ConcurrentHashMapKeycloakTransaction.class);
 
-    private boolean active;
-    private boolean rollback;
-    private final Map<K, MapTaskWithValue> tasks = new LinkedHashMap<>();
-    private final MapStorage<K, V, M> map;
+    protected boolean active;
+    protected boolean rollback;
+    protected final Map<String, MapTaskWithValue> tasks = new LinkedHashMap<>();
+    protected final ConcurrentHashMapCrudOperations<V, M> map;
+    protected final StringKeyConvertor<K> keyConvertor;
+    protected final DeepCloner cloner;
+    protected final Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates;
 
     enum MapOperation {
         CREATE, UPDATE, DELETE,
     }
 
-    public ConcurrentHashMapKeycloakTransaction(MapStorage<K, V, M> map) {
+    public ConcurrentHashMapKeycloakTransaction(ConcurrentHashMapCrudOperations<V, M> map, StringKeyConvertor<K> keyConvertor, DeepCloner cloner, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates) {
         this.map = map;
+        this.keyConvertor = keyConvertor;
+        this.cloner = cloner;
+        this.fieldPredicates = fieldPredicates;
     }
 
     @Override
@@ -56,14 +66,15 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
 
     @Override
     public void commit() {
-        log.tracef("Commit - %s", map);
-
         if (rollback) {
             throw new RuntimeException("Rollback only!");
         }
 
-        for (MapTaskWithValue value : tasks.values()) {
-            value.execute();
+        if (! tasks.isEmpty()) {
+            log.tracef("Commit - %s", map);
+            for (MapTaskWithValue value : tasks.values()) {
+                value.execute();
+            }
         }
     }
 
@@ -87,27 +98,51 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
         return active;
     }
 
+    private MapModelCriteriaBuilder<K, V, M> createCriteriaBuilder() {
+        return new MapModelCriteriaBuilder<K, V, M>(keyConvertor, fieldPredicates);
+    }
+
     /**
      * Adds a given task if not exists for the given key
      */
-    protected void addTask(K key, MapTaskWithValue task) {
+    protected void addTask(String key, MapTaskWithValue task) {
         log.tracef("Adding operation %s for %s @ %08x", task.getOperation(), key, System.identityHashCode(task.getValue()));
 
-        K taskKey = key;
-        tasks.merge(taskKey, task, MapTaskCompose::new);
+        tasks.merge(key, task, MapTaskCompose::new);
+    }
+
+    /**
+     * Returns a deep clone of an entity. If the clone is already in the transaction, returns this one.
+     * <p>
+     * Usually used before giving an entity from a source back to the caller,
+     * to prevent changing it directly in the data store, but to keep transactional properties.
+     * @param origEntity Original entity
+     * @return
+     */
+    public V registerEntityForChanges(V origEntity) {
+        final String key = origEntity.getId();
+        // If the entity is listed in the transaction already, return it directly
+        if (tasks.containsKey(key)) {
+            MapTaskWithValue current = tasks.get(key);
+            return current.getValue();
+        }
+        // Else enlist its copy in the transaction. Never return direct reference to the underlying map
+        final V res = cloner.from(origEntity);
+        return updateIfChanged(res, e -> e.isUpdated());
     }
 
     @Override
-    public V read(K key) {
-        try {   // TODO: Consider using Optional rather than handling NPE
-            return read(key, map::read);
+    public V read(String sKey) {
+        try { 
+            // TODO: Consider using Optional rather than handling NPE
+            final V entity = read(sKey, map::read);
+            return registerEntityForChanges(entity);
         } catch (NullPointerException ex) {
             return null;
         }
     }
 
-    @Override
-    public V read(K key, Function<K, V> defaultValueFunc) {
+    public V read(String key, Function<String, V> defaultValueFunc) {
         MapTaskWithValue current = tasks.get(key);
         // If the key exists, then it has entered the "tasks" after bulk delete that could have 
         // removed it, so looking through bulk deletes is irrelevant
@@ -134,11 +169,14 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
      * Returns the stream of records that match given criteria and includes changes made in this transaction, i.e.
      * the result contains updates and excludes records that have been deleted in this transaction.
      *
-     * @param mcb
+     * @param queryParameters
      * @return
      */
     @Override
-    public Stream<V> read(ModelCriteriaBuilder<M> mcb) {
+    public Stream<V> read(QueryParameters<M> queryParameters) {
+        DefaultModelCriteria<M> mcb = queryParameters.getModelCriteriaBuilder();
+        MapModelCriteriaBuilder<K,V,M> mapMcb = mcb.flashToModelCriteriaBuilder(createCriteriaBuilder());
+
         Predicate<? super V> filterOutAllBulkDeletedObjects = tasks.values().stream()
           .filter(BulkDeleteOperation.class::isInstance)
           .map(BulkDeleteOperation.class::cast)
@@ -146,13 +184,13 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
           .reduce(Predicate::and)
           .orElse(v -> true);
 
-        Stream<V> updatedAndNotRemovedObjectsStream = this.map.read(mcb)
+        Stream<V> updatedAndNotRemovedObjectsStream = this.map.read(queryParameters)
           .filter(filterOutAllBulkDeletedObjects)
           .map(this::getUpdated)      // If the object has been removed, tx.get will return null, otherwise it will return me.getValue()
-          .filter(Objects::nonNull);
+          .filter(Objects::nonNull)
+          .map(this::registerEntityForChanges);
 
         // In case of created values stored in MapKeycloakTransaction, we need filter those according to the filter
-        MapModelCriteriaBuilder<K, V, M> mapMcb = mcb.unwrap(MapModelCriteriaBuilder.class);
         Stream<V> res = mapMcb == null
           ? updatedAndNotRemovedObjectsStream
           : Stream.concat(
@@ -160,63 +198,73 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
               updatedAndNotRemovedObjectsStream
             );
 
+        if (!queryParameters.getOrderBy().isEmpty()) {
+            res = res.sorted(MapFieldPredicates.getComparator(queryParameters.getOrderBy().stream()));
+        }
+
+
         return res;
     }
 
     @Override
-    public long getCount(ModelCriteriaBuilder<M> mcb) {
-        return read(mcb).count();
+    public long getCount(QueryParameters<M> queryParameters) {
+        return read(queryParameters).count();
     }
 
-    @Override
-    public V getUpdated(V orig) {
+    private V getUpdated(V orig) {
         MapTaskWithValue current = orig == null ? null : tasks.get(orig.getId());
         return current == null ? orig : current.getValue();
     }
 
     @Override
-    public void update(K key, V value) {
-        addTask(key, new UpdateOperation(key, value));
+    public V create(V value) {
+        String key = value.getId();
+        if (key == null) {
+            K newKey = keyConvertor.yieldNewUniqueKey();
+            key = keyConvertor.keyToString(newKey);
+            value = cloner.from(key, value);
+        } else {
+            value = cloner.from(value);
+        }
+        addTask(key, new CreateOperation(value));
+        return value;
     }
 
-    @Override
-    public void create(K key, V value) {
-        addTask(key, new CreateOperation(key, value));
-    }
-
-    @Override
-    public void updateIfChanged(K key, V value, Predicate<V> shouldPut) {
+    public V updateIfChanged(V value, Predicate<V> shouldPut) {
+        String key = value.getId();
         log.tracef("Adding operation UPDATE_IF_CHANGED for %s @ %08x", key, System.identityHashCode(value));
 
-        K taskKey = key;
+        String taskKey = key;
         MapTaskWithValue op = new MapTaskWithValue(value) {
             @Override
             public void execute() {
                 if (shouldPut.test(getValue())) {
-                    map.update(key, getValue());
+                    map.update(getValue());
                 }
             }
             @Override public MapOperation getOperation() { return MapOperation.UPDATE; }
         };
-        tasks.merge(taskKey, op, this::merge);
+        return tasks.merge(taskKey, op, this::merge).getValue();
     }
 
     @Override
-    public void delete(K key) {
+    public boolean delete(String key) {
         addTask(key, new DeleteOperation(key));
+        return true;
     }
 
-
     @Override
-    public long delete(K artificialKey, ModelCriteriaBuilder<M> mcb) {
+    public long delete(QueryParameters<M> queryParameters) {
         log.tracef("Adding operation DELETE_BULK");
 
+        K artificialKey = keyConvertor.yieldNewUniqueKey();
+
         // Remove all tasks that create / update / delete objects deleted by the bulk removal.
-        final BulkDeleteOperation bdo = new BulkDeleteOperation(mcb);
+        final BulkDeleteOperation bdo = new BulkDeleteOperation(queryParameters);
         Predicate<V> filterForNonDeletedObjects = bdo.getFilterForNonDeletedObjects();
         long res = 0;
-        for (Iterator<Entry<K, MapTaskWithValue>> it = tasks.entrySet().iterator(); it.hasNext();) {
-            Entry<K, MapTaskWithValue> me = it.next();
+        for (Iterator<Entry<String, MapTaskWithValue>> it = tasks.entrySet().iterator(); it.hasNext();) {
+            Entry<String, MapTaskWithValue> me = it.next();
             if (! filterForNonDeletedObjects.test(me.getValue().getValue())) {
                 log.tracef(" [DELETE_BULK] removing %s", me.getKey());
                 it.remove();
@@ -224,14 +272,14 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
             }
         }
 
-        tasks.put(artificialKey, bdo);
+        tasks.put(keyConvertor.keyToString(artificialKey), bdo);
 
         return res + bdo.getCount();
     }
 
     private Stream<V> createdValuesStream(Predicate<? super K> keyFilter, Predicate<? super V> entityFilter) {
         return this.tasks.entrySet().stream()
-          .filter(me -> keyFilter.test(me.getKey()))
+          .filter(me -> keyFilter.test(keyConvertor.fromStringSafe(me.getKey())))
           .map(Map.Entry::getValue)
           .filter(v -> v.containsCreate() && ! v.isReplace())
           .map(MapTaskWithValue::getValue)
@@ -322,33 +370,18 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
     }
 
     private class CreateOperation extends MapTaskWithValue {
-        private final K key;
-
-        public CreateOperation(K key, V value) {
+        public CreateOperation(V value) {
             super(value);
-            this.key = key;
         }
 
-        @Override public void execute() { map.create(key, getValue()); }
+        @Override public void execute() { map.create(getValue()); }
         @Override public MapOperation getOperation() { return MapOperation.CREATE; }
     }
 
-    private class UpdateOperation extends MapTaskWithValue {
-        private final K key;
-
-        public UpdateOperation(K key, V value) {
-            super(value);
-            this.key = key;
-        }
-
-        @Override public void execute() { map.update(key, getValue()); }
-        @Override public MapOperation getOperation() { return MapOperation.UPDATE; }
-    }
-
     private class DeleteOperation extends MapTaskWithValue {
-        private final K key;
+        private final String key;
 
-        public DeleteOperation(K key) {
+        public DeleteOperation(String key) {
             super(null);
             this.key = key;
         }
@@ -359,30 +392,26 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
 
     private class BulkDeleteOperation extends MapTaskWithValue {
 
-        private final ModelCriteriaBuilder<M> mcb;
+        private final QueryParameters<M> queryParameters;
 
-        public BulkDeleteOperation(ModelCriteriaBuilder<M> mcb) {
+        public BulkDeleteOperation(QueryParameters<M> queryParameters) {
             super(null);
-            this.mcb = mcb;
+            this.queryParameters = queryParameters;
         }
 
         @Override
         @SuppressWarnings("unchecked")
         public void execute() {
-            map.delete(mcb);
+            map.delete(queryParameters);
         }
 
         public Predicate<V> getFilterForNonDeletedObjects() {
-            if (! (mcb instanceof MapModelCriteriaBuilder)) {
-                return t -> true;
-            }
-
-            @SuppressWarnings("unchecked")
-            final MapModelCriteriaBuilder<K, V, M> mmcb = (MapModelCriteriaBuilder<K, V, M>) mcb;
+            DefaultModelCriteria<M> mcb = queryParameters.getModelCriteriaBuilder();
+            MapModelCriteriaBuilder<K,V,M> mmcb = mcb.flashToModelCriteriaBuilder(createCriteriaBuilder());
             
             Predicate<? super V> entityFilter = mmcb.getEntityFilter();
-            Predicate<? super K> keyFilter = ((MapModelCriteriaBuilder) mcb).getKeyFilter();
-            return v -> v == null || ! (keyFilter.test(v.getId()) && entityFilter.test(v));
+            Predicate<? super K> keyFilter = mmcb.getKeyFilter();
+            return v -> v == null || ! (keyFilter.test(keyConvertor.fromStringSafe(v.getId())) && entityFilter.test(v));
         }
 
         @Override
@@ -391,7 +420,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity<K>
         }
 
         private long getCount() {
-            return map.getCount(mcb);
+            return map.getCount(queryParameters);
         }
     }
 }

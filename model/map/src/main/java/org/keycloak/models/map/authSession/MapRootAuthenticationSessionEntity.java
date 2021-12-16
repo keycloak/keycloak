@@ -18,6 +18,7 @@ package org.keycloak.models.map.authSession;
 
 import org.keycloak.models.map.common.AbstractEntity;
 
+import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,39 +26,34 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapRootAuthenticationSessionEntity<K> implements AbstractEntity<K> {
+public class MapRootAuthenticationSessionEntity extends UpdatableEntity.Impl implements AbstractEntity {
 
-    private K id;
+    private String id;
     private String realmId;
 
     /**
      * Flag signalizing that any of the setters has been meaningfully used.
      */
-    protected boolean updated;
     private int timestamp;
     private Map<String, MapAuthenticationSessionEntity> authenticationSessions = new ConcurrentHashMap<>();
 
-    protected MapRootAuthenticationSessionEntity() {
-        this.id = null;
-        this.realmId = null;
-    }
+    public MapRootAuthenticationSessionEntity() {}
 
-    public MapRootAuthenticationSessionEntity(K id, String realmId) {
-        Objects.requireNonNull(id, "id");
-        Objects.requireNonNull(realmId, "realmId");
-
+    public MapRootAuthenticationSessionEntity(String id, String realmId) {
         this.id = id;
         this.realmId = realmId;
     }
 
     @Override
-    public K getId() {
+    public String getId() {
         return this.id;
     }
 
     @Override
-    public boolean isUpdated() {
-        return this.updated;
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     public String getRealmId() {
@@ -100,5 +96,9 @@ public class MapRootAuthenticationSessionEntity<K> implements AbstractEntity<K> 
     public void clearAuthenticationSessions() {
         this.updated |= !this.authenticationSessions.isEmpty();
         this.authenticationSessions.clear();
+    }
+
+    void signalUpdated(boolean updated) {
+        this.updated |= updated;
     }
 }

@@ -20,6 +20,7 @@
 package org.keycloak.userprofile.config;
 
 import org.keycloak.component.ComponentModel;
+import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 import org.keycloak.userprofile.UserProfileProvider;
 
 /**
@@ -27,8 +28,8 @@ import org.keycloak.userprofile.UserProfileProvider;
  */
 public class DeclarativeUserProfileModel extends ComponentModel {
 
-    public DeclarativeUserProfileModel() {
-        setProviderId(DeclarativeUserProfileProvider.ID);
+    public DeclarativeUserProfileModel(String providerId) {
+        setProviderId(providerId);
         setProviderType(UserProfileProvider.class.getName());
     }
 }

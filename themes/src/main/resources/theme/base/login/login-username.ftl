@@ -58,6 +58,7 @@
                         </div>
                     </form>
                 </#if>
+            </div>
         </div>
 
             <#if realm.password && social.providers??>

@@ -18,31 +18,36 @@
 package org.keycloak.models.map.authorization.entity;
 
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 
 import java.util.Objects;
 
-public class MapResourceServerEntity<K> implements AbstractEntity<K> {
+public class MapResourceServerEntity extends UpdatableEntity.Impl implements AbstractEntity {
 
-    private final K id;
-    private boolean updated = false;
+    private String id;
 
     private boolean allowRemoteResourceManagement;
     private PolicyEnforcementMode policyEnforcementMode = PolicyEnforcementMode.ENFORCING;
     private DecisionStrategy decisionStrategy = DecisionStrategy.UNANIMOUS;
 
-    public MapResourceServerEntity(K id) {
+    public MapResourceServerEntity(String id) {
         this.id = id;
     }
 
-    public MapResourceServerEntity() {
-        this.id = null;
+    public MapResourceServerEntity() {}
+
+    @Override
+    public String getId() {
+        return id;
     }
 
     @Override
-    public K getId() {
-        return id;
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     public boolean isAllowRemoteResourceManagement() {
@@ -70,11 +75,6 @@ public class MapResourceServerEntity<K> implements AbstractEntity<K> {
     public void setDecisionStrategy(DecisionStrategy decisionStrategy) {
         this.updated |= !Objects.equals(this.decisionStrategy, decisionStrategy);
         this.decisionStrategy = decisionStrategy;
-    }
-
-    @Override
-    public boolean isUpdated() {
-        return updated;
     }
 
     @Override

@@ -17,8 +17,10 @@
 package org.keycloak.models.map.clientscope;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -27,11 +29,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.EntityWithAttributes;
+import org.keycloak.models.map.common.UpdatableEntity;
 
-public class MapClientScopeEntity<K> implements AbstractEntity<K> {
+public class MapClientScopeEntity extends UpdatableEntity.Impl implements AbstractEntity, EntityWithAttributes {
 
-    private final K id;
-    private final String realmId;
+    private String id;
+    private String realmId;
 
     private String name;
     private String protocol;
@@ -39,34 +43,29 @@ public class MapClientScopeEntity<K> implements AbstractEntity<K> {
 
     private final Set<String> scopeMappings = new LinkedHashSet<>();
     private final Map<String, ProtocolMapperModel> protocolMappers = new HashMap<>();
-    private final Map<String, String> attributes = new HashMap<>();
+    private final Map<String, List<String>> attributes = new HashMap<>();
 
     /**
      * Flag signalizing that any of the setters has been meaningfully used.
      */
-    protected boolean updated;
 
-    protected MapClientScopeEntity() {
-        this.id = null;
-        this.realmId = null;
-    }
+    public MapClientScopeEntity() {}
 
-    public MapClientScopeEntity(K id, String realmId) {
-        Objects.requireNonNull(id, "id");
-        Objects.requireNonNull(realmId, "realmId");
-
+    public MapClientScopeEntity(String id, String realmId) {
         this.id = id;
         this.realmId = realmId;
     }
 
     @Override
-    public K getId() {
+    public String getId() {
         return this.id;
     }
 
     @Override
-    public boolean isUpdated() {
-        return this.updated;
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     public String getName() {
@@ -96,14 +95,21 @@ public class MapClientScopeEntity<K> implements AbstractEntity<K> {
         this.protocol = protocol;
     }
 
-    public Map<String, String> getAttributes() {
+    @Override
+    public Map<String, List<String>> getAttributes() {
         return attributes;
     }
 
-    public void setAttributes(Map<String, String> attributes) {
-        this.updated |= ! Objects.equals(this.attributes, attributes);
+    @Override
+    public void setAttributes(Map<String, List<String>> attributes) {
         this.attributes.clear();
         this.attributes.putAll(attributes);
+        this.updated = true;
+    }
+
+    @Override
+    public void setAttribute(String name, List<String> values) {
+        this.updated |= ! Objects.equals(this.attributes.put(name, values), values);
     }
 
     public ProtocolMapperModel addProtocolMapper(ProtocolMapperModel model) {
@@ -136,21 +142,23 @@ public class MapClientScopeEntity<K> implements AbstractEntity<K> {
         return id == null ? null : protocolMappers.get(id);
     }
 
-    public void setAttribute(String name, String value) {
-        this.updated = true;
-        this.attributes.put(name, value);
-    }
-
+    @Override
     public void removeAttribute(String name) {
         this.updated |= this.attributes.remove(name) != null;
     }
 
-    public String getAttribute(String name) {
-        return this.attributes.get(name);
+    @Override
+    public List<String> getAttribute(String name) {
+        return attributes.getOrDefault(name, Collections.EMPTY_LIST);
     }
 
     public String getRealmId() {
         return this.realmId;
+    }
+
+    public void setRealmId(String realmId) {
+        this.updated |= !Objects.equals(this.realmId, realmId);
+        this.realmId = realmId;
     }
 
     public Stream<String> getScopeMappings() {

@@ -16,8 +16,6 @@
  */
 package org.keycloak.services.resources.admin;
 
-import static org.keycloak.userprofile.UserProfileContext.USER_API;
-
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
@@ -43,6 +41,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 import org.keycloak.services.resources.admin.permissions.UserPermissionEvaluator;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.utils.SearchQueryUtils;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -56,10 +55,13 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
+
+import static org.keycloak.userprofile.UserProfileContext.USER_API;
 
 /**
  * Base resource for managing users
@@ -215,7 +217,7 @@ public class UsersResource {
     /**
      * Get users
      *
-     * Returns a stream of users, filtered according to query parameters
+     * Returns a stream of users, filtered according to query parameters.
      *
      * @param search A String contained in username, first or last name, or email
      * @param last A String contained in lastName, or the complete lastName, if param "exact" is true
@@ -230,6 +232,7 @@ public class UsersResource {
      * @param enabled Boolean representing if user is enabled or not
      * @param briefRepresentation Boolean which defines whether brief representations are returned (default: false)
      * @param exact Boolean which defines whether the params "last", "first", "email" and "username" must match exactly
+     * @param searchQuery A query to search for custom attributes, in the format 'key1:value2 key2:value2'
      * @return a non-null {@code Stream} of users
      */
     @GET
@@ -247,13 +250,18 @@ public class UsersResource {
                                                @QueryParam("max") Integer maxResults,
                                                @QueryParam("enabled") Boolean enabled,
                                                @QueryParam("briefRepresentation") Boolean briefRepresentation,
-                                               @QueryParam("exact") Boolean exact) {
+                                               @QueryParam("exact") Boolean exact,
+                                               @QueryParam("q") String searchQuery) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
 
         userPermissionEvaluator.requireQuery();
 
         firstResult = firstResult != null ? firstResult : -1;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
+
+        Map<String, String> searchAttributes = searchQuery == null
+                ? Collections.emptyMap()
+                : SearchQueryUtils.getFields(searchQuery);
 
         Stream<UserModel> userModels = Stream.empty();
         if (search != null) {
@@ -273,7 +281,7 @@ public class UsersResource {
                         maxResults, false);
             }
         } else if (last != null || first != null || email != null || username != null || emailVerified != null
-                || idpAlias != null || idpUserId != null || enabled != null || exact != null) {
+                || idpAlias != null || idpUserId != null || enabled != null || exact != null || !searchAttributes.isEmpty()) {
                     Map<String, String> attributes = new HashMap<>();
                     if (last != null) {
                         attributes.put(UserModel.LAST_NAME, last);
@@ -302,6 +310,9 @@ public class UsersResource {
                     if (exact != null) {
                         attributes.put(UserModel.EXACT, exact.toString());
                     }
+
+                    attributes.putAll(searchAttributes);
+
                     return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
                             maxResults, true);
                 } else {

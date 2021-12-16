@@ -24,6 +24,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
@@ -85,7 +86,8 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
 
     @Override
     public void passwordUpdated(UserModel user, LDAPObject ldapUser, UserCredentialModel password) {
-        logger.debugf("Going to update userAccountControl for ldap user '%s' after successful password update", ldapUser.getDn().toString());
+        logger.debugf("Going to update userAccountControl for ldap user '%s' after successful password update. Keycloak user '%s' in realm '%s'", ldapUser.getDn().toString(),
+                user.getUsername(), getRealmName());
 
         // Normally it's read-only
         ldapUser.removeReadOnlyAttributeName(LDAPConstants.PWD_LAST_SET);
@@ -136,13 +138,28 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
     }
 
     protected boolean processAuthErrorCode(String errorCode, UserModel user) {
-        logger.debugf("MSAD Error code is '%s' after failed LDAP login of user '%s'", errorCode, user.getUsername());
+        logger.debugf("MSAD Error code is '%s' after failed LDAP login of user '%s'. Realm is '%s'", errorCode, user.getUsername(), getRealmName());
 
         if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE) {
             if (errorCode.equals("532") || errorCode.equals("773")) {
-                // User needs to change his MSAD password. Allow him to login, but add UPDATE_PASSWORD required action
+                // User needs to change his MSAD password. Allow him to login, but add UPDATE_PASSWORD required action to authenticationSession
                 if (user.getRequiredActionsStream().noneMatch(action -> Objects.equals(action, UserModel.RequiredAction.UPDATE_PASSWORD.name()))) {
-                    user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+                    // This usually happens when 532 was returned, which means that "pwdLastSet" is set to some positive value, which is older than MSAD password expiration policy.
+                    AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
+                    if (authSession != null) {
+                        if (authSession.getRequiredActions().stream().noneMatch(action -> Objects.equals(action, UserModel.RequiredAction.UPDATE_PASSWORD.name()))) {
+                            logger.debugf("Adding requiredAction UPDATE_PASSWORD to the authenticationSession of user %s", user.getUsername());
+                            authSession.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+                        }
+                    } else {
+                        // Just a fallback. It should not happen during normal authentication process
+                        logger.debugf("Adding requiredAction UPDATE_PASSWORD to the user %s", user.getUsername());
+                        user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+                    }
+                } else {
+                    // This usually happens when "773" error code is returned by MSAD. This typically happens when "pwdLastSet" is set to 0 and password was manually set
+                    // by administrator (or user) to expire
+                    logger.tracef("Skip adding required action UPDATE_PASSWORD. It was already set on user '%s' in realm '%s'", user.getUsername(), getRealmName());
                 }
                 return true;
             } else if (errorCode.equals("533")) {
@@ -152,7 +169,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
                 }
                 return true;
             } else if (errorCode.equals("775")) {
-                logger.warnf("Locked user '%s' attempt to login", user.getUsername());
+                logger.warnf("Locked user '%s' attempt to login. Realm is '%s'", user.getUsername(), getRealmName());
             }
         }
 
@@ -193,7 +210,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
     // Update user in LDAP if "updateInLDAP" is true. Otherwise it is assumed that LDAP update will be called at the end of transaction
     protected void updateUserAccountControl(boolean updateInLDAP, LDAPObject ldapUser, UserAccountControl accountControl) {
         String userAccountControlValue = String.valueOf(accountControl.getValue());
-        logger.debugf("Updating userAccountControl of user '%s' to value '%s'", ldapUser.getDn().toString(), userAccountControlValue);
+        logger.debugf("Updating userAccountControl of user '%s' to value '%s'. Realm is '%s'", ldapUser.getDn().toString(), userAccountControlValue, getRealmName());
 
         ldapUser.setSingleAttribute(LDAPConstants.USER_ACCOUNT_CONTROL, userAccountControlValue);
 
@@ -202,6 +219,10 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
         }
     }
 
+    private String getRealmName() {
+        RealmModel realm = session.getContext().getRealm();
+        return (realm != null) ? realm.getName() : "null";
+    }
 
 
     public class MSADUserModelDelegate extends TxAwareLDAPUserModelDelegate {
@@ -232,7 +253,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
             super.setEnabled(enabled);
 
             if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE && getPwdLastSet() > 0) {
-                logger.debugf("Going to propagate enabled=%s for ldapUser '%s' to MSAD", enabled, ldapUser.getDn().toString());
+                MSADUserAccountControlStorageMapper.logger.debugf("Going to propagate enabled=%s for ldapUser '%s' to MSAD", enabled, ldapUser.getDn().toString());
 
                 UserAccountControl control = getUserAccountControl(ldapUser);
                 if (enabled) {
@@ -255,11 +276,9 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
 
         @Override
         public void addRequiredAction(String action) {
-            // Always update DB
-            super.addRequiredAction(action);
-
             if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE && RequiredAction.UPDATE_PASSWORD.toString().equals(action)) {
-                logger.debugf("Going to propagate required action UPDATE_PASSWORD to MSAD for ldap user '%s' ", ldapUser.getDn().toString());
+                MSADUserAccountControlStorageMapper.logger.debugf("Going to propagate required action UPDATE_PASSWORD to MSAD for ldap user '%s'. Keycloak user '%s' in realm '%s'",
+                        ldapUser.getDn().toString(), getUsername(), getRealmName());
 
                 // Normally it's read-only
                 ldapUser.removeReadOnlyAttributeName(LDAPConstants.PWD_LAST_SET);
@@ -267,6 +286,10 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
                 ldapUser.setSingleAttribute(LDAPConstants.PWD_LAST_SET, "0");
 
                 markUpdatedRequiredActionInTransaction(action);
+            } else {
+                // Update DB
+                MSADUserAccountControlStorageMapper.logger.debugf("Going to add required action '%s' of user '%s' in realm '%s' to the DB", action, getUsername(), getRealmName());
+                super.addRequiredAction(action);
             }
         }
 
@@ -286,7 +309,8 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
                 // Don't set pwdLastSet in MSAD when it is new user
                 UserAccountControl accountControl = getUserAccountControl(ldapUser);
                 if (accountControl.getValue() != 0 && !accountControl.has(UserAccountControl.PASSWD_NOTREQD)) {
-                    logger.debugf("Going to remove required action UPDATE_PASSWORD from MSAD for ldap user '%s' ", ldapUser.getDn().toString());
+                    MSADUserAccountControlStorageMapper.logger.debugf("Going to remove required action UPDATE_PASSWORD from MSAD for ldap user '%s'. Account control: %s, Keycloak user '%s' in realm '%s'",
+                            ldapUser.getDn().toString(), accountControl.getValue(), getUsername(), getRealmName());
 
                     // Normally it's read-only
                     ldapUser.removeReadOnlyAttributeName(LDAPConstants.PWD_LAST_SET);
@@ -294,6 +318,9 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
                     ldapUser.setSingleAttribute(LDAPConstants.PWD_LAST_SET, "-1");
 
                     markUpdatedRequiredActionInTransaction(action);
+                } else {
+                    MSADUserAccountControlStorageMapper.logger.tracef("It was not required action to remove UPDATE_PASSWORD from MSAD for ldap user '%s' as it was not set on the user. Account control: %s, Keycloak user '%s' in realm '%s'",
+                            ldapUser.getDn().toString(), accountControl.getValue(), getUsername(), getRealmName());
                 }
             }
         }
@@ -302,6 +329,7 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
         public Stream<String> getRequiredActionsStream() {
             if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE) {
                 if (getPwdLastSet() == 0 || getUserAccountControl(ldapUser).has(UserAccountControl.PASSWORD_EXPIRED)) {
+                    MSADUserAccountControlStorageMapper.logger.tracef("Required action UPDATE_PASSWORD is set in LDAP for user '%s' in realm '%s'", getUsername(), getRealmName());
                     return Stream.concat(super.getRequiredActionsStream(), Stream.of(RequiredAction.UPDATE_PASSWORD.toString()))
                             .distinct();
                 }

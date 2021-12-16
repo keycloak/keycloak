@@ -69,7 +69,7 @@ public class AuthzClient {
      * @return a new instance
      */
     public static AuthzClient create(InputStream configStream) throws RuntimeException {
-        if (Objects.isNull(configStream)) {
+        if (configStream == null) {
             throw new IllegalArgumentException("Config input stream can not be null");
         }
 

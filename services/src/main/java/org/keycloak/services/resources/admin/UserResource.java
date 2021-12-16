@@ -97,11 +97,13 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
+
 import java.net.URI;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -141,14 +143,14 @@ public class UserResource {
 
     @Context
     protected HttpHeaders headers;
-
+    
     public UserResource(RealmModel realm, UserModel user, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.auth = auth;
         this.realm = realm;
         this.user = user;
         this.adminEvent = adminEvent.resource(ResourceType.USER);
     }
-
+    
     /**
      * Update the user
      *
@@ -195,7 +197,7 @@ public class UserResource {
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("User exists with same username or email");
         } catch (ReadOnlyException re) {
-            return ErrorResponse.exists("User is read only!");
+            return ErrorResponse.error("User is read only!", Status.BAD_REQUEST);
         } catch (ModelException me) {
             logger.warn("Could not update user!", me);
             return ErrorResponse.error("Could not update user!", Status.BAD_REQUEST);
@@ -214,7 +216,7 @@ public class UserResource {
             List<ErrorRepresentation> errors = new ArrayList<>();
 
             for (ValidationException.Error error : pve.getErrors()) {
-                errors.add(new ErrorRepresentation(error.getFormattedMessage()));
+                errors.add(new ErrorRepresentation(error.getFormattedMessage(new AdminMessageFormatter(session, user))));
             }
 
             return ErrorResponse.errors(errors, Response.Status.BAD_REQUEST);
@@ -284,11 +286,10 @@ public class UserResource {
 
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
         UserProfile profile = provider.create(USER_API, user);
+        Map<String, List<String>> readableAttributes = profile.getAttributes().getReadable(false);
 
-        Map<String, List<String>> attributes = profile.getAttributes().getReadable(false);
-
-        if (!attributes.isEmpty()) {
-            rep.setAttributes(attributes);
+        if (rep.getAttributes() != null) {
+            rep.setAttributes(readableAttributes);
         }
 
         return rep;
@@ -450,11 +451,18 @@ public class UserResource {
 
         Set<ClientModel> offlineClients = new UserSessionManager(session).findClientsWithOfflineToken(realm, user);
 
-        return Stream.concat(
-                session.users().getConsentsStream(realm, user.getId())
-                    .map(consent -> toConsent(consent, offlineClients)),
+        Set<ClientModel> clientsWithUserConsents = new HashSet<>();
+        List<UserConsentModel> userConsents = session.users().getConsentsStream(realm, user.getId())
+                 // collect clients with explicit user consents for later filtering
+                .peek(ucm -> clientsWithUserConsents.add(ucm.getClient()))
+                .collect(Collectors.toList());
 
-                offlineClients.stream().map(this::toConsent)
+        return Stream.concat(
+                userConsents.stream().map(consent -> toConsent(consent, offlineClients)),
+                offlineClients.stream()
+                        // filter out clients with explicit user consents to avoid rendering them twice
+                        .filter(c -> !clientsWithUserConsents.contains(c))
+                        .map(this::toConsent)
         );
     }
 
@@ -492,7 +500,6 @@ public class UserResource {
             offlineTokens.put("client", consent.getClient().getId());
             offlineTokens.put("key", "Offline Token");
             additionalGrants.add(offlineTokens);
-            offlineClients.remove(consent.getClient());
         }
         currentRep.put("additionalGrants", additionalGrants);
         return currentRep;
@@ -947,7 +954,7 @@ public class UserResource {
         if (clientSession == null) {
             return null;
         }
-        rep.setLastAccess(clientSession.getTimestamp());
+        rep.setLastAccess(Time.toMillis(clientSession.getTimestamp()));
         return rep;
     }
 }

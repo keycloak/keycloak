@@ -82,7 +82,7 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
             context.getEvent().user(user);
             context.getEvent().error(bruteForceError);
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
-            context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
+            context.forceChallenge(challengeResponse);
             return;
         }
 
@@ -90,7 +90,7 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
             context.getEvent().user(user);
             context.getEvent().error(Errors.USER_DISABLED);
             Response challengeResponse = errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_grant", "Account disabled");
-            context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
+            context.forceChallenge(challengeResponse);
             return;
         }
         context.setUser(user);

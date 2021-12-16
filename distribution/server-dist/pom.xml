@@ -30,7 +30,7 @@
     <parent>
         <artifactId>keycloak-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>15.0.0-SNAPSHOT</version>
+        <version>16.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>keycloak-server-dist</artifactId>
@@ -41,16 +41,18 @@
     <packaging>pom</packaging>
 
     <dependencies>
-        <dependency>
-            <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-galleon-pack</artifactId>
-            <type>pom</type>
-            <scope>provided</scope>
+         <dependency>
+             <groupId>${ee.maven.groupId}</groupId>
+             <artifactId>wildfly-ee-galleon-pack</artifactId>
+             <version>${ee.maven.version}</version>
+             <type>pom</type>
+             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-galleon-pack</artifactId>
+            <groupId>${ee.maven.groupId}</groupId>
+            <artifactId>wildfly-ee-galleon-pack</artifactId>
             <type>zip</type>
+            <version>${ee.maven.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -79,7 +81,6 @@
     </dependencies>
 
     <build>
-        <finalName>${server.output.dir.prefix}-${server.output.dir.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.jboss.galleon</groupId>
@@ -92,7 +93,7 @@
                         </goals>
                         <phase>compile</phase>
                         <configuration>
-                            <install-dir>${basedir}/target/${project.build.finalName}</install-dir>
+                            <install-dir>${basedir}/target/${server.output.dir.prefix}-${server.output.dir.version}</install-dir>
                             <record-state>false</record-state>
                             <log-time>${galleon.log.time}</log-time>
                             <offline>${galleon.offline}</offline>
@@ -114,11 +115,11 @@
                                         <name>bin.appclient</name>
                                     </excluded-packages>
                                 </feature-pack>
-                                <feature-pack>
+                                <!-- feature-pack>
                                     <transitive>true</transitive>
-                                    <groupId>org.wildfly</groupId>
+                                    <groupId>${ee.maven.groupId}</groupId>
                                     <artifactId>wildfly-galleon-pack</artifactId>
-                                    <version>${wildfly.version}</version>
+                                    <version>${ee.maven.version}</version>
                                     <included-packages>
                                         <name>bin</name>
                                         <name>bin.domain</name>
@@ -129,7 +130,7 @@
                                         <name>appclient</name>
                                         <name>bin.appclient</name>
                                     </excluded-packages>
-                                </feature-pack>
+                                </feature-pack -->
                                 <feature-pack>
                                     <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-server-galleon-pack</artifactId>
@@ -165,7 +166,7 @@
                                     <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-server-feature-pack</artifactId>
                                     <type>zip</type>
-                                    <outputDirectory>${basedir}/target/${project.build.finalName}/docs</outputDirectory>
+                                    <outputDirectory>${basedir}/target/${server.output.dir.prefix}-${server.output.dir.version}/docs</outputDirectory>
                                     <includes>content/docs/licenses-${product.slot}/**</includes>
                                     <fileMappers>
                                         <org.codehaus.plexus.components.io.filemappers.RegExpFileMapper>
@@ -194,17 +195,23 @@
                             <excludeDefaultDirectories>true</excludeDefaultDirectories>
                             <filesets>
                                 <fileset>
-                                    <directory>${basedir}/target/${project.build.finalName}</directory>
+                                    <directory>${basedir}/target/${server.output.dir.prefix}-${server.output.dir.version}</directory>
                                     <includes>
                                         <include>README.txt</include>
                                         <include>copyright.txt</include>
                                     </includes>
                                 </fileset>
                                 <fileset>
-                                    <directory>${basedir}/target/${project.build.finalName}/welcome-content</directory>
+                                    <directory>${basedir}/target/${server.output.dir.prefix}-${server.output.dir.version}/welcome-content</directory>
                                     <excludes>
                                         <exclude>robots.txt</exclude>
                                         <exclude>index.html</exclude>
+                                    </excludes>
+                                </fileset>
+                                <fileset>
+                                    <directory>${basedir}/target/${server.output.dir.prefix}-${server.output.dir.version}/modules/system/layers/keycloak/org/jboss/as/product</directory>
+                                    <excludes>
+                                        <exclude>${product.slot}/**/*</exclude>
                                     </excludes>
                                 </fileset>
                             </filesets>
@@ -265,4 +272,90 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.wildfly</groupId>
+                    <artifactId>wildfly-galleon-pack</artifactId>
+                    <type>pom</type>
+                    <scope>provided</scope>
+                </dependency>
+                <dependency>
+                    <groupId>org.wildfly</groupId>
+                    <artifactId>wildfly-galleon-pack</artifactId>
+                    <type>zip</type>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>*</groupId>
+                            <artifactId>*</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+            </dependencies>
+            <build>
+                <finalName>keycloak-${project.version}</finalName>
+            </build>
+        </profile>
+        <profile>
+            <id>product</id>
+            <activation>
+                <property>
+                    <name>product</name>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>${ee.maven.groupId}</groupId>
+                    <artifactId>wildfly-ee-galleon-pack</artifactId>
+                    <type>pom</type>
+                    <version>${ee.maven.version}</version>
+                    <scope>provided</scope>
+                </dependency>
+                <dependency>
+                    <groupId>${ee.maven.groupId}</groupId>
+                    <artifactId>wildfly-ee-galleon-pack</artifactId>
+                    <type>zip</type>
+                    <version>${ee.maven.version}</version>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>*</groupId>
+                            <artifactId>*</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+            </dependencies>
+            <build>
+                <finalName>${product.name}-${product.filename.version}</finalName>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>assemble</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <configuration>
+                                    <descriptors>
+                                        <descriptor>assembly-zip-only.xml</descriptor>
+                                    </descriptors>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>

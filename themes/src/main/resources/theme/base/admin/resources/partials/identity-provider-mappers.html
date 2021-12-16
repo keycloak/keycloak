@@ -34,7 +34,7 @@
         </tr>
         </thead>
         <tbody>
-        <tr ng-repeat="mapper in mappers | filter:search">
+        <tr ng-repeat="mapper in mappers | filter:search | orderBy:'name'">
             <td><a href="#/realms/{{realm.realm}}/identity-provider-mappers/{{identityProvider.alias}}/mappers/{{mapper.id}}">{{mapper.name}}</a></td>
             <td>{{mapperTypes[mapper.identityProviderMapper].category}}</td>
             <td>{{mapperTypes[mapper.identityProviderMapper].name}}</td>

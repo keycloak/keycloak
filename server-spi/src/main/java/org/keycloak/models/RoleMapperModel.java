@@ -17,6 +17,7 @@
 
 package org.keycloak.models;
 
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -63,6 +64,17 @@ public interface RoleMapperModel {
     }
 
     /**
+     * Returns {@code true}, if this object is directly assigned the given role.
+     * 
+     * @param role the role
+     * @return see description
+     * @see #hasRole(RoleModel) if you want to check whether this object is directly or indirectly assigned to a role
+     */
+    default boolean hasDirectRole(RoleModel role) {
+        return getRoleMappingsStream().anyMatch(r -> Objects.equals(r, role));
+    }
+
+    /**
      * Returns {@code true} if this object is directly or indirectly assigned the given role, {@code false} otherwise.
      * <p>
      * For example, {@code true} is returned for hasRole(R) if:
@@ -73,6 +85,7 @@ public interface RoleMapperModel {
      * </ul>
      * @param role
      * @return see description
+     * @see #hasDirectRole(RoleModel) if you want to check if this object is directly assigned to a role
      */
     boolean hasRole(RoleModel role);
 

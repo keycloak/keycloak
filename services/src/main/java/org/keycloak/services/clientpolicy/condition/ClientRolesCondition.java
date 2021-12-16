@@ -70,11 +70,15 @@ public class ClientRolesCondition extends AbstractClientPolicyConditionProvider<
         switch (context.getEvent()) {
             case AUTHORIZATION_REQUEST:
             case TOKEN_REQUEST:
+            case SERVICE_ACCOUNT_TOKEN_REQUEST:
             case TOKEN_REFRESH:
             case TOKEN_REVOKE:
             case TOKEN_INTROSPECT:
             case USERINFO_REQUEST:
             case LOGOUT_REQUEST:
+            case BACKCHANNEL_AUTHENTICATION_REQUEST:
+            case BACKCHANNEL_TOKEN_REQUEST:
+            case PUSHED_AUTHORIZATION_REQUEST:
                 if (isRolesMatched(session.getContext().getClient())) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
             default:

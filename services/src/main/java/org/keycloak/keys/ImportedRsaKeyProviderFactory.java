@@ -45,6 +45,7 @@ public class ImportedRsaKeyProviderFactory extends AbstractRsaKeyProviderFactory
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = AbstractRsaKeyProviderFactory.configurationBuilder()
             .property(Attributes.PRIVATE_KEY_PROPERTY)
             .property(Attributes.CERTIFICATE_PROPERTY)
+            .property(Attributes.KEY_USE_PROPERTY)
             .build();
 
     @Override

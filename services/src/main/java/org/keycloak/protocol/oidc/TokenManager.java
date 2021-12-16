@@ -67,7 +67,6 @@ import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
-import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.IdentityBrokerService;
@@ -218,16 +217,16 @@ public class TokenManager {
     }
 
     /**
-     * Checks if the token is valid. Intended usage is for token introspection endpoints as the session last refresh
-     * is updated if the token was valid. This is used to keep the session alive when long lived tokens are used.
+     * Checks if the token is valid. Optionally the session last refresh and client session timestamp
+     * are updated if the token was valid. This is used to keep the session alive when long lived tokens are used.
      *
      * @param session
      * @param realm
      * @param token
+     * @param updateTimestamps
      * @return
-     * @throws OAuthErrorException
      */
-    public boolean checkTokenValidForIntrospection(KeycloakSession session, RealmModel realm, AccessToken token) throws OAuthErrorException {
+    public boolean checkTokenValidForIntrospection(KeycloakSession session, RealmModel realm, AccessToken token, boolean updateTimestamps) {
         ClientModel client = realm.getClientByClientId(token.getIssuedFor());
         if (client == null || !client.isEnabled()) {
             return false;
@@ -238,6 +237,7 @@ public class TokenManager {
                     .withChecks(NotBeforeCheck.forModel(client), TokenVerifier.IS_ACTIVE)
                     .verify();
         } catch (VerificationException e) {
+            logger.debugf("JWT check failed: %s", e.getMessage());
             return false;
         }
 
@@ -283,7 +283,7 @@ public class TokenManager {
                 return false;
             }
 
-            if (valid) {
+            if (updateTimestamps && valid) {
                 int currentTime = Time.currentTime();
                 userSession.setLastSessionRefresh(currentTime);
                 if (clientSession != null) {
@@ -327,6 +327,7 @@ public class TokenManager {
                     .withChecks(NotBeforeCheck.forModel(session ,realm, user))
                     .verify();
         } catch (VerificationException e) {
+            logger.debugf("JWT check failed: %s", e.getMessage());
             return false;
         }
         return true;
@@ -718,7 +719,73 @@ public class TokenManager {
 
     public Map<String, Object> generateUserInfoClaims(AccessToken userInfo, UserModel userModel) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("sub", userModel.getId());
+        claims.put("sub", userInfo.getSubject() == null? userModel.getId() : userInfo.getSubject());
+        if (userInfo.getIssuer() != null) {
+            claims.put("iss", userInfo.getIssuer());
+        }
+        if (userInfo.getAudience()!= null) {
+            claims.put("aud", userInfo.getAudience());
+        }
+        if (userInfo.getName() != null) {
+            claims.put("name", userInfo.getName());
+        }
+        if (userInfo.getGivenName() != null) {
+            claims.put("given_name", userInfo.getGivenName());
+        }
+        if (userInfo.getFamilyName() != null) {
+            claims.put("family_name", userInfo.getFamilyName());
+        }
+        if (userInfo.getMiddleName() != null) {
+            claims.put("middle_name", userInfo.getMiddleName());
+        }
+        if (userInfo.getNickName() != null) {
+            claims.put("nickname", userInfo.getNickName());
+        }
+        if (userInfo.getPreferredUsername() != null) {
+            claims.put("preferred_username", userInfo.getPreferredUsername());
+        }
+        if (userInfo.getProfile() != null) {
+            claims.put("profile", userInfo.getProfile());
+        }
+        if (userInfo.getPicture() != null) {
+            claims.put("picture", userInfo.getPicture());
+        }
+        if (userInfo.getWebsite() != null) {
+            claims.put("website", userInfo.getWebsite());
+        }
+        if (userInfo.getEmail() != null) {
+            claims.put("email", userInfo.getEmail());
+        }
+        if (userInfo.getEmailVerified() != null) {
+            claims.put("email_verified", userInfo.getEmailVerified());
+        }
+        if (userInfo.getGender() != null) {
+            claims.put("gender", userInfo.getGender());
+        }
+        if (userInfo.getBirthdate() != null) {
+            claims.put("birthdate", userInfo.getBirthdate());
+        }
+        if (userInfo.getZoneinfo() != null) {
+            claims.put("zoneinfo", userInfo.getZoneinfo());
+        }
+        if (userInfo.getLocale() != null) {
+            claims.put("locale", userInfo.getLocale());
+        }
+        if (userInfo.getPhoneNumber() != null) {
+            claims.put("phone_number", userInfo.getPhoneNumber());
+        }
+        if (userInfo.getPhoneNumberVerified() != null) {
+            claims.put("phone_number_verified", userInfo.getPhoneNumberVerified());
+        }
+        if (userInfo.getAddress() != null) {
+            claims.put("address", userInfo.getAddress());
+        }
+        if (userInfo.getUpdatedAt() != null) {
+            claims.put("updated_at", userInfo.getUpdatedAt());
+        }
+        if (userInfo.getClaimsLocales() != null) {
+            claims.put("claims_locales", userInfo.getClaimsLocales());
+        }
         claims.putAll(userInfo.getOtherClaims());
 
         if (userInfo.getRealmAccess() != null) {

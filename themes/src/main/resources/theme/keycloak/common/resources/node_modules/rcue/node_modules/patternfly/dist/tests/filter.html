@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<!--[if IE 9]><html lang="en-us" class="ie9"><![endif]-->
+<!--[if gt IE 9]><!-->
+<html lang="en-us">
+<!--<![endif]-->
+  <head>
+    <title>Filter - PatternFly</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="../img/favicon.ico">
+    <!-- iPad retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../img/apple-touch-icon-precomposed-152.png">
+    <!-- iPad retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="../img/apple-touch-icon-precomposed-144.png">
+    <!-- iPad non-retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="76x76" href="../img/apple-touch-icon-precomposed-76.png">
+    <!-- iPad non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="../img/apple-touch-icon-precomposed-72.png">
+    <!-- iPhone 6 Plus icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="120x120" href="../img/apple-touch-icon-precomposed-180.png">
+    <!-- iPhone retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../img/apple-touch-icon-precomposed-114.png">
+    <!-- iPhone non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="57x57" href="../img/apple-touch-icon-precomposed-57.png">
+    <link rel="stylesheet" href="../css/patternfly.min.css" >
+    <link rel="stylesheet" href="../css/patternfly-additions.min.css" >
+      <link href="tests.css" rel="stylesheet" media="screen, print">
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="../js/patternfly.min.js"></script>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="page-header">
+        <h1>Filter</h1>
+      </div>
+      <div class="alert alert-warning">
+        <span class="pficon pficon-warning-triangle-o"></span>
+        These examples are included for development testing purposes.  For official documentation, see <a href="https://www.patternfly.org" class="alert-link">https://www.patternfly.org</a> and <a href="http://getbootstrap.com" class="alert-link">http://getbootstrap.com</a>.
+      </div>
+      <hr>
+<div>
+  <h3>Input Filters</h3>
+  <div style="width: 300px;">
+    <div class="filter-pf" id="input-filters">
+      <div class="filter-pf-fields">
+        <div class="input-group form-group">
+          <div class="input-group-btn">
+            <div class="dropdown btn-group">
+              <button type="button" class="dropdown-toggle btn btn-default" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Name
+                <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                <li class="selected"><a href="#">Name</a></li>
+                <li><a href="#">Address</a></li>
+                <li><a href="#">Birth Month</a></li>
+                <li><a href="#">Car</a></li>
+              </ul>
+            </div>
+          </div>
+          <input type="text" class="form-control" value="" placeholder="Filter by Name">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Select Filters</h3>
+  <div class="filter-pf" id="select-filters">
+    <div class="filter-pf-fields">
+      <div class="input-group form-group">
+        <div class="input-group-btn">
+          <div class="dropdown btn-group">
+            <button type="button" class="filter-pf-fields dropdown-toggle btn btn-default" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Birth Month
+              <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+              <li class="selected"><a href="#">Name</a></li>
+              <li><a href="#">Address</a></li>
+              <li><a href="#">Birth Month</a></li>
+              <li><a href="#">Car</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="filter-pf-select">
+          <div class="dropdown btn-group">
+            <button type="button" class="filter-pf-select-dropdown dropdown-toggle btn btn-default" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Filter by Birth Month
+              <span class="caret"></span>
+            </button>
+            <ul role="menu" class="dropdown-menu" aria-labelledby="filterSelectMenu">
+              <li><a href="#">Filter by Birth Month</a></li>
+              <li><a role="menuitem" tabindex="-1" href="#">January</a></li>
+              <li class="selected"><a role="menuitem" tabindex="-1" href="#">February</a></li>
+              <li><a href="#">March</a></li>
+              <li><a href="#">April</a></li>
+              <li><a href="#">May</a></li>
+              <li><a href="#">June</a></li>
+              <li><a href="#">July</a></li>
+              <li><a href="#">August</a></li>
+              <li><a href="#">September</a></li>
+              <li><a href="#">October</a></li>
+              <li><a href="#">November</a></li>
+              <li><a href="#">December</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Category Filters</h3>
+  <div class="filter-pf" id="category-filters">
+    <div class="filter-pf-fields">
+      <div class="input-group form-group">
+        <div class="input-group-btn">
+          <div class="dropdown btn-group">
+            <button type="button" class="filter-pf-fields dropdown-toggle btn btn-default" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Car
+              <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+              <li><a href="#">Name</a></li>
+              <li><a href="#">Address</a></li>
+              <li><a href="#">Birth Month</a></li>
+              <li class="selected"><a href="#">Car</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="filter-pf-category-select">
+          <div class="filter-pf-select">
+            <div class="dropdown btn-group">
+              <button type="button" class="filter-pf-select-dropdown dropdown-toggle btn btn-default" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Subaru
+                <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                <li><a href="#">Filter by Car Make</a></li>
+                <li class="selected"><a href="#">Subaru</a></li>
+                <li><a href="#">Toyota</a></li>
+              </ul>
+            </div>
+          </div>
+          <div class="filter-pf-select">
+            <div class="dropdown btn-group">
+              <button type="button" class="filter-pf-category-select-value filter-pf-select-dropdown dropdown-toggle btn btn-default" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Crosstrek
+                <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                <li><a href="#">Filter by Car Model</a></li>
+                <li><a href="#">Outback</a></li>
+                <li><a href="#">Crosstrek</a></li>
+                <li><a href="#">Impreza</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+    </div><!-- /container -->
+  </body>
+</html>

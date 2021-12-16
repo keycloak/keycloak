@@ -27,7 +27,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>galleon-feature-packs-parent</artifactId>
-        <version>15.0.0-SNAPSHOT</version>
+        <version>16.0.0-SNAPSHOT</version>
     </parent>
 
     <groupId>org.keycloak</groupId>
@@ -79,14 +79,88 @@
         </dependency>
 
         <dependency>
-            <groupId>org.wildfly</groupId>
+            <groupId>${ee.maven.groupId}</groupId>
+            <artifactId>wildfly-servlet-feature-pack-common</artifactId>
+            <version>${ee.maven.version}</version>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>${ee.maven.groupId}</groupId>
+            <artifactId>wildfly-servlet-feature-pack-ee-8-api</artifactId>
+            <version>${ee.maven.version}</version>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>${ee.maven.groupId}</groupId>
+            <artifactId>wildfly-servlet-feature-pack-galleon-common</artifactId>
+            <version>${ee.maven.version}</version>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>${ee.maven.groupId}</groupId>
+            <artifactId>wildfly-servlet-feature-pack-galleon-legacy</artifactId>
+            <version>${ee.maven.version}</version>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>${ee.maven.groupId}</groupId>
+            <artifactId>wildfly-ee-feature-pack-common</artifactId>
+            <version>${ee.maven.version}</version>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>${ee.maven.groupId}</groupId>
+            <artifactId>wildfly-ee-feature-pack-ee-8-api</artifactId>
+            <version>${ee.maven.version}</version>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>${ee.maven.groupId}</groupId>
+            <artifactId>wildfly-ee-feature-pack-galleon-common</artifactId>
+            <version>${ee.maven.version}</version>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>${ee.maven.groupId}</groupId>
+            <artifactId>wildfly-ee-feature-pack-galleon-content</artifactId>
+            <version>${ee.maven.version}</version>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>${ee.maven.groupId}</groupId>
+            <artifactId>wildfly-ee-feature-pack-pruned</artifactId>
+            <version>${ee.maven.version}</version>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>${ee.maven.groupId}</groupId>
             <artifactId>wildfly-ee-galleon-pack</artifactId>
+            <version>${ee.maven.version}</version>
             <type>zip</type>
         </dependency>
 
         <dependency>
-            <groupId>org.wildfly</groupId>
+            <groupId>${ee.maven.groupId}</groupId>
             <artifactId>wildfly-servlet-galleon-pack</artifactId>
+            <version>${ee.maven.version}</version>
             <type>zip</type>
         </dependency>
 
@@ -100,6 +174,20 @@
             <groupId>org.wildfly.galleon-plugins</groupId>
             <artifactId>wildfly-config-gen</artifactId>
             <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-feature-pack</artifactId>
+            <version>${project.version}</version>
+            <type>pom</type>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- module and copy artifact dependencies -->
@@ -277,13 +365,14 @@
                         <configuration>
                             <release-name>Keycloak</release-name>
                             <fork-embedded>${galleon.fork.embedded}</fork-embedded>
-                            <config-file>keycloak-server-galleon-pack-build.xml</config-file>
+                            <config-file>${product.slot}-server-galleon-pack-build.xml</config-file>
                             <task-properties>
                                 <product.name>${product.name}</product.name>
                                 <product.name.full>${product.name.full}</product.name.full>
                                 <product.slot>${product.slot}</product.slot>
                                 <product.wildfly.console.slot>${product.wildfly.console.slot}</product.wildfly.console.slot>
                                 <product.version>${project.version}</product.version>
+                                <product.rhsso.version>${product.rhsso.version}</product.rhsso.version>
                                 <client-cli.src.dir>${project.basedir}</client-cli.src.dir>
                             </task-properties>
                         </configuration>
@@ -330,14 +419,14 @@
             </activation>
 
             <properties>
-                <feature.parent>org.jboss.eap:wildfly-galleon-pack</feature.parent>
+                <feature.parent>${ee.maven.groupId}:wildfly-ee-galleon-pack</feature.parent>
             </properties>
 
             <dependencies>
                 <dependency>
-                    <groupId>org.jboss.eap</groupId>
-                    <artifactId>wildfly-galleon-pack</artifactId>
-                    <version>${eap.version}</version>
+                    <groupId>${ee.maven.groupId}</groupId>
+                    <artifactId>wildfly-ee-galleon-pack</artifactId>
+                    <version>${ee.maven.version}</version>
                     <type>zip</type>
                     <exclusions>
                         <exclusion>
@@ -376,9 +465,20 @@
                                                 <exclude>sun.jdk:jconsole</exclude>
                                                 <!-- Ignore the shared resource poms as those we want their
                                                      transitives. Those poms ban transitives at their level -->
-                                                <exclude>org.keycloak:keycloak-server-feature-pack-dependencies</exclude>
                                                 <exclude>org.wildfly.core:wildfly-core-feature-pack-common</exclude>
                                                 <exclude>org.wildfly.core:wildfly-core-feature-pack-ee-8-api</exclude>
+                                                <exclude>org.wildfly.core:wildfly-core-feature-pack-galleon-pruned</exclude>
+                                                <exclude>org.wildfly.core:wildfly-core-feature-pack-galleon-common</exclude>
+                                                <exclude>${ee.maven.groupId}:wildfly-servlet-feature-pack-common</exclude>
+                                                <exclude>${ee.maven.groupId}:wildfly-servlet-feature-pack-ee-8-api</exclude>
+                                                <exclude>${ee.maven.groupId}:wildfly-servlet-feature-pack-galleon-legacy</exclude>
+                                                <exclude>${ee.maven.groupId}:wildfly-ee-feature-pack-common</exclude>
+                                                <exclude>${ee.maven.groupId}:wildfly-ee-feature-pack-ee-8-api</exclude>
+                                                <exclude>${ee.maven.groupId}:wildfly-ee-feature-pack-pruned</exclude>
+                                                <exclude>${ee.maven.groupId}:wildfly-ee-feature-pack-galleon-content</exclude>
+                                                <!-- Ignore the shared resource poms as those we want their
+                                                     transitives. Those poms ban transitives at their level -->
+                                                <exclude>org.keycloak:keycloak-server-feature-pack-dependencies</exclude>
                                                 <exclude>org.keycloak:keycloak-client-registration-cli</exclude>
                                                 <exclude>org.keycloak:keycloak-admin-cli</exclude>
                                             </excludes>

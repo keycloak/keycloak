@@ -4631,4 +4631,8 @@
     "waitIncrementSeconds" : "60"
   },
   "keycloakVersion" : "2.5.5.Final"
-} ]
+},
+{
+  "id" : "test ' and ; and -- and \"",
+  "realm" : "test ' and ; and -- and \""
+}]

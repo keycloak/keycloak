@@ -39,6 +39,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.jpa.entities.FederatedIdentityEntity;
+import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.jpa.entities.UserConsentClientScopeEntity;
 import org.keycloak.models.jpa.entities.UserConsentEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
@@ -49,15 +50,16 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 
 import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Join;
+import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Subquery;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -67,8 +69,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
-
-import javax.persistence.LockModeType;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
@@ -768,7 +768,8 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
         CriteriaQuery<UserEntity> queryBuilder = builder.createQuery(UserEntity.class);
         Root<UserEntity> root = queryBuilder.from(UserEntity.class);
 
-        List<Predicate> predicates = new ArrayList();
+        List<Predicate> predicates = new ArrayList<>();
+        List<Predicate> attributePredicates = new ArrayList<>();
 
         predicates.add(builder.equal(root.get("realmId"), realm.getId()));
 
@@ -788,7 +789,7 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
 
             switch (key) {
                 case UserModel.SEARCH:
-                    List<Predicate> orPredicates = new ArrayList();
+                    List<Predicate> orPredicates = new ArrayList<>();
 
                     orPredicates
                             .add(builder.like(builder.lower(root.get(USERNAME)), "%" + value.toLowerCase() + "%"));
@@ -799,7 +800,7 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
                                     builder.coalesce(root.get(LAST_NAME), builder.literal("")))),
                             "%" + value.toLowerCase() + "%"));
 
-                    predicates.add(builder.or(orPredicates.toArray(new Predicate[orPredicates.size()])));
+                    predicates.add(builder.or(orPredicates.toArray(new Predicate[0])));
 
                     break;
 
@@ -831,7 +832,22 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
                     }
                     predicates.add(builder.equal(federatedIdentitiesJoin.get("userId"), value));
                     break;
+                case UserModel.EXACT:
+                    break;
+                // All unknown attributes will be assumed as custom attributes
+                default:
+                    Join<UserEntity, UserAttributeEntity> attributesJoin = root.join("attributes", JoinType.LEFT);
+
+                    attributePredicates.add(builder.and(
+                            builder.equal(builder.lower(attributesJoin.get("name")), key.toLowerCase()),
+                            builder.equal(builder.lower(attributesJoin.get("value")), value.toLowerCase())));
+
+                    break;
             }
+        }
+
+        if (!attributePredicates.isEmpty()) {
+            predicates.add(builder.and(attributePredicates.toArray(new Predicate[0])));
         }
 
         Set<String> userGroups = (Set<String>) session.getAttribute(UserModel.GROUPS);

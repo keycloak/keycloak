@@ -244,7 +244,7 @@ public class DefaultKeyManager implements KeyManager {
     }
 
     private boolean matches(KeyWrapper key, KeyUse use, String algorithm) {
-        return use.equals(key.getUse()) && key.getAlgorithm().equals(algorithm);
+        return use.equals(key.getUse()) && key.getAlgorithmOrDefault().equals(algorithm);
     }
 
     private List<KeyProvider> getProviders(RealmModel realm) {

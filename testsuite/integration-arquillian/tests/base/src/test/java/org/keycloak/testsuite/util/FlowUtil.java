@@ -82,6 +82,10 @@ public class FlowUtil {
         return copyFlow(DefaultAuthenticationFlows.REGISTRATION_FLOW, newFlowAlias);
     }
 
+    public FlowUtil copyDirectGrantFlow(String newFlowAlias) {
+        return copyFlow(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, newFlowAlias);
+    }
+
     public FlowUtil copyFlow(String original, String newFlowAlias) {
         flowAlias = newFlowAlias;
         AuthenticationFlowModel existingBrowserFlow = realm.getFlowByAlias(original);
@@ -236,7 +240,7 @@ public class FlowUtil {
         return this;
     }
 
-    private List<AuthenticationExecutionModel> getExecutions() {
+    public List<AuthenticationExecutionModel> getExecutions() {
         if (executions == null) {
             executions = realm.getAuthenticationExecutionsStream(currentFlow.getId()).collect(Collectors.toList());
         }

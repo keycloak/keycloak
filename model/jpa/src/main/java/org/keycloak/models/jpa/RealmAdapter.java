@@ -563,6 +563,11 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    public ParConfig getParPolicy() {
+        return new ParConfig(this);
+    }
+
+    @Override
     public Map<String, Integer> getUserActionTokenLifespans() {
 
         Map<String, Integer> userActionTokens = new HashMap<>();
@@ -2168,14 +2173,13 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public void patchRealmLocalizationTexts(String locale, Map<String, String> localizationTexts) {
+    public void createOrUpdateRealmLocalizationTexts(String locale, Map<String, String> localizationTexts) {
         Map<String, RealmLocalizationTextsEntity> currentLocalizationTexts = realm.getRealmLocalizationTexts();
         if(currentLocalizationTexts.containsKey(locale)) {
             RealmLocalizationTextsEntity localizationTextsEntity = currentLocalizationTexts.get(locale);
-            Map<String, String> keys = new HashMap<>(localizationTextsEntity.getTexts());
-            keys.putAll(localizationTexts);
-            localizationTextsEntity.setTexts(keys);
-            localizationTextsEntity.getTexts().putAll(localizationTexts);
+            Map<String, String> updatedTexts = new HashMap<>(localizationTextsEntity.getTexts());
+            updatedTexts.putAll(localizationTexts);
+            localizationTextsEntity.setTexts(updatedTexts);
 
             em.persist(localizationTextsEntity);
         }

@@ -19,14 +19,12 @@ package org.keycloak.models.map.authorization.entity;
 
 import org.keycloak.models.map.common.AbstractEntity;
 
-import java.util.Comparator;
+import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.Objects;
 
-public class MapPermissionTicketEntity<K> implements AbstractEntity<K> {
+public class MapPermissionTicketEntity extends UpdatableEntity.Impl implements AbstractEntity {
 
-    public static final Comparator<MapPermissionTicketEntity<?>> COMPARE_BY_RESOURCE_ID = Comparator.comparing(MapPermissionTicketEntity::getResourceId);
-
-    private final K id;
+    private String id;
     private String owner;
     private String requester;
     private Long createdTimestamp;
@@ -35,19 +33,23 @@ public class MapPermissionTicketEntity<K> implements AbstractEntity<K> {
     private String scopeId;
     private String resourceServerId;
     private String policyId;
-    private boolean updated = false;
 
-    public MapPermissionTicketEntity(K id) {
+    public MapPermissionTicketEntity(String id) {
         this.id = id;
     }
 
-    public MapPermissionTicketEntity() {
-        this.id = null;
+    public MapPermissionTicketEntity() {}
+
+    @Override
+    public String getId() {
+        return id;
     }
 
     @Override
-    public K getId() {
-        return id;
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     public String getOwner() {
@@ -120,11 +122,6 @@ public class MapPermissionTicketEntity<K> implements AbstractEntity<K> {
     public void setPolicyId(String policyId) {
         this.updated |= !Objects.equals(this.policyId, policyId);
         this.policyId = policyId;
-    }
-
-    @Override
-    public boolean isUpdated() {
-        return updated;
     }
 
     @Override

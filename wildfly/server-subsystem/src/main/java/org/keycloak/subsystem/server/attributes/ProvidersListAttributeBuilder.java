@@ -31,7 +31,7 @@ public class ProvidersListAttributeBuilder extends StringListAttributeDefinition
         provider.add("classpath:${jboss.home.dir}/providers/*");
         this.defaultValue = provider;
         setAllowExpression(true);
-        setAllowNull(true);
+        setRequired(false);
     }
     
 }

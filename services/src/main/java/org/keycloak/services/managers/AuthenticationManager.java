@@ -38,6 +38,7 @@ import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureVerifierContext;
@@ -69,8 +70,11 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.LogoutRequestContext;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.LoginActionsService;
@@ -493,6 +497,12 @@ public class AuthenticationManager {
         }
 
         try {
+            session.clientPolicy().triggerOnEvent(new LogoutRequestContext());
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
+        }
+
+        try {
             setClientLogoutAction(logoutAuthSession, client.getId(), AuthenticationSessionModel.Action.LOGGING_OUT);
 
             String authMethod = clientSession.getProtocol();
@@ -712,7 +722,7 @@ public class AuthenticationManager {
 
         String stateChecker = (String) keycloakSession.getAttribute("state_checker");
         if (stateChecker == null) {
-            stateChecker = Base64Url.encode(KeycloakModelUtils.generateSecret());
+            stateChecker = Base64Url.encode(SecretGenerator.getInstance().randomBytes());
             keycloakSession.setAttribute("state_checker", stateChecker);
         }
         token.getOtherClaims().put("state_checker", stateChecker);

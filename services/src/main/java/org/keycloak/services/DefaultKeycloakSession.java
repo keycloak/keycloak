@@ -354,15 +354,12 @@ public class DefaultKeycloakSession implements KeycloakSession {
         Integer hash = clazz.hashCode() + componentId.hashCode();
         T provider = (T) providers.get(hash);
         final RealmModel realm = getContext().getRealm();
-        if (realm == null) {
-            throw new IllegalArgumentException("Realm not set in the context.");
-        }
 
         // KEYCLOAK-11890 - Avoid using HashMap.computeIfAbsent() to implement logic in outer if() block below,
         // since per JDK-8071667 the remapping function should not modify the map during computation. While
         // allowed on JDK 1.8, attempt of such a modification throws ConcurrentModificationException with JDK 9+
         if (provider == null) {
-            final String realmId = realm.getId();
+            final String realmId = realm == null ? null : realm.getId();
             ProviderFactory<T> providerFactory = factory.getProviderFactory(clazz, realmId, componentId, modelGetter);
             if (providerFactory != null) {
                 provider = providerFactory.create(this);

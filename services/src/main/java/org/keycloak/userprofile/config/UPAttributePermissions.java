@@ -17,7 +17,7 @@
 package org.keycloak.userprofile.config;
 
 import java.util.Collections;
-import java.util.List;
+import java.util.Set;
 
 /**
  * Configuration of permissions for the attribute
@@ -27,22 +27,22 @@ import java.util.List;
  */
 public class UPAttributePermissions {
 
-    private List<String> view = Collections.emptyList();
-    private List<String> edit = Collections.emptyList();
+    private Set<String> view = Collections.emptySet();
+    private Set<String> edit = Collections.emptySet();
 
-    public List<String> getView() {
+    public Set<String> getView() {
         return view;
     }
 
-    public void setView(List<String> view) {
+    public void setView(Set<String> view) {
         this.view = view;
     }
 
-    public List<String> getEdit() {
+    public Set<String> getEdit() {
         return edit;
     }
 
-    public void setEdit(List<String> edit) {
+    public void setEdit(Set<String> edit) {
         this.edit = edit;
     }
 

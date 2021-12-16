@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
@@ -64,6 +65,14 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
 
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
+
+        //KEYCLOAK-19461: Needed for quarkus resteasy implementation throws exception when called with mediaType authentication/json in OpenShiftTokenReviewEndpoint
+        if(!isFormDataRequest(context.getHttpRequest())) {
+            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Parameter client_assertion_type is missing");
+            context.challenge(challengeResponse);
+            return;
+        }
+
         MultivaluedMap<String, String> params = context.getHttpRequest().getDecodedFormParameters();
 
         String clientAssertionType = params.getFirst(OAuth2Constants.CLIENT_ASSERTION_TYPE);

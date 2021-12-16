@@ -26,6 +26,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.par.endpoints.request.AuthzEndpointParParser;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ServicesLogger;
@@ -77,16 +78,21 @@ public class AuthorizationEndpointRequestParserProcessor {
             if (requestParam != null) {
                 new AuthzEndpointRequestObjectParser(session, requestParam, client).parseRequest(request);
             } else if (requestUriParam != null) {
-                // Validate "requestUriParam" with allowed requestUris
-                List<String> requestUris = OIDCAdvancedConfigWrapper.fromClientModel(client).getRequestUris();
-                String requestUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(), requestUriParam, new HashSet<>(requestUris), false);
-                if (requestUri == null) {
-                    throw new RuntimeException("Specified 'request_uri' not allowed for this client.");
-                }
-
-                try (InputStream is = session.getProvider(HttpClientProvider.class).get(requestUri)) {
-                    String retrievedRequest = StreamUtil.readString(is);
-                    new AuthzEndpointRequestObjectParser(session, retrievedRequest, client).parseRequest(request);
+                // Define, if the request is `PAR` or usual `Request Object`.
+                RequestUriType requestUriType = getRequestUriType(requestUriParam);
+                if (requestUriType == RequestUriType.PAR) {
+                    new AuthzEndpointParParser(session, client, requestUriParam).parseRequest(request);
+                } else {
+                    // Validate "requestUriParam" with allowed requestUris
+                    List<String> requestUris = OIDCAdvancedConfigWrapper.fromClientModel(client).getRequestUris();
+                    String requestUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(), requestUriParam, new HashSet<>(requestUris), false);
+                    if (requestUri == null) {
+                        throw new RuntimeException("Specified 'request_uri' not allowed for this client.");
+                    }
+                    try (InputStream is = session.getProvider(HttpClientProvider.class).get(requestUri)) {
+                        String retrievedRequest = StreamUtil.readString(is);
+                        new AuthzEndpointRequestObjectParser(session, retrievedRequest, client).parseRequest(request);
+                    }
                 }
             }
 
@@ -107,6 +113,16 @@ public class AuthorizationEndpointRequestParserProcessor {
             event.error(Errors.INVALID_REQUEST);
             throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
         }
+    }
+
+    public static RequestUriType getRequestUriType(String requestUri) {
+        if (requestUri == null) {
+            throw new RuntimeException("'request_uri' parameter is null");
+        }
+
+        return requestUri.toLowerCase().startsWith("urn:ietf:params:oauth:request_uri:")
+                       ? RequestUriType.PAR
+                       : RequestUriType.REQUEST_OBJECT;
     }
 
 }

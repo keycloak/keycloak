@@ -459,4 +459,7 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=104, value="Not creating user %s. It already exists.")
     void notCreatingExistingUser(String userName);
 
+    @LogMessage(level = ERROR)
+    @Message(id=105, value="Response_mode 'query.jwt' is allowed only when the authorization response token is encrypted")
+    void responseModeQueryJwtNotAllowed();
 }

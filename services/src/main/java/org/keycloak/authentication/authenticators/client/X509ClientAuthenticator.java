@@ -5,11 +5,13 @@ import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.x509.X509ClientCertificateLookup;
 
+import javax.security.auth.x500.X500Principal;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -17,11 +19,13 @@ import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -30,6 +34,23 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
     public static final String PROVIDER_ID = "client-x509";
     public static final String ATTR_PREFIX = "x509";
     public static final String ATTR_SUBJECT_DN = ATTR_PREFIX + ".subjectdn";
+
+    public static final String ATTR_ALLOW_REGEX_PATTERN_COMPARISON = ATTR_PREFIX + ".allow.regex.pattern.comparison";
+
+    // Custom OIDs defined in the OpenBanking Brasil - https://openbanking-brasil.github.io/specs-seguranca/open-banking-brasil-certificate-standards-1_ID1.html#name-client-certificate
+    // These are not recognized by default in RFC1779 or RFC2253 and hence not read in the java by default
+    private static final Map<String, String> CUSTOM_OIDS = new HashMap<>();
+    private static final Map<String, String> CUSTOM_OIDS_REVERSED = new HashMap<>();
+    static {
+        CUSTOM_OIDS.put("2.5.4.5", "serialNumber".toUpperCase());
+        CUSTOM_OIDS.put("2.5.4.15", "businessCategory".toUpperCase());
+        CUSTOM_OIDS.put("1.3.6.1.4.1.311.60.2.1.3", "jurisdictionCountryName".toUpperCase());
+
+        // Reverse map
+        for (Map.Entry<String, String> entry : CUSTOM_OIDS.entrySet()) {
+            CUSTOM_OIDS_REVERSED.put(entry.getValue(), entry.getKey());
+        }
+    }
 
     protected static ServicesLogger logger = ServicesLogger.LOGGER;
 
@@ -99,27 +120,42 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
             return;
         }
 
+        OIDCAdvancedConfigWrapper clientCfg = OIDCAdvancedConfigWrapper.fromClientModel(client);
         String subjectDNRegexp = client.getAttribute(ATTR_SUBJECT_DN);
         if (subjectDNRegexp == null || subjectDNRegexp.length() == 0) {
             logger.errorf("[X509ClientCertificateAuthenticator:authenticate] " + ATTR_SUBJECT_DN + " is null or empty");
             context.attempted();
             return;
         }
-        Pattern subjectDNPattern = Pattern.compile(subjectDNRegexp);
 
-        Optional<String> matchedCertificate = Arrays.stream(certs)
-              .map(certificate -> certificate.getSubjectDN().getName())
-              .filter(subjectdn -> subjectDNPattern.matcher(subjectdn).matches())
-              .findFirst();
+        Optional<String> matchedCertificate;
+
+        if (clientCfg.getAllowRegexPatternComparison()) {
+            Pattern subjectDNPattern = Pattern.compile(subjectDNRegexp);
+
+            matchedCertificate = Arrays.stream(certs)
+                    .map(certificate -> certificate.getSubjectDN().getName())
+                    .filter(subjectdn -> subjectDNPattern.matcher(subjectdn).matches())
+                    .findFirst();
+        } else {
+            // OIDC/OAuth2 does not use regex comparison as it expects exact DN given in the format according to RFC4514. See RFC8705 for the details.
+            // We allow custom OIDs attributes to be "expanded" or not expanded in the given Subject DN
+            X500Principal expectedDNPrincipal = new X500Principal(subjectDNRegexp, CUSTOM_OIDS_REVERSED);
+
+            matchedCertificate = Arrays.stream(certs)
+                    .filter(certificate -> expectedDNPrincipal.getName(X500Principal.RFC2253, CUSTOM_OIDS).equals(certificate.getSubjectX500Principal().getName(X500Principal.RFC2253, CUSTOM_OIDS)))
+                    .map(certificate -> certificate.getSubjectDN().getName())
+                    .findFirst();
+        }
 
         if (!matchedCertificate.isPresent()) {
             // We do quite expensive operation here, so better check the logging level beforehand.
             if (logger.isDebugEnabled()) {
-                logger.debug("[X509ClientCertificateAuthenticator:authenticate] Couldn't match any certificate for pattern " + subjectDNRegexp);
+                logger.debug("[X509ClientCertificateAuthenticator:authenticate] Couldn't match any certificate for expected Subject DN '" + subjectDNRegexp + "' with allow regex pattern '" + clientCfg.getAllowRegexPatternComparison() + "'.");
                 logger.debug("[X509ClientCertificateAuthenticator:authenticate] Available SubjectDNs: " +
-                      Arrays.stream(certs)
-                            .map(cert -> cert.getSubjectDN().getName())
-                            .collect(Collectors.toList()));
+                        Arrays.stream(certs)
+                                .map(cert -> cert.getSubjectDN().getName())
+                                .collect(Collectors.toList()));
             }
             context.attempted();
             return;
@@ -179,4 +215,5 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
     public String getId() {
         return PROVIDER_ID;
     }
+
 }

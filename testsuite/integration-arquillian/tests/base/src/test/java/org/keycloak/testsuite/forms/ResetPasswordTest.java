@@ -1157,6 +1157,38 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    @Test
+    public void resetPasswordInfoMessageWithDuplicateEmailsAllowed() throws IOException {
+        RealmRepresentation realmRep = testRealm().toRepresentation();
+        Boolean originalLoginWithEmailAllowed = realmRep.isLoginWithEmailAllowed();
+        Boolean originalDuplicateEmailsAllowed = realmRep.isDuplicateEmailsAllowed();
+
+        try {
+            loginPage.open();
+            loginPage.resetPassword();
+
+            resetPasswordPage.assertCurrent();
+
+            assertEquals("Enter your username or email address and we will send you instructions on how to create a new password.", resetPasswordPage.getInfoMessage());
+
+            realmRep.setLoginWithEmailAllowed(false);
+            realmRep.setDuplicateEmailsAllowed(true);
+            testRealm().update(realmRep);
+
+            loginPage.open();
+            loginPage.resetPassword();
+
+            resetPasswordPage.assertCurrent();
+
+            assertEquals("Enter your username and we will send you instructions on how to create a new password.", resetPasswordPage.getInfoMessage());
+        } finally {
+            realmRep.setLoginWithEmailAllowed(originalLoginWithEmailAllowed);
+            realmRep.setDuplicateEmailsAllowed(originalDuplicateEmailsAllowed);
+            testRealm().update(realmRep);
+        }
+
+    }
+
     // KEYCLOAK-15170
     @Test
     public void changeEmailAddressAfterSendingEmail() throws IOException {
@@ -1175,6 +1207,18 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         driver.navigate().to(changePasswordUrl.trim());
         errorPage.assertCurrent();
         assertEquals("Invalid email address.", errorPage.getError());
+    }
+
+    @Test
+    public void resetPasswordWithLoginHint() throws IOException {
+        // Redirect directly to KC "forgot password" endpoint instead of "authenticate" endpoint
+        String loginUrl = oauth.getLoginFormUrl();
+        String forgotPasswordUrl = loginUrl.replace("/auth?", "/forgot-credentials?"); // Workaround, but works
+
+        driver.navigate().to(forgotPasswordUrl + "&login_hint=test");
+        resetPasswordPage.assertCurrent();
+
+        assertEquals("test", resetPasswordPage.getUsername());
     }
 
     private void changePasswordOnUpdatePage(WebDriver driver) {

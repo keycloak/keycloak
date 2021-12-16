@@ -17,11 +17,11 @@
 package org.keycloak.models.map.authSession;
 
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import java.util.Map;
@@ -31,10 +31,15 @@ import java.util.stream.Collectors;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public abstract class MapRootAuthenticationSessionAdapter<K> extends AbstractRootAuthenticationSessionModel<MapRootAuthenticationSessionEntity<K>> {
+public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticationSessionModel<MapRootAuthenticationSessionEntity> {
 
-    public MapRootAuthenticationSessionAdapter(KeycloakSession session, RealmModel realm, MapRootAuthenticationSessionEntity<K> entity) {
+    public MapRootAuthenticationSessionAdapter(KeycloakSession session, RealmModel realm, MapRootAuthenticationSessionEntity entity) {
         super(session, realm, entity);
+    }
+
+    @Override
+    public String getId() {
+        return entity.getId();
     }
 
     @Override
@@ -114,10 +119,10 @@ public abstract class MapRootAuthenticationSessionAdapter<K> extends AbstractRoo
     }
 
     public void setUpdated(boolean updated) {
-        entity.updated |= updated;
+        entity.signalUpdated(updated);
     }
 
     private String generateTabId() {
-        return Base64Url.encode(KeycloakModelUtils.generateSecret(8));
+        return Base64Url.encode(SecretGenerator.getInstance().randomBytes(8));
     }
 }

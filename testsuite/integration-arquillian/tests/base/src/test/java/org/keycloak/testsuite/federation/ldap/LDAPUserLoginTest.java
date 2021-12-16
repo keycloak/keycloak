@@ -50,8 +50,7 @@ import java.util.List;
 
 import java.util.Objects;
 import org.junit.Assume;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
  * Test user logins utilizing various LDAP authentication methods and different LDAP connection encryption mechanisms.
@@ -227,7 +226,7 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
     // Test variant: Bind credential set to vault
     @Test
     @LDAPConnectionParameters(bindCredential=LDAPConnectionParameters.BindCredential.VAULT, bindType=LDAPConnectionParameters.BindType.SIMPLE, encryption=LDAPConnectionParameters.Encryption.NONE)
-    @AuthServerContainerExclude(value = {AuthServerContainerExclude.AuthServer.QUARKUS, AuthServerContainerExclude.AuthServer.REMOTE}, details =
+    @AuthServerContainerExclude(value = REMOTE, details =
             "java.io.NotSerializableException: com.sun.jndi.ldap.LdapCtx")
     public void loginLDAPUserCredentialVaultAuthenticationSimpleEncryptionNone() {
         verifyConnectionUrlProtocolPrefix("ldap://");
@@ -247,7 +246,7 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
     // Test variant: Bind credential set to vault
     @Test
     @LDAPConnectionParameters(bindCredential=LDAPConnectionParameters.BindCredential.VAULT, bindType=LDAPConnectionParameters.BindType.SIMPLE, encryption=LDAPConnectionParameters.Encryption.SSL)
-    @AuthServerContainerExclude(value = {AuthServerContainerExclude.AuthServer.QUARKUS, AuthServerContainerExclude.AuthServer.REMOTE}, details =
+    @AuthServerContainerExclude(value = REMOTE, details =
             "java.io.NotSerializableException: com.sun.jndi.ldap.LdapCtx")
     public void loginLDAPUserCredentialVaultAuthenticationSimpleEncryptionSSL() {
         verifyConnectionUrlProtocolPrefix("ldaps://");
@@ -267,7 +266,7 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
     // Test variant: Bind credential set to vault
     @Test
     @LDAPConnectionParameters(bindCredential=LDAPConnectionParameters.BindCredential.VAULT, bindType=LDAPConnectionParameters.BindType.SIMPLE, encryption=LDAPConnectionParameters.Encryption.STARTTLS)
-    @AuthServerContainerExclude(value = {AuthServerContainerExclude.AuthServer.QUARKUS, AuthServerContainerExclude.AuthServer.REMOTE}, details =
+    @AuthServerContainerExclude(value = REMOTE, details =
             "java.io.NotSerializableException: com.sun.jndi.ldap.LdapCtx")
     public void loginLDAPUserCredentialVaultAuthenticationSimpleEncryptionStartTLS() {
         verifyConnectionUrlProtocolPrefix("ldap://");

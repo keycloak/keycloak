@@ -19,11 +19,12 @@ package org.keycloak.models.map.user;
 
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.EntityWithAttributes;
+import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -39,10 +40,10 @@ import java.util.stream.Stream;
  *
  * @author mhajas
  */
-public class MapUserEntity<K> implements AbstractEntity<K> {
+public class MapUserEntity extends UpdatableEntity.Impl implements AbstractEntity, EntityWithAttributes {
 
-    private final K id;
-    private final String realmId;
+    private String id;
+    private String realmId;
 
     private String username;
     private String firstName;
@@ -65,29 +66,27 @@ public class MapUserEntity<K> implements AbstractEntity<K> {
     private String serviceAccountClientLink;
     private int notBefore;
 
-    static Comparator<MapUserEntity<?>> COMPARE_BY_USERNAME = Comparator.comparing(MapUserEntity::getUsername);
-
     /**
      * Flag signalizing that any of the setters has been meaningfully used.
      */
-    protected boolean updated;
 
-    protected MapUserEntity() {
-        this.id = null;
-        this.realmId = null;
-    }
+    public MapUserEntity() {}
 
-    public MapUserEntity(K id, String realmId) {
-        Objects.requireNonNull(id, "id");
-        Objects.requireNonNull(realmId, "realmId");
-
+    public MapUserEntity(String id, String realmId) {
         this.id = id;
         this.realmId = realmId;
     }
 
     @Override
-    public K getId() {
+    public String getId() {
         return this.id;
+    }
+
+    @Override
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     @Override
@@ -100,6 +99,11 @@ public class MapUserEntity<K> implements AbstractEntity<K> {
 
     public String getRealmId() {
         return realmId;
+    }
+
+    public void setRealmId(String realmId) {
+        this.updated |= !Objects.equals(this.realmId, realmId);
+        this.realmId = realmId;
     }
 
     public String getUsername() {
@@ -179,19 +183,23 @@ public class MapUserEntity<K> implements AbstractEntity<K> {
         return attributes;
     }
 
+    @Override
     public List<String> getAttribute(String name) {
         return attributes.getOrDefault(name, Collections.emptyList());
     }
 
+    @Override
     public void setAttributes(Map<String, List<String>> attributes) {
         this.updated |= !Objects.equals(this.attributes, attributes);
         this.attributes = attributes;
     }
 
+    @Override
     public void setAttribute(String name, List<String> value) {
         this.updated |= !Objects.equals(this.attributes.put(name, value), value);
     }
-    
+
+    @Override
     public void removeAttribute(String name) {
         this.updated |= this.attributes.remove(name) != null;
     }

@@ -29,45 +29,38 @@ import org.keycloak.models.map.authorization.adapter.MapScopeAdapter;
 import org.keycloak.models.map.authorization.entity.MapScopeEntity;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 
+import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
-import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
-import static org.keycloak.utils.StreamsUtil.paginatedStream;
+import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
+import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 
-public class MapScopeStore<K> implements ScopeStore {
+public class MapScopeStore implements ScopeStore {
 
     private static final Logger LOG = Logger.getLogger(MapScopeStore.class);
     private final AuthorizationProvider authorizationProvider;
-    final MapKeycloakTransaction<K, MapScopeEntity<K>, Scope> tx;
-    private final MapStorage<K, MapScopeEntity<K>, Scope> scopeStore;
+    final MapKeycloakTransaction<MapScopeEntity, Scope> tx;
 
-    public MapScopeStore(KeycloakSession session, MapStorage<K, MapScopeEntity<K>, Scope> scopeStore, AuthorizationProvider provider) {
+    public MapScopeStore(KeycloakSession session, MapStorage<MapScopeEntity, Scope> scopeStore, AuthorizationProvider provider) {
         this.authorizationProvider = provider;
-        this.scopeStore = scopeStore;
         this.tx = scopeStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
     }
 
-    private Scope entityToAdapter(MapScopeEntity<K> origEntity) {
+    private Scope entityToAdapter(MapScopeEntity origEntity) {
         if (origEntity == null) return null;
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return new MapScopeAdapter<K>(registerEntityForChanges(tx, origEntity), authorizationProvider.getStoreFactory()) {
-            @Override
-            public String getId() {
-                return scopeStore.getKeyConvertor().keyToString(entity.getId());
-            }
-        };
+        return new MapScopeAdapter(origEntity, authorizationProvider.getStoreFactory());
     }
 
-    private ModelCriteriaBuilder<Scope> forResourceServer(String resourceServerId) {
-        ModelCriteriaBuilder<Scope> mcb = scopeStore.createCriteriaBuilder();
+    private DefaultModelCriteria<Scope> forResourceServer(String resourceServerId) {
+        DefaultModelCriteria<Scope> mcb = criteria();
 
         return resourceServerId == null
                 ? mcb
@@ -81,20 +74,19 @@ public class MapScopeStore<K> implements ScopeStore {
 
 
         // @UniqueConstraint(columnNames = {"NAME", "RESOURCE_SERVER_ID"})
-        ModelCriteriaBuilder<Scope> mcb = forResourceServer(resourceServer.getId())
+        DefaultModelCriteria<Scope> mcb = forResourceServer(resourceServer.getId())
                 .compare(SearchableFields.NAME, Operator.EQ, name);
 
-        if (tx.getCount(mcb) > 0) {
+        if (tx.getCount(withCriteria(mcb)) > 0) {
             throw new ModelDuplicateException("Scope with name '" + name + "' for " + resourceServer.getId() + " already exists");
         }
 
-        K uid = id == null ? scopeStore.getKeyConvertor().yieldNewUniqueKey(): scopeStore.getKeyConvertor().fromString(id);
-        MapScopeEntity<K> entity = new MapScopeEntity<>(uid);
+        MapScopeEntity entity = new MapScopeEntity(id);
 
         entity.setName(name);
         entity.setResourceServerId(resourceServer.getId());
 
-        tx.create(uid, entity);
+        entity = tx.create(entity);
 
         return entityToAdapter(entity);
     }
@@ -102,15 +94,15 @@ public class MapScopeStore<K> implements ScopeStore {
     @Override
     public void delete(String id) {
         LOG.tracef("delete(%s)%s", id, getShortStackTrace());
-        tx.delete(scopeStore.getKeyConvertor().fromString(id));
+        tx.delete(id);
     }
 
     @Override
     public Scope findById(String id, String resourceServerId) {
         LOG.tracef("findById(%s, %s)%s", id, resourceServerId, getShortStackTrace());
 
-        return tx.read(forResourceServer(resourceServerId)
-                    .compare(Scope.SearchableFields.ID, Operator.EQ, id))
+        return tx.read(withCriteria(forResourceServer(resourceServerId)
+                .compare(SearchableFields.ID, Operator.EQ, id)))
                 .findFirst()
                 .map(this::entityToAdapter)
                 .orElse(null);
@@ -120,8 +112,8 @@ public class MapScopeStore<K> implements ScopeStore {
     public Scope findByName(String name, String resourceServerId) {
         LOG.tracef("findByName(%s, %s)%s", name, resourceServerId, getShortStackTrace());
 
-        return tx.read(forResourceServer(resourceServerId).compare(Scope.SearchableFields.NAME,
-                Operator.EQ, name))
+        return tx.read(withCriteria(forResourceServer(resourceServerId).compare(SearchableFields.NAME,
+                Operator.EQ, name)))
                 .findFirst()
                 .map(this::entityToAdapter)
                 .orElse(null);
@@ -131,14 +123,14 @@ public class MapScopeStore<K> implements ScopeStore {
     public List<Scope> findByResourceServer(String id) {
         LOG.tracef("findByResourceServer(%s)%s", id, getShortStackTrace());
 
-        return tx.read(forResourceServer(id))
+        return tx.read(withCriteria(forResourceServer(id)))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<Scope> findByResourceServer(Map<Scope.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
-        ModelCriteriaBuilder<Scope> mcb = forResourceServer(resourceServerId);
+        DefaultModelCriteria<Scope> mcb = forResourceServer(resourceServerId);
 
         for (Scope.FilterOption filterOption : attributes.keySet()) {
             String[] value = attributes.get(filterOption);
@@ -155,7 +147,8 @@ public class MapScopeStore<K> implements ScopeStore {
             }
         }
 
-        return paginatedStream(tx.read(mcb).map(this::entityToAdapter), firstResult, maxResult)
-                .collect(Collectors.toList());
+        return tx.read(withCriteria(mcb).pagination(firstResult, maxResult, SearchableFields.NAME))
+            .map(this::entityToAdapter)
+            .collect(Collectors.toList());
     }
 }

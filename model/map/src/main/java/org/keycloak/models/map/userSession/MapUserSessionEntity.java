@@ -22,6 +22,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.common.AbstractEntity;
 
+import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,15 +30,14 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapUserSessionEntity<K> implements AbstractEntity<K> {
-    private K id;
+public class MapUserSessionEntity extends UpdatableEntity.Impl implements AbstractEntity {
+    private String id;
 
     private String realmId;
 
     /**
      * Flag signalizing that any of the setters has been meaningfully used.
      */
-    protected boolean updated;
 
     private String userId;
 
@@ -68,20 +68,14 @@ public class MapUserSessionEntity<K> implements AbstractEntity<K> {
 
     private boolean offline;
 
-    public MapUserSessionEntity() {
-        this.id = null;
-        this.realmId = null;
-    }
+    public MapUserSessionEntity() {}
 
-    public MapUserSessionEntity(K id, String realmId) {
-        Objects.requireNonNull(id, "id");
-        Objects.requireNonNull(realmId, "realmId");
-
+    public MapUserSessionEntity(String id, String realmId) {
         this.id = id;
         this.realmId = realmId;
     }
 
-    public MapUserSessionEntity(K id, RealmModel realm, UserModel user, String loginUsername, String ipAddress,
+    public MapUserSessionEntity(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress,
                                      String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId,
                                      boolean offline) {
         this.id = id;
@@ -99,13 +93,15 @@ public class MapUserSessionEntity<K> implements AbstractEntity<K> {
     }
 
     @Override
-    public K getId() {
+    public String getId() {
         return this.id;
     }
 
     @Override
-    public boolean isUpdated() {
-        return this.updated;
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     public String getRealmId() {

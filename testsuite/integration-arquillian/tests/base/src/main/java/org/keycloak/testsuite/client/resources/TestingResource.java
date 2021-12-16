@@ -342,6 +342,14 @@ public interface TestingResource {
     @Consumes(MediaType.APPLICATION_JSON)
     Response disableFeature(@PathParam("feature") String feature);
 
+    /**
+     * If property-value is null, the system property will be unset (removed) on the server
+     */
+    @GET
+    @Path("/set-system-property")
+    @Consumes(MediaType.TEXT_HTML_UTF_8)
+    void setSystemPropertyOnServer(@QueryParam("property-name") String propertyName, @QueryParam("property-value") String propertyValue);
+
 
     /**
      * This method is here just to have all endpoints from TestingResourceProvider available here.

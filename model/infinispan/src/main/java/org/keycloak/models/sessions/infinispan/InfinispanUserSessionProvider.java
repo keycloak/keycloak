@@ -56,7 +56,7 @@ import org.keycloak.models.sessions.infinispan.stream.SessionPredicate;
 import org.keycloak.models.sessions.infinispan.stream.UserSessionPredicate;
 import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
 import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
-import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
+import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 
 import java.io.Serializable;
@@ -369,9 +369,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         cache = CacheDecorators.skipCacheLoaders(cache);
 
         // return a stream that 'wraps' the infinispan cache stream so that the cache stream's elements are read one by one
-        // and then filtered/mapped locally to avoid serialization issues when trying to manipulate the cache stream directly.
-        return StreamSupport.stream(cache.entrySet().stream().spliterator(), true)
-                .filter(predicate)
+        // and then mapped locally to avoid serialization issues when trying to manipulate the cache stream directly.
+        return StreamSupport.stream(cache.entrySet().stream().filter(predicate).spliterator(), false)
                 .map(Mappers.userSessionEntity())
                 .map(entity -> this.wrap(realm, entity, offline));
     }
@@ -440,8 +439,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         // return a stream that 'wraps' the infinispan cache stream so that the cache stream's elements are read one by one
         // and then filtered/mapped locally to avoid serialization issues when trying to manipulate the cache stream directly.
-        Stream<UserSessionEntity> stream = StreamSupport.stream(cache.entrySet().stream().spliterator(), true)
-                .filter(predicate)
+        Stream<UserSessionEntity> stream = StreamSupport.stream(cache.entrySet().stream().filter(predicate).spliterator(), false)
                 .map(Mappers.userSessionEntity())
                 .sorted(Comparators.userSessionLastSessionRefresh());
 

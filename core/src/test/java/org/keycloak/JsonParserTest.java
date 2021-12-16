@@ -100,6 +100,9 @@ public class JsonParserTest {
         System.setProperty("my.host", "foo");
         System.setProperty("con.pool.size", "200");
         System.setProperty("allow.any.hostname", "true");
+        System.setProperty("socket.timeout.millis", "6000");
+        System.setProperty("connection.timeout.millis", "7000");
+        System.setProperty("connection.ttl.millis", "500");
 
         InputStream is = getClass().getClassLoader().getResourceAsStream("keycloak.json");
 
@@ -111,6 +114,9 @@ public class JsonParserTest {
         Assert.assertTrue(config.isAllowAnyHostname());
         Assert.assertEquals(100, config.getCorsMaxAge());
         Assert.assertEquals(200, config.getConnectionPoolSize());
+        Assert.assertEquals(6000L, config.getSocketTimeout());
+        Assert.assertEquals(7000L, config.getConnectionTimeout());
+        Assert.assertEquals(500L, config.getConnectionTTL());
     }
 
     static Pattern substitution = Pattern.compile("\\$\\{([^}]+)\\}");

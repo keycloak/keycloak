@@ -265,7 +265,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
                     .assertEvent();
 
             // Check signature and content
-            PublicKey publicKey = PemUtils.decodePublicKey(ApiUtil.findActiveKey(adminClient.realm("test")).getPublicKey());
+            PublicKey publicKey = PemUtils.decodePublicKey(ApiUtil.findActiveSigningKey(adminClient.realm("test")).getPublicKey());
 
             Assert.assertEquals(200, response.getStatus());
             Assert.assertEquals(response.getHeaderString(HttpHeaders.CONTENT_TYPE), MediaType.APPLICATION_JWT);

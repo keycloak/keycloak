@@ -77,6 +77,7 @@ public class SecureSigningAlgorithmForSignedJwtExecutor implements ClientPolicyE
     public void executeOnEvent(ClientPolicyContext context) throws ClientPolicyException {
         switch (context.getEvent()) {
             case TOKEN_REQUEST:
+            case SERVICE_ACCOUNT_TOKEN_REQUEST:
             case TOKEN_REFRESH:
             case TOKEN_REVOKE:
             case TOKEN_INTROSPECT:
@@ -94,8 +95,7 @@ public class SecureSigningAlgorithmForSignedJwtExecutor implements ClientPolicyE
                 } catch (JWSInputException e) {
                     throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed input format.");
                 }
-                String alg = jws.getHeader().getAlgorithm().name();
-                verifySecureSigningAlgorithm(alg);
+                verifySecureSigningAlgorithm(jws.getHeader().getAlgorithm().name());
                 break;
             default:
                 return;
@@ -103,17 +103,11 @@ public class SecureSigningAlgorithmForSignedJwtExecutor implements ClientPolicyE
     }
 
     private void verifySecureSigningAlgorithm(String signatureAlgorithm) throws ClientPolicyException {
-        // Please change also SecureSigningAlgorithmForSignedJwtEnforceExecutorFactory.getHelpText() if you are changing any algorithms here.
-        switch (signatureAlgorithm) {
-            case Algorithm.PS256:
-            case Algorithm.PS384:
-            case Algorithm.PS512:
-            case Algorithm.ES256:
-            case Algorithm.ES384:
-            case Algorithm.ES512:
-                logger.tracev("Passed. signatureAlgorithm = {0}", signatureAlgorithm);
-                return;
+        if (FapiConstant.ALLOWED_ALGORITHMS.contains(signatureAlgorithm)) {
+            logger.tracev("Passed. signatureAlgorithm = {0}", signatureAlgorithm);
+            return;
         }
+
         logger.tracev("NOT allowed signatureAlgorithm = {0}", signatureAlgorithm);
         throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed signature algorithm.");
     }

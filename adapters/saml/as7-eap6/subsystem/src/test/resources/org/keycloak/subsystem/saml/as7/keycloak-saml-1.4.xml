@@ -1,0 +1,93 @@
+<!--
+  ~ Copyright 2020 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<subsystem xmlns="urn:jboss:domain:keycloak-saml:1.4">
+    <secure-deployment name="my-app.war">
+        <SP entityID="http://localhost:8080/sales-post-enc/"
+            sslPolicy="EXTERNAL"
+            nameIDPolicyFormat="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
+            logoutPage="/logout.jsp"
+            keepDOMAssertion="false"
+            forceAuthentication="false"
+            isPassive="true"
+            turnOffChangeSessionIdOnLogin="true"
+            autodetectBearerOnly="false">
+
+            <Keys>
+                <Key encryption="true" signing="true">
+                    <PrivateKeyPem>my_key.pem</PrivateKeyPem>
+                    <PublicKeyPem>my_key.pub</PublicKeyPem>
+                    <CertificatePem>cert.cer</CertificatePem>
+                    <KeyStore resource="/WEB-INF/keystore.jks" password="store123" file="test" alias="test" type="jks">
+                        <PrivateKey alias="http://localhost:8080/sales-post-enc/" password="test123"/>
+                        <Certificate alias="http://localhost:8080/sales-post-enc/"/>
+                    </KeyStore>
+                </Key>
+            </Keys>
+            <PrincipalNameMapping policy="FROM_NAME_ID" attribute="test"/>
+            <RoleIdentifiers>
+                <Attribute name="Role"/>
+                <Attribute name="Role2"/>
+            </RoleIdentifiers>
+            <RoleMappingsProvider id="properties-based-role-mapper">
+                <Property name="properties.file.location" value="test-roles.properties"/>
+                <Property name="another.property" value="another.value"/>
+            </RoleMappingsProvider>
+            <IDP entityID="idp"
+                 signaturesRequired="true"
+                 signatureAlgorithm="DSA_SHA1"
+                 signatureCanonicalizationMethod="test"
+                 metadataUrl="http://localhost:8080/metadata">
+                <SingleSignOnService signRequest="true"
+                                     validateResponseSignature="true"
+                                     validateAssertionSignature="true"
+                                     requestBinding="POST"
+                                     responseBinding="POST"
+                                     bindingUrl="http://localhost:8080/auth/realms/saml-demo/protocol/saml"
+                                     assertionConsumerServiceUrl="acsUrl"/>
+                <SingleLogoutService
+                        validateRequestSignature="true"
+                        validateResponseSignature="true"
+                        signRequest="true"
+                        signResponse="true"
+                        requestBinding="POST"
+                        responseBinding="POST"
+                        postBindingUrl="http://localhost:8080/auth/realms/saml-demo/protocol/saml"
+                        redirectBindingUrl="http://localhost:8080/auth/realms/saml-demo/protocol/saml"/>
+                <Keys>
+                    <Key signing="true">
+                        <KeyStore resource="/WEB-INF/keystore.jks" password="store123">
+                            <Certificate alias="saml-demo"/>
+                        </KeyStore>
+                    </Key>
+                </Keys>
+                <HttpClient allowAnyHostname="false"
+                            clientKeystore="/tmp/keystore.jks"
+                            clientKeystorePassword="testpwd1!@"
+                            connectionPoolSize="20"
+                            disableTrustManager="false"
+                            proxyUrl="http://localhost:9090/proxy"
+                            truststore="/tmp/truststore.jks"
+                            truststorePassword="trustpwd#*"
+                            socketTimeout="6000"
+                            connectionTtl="500"
+                            connectionTimeout="1000"
+                />
+            </IDP>
+        </SP>
+    </secure-deployment>
+</subsystem>

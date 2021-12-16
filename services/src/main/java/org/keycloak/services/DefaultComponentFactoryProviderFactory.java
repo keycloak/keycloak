@@ -143,7 +143,12 @@ public class DefaultComponentFactoryProviderFactory implements ComponentFactoryP
         newFactory.init(configScope);
         newFactory.postInit(factory);
 
-        dependentInvalidations.computeIfAbsent(realmId, k -> ConcurrentHashMap.newKeySet()).add(componentId);
+        if (realmId == null) {
+            realmId = configScope.getComponentParentId();
+        }
+        if (realmId != null) {
+            dependentInvalidations.computeIfAbsent(realmId, k -> ConcurrentHashMap.newKeySet()).add(componentId);
+        }
         dependentInvalidations.computeIfAbsent(newFactory.getClass(), k -> ConcurrentHashMap.newKeySet()).add(componentId);
 
         return newFactory;

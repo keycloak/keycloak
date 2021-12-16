@@ -44,9 +44,9 @@
     </fileSets>
     <files>
         <file>
-            <source>src/main/content/conf/cluster-${auth.server.quarkus.cluster.config}.xml</source>
+            <source>src/main/content/conf/cluster-ha.xml</source>
             <outputDirectory>/auth-server-quarkus/conf</outputDirectory>
-            <destName>cluster-${auth.server.quarkus.cluster.config}.xml</destName>
+            <destName>cluster-ha.xml</destName>
             <filtered>true</filtered>
         </file>
     </files>

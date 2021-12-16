@@ -29,8 +29,8 @@ import org.keycloak.models.map.authorization.adapter.MapPolicyAdapter;
 import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 
 import java.util.Arrays;
@@ -41,36 +41,29 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
-import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
-import static org.keycloak.utils.StreamsUtil.paginatedStream;
+import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
+import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 
-public class MapPolicyStore<K> implements PolicyStore {
+public class MapPolicyStore implements PolicyStore {
 
     private static final Logger LOG = Logger.getLogger(MapPolicyStore.class);
     private final AuthorizationProvider authorizationProvider;
-    final MapKeycloakTransaction<K, MapPolicyEntity<K>, Policy> tx;
-    private final MapStorage<K, MapPolicyEntity<K>, Policy> policyStore;
+    final MapKeycloakTransaction<MapPolicyEntity, Policy> tx;
 
-    public MapPolicyStore(KeycloakSession session, MapStorage<K, MapPolicyEntity<K>, Policy> policyStore, AuthorizationProvider provider) {
+    public MapPolicyStore(KeycloakSession session, MapStorage<MapPolicyEntity, Policy> policyStore, AuthorizationProvider provider) {
         this.authorizationProvider = provider;
-        this.policyStore = policyStore;
         this.tx = policyStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
     }
 
-    private Policy entityToAdapter(MapPolicyEntity<K> origEntity) {
+    private Policy entityToAdapter(MapPolicyEntity origEntity) {
         if (origEntity == null) return null;
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return new MapPolicyAdapter<K>(registerEntityForChanges(tx, origEntity), authorizationProvider.getStoreFactory()) {
-            @Override
-            public String getId() {
-                return policyStore.getKeyConvertor().keyToString(entity.getId());
-            }
-        };
+        return new MapPolicyAdapter(origEntity, authorizationProvider.getStoreFactory());
     }
 
-    private ModelCriteriaBuilder<Policy> forResourceServer(String resourceServerId) {
-        ModelCriteriaBuilder<Policy> mcb = policyStore.createCriteriaBuilder();
+    private DefaultModelCriteria<Policy> forResourceServer(String resourceServerId) {
+        DefaultModelCriteria<Policy> mcb = criteria();
 
         return resourceServerId == null
                 ? mcb
@@ -83,20 +76,20 @@ public class MapPolicyStore<K> implements PolicyStore {
         LOG.tracef("create(%s, %s, %s)%s", representation.getId(), resourceServer.getId(), resourceServer, getShortStackTrace());
 
         // @UniqueConstraint(columnNames = {"NAME", "RESOURCE_SERVER_ID"})
-        ModelCriteriaBuilder<Policy> mcb = forResourceServer(resourceServer.getId())
+        DefaultModelCriteria<Policy> mcb = forResourceServer(resourceServer.getId())
                 .compare(SearchableFields.NAME, Operator.EQ, representation.getName());
 
-        if (tx.getCount(mcb) > 0) {
+        if (tx.getCount(withCriteria(mcb)) > 0) {
             throw new ModelDuplicateException("Policy with name '" + representation.getName() + "' for " + resourceServer.getId() + " already exists");
         }
 
-        K uid = representation.getId() == null ? policyStore.getKeyConvertor().yieldNewUniqueKey() : policyStore.getKeyConvertor().fromString(representation.getId());
-        MapPolicyEntity<K> entity = new MapPolicyEntity<>(uid);
+        String uid = representation.getId();
+        MapPolicyEntity entity = new MapPolicyEntity(uid);
         entity.setType(representation.getType());
         entity.setName(representation.getName());
         entity.setResourceServerId(resourceServer.getId());
         
-        tx.create(uid, entity);
+        entity = tx.create(entity);
 
         return entityToAdapter(entity);
     }
@@ -104,15 +97,15 @@ public class MapPolicyStore<K> implements PolicyStore {
     @Override
     public void delete(String id) {
         LOG.tracef("delete(%s)%s", id, getShortStackTrace());
-        tx.delete(policyStore.getKeyConvertor().fromString(id));
+        tx.delete(id);
     }
 
     @Override
     public Policy findById(String id, String resourceServerId) {
         LOG.tracef("findById(%s, %s)%s", id, resourceServerId, getShortStackTrace());
 
-        return tx.read(forResourceServer(resourceServerId)
-                .compare(SearchableFields.ID, Operator.EQ, id))
+        return tx.read(withCriteria(forResourceServer(resourceServerId)
+                .compare(SearchableFields.ID, Operator.EQ, id)))
                 .findFirst()
                 .map(this::entityToAdapter)
                 .orElse(null);
@@ -122,8 +115,8 @@ public class MapPolicyStore<K> implements PolicyStore {
     public Policy findByName(String name, String resourceServerId) {
         LOG.tracef("findByName(%s, %s)%s", name, resourceServerId, getShortStackTrace());
 
-        return tx.read(forResourceServer(resourceServerId)
-                .compare(SearchableFields.NAME, Operator.EQ, name))
+        return tx.read(withCriteria(forResourceServer(resourceServerId)
+                .compare(SearchableFields.NAME, Operator.EQ, name)))
                 .findFirst()
                 .map(this::entityToAdapter)
                 .orElse(null);
@@ -133,51 +126,49 @@ public class MapPolicyStore<K> implements PolicyStore {
     public List<Policy> findByResourceServer(String id) {
         LOG.tracef("findByResourceServer(%s)%s", id, getShortStackTrace());
 
-        return tx.read(forResourceServer(id))
+        return tx.read(withCriteria(forResourceServer(id)))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<Policy> findByResourceServer(Map<Policy.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
-        LOG.tracef("findByResource(%s, %s, %d, %d)%s", attributes, resourceServerId, firstResult, maxResult, getShortStackTrace());
+        LOG.tracef("findByResourceServer(%s, %s, %d, %d)%s", attributes, resourceServerId, firstResult, maxResult, getShortStackTrace());
 
-        ModelCriteriaBuilder<Policy> mcb = forResourceServer(resourceServerId).and(
+        DefaultModelCriteria<Policy> mcb = forResourceServer(resourceServerId).and(
                 attributes.entrySet().stream()
-                        .map(this::filterEntryToModelCriteriaBuilder)
+                        .map(this::filterEntryToDefaultModelCriteria)
                         .filter(Objects::nonNull)
-                        .toArray(ModelCriteriaBuilder[]::new)
+                        .toArray(DefaultModelCriteria[]::new)
         );
 
         if (!attributes.containsKey(Policy.FilterOption.OWNER) && !attributes.containsKey(Policy.FilterOption.ANY_OWNER)) {
             mcb = mcb.compare(SearchableFields.OWNER, Operator.NOT_EXISTS);
         }
 
-        return paginatedStream(tx.read(mcb)
-                .sorted(MapPolicyEntity.COMPARE_BY_NAME), firstResult, maxResult)
-                .map(MapPolicyEntity<K>::getId)
-                .map(K::toString)
-                .map(id -> authorizationProvider.getStoreFactory().getPolicyStore().findById(id, resourceServerId)) // We need to go through cache
-                .collect(Collectors.toList());
+        return tx.read(withCriteria(mcb).pagination(firstResult, maxResult, SearchableFields.NAME))
+            .map(MapPolicyEntity::getId)
+            // We need to go through cache
+            .map(id -> authorizationProvider.getStoreFactory().getPolicyStore().findById(id, resourceServerId))
+            .collect(Collectors.toList());
     }
 
-    private ModelCriteriaBuilder<Policy> filterEntryToModelCriteriaBuilder(Map.Entry<Policy.FilterOption, String[]> entry) {
+    private DefaultModelCriteria<Policy> filterEntryToDefaultModelCriteria(Map.Entry<Policy.FilterOption, String[]> entry) {
         Policy.FilterOption name = entry.getKey();
         String[] value = entry.getValue();
 
+        DefaultModelCriteria<Policy> mcb = criteria();
         switch (name) {
             case ID:
             case SCOPE_ID:
             case RESOURCE_ID:
             case OWNER:
-                return policyStore.createCriteriaBuilder()
-                        .compare(name.getSearchableModelField(), Operator.IN, Arrays.asList(value));
+                return mcb.compare(name.getSearchableModelField(), Operator.IN, Arrays.asList(value));
             case PERMISSION: {
-                ModelCriteriaBuilder<Policy> mcb = policyStore.createCriteriaBuilder()
-                        .compare(SearchableFields.TYPE, Operator.IN, Arrays.asList("resource", "scope", "uma"));
+                mcb = mcb.compare(SearchableFields.TYPE, Operator.IN, Arrays.asList("resource", "scope", "uma"));
                 
                 if (!Boolean.parseBoolean(value[0])) {
-                    mcb = policyStore.createCriteriaBuilder().not(mcb); // TODO: create NOT_IN operator
+                    mcb = DefaultModelCriteria.<Policy>criteria().not(mcb); // TODO: create NOT_IN operator
                 }
                 
                 return mcb;
@@ -190,11 +181,10 @@ public class MapPolicyStore<K> implements PolicyStore {
                 }
                 
                 value[1] = "%" + value[1] + "%";
-                return policyStore.createCriteriaBuilder()
-                        .compare(SearchableFields.CONFIG, Operator.LIKE, (Object[]) value);
+                return mcb.compare(SearchableFields.CONFIG, Operator.LIKE, (Object[]) value);
             case TYPE:
             case NAME:
-                return policyStore.createCriteriaBuilder().compare(name.getSearchableModelField(), Operator.ILIKE, "%" + value[0] + "%");
+                return mcb.compare(name.getSearchableModelField(), Operator.ILIKE, "%" + value[0] + "%");
             default:
                 throw new IllegalArgumentException("Unsupported filter [" + name + "]");
 
@@ -205,31 +195,31 @@ public class MapPolicyStore<K> implements PolicyStore {
     public void findByResource(String resourceId, String resourceServerId, Consumer<Policy> consumer) {
         LOG.tracef("findByResource(%s, %s, %s)%s", resourceId, resourceServerId, consumer, getShortStackTrace());
 
-        tx.read(forResourceServer(resourceServerId)
-                .compare(Policy.SearchableFields.RESOURCE_ID, Operator.EQ, resourceId))
+        tx.read(withCriteria(forResourceServer(resourceServerId)
+                .compare(SearchableFields.RESOURCE_ID, Operator.EQ, resourceId)))
                 .map(this::entityToAdapter)
                 .forEach(consumer);
     }
 
     @Override
     public void findByResourceType(String type, String resourceServerId, Consumer<Policy> policyConsumer) {
-        tx.read(forResourceServer(resourceServerId)
-                .compare(SearchableFields.CONFIG, Operator.LIKE, (Object[]) new String[] {"defaultResourceType", type}))
+        tx.read(withCriteria(forResourceServer(resourceServerId)
+                .compare(SearchableFields.CONFIG, Operator.LIKE, (Object[]) new String[]{"defaultResourceType", type})))
                 .map(this::entityToAdapter)
                 .forEach(policyConsumer);
     }
 
     @Override
     public List<Policy> findByScopeIds(List<String> scopeIds, String resourceServerId) {
-        return tx.read(forResourceServer(resourceServerId)
-                .compare(SearchableFields.SCOPE_ID, Operator.IN, scopeIds))
+        return tx.read(withCriteria(forResourceServer(resourceServerId)
+                .compare(SearchableFields.SCOPE_ID, Operator.IN, scopeIds)))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
     }
 
     @Override
     public void findByScopeIds(List<String> scopeIds, String resourceId, String resourceServerId, Consumer<Policy> consumer) {
-        ModelCriteriaBuilder<Policy> mcb = forResourceServer(resourceServerId)
+        DefaultModelCriteria<Policy> mcb = forResourceServer(resourceServerId)
                 .compare(SearchableFields.TYPE, Operator.EQ, "scope")
                 .compare(SearchableFields.SCOPE_ID, Operator.IN, scopeIds);
 
@@ -240,22 +230,22 @@ public class MapPolicyStore<K> implements PolicyStore {
             mcb = mcb.compare(SearchableFields.RESOURCE_ID, Operator.NOT_EXISTS)
                     .compare(SearchableFields.CONFIG, Operator.NOT_EXISTS, (Object[]) new String[] {"defaultResourceType"});
         }
-        
-        tx.read(mcb).map(this::entityToAdapter).forEach(consumer);
+
+        tx.read(withCriteria(mcb)).map(this::entityToAdapter).forEach(consumer);
     }
 
     @Override
     public List<Policy> findByType(String type, String resourceServerId) {
-        return tx.read(forResourceServer(resourceServerId)
-                .compare(SearchableFields.TYPE, Operator.EQ, type))
+        return tx.read(withCriteria(forResourceServer(resourceServerId)
+                .compare(SearchableFields.TYPE, Operator.EQ, type)))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<Policy> findDependentPolicies(String id, String resourceServerId) {
-        return tx.read(forResourceServer(resourceServerId)
-                    .compare(SearchableFields.ASSOCIATED_POLICY_ID, Operator.EQ, id))
+        return tx.read(withCriteria(forResourceServer(resourceServerId)
+                .compare(SearchableFields.ASSOCIATED_POLICY_ID, Operator.EQ, id)))
                     .map(this::entityToAdapter)
                     .collect(Collectors.toList());
     }

@@ -176,6 +176,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     protected static final String FAPI1_BASELINE_PROFILE_NAME = "fapi-1-baseline";
     protected static final String FAPI1_ADVANCED_PROFILE_NAME = "fapi-1-advanced";
+    protected static final String FAPI_CIBA_PROFILE_NAME = "fapi-ciba";
 
     protected static final String ERR_MSG_MISSING_NONCE = "Missing parameter: nonce";
     protected static final String ERR_MSG_MISSING_STATE = "Missing parameter: state";
@@ -291,7 +292,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         ClientProfilesRepresentation actualProfilesRep = getProfilesWithGlobals();
 
         // same profiles
-        assertExpectedProfiles(actualProfilesRep, Arrays.asList(FAPI1_BASELINE_PROFILE_NAME, FAPI1_ADVANCED_PROFILE_NAME), Arrays.asList("ordinal-test-profile", "lack-of-builtin-field-test-profile"));
+        assertExpectedProfiles(actualProfilesRep, Arrays.asList(FAPI1_BASELINE_PROFILE_NAME, FAPI1_ADVANCED_PROFILE_NAME, FAPI_CIBA_PROFILE_NAME), Arrays.asList("ordinal-test-profile", "lack-of-builtin-field-test-profile"));
 
         // each profile - fapi-1-baseline
         ClientProfileRepresentation actualProfileRep =  getProfileRepresentation(actualProfilesRep, FAPI1_BASELINE_PROFILE_NAME, true);
@@ -371,7 +372,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     // Utilities for Request Object retrieved by reference from jwks_uri
 
-    protected KeyPair setupJwks(String algorithm, ClientRepresentation clientRepresentation, ClientResource clientResource) throws Exception {
+    protected KeyPair setupJwksUrl(String algorithm, ClientRepresentation clientRepresentation, ClientResource clientResource) throws Exception {
         // generate and register client keypair
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
         oidcClientEndpointsResource.generateKeys(algorithm);
@@ -543,12 +544,13 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         requestObject.setResponseType("code");
         requestObject.setRedirectUriParam(oauth.getRedirectUri());
         requestObject.setScope("openid");
-        String scope = KeycloakModelUtils.generateId();
-        oauth.stateParamHardcoded(scope);
-        requestObject.setState(scope);
+        String state = KeycloakModelUtils.generateId();
+        oauth.stateParamHardcoded(state);
+        requestObject.setState(state);
         requestObject.setMax_age(Integer.valueOf(600));
         requestObject.setOtherClaims("custom_claim_ein", "rot");
         requestObject.audience(Urls.realmIssuer(new URI(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth"), REALM_NAME), "https://example.com");
+        requestObject.setNonce(KeycloakModelUtils.generateId());
         return requestObject;
     }
 

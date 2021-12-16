@@ -39,7 +39,6 @@ import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
-import sun.applet.AppletSecurity;
 
 import static org.keycloak.testsuite.utils.io.IOUtil.modifyDocElementAttribute;
 import static org.keycloak.testsuite.util.ServerURLs.getAppServerContextRoot;
@@ -91,8 +90,8 @@ public class DeploymentArchiveProcessorUtils {
         }
 
         //We need to add filter declaration to web.xml
-        log.info("Adding filter to " + testClass.getAnnotation(UseServletFilter.class).filterClass() + 
-                " with mapping " + testClass.getAnnotation(UseServletFilter.class).filterPattern() + 
+        log.info("Adding filter to " + testClass.getAnnotation(UseServletFilter.class).filterClass() +
+                " with mapping " + testClass.getAnnotation(UseServletFilter.class).filterPattern() +
                 " for " + archive.getName());
 
         Element filter = webXmlDoc.createElement("filter");
@@ -124,21 +123,9 @@ public class DeploymentArchiveProcessorUtils {
 
         // Limitation that all deployments of annotated class use same skipPattern. Refactor if 
         // something more flexible is needed (would require more tricky web.xml parsing though...)
-        String skipPattern = testClass.getAnnotation(UseServletFilter.class).skipPattern();
-        if (skipPattern != null && !skipPattern.isEmpty()) {
-            Element initParam = webXmlDoc.createElement("init-param");
+        addInitParam(webXmlDoc, filter, KeycloakOIDCFilter.SKIP_PATTERN_PARAM, testClass.getAnnotation(UseServletFilter.class).skipPattern());
+        addInitParam(webXmlDoc, filter, KeycloakOIDCFilter.ID_MAPPER_PARAM, testClass.getAnnotation(UseServletFilter.class).idMapper());
 
-            Element paramName = webXmlDoc.createElement("param-name");
-            paramName.setTextContent(KeycloakOIDCFilter.SKIP_PATTERN_PARAM);
-
-            Element paramValue = webXmlDoc.createElement("param-value");
-            paramValue.setTextContent(skipPattern);
-
-            initParam.appendChild(paramName);
-            initParam.appendChild(paramValue);
-
-            filter.appendChild(initParam);
-        }
 
         IOUtil.appendChildInDocument(webXmlDoc, "web-app", filter);
 
@@ -165,10 +152,28 @@ public class DeploymentArchiveProcessorUtils {
         IOUtil.removeElementsFromDoc(webXmlDoc, "web-app", "security-constraint");
         IOUtil.removeElementsFromDoc(webXmlDoc, "web-app", "login-config");
         IOUtil.removeElementsFromDoc(webXmlDoc, "web-app", "security-role");
-        
+
         archive.add(new StringAsset((IOUtil.documentToString(webXmlDoc))), WEBXML_PATH);
     }
-    
+
+    private static void addInitParam(Document webXmlDoc, Element filter, String initParamName, String initParamValue) {
+        // Limitation that all deployments of annotated class use same skipPattern. Refactor if something more flexible is needed (would require more tricky web.xml parsing though...)
+        if (initParamValue != null && !initParamValue.isEmpty()) {
+            Element initParam = webXmlDoc.createElement("init-param");
+
+            Element paramName = webXmlDoc.createElement("param-name");
+            paramName.setTextContent(initParamName);
+
+            Element paramValue = webXmlDoc.createElement("param-value");
+            paramValue.setTextContent(initParamValue);
+
+            initParam.appendChild(paramName);
+            initParam.appendChild(paramValue);
+
+            filter.appendChild(initParam);
+        }
+    }
+
     public static String getKeycloakResolverClass(Document doc) {
         try {
             XPathFactory factory = XPathFactory.newInstance();
@@ -188,7 +193,7 @@ public class DeploymentArchiveProcessorUtils {
 
     public static void addFilterDependencies(Archive<?> archive, TestClass testClass) {
         log.info("Adding filter dependencies to " + archive.getName());
-        
+
         String dependency = testClass.getAnnotation(UseServletFilter.class).filterDependency();
         ((WebArchive) archive).addAsLibraries(KeycloakDependenciesResolver.resolveDependencies((dependency + ":" + System.getProperty("project.version"))));
 

@@ -16,5 +16,4 @@
 #  * limitations under the License.
 #  */
 #
-org.keycloak.userprofile.legacy.DefaultUserProfileProvider
-org.keycloak.userprofile.config.DeclarativeUserProfileProvider
+org.keycloak.userprofile.DeclarativeUserProfileProvider

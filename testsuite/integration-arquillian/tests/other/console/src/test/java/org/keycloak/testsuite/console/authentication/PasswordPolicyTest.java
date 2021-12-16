@@ -19,7 +19,6 @@ package org.keycloak.testsuite.console.authentication;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
@@ -78,6 +77,20 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
         assertAlertDanger();
 
         testUserCredentialsPage.resetPassword("12345678");
+        assertAlertSuccess();
+    }
+
+    @Test
+    public void testMaximumLengthPolicy() {
+        RealmRepresentation realm = testRealmResource().toRepresentation();
+        realm.setPasswordPolicy("maxLength(32) and ");
+        testRealmResource().update(realm);
+
+        testUserCredentialsPage.navigateTo();
+        testUserCredentialsPage.resetPassword("123456789012345678901234567890123");
+        assertAlertDanger();
+
+        testUserCredentialsPage.resetPassword("12345678901234567890123456789012");
         assertAlertSuccess();
     }
 

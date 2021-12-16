@@ -19,7 +19,8 @@ package org.keycloak.models.map.authorization.entity;
 
 import org.keycloak.models.map.common.AbstractEntity;
 
-import java.util.Comparator;
+import org.keycloak.models.map.common.EntityWithAttributes;
+import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -27,11 +28,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-public class MapResourceEntity<K> implements AbstractEntity<K> {
+public class MapResourceEntity extends UpdatableEntity.Impl implements AbstractEntity, EntityWithAttributes {
     
-    public static final Comparator<MapResourceEntity<?>> COMPARE_BY_NAME = Comparator.comparing(MapResourceEntity::getName);
-
-    private final K id;
+    private String id;
     private String name;
     private String displayName;
     private final Set<String> uris = new HashSet<>();
@@ -43,19 +42,23 @@ public class MapResourceEntity<K> implements AbstractEntity<K> {
     private final Set<String> scopeIds = new HashSet<>();
     private final Set<String> policyIds = new HashSet<>();
     private final Map<String, List<String>> attributes = new HashMap<>();
-    private boolean updated = false;
 
-    public MapResourceEntity(K id) {
+    public MapResourceEntity(String id) {
         this.id = id;
     }
 
-    public MapResourceEntity() {
-        this.id = null;
+    public MapResourceEntity() {}
+
+    @Override
+    public String getId() {
+        return id;
     }
 
     @Override
-    public K getId() {
-        return id;
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     public String getName() {
@@ -154,30 +157,31 @@ public class MapResourceEntity<K> implements AbstractEntity<K> {
         return policyIds;
     }
 
+    @Override
     public Map<String, List<String>> getAttributes() {
         return attributes;
     }
 
+    @Override
+    public void setAttributes(Map<String, List<String>> attributes) {
+        this.updated |= ! Objects.equals(this.attributes, attributes);
+        this.attributes.clear();
+        this.attributes.putAll(attributes);
+    }
+
+    @Override
     public List<String> getAttribute(String name) {
         return attributes.get(name);
     }
 
-    public String getSingleAttribute(String name) {
-        List<String> attributeValues = attributes.get(name);
-        return  attributeValues == null || attributeValues.isEmpty() ? null : attributeValues.get(0);
-    }
-
+    @Override
     public void setAttribute(String name, List<String> value) {
         this.updated |= !Objects.equals(this.attributes.put(name, value), value);
     }
 
+    @Override
     public void removeAttribute(String name) {
         this.updated |= this.attributes.remove(name) != null;
-    }
-
-    @Override
-    public boolean isUpdated() {
-        return updated;
     }
 
     @Override

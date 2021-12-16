@@ -33,7 +33,6 @@ public class KeycloakReadyHealthCheckTest {
     @RegisterExtension
     static final QuarkusUnitTest test = new QuarkusUnitTest()
             .setArchiveProducer(() -> ShrinkWrap.create(JavaArchive.class)
-                    .addAsResource("application.properties", "application.properties")
                     .addAsResource("keycloak.properties", "META-INF/keycloak.properties"));
 
     @Test
@@ -52,14 +51,5 @@ public class KeycloakReadyHealthCheckTest {
             .then()
                 .statusCode(200)
                 .body(Matchers.containsString("UP"));
-    }
-
-    @Test
-    @Disabled // Temporarily disabled. See KEYCLOAK-16382 and https://github.com/quarkusio/quarkus/issues/14705
-    public void testMetricsUp() {
-        given()
-            .when().get("/metrics")
-            .then()
-                .statusCode(200);
     }
 }

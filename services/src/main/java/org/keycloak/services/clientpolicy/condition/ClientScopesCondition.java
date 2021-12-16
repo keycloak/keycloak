@@ -29,11 +29,15 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
+import org.keycloak.protocol.oidc.grants.ciba.channel.CIBAAuthenticationRequest;
+import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.context.BackchannelAuthenticationRequestContext;
+import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.context.BackchannelTokenRequestContext;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
+import org.keycloak.services.clientpolicy.context.ServiceAccountTokenRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
 
 /**
@@ -88,6 +92,15 @@ public class ClientScopesCondition extends AbstractClientPolicyConditionProvider
             case TOKEN_REQUEST:
                 if (isScopeMatched(((TokenRequestContext)context).getParseResult().getClientSession())) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
+            case SERVICE_ACCOUNT_TOKEN_REQUEST:
+                if (isScopeMatched(((ServiceAccountTokenRequestContext)context).getClientSession())) return ClientPolicyVote.YES;
+                return ClientPolicyVote.NO;
+            case BACKCHANNEL_AUTHENTICATION_REQUEST:
+                if (isScopeMatched(((BackchannelAuthenticationRequestContext)context).getParsedRequest())) return ClientPolicyVote.YES;
+                return ClientPolicyVote.NO;
+            case BACKCHANNEL_TOKEN_REQUEST:
+                if (isScopeMatched(((BackchannelTokenRequestContext)context).getParsedRequest())) return ClientPolicyVote.YES;
+                return ClientPolicyVote.NO;
             default:
                 return ClientPolicyVote.ABSTAIN;
         }
@@ -101,6 +114,11 @@ public class ClientScopesCondition extends AbstractClientPolicyConditionProvider
     private boolean isScopeMatched(AuthorizationEndpointRequest request) {
         if (request == null) return false;
         return isScopeMatched(request.getScope(), session.getContext().getRealm().getClientByClientId(request.getClientId()));
+    }
+
+    private boolean isScopeMatched(CIBAAuthenticationRequest request) {
+        if (request == null || request.getClient() == null) return false;
+        return isScopeMatched(request.getScope(), session.getContext().getRealm().getClientByClientId(request.getClient().getClientId()));
     }
 
     private boolean isScopeMatched(String explicitScopes, ClientModel client) {

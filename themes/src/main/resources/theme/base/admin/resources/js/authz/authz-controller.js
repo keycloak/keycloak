@@ -2234,6 +2234,28 @@ module.controller('ResourceServerPolicyClientScopeDetailCtrl', function($scope, 
     }, realm, client, $scope);
 });
 
+module.controller('ResourceServerPolicyRegexDetailCtrl', function($scope, realm, client, PolicyController) {
+    PolicyController.onInit({
+        getPolicyType : function() {
+            return "regex";
+        },
+
+        onInit : function() {
+        },
+
+        onInitUpdate : function(policy) {
+        },
+
+        onUpdate : function() {
+            delete $scope.policy.config;
+        },
+
+        onCreate : function() {
+            delete $scope.policy.config;
+        }
+    }, realm, client, $scope);
+});
+
 module.service("PolicyController", function($http, $route, $location, ResourceServer, ResourceServerPolicy, ResourceServerPermission, AuthzDialog, Notifications, policyViewState, PolicyProvider, viewState) {
 
     var PolicyController = {};

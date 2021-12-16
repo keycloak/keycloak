@@ -52,6 +52,7 @@ public class Profile {
         ACCOUNT2(Type.DEFAULT),
         ACCOUNT_API(Type.DEFAULT),
         ADMIN_FINE_GRAINED_AUTHZ(Type.PREVIEW),
+        ADMIN2(Type.EXPERIMENTAL),
         DOCKER(Type.DISABLED_BY_DEFAULT),
         IMPERSONATION(Type.DEFAULT),
         OPENSHIFT_INTEGRATION(Type.PREVIEW),
@@ -60,8 +61,9 @@ public class Profile {
         UPLOAD_SCRIPTS(DEPRECATED),
         WEB_AUTHN(Type.DEFAULT, Type.PREVIEW),
         CLIENT_POLICIES(Type.DEFAULT),
-        CIBA(Type.PREVIEW),
+        CIBA(Type.DEFAULT),
         MAP_STORAGE(Type.EXPERIMENTAL),
+        PAR(Type.DEFAULT),
         DECLARATIVE_USER_PROFILE(Type.PREVIEW);
 
         private final Type typeProject;
@@ -211,6 +213,10 @@ public class Profile {
 
     public static boolean isFeatureEnabled(Feature feature) {
         return !getInstance().disabledFeatures.contains(feature);
+    }
+
+    public static boolean isProduct() {
+        return getInstance().profile.equals(ProfileValue.PRODUCT);
     }
 
     private class Config {

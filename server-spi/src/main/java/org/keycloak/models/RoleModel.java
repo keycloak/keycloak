@@ -69,7 +69,19 @@ public interface RoleModel {
      * Returns all composite roles as a stream.
      * @return Stream of {@link RoleModel}. Never returns {@code null}.
      */
-    Stream<RoleModel> getCompositesStream();
+    default Stream<RoleModel> getCompositesStream() {
+        return getCompositesStream(null, null, null);
+    }
+
+    /**
+     * Returns a paginated stream of composite roles of {@code this} role that contain given string in its name.
+     *
+     * @param search Case-insensitive search string
+     * @param first Index of the first result to return. Ignored if negative or {@code null}.
+     * @param max Maximum number of results to return. Ignored if negative or {@code null}.
+     * @return A stream of requested roles ordered by the role name
+     */
+    Stream<RoleModel> getCompositesStream(String search, Integer first, Integer max);
 
     boolean isClientRole();
 

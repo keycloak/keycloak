@@ -22,10 +22,16 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.Constants;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.representations.IDToken;
+import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -348,4 +354,64 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    @Test
+    public void testFrontChannelLogoutWithPostLogoutRedirectUri() throws Exception {
+        ClientsResource clients = adminClient.realm(oauth.getRealm()).clients();
+        ClientRepresentation rep = clients.findByClientId(oauth.getClientId()).get(0);
+        rep.setFrontchannelLogout(true);
+        rep.getAttributes().put(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, oauth.APP_ROOT + "/admin/frontchannelLogout");
+        clients.get(rep.getId()).update(rep);        
+        try {
+            oauth.clientSessionState("client-session");
+            oauth.doLogin("test-user@localhost", "password");
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            String idTokenString = tokenResponse.getIdToken();
+            String logoutUrl = oauth.getLogoutUrl().idTokenHint(idTokenString)
+                    .postLogoutRedirectUri(oauth.APP_AUTH_ROOT).build();
+            driver.navigate().to(logoutUrl);
+            LogoutToken logoutToken = testingClient.testApp().getFrontChannelLogoutToken();
+            Assert.assertNotNull(logoutToken);
+
+            IDToken idToken = new JWSInput(idTokenString).readJsonContent(IDToken.class);
+
+            Assert.assertEquals(logoutToken.getIssuer(), idToken.getIssuer());
+            Assert.assertEquals(logoutToken.getSid(), idToken.getSessionId());
+        } finally {
+            rep.setFrontchannelLogout(false);
+            rep.getAttributes().put(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, "");
+            clients.get(rep.getId()).update(rep);
+        }
+    }
+
+    @Test
+    public void testFrontChannelLogout() throws Exception {
+        ClientsResource clients = adminClient.realm(oauth.getRealm()).clients();
+        ClientRepresentation rep = clients.findByClientId(oauth.getClientId()).get(0);
+        rep.setName("My Testing App");
+        rep.setFrontchannelLogout(true);
+        rep.getAttributes().put(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, oauth.APP_ROOT + "/admin/frontchannelLogout");
+        clients.get(rep.getId()).update(rep);
+        try {
+            oauth.clientSessionState("client-session");
+            oauth.doLogin("test-user@localhost", "password");
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            String idTokenString = tokenResponse.getIdToken();
+            String logoutUrl = oauth.getLogoutUrl().idTokenHint(idTokenString).build();
+            driver.navigate().to(logoutUrl);
+            LogoutToken logoutToken = testingClient.testApp().getFrontChannelLogoutToken();
+            Assert.assertNotNull(logoutToken);
+            IDToken idToken = new JWSInput(idTokenString).readJsonContent(IDToken.class);
+            Assert.assertEquals(logoutToken.getIssuer(), idToken.getIssuer());
+            Assert.assertEquals(logoutToken.getSid(), idToken.getSessionId());
+            assertTrue(driver.getTitle().equals("Logging out"));
+            assertTrue(driver.getPageSource().contains("You are logging out from following apps"));
+            assertTrue(driver.getPageSource().contains("My Testing App"));
+        } finally {
+            rep.setFrontchannelLogout(false);
+            rep.getAttributes().put(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, "");
+            clients.get(rep.getId()).update(rep);
+        }
+    }
 }

@@ -45,7 +45,7 @@ import static org.keycloak.models.utils.KeycloakModelUtils.getComponentFactory;
 /**
  * @author mhajas
  */
-public class MapAuthorizationStoreFactory<K> implements AmphibianProviderFactory<StoreFactory>, AuthorizationStoreFactory, EnvironmentDependentProviderFactory {
+public class MapAuthorizationStoreFactory implements AmphibianProviderFactory<StoreFactory>, AuthorizationStoreFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = AbstractMapProviderFactory.PROVIDER_ID;
 
@@ -65,11 +65,11 @@ public class MapAuthorizationStoreFactory<K> implements AmphibianProviderFactory
         MapStorage resourceStore;
         MapStorage scopeStore;
 
-        permissionTicketStore = mapStorageProvider.getStorage(MapPermissionTicketEntity.class, PermissionTicket.class);
-        policyStore = mapStorageProvider.getStorage(MapPolicyEntity.class, Policy.class);
-        resourceServerStore = mapStorageProvider.getStorage(MapResourceServerEntity.class, ResourceServer.class);
-        resourceStore = mapStorageProvider.getStorage(MapResourceEntity.class, Resource.class);
-        scopeStore = mapStorageProvider.getStorage(MapScopeEntity.class, Scope.class);
+        permissionTicketStore = mapStorageProvider.getStorage(PermissionTicket.class);
+        policyStore = mapStorageProvider.getStorage(Policy.class);
+        resourceServerStore = mapStorageProvider.getStorage(ResourceServer.class);
+        resourceStore = mapStorageProvider.getStorage(Resource.class);
+        scopeStore = mapStorageProvider.getStorage(Scope.class);
         
         return new MapAuthorizationStore(session,
                     permissionTicketStore,

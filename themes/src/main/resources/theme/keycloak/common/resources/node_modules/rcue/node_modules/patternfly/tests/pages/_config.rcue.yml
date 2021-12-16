@@ -1,0 +1,24 @@
+# Site settings
+alert-message: ' and <a href="http://getbootstrap.com" class="alert-link">http://getbootstrap.com</a>.'
+baseurl: ''
+assets-base: '..'
+category-list: [Widgets, Charts, Layouts, Navigation]
+company: Red Hat
+navbar-pf-navbar-brand-icon: true
+navbar-pf-alt-navbar-brand-icon: true
+navbar-logo-icon: '/img/redhat_reverse.png'
+navbar-logo-alt-icon: '/img/redhat_reverse.png'
+navbar-brand-icon: '/img/rcue-full.svg'
+navbar-brand-alt-icon: '/img/rcue.svg'
+brand-horizontal: '/img/rcue.svg'
+google-drive-icon: '/img/google-drive.svg'
+gmail-icon: '/img/gmail.svg'
+google-calendar-icon: '/img/google-calendar.svg'
+title: Red Hat Common User Experience
+title-product: 'Red Hat Common User Experience'
+url-css-additions: '/css/rcue-additions.min.css'
+url-css-extra: 'tests.css'
+url-css-main: '/css/rcue.min.css'
+url-img: '/img'
+url-js: '/js/patternfly.min.js'
+nav-tertiary: false

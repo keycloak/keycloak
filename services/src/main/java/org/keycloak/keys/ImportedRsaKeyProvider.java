@@ -20,6 +20,7 @@ package org.keycloak.keys;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.RealmModel;
 
@@ -48,7 +49,9 @@ public class ImportedRsaKeyProvider extends AbstractRsaKeyProvider {
         KeyPair keyPair = new KeyPair(publicKey, privateKey);
         X509Certificate certificate = PemUtils.decodeCertificate(certificatePem);
 
-        return createKeyWrapper(keyPair, certificate);
+        KeyUse keyUse = KeyUse.valueOf(model.get(Attributes.KEY_USE, KeyUse.SIG.name()).toUpperCase());
+
+        return createKeyWrapper(keyPair, certificate, keyUse);
     }
 
 }

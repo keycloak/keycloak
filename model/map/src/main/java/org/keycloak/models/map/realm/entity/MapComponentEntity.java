@@ -23,7 +23,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-public class MapComponentEntity implements UpdatableEntity {
+public class MapComponentEntity extends UpdatableEntity.Impl {
 
     private String id;
     private String name;
@@ -33,7 +33,6 @@ public class MapComponentEntity implements UpdatableEntity {
     private String parentId;
     private MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
 
-    private boolean updated;
 
     private MapComponentEntity() {}
 
@@ -62,11 +61,6 @@ public class MapComponentEntity implements UpdatableEntity {
         model.setParentId(entity.getParentId());
         model.setConfig(entity.getConfig() == null ? null : new MultivaluedHashMap<>(entity.getConfig()));
         return model;
-    }
-
-    @Override
-    public boolean isUpdated() {
-        return updated;
     }
 
     public String getId() {

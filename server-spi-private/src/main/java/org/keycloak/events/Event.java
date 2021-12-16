@@ -25,6 +25,8 @@ import java.util.Map;
  */
 public class Event {
 
+    private String id;
+
     private long time;
 
     private EventType type;
@@ -42,6 +44,14 @@ public class Event {
     private String error;
 
     private Map<String, String> details;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public long getTime() {
         return time;
@@ -117,6 +127,7 @@ public class Event {
 
     public Event clone() {
         Event clone = new Event();
+        clone.id = id;
         clone.time = time;
         clone.type = type;
         clone.realmId = realmId;

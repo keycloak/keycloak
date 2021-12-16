@@ -1,4 +1,4 @@
-This copy of Jackson JSON processor databind module is licensed under the
+This copy of Jackson JSON processor `jackson-module-jaxb-annotations` module is licensed under the
 Apache (Software) License, version 2.0 ("the License").
 See the License for details about distribution rights, and the
 specific rights regarding derivate works.

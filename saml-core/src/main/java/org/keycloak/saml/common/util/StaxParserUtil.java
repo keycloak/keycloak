@@ -339,6 +339,30 @@ public class StaxParserUtil {
      * Get the Attribute value
      *
      * @param startElement
+     * @param attrName
+     */
+    public static Long getLongAttributeValue(StartElement startElement, HasQName attrName) {
+        Attribute attr = startElement.getAttributeByName(attrName.getQName());
+        String value = getAttributeValue(attr);
+        return value == null ? null : Long.valueOf(value);
+    }
+
+    /**
+     * Get the Attribute value
+     *
+     * @param startElement
+     * @param attrName
+     */
+    public static Long getLongAttributeValueRP(StartElement startElement, HasQName attrName) {
+        Attribute attr = startElement.getAttributeByName(attrName.getQName());
+        String value = getAttributeValueRP(attr);
+        return value == null ? null : Long.valueOf(value);
+    }
+
+    /**
+     * Get the Attribute value
+     *
+     * @param startElement
      * @param tag localpart of the qname of the attribute
      *
      * @return

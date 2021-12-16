@@ -33,7 +33,7 @@
 
     <xsl:template match="//*[local-name()='subsystem' and starts-with(namespace-uri(), $keycloakNamespace)]">
         <xsl:copy>
-            <secure-deployment name="hawtio.war" xmlns="urn:jboss:domain:keycloak:1.1"/>
+            <secure-deployment name="hawtio.war" xmlns="urn:jboss:domain:keycloak:1.2"/>
         </xsl:copy>
     </xsl:template>
 
