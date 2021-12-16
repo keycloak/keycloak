@@ -24,11 +24,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import com.webauthn4j.WebAuthnRegistrationManager;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.CredentialRegistrator;
 import org.keycloak.authentication.InitiatedActionSupport;
@@ -132,7 +134,11 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
                     }).collect(Collectors.joining(","));
         }
 
-        String isSetRetry = context.getHttpRequest().getDecodedFormParameters().getFirst(WebAuthnConstants.IS_SET_RETRY);
+        String isSetRetry = null;
+
+        if (isFormDataRequest(context.getHttpRequest())) {
+            isSetRetry = context.getHttpRequest().getDecodedFormParameters().getFirst(WebAuthnConstants.IS_SET_RETRY);
+        }
 
         Response form = context.form()
                 .setAttribute(WebAuthnConstants.CHALLENGE, challengeValue)
@@ -367,6 +373,11 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         default:
                 // NOP
         }
+    }
+
+    private boolean isFormDataRequest(HttpRequest request) {
+        MediaType mediaType = request.getHttpHeaders().getMediaType();
+        return mediaType != null && mediaType.isCompatible(MediaType.APPLICATION_FORM_URLENCODED_TYPE);
     }
 
 }

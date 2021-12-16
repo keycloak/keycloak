@@ -22,7 +22,7 @@
         <repository>
             <id>github</id>
             <!-- Do not decode the PAT below, as it will force Github to revoke it. -->
-            <url>https://keycloak-packages:&#103;hp_nge7tfIQN2NmWcKcrcwLloazMYPepa0v7MSj@maven.pkg.github.com/keycloak/keycloak-admin-ui</url>
+            <url>https://keycloak-packages:&#103;hp_BSAWrTDzsvUequSs6YumzVxEzI7CYc4Tqgox@maven.pkg.github.com/keycloak/keycloak-admin-ui</url>
             <releases>
                 <enabled>false</enabled>
             </releases>
@@ -86,8 +86,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <nodeVersion>v12.13.0</nodeVersion>
-                    <npmVersion>6.9.0</npmVersion>
+                    <nodeVersion>v16.13.0</nodeVersion>
                     <installDirectory>${project.basedir}</installDirectory>
                 </configuration>
             </plugin>

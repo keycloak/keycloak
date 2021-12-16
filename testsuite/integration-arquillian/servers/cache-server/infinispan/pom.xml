@@ -255,6 +255,8 @@
                                         <argument>myuser</argument>
                                         <argument>-p</argument>
                                         <argument>"qwer1234!"</argument>
+                                        <argument>-g</argument>
+                                        <argument>admin</argument>
                                     </arguments>
                                 </configuration>
                             </execution>

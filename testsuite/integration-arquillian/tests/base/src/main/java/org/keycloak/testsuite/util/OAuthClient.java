@@ -174,6 +174,8 @@ public class OAuthClient {
 
     private String requestUri;
 
+    private Map<String, String> requestHeaders;
+
     private Map<String, JSONWebKeySet> publicKeys = new HashMap<>();
 
     // https://tools.ietf.org/html/rfc7636#section-4
@@ -492,6 +494,12 @@ public class OAuthClient {
     public String introspectTokenWithClientCredential(String clientId, String clientSecret, String tokenType, String tokenToIntrospect, CloseableHttpClient client) {
         HttpPost post = new HttpPost(getTokenIntrospectionUrl());
 
+        if (requestHeaders != null) {
+            for (Map.Entry<String, String> header : requestHeaders.entrySet()) {
+                post.addHeader(header.getKey(), header.getValue());
+            }
+        }
+
         String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
         post.setHeader("Authorization", authorization);
 
@@ -545,6 +553,12 @@ public class OAuthClient {
                                                          String clientId, String clientSecret, String userAgent) throws Exception {
         try (CloseableHttpClient client = httpClient.get()) {
             HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
+
+            if (requestHeaders != null) {
+                for (Map.Entry<String, String> header : requestHeaders.entrySet()) {
+                    post.addHeader(header.getKey(), header.getValue());
+                }
+            }
 
             List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD));
@@ -1027,7 +1041,14 @@ public class OAuthClient {
 
     public OIDCConfigurationRepresentation doWellKnownRequest(String realm) {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            return SimpleHttp.doGet(baseUrl + "/realms/" + realm + "/.well-known/openid-configuration", client).asJson(OIDCConfigurationRepresentation.class);
+            SimpleHttp request = SimpleHttp.doGet(baseUrl + "/realms/" + realm + "/.well-known/openid-configuration",
+                    client);
+            if (requestHeaders != null) {
+                for (Map.Entry<String, String> entry : requestHeaders.entrySet()) {
+                    request.header(entry.getKey(), entry.getValue());
+                }
+            }
+            return request.asJson(OIDCConfigurationRepresentation.class);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
@@ -1303,6 +1324,10 @@ public class OAuthClient {
         driver.navigate().to(getLoginFormUrl());
     }
 
+    public void openRegistrationForm() {
+        driver.navigate().to(getRegistrationFormUrl());
+    }
+
     public void openOAuth2DeviceVerificationForm(String verificationUri) {
         driver.navigate().to(verificationUri);
     }
@@ -1385,6 +1410,30 @@ public class OAuthClient {
         if (codeChallengeMethod != null) {
             b.queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod);
         }
+        if (customParameters != null) {
+            customParameters.keySet().stream().forEach(i -> b.queryParam(i, customParameters.get(i)));
+        }
+
+        return b.build(realm).toString();
+    }
+
+    private String getRegistrationFormUrl() {
+        UriBuilder b = OIDCLoginProtocolService.registrationsUrl(UriBuilder.fromUri(baseUrl));
+        if (responseType != null) {
+            b.queryParam(OAuth2Constants.RESPONSE_TYPE, responseType);
+        }
+        if (clientId != null) {
+            b.queryParam(OAuth2Constants.CLIENT_ID, clientId);
+        }
+        if (redirectUri != null) {
+            b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
+        }
+
+        String scopeParam = openid ? TokenUtil.attachOIDCScope(scope) : scope;
+        if (scopeParam != null && !scopeParam.isEmpty()) {
+            b.queryParam(OAuth2Constants.SCOPE, scopeParam);
+        }
+
         if (customParameters != null) {
             customParameters.keySet().stream().forEach(i -> b.queryParam(i, customParameters.get(i)));
         }
@@ -1608,6 +1657,11 @@ public class OAuthClient {
         if (customParameters != null) {
             customParameters.remove(key);
         }
+        return this;
+    }
+
+    public OAuthClient requestHeaders(Map<String, String> headers) {
+        this.requestHeaders = headers;
         return this;
     }
 

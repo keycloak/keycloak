@@ -20,6 +20,7 @@ package org.keycloak.protocol.oidc;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.utils.StringUtil;
@@ -314,6 +315,18 @@ public class OIDCAdvancedConfigWrapper {
 
     public String getFrontChannelLogoutUrl() {
         return getAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI);
+    }
+
+    public void setLogoUri(String logoUri) {
+        setAttribute(ClientModel.LOGO_URI, logoUri);
+    }
+
+    public void setPolicyUri(String policyUri) {
+        setAttribute(ClientModel.POLICY_URI, policyUri);
+    }
+
+    public void setTosUri(String tosUri) {
+        setAttribute(ClientModel.TOS_URI, tosUri);
     }
 
     private String getAttribute(String attrKey) {

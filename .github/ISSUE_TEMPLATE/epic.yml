@@ -1,6 +1,6 @@
 name: Epic
 description: A large feature that is broken down into multiple linked issues.
-labels: ["kind/epic"]
+labels: ["kind/epic", "status/triage"]
 body:
   - type: textarea
     attributes:

@@ -67,8 +67,6 @@ public class Map extends KeycloakModelParameters {
       .add(MapUserSessionProviderFactory.class)
       .add(MapUserLoginFailureProviderFactory.class)
       .add(NoLockingDBLockProviderFactory.class)
-
-      .add(MapStorageProviderFactory.class)
       .build();
 
     public Map() {

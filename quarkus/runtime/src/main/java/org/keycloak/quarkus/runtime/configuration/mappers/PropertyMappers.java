@@ -3,6 +3,7 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 import java.util.Collection;
@@ -15,36 +16,30 @@ import java.util.stream.Collectors;
 
 public final class PropertyMappers {
 
-    static final Map<String, PropertyMapper> MAPPERS = new HashMap<>();
+    public static String VALUE_MASK = "*******";
+    static final MappersConfig MAPPERS = new MappersConfig();
 
     private PropertyMappers(){}
 
     static {
-        addMappers(ClusteringPropertyMappers.getClusteringPropertyMappers());
-        addMappers(DatabasePropertyMappers.getDatabasePropertyMappers());
-        addMappers(HostnamePropertyMappers.getHostnamePropertyMappers());
-        addMappers(HttpPropertyMappers.getHttpPropertyMappers());
-        addMappers(MetricsPropertyMappers.getMetricsPropertyMappers());
-        addMappers(ProxyPropertyMappers.getProxyPropertyMappers());
-        addMappers(VaultPropertyMappers.getVaultPropertyMappers());
-    }
-
-    private static void addMappers(PropertyMapper[] mappers) {
-        for (PropertyMapper mapper : mappers) {
-            MAPPERS.put(mapper.getTo(), mapper);
-        }
+        MAPPERS.addAll(ClusteringPropertyMappers.getClusteringPropertyMappers());
+        MAPPERS.addAll(DatabasePropertyMappers.getDatabasePropertyMappers());
+        MAPPERS.addAll(HostnamePropertyMappers.getHostnamePropertyMappers());
+        MAPPERS.addAll(HttpPropertyMappers.getHttpPropertyMappers());
+        MAPPERS.addAll(MetricsPropertyMappers.getMetricsPropertyMappers());
+        MAPPERS.addAll(ProxyPropertyMappers.getProxyPropertyMappers());
+        MAPPERS.addAll(VaultPropertyMappers.getVaultPropertyMappers());
     }
 
     public static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
         PropertyMapper mapper = MAPPERS.getOrDefault(name, PropertyMapper.IDENTITY);
-        ConfigValue configValue = mapper
-                .getOrDefault(name, context, context.proceed(name));
+        ConfigValue configValue = mapper.getConfigValue(name, context);
 
         if (configValue == null) {
             Optional<String> prefixedMapper = getPrefixedMapper(name);
 
             if (prefixedMapper.isPresent()) {
-                return MAPPERS.get(prefixedMapper.get()).getOrDefault(name, context, configValue);
+                return MAPPERS.get(prefixedMapper.get()).getConfigValue(name, context);
             }
         } else {
             configValue.withName(mapper.getTo());
@@ -63,7 +58,13 @@ public final class PropertyMappers {
         }
 
         boolean isBuildTimeProperty = MAPPERS.entrySet().stream()
-                .anyMatch(entry -> entry.getValue().getFrom().equals(name) && entry.getValue().isBuildTime());
+                .anyMatch(new Predicate<Map.Entry<String, PropertyMapper>>() {
+                    @Override
+                    public boolean test(Map.Entry<String, PropertyMapper> entry) {
+                        PropertyMapper mapper = entry.getValue();
+                        return (mapper.getFrom().equals(name) || mapper.getTo().equals(name)) && mapper.isBuildTime();
+                    }
+                });
 
         if (!isBuildTimeProperty) {
             Optional<String> prefixedMapper = PropertyMappers.getPrefixedMapper(name);
@@ -75,7 +76,7 @@ public final class PropertyMappers {
 
         return isBuildTimeProperty
                 && !"kc.version".equals(name)
-                && !Environment.CLI_ARGS.equals(name)
+                && !ConfigArgsConfigSource.CLI_ARGS.equals(name)
                 && !"kc.home.dir".equals(name)
                 && !"kc.config.file".equals(name)
                 && !Environment.PROFILE.equals(name)
@@ -96,6 +97,7 @@ public final class PropertyMappers {
         if (name.indexOf('.') == -1) {
             return name;
         }
+
         return MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX
                 .concat(name.substring(3, name.lastIndexOf('.') + 1)
                         .replaceAll("\\.", "-") + name.substring(name.lastIndexOf('.') + 1));
@@ -116,22 +118,26 @@ public final class PropertyMappers {
     }
 
     public static String formatValue(String property, String value) {
+        property = removeProfilePrefixIfNeeded(property);
         PropertyMapper mapper = getMapper(property);
 
         if (mapper != null && mapper.isMask()) {
-            return "*******";
+            return VALUE_MASK;
         }
 
         return value;
     }
 
+    private static String removeProfilePrefixIfNeeded(String property) {
+        if(property.startsWith("%")) {
+            String profilePrefix = property.substring(0, property.indexOf(".") +1);
+            property = property.split(profilePrefix)[1];
+        }
+        return property;
+    }
+
     public static PropertyMapper getMapper(String property) {
-        return MAPPERS.values().stream().filter(new Predicate<PropertyMapper>() {
-            @Override
-            public boolean test(PropertyMapper propertyMapper) {
-                return property.equals(propertyMapper.getFrom()) || property.equals(propertyMapper.getTo());
-            }
-        }).findFirst().orElse(null);
+        return MAPPERS.get(property);
     }
 
     public static Collection<PropertyMapper> getMappers() {
@@ -155,5 +161,24 @@ public final class PropertyMappers {
                 })
                 .map(Map.Entry::getKey)
                 .findAny();
+    }
+
+    private static class MappersConfig extends HashMap<String, PropertyMapper> {
+
+        public void addAll(PropertyMapper[] mappers) {
+            for (PropertyMapper mapper : mappers) {
+                super.put(mapper.getTo(), mapper);
+                super.put(mapper.getFrom(), mapper);
+                super.put(mapper.getCliFormat(), mapper);
+            }
+        }
+
+        @Override
+        public PropertyMapper put(String key, PropertyMapper value) {
+            if (containsKey(key)) {
+                throw new IllegalArgumentException("Duplicated mapper for key [" + key + "]");
+            }
+            return super.put(key, value);
+        }
     }
 }

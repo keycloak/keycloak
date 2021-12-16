@@ -23,11 +23,8 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
 @Command(name = "export",
-        description = "Export data from realms to a file or directory.",
-        showDefaultValues = true,
-        abbreviateSynopsis = true,
-        optionListHeading = "%nOptions%n",
-        parameterListHeading = "Available Commands%n")
+        header = "Export data from realms to a file or directory.",
+        description = "%nExport data from realms to a file or directory.")
 public final class Export extends AbstractExportImportCommand implements Runnable {
 
     @Option(names = "--users",

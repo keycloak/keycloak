@@ -20,54 +20,37 @@ package org.keycloak.testsuite.ui.account2;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
-import org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAuthenticatorFactory;
-import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
-import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
-import org.keycloak.common.Profile;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
-import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.models.utils.Base32;
 import org.keycloak.models.utils.TimeBasedOTP;
-import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
-import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
-import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
-import org.keycloak.testsuite.WebAuthnAssume;
 import org.keycloak.testsuite.admin.Users;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.auth.page.login.OTPSetup;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
-import org.keycloak.testsuite.pages.webauthn.WebAuthnRegisterPage;
 import org.keycloak.testsuite.ui.account2.page.AbstractLoggedInPage;
 import org.keycloak.testsuite.ui.account2.page.SigningInPage;
+import org.keycloak.testsuite.ui.account2.page.utils.SigningInPageUtils;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 import static java.util.Collections.emptyList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.models.UserModel.RequiredAction.CONFIGURE_TOTP;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+import static org.keycloak.testsuite.ui.account2.page.utils.SigningInPageUtils.assertUserCredential;
+import static org.keycloak.testsuite.ui.account2.page.utils.SigningInPageUtils.testSetUpLink;
 import static org.keycloak.testsuite.util.UIUtils.refreshPageAndWaitForLoad;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-@EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
 public class SigningInTest extends BaseAccountPageTest {
     public static final String PASSWORD_LABEL = "My Password";
-    public static final String WEBAUTHN_FLOW_ID = "75e2390e-f296-49e6-acf8-6d21071d7e10";
 
     @Page
     private SigningInPage signingInPage;
@@ -78,54 +61,13 @@ public class SigningInTest extends BaseAccountPageTest {
     @Page
     private OTPSetup otpSetupPage;
 
-    @Page
-    private WebAuthnRegisterPage webAuthnRegisterPage;
-
     private SigningInPage.CredentialType passwordCredentialType;
     private SigningInPage.CredentialType otpCredentialType;
-    private SigningInPage.CredentialType webAuthnCredentialType;
-    private SigningInPage.CredentialType webAuthnPwdlessCredentialType;
     private TimeBasedOTP otpGenerator;
 
     @Override
     protected AbstractLoggedInPage getAccountPage() {
         return signingInPage;
-    }
-
-    @Override
-    protected void afterAbstractKeycloakTestRealmImport() {
-        super.afterAbstractKeycloakTestRealmImport();
-
-        // configure WebAuthn
-        // we can't do this during the realm import because we'd need to specify all built-in flows as well
-
-        AuthenticationFlowRepresentation flow = new AuthenticationFlowRepresentation();
-        flow.setId(WEBAUTHN_FLOW_ID);
-        flow.setAlias("webauthn flow");
-        flow.setProviderId("basic-flow");
-        flow.setBuiltIn(false);
-        flow.setTopLevel(true);
-        testRealmResource().flows().createFlow(flow);
-
-        AuthenticationExecutionRepresentation execution = new AuthenticationExecutionRepresentation();
-        execution.setAuthenticator(WebAuthnAuthenticatorFactory.PROVIDER_ID);
-        execution.setPriority(10);
-        execution.setRequirement(REQUIRED.toString());
-        execution.setParentFlow(WEBAUTHN_FLOW_ID);
-        testRealmResource().flows().addExecution(execution);
-
-        execution.setAuthenticator(WebAuthnPasswordlessAuthenticatorFactory.PROVIDER_ID);
-        testRealmResource().flows().addExecution(execution);
-
-        RequiredActionProviderSimpleRepresentation requiredAction = new RequiredActionProviderSimpleRepresentation();
-        requiredAction.setProviderId(WebAuthnRegisterFactory.PROVIDER_ID);
-        requiredAction.setName("blahblah");
-        testRealmResource().flows().registerRequiredAction(requiredAction);
-
-        requiredAction.setProviderId(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
-        testRealmResource().flows().registerRequiredAction(requiredAction);
-
-        // no need to actually configure the authentication, in Account Console tests we just verify the registration
     }
 
     @Override
@@ -139,8 +81,6 @@ public class SigningInTest extends BaseAccountPageTest {
     public void beforeSigningInTest() {
         passwordCredentialType = signingInPage.getCredentialType(PasswordCredentialModel.TYPE);
         otpCredentialType = signingInPage.getCredentialType(OTPCredentialModel.TYPE);
-        webAuthnCredentialType = signingInPage.getCredentialType(WebAuthnCredentialModel.TYPE_TWOFACTOR);
-        webAuthnPwdlessCredentialType = signingInPage.getCredentialType(WebAuthnCredentialModel.TYPE_PASSWORDLESS);
 
         RealmRepresentation realm = testRealmResource().toRepresentation();
         otpGenerator = new TimeBasedOTP(realm.getOtpPolicyAlgorithm(), realm.getOtpPolicyDigits(), realm.getOtpPolicyPeriod(), 0);
@@ -150,25 +90,21 @@ public class SigningInTest extends BaseAccountPageTest {
     public void categoriesTest() {
         testContext.setTestRealmReps(emptyList()); // reimport realm after this test
 
-        assertEquals(3, signingInPage.getCategoriesCount());
-
-        assertEquals("Basic Authentication", signingInPage.getCategoryTitle("basic-authentication"));
-        assertEquals("Two-Factor Authentication", signingInPage.getCategoryTitle("two-factor"));
-        assertEquals("Passwordless", signingInPage.getCategoryTitle("passwordless"));
-
-        // Delete WebAuthn flow ==> Passwordless category should disappear
-        testRealmResource().flows().deleteFlow(WEBAUTHN_FLOW_ID);
-        refreshPageAndWaitForLoad();
-        assertEquals(2, signingInPage.getCategoriesCount());
+        assertThat(signingInPage.getCategoriesCount(), is(1));
+        assertThat(signingInPage.getCategoryTitle("basic-authentication"), is("Basic Authentication"));
     }
 
     @Test
     public void updatePasswordTest() {
-        SigningInPage.UserCredential passwordCred =
-                passwordCredentialType.getUserCredential(testUserResource().credentials().get(0).getId());
+        SigningInPage.UserCredential passwordCred = passwordCredentialType.getUserCredential(
+                testUserResource()
+                        .credentials()
+                        .get(0)
+                        .getId()
+        );
 
-        assertFalse(passwordCredentialType.isSetUpLinkVisible());
-        assertTrue(passwordCredentialType.isSetUp());
+        assertThat(passwordCredentialType.isSetUpLinkVisible(), is(false));
+        assertThat(passwordCredentialType.isSetUp(), is(true));
         assertUserCredential(PASSWORD_LABEL, false, passwordCred);
 
         LocalDateTime previousCreatedAt = passwordCred.getCreatedAt();
@@ -182,158 +118,79 @@ public class SigningInTest extends BaseAccountPageTest {
         signingInPage.assertCurrent();
 
         assertUserCredential(PASSWORD_LABEL, false, passwordCred);
-        assertNotEquals(previousCreatedAt, passwordCred.getCreatedAt());
+        assertThat(passwordCred.getCreatedAt(), is(not(previousCreatedAt)));
     }
 
     @Test
     public void updatePasswordTestForUserWithoutPassword() {
-            // Remove password from the user through admin REST API
-            String passwordId = testUserResource().credentials().get(0).getId();
-            testUserResource().removeCredential(passwordId);
+        // Remove password from the user through admin REST API
+        String passwordId = testUserResource().credentials().get(0).getId();
+        testUserResource().removeCredential(passwordId);
 
-            // Refresh the page
-            refreshPageAndWaitForLoad();
+        // Refresh the page
+        refreshPageAndWaitForLoad();
 
-            // Test user doesn't have password set
-            assertTrue(passwordCredentialType.isSetUpLinkVisible());
-            assertFalse(passwordCredentialType.isSetUp());
+        // Test user doesn't have password set
+        assertThat(passwordCredentialType.isSetUpLinkVisible(), is(true));
+        assertThat(passwordCredentialType.isSetUp(), is(false));
 
-            // Set password
-            passwordCredentialType.clickSetUpLink();
-            updatePasswordPage.assertCurrent();
-            String originalPassword = Users.getPasswordOf(testUser);
-            updatePasswordPage.updatePasswords(originalPassword, originalPassword);
-             signingInPage.assertCurrent();
+        // Set password
+        passwordCredentialType.clickSetUpLink();
+        updatePasswordPage.assertCurrent();
+        String originalPassword = Users.getPasswordOf(testUser);
+        updatePasswordPage.updatePasswords(originalPassword, originalPassword);
+        signingInPage.assertCurrent();
 
-            // Credential set-up now
-            assertFalse(passwordCredentialType.isSetUpLinkVisible());
-            assertTrue(passwordCredentialType.isSetUp());
-            SigningInPage.UserCredential passwordCred =
-                    passwordCredentialType.getUserCredential(testUserResource().credentials().get(0).getId());
-            assertUserCredential(PASSWORD_LABEL, false, passwordCred);
+        // Credential set-up now
+        assertThat(passwordCredentialType.isSetUpLinkVisible(), is(false));
+        assertThat(passwordCredentialType.isSetUp(), is(true));
+        SigningInPage.UserCredential passwordCred =
+                passwordCredentialType.getUserCredential(testUserResource().credentials().get(0).getId());
+        assertUserCredential(PASSWORD_LABEL, false, passwordCred);
     }
 
     @Test
     public void otpTest() {
         testContext.setTestRealmReps(emptyList());
 
-        assertFalse(otpCredentialType.isSetUp());
+        assertThat(otpCredentialType.isSetUp(), is(false));
         otpCredentialType.clickSetUpLink();
         otpSetupPage.cancel();
-         signingInPage.assertCurrent();
-        assertFalse(otpCredentialType.isSetUp());
 
-        assertEquals("Authenticator Application", otpCredentialType.getTitle());
+        signingInPage.assertCurrent();
+        assertThat(otpCredentialType.isSetUp(), is(false));
+        assertThat(otpCredentialType.getTitle(), is("Authenticator Application"));
 
         final String label1 = "OTP is secure";
         final String label2 = "OTP is inconvenient";
 
         SigningInPage.UserCredential otp1 = addOtpCredential(label1);
-        assertTrue(otpCredentialType.isSetUp());
-        assertEquals(1, otpCredentialType.getUserCredentialsCount());
+        assertThat(otpCredentialType.isSetUp(), is(true));
+        assertThat(otpCredentialType.getUserCredentialsCount(), is(1));
         assertUserCredential(label1, true, otp1);
 
         SigningInPage.UserCredential otp2 = addOtpCredential(label2);
-        assertEquals(2, otpCredentialType.getUserCredentialsCount());
+        assertThat(otpCredentialType.getUserCredentialsCount(), is(2));
         assertUserCredential(label2, true, otp2);
 
-        assertTrue("Set up link is not visible", otpCredentialType.isSetUpLinkVisible());
+        assertThat("Set up link is not visible", otpCredentialType.isSetUpLinkVisible(), is(true));
         RequiredActionProviderRepresentation requiredAction = new RequiredActionProviderRepresentation();
         requiredAction.setEnabled(false);
         testRealmResource().flows().updateRequiredAction(CONFIGURE_TOTP.name(), requiredAction);
 
         refreshPageAndWaitForLoad();
 
-        assertFalse("Set up link for \"otp\" is visible", otpCredentialType.isSetUpLinkVisible());
-        assertFalse("Not set up link for \"otp\" is visible", otpCredentialType.isNotSetUpLabelVisible());
-        assertTrue("Title for \"otp\" is not visible", otpCredentialType.isTitleVisible());
-        assertEquals(2, otpCredentialType.getUserCredentialsCount());
+        assertThat("Set up link for \"otp\" is visible", otpCredentialType.isSetUpLinkVisible(), is(false));
+        assertThat("Not set up link for \"otp\" is visible", otpCredentialType.isNotSetUpLabelVisible(), is(false));
+        assertThat("Title for \"otp\" is not visible", otpCredentialType.isTitleVisible(), is(true));
+        assertThat(otpCredentialType.getUserCredentialsCount(), is(2));
 
         testRemoveCredential(otp1);
     }
 
     @Test
-    public void twoFactorWebAuthnTest() {
-        testWebAuthn(false);
-    }
-
-    @Test
-    public void passwordlessWebAuthnTest() {
-        testWebAuthn(true);
-    }
-
-    private void testWebAuthn(boolean passwordless) {
-        testContext.setTestRealmReps(emptyList());
-
-        WebAuthnAssume.assumeChrome(driver); // we need some special flags to be able to register security key
-
-        SigningInPage.CredentialType credentialType;
-        final String expectedHelpText;
-        final String providerId;
-
-        if (passwordless) {
-            credentialType = webAuthnPwdlessCredentialType;
-            expectedHelpText = "Use your security key for passwordless sign in.";
-            providerId = WebAuthnPasswordlessRegisterFactory.PROVIDER_ID;
-        }
-        else {
-            credentialType = webAuthnCredentialType;
-            expectedHelpText = "Use your security key to sign in.";
-            providerId = WebAuthnRegisterFactory.PROVIDER_ID;
-        }
-
-        assertFalse(credentialType.isSetUp());
-        // no way to simulate registration cancellation
-
-        assertTrue("Set up link for \"" + credentialType.getType() + "\" is not visible", credentialType.isSetUpLinkVisible());
-        assertEquals("Security Key", credentialType.getTitle());
-        assertEquals(expectedHelpText, credentialType.getHelpText());
-
-        final String label1 = "WebAuthn is convenient";
-        final String label2 = "but not yet widely adopted";
-
-        SigningInPage.UserCredential webAuthn1 = addWebAuthnCredential(label1, passwordless);
-        assertTrue(credentialType.isSetUp());
-        assertEquals(1, credentialType.getUserCredentialsCount());
-        assertUserCredential(label1, true, webAuthn1);
-
-        SigningInPage.UserCredential webAuthn2 = addWebAuthnCredential(label2, passwordless);
-        assertEquals(2, credentialType.getUserCredentialsCount());
-        assertUserCredential(label2, true, webAuthn2);
-
-        RequiredActionProviderRepresentation requiredAction = new RequiredActionProviderRepresentation();
-        requiredAction.setEnabled(false);
-        testRealmResource().flows().updateRequiredAction(providerId, requiredAction);
-
-        refreshPageAndWaitForLoad();
-
-        assertFalse("Set up link for \"" + credentialType.getType() + "\" is visible", credentialType.isSetUpLinkVisible());
-        assertFalse("Not set up link for \"" + credentialType.getType() + "\" is visible", credentialType.isNotSetUpLabelVisible());
-        assertTrue("Title for \"" + credentialType.getType() + "\" is not visible", credentialType.isTitleVisible());
-        assertEquals(2, credentialType.getUserCredentialsCount());
-
-        testRemoveCredential(webAuthn1);
-    }
-
-    @Test
     public void setUpLinksTest() {
-        testSetUpLink(otpCredentialType, CONFIGURE_TOTP.name());
-        testSetUpLink(webAuthnCredentialType, WebAuthnRegisterFactory.PROVIDER_ID);
-        testSetUpLink(webAuthnPwdlessCredentialType, WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
-    }
-
-    private void testSetUpLink(SigningInPage.CredentialType credentialType, String requiredActionProviderId) {
-        assertTrue("Set up link for \"" + credentialType.getType() + "\" is not visible", credentialType.isSetUpLinkVisible());
-
-        RequiredActionProviderRepresentation requiredAction = new RequiredActionProviderRepresentation();
-        requiredAction.setEnabled(false);
-        testRealmResource().flows().updateRequiredAction(requiredActionProviderId, requiredAction);
-
-        refreshPageAndWaitForLoad();
-
-        assertFalse("Set up link for \"" + credentialType.getType() + "\" is visible", credentialType.isSetUpLinkVisible());
-        assertFalse("Title for \"" + credentialType.getType() + "\" is visible", credentialType.isTitleVisible());
-        assertFalse("Set up link for \"" + credentialType.getType() + "\" is visible", credentialType.isNotSetUpLabelVisible());
+        testSetUpLink(testRealmResource(), otpCredentialType, CONFIGURE_TOTP.name());
     }
 
     private SigningInPage.UserCredential addOtpCredential(String label) {
@@ -351,52 +208,11 @@ public class SigningInTest extends BaseAccountPageTest {
         return getNewestUserCredential(otpCredentialType);
     }
 
-    private SigningInPage.UserCredential addWebAuthnCredential(String label, boolean passwordless) {
-        SigningInPage.CredentialType credentialType = passwordless ? webAuthnPwdlessCredentialType : webAuthnCredentialType;
-
-        credentialType.clickSetUpLink();
-        webAuthnRegisterPage.confirmAIA();
-        webAuthnRegisterPage.registerWebAuthnCredential(label);
-        waitForPageToLoad();
-        signingInPage.assertCurrent();
-
-        return getNewestUserCredential(credentialType);
-    }
-
     private SigningInPage.UserCredential getNewestUserCredential(SigningInPage.CredentialType credentialType) {
-        List<CredentialRepresentation> credentials = testUserResource().credentials();
-        SigningInPage.UserCredential userCredential =
-                credentialType.getUserCredential(credentials.get(credentials.size() - 1).getId());
-        assertTrue(userCredential.isPresent());
-        return userCredential;
+        return SigningInPageUtils.getNewestUserCredential(testUserResource(), credentialType);
     }
 
     private void testRemoveCredential(SigningInPage.UserCredential userCredential) {
-        int countBeforeRemove = userCredential.getCredentialType().getUserCredentialsCount();
-
-        testModalDialog(userCredential::clickRemoveBtn, () -> {
-            assertTrue(userCredential.isPresent());
-            assertEquals(countBeforeRemove, userCredential.getCredentialType().getUserCredentialsCount());
-        });
-        signingInPage.alert().assertSuccess();
-
-        assertFalse(userCredential.isPresent());
-        assertEquals(countBeforeRemove - 1, userCredential.getCredentialType().getUserCredentialsCount());
-    }
-
-    private void assertUserCredential(String expectedUserLabel, boolean removable, SigningInPage.UserCredential userCredential) {
-        assertEquals(expectedUserLabel, userCredential.getUserLabel());
-
-        // we expect the credential was created/edited no longer that 2 minutes ago (1 minute might not be enough in some corner cases)
-        LocalDateTime beforeNow = LocalDateTime.now().minusMinutes(2);
-        LocalDateTime now = LocalDateTime.now();
-        // createdAt doesn't specify seconds so it should be something like 12:47:00
-        LocalDateTime createdAt = userCredential.getCreatedAt();
-
-        assertTrue("Creation time should be after time before update", createdAt.isAfter(beforeNow));
-        assertTrue("Creation time should be before now", createdAt.isBefore(now));
-
-        assertEquals("Remove button visible", removable, userCredential.isRemoveBtnDisplayed());
-        assertEquals("Update button visible", !removable, userCredential.isUpdateBtnDisplayed());
+        SigningInPageUtils.testRemoveCredential(getAccountPage(), userCredential);
     }
 }

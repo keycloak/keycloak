@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.forms;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Assert;
@@ -98,13 +99,15 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
 
     private int lifespan;
 
+    private static final Integer failureFactor= 2;
+
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         UserRepresentation user = RealmRepUtil.findUser(testRealm, "test-user@localhost");
         UserBuilder.edit(user).totpSecret("totpSecret");
 
         testRealm.setBruteForceProtected(true);
-        testRealm.setFailureFactor(2);
+        testRealm.setFailureFactor(failureFactor);
         testRealm.setMaxDeltaTimeSeconds(20);
         testRealm.setMaxFailureWaitSeconds(100);
         testRealm.setWaitIncrementSeconds(5);
@@ -122,7 +125,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             clearUserFailures();
             clearAllUserFailures();
             RealmRepresentation realm = adminClient.realm("test").toRepresentation();
-            realm.setFailureFactor(2);
+            realm.setFailureFactor(failureFactor);
             realm.setMaxDeltaTimeSeconds(20);
             realm.setMaxFailureWaitSeconds(100);
             realm.setWaitIncrementSeconds(5);
@@ -314,6 +317,73 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             events.clear();
         }
 
+    }
+
+    @Test
+    public void testNumberOfFailuresForDisabledUsersWithPasswordGrantType() throws Exception {
+        try {
+            UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
+            assertUserNumberOfFailures(user.getId(), 0);
+            user.setEnabled(false);
+            updateUser(user);
+
+            OAuthClient.AccessTokenResponse response = getTestToken("invalid", "invalid");
+            Assert.assertNull(response.getAccessToken());
+            Assert.assertEquals(response.getError(), "invalid_grant");
+            Assert.assertEquals(response.getErrorDescription(), "Account disabled");
+            events.clear();
+
+            assertUserNumberOfFailures(user.getId(), 0);
+        } finally {
+            UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
+            user.setEnabled(true);
+            updateUser(user);
+            events.clear();
+        }
+    }
+
+    @Test
+    public void testNumberOfFailuresForTemporaryDisabledUsersWithPasswordGrantType() throws Exception {
+        UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
+
+        // Lock user (temporarily) and make sure the number of failures matches failure factor
+        lockUserWithPasswordGrant();
+        assertUserNumberOfFailures(user.getId(), failureFactor);
+
+        // Try to login with invalid credentials and make sure the number of failures doesn't change during temporary lockout
+        sendInvalidPasswordPasswordGrant();
+        assertUserNumberOfFailures(user.getId(), failureFactor);
+
+        events.clear();
+    }
+
+    @Test
+    public void testNumberOfFailuresForPermanentlyDisabledUsersWithPasswordGrantType() throws Exception {
+        RealmRepresentation realm = testRealm().toRepresentation();
+        try {
+            // Set permanent lockout for the test
+            realm.setPermanentLockout(true);
+            testRealm().update(realm);
+
+            UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
+
+            // Lock user (permanently) and make sure the number of failures matches failure factor
+            lockUserWithPasswordGrant();
+            assertUserNumberOfFailures(user.getId(), failureFactor);
+            assertUserDisabledReason(BruteForceProtector.DISABLED_BY_PERMANENT_LOCKOUT);
+
+            // Try to login with invalid credentials and make sure the number of failures doesn't change during temporary lockout
+            sendInvalidPasswordPasswordGrant();
+            assertUserNumberOfFailures(user.getId(), failureFactor);
+
+            events.clear();
+         } finally {
+             realm.setPermanentLockout(false);
+             testRealm().update(realm);
+             UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
+             user.setEnabled(true);
+             updateUser(user);
+         }
     }
 
     @Test
@@ -724,5 +794,31 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
                 .get(0)
                 .firstAttribute(UserModel.DISABLED_REASON);
         assertEquals(expected, actual);
+    }
+
+    private void assertUserNumberOfFailures(String userId, Integer numberOfFailures) {
+        Map<String, Object> userAttackInfo = adminClient.realm("test").attackDetection().bruteForceUserStatus(userId);
+        MatcherAssert.assertThat((Integer) userAttackInfo.get("numFailures"), is(numberOfFailures));
+    }
+
+    private void sendInvalidPasswordPasswordGrant() throws Exception {
+        String totpSecret = totp.generateTOTP("totpSecret");
+        OAuthClient.AccessTokenResponse response = getTestToken("invalid", totpSecret);
+        Assert.assertNull(response.getAccessToken());
+        Assert.assertEquals(response.getError(), "invalid_grant");
+        Assert.assertEquals(response.getErrorDescription(), "Invalid user credentials");
+        events.clear();
+    }
+
+    private void lockUserWithPasswordGrant() throws Exception {
+        String totpSecret = totp.generateTOTP("totpSecret");
+        OAuthClient.AccessTokenResponse response = getTestToken("password", totpSecret);
+        Assert.assertNotNull(response.getAccessToken());
+        Assert.assertNull(response.getError());
+        events.clear();
+
+        for (int i = 0; i < failureFactor; ++i) {
+            sendInvalidPasswordPasswordGrant();
+        }
     }
 }

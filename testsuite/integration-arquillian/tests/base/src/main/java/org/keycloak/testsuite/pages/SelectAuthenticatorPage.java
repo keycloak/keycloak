@@ -7,7 +7,6 @@ import org.keycloak.testsuite.util.DroneUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.FindBy;
 
 /**
  * Login page with the list of authentication mechanisms, which are available to the user (Password, OTP, WebAuthn...)
@@ -22,6 +21,9 @@ public class SelectAuthenticatorPage extends LanguageComboboxAwarePage {
 
     // Corresponds to the OTPFormAuthenticator
     public static final String AUTHENTICATOR_APPLICATION = "Authenticator Application";
+
+    // Corresponds to the WebAuthn authenticators
+    public static final String SECURITY_KEY = "Security Key";
 
     /**
      * Return list of names like for example [ "Password", "Authenticator Application", "Security Key" ]

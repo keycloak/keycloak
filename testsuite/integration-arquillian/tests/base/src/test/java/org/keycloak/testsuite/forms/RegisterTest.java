@@ -606,6 +606,23 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    @Test
+    public void registerWithLoginHint() throws IOException {
+
+        registerPage.openWithLoginHint("username_test");
+
+        assertEquals("username_test", registerPage.getUsername());
+    }
+
+    @Test
+    public void registerWithLoginHint_emailAsUsername() throws IOException {
+        try (RealmAttributeUpdater rau = configureRealmRegistrationEmailAsUsername(true).update()) {
+            registerPage.openWithLoginHint("test@test.com");
+
+            assertEquals("test@test.com", registerPage.getEmail());
+        }
+    }
+
     //KEYCLOAK-14161
     @Test
     public void customRegistrationPageFormTest() {

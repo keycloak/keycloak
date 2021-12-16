@@ -32,9 +32,10 @@
 
     <modules>
         <module>jpa</module>
+        <module>map-jpa</module>
         <module>infinispan</module>
         <module>map</module>
         <module>build-processor</module>
-        <module>hot-rod</module>
+        <module>map-hot-rod</module>
     </modules>
 </project>

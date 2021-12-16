@@ -225,6 +225,21 @@ public class BrokeredIdentityContext {
     }
 
     /**
+     * Obtains the set of groups that were assigned by mappers.
+     *
+     * @return a {@link Set} containing the groups.
+     */
+    @SuppressWarnings("unchecked")
+    private Set<String> getMapperAssignedGroups() {
+        Set<String> groups = (Set<String>) this.contextData.get(Constants.MAPPER_GRANTED_GROUPS);
+        if (groups == null) {
+            groups = new HashSet<>();
+            this.contextData.put(Constants.MAPPER_GRANTED_GROUPS, groups);
+        }
+        return groups;
+    }
+
+    /**
      * Verifies if a mapper has already granted the specified role.
      *
      * @param roleName the name of the role.
@@ -235,12 +250,31 @@ public class BrokeredIdentityContext {
     }
 
     /**
+     * Verifies if a mapper has already assigned the specified group.
+     *
+     * @param groupId the id of the group.
+     * @return {@code true} if a mapper has already assigned the group; {@code false} otherwise.
+     */
+    public boolean hasMapperAssignedGroup(final String groupId) {
+        return this.getMapperAssignedGroups().contains(groupId);
+    }
+
+    /**
      * Adds the specified role to the set of roles granted by mappers.
      *
      * @param roleName the name of the role.
      */
     public void addMapperGrantedRole(final String roleName) {
         this.getMapperGrantedRoles().add(roleName);
+    }
+
+    /**
+     * Adds the specified group to the set of groups assigned by mappers.
+     *
+     * @param groupId the id of the group.
+     */
+    public void addMapperAssignedGroup(final String groupId) {
+        this.getMapperAssignedGroups().add(groupId);
     }
 
     /**

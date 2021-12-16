@@ -263,6 +263,13 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
         Response response = request.get();
 
         assertEquals("http://somehost", response.getHeaders().getFirst(Cors.ACCESS_CONTROL_ALLOW_ORIGIN));
+
+
+        Invocation.Builder nullRequest = oidcDiscoveryTarget.request();
+        nullRequest.header(Cors.ORIGIN_HEADER, "null");
+        Response nullResponse = nullRequest.get();
+
+        assertEquals("null", nullResponse.getHeaders().getFirst(Cors.ACCESS_CONTROL_ALLOW_ORIGIN));
     }
 
     @Test

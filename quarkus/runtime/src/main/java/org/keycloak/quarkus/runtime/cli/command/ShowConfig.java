@@ -17,8 +17,7 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import static java.lang.Boolean.parseBoolean;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuiltTimeProperty;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuildTimeProperty;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfigValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.canonicalFormat;
@@ -36,17 +35,17 @@ import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.Environment;
 
+import io.quarkus.runtime.Quarkus;
 import io.smallrye.config.ConfigValue;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
 @Command(name = "show-config",
-        description = "Print out the current configuration.",
-        abbreviateSynopsis = true,
-        optionListHeading = "%nOptions%n",
-        parameterListHeading = "Available Commands%n")
+        header = "Print out the current configuration.",
+        description = "%nPrint out the current configuration.")
 public final class ShowConfig extends AbstractCommand implements Runnable {
 
+    public static final String NAME = "show-config";
     @Parameters(
             paramLabel = "filter",
             defaultValue = "none",
@@ -72,8 +71,8 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
                         .forEachOrdered(this::printProperty);
             }
 
-            if (!parseBoolean(System.getProperty("kc.show.config.runtime", Boolean.FALSE.toString()))) {
-                System.exit(0);
+            if (!Boolean.getBoolean("kc.show.config.runtime")) {
+                Quarkus.asyncExit(0);
             }
         }
     }
@@ -120,7 +119,7 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
         String profile = Environment.getProfile();
 
         if (profile == null) {
-            return getBuiltTimeProperty("quarkus.profile").orElse(null);
+            return getBuildTimeProperty("quarkus.profile").orElse(null);
         }
 
         return profile;

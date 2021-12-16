@@ -306,7 +306,7 @@ public final class KeycloakModelUtils {
         String componentId = config.get("componentId");
         if (realmId == null || componentId == null) {
             realmId = "ROOT";
-            ComponentModel cm = new ScopeComponentModel(providerClass, config, spiName);
+            ComponentModel cm = new ScopeComponentModel(providerClass, config, spiName, realmId);
             return factory.getProviderFactory(providerClass, realmId, cm.getId(), k -> cm);
         } else {
             return factory.getProviderFactory(providerClass, realmId, componentId, componentModelGetter(realmId, componentId));
@@ -318,14 +318,16 @@ public final class KeycloakModelUtils {
         private final String componentId;
         private final String providerId;
         private final String providerType;
+        private final String realmId;
         private final Scope config;
 
-        public ScopeComponentModel(Class<?> providerClass, Scope baseConfiguration, String spiName) {
+        public ScopeComponentModel(Class<?> providerClass, Scope baseConfiguration, String spiName, String realmId) {
             final String pr = baseConfiguration.get("provider", Config.getProvider(spiName));
 
             this.providerId = pr == null ? "default" : pr;
             this.config = baseConfiguration.scope(this.providerId);
-            this.componentId = spiName + "-" + this.providerId;
+            this.componentId = spiName + "- " + (realmId == null ? "" : "f:" + realmId + ":") + this.providerId;
+            this.realmId = realmId;
             this.providerType = providerClass.getName();
         }
 
@@ -350,6 +352,11 @@ public final class KeycloakModelUtils {
         }
 
         @Override
+        public String getParentId() {
+            return realmId;
+        }
+
+        @Override
         public boolean get(String key, boolean defaultValue) {
             return config.getBoolean(key, defaultValue);
         }
@@ -366,7 +373,6 @@ public final class KeycloakModelUtils {
 
         @Override
         public String get(String key, String defaultValue) {
-
             return config.get(key, defaultValue);
         }
 

@@ -19,6 +19,7 @@ package org.keycloak.testsuite.pages;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.testsuite.auth.page.AccountFields;
 import org.keycloak.testsuite.auth.page.PasswordFields;
 import org.keycloak.testsuite.util.UIUtils;
@@ -232,7 +233,13 @@ public class RegisterPage extends AbstractPage {
 
     @Override
     public void open() {
-        throw new UnsupportedOperationException();
+        oauth.openRegistrationForm();
+        assertCurrent();
+    }
+
+    public void openWithLoginHint(String loginHint) {
+        oauth.addCustomParameter(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint).openRegistrationForm();
+        assertCurrent();
     }
 
 }

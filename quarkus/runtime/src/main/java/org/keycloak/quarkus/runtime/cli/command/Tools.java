@@ -20,10 +20,8 @@ package org.keycloak.quarkus.runtime.cli.command;
 import picocli.CommandLine.Command;
 
 @Command(name = "tools",
-        description = "Utilities for use and interaction with the server.",
-        abbreviateSynopsis = true,
-        optionListHeading = "%nOptions%n",
-        parameterListHeading = "Available Commands%n",
+        description = "%nUtilities for use and interaction with the server.",
         subcommands = {Completion.class})
 public class Tools {
+
 }

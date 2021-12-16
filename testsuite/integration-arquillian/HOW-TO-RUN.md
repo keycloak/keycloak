@@ -495,9 +495,6 @@ mvn -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml \
     -Pandroid \
     -Dappium.avd=Nexus_5X_API_27
 ```
-**Note:** Some of the tests are covering WebAuthn functionality. Such tests are ignored by default, to ensure that all
-tests in the Base UI testsuite are executed please use `-DchromeArguments=--enable-web-authentication-testing-api` as
-specified in [WebAuthn tests](#webauthn-tests).
 
 ## Disabling features
 Some features in Keycloak can be disabled. To run the testsuite with a specific feature disabled use the `auth.server.feature` system property. For example to run the tests with authorization disabled run:
@@ -505,33 +502,22 @@ Some features in Keycloak can be disabled. To run the testsuite with a specific 
 mvn -f testsuite/integration-arquillian/tests/base/pom.xml clean test -Pauth-server-wildfly -Dauth.server.feature=-Dkeycloak.profile.feature.authorization=disabled
 ```
 ## WebAuthN tests
-The WebAuthN tests, in Keycloak, can be only executed with Chrome browser, because the Chrome has feature _WebAuthenticationTestingApi_,
-which simulate hardware authentication device. For automated WebAuthN testing, this approach seems like the best choice so far.
-To enabling the feature you have to add flag to _chromeArguments_. In each WebAuthN test should be method with ``@Before`` annotation
-to verify the browser properties.
-
-**Note:** The testing feature is only available for Chrome version 68-80.
-
-#### Example of verifying the browser properties
-```
-@Before
-void verifyEnvironment(WebDriver driver) {
-    WebAuthnAssume.assumeChrome(driver);
-}
-```
+These tests cover feature W3C WebAuthn, which provides us a lot of possibilities how to include 2FA or MFA to our authentication flows. 
+For testing the feature, it's necessary to use various devices, which support WebAuthn. 
+However, we are not able to physically test those devices as in a real world, but we create a virtual authenticators, which should behave the same.
+The support for the Virtual Authenticators came from Selenium 4.
 
 #### Run all WebAuthN tests
 ```
-mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
-    clean test \
-    -Dtest=org.keycloak.testsuite.webauthn.**.*Test \
-    -Dbrowser=chrome \
-    -DchromeArguments=--enable-web-authentication-testing-api
+mvn -f testsuite/integration-arquillian/tests/other/pom.xml clean test \
+    -Dbrowser=chrome -Pwebauthn
 ```
+
+**Note:** You can also execute those tests with `chromeHeadless` browser in order to not open a new window.
 
 #### Troubleshooting
 
-If you try to run WebAuthn tests and you see error like:
+If you try to run WebAuthn tests with Chrome browser and you see error like:
 
 ```
 Caused by: java.lang.RuntimeException: Unable to instantiate Drone via org.openqa.selenium.chrome.ChromeDriver(Capabilities):
@@ -544,6 +530,11 @@ Then run the WebAuthn tests as above with the additional system property for spe
 ```
 -DchromeDriverVersion=77.0.3865.40
 ```
+
+**For Windows**: Probably, you encounter issues with execution those tests on the Windows platform due to Chrome Driver is not available.
+In this case, please define the path to the local Chrome Driver by adding this property `-Dwebdriver.chrome.driver=C:/path/to/chromedriver.exe`.
+
+**Warning:** Please, be aware the WebAuthn tests are still in a development phase and there is a high chance those tests will not be stable.
 
 ## Social Login
 The social login tests require setup of all social networks including an example social user. These details can't be

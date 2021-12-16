@@ -35,7 +35,7 @@ public class LazyDelegateProvider<T extends UpdatableEntity> implements Delegate
     }
 
     @Override
-    public T getDelegate(boolean isRead, Object field) {
+    public T getDelegate(boolean isRead, Object field, Object... parameters) {
         if (! isDelegateInitialized()) {
             delegate.compareAndSet(null, delegateSupplier == null ? null : delegateSupplier.get(), false, true);
         }

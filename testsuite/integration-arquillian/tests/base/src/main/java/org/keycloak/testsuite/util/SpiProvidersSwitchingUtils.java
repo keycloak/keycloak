@@ -7,6 +7,7 @@ import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer;
+import org.keycloak.utils.StringUtil;
 import org.wildfly.extras.creaper.core.online.CliException;
 import org.wildfly.extras.creaper.core.online.ModelNodeResult;
 import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
@@ -27,7 +28,8 @@ public class SpiProvidersSwitchingUtils {
     private enum SpiSwitcher {
         UNDERTOW {
             @Override
-            public Optional<String> getCurrentDefaultProvider(Container container, String spiName) {
+            public Optional<String> getCurrentDefaultProvider(Container container, String spiName,
+                    SetDefaultProvider annotation) {
                 return Optional.ofNullable(System.getProperty(getProviderPropertyName(spiName)));
             }
 
@@ -48,7 +50,8 @@ public class SpiProvidersSwitchingUtils {
         WILDFLY {
             
             @Override
-            public Optional<String> getCurrentDefaultProvider(Container container, String spiName) {
+            public Optional<String> getCurrentDefaultProvider(Container container, String spiName,
+                    SetDefaultProvider annotation) {
                 String cliCmd = SUBSYSTEM_KEYCLOAK_SERVER_SPI + spiName + ":read-attribute(name=default-provider)";
                 return runInCli(cliCmd).filter(ModelNodeResult::isSuccess)
                         .map(n -> n.get("result").asString());
@@ -87,12 +90,6 @@ public class SpiProvidersSwitchingUtils {
             }
         },
         QUARKUS {
-            
-            @Override
-            public Optional<String> getCurrentDefaultProvider(Container container, String spiName) {
-                return Optional.ofNullable(
-                        getQuarkusContainer(container).getCurrentlyConfiguredSpiProviderFor(toDashCase(spiName)));
-            }
 
             @Override
             public void setDefaultProvider(Container container, String spiName, String providerId) {
@@ -102,8 +99,7 @@ public class SpiProvidersSwitchingUtils {
 
             @Override
             public void removeProviderConfig(Container container, String spiName) {
-                getQuarkusContainer(container).setAdditionalBuildArgs(Collections
-                        .singletonList(KEYCLOAKX_ARG_SPI_PREFIX + toDashCase(spiName) + "-provider=default"));
+                getQuarkusContainer(container).setAdditionalBuildArgs(Collections.emptyList());
             }
 
             private KeycloakQuarkusServerDeployableContainer getQuarkusContainer(Container container) {
@@ -136,7 +132,14 @@ public class SpiProvidersSwitchingUtils {
             }
         };
 
-        public abstract Optional<String> getCurrentDefaultProvider(Container container, String spiName);
+        public Optional<String> getCurrentDefaultProvider(Container container, String spiName,
+                SetDefaultProvider annotation) {
+            String defaultProvider = annotation.defaultProvider();
+            if (StringUtil.isNotBlank(defaultProvider)) {
+                return Optional.of(defaultProvider);
+            }
+            return Optional.empty();
+        }
 
         public abstract void setDefaultProvider(Container container, String spiName, String providerId);
 
@@ -172,7 +175,7 @@ public class SpiProvidersSwitchingUtils {
         log.infof("Setting default provider for %s to %s", spi, annotation.providerId());
 
         if (annotation.onlyUpdateDefault()) {
-            spiSwitcher.getCurrentDefaultProvider(container, spi).ifPresent(v -> originalSettingsBackup.put(spi, v));
+            spiSwitcher.getCurrentDefaultProvider(container, spi, annotation).ifPresent(v -> originalSettingsBackup.put(spi, v));
             spiSwitcher.updateDefaultProvider(container, spi, annotation.providerId());
         } else {
             spiSwitcher.setDefaultProvider(container, spi, annotation.providerId());

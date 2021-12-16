@@ -32,8 +32,9 @@ import java.util.stream.Stream;
 import org.jboss.logging.Logger;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.QueryParameters;
+import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder.UpdatePredicatesFunc;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
-import org.keycloak.utils.StreamsUtil;
+import org.keycloak.storage.SearchableModelField;
 
 public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & UpdatableEntity, M> implements MapKeycloakTransaction<V, M> {
 
@@ -42,18 +43,20 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
     protected boolean active;
     protected boolean rollback;
     protected final Map<String, MapTaskWithValue> tasks = new LinkedHashMap<>();
-    protected final ConcurrentHashMapStorage<K, V, M> map;
+    protected final ConcurrentHashMapCrudOperations<V, M> map;
     protected final StringKeyConvertor<K> keyConvertor;
     protected final DeepCloner cloner;
+    protected final Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates;
 
     enum MapOperation {
         CREATE, UPDATE, DELETE,
     }
 
-    public ConcurrentHashMapKeycloakTransaction(ConcurrentHashMapStorage<K, V, M> map, StringKeyConvertor<K> keyConvertor, DeepCloner cloner) {
+    public ConcurrentHashMapKeycloakTransaction(ConcurrentHashMapCrudOperations<V, M> map, StringKeyConvertor<K> keyConvertor, DeepCloner cloner, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates) {
         this.map = map;
         this.keyConvertor = keyConvertor;
         this.cloner = cloner;
+        this.fieldPredicates = fieldPredicates;
     }
 
     @Override
@@ -93,6 +96,10 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
     @Override
     public boolean isActive() {
         return active;
+    }
+
+    private MapModelCriteriaBuilder<K, V, M> createCriteriaBuilder() {
+        return new MapModelCriteriaBuilder<K, V, M>(keyConvertor, fieldPredicates);
     }
 
     /**
@@ -168,7 +175,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
     @Override
     public Stream<V> read(QueryParameters<M> queryParameters) {
         DefaultModelCriteria<M> mcb = queryParameters.getModelCriteriaBuilder();
-        MapModelCriteriaBuilder<K,V,M> mapMcb = mcb.flashToModelCriteriaBuilder(map.createCriteriaBuilder());
+        MapModelCriteriaBuilder<K,V,M> mapMcb = mcb.flashToModelCriteriaBuilder(createCriteriaBuilder());
 
         Predicate<? super V> filterOutAllBulkDeletedObjects = tasks.values().stream()
           .filter(BulkDeleteOperation.class::isInstance)
@@ -196,7 +203,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
         }
 
 
-        return StreamsUtil.paginatedStream(res, queryParameters.getOffset(), queryParameters.getLimit());
+        return res;
     }
 
     @Override
@@ -245,7 +252,6 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
         addTask(key, new DeleteOperation(key));
         return true;
     }
-
 
     @Override
     public long delete(QueryParameters<M> queryParameters) {
@@ -401,7 +407,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
 
         public Predicate<V> getFilterForNonDeletedObjects() {
             DefaultModelCriteria<M> mcb = queryParameters.getModelCriteriaBuilder();
-            MapModelCriteriaBuilder<K,V,M> mmcb = mcb.flashToModelCriteriaBuilder(map.createCriteriaBuilder());
+            MapModelCriteriaBuilder<K,V,M> mmcb = mcb.flashToModelCriteriaBuilder(createCriteriaBuilder());
             
             Predicate<? super V> entityFilter = mmcb.getEntityFilter();
             Predicate<? super K> keyFilter = mmcb.getKeyFilter();

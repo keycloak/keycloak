@@ -1,0 +1,34 @@
+---
+categories: [Widgets]
+layout: page
+title: Toast Notifications
+resource: true
+---
+<div class="toast-notifications-list-pf">
+  <div class="toast-pf alert alert-success">
+    <div class="pull-right toast-pf-action">
+      <a href="#">Start Server</a>
+    </div>
+    <span class="pficon pficon-ok"></span>
+    <strong>server</strong> has been added.
+  </div>
+  <div class="toast-pf alert alert-danger alert-dismissable">
+    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">
+      <span class="pficon pficon-close"></span>
+    </button>
+    <span class="pficon pficon-error-circle-o"></span>
+    Failed to add <strong>server_abc</strong>.
+  </div>
+  <div class="toast-pf alert alert-warning">
+    {% include widgets/kebab.html dropmenuType="dropdown" dropmenuPosition="pull-right" dropmenuId="dropdownKebabRight" dropdownPosition="dropdown-menu-right" dropmenuVariation="dropdown-kebab-pf" %}
+    <div class="pull-right toast-pf-action">
+      <a href="#">Reload Server</a>
+    </div>
+    <span class="pficon pficon-warning-triangle-o"></span>
+    The server configuration changed.
+  </div>
+  <div class="toast-pf alert alert-info">
+    <span class="pficon pficon-info"></span>
+    Praesent sagittis est et arcu fringilla placerat. Cras erat ante, dapibus non mauris ac, volutpat sollicitudin ligula. Morbi gravida nisl vel risus tempor, sit amet luctus erat tempus. Curabitur blandit sem non pretium bibendum. Donec eleifend non turpis vitae vestibulum. Vestibulum ut sem ac nunc posuere blandit sed porta lorem. Cras rutrum velit vel leo iaculis imperdiet.
+  </div>
+</div>

@@ -11,6 +11,7 @@ final class VaultPropertyMappers {
                         .from("vault.file.path")
                         .to("kc.spi.vault.files-plaintext.dir")
                         .description("If set, secrets can be obtained by reading the content of files within the given path.")
+                        .paramLabel("dir")
                         .build(),
                 builder()
                         .from("vault.hashicorp.")
@@ -21,6 +22,7 @@ final class VaultPropertyMappers {
                         .from("vault.hashicorp.paths")
                         .to("kc.spi.vault.hashicorp.paths")
                         .description("A set of one or more paths that should be used when looking up secrets.")
+                        .paramLabel("paths")
                         .build()
         };
     }

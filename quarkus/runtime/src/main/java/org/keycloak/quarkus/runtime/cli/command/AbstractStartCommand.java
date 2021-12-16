@@ -18,6 +18,7 @@
 package org.keycloak.quarkus.runtime.cli.command;
 
 import org.keycloak.quarkus.runtime.KeycloakMain;
+import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
 
 import picocli.CommandLine;
 
@@ -30,7 +31,7 @@ public abstract class AbstractStartCommand extends AbstractCommand implements Ru
     public void run() {
         doBeforeRun();
         CommandLine cmd = spec.commandLine();
-        KeycloakMain.start(cmd.getParseResult().expandedArgs(), cmd.getErr());
+        KeycloakMain.start((ExecutionExceptionHandler) cmd.getExecutionExceptionHandler(), cmd.getErr());
     }
 
     protected void doBeforeRun() {

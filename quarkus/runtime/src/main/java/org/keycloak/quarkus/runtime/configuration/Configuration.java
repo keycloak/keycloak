@@ -29,6 +29,7 @@ import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigProviderResolver;
 
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
@@ -39,37 +40,36 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
  */
 public final class Configuration {
 
-    private static volatile SmallRyeConfig CONFIG;
-
     private Configuration() {
 
     }
 
     public static synchronized SmallRyeConfig getConfig() {
-        if (CONFIG == null) {
-            CONFIG = (SmallRyeConfig) SmallRyeConfigProviderResolver.instance().getConfig();
-        }
-        return CONFIG;
+        return (SmallRyeConfig) ConfigProviderResolver.instance().getConfig();
     }
 
-    public static Optional<String> getBuiltTimeProperty(String name) {
-        String value = KeycloakConfigSourceProvider.PERSISTED_CONFIG_SOURCE.getValue(name);
+    public static Optional<String> getBuildTimeProperty(String name) {
+        Optional<String> value = getRawPersistedProperty(name);
 
-        if (value == null) {
-            value = KeycloakConfigSourceProvider.PERSISTED_CONFIG_SOURCE.getValue(getMappedPropertyName(name));
+        if (value.isEmpty()) {
+            value = getRawPersistedProperty(getMappedPropertyName(name));
         }
 
-        if (value == null) {
+        if (value.isEmpty()) {
             String profile = Environment.getProfile();
 
             if (profile == null) {
                 profile = getConfig().getRawValue(Environment.PROFILE);
             }
 
-            value = KeycloakConfigSourceProvider.PERSISTED_CONFIG_SOURCE.getValue("%" + profile + "." + name);
+            value = getRawPersistedProperty("%" + profile + "." + name);
         }
 
-        return Optional.ofNullable(value);
+        return value;
+    }
+
+    public static Optional<String> getRawPersistedProperty(String name) {
+        return Optional.ofNullable(PersistedConfigSource.getInstance().getValue(name));
     }
 
     public static String getRawValue(String propertyName) {

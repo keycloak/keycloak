@@ -2,15 +2,15 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 public enum ConfigCategory {
     // ordered by name asc
-    CLUSTERING("%nCluster:%n%n", 10),
-    DATABASE("%nDatabase:%n%n", 20),
-    FEATURE("%nFeature:%n%n", 30),
-    HOSTNAME("%nHostname:%n%n", 40),
-    HTTP("%nHTTP/TLS:%n%n", 50),
-    METRICS("%nMetrics:%n%n", 60),
-    PROXY("%nProxy:%n%n", 70),
-    VAULT("%nVault:%n%n", 80),
-    GENERAL("%nGeneral:%n%n", 999);
+    CLUSTERING("Cluster:", 10),
+    DATABASE("Database:", 20),
+    FEATURE("Feature:", 30),
+    HOSTNAME("Hostname:", 40),
+    HTTP("HTTP/TLS:", 50),
+    METRICS("Metrics:", 60),
+    PROXY("Proxy:", 70),
+    VAULT("Vault:", 80),
+    GENERAL("General:", 999);
 
     private final String heading;
 

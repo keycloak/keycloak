@@ -29,9 +29,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.EntityWithAttributes;
 import org.keycloak.models.map.common.UpdatableEntity;
 
-public class MapClientScopeEntity extends UpdatableEntity.Impl implements AbstractEntity {
+public class MapClientScopeEntity extends UpdatableEntity.Impl implements AbstractEntity, EntityWithAttributes {
 
     private String id;
     private String realmId;
@@ -94,10 +95,19 @@ public class MapClientScopeEntity extends UpdatableEntity.Impl implements Abstra
         this.protocol = protocol;
     }
 
+    @Override
     public Map<String, List<String>> getAttributes() {
         return attributes;
     }
 
+    @Override
+    public void setAttributes(Map<String, List<String>> attributes) {
+        this.attributes.clear();
+        this.attributes.putAll(attributes);
+        this.updated = true;
+    }
+
+    @Override
     public void setAttribute(String name, List<String> values) {
         this.updated |= ! Objects.equals(this.attributes.put(name, values), values);
     }
@@ -132,10 +142,12 @@ public class MapClientScopeEntity extends UpdatableEntity.Impl implements Abstra
         return id == null ? null : protocolMappers.get(id);
     }
 
+    @Override
     public void removeAttribute(String name) {
         this.updated |= this.attributes.remove(name) != null;
     }
 
+    @Override
     public List<String> getAttribute(String name) {
         return attributes.getOrDefault(name, Collections.EMPTY_LIST);
     }

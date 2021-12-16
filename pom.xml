@@ -35,6 +35,7 @@
     <packaging>pom</packaging>
 
     <properties>
+        <quarkus.version>2.5.2.Final</quarkus.version>
 
         <!--
         Performing a Wildfly upgrade? Run the:
@@ -79,6 +80,7 @@
         <hibernate.c3p0.version>5.3.20.Final</hibernate.c3p0.version>
         <infinispan.version>11.0.9.Final</infinispan.version>
         <infinispan.protostream.processor.version>4.3.4.Final</infinispan.protostream.processor.version>
+        <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
         <jackson.version>2.12.1</jackson.version>
         <jackson.databind.version>${jackson.version}</jackson.databind.version>
         <jackson.annotations.version>${jackson.databind.version}</jackson.annotations.version>
@@ -149,7 +151,7 @@
 
         <!-- Test -->
         <greenmail.version>1.3.1b</greenmail.version>
-        <hamcrest.version>1.3</hamcrest.version>
+        <hamcrest.version>2.2</hamcrest.version>
         <jmeter.version>2.10</jmeter.version>
         <junit.version>4.13.2</junit.version>
         <picketlink.version>2.7.0.Final</picketlink.version>
@@ -170,7 +172,7 @@
         <osgi.bundle.plugin.version>2.3.7</osgi.bundle.plugin.version>
         <wildfly.plugin.version>2.0.1.Final</wildfly.plugin.version>
         <nexus.staging.plugin.version>1.6.5</nexus.staging.plugin.version>
-        <frontend.plugin.version>1.8.0</frontend.plugin.version>
+        <frontend.plugin.version>1.12.0</frontend.plugin.version>
         <docker.maven.plugin.version>0.28.0</docker.maven.plugin.version>
         <verifier.plugin.version>1.1</verifier.plugin.version>
 
@@ -243,14 +245,8 @@
 
     <developers>
         <developer>
-            <id>patriot1burke</id>
-            <name>Bill Burke</name>
-            <email>bburke@redhat.co</email>
-            <organization>Red Hat</organization>
-            <roles>
-                <role>project-owner</role>
-            </roles>
-            <timezone>-5</timezone>
+            <id>keycloak</id>
+            <name>Keycloak Team</name>
         </developer>
     </developers>
 
@@ -261,6 +257,7 @@
         <module>common</module>
         <module>core</module>
         <module>dependencies</module>
+        <module>docs</module>
         <module>server-spi</module>
         <module>server-spi-private</module>
         <module>saml-core-api</module>
@@ -527,7 +524,7 @@
             </dependency>
             <dependency>
                 <groupId>org.hamcrest</groupId>
-                <artifactId>hamcrest-all</artifactId>
+                <artifactId>hamcrest</artifactId>
                 <version>${hamcrest.version}</version>
                 <scope>test</scope>
             </dependency>
@@ -1288,6 +1285,11 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-model-map-jpa</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-model-infinispan</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1640,17 +1642,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-client-cli-dist</artifactId>
-                <version>${project.version}</version>
-                <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>kcinit</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>kcinit-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>

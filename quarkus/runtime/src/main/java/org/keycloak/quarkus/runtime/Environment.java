@@ -17,7 +17,7 @@
 
 package org.keycloak.quarkus.runtime;
 
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuiltTimeProperty;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuildTimeProperty;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -26,6 +26,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -36,10 +37,12 @@ import org.apache.commons.lang3.SystemUtils;
 public final class Environment {
 
     public static final String IMPORT_EXPORT_MODE = "import_export";
-    public static final String CLI_ARGS = "kc.config.args";
     public static final String PROFILE ="kc.profile";
     public static final String ENV_PROFILE ="KC_PROFILE";
     public static final String DATA_PATH = "/data";
+    public static final String DEFAULT_THEMES_PATH = "/themes";
+    public static final String DEV_PROFILE_VALUE = "dev";
+    public static final String LAUNCH_MODE = "kc.launch.mode";
 
     private Environment() {}
 
@@ -65,6 +68,10 @@ public final class Environment {
         return getHomeDir() + DATA_PATH;
     }
 
+    public static String getDefaultThemeRootDir() {
+        return getHomeDir() + DEFAULT_THEMES_PATH;
+    }
+
     public static Path getProvidersPath() {
         Path homePath = Environment.getHomePath();
 
@@ -76,20 +83,11 @@ public final class Environment {
     }
 
     public static String getCommand() {
-        String homeDir = getHomeDir();
-
-        if (homeDir == null) {
-            return "java -jar $KEYCLOAK_HOME/lib/quarkus-run.jar";
-        }
-
         if (isWindows()) {
-            return "./kc.bat";
+            return "kc.bat";
         }
-        return "./kc.sh";
-    }
-    
-    public static String getConfigArgs() {
-        return System.getProperty(CLI_ARGS, "");
+
+        return "kc.sh";
     }
 
     public static String getProfile() {
@@ -105,6 +103,10 @@ public final class Environment {
     public static void setProfile(String profile) {
         System.setProperty(PROFILE, profile);
         System.setProperty("quarkus.profile", profile);
+        if (isTestLaunchMode()) {
+            System.setProperty("mp.config.profile", profile);
+            System.setProperty(ProfileManager.QUARKUS_TEST_PROFILE_PROP, profile);
+        }
     }
 
     public static String getProfileOrDefault(String defaultProfile) {
@@ -118,16 +120,15 @@ public final class Environment {
     }
 
     public static boolean isDevMode() {
-        if ("dev".equalsIgnoreCase(getProfile())) {
+        if (DEV_PROFILE_VALUE.equalsIgnoreCase(getProfile())) {
             return true;
         }
 
-        // if running in quarkus:dev mode
-        if (ProfileManager.getLaunchMode() == LaunchMode.DEVELOPMENT) {
-            return true;
-        }
+        return DEV_PROFILE_VALUE.equals(getBuildTimeProperty(PROFILE).orElse(null));
+    }
 
-        return "dev".equals(getBuiltTimeProperty(PROFILE).orElse(null));
+    public static boolean isDevProfile(){
+        return Optional.ofNullable(getProfile()).orElse("").equalsIgnoreCase(DEV_PROFILE_VALUE);
     }
 
     public static boolean isImportExportMode() {
@@ -139,7 +140,7 @@ public final class Environment {
     }
 
     public static void forceDevProfile() {
-        setProfile("dev");
+        setProfile(DEV_PROFILE_VALUE);
     }
 
     public static Map<String, File> getProviderFiles() {
@@ -161,5 +162,21 @@ public final class Environment {
                 return name.endsWith(".jar");
             }
         })).collect(Collectors.toMap(File::getName, Function.identity()));
+    }
+
+    public static boolean isQuarkusDevMode() {
+        return ProfileManager.getLaunchMode().equals(LaunchMode.DEVELOPMENT);
+    }
+
+    public static boolean isTestLaunchMode() {
+        return "test".equals(System.getProperty(LAUNCH_MODE));
+    }
+
+    public static void forceTestLaunchMode() {
+        System.setProperty(LAUNCH_MODE, "test");
+    }
+
+    public static boolean isDistribution() {
+        return getHomeDir() != null;
     }
 }

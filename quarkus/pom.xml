@@ -31,23 +31,22 @@
     <packaging>pom</packaging>
 
     <properties>
-        <!-- Quarkus version -->
-        <quarkus.version>2.4.1.Final</quarkus.version>
-
         <!--
             Override versions based on Quarkus dependencies.
             Make sure to update these dependencies when Quarkus version changes.
             See https://github.com/quarkusio/quarkus/blob/<versionTag>/bom/application/pom.xml
             for reference
         -->
-        <resteasy.version>4.7.0.Final</resteasy.version>
+        <resteasy.version>4.7.3.Final</resteasy.version>
         <jackson.version>2.12.5</jackson.version>
         <jackson.databind.version>${jackson.version}</jackson.databind.version>
         <hibernate.core.version>5.6.1.Final</hibernate.core.version>
-        <mysql.driver.version>8.0.26</mysql.driver.version>
-        <postgresql.version>42.2.24</postgresql.version>
+        <mysql.driver.version>8.0.27</mysql.driver.version>
+        <postgresql.version>42.3.1</postgresql.version>
         <microprofile-metrics-api.version>3.0</microprofile-metrics-api.version>
         <wildfly.common.version>1.5.4.Final-format-001</wildfly.common.version>
+        <infinispan.version>13.0.0.Final</infinispan.version>
+        <xmlsec.version>2.1.7</xmlsec.version>
 
         <!--
             Java EE dependencies. Not available from JDK 11+.
@@ -157,6 +156,7 @@
         <module>runtime</module>
         <module>deployment</module>
         <module>server</module>
+        <module>tests</module>
     </modules>
 
     <repositories>

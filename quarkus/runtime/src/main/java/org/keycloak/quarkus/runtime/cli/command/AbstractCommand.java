@@ -17,36 +17,22 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
+import static org.keycloak.quarkus.runtime.Messages.cliExecutionError;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
-import picocli.CommandLine.Option;
 
 public abstract class AbstractCommand {
 
     @Spec
     protected CommandSpec spec;
 
-    @Option(names = { "-h", "--help" },
-            description = "This help message.",
-            usageHelp = true)
-    boolean help;
-
-    @Option(names = {"-pf", "--profile"},
-            description = "Set the profile. Use 'dev' profile to enable development mode.")
-    public void setProfile(String profile) {
-        Environment.setProfile(profile);
+    protected void executionError(CommandLine cmd, String message) {
+        executionError(cmd, message, null);
     }
 
-    @Option(names = { "-cf", "--config-file" },
-            arity = "1",
-            description = "Set the path to a configuration file. By default, configuration properties are read from the \"keycloak.properties\" file in the \"conf\" directory.",
-            paramLabel = "<config-file>",
-            scope = CommandLine.ScopeType.INHERIT)
-    public void setConfigFile(String path) {
-        System.setProperty(KeycloakConfigSourceProvider.KEYCLOAK_CONFIG_FILE_PROP, path);
+    protected void executionError(CommandLine cmd, String message, Throwable cause) {
+        cliExecutionError(cmd, message, cause);
     }
 }

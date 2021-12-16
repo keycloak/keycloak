@@ -28,9 +28,9 @@ import org.keycloak.models.map.authSession.MapRootAuthenticationSessionProviderF
 import org.keycloak.models.map.authorization.MapAuthorizationStoreFactory;
 import org.keycloak.models.map.client.MapClientProviderFactory;
 import org.keycloak.models.map.clientscope.MapClientScopeProviderFactory;
-import org.keycloak.models.map.connections.DefaultHotRodConnectionProviderFactory;
-import org.keycloak.models.map.connections.HotRodConnectionProviderFactory;
-import org.keycloak.models.map.connections.HotRodConnectionSpi;
+import org.keycloak.models.map.storage.hotRod.connections.DefaultHotRodConnectionProviderFactory;
+import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionProviderFactory;
+import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionSpi;
 import org.keycloak.models.map.deploymentState.MapDeploymentStateProviderFactory;
 import org.keycloak.models.map.group.MapGroupProviderFactory;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureProviderFactory;
@@ -38,7 +38,7 @@ import org.keycloak.models.map.realm.MapRealmProviderFactory;
 import org.keycloak.models.map.role.MapRoleProviderFactory;
 import org.keycloak.models.map.storage.MapStorageSpi;
 import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory;
-//import org.keycloak.models.map.storage.hotRod.HotRodMapStorageProviderFactory;
+import org.keycloak.models.map.storage.hotRod.HotRodMapStorageProviderFactory;
 import org.keycloak.models.map.user.MapUserProviderFactory;
 import org.keycloak.models.map.userSession.MapUserSessionProviderFactory;
 import org.keycloak.provider.ProviderFactory;
@@ -61,9 +61,9 @@ public class HotRodMapStorage extends KeycloakModelParameters {
       .build();
 
     static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = ImmutableSet.<Class<? extends ProviderFactory>>builder()
-      //.add(HotRodMapStorageProviderFactory.class)
+      .add(HotRodMapStorageProviderFactory.class)
       .add(HotRodConnectionProviderFactory.class)
-      .add(ConcurrentHashMapStorageProviderFactory.class)
+      .add(ConcurrentHashMapStorageProviderFactory.class) // TODO: this should be removed when we have a HotRod implementation for each area
       .build();
     
     private static final String STORAGE_CONFIG = "storage.provider";
@@ -73,8 +73,7 @@ public class HotRodMapStorage extends KeycloakModelParameters {
     @Override
     public void updateConfig(Config cf) {
         cf.spi(AuthenticationSessionSpi.PROVIDER_ID).provider(MapRootAuthenticationSessionProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
-          //.spi("client").provider(MapClientProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, HotRodMapStorageProviderFactory.PROVIDER_ID)
-          .spi("client").provider(MapClientProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
+          .spi("client").provider(MapClientProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, HotRodMapStorageProviderFactory.PROVIDER_ID)
           .spi("clientScope").provider(MapClientScopeProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
           .spi("group").provider(MapGroupProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
           .spi("realm").provider(MapRealmProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
