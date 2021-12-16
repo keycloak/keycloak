@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Controller, useForm } from "react-hook-form";
 import {
+  AlertVariant,
   Button,
   Divider,
   FormGroup,
@@ -18,6 +19,7 @@ import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { SaveReset } from "../advanced/SaveReset";
 import { ImportDialog } from "./ImportDialog";
 import useToggle from "../../utils/useToggle";
+import { useAlerts } from "../../components/alert/Alerts";
 
 const POLICY_ENFORCEMENT_MODES = [
   "ENFORCING",
@@ -31,11 +33,13 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
   const [resource, setResource] = useState<ResourceServerRepresentation>();
   const [importDialog, toggleImportDialog] = useToggle();
 
-  const { control, reset } = useForm<ResourceServerRepresentation>({
-    shouldUnregister: false,
-  });
+  const { control, reset, handleSubmit } =
+    useForm<ResourceServerRepresentation>({
+      shouldUnregister: false,
+    });
 
   const adminClient = useAdminClient();
+  const { addAlert, addError } = useAlerts();
 
   useFetch(
     () => adminClient.clients.getResourceServer({ id: clientId }),
@@ -46,8 +50,26 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
     []
   );
 
-  const importResource = () => {
-    //different PR
+  const importResource = async (value: ResourceServerRepresentation) => {
+    try {
+      await adminClient.clients.importResource({ id: clientId }, value);
+      addAlert(t("importResourceSuccess"), AlertVariant.success);
+      reset({ ...value });
+    } catch (error) {
+      addError("clients:importResourceError", error);
+    }
+  };
+
+  const save = async (resource: ResourceServerRepresentation) => {
+    try {
+      await adminClient.clients.updateResourceServer(
+        { id: clientId },
+        resource
+      );
+      addAlert(t("updateResourceSuccess"), AlertVariant.success);
+    } catch (error) {
+      addError("clients:resourceSaveError", error);
+    }
   };
 
   if (!resource) {
@@ -174,10 +196,8 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
           />
         </FormGroup>
         <SaveReset
-          name="settings"
-          save={(): void => {
-            // another PR
-          }}
+          name="authenticationSettings"
+          save={() => handleSubmit(save)()}
           reset={() => reset(resource)}
         />
       </FormAccess>

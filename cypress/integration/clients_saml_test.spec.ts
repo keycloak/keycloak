@@ -45,11 +45,7 @@ describe("Clients SAML tests", () => {
     });
 
     it("should save force name id format", () => {
-      const load = "auth/admin/realms/master/client-scopes";
-      cy.intercept(load).as("load");
-
       cy.get(".pf-c-jump-links__list").contains("SAML capabilities").click();
-      cy.wait("@load");
 
       cy.findByTestId("forceNameIdFormat").click({
         force: true,
@@ -142,6 +138,9 @@ describe("Clients SAML tests", () => {
     it("Should update the resource server settings", () => {
       listingPage.searchItem(clientName).goToItemDetails(clientName);
       authenticationTab.goToTab();
+      authenticationTab.setPolicy("DISABLED").saveSettings();
+
+      masthead.checkNotificationMessage("Resource successfully updated");
     });
 
     it("Should create a resource", () => {

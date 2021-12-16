@@ -64,6 +64,8 @@ export default {
     importResources: "The following settings and data will be imported:",
     importWarning:
       "The data and settings imported above may overwrite the data and settings that already exist.",
+    importResourceSuccess: "The resource was successfully imported",
+    importResourceError: "Could not import the resource due to {{error}}",
     createResource: "Create resource",
     createResourceBasedPermission: "Create resource-based permission",
     displayName: "Display name",

@@ -361,7 +361,7 @@ export default function ClientDetails() {
       />
       <PageSection variant="light" className="pf-u-p-0">
         <FormProvider {...form}>
-          <KeycloakTabs data-testid="client-tabs" isBox>
+          <KeycloakTabs data-testid="client-tabs" isBox mountOnEnter>
             <Tab
               id="settings"
               eventKey="settings"
@@ -467,6 +467,8 @@ export default function ClientDetails() {
                 <Tabs
                   activeKey={authorizationSubTab}
                   onSelect={(_, key) => setAuthorizationSubTab(key as number)}
+                  mountOnEnter
+                  unmountOnExit
                 >
                   <Tab
                     id="settings"

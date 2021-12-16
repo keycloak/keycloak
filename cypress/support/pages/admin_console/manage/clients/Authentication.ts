@@ -36,8 +36,18 @@ export default class AuthenticationTab {
     return this;
   }
 
+  setPolicy(policyName: string) {
+    cy.findByTestId(policyName).click();
+    return this;
+  }
+
   save() {
     cy.findByTestId("save").click();
+    return this;
+  }
+
+  saveSettings() {
+    cy.findByTestId("authenticationSettingsSave").click();
     return this;
   }
 
