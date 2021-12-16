@@ -1,0 +1,9 @@
+= Highlights
+
+== Upgrade to Wildfly 25.0.1
+
+Keycloak server was upgraded to use Wildfly 25.0.1.Final as the underlying container.
+
+== Upgrade to Quarkus 2.5.3
+
+Keycloak.X Quarkus preview distribution was upgraded to Quarkus 2.5.3.
