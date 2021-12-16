@@ -37,16 +37,15 @@ export default class ProviderPage {
   private cachePolicyList = "#kc-cache-policy + ul";
 
   // Mapper required input values
-  private userModelAttInput = "data-testid=mapper-userModelAttribute-fld";
-  private ldapAttInput = "data-testid=mapper-ldapAttribute-fld";
-  private userModelAttNameInput =
-    "data-testid=mapper-userModelAttributeName-fld";
-  private attValueInput = "data-testid=mapper-attributeValue-fld";
-  private ldapFullNameAttInput = "data-testid=mapper-fullNameAttribute-fld";
-  private ldapAttNameInput = "data-testid=mapper-ldapAttributeName-fld";
-  private ldapAttValueInput = "data-testid=mapper-ldapAttributeValue-fld";
-  private groupInput = "data-testid=mapper-group-fld";
-  private ldapDnInput = "data-testid=ldap-dn";
+  private userModelAttInput = "user.model.attribute";
+  private ldapAttInput = "ldap.attribute";
+  private userModelAttNameInput = "user.model.attribute";
+  private attValueInput = "attribute.value";
+  private ldapFullNameAttInput = "ldap.full.name.attribute";
+  private ldapAttNameInput = "ldap.attribute.name";
+  private ldapAttValueInput = "ldap.attribute.value";
+  private groupInput = "group";
+  private ldapDnInput = "groups.dn";
 
   // mapper types
   private msadUserAcctMapper = "msad-user-account-control-mapper";
@@ -247,29 +246,29 @@ export default class ProviderPage {
         break;
       case this.userAttLdapMapper:
       case this.certLdapMapper:
-        cy.get(`[${this.userModelAttInput}]`).type(userModelAttValue);
-        cy.get(`[${this.ldapAttInput}]`).type(ldapAttValue);
+        cy.findByTestId(this.userModelAttInput).type(userModelAttValue);
+        cy.findByTestId(this.ldapAttInput).type(ldapAttValue);
         break;
       case this.hcAttMapper:
-        cy.get(`[${this.userModelAttNameInput}]`).type(userModelAttValue);
-        cy.get(`[${this.attValueInput}]`).type(ldapAttValue);
+        cy.findByTestId(this.userModelAttNameInput).type(userModelAttValue);
+        cy.findByTestId(this.attValueInput).type(ldapAttValue);
         break;
       case this.fullNameLdapMapper:
-        cy.get(`[${this.ldapFullNameAttInput}]`).type(ldapAttValue);
+        cy.findByTestId(this.ldapFullNameAttInput).type(ldapAttValue);
         break;
       case this.hcLdapAttMapper:
-        cy.get(`[${this.ldapAttNameInput}]`).type(userModelAttValue);
-        cy.get(`[${this.ldapAttValueInput}]`).type(ldapAttValue);
+        cy.findByTestId(this.ldapAttNameInput).type(userModelAttValue);
+        cy.findByTestId(this.ldapAttValueInput).type(ldapAttValue);
         break;
       case this.hcLdapGroupMapper:
-        cy.get(`[${this.groupInput}]`).type(this.groupName);
+        cy.findByTestId(this.groupInput).type(this.groupName);
         break;
       case this.groupLdapMapper:
-        cy.get(`[${this.ldapDnInput}]`).type(ldapDnValue);
+        cy.findByTestId(this.ldapDnInput).type(ldapDnValue);
         break;
 
       case this.roleLdapMapper:
-        cy.get(`[${this.ldapDnInput}]`).type(ldapDnValue);
+        cy.findByTestId(this.ldapDnInput).type(ldapDnValue);
         // cy select clientID dropdown and choose clientName (var)
         cy.get(this.clientIdSelect).click();
         cy.get("button").contains(this.clientName).click({ force: true });
@@ -303,26 +302,21 @@ export default class ProviderPage {
         break;
       case this.userAttLdapMapper:
       case this.certLdapMapper:
-        cy.get(`[${this.userModelAttInput}]`).clear();
-        cy.get(`[${this.userModelAttInput}]`).type(userModelAttValue);
-        cy.get(`[${this.ldapAttInput}]`).clear();
-        cy.get(`[${this.ldapAttInput}]`).type(ldapAttValue);
+        cy.findByTestId(this.userModelAttInput).clear().type(userModelAttValue);
+        cy.findByTestId(this.ldapAttInput).clear().type(ldapAttValue);
         break;
       case this.hcAttMapper:
-        cy.get(`[${this.userModelAttNameInput}]`).clear();
-        cy.get(`[${this.userModelAttNameInput}]`).type(userModelAttValue);
-        cy.get(`[${this.attValueInput}]`).clear();
-        cy.get(`[${this.attValueInput}]`).type(ldapAttValue);
+        cy.findByTestId(this.userModelAttNameInput)
+          .clear()
+          .type(userModelAttValue);
+        cy.findByTestId(this.attValueInput).clear().type(ldapAttValue);
         break;
       case this.fullNameLdapMapper:
-        cy.get(`[${this.ldapFullNameAttInput}]`).clear();
-        cy.get(`[${this.ldapFullNameAttInput}]`).type(ldapAttValue);
+        cy.findByTestId(this.ldapFullNameAttInput).clear().type(ldapAttValue);
         break;
       case this.hcLdapAttMapper:
-        cy.get(`[${this.ldapAttNameInput}]`).clear();
-        cy.get(`[${this.ldapAttNameInput}]`).type(userModelAttValue);
-        cy.get(`[${this.ldapAttValueInput}]`).clear;
-        cy.get(`[${this.ldapAttValueInput}]`).type(ldapAttValue);
+        cy.findByTestId(this.ldapAttNameInput).clear().type(userModelAttValue);
+        cy.findByTestId(this.ldapAttValueInput).clear().type(ldapAttValue);
         break;
       default:
         console.log("Invalid mapper name.");

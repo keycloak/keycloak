@@ -17,27 +17,22 @@ import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/de
 import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
 import { ViewHeader } from "../../../components/view-header/ViewHeader";
 import { useHistory, useParams } from "react-router-dom";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useAlerts } from "../../../components/alert/Alerts";
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "../../../components/help-enabler/HelpItem";
 import { FormAccess } from "../../../components/form-access/FormAccess";
 
-import { LdapMapperUserAttribute } from "./LdapMapperUserAttribute";
-import { LdapMapperMsadUserAccount } from "./LdapMapperMsadUserAccount";
-import { LdapMapperFullNameAttribute } from "./LdapMapperFullNameAttribute";
-
-import { LdapMapperHardcodedLdapRole } from "./LdapMapperHardcodedLdapRole";
-import { LdapMapperHardcodedLdapGroup } from "./LdapMapperHardcodedLdapGroup";
-import { LdapMapperHardcodedLdapAttribute } from "./LdapMapperHardcodedLdapAttribute";
-import { LdapMapperHardcodedAttribute } from "./LdapMapperHardcodedAttribute";
-
-import { LdapMapperRoleGroup } from "./LdapMapperRoleGroup";
+import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
+import { DynamicComponents } from "../../../components/dynamic/DynamicComponents";
 import { useRealm } from "../../../context/realm-context/RealmContext";
+import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
+import { toUserFederationLdap } from "../../routes/UserFederationLdap";
 
 export default function LdapMapperDetails() {
   const form = useForm<ComponentRepresentation>();
   const [mapping, setMapping] = useState<ComponentRepresentation>();
+  const [components, setComponents] = useState<ComponentTypeRepresentation[]>();
 
   const adminClient = useAdminClient();
   const { id, mapperId } = useParams<{ id: string; mapperId: string }>();
@@ -50,21 +45,25 @@ export default function LdapMapperDetails() {
 
   useFetch(
     async () => {
+      const components = await adminClient.components.listSubComponents({
+        id,
+        type: "org.keycloak.storage.ldap.mappers.LDAPStorageMapper",
+      });
       if (mapperId && mapperId !== "new") {
         const fetchedMapper = await adminClient.components.findOne({
           id: mapperId,
         });
-        if (!fetchedMapper) {
-          throw new Error(t("common:notFound"));
-        }
-        return fetchedMapper;
+        return { components, fetchedMapper };
       }
+      return { components };
     },
-    (fetchedMapper) => {
+    ({ components, fetchedMapper }) => {
       setMapping(fetchedMapper);
-      if (fetchedMapper) {
-        setupForm(fetchedMapper);
-      }
+      setComponents(components);
+      if (mapperId !== "new" && !fetchedMapper)
+        throw new Error(t("common:notFound"));
+
+      if (fetchedMapper) setupForm(fetchedMapper);
     },
     []
   );
@@ -74,18 +73,27 @@ export default function LdapMapperDetails() {
   };
 
   const save = async (mapper: ComponentRepresentation) => {
-    const map = convertFormValuesToObject(mapper);
+    const component: ComponentRepresentation =
+      convertFormValuesToObject(mapper);
+    const map = {
+      ...component,
+      config: Object.entries(component.config || {}).reduce(
+        (result, [key, value]) => {
+          result[key] = Array.isArray(value) ? value : [value];
+          return result;
+        },
+        {} as Record<string, string | string[]>
+      ),
+    };
 
     try {
-      if (mapperId) {
-        if (mapperId === "new") {
-          await adminClient.components.create(map);
-          history.push(
-            `/${realm}/user-federation/ldap/${mapper!.parentId}/mappers`
-          );
-        } else {
-          await adminClient.components.update({ id: mapperId }, map);
-        }
+      if (mapperId === "new") {
+        await adminClient.components.create(map);
+        history.push(
+          toUserFederationLdap({ realm, id: mapper.parentId!, tab: "mappers" })
+        );
+      } else {
+        await adminClient.components.update({ id: mapperId }, map);
       }
       setupForm(map as ComponentRepresentation);
       addAlert(
@@ -112,6 +120,10 @@ export default function LdapMapperDetails() {
   });
 
   const isNew = mapperId === "new";
+
+  if (!components) {
+    return <KeycloakSpinner />;
+  }
 
   return (
     <>
@@ -230,130 +242,23 @@ export default function LdapMapperDetails() {
                     selections={value}
                     variant={SelectVariant.typeahead}
                   >
-                    <SelectOption
-                      key={0}
-                      value="msad-user-account-control-mapper"
-                    />
-                    <SelectOption
-                      key={1}
-                      value="msad-lds-user-account-control-mapper"
-                    />
-                    <SelectOption key={2} value="group-ldap-mapper" />
-                    <SelectOption key={3} value="user-attribute-ldap-mapper" />
-                    <SelectOption key={4} value="role-ldap-mapper" />
-                    <SelectOption key={5} value="hardcoded-attribute-mapper" />
-                    <SelectOption key={6} value="hardcoded-ldap-role-mapper" />
-                    <SelectOption key={7} value="certificate-ldap-mapper" />
-                    <SelectOption key={8} value="full-name-ldap-mapper" />
-                    <SelectOption key={9} value="hardcoded-ldap-group-mapper" />
-                    <SelectOption
-                      key={10}
-                      value="hardcoded-ldap-attribute-mapper"
-                    />
+                    {components.map((c) => (
+                      <SelectOption key={c.id} value={c.id} />
+                    ))}
                   </Select>
                 )}
               ></Controller>
             </FormGroup>
           )}
-          {/* When loading existing mappers, load forms based on providerId aka mapper type */}
-          {mapping
-            ? (mapping.providerId! === "certificate-ldap-mapper" ||
-                mapping.providerId! === "user-attribute-ldap-mapper") && (
-                <LdapMapperUserAttribute
-                  form={form}
-                  mapperType={mapping.providerId}
-                />
-              )
-            : ""}
-          {mapping
-            ? mapping.providerId! === "msad-user-account-control-mapper" && (
-                <LdapMapperMsadUserAccount form={form} />
-              )
-            : ""}
-          {/* msad-lds-user-account-control-mapper does not need a component 
-              because it is just id, name, and mapper type*/}
-          {mapping
-            ? mapping.providerId! === "full-name-ldap-mapper" && (
-                <LdapMapperFullNameAttribute form={form} />
-              )
-            : ""}
-          {mapping
-            ? mapping.providerId! === "hardcoded-ldap-role-mapper" && (
-                <LdapMapperHardcodedLdapRole form={form} />
-              )
-            : ""}
-          {mapping
-            ? mapping.providerId! === "hardcoded-ldap-group-mapper" && (
-                <LdapMapperHardcodedLdapGroup form={form} />
-              )
-            : ""}
-          {mapping
-            ? mapping.providerId! === "hardcoded-ldap-attribute-mapper" && (
-                <LdapMapperHardcodedLdapAttribute form={form} />
-              )
-            : ""}
-          {mapping
-            ? mapping.providerId! === "hardcoded-attribute-mapper" && (
-                <LdapMapperHardcodedAttribute form={form} />
-              )
-            : ""}
-          {mapping
-            ? (mapping.providerId! === "role-ldap-mapper" ||
-                mapping.providerId! === "group-ldap-mapper") && (
-                <LdapMapperRoleGroup form={form} type={mapping.providerId} />
-              )
-            : ""}
-          {/* When creating new mappers, load forms based on dropdown selection */}
-          {isNew && mapperType
-            ? mapperType === "certificate-ldap-mapper" && (
-                <LdapMapperUserAttribute form={form} mapperType={mapperType} />
-              )
-            : ""}
-          {isNew && mapperType
-            ? mapperType === "user-attribute-ldap-mapper" && (
-                <LdapMapperUserAttribute form={form} mapperType={mapperType} />
-              )
-            : ""}
-          {isNew && mapperType
-            ? mapperType === "msad-user-account-control-mapper" && (
-                <LdapMapperMsadUserAccount form={form} />
-              )
-            : ""}
-          {isNew && mapperType
-            ? mapperType === "full-name-ldap-mapper" && (
-                <LdapMapperFullNameAttribute form={form} />
-              )
-            : ""}
-          {isNew && mapperType
-            ? mapperType === "hardcoded-ldap-role-mapper" && (
-                <LdapMapperHardcodedLdapRole form={form} />
-              )
-            : ""}
-          {isNew && mapperType
-            ? mapperType === "hardcoded-ldap-group-mapper" && (
-                <LdapMapperHardcodedLdapGroup form={form} />
-              )
-            : ""}
-          {isNew && mapperType
-            ? mapperType === "hardcoded-ldap-attribute-mapper" && (
-                <LdapMapperHardcodedLdapAttribute form={form} />
-              )
-            : ""}
-          {isNew && mapperType
-            ? mapperType === "hardcoded-attribute-mapper" && (
-                <LdapMapperHardcodedAttribute form={form} />
-              )
-            : ""}
-          {isNew && mapperType
-            ? mapperType === "role-ldap-mapper" && (
-                <LdapMapperRoleGroup form={form} type={mapperType} />
-              )
-            : ""}
-          {isNew && mapperType
-            ? mapperType === "group-ldap-mapper" && (
-                <LdapMapperRoleGroup form={form} type={mapperType} />
-              )
-            : ""}
+          <FormProvider {...form}>
+            {!!mapperType && (
+              <DynamicComponents
+                properties={
+                  components.find((c) => c.id === mapperType)?.properties!
+                }
+              />
+            )}
+          </FormProvider>
         </FormAccess>
 
         <Form onSubmit={form.handleSubmit(() => save(form.getValues()))}>
