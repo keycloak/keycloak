@@ -3,7 +3,7 @@ Keycloak Documentation
 
 Open Source Identity and Access Management for modern Applications and Services.
 
-For more information about Keycloak visit the [Keycloak homepage](http://keycloak.org) and [Keycloak blog](http://blog.keycloak.org).
+For more information about Keycloak visit the [Keycloak homepage](http://keycloak.org) and [Keycloak blog](https://www.keycloak.org/blog).
 
 
 Contributing to Keycloak Documentation
