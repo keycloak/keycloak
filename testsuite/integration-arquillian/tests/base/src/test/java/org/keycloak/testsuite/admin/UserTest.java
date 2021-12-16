@@ -26,6 +26,7 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.TokenVerifier;
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -39,6 +40,7 @@ import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.Constants;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.PasswordPolicy;
@@ -73,6 +75,7 @@ import org.keycloak.testsuite.pages.PageUtils;
 import org.keycloak.testsuite.pages.ProceedPage;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.updaters.Creator;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GreenMailRule;
@@ -90,6 +93,7 @@ import javax.mail.internet.MimeMessage;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
@@ -118,6 +122,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.Assert.assertNames;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -2645,5 +2650,38 @@ public class UserTest extends AbstractAdminTest {
         // Set ID to the original rep
         group.setId(groupId);
         return group;
+    }
+
+    @Test
+    public void failCreateUserUsingRegularUser() throws Exception {
+        String regularUserId = ApiUtil.getCreatedId(
+                testRealm().users().create(UserBuilder.create().username("regular-user").password("password").build()));
+        UserResource regularUser = testRealm().users().get(regularUserId);
+        UserRepresentation regularUserRep = regularUser.toRepresentation();
+
+        try (Keycloak adminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
+                TEST, regularUserRep.getUsername(), "password", Constants.ADMIN_CLI_CLIENT_ID, null)) {
+            UserRepresentation invalidUser = UserBuilder.create().username("do-not-create-me").build();
+
+            Response response = adminClient.realm(TEST).users().create(invalidUser);
+            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
+
+            invalidUser.setGroups(Collections.emptyList());
+            response = adminClient.realm(TEST).users().create(invalidUser);
+
+            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
+    public void testCreateUserDoNotGrantRole() {
+        testRealm().roles().create(RoleBuilder.create().name("realm-role").build());
+
+        UserRepresentation userRep = UserBuilder.create().username("alice").password("password").addRoles("realm-role").build();
+        String userId = ApiUtil.getCreatedId(testRealm().users().create(userRep));
+        UserResource user = testRealm().users().get(userId);
+        List<RoleRepresentation> realmMappings = user.roles().getAll().getRealmMappings();
+
+        assertFalse(realmMappings.stream().map(RoleRepresentation::getName).anyMatch("realm-role"::equals));
     }
 }
