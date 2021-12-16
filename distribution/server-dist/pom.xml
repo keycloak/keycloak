@@ -115,6 +115,22 @@
                                         <name>bin.appclient</name>
                                     </excluded-packages>
                                 </feature-pack>
+                                <!-- feature-pack>
+                                    <transitive>true</transitive>
+                                    <groupId>${ee.maven.groupId}</groupId>
+                                    <artifactId>wildfly-galleon-pack</artifactId>
+                                    <version>${ee.maven.version}</version>
+                                    <included-packages>
+                                        <name>bin</name>
+                                        <name>bin.domain</name>
+                                        <name>docs.examples.configs</name>
+                                    </included-packages>
+                                    <excluded-packages>
+                                        <name>product.conf</name>
+                                        <name>appclient</name>
+                                        <name>bin.appclient</name>
+                                    </excluded-packages>
+                                </feature-pack -->
                                 <feature-pack>
                                     <groupId>org.keycloak</groupId>
                                     <artifactId>keycloak-server-galleon-pack</artifactId>

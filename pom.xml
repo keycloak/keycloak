@@ -250,7 +250,7 @@
         </developer>
     </developers>
 
-    <contributors/>
+    <contributors></contributors>
 
     <modules>
         <module>boms</module>
