@@ -127,42 +127,27 @@ Now that you have a Java keystore with the appropriate certificates, you need to
 +
 If you are using absolute paths, remove the optional `relative-to` parameter from your configuration (See <<_operating-mode, operating mode>>).
 
-. Add the new `security-realm` element using the CLI:
+. Configure the keystore using the CLI:
 +
 [source]
 ----
-$ /core-service=management/security-realm=UndertowRealm:add()
-
-$ /core-service=management/security-realm=UndertowRealm/server-identity=ssl:add(keystore-path=keycloak.jks, keystore-relative-to=jboss.server.config.dir, keystore-password=secret)
+$ /subsystem=elytron/key-store=httpsKS:add(relative-to=jboss.server.config.dir,path=keycloak.jks,credential-reference={clear-text=secret},type=JKS)
+$ /subsystem=elytron/key-manager=httpsKM:add(key-store=httpsKS,credential-reference={clear-text=secret})
+$ /subsystem=elytron/server-ssl-context=httpsSSC:add(key-manager=httpsKM,protocols=[\"TLSv1.3\"])
 ----
 +
 If using domain mode, the commands should be executed in every host using the `/host=<host_name>/` prefix (in order to create the `security-realm` in all of them). Here is an example, which you would repeat for each host:
 +
 [source]
 ----
-$ /host=<host_name>/core-service=management/security-realm=UndertowRealm/server-identity=ssl:add(keystore-path=keycloak.jks, keystore-relative-to=jboss.domain.config.dir, keystore-password=secret)
+$ /host=<host_name>/subsystem=elytron/key-store=httpsKS:add(relative-to=jboss.server.config.dir,path=keycloak.jks,credential-reference={clear-text=secret},type=JKS)
 ----
 +
-In the standalone or host configuration file, the `security-realms` element should look like this:
-+
-[source,xml]
-----
-<security-realm name="UndertowRealm">
-    <server-identities>
-        <ssl>
-            <keystore path="keycloak.jks" relative-to="jboss.server.config.dir" keystore-password="secret" />
-        </ssl>
-    </server-identities>
-</security-realm>
-----
-
-. In the standalone or each domain configuration file, search for any instances of `security-realm`.
-
-. Modify the `https-listener` to use the created realm:
+. Modify the `https-listener` to use the `server-ssl-context`previously created:
 +
 [source]
 ----
-$ /subsystem=undertow/server=default-server/https-listener=https:write-attribute(name=security-realm, value=UndertowRealm)
+$ /subsystem=undertow/server=default-server/https-listener=https:write-attribute(name=ssl-context, value=httpsSSC)
 ----
 +
 If using domain mode, prefix the command with the profile that is being used with: `/profile=<profile_name>/`.
@@ -174,7 +159,7 @@ The resulting element, `server name="default-server"`, which is a child element 
 <subsystem xmlns="{subsystem_undertow_xml_urn}">
    <buffer-cache name="default"/>
    <server name="default-server">
-      <https-listener name="https" socket-binding="https" security-realm="UndertowRealm"/>
+      <https-listener name="https" socket-binding="https" ssl-context="httpsSSC"/>
    ...
 </subsystem>
 ----
