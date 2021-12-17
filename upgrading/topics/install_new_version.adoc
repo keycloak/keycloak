@@ -2,6 +2,13 @@
 
 == Upgrading {project_name} server
 
+[WARNING]
+====
+The steps covered in this section are the default upgrade procedure, and may not always be possible due to manual changes required to the configuration guide.
+
+Please refer to the migration changes for details on the version you are upgrading to.
+====
+
 It is important that you upgrade {project_name} server before upgrading the adapters.
 
 To upgrade {project_name} server, complete the following steps:
