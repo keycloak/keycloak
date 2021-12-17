@@ -28,6 +28,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import io.quarkus.dev.console.QuarkusConsole;
+import io.quarkus.dev.console.RedirectPrintStream;
 import io.quarkus.runtime.configuration.QuarkusConfigFactory;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
@@ -47,6 +49,45 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     private static final String KEY_VALUE_SEPARATOR = "[= ]";
     private KeycloakDistribution dist;
 
+    // PARTIAL WORKAROUND FOR: https://github.com/quarkusio/quarkus/issues/22302
+    // PLEASE REMOVE THIS CODE AFTER UPGRADING TO QUARKUS > 2.6.1
+    private RedirectPrintStream redirectOut = null;
+    private RedirectPrintStream redirectErr = null;
+
+    private void closeRedirectStreams() {
+        if (System.out instanceof RedirectPrintStream) {
+            System.out.flush();
+            System.out.close();
+            redirectOut = null;
+        }
+
+        if (System.err instanceof RedirectPrintStream) {
+            System.err.flush();
+            System.err.close();
+            redirectErr = null;
+        }
+    }
+
+    private void beforeEachStreamsWorkaround(boolean dist) {
+        closeRedirectStreams();
+
+        if (dist) {
+            if (System.out != QuarkusConsole.ORIGINAL_OUT) {
+                System.setOut(QuarkusConsole.ORIGINAL_OUT);
+            }
+            if (System.err != QuarkusConsole.ORIGINAL_ERR) {
+                System.setErr(QuarkusConsole.ORIGINAL_ERR);
+            }
+        } else {
+            redirectOut = new RedirectPrintStream(false);
+            redirectErr = new RedirectPrintStream(true);
+
+            System.setOut(redirectOut);
+            System.setErr(redirectErr);
+        }
+    }
+    // WORKAROUND END
+
     @Override
     public void beforeEach(ExtensionContext context) throws Exception {
         DistributionTest distConfig = getDistributionConfig(context);
@@ -62,9 +103,11 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             }
         }
 
-        if (distConfig != null) {
+        beforeEachStreamsWorkaround(distConfig != null);
 
+        if (distConfig != null) {
             if (launch != null) {
+
                 if (dist == null) {
                     dist = createDistribution(distConfig);
                 }
@@ -111,6 +154,8 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         }
 
         super.beforeAll(context);
+
+        closeRedirectStreams();
     }
 
     @Override

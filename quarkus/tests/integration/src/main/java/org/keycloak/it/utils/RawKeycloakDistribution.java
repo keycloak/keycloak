@@ -103,6 +103,15 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             } catch (Exception cause) {
                 keycloak.destroyForcibly();
                 throw new RuntimeException("Failed to stop the server", cause);
+            } finally {
+                try {
+                    keycloak.getInputStream().close();
+                    keycloak.getOutputStream().flush();
+                    keycloak.getOutputStream().close();
+                    keycloak.getErrorStream().close();
+                } catch (IOException cause) {
+                    throw new RuntimeException("Failed to close open streams", cause);
+                }
             }
         }
 
