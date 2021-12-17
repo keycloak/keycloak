@@ -8,7 +8,6 @@ import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.containers.output.ToStringConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.builder.ImageFromDockerfile;
-import org.testcontainers.shaded.com.google.common.util.concurrent.RateLimiter;
 import org.testcontainers.utility.ResourceReaper;
 
 import java.io.File;
@@ -35,12 +34,12 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
     private File cachedDockerfile = createDockerCacheFile();
     private boolean dockerfileFetched = false;
 
-    private GenericContainer keycloakContainer = null;
+    private GenericContainer<?> keycloakContainer = null;
     private String containerId = null;
 
     private Executor parallelReaperExecutor = Executors.newSingleThreadExecutor();
 
-    public <T> DockerKeycloakDistribution(boolean debug, boolean manualStop, boolean reCreate) {
+    public DockerKeycloakDistribution(boolean debug, boolean manualStop, boolean reCreate) {
         this.debug = debug;
         this.manualStop = manualStop;
     }
@@ -117,6 +116,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
 
     // After the web server is responding we are still producing some logs that got checked in the tests
     private void waitForStableOutput() {
+        int retry = 10;
         String lastLine = "";
         boolean stableOutput = false;
         while (!stableOutput) {
@@ -124,11 +124,13 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
                 try {
                     Thread.sleep(200);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
-                String[] splitted = keycloakContainer.getLogs().split("\n");
+                String[] splitted = keycloakContainer.getLogs().split(System.lineSeparator());
                 String newLastLine = splitted[splitted.length - 1];
 
-                stableOutput = lastLine.equals(newLastLine);
+                retry -= 1;
+                stableOutput = lastLine.equals(newLastLine) | (retry <= 0);
                 lastLine = newLastLine;
             } else {
                 stableOutput = true;
