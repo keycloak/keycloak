@@ -40,6 +40,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -58,6 +59,7 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 
 import javax.ws.rs.ClientErrorException;
@@ -65,6 +67,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -81,6 +84,7 @@ import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@EnableFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)
 public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
     public static final String CLIENT_NAME = "application";
@@ -97,6 +101,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         testRealmRep.setRealm(TEST);
         testRealmRep.setEnabled(true);
         testRealms.add(testRealmRep);
+        testRealmRep.setGroups(Arrays.asList(GroupBuilder.create().name("restricted-group").build()));
     }
 
     public static void setupDemo(KeycloakSession session) {
@@ -656,14 +661,35 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
                     Assert.assertEquals(403, e.getResponse().getStatus());
                 }
 
-                UserRepresentation newGroupMemberWithAWrongGroup = createUserRepresentation("new-group-member",
+                UserRepresentation newEmptyGroupList = createUserRepresentation("new-group-member",
+                        "new-group-member@keycloak.org", "New", "Member", true);
+                newEmptyGroupList.setGroups(Collections.emptyList());
+
+                try {
+                    ApiUtil.createUserWithAdminClient(realmClient.realm(TEST), newEmptyGroupList);
+                    Assert.fail("should fail with HTTP response code 403 Forbidden");
+                } catch (WebApplicationException e) {
+                    Assert.assertEquals(403, e.getResponse().getStatus());
+                }
+
+                UserRepresentation newGroupMemberWithNonExistentGroup = createUserRepresentation("new-group-member",
                         "new-group-member@keycloak.org", "New", "Member",
                         Arrays.asList("wrong-group"),true);
                 try {
-                    ApiUtil.createUserWithAdminClient(realmClient.realm(TEST), newGroupMemberWithAWrongGroup);
-                    Assert.fail("should fail with HTTP response code 400 Bad Request");
+                    ApiUtil.createUserWithAdminClient(realmClient.realm(TEST), newGroupMemberWithNonExistentGroup);
+                    Assert.fail("should fail with HTTP response code 403 Forbidden");
                 } catch (WebApplicationException e) {
-                    Assert.assertEquals(400, e.getResponse().getStatus());
+                    Assert.assertEquals(403, e.getResponse().getStatus());
+                }
+
+                UserRepresentation newGroupMemberOfNotManagedGroup = createUserRepresentation("new-group-member",
+                        "new-group-member@keycloak.org", "New", "Member",
+                        Arrays.asList("restricted-group"),true);
+                try {
+                    ApiUtil.createUserWithAdminClient(realmClient.realm(TEST), newGroupMemberOfNotManagedGroup);
+                    Assert.fail("should fail with HTTP response code 403 Forbidden");
+                } catch (WebApplicationException e) {
+                    Assert.assertEquals(403, e.getResponse().getStatus());
                 }
 
                 UserRepresentation newGroupMember = createUserRepresentation("new-group-member",
