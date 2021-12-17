@@ -18,7 +18,9 @@
 package org.keycloak.testsuite.arquillian;
 
 import org.jboss.logging.Logger;
+import org.wildfly.extras.creaper.commands.undertow.AddUndertowListener;
 import org.wildfly.extras.creaper.commands.undertow.RemoveUndertowListener;
+import org.wildfly.extras.creaper.commands.undertow.SslVerifyClient;
 import org.wildfly.extras.creaper.commands.undertow.UndertowListenerType;
 import org.wildfly.extras.creaper.core.CommandFailedException;
 import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
@@ -55,6 +57,23 @@ public class ServerTestEnricherUtil {
             client.execute("/subsystem=undertow/server=default-server/https-listener=https:add(ssl-context=httpsSSC, socket-binding=https)");
             return true;
         } catch (Exception e) {
+            LOG.warn("Cannot add HTTPS listener 'https'");
+            return false;
+        }
+    }
+
+    /**
+     * Add Undertow HTTPS listener for Wildfly 23
+     */
+    public static boolean addHttpsListenerAppServer(OnlineManagementClient client) {
+        try {
+            LOG.debug("Add Undertow HTTPS listener 'https'");
+            client.apply(new AddUndertowListener.HttpsBuilder("https", "default-server", "https")
+                    .securityRealm("UndertowRealm")
+                    .verifyClient(SslVerifyClient.REQUESTED)
+                    .build());
+            return true;
+        } catch (CommandFailedException e) {
             LOG.warn("Cannot add HTTPS listener 'https'");
             return false;
         }
