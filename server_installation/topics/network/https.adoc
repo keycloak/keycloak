@@ -164,4 +164,5 @@ The resulting element, `server name="default-server"`, which is a child element 
 </subsystem>
 ----
 
+For more information on configuring TLS refer to the https://docs.wildfly.org/25/WildFly_Elytron_Security.html#configure-ssltls[WildFly documentation].
 
