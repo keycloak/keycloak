@@ -2677,11 +2677,16 @@ public class UserTest extends AbstractAdminTest {
     public void testCreateUserDoNotGrantRole() {
         testRealm().roles().create(RoleBuilder.create().name("realm-role").build());
 
-        UserRepresentation userRep = UserBuilder.create().username("alice").password("password").addRoles("realm-role").build();
-        String userId = ApiUtil.getCreatedId(testRealm().users().create(userRep));
-        UserResource user = testRealm().users().get(userId);
-        List<RoleRepresentation> realmMappings = user.roles().getAll().getRealmMappings();
+        try {
+            UserRepresentation userRep = UserBuilder.create().username("alice").password("password").addRoles("realm-role")
+                    .build();
+            String userId = ApiUtil.getCreatedId(testRealm().users().create(userRep));
+            UserResource user = testRealm().users().get(userId);
+            List<RoleRepresentation> realmMappings = user.roles().getAll().getRealmMappings();
 
-        assertFalse(realmMappings.stream().map(RoleRepresentation::getName).anyMatch("realm-role"::equals));
+            assertFalse(realmMappings.stream().map(RoleRepresentation::getName).anyMatch("realm-role"::equals));
+        } finally {
+            testRealm().roles().get("realm-role").remove();
+        }
     }
 }
