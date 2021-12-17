@@ -19,7 +19,7 @@
     <parent>
         <artifactId>keycloak-docs-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>15.1.0</version>
+        <version>15.1.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -33,7 +33,7 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-guides-maven-plugin</artifactId>
-            <version>15.1.0</version>
+            <version>15.1.1</version>
         </dependency>
     </dependencies>
 

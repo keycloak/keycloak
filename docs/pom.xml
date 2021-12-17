@@ -19,7 +19,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>15.1.0</version>
+        <version>15.1.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <name>Keycloak Docs Parent</name>

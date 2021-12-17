@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>15.1.0</version>
+        <version>15.1.1</version>
     </parent>
 
     <artifactId>keycloak-server-x-dist</artifactId>
