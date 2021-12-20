@@ -26,7 +26,6 @@ final class HostnamePropertyMappers {
                 builder().from("hostname.strict-https")
                         .to("kc.spi.hostname.default.strict-https")
                         .description("Forces URLs to use HTTPS. Only needed if proxy does not properly set the X-Forwarded-Proto header.")
-                        .hidden(true)
                         .defaultValue(Boolean.TRUE.toString())
                         .type(Boolean.class)
                         .build(),
