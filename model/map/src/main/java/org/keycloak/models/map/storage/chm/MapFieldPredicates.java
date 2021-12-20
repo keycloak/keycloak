@@ -122,7 +122,6 @@ public class MapFieldPredicates {
         put(ROLE_PREDICATES, RoleModel.SearchableFields.DESCRIPTION,              MapRoleEntity::getDescription);
         put(ROLE_PREDICATES, RoleModel.SearchableFields.NAME,                     MapRoleEntity::getName);
         put(ROLE_PREDICATES, RoleModel.SearchableFields.IS_CLIENT_ROLE,           MapRoleEntity::isClientRole);
-        put(ROLE_PREDICATES, RoleModel.SearchableFields.IS_COMPOSITE_ROLE,        MapRoleEntity::isComposite);
 
         put(USER_PREDICATES, UserModel.SearchableFields.REALM_ID,                 MapUserEntity::getRealmId);
         put(USER_PREDICATES, UserModel.SearchableFields.USERNAME,                 MapUserEntity::getUsername);

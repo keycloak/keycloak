@@ -42,6 +42,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.map.storage.jpa.client.entity.JpaClientEntity;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntityImpl;
@@ -50,6 +51,8 @@ import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
 import org.keycloak.models.map.storage.jpa.client.JpaClientMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.role.JpaRoleMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity;
 import org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterProvider;
 import static org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterProvider.Status.VALID;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -70,11 +73,14 @@ public class JpaMapStorageProviderFactory implements
             //client
             .constructor(JpaClientEntity.class,                 JpaClientEntity::new)
             .constructor(MapProtocolMapperEntity.class,         MapProtocolMapperEntityImpl::new)
+            //role
+            .constructor(JpaRoleEntity.class,                   JpaRoleEntity::new)
             .build();
 
     private static final Map<Class<?>, Function<EntityManager, MapKeycloakTransaction>> MODEL_TO_TX = new HashMap<>();
     static {
-        MODEL_TO_TX.put(ClientModel.class, JpaClientMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(ClientModel.class,  JpaClientMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(RoleModel.class,    JpaRoleMapKeycloakTransaction::new);
     }
 
     public MapKeycloakTransaction createTransaction(Class<?> modelType, EntityManager em) {

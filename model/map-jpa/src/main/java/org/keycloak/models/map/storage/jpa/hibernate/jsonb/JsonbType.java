@@ -76,6 +76,9 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> imp
     abstract class IgnoredMetadataFieldsMixIn {
         @JsonIgnore public abstract String getId();
         @JsonIgnore public abstract Map<String, List<String>> getAttributes();
+
+        // roles: assumed it's true when getClient() != null, see AbstractRoleEntity.isClientRole()
+        @JsonIgnore public abstract Boolean isClientRole();
     }
 
     public JsonbType() {
