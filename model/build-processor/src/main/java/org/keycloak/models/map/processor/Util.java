@@ -99,4 +99,11 @@ public class Util {
           .findAny();
     }
 
+    public static String singularToPlural(String word) {
+        return word.endsWith("y") ? word.substring(0, word.length() -1) + "ies" : word + "s";
+    }
+
+    public static String pluralToSingular(String word) {
+        return word.endsWith("ies") ? word.substring(0, word.length() - 3) + "y" : word.endsWith("s") ? word.substring(0, word.length() - 1) : word;
+    }
 }

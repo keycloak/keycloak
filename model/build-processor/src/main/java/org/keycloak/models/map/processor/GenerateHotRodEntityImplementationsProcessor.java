@@ -104,6 +104,7 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
             boolean needsDeepClone = fieldGetters(methodsPerAttribute)
                     .map(ExecutableElement::getReturnType)
                     .anyMatch(fieldType -> ! isKnownCollectionOfImmutableFinalTypes(fieldType) && ! isImmutableFinalType(fieldType));
+            boolean usingGeneratedCloner = ! hasDeepClone && needsDeepClone;
             boolean hasId = methodsPerAttribute.containsKey("Id") || allMembers.stream().anyMatch(el -> "getId".equals(el.getSimpleName().toString()));
 
             JavaFileObject file = processingEnv.getFiler().createSourceFile(hotRodImplClassName);
@@ -132,43 +133,41 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
                         .map(ExecutableElement.class::cast)
                         .filter((ExecutableElement ee) -> ee.getKind() == ElementKind.CONSTRUCTOR)
                         .forEach((ExecutableElement ee) -> {
-                            if (hasDeepClone || ! needsDeepClone) {
-                                pw.println("    "
-                                        + ee.getModifiers().stream().map(Object::toString).collect(Collectors.joining(" "))
-                                        + " " + hotRodSimpleClassName + "(" + methodParameters(ee.getParameters()) + ") {"
-                                );
-                                pw.println("        super(" + ee.getParameters() + ");");
-                                pw.println("        this." + ENTITY_VARIABLE + " = new " + className + "();");
-                                pw.println("    }");
-                            } else if (needsDeepClone) {
+                            // Create constructor and initialize cloner to DUMB_CLONER if necessary
+                            if (usingGeneratedCloner) {
                                 pw.println("    /**");
                                 pw.println("     * @deprecated This constructor uses a {@link DeepCloner#DUMB_CLONER} that does not clone anything. Use {@link #" + hotRodSimpleClassName + "(DeepCloner)} variant instead");
                                 pw.println("     */");
-                                pw.println("    "
-                                        + ee.getModifiers().stream().map(Object::toString).collect(Collectors.joining(" "))
-                                        + " "
-                                        + hotRodSimpleClassName + "(" + methodParameters(ee.getParameters()) + ") { this(DeepCloner.DUMB_CLONER" + (ee.getParameters().isEmpty() ? "" : ", ") + ee.getParameters() + "); }"
-                                );
-                                pw.println("    "
-                                        + ee.getModifiers().stream().map(Object::toString).collect(Collectors.joining(" "))
-                                        + " "
-                                        + hotRodSimpleClassName + "(DeepCloner cloner" + (ee.getParameters().isEmpty() ? "" : ", ") + methodParameters(ee.getParameters()) + ") {"
-                                );
-                                pw.println("        super(" + ee.getParameters() + ");");
-                                pw.println("        this.cloner = cloner;");
-                                pw.println("        this." + ENTITY_VARIABLE + " = new " + className + "();");
-                                pw.println("    }");
                             }
+                            pw.println("    "
+                                    + ee.getModifiers().stream().map(Object::toString).collect(Collectors.joining(" "))
+                                    + " " + hotRodSimpleClassName + "(" + methodParameters(ee.getParameters()) + ") {"
+                            );
+                            pw.println("        super(" + ee.getParameters() + ");");
+                            if (usingGeneratedCloner) pw.println("        this.cloner = DeepCloner.DUMB_CLONER;");
+                            pw.println("        this." + ENTITY_VARIABLE + " = new " + className + "();");
+                            pw.println("    }");
                         });
 
                 // Add constructor for setting HotRodEntity
+                if (usingGeneratedCloner) {
+                    pw.println("    /**");
+                    pw.println("     * @deprecated This constructor uses a {@link DeepCloner#DUMB_CLONER} that does not clone anything. Use {@link #" + hotRodSimpleClassName + "(DeepCloner)} variant instead");
+                    pw.println("     */");
+                }
                 pw.println("    " +
                         "public " + hotRodSimpleClassName + "(" + className + " " + ENTITY_VARIABLE + ") {"
                 );
                 pw.println("        this." + ENTITY_VARIABLE + " = " + ENTITY_VARIABLE + ";");
-                if (! hasDeepClone && needsDeepClone) {
+                if (usingGeneratedCloner) {
                     pw.println("        this.cloner = DeepCloner.DUMB_CLONER;");
                 }
+                pw.println("    }");
+
+                pw.println("    public " + hotRodSimpleClassName + "(DeepCloner cloner) {");
+                pw.println("        super();");
+                pw.println("        this." + ENTITY_VARIABLE + " = new " + className + "();");
+                if (usingGeneratedCloner) pw.println("        this.cloner = cloner;");
                 pw.println("    }");
 
                 // equals, hashCode, toString

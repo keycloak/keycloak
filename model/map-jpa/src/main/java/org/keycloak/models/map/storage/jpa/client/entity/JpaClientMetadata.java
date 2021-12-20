@@ -18,8 +18,17 @@ package org.keycloak.models.map.storage.jpa.client.entity;
 
 import java.io.Serializable;
 import org.keycloak.models.map.client.MapClientEntityImpl;
+import org.keycloak.models.map.common.DeepCloner;
 
 public class JpaClientMetadata extends MapClientEntityImpl implements Serializable {
+
+    public JpaClientMetadata(DeepCloner cloner) {
+        super(cloner);
+    }
+
+    public JpaClientMetadata() {
+        super();
+    }
 
     private Integer entityVersion;
 

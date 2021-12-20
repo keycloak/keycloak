@@ -42,6 +42,8 @@ import org.hibernate.annotations.TypeDefs;
 import org.keycloak.models.map.client.MapClientEntity.AbstractClientEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import static org.keycloak.models.map.storage.jpa.client.JpaClientMapStorage.SUPPORTED_VERSION;
+
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
 @Entity
@@ -85,6 +87,10 @@ public class JpaClientEntity extends AbstractClientEntity implements Serializabl
      */
     public JpaClientEntity() {
         this.metadata = new JpaClientMetadata();
+    }
+
+    public JpaClientEntity(DeepCloner cloner) {
+        this.metadata = new JpaClientMetadata(cloner);
     }
 
     /**
