@@ -45,6 +45,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
@@ -258,6 +259,10 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
         props.put("client-key-password", "REPLACE WITH THE KEY PASSWORD IN KEYSTORE");
         props.put("client-key-alias", client.getClientId());
         props.put("token-timeout", 10);
+        String algorithm = client.getAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG);
+        if (algorithm != null) {
+            props.put("algorithm", algorithm);
+        }
 
         Map<String, Object> config = new HashMap<>();
         config.put("jwt", props);

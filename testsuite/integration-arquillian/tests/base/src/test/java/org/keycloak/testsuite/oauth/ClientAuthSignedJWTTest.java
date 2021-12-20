@@ -278,8 +278,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
     }
 
-    @Test
-    public void testCodeToTokenRequestSuccess() throws Exception {
+    public void testCodeToTokenRequestSuccess(String algorithm) throws Exception {
         oauth.clientId("client2");
         oauth.doLogin("test-user@localhost", "password");
         EventRepresentation loginEvent = events.expectLogin()
@@ -287,7 +286,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
                 .assertEvent();
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code, getClient2SignedJWT());
+        OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code, getClient2SignedJWT(algorithm));
 
         assertEquals(200, response.getStatusCode());
         oauth.verifyToken(response.getAccessToken());
@@ -296,6 +295,37 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
                 .client("client2")
                 .detail(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
                 .assertEvent();
+    }
+
+    public void testCodeToTokenRequestSuccessForceAlgInClient(String algorithm) throws Exception {
+        ClientManager.realm(adminClient.realm("test")).clientId("client2")
+                .updateAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG, algorithm);
+        try {
+            testCodeToTokenRequestSuccess(algorithm);
+        } finally {
+            ClientManager.realm(adminClient.realm("test")).clientId("client2")
+                    .updateAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG, null);
+        }
+    }
+
+    @Test
+    public void testCodeToTokenRequestSuccess() throws Exception {
+        testCodeToTokenRequestSuccess(Algorithm.RS256);
+    }
+
+    @Test
+    public void testCodeToTokenRequestSuccess512() throws Exception {
+        testCodeToTokenRequestSuccess(Algorithm.RS512);
+    }
+
+    @Test
+    public void testCodeToTokenRequestSuccessPS384() throws Exception {
+        testCodeToTokenRequestSuccessForceAlgInClient(Algorithm.PS384);
+    }
+
+    @Test
+    public void testCodeToTokenRequestSuccessPS512() throws Exception {
+        testCodeToTokenRequestSuccessForceAlgInClient(Algorithm.PS512);
     }
 
     @Test
@@ -494,14 +524,14 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
             OAuthClient.AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, signingAlgorithm));
             assertEquals(200, response.getStatusCode());
 
-            // send a JWS using a algorithm other than the default (RS256)
+            // sending a JWS using another RSA based alg (PS256) should work as alg is not specified
             publicKey = keyPair.getPublic();
             privateKey = keyPair.getPrivate();
             oauth.clientId("client2");
             response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, Algorithm.PS256));
-            assertEquals(400, response.getStatusCode());
-            assertEquals("Client authentication with signed JWT failed: Signature on JWT token failed validation", response.getErrorDescription());
+            assertEquals(200, response.getStatusCode());
 
+            // sending an invalid EC (ES256) one should not work
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRepresentation).setTokenEndpointAuthSigningAlg(Algorithm.ES256);
             clientResource.update(clientRepresentation);
             response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, Algorithm.PS256));
@@ -1261,12 +1291,16 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         }
     }
 
+    private String getClient2SignedJWT(String algorithm) {
+        return getClientSignedJWT(getClient2KeyPair(), "client2", algorithm);
+    }
+
     private String getClient1SignedJWT() {
-        return getClientSignedJWT(getClient1KeyPair(), "client1");
+        return getClientSignedJWT(getClient1KeyPair(), "client1", Algorithm.RS256);
     }
 
     private String getClient2SignedJWT() {
-        return getClientSignedJWT(getClient2KeyPair(), "client2");
+        return getClientSignedJWT(getClient2KeyPair(), "client2", Algorithm.RS256);
     }
 
     private KeyPair getClient1KeyPair() {
@@ -1280,8 +1314,12 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     }
 
     private String getClientSignedJWT(KeyPair keyPair, String clientId) {
+        return getClientSignedJWT(keyPair, clientId, Algorithm.RS256);
+    }
+
+    private String getClientSignedJWT(KeyPair keyPair, String clientId, String algorithm) {
         JWTClientCredentialsProvider jwtProvider = new JWTClientCredentialsProvider();
-        jwtProvider.setupKeyPair(keyPair);
+        jwtProvider.setupKeyPair(keyPair, algorithm);
         jwtProvider.setTokenTimeout(10);
         return jwtProvider.createSignedRequestToken(clientId, getRealmInfoUrl());
     }

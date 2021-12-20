@@ -42,6 +42,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ServicesLogger;
@@ -232,7 +233,10 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
         // }
         Map<String, Object> props = new HashMap<>();
         props.put("secret", client.getSecret());
-        // "algorithm" field is not saved because keycloak does not manage client's property of which algorithm is used for client secret signed JWT.
+        String algorithm = client.getAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG);
+        if (algorithm != null) {
+            props.put("algorithm", algorithm);
+        }
 
         Map<String, Object> config = new HashMap<>();
         config.put("secret-jwt", props);

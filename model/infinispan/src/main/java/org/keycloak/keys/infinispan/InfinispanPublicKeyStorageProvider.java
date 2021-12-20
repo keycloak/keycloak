@@ -142,7 +142,8 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
         if (entry != null) {
             KeyWrapper publicKey = algorithm != null ? getPublicKeyByAlg(entry.getCurrentKeys(), algorithm) : getPublicKey(entry.getCurrentKeys(), kid);
             if (publicKey != null) {
-                return publicKey;
+                // return a copy of the key to not modify the cached one
+                return publicKey.cloneKey();
             }
         }
 
@@ -168,7 +169,8 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
                 // Computation finished. Let's see if key is available
                 KeyWrapper publicKey = algorithm != null ? getPublicKeyByAlg(entry.getCurrentKeys(), algorithm) : getPublicKey(entry.getCurrentKeys(), kid);
                 if (publicKey != null) {
-                    return publicKey;
+                    // return a copy of the key to not modify the cached one
+                    return publicKey.cloneKey();
                 }
 
             } catch (ExecutionException ee) {
