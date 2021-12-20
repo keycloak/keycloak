@@ -171,7 +171,7 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
                 pw.println("            return " + types.erasure(firstParameterType) + ".class;");
                 pw.println("        }");
             });
-            
+
             FieldAccessorType.getMethod(FieldAccessorType.MAP_ADD, methods, fieldName, types, fieldType).ifPresent(method -> {
                 TypeMirror firstParameterType = method.getParameters().get(0).asType();
                 TypeMirror secondParameterType = method.getParameters().get(1).asType();
@@ -182,7 +182,7 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
                 pw.println("            return " + types.erasure(secondParameterType) + ".class;");
                 pw.println("        }");
             });
-            
+
             for (ExecutableElement ee : methods) {
                 FieldAccessorType fat = FieldAccessorType.determineType(ee, fieldName, types, fieldType);
                 printMethodBody(pw, fat, ee, className, fieldType);
@@ -265,6 +265,7 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
             boolean needsDeepClone = fieldGetters(methodsPerAttribute)
               .map(ExecutableElement::getReturnType)
               .anyMatch(fieldType -> ! isKnownCollectionOfImmutableFinalTypes(fieldType) && ! isImmutableFinalType(fieldType));
+            boolean usingGeneratedCloner = ! hasDeepClone && needsDeepClone;
 
             JavaFileObject file = processingEnv.getFiler().createSourceFile(mapImplClassName);
             try (PrintWriter pw = new PrintWriterNoJavaLang(file.openWriter())) {
@@ -283,27 +284,25 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
                   .map(ExecutableElement.class::cast)
                   .filter((ExecutableElement ee) -> ee.getKind() == ElementKind.CONSTRUCTOR)
                   .forEach((ExecutableElement ee) -> {
-                      if (hasDeepClone || ! needsDeepClone) {
-                          pw.println("    "
-                            + ee.getModifiers().stream().map(Object::toString).collect(Collectors.joining(" "))
-                            + " " + mapSimpleClassName + "(" + methodParameters(ee.getParameters()) + ") { super(" + ee.getParameters() + "); }"
-                          );
-                      } else if (needsDeepClone) {
+                      // Create constructor and initialize cloner to DUMB_CLONER if necessary
+                      if (usingGeneratedCloner) {
                           pw.println("    /**");
                           pw.println("     * @deprecated This constructor uses a {@link DeepCloner#DUMB_CLONER} that does not clone anything. Use {@link #" + mapSimpleClassName + "(DeepCloner)} variant instead");
                           pw.println("     */");
-                          pw.println("    "
-                            + ee.getModifiers().stream().map(Object::toString).collect(Collectors.joining(" "))
-                            + " "
-                            + mapSimpleClassName + "(" + methodParameters(ee.getParameters()) + ") { this(DeepCloner.DUMB_CLONER" + (ee.getParameters().isEmpty() ? "" : ", ") + ee.getParameters() + "); }"
-                          );
-                          pw.println("    "
-                            + ee.getModifiers().stream().map(Object::toString).collect(Collectors.joining(" "))
-                            + " "
-                            + mapSimpleClassName + "(DeepCloner cloner" + (ee.getParameters().isEmpty() ? "" : ", ") + methodParameters(ee.getParameters()) + ") { super(" + ee.getParameters() + "); this.cloner = cloner; }"
-                          );
                       }
+                      pw.println("    "
+                              + ee.getModifiers().stream().map(Object::toString).collect(Collectors.joining(" "))
+                              + " " + mapSimpleClassName + "(" + methodParameters(ee.getParameters()) + ") {"
+                      );
+                      pw.println("        super(" + ee.getParameters() + ");");
+                      if (usingGeneratedCloner) pw.println("        this.cloner = DeepCloner.DUMB_CLONER;");
+                      pw.println("    }");
                   });
+
+                pw.println("    "
+                        + "public "
+                        + mapSimpleClassName + "(DeepCloner cloner) { super(); " + (!usingGeneratedCloner ? "" : "this.cloner = cloner;") + "}"
+                );
 
                 // equals, hashCode, toString
                 pw.println("    @Override public boolean equals(Object o) {");
@@ -339,7 +338,7 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
                 pw.println("    }");
 
                 // deepClone
-                if (! hasDeepClone && needsDeepClone) {
+                if (usingGeneratedCloner) {
                     pw.println("    private final DeepCloner cloner;");
                     pw.println("    public <V> V deepClone(V obj) {");
                     pw.println("        return cloner.from(obj);");
@@ -363,7 +362,7 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
 
                         if (parentMethod.isPresent()) {
                             processingEnv.getMessager().printMessage(Kind.OTHER, "Method " + method + " is declared in a parent class.", method);
-                        } else if (fat != FieldAccessorType.UNKNOWN && ! printMethodBody(pw, fat, method, "f" + me.getKey(), fieldType)) {
+                        } else if (fat == FieldAccessorType.UNKNOWN || ! printMethodBody(pw, fat, method, "f" + me.getKey(), fieldType)) {
                             processingEnv.getMessager().printMessage(Kind.WARNING, "Could not determine desired semantics of method from its signature", method);
                         }
                     }
@@ -446,10 +445,12 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
                     pw.println("    }");
                     return true;
                 case COLLECTION_DELETE:
+                    boolean needsReturn = method.getReturnType().getKind() != TypeKind.VOID;
                     pw.println("    @SuppressWarnings(\"unchecked\") @Override public " + method.getReturnType() + " " + method.getSimpleName() + "(" + firstParameterType + " p0) {");
-                    pw.println("        if (" + fieldName + " == null) { return; }");
+                    pw.println("        if (" + fieldName + " == null) { return" + (needsReturn ? " false" : "") + "; }");
                     pw.println("        boolean removed = " + fieldName + ".remove(p0)" + ("java.util.Map".equals(typeElement.getQualifiedName().toString()) ? " != null" : "") + ";");
                     pw.println("        updated |= removed;");
+                    if (needsReturn) pw.println("        return removed;");
                     pw.println("    }");
                     return true;
                 case MAP_ADD:

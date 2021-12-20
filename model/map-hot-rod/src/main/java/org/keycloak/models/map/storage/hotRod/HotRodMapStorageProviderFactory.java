@@ -49,9 +49,9 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
     private static final Logger LOG = Logger.getLogger(HotRodMapStorageProviderFactory.class);
 
     private final static DeepCloner CLONER = new DeepCloner.Builder()
-            .constructorDC(MapClientEntity.class,             HotRodClientEntityDelegate::new)
+            .constructor(MapClientEntity.class,               HotRodClientEntityDelegate::new)
             .constructor(MapProtocolMapperEntity.class,       HotRodProtocolMapperEntityDelegate::new)
-            .constructorDC(MapGroupEntity.class,              HotRodGroupEntityDelegate::new)
+            .constructor(MapGroupEntity.class,                HotRodGroupEntityDelegate::new)
             .build();
 
     public static final Map<Class<?>, HotRodEntityDescriptor<?, ?>> ENTITY_DESCRIPTOR_MAP = new HashMap<>();

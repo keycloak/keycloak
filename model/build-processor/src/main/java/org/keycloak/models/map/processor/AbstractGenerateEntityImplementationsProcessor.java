@@ -50,6 +50,7 @@ import javax.lang.model.SourceVersion;
 import static org.keycloak.models.map.processor.FieldAccessorType.GETTER;
 import static org.keycloak.models.map.processor.Util.getGenericsDeclaration;
 import static org.keycloak.models.map.processor.Util.isMapType;
+import static org.keycloak.models.map.processor.Util.singularToPlural;
 
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public abstract class AbstractGenerateEntityImplementationsProcessor extends AbstractProcessor {
@@ -123,11 +124,11 @@ public abstract class AbstractGenerateEntityImplementationsProcessor extends Abs
 
         // Merge plurals with singulars
         methodsPerAttribute.keySet().stream()
-                .filter(key -> methodsPerAttribute.containsKey(key + "s"))
+                .filter(key -> methodsPerAttribute.containsKey(singularToPlural(key)))
                 .collect(Collectors.toSet())
                 .forEach(key -> {
                     HashSet<ExecutableElement> removed = methodsPerAttribute.remove(key);
-                    methodsPerAttribute.get(key + "s").addAll(removed);
+                    methodsPerAttribute.get(singularToPlural(key)).addAll(removed);
                 });
 
         return methodsPerAttribute;
