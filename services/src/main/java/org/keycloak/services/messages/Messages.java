@@ -229,6 +229,8 @@ public class Messages {
 
     public static final String IDENTITY_PROVIDER_LOGIN_FAILURE = "identityProviderLoginFailure";
 
+    public static final String INSUFFICIENT_LEVEL_OF_AUTHENTICATION = "insufficientLevelOfAuthentication";
+
     public static final String FAILED_LOGOUT = "failedLogout";
 
     public static final String CONSENT_DENIED="consentDenied";
