@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.webauthn;
 
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -178,6 +179,9 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             loginPage.login(username, password);
 
             webAuthnLoginPage.assertCurrent();
+            assertThat(webAuthnLoginPage.getAuthenticatorsCount(), is(1));
+            assertThat(webAuthnLoginPage.getAuthenticatorsLabels(), Matchers.contains(authenticatorLabel));
+
             webAuthnLoginPage.clickAuthenticate();
 
             appPage.assertCurrent();
@@ -204,7 +208,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
     }
 
     @Test
-    public void testWebAuthnPasswordlessAlternativeWithWebAuthnAndPassword() throws IOException {
+    public void webAuthnPasswordlessAlternativeWithWebAuthnAndPassword() throws IOException {
         String userId = null;
 
         final String WEBAUTHN_LABEL = "webauthn";
@@ -280,6 +284,9 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             passwordPage.login("password");
 
             webAuthnLoginPage.assertCurrent();
+            assertThat(webAuthnLoginPage.getAuthenticatorsCount(), is(1));
+            assertThat(webAuthnLoginPage.getAuthenticatorsLabels(), Matchers.contains(WEBAUTHN_LABEL));
+
             webAuthnLoginPage.clickAuthenticate();
 
             appPage.assertCurrent();
@@ -310,7 +317,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
     }
 
     @Test
-    public void testWebAuthnTwoFactorAndWebAuthnPasswordlessTogether() throws IOException {
+    public void webAuthnTwoFactorAndWebAuthnPasswordlessTogether() throws IOException {
         // Change binding to browser-webauthn-passwordless. This is flow, which contains both "webauthn" and "webauthn-passwordless" authenticator
         try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm()).setBrowserFlow("browser-webauthn-passwordless").update()) {
             // Login as test-user@localhost with password

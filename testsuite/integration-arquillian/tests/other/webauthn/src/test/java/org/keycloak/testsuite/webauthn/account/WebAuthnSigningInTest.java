@@ -17,20 +17,17 @@
 
 package org.keycloak.testsuite.webauthn.account;
 
+import org.hamcrest.Matchers;
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
-import org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAuthenticatorFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
-import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
-import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
-import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
 import org.keycloak.testsuite.ui.account2.page.SigningInPage;
-import org.keycloak.testsuite.ui.account2.page.utils.SigningInPageUtils;
 import org.keycloak.testsuite.webauthn.authenticators.UseVirtualAuthenticators;
+import org.keycloak.testsuite.webauthn.pages.WebAuthnLoginPage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,13 +40,15 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
-import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
 import static org.keycloak.testsuite.ui.account2.page.utils.SigningInPageUtils.assertUserCredential;
 import static org.keycloak.testsuite.ui.account2.page.utils.SigningInPageUtils.testSetUpLink;
 import static org.keycloak.testsuite.util.UIUtils.refreshPageAndWaitForLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest implements UseVirtualAuthenticators {
+
+    @Page
+    protected WebAuthnLoginPage webAuthnLoginPage;
 
     @Test
     public void categoriesTest() {
@@ -78,7 +77,7 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest implement
     }
 
     @Test
-    public void testCreateWebAuthnSameUserLabel() {
+    public void createWebAuthnSameUserLabel() {
         final String SAME_LABEL = "key123";
 
         // Do we really allow to have several authenticators with the same user label??
@@ -112,7 +111,7 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest implement
     }
 
     @Test
-    public void testMultipleSecurityKeys() {
+    public void multipleSecurityKeys() {
         final String LABEL = "SecurityKey#";
 
         List<SigningInPage.UserCredential> createdCredentials = new ArrayList<>();
@@ -168,16 +167,39 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest implement
     }
 
     @Test
-    public void testCancelRegistration() {
-        cancelRegistration(false);
+    public void displayAvailableAuthenticators() {
+        addWebAuthnCredential("authenticator#1");
+        addWebAuthnCredential("authenticator#2");
+
+        final int webAuthnCount = webAuthnCredentialType.getUserCredentialsCount();
+        assertThat(webAuthnCount, is(2));
+
+        setUpWebAuthnFlow("webAuthnFlow");
+        logout();
+
+        signingInPage.navigateTo();
+        loginToAccount();
+
+        webAuthnLoginPage.assertCurrent();
+
+        assertThat(webAuthnLoginPage.getAuthenticatorsCount(), is(2));
+        assertThat(webAuthnLoginPage.getAuthenticatorsLabels(), Matchers.contains("authenticator#1", "authenticator#2"));
+
+        webAuthnLoginPage.clickAuthenticate();
+        signingInPage.assertCurrent();
     }
 
     @Test
-    public void testCancelPasswordlessRegistration() {
-        cancelRegistration(true);
+    public void cancelRegistration() {
+        checkCancelRegistration(false);
     }
 
-    private void cancelRegistration(boolean passwordless) {
+    @Test
+    public void cancelPasswordlessRegistration() {
+        checkCancelRegistration(true);
+    }
+
+    private void checkCancelRegistration(boolean passwordless) {
         SigningInPage.CredentialType credentialType = passwordless ? webAuthnPwdlessCredentialType : webAuthnCredentialType;
 
         credentialType.clickSetUpLink();

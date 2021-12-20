@@ -18,11 +18,16 @@
 package org.keycloak.testsuite.webauthn.pages;
 
 import org.keycloak.testsuite.pages.LanguageComboboxAwarePage;
+import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Page shown during WebAuthn login. Page is useful with Chrome testing API
@@ -31,6 +36,9 @@ public class WebAuthnLoginPage extends LanguageComboboxAwarePage {
 
     @FindBy(id = "authenticateWebAuthnButton")
     private WebElement authenticateButton;
+
+    @FindBy(id = "kc-webauthn-authenticator-label")
+    private List<WebElement> authenticatorsLabels;
 
     public void clickAuthenticate() {
         WaitUtils.waitUntilElement(authenticateButton).is().clickable();
@@ -43,6 +51,25 @@ public class WebAuthnLoginPage extends LanguageComboboxAwarePage {
             return driver.getPageSource().contains("navigator.credentials.get");
         } catch (NoSuchElementException e) {
             return false;
+        }
+    }
+
+    public int getAuthenticatorsCount() {
+        try {
+            return authenticatorsLabels.size();
+        } catch (NoSuchElementException e) {
+            return 0;
+        }
+    }
+
+    public List<String> getAuthenticatorsLabels() {
+        try {
+            return authenticatorsLabels.stream()
+                    .filter(Objects::nonNull)
+                    .map(UIUtils::getTextFromElement)
+                    .collect(Collectors.toList());
+        } catch (NoSuchElementException e) {
+            return Collections.emptyList();
         }
     }
 

@@ -309,7 +309,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
     }
 
     private Response createErrorResponse(AuthenticationFlowContext context, final String errorCase) {
-        LoginFormsProvider provider = context.form().setError(errorCase);
+        LoginFormsProvider provider = context.form().setError(errorCase, "");
         UserModel user = context.getUser();
         if (user != null) {
             WebAuthnAuthenticatorsBean authenticators = new WebAuthnAuthenticatorsBean(context.getSession(), context.getRealm(), user, getCredentialType());

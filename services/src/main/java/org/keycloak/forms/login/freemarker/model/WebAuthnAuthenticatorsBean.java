@@ -25,6 +25,11 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+
 public class WebAuthnAuthenticatorsBean {
     private List<WebAuthnAuthenticatorBean> authenticators = new LinkedList<WebAuthnAuthenticatorBean>();
 
@@ -34,9 +39,20 @@ public class WebAuthnAuthenticatorsBean {
                 .map(WebAuthnCredentialModel::createFromCredentialModel)
                 .map(webAuthnCredential -> {
                     String credentialId = Base64Url.encodeBase64ToBase64Url(webAuthnCredential.getWebAuthnCredentialData().getCredentialId());
-                    String label = (webAuthnCredential.getUserLabel()==null || webAuthnCredential.getUserLabel().isEmpty()) ? "label missing" : webAuthnCredential.getUserLabel();
-                    return new WebAuthnAuthenticatorBean(credentialId, label);
+                    String label = (webAuthnCredential.getUserLabel() == null || webAuthnCredential.getUserLabel().isEmpty()) ? "label missing" : webAuthnCredential.getUserLabel();
+                    String createdAt = getDateTimeFromMillis(webAuthnCredential.getCreatedDate());
+                    return new WebAuthnAuthenticatorBean(credentialId, label, createdAt);
                 }).collect(Collectors.toList());
+    }
+
+    private String getDateTimeFromMillis(long millis) {
+        return getDateTimeFromMillis(millis, "dd-MM-yyyy HH:mm");
+    }
+
+    private String getDateTimeFromMillis(long millis, String format) {
+        final LocalDateTime date = LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneId.systemDefault());
+        final DateTimeFormatter createdFormat = DateTimeFormatter.ofPattern(format);
+        return date.format(createdFormat);
     }
 
     public List<WebAuthnAuthenticatorBean> getAuthenticators() {
@@ -46,10 +62,12 @@ public class WebAuthnAuthenticatorsBean {
     public static class WebAuthnAuthenticatorBean {
         private final String credentialId;
         private final String label;
+        private final String createdAt;
 
-        public WebAuthnAuthenticatorBean(String credentialId, String label) {
+        public WebAuthnAuthenticatorBean(String credentialId, String label, String createdAt) {
             this.credentialId = credentialId;
             this.label = label;
+            this.createdAt = createdAt;
         }
 
         public String getCredentialId() {
@@ -58,6 +76,10 @@ public class WebAuthnAuthenticatorsBean {
 
         public String getLabel() {
             return this.label;
+        }
+
+        public String getCreatedAt() {
+            return this.createdAt;
         }
     }
 }
