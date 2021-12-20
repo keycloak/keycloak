@@ -199,7 +199,7 @@
         <org.apache.kerby.kerby-asn1.version>2.0.0</org.apache.kerby.kerby-asn1.version>
 
         <!-- WildFly Galleon Build related properties -->
-        <org.wildfly.galleon-plugins.version>5.2.2.Final</org.wildfly.galleon-plugins.version>
+        <org.wildfly.galleon-plugins.version>5.2.7.Final</org.wildfly.galleon-plugins.version>
         <org.jboss.galleon.version>4.2.8.Final</org.jboss.galleon.version>
 
         <!-- Galleon -->
