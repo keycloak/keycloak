@@ -37,6 +37,7 @@ import { ProviderIconMapper } from "./ProviderIconMapper";
 import { ManageOderDialog } from "./ManageOrderDialog";
 import { toIdentityProvider } from "./routes/IdentityProvider";
 import { toIdentityProviderCreate } from "./routes/IdentityProviderCreate";
+import helpUrls from "../help-urls";
 
 export default function IdentityProvidersSection() {
   const { t } = useTranslation("identity-providers");
@@ -168,6 +169,7 @@ export default function IdentityProvidersSection() {
       <ViewHeader
         titleKey="common:identityProviders"
         subKey="identity-providers:listExplain"
+        helpUrl={helpUrls.identityProvidersUrl}
       />
       <PageSection
         variant={providers.length === 0 ? "default" : "light"}

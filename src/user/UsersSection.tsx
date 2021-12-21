@@ -41,6 +41,7 @@ import { toUser } from "./routes/User";
 import { toAddUser } from "./routes/AddUser";
 
 import "./user-section.css";
+import helpUrls from "../help-urls";
 
 type BruteUser = UserRepresentation & {
   brute?: Record<string, object>;
@@ -260,7 +261,11 @@ export default function UsersSection() {
     <>
       <DeleteConfirm />
       <UnlockUsersConfirm />
-      <ViewHeader titleKey="users:title" />
+      <ViewHeader
+        titleKey="users:title"
+        subKey="users:usersExplain"
+        helpUrl={helpUrls.usersUrl}
+      />
       <PageSection
         data-testid="users-page"
         variant="light"

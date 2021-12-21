@@ -1,5 +1,6 @@
 export default {
   groups: {
+    groups: "Groups",
     groupDetails: "Group details",
     childGroups: "Child groups",
     createGroup: "Create group",
@@ -32,7 +33,7 @@ export default {
     moveGroupSuccess: "Group moved",
     moveGroupError: "Could not move group {{error}}",
     tableOfGroups: "Table of groups",
-    groupsDescription: "Description goes here",
+    groupsDescription: "Placeholder for groups explanation.",
     groupCreated: "Group created",
     couldNotCreateGroup: "Could not create group {{error}}",
     createAGroup: "Create a group",

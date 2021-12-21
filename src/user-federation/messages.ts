@@ -3,7 +3,7 @@ export default {
     userFederation: "User federation",
     descriptionLanding:
       "This is the description for the user federation landing page",
-    userFederationExplanation:
+    userFederationExplain:
       "Keycloak can federate external user databases. Out of the box we have support for LDAP and Active Directory.",
     getStarted: "To get started, select a provider from the list below.",
     providers: "Add providers",

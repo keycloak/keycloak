@@ -122,7 +122,7 @@ export default {
     generalSettings: "General Settings",
     capabilityConfig: "Capability config",
     clientsExplain:
-      "Clients are applications and services that can request authentication of a user",
+      "Clients are applications and services that can request authentication of a user.",
     explainBearerOnly:
       "This is a special OIDC type. This client only allows bearer token requests and cannot participate in browser logins.",
     createSuccess: "Client created successfully",

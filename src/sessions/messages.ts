@@ -1,7 +1,7 @@
 export default {
   sessions: {
     title: "Sessions",
-    sessionExplain: "Some description about sessions",
+    sessionExplain: "Placeholder for sessions explanation.",
     searchForSession: "Search session",
     subject: "Subject",
     lastAccess: "Last access",

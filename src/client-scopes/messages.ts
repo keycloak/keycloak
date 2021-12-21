@@ -5,7 +5,7 @@ export default {
     grantedClientScopes: "Granted client scopes",
     clientScopeDetails: "Client scope details",
     clientScopeExplain:
-      "Client scopes allow you to define a common set of protocol mappers and roles, which are shared between multiple clients",
+      "Client scopes allow you to define a common set of protocol mappers and roles, which are shared between multiple clients.",
     searchFor: "Search for client scope",
     protocol: "Protocol",
     assignedType: "Assigned type",

@@ -45,6 +45,7 @@ import {
 } from "./details/SearchFilter";
 import type { Row } from "../clients/scopes/ClientScopes";
 import { getProtocolName } from "../clients/utils";
+import helpUrls from "../help-urls";
 
 export default function ClientScopesSection() {
   const { realm } = useRealm();
@@ -167,6 +168,7 @@ export default function ClientScopesSection() {
       <ViewHeader
         titleKey="clientScopes"
         subKey="client-scopes:clientScopeExplain"
+        helpUrl={helpUrls.clientScopesUrl}
       />
       <PageSection variant="light" className="pf-u-p-0">
         <KeycloakDataTable

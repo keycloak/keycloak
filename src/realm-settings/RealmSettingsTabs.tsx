@@ -52,6 +52,7 @@ import { UserRegistration } from "./UserRegistration";
 import { toDashboard } from "../dashboard/routes/Dashboard";
 import environment from "../environment";
 import { UserProfileTab } from "./UserProfileTab";
+import helpUrls from "../help-urls";
 
 type RealmSettingsHeaderProps = {
   onChange: (value: boolean) => void;
@@ -118,6 +119,8 @@ const RealmSettingsHeader = ({
       />
       <ViewHeader
         titleKey={toUpperCase(realmName)}
+        subKey="realm-settings:realmSettingsExplain"
+        helpUrl={helpUrls.realmSettingsUrl}
         divider={false}
         dropdownItems={[
           <DropdownItem

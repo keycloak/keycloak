@@ -3,6 +3,7 @@ import { PageSection } from "@patternfly/react-core";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { RolesList } from "./RolesList";
+import helpUrls from "../help-urls";
 
 export default function RealmRolesSection() {
   const adminClient = useAdminClient();
@@ -24,7 +25,11 @@ export default function RealmRolesSection() {
 
   return (
     <>
-      <ViewHeader titleKey="roles:title" subKey="roles:roleExplain" />
+      <ViewHeader
+        titleKey="roles:title"
+        subKey="roles:roleExplain"
+        helpUrl={helpUrls.realmRolesUrl}
+      />
       <PageSection variant="light" padding={{ default: "noPadding" }}>
         <RolesList loader={loader} />
       </PageSection>

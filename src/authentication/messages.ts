@@ -1,6 +1,7 @@
 export default {
   authentication: {
     title: "Authentication",
+    authenticationExplain: "Placeholder for authentication explanation.",
     flows: "Flows",
     requiredActions: "Required actions",
     policies: "Policies",

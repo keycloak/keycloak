@@ -1,5 +1,6 @@
 export default {
   "realm-settings": {
+    realmSettingsExplain: "Placeholder for realm settings explanation.",
     partialImport: "Partial import",
     partialExport: "Partial export",
     deleteRealm: "Delete realm",

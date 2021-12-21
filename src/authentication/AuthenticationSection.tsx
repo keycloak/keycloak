@@ -32,6 +32,7 @@ import { RequiredActions } from "./RequiredActions";
 import { Policies } from "./policies/Policies";
 
 import "./authentication-section.css";
+import helpUrls from "../help-urls";
 
 type UsedBy = "specificClients" | "default" | "specificProviders";
 
@@ -211,7 +212,12 @@ export default function AuthenticationSection() {
           }}
         />
       )}
-      <ViewHeader titleKey="authentication:title" divider={false} />
+      <ViewHeader
+        titleKey="authentication:title"
+        subKey="authentication:authenticationExplain"
+        helpUrl={helpUrls.authenticationUrl}
+        divider={false}
+      />
       <PageSection variant="light" className="pf-u-p-0">
         <KeycloakTabs isBox>
           <Tab

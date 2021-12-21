@@ -22,6 +22,7 @@ import "./SessionsSection.css";
 import { RevocationModal } from "./RevocationModal";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { LogoutAllSessionsModal } from "./LogoutAllSessionsModal";
+import helpUrls from "../help-urls";
 
 const Clients = (row: UserSessionRepresentation) => {
   return (
@@ -121,6 +122,7 @@ export default function SessionsSection() {
         dropdownItems={dropdownItems}
         titleKey="sessions:title"
         subKey="sessions:sessionExplain"
+        helpUrl={helpUrls.sessionsUrl}
       />
       <PageSection variant="light" className="pf-u-p-0">
         {revocationModalOpen && (

@@ -43,6 +43,7 @@ import { toRealmSettings } from "../realm-settings/routes/RealmSettings";
 import { toUser } from "../user/routes/User";
 import { AdminEvents } from "./AdminEvents";
 import "./events.css";
+import helpUrls from "../help-urls";
 
 type UserEventSearchForm = {
   client: string;
@@ -413,6 +414,7 @@ export default function EventsSection() {
             page realm settings to configure.
           </Trans>
         }
+        helpUrl={helpUrls.eventsUrl}
         divider={false}
       />
       <PageSection variant="light" className="pf-u-p-0">

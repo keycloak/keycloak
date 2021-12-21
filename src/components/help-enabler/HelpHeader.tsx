@@ -13,6 +13,7 @@ import React, { createContext, FunctionComponent, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useRequiredContext from "../../utils/useRequiredContext";
 import "./help-header.css";
+import helpUrls from "../../help-urls";
 
 type HelpContextProps = {
   enabled: boolean;
@@ -44,7 +45,12 @@ export const HelpHeader = () => {
   const { t } = useTranslation();
 
   const dropdownItems = [
-    <DropdownItem key="link" id="link">
+    <DropdownItem
+      key="link"
+      id="link"
+      href={helpUrls.documentationUrl}
+      target="_blank"
+    >
       <Split>
         <SplitItem isFilled>{t("documentation")}</SplitItem>
         <SplitItem>

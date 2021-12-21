@@ -31,6 +31,7 @@ import { toAddClient } from "./routes/AddClient";
 import { toClient } from "./routes/Client";
 import { toImportClient } from "./routes/ImportClient";
 import { isRealmClient, getProtocolName } from "./utils";
+import helpUrls from "../help-urls";
 
 export default function ClientsSection() {
   const { t } = useTranslation("clients");
@@ -99,6 +100,7 @@ export default function ClientsSection() {
       <ViewHeader
         titleKey="clients:clientList"
         subKey="clients:clientsExplain"
+        helpUrl={helpUrls.clientsUrl}
         divider={false}
       />
       <PageSection variant="light" className="pf-u-p-0">

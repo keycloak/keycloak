@@ -28,6 +28,7 @@ import { toGroupsSearch } from "./routes/GroupsSearch";
 import { GroupRoleMapping } from "./GroupRoleMapping";
 
 import "./GroupsSection.css";
+import helpUrls from "../help-urls";
 
 export default function GroupsSection() {
   const { t } = useTranslation("groups");
@@ -107,6 +108,7 @@ export default function GroupsSection() {
       <ViewHeader
         titleKey={!id ? "groups:groups" : currentGroup().name!}
         subKey={!id ? "groups:groupsDescription" : ""}
+        helpUrl={!id ? helpUrls.groupsUrl : ""}
         divider={!id}
         dropdownItems={
           id
