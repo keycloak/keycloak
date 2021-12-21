@@ -139,6 +139,12 @@
                         <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
                         <Import-Package>${keycloak.osgi.import}</Import-Package>
                         <Export-Package>${keycloak.osgi.export}</Export-Package>
+                        <Require-Capability>
+                          osgi.extender; filter:="(osgi.extender=osgi.serviceloader.processor)", osgi.serviceloader; filter:="(osgi.serviceloader=org.keycloak.adapters.authorization.ClaimInformationPointProviderFactory)";cardinality:=multiple, osgi.extender; filter:="(osgi.extender=osgi.serviceloader.registrar)"
+                        </Require-Capability>
+                        <Provide-Capability>
+                          osgi.serviceloader; osgi.serviceloader=org.keycloak.adapters.authorization.ClaimInformationPointProviderFactory
+                        </Provide-Capability>
                     </instructions>
                 </configuration>
             </plugin>
