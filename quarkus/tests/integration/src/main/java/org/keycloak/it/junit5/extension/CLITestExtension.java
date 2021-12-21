@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import io.quarkus.dev.console.QuarkusConsole;
 import io.quarkus.runtime.configuration.QuarkusConfigFactory;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
@@ -72,6 +73,8 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             }
         } else {
             configureProfile(context);
+            // WORKAROUND: this intercepts the output when actually starting the server.
+            QuarkusConsole.installRedirects();
             super.beforeEach(context);
         }
     }
