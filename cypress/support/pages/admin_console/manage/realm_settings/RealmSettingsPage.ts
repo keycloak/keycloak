@@ -48,6 +48,9 @@ export default class RealmSettingsPage {
 
   selectDefaultLocale = "select-default-locale";
   defaultLocaleList = "select-default-locale > div > ul";
+  supportedLocalesTypeahead =
+    "#kc-l-supported-locales-select-multi-typeahead-typeahead";
+  supportedLocalesToggle = "#kc-l-supported-locales";
   emailSaveBtn = "email-tab-save";
   managedAccessSwitch = "user-managed-access-switch";
   userRegSwitch = "user-reg-switch";
@@ -75,7 +78,7 @@ export default class RealmSettingsPage {
   testConnectionButton = "test-connection-button";
   modalTestConnectionButton = "modal-test-connection-button";
   emailAddressInput = "email-address-input";
-  addBundleButton = "no-message-bundles-empty-action";
+  addBundleButton = "add-bundle-button";
   confirmAddBundle = "add-bundle-confirm-button";
   keyInput = "key-input";
   valueInput = "value-input";

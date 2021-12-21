@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { cloneDeep, isEqual, uniqWith } from "lodash";
 import { Controller, useForm, useFormContext, useWatch } from "react-hook-form";
 import {
   ActionGroup,
@@ -21,14 +22,32 @@ import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/r
 import { FormAccess } from "../components/form-access/FormAccess";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { FormPanel } from "../components/scroll-form/FormPanel";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { useAdminClient } from "../context/auth/AdminClient";
+import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { AddMessageBundleModal } from "./AddMessageBundleModal";
 import { useAlerts } from "../components/alert/Alerts";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { DEFAULT_LOCALE } from "../i18n";
+import {
+  EditableTextCell,
+  validateCellEdits,
+  cancelCellEdits,
+  applyCellEdits,
+  RowErrors,
+  RowEditType,
+  IRowCell,
+  TableBody,
+  TableHeader,
+  Table,
+  TableVariant,
+  IRow,
+  IEditableTextCell,
+} from "@patternfly/react-table";
+import type { EditableTextCellProps } from "@patternfly/react-table/dist/esm/components/Table/base";
+import { PaginatingTableToolbar } from "../components/table-toolbar/PaginatingTableToolbar";
+import { SearchIcon } from "@patternfly/react-icons";
+import { useWhoAmI } from "../context/whoami/WhoAmI";
 
 type LocalizationTabProps = {
   save: (realm: RealmRepresentation) => void;
@@ -38,6 +57,12 @@ type LocalizationTabProps = {
 };
 
 export type KeyValueType = { key: string; value: string };
+
+export enum RowEditAction {
+  Save = "save",
+  Cancel = "cancel",
+  Edit = "edit",
+}
 
 export type BundleForm = {
   messageBundle: KeyValueType;
@@ -60,11 +85,14 @@ export const LocalizationTab = ({
 
   const { getValues, control, handleSubmit, formState } = useFormContext();
   const [selectMenuValueSelected, setSelectMenuValueSelected] = useState(false);
+  const [messageBundles, setMessageBundles] = useState<[string, string][]>([]);
+  const [tableRows, setTableRows] = useState<IRow[]>([]);
 
   const themeTypes = useServerInfo().themes!;
   const bundleForm = useForm<BundleForm>({ mode: "onChange" });
   const { addAlert, addError } = useAlerts();
   const { realm: currentRealm } = useRealm();
+  const { whoAmI } = useWhoAmI();
 
   const watchSupportedLocales = useWatch<string[]>({
     control,
@@ -76,31 +104,170 @@ export const LocalizationTab = ({
     defaultValue: false,
   });
 
-  const loader = async () => {
-    try {
-      const result = await adminClient.realms.getRealmLocalizationTexts({
-        realm: realm.realm!,
-        selectedLocale:
-          selectMenuLocale || getValues("defaultLocale") || DEFAULT_LOCALE,
-      });
+  const [tableKey, setTableKey] = useState(0);
+  const [max, setMax] = useState(10);
+  const [first, setFirst] = useState(0);
+  const [filter, setFilter] = useState("");
 
-      return Object.entries(result);
-    } catch (error) {
-      return [];
-    }
+  const refreshTable = () => {
+    setTableKey(tableKey + 1);
   };
 
-  const tableLoader = async () => {
-    try {
-      const result = await adminClient.realms.getRealmLocalizationTexts({
-        realm: currentRealm,
-        selectedLocale: selectMenuLocale,
+  useFetch(
+    async () => {
+      let result = await adminClient.realms.getRealmLocalizationTexts({
+        first,
+        max,
+        realm: realm.realm!,
+        selectedLocale:
+          selectMenuLocale || getValues("defaultLocale") || whoAmI.getLocale(),
       });
 
-      return Object.entries(result);
-    } catch (error) {
-      return [];
+      const searchInBundles = (idx: number) => {
+        return Object.entries(result).filter((i) => i[idx].includes(filter));
+      };
+
+      if (filter) {
+        const filtered = uniqWith(
+          searchInBundles(0).concat(searchInBundles(1)),
+          isEqual
+        );
+
+        result = Object.fromEntries(filtered);
+      }
+
+      return { result };
+    },
+    ({ result }) => {
+      const bundles = Object.entries(result).slice(first, first + max + 1);
+      setMessageBundles(bundles);
+
+      const updatedRows = bundles.map<IRow>((messageBundle) => ({
+        rowEditBtnAriaLabel: () =>
+          t("rowEditBtnAriaLabel", {
+            messageBundle: messageBundle[1],
+          }),
+        rowSaveBtnAriaLabel: () =>
+          t("rowSaveBtnAriaLabel", {
+            messageBundle: messageBundle[1],
+          }),
+        rowCancelBtnAriaLabel: () =>
+          t("rowCancelBtnAriaLabel", {
+            messageBundle: messageBundle[1],
+          }),
+        cells: [
+          {
+            title: (
+              value: string,
+              rowIndex: number,
+              cellIndex: number,
+              props
+            ) => (
+              <EditableTextCell
+                value={value}
+                rowIndex={rowIndex}
+                cellIndex={cellIndex}
+                props={props}
+                isDisabled
+                handleTextInputChange={handleTextInputChange}
+                inputAriaLabel={messageBundle[0]}
+              />
+            ),
+            props: {
+              value: messageBundle[0],
+            },
+          },
+          {
+            title: (
+              value: string,
+              rowIndex: number,
+              cellIndex: number,
+              props: EditableTextCellProps
+            ) => (
+              <EditableTextCell
+                value={value}
+                rowIndex={rowIndex}
+                cellIndex={cellIndex}
+                props={props}
+                handleTextInputChange={handleTextInputChange}
+                inputAriaLabel={messageBundle[1]}
+              />
+            ),
+            props: {
+              value: messageBundle[1],
+            },
+          },
+        ],
+      }));
+      setTableRows(updatedRows);
+
+      return bundles;
+    },
+    [tableKey, filter, first, max]
+  );
+
+  const handleTextInputChange = (
+    newValue: string,
+    evt: any,
+    rowIndex: number,
+    cellIndex: number
+  ) => {
+    setTableRows((prev) => {
+      const newRows = cloneDeep(prev);
+      (
+        newRows[rowIndex]?.cells?.[cellIndex] as IEditableTextCell
+      ).props.editableValue = newValue;
+      return newRows;
+    });
+  };
+
+  const updateEditableRows = async (
+    evt: any,
+    type: RowEditType,
+    isEditable?: boolean | undefined,
+    rowIndex?: number,
+    validationErrors?: RowErrors
+  ) => {
+    if (rowIndex === undefined) {
+      return;
     }
+    const newRows = cloneDeep(tableRows);
+    let newRow: IRow;
+    const invalid =
+      !!validationErrors && Object.keys(validationErrors).length > 0;
+
+    if (invalid) {
+      newRow = validateCellEdits(newRows[rowIndex], type, validationErrors);
+    } else if (type === RowEditAction.Cancel) {
+      newRow = cancelCellEdits(newRows[rowIndex]);
+    } else {
+      newRow = applyCellEdits(newRows[rowIndex], type);
+    }
+    newRows[rowIndex] = newRow;
+
+    // Update the copy of the retrieved data set so we can save it when the user saves changes
+
+    if (!invalid && type === RowEditAction.Save) {
+      const key = (newRow.cells?.[0] as IRowCell).props.value;
+      const value = (newRow.cells?.[1] as IRowCell).props.value;
+
+      // We only have one editable value, otherwise we'd need to save each
+      try {
+        await adminClient.realms.addLocalization(
+          {
+            realm: realm.realm!,
+            selectedLocale:
+              selectMenuLocale || getValues("defaultLocale") || DEFAULT_LOCALE,
+            key,
+          },
+          value
+        );
+        addAlert(t("updateMessageBundleSuccess"), AlertVariant.success);
+      } catch (error) {
+        addAlert(t("updateMessageBundleError"), AlertVariant.danger);
+      }
+    }
+    setTableRows(newRows);
   };
 
   const handleModalToggle = () => {
@@ -129,17 +296,8 @@ export const LocalizationTab = ({
     </SelectGroup>,
   ];
 
-  const [tableKey, setTableKey] = useState(0);
-
-  const refreshTable = () => {
-    setTableKey(new Date().getTime());
-  };
-
   const addKeyValue = async (pair: KeyValueType): Promise<void> => {
     try {
-      adminClient.setConfig({
-        requestConfig: { headers: { "Content-Type": "text/plain" } },
-      });
       await adminClient.realms.addLocalization(
         {
           realm: currentRealm!,
@@ -154,9 +312,9 @@ export const LocalizationTab = ({
         realmName: currentRealm!,
       });
       refreshTable();
-      addAlert(t("pairCreatedSuccess"), AlertVariant.success);
+      addAlert(t("addMessageBundleSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("realm-settings:pairCreatedError", error);
+      addError(t("addMessageBundleError"), error);
     }
   };
 
@@ -331,10 +489,32 @@ export const LocalizationTab = ({
             {t("messageBundleDescription")}
           </TextContent>
           <div className="tableBorder">
-            <KeycloakDataTable
-              key={tableKey}
-              loader={selectMenuValueSelected ? tableLoader : loader}
-              ariaLabelKey="realm-settings:localization"
+            <PaginatingTableToolbar
+              count={messageBundles.length}
+              first={first}
+              max={max}
+              onNextClick={setFirst}
+              onPreviousClick={setFirst}
+              onPerPageSelect={(first, max) => {
+                setFirst(first);
+                setMax(max);
+              }}
+              inputGroupName={"common:search"}
+              inputGroupOnEnter={(search) => {
+                setFilter(search);
+                setFirst(0);
+                setMax(10);
+              }}
+              inputGroupPlaceholder={t("searchForMessageBundle")}
+              toolbarItem={
+                <Button
+                  data-testid="add-bundle-button"
+                  isDisabled={!formState.isSubmitSuccessful}
+                  onClick={() => setAddMessageBundleModalOpen(true)}
+                >
+                  {t("addMessageBundle")}
+                </Button>
+              }
               searchTypeComponent={
                 <ToolbarItem>
                   <Select
@@ -363,37 +543,38 @@ export const LocalizationTab = ({
                   </Select>
                 </ToolbarItem>
               }
-              toolbarItem={
-                <Button
-                  data-testid="add-bundle-button"
-                  isDisabled={!formState.isSubmitSuccessful}
-                  onClick={() => setAddMessageBundleModalOpen(true)}
-                >
-                  {t("addMessageBundle")}
-                </Button>
-              }
-              searchPlaceholderKey=" "
-              emptyState={
+            >
+              {messageBundles.length === 0 && !filter && (
                 <ListEmptyState
-                  hasIcon={true}
+                  hasIcon
                   message={t("noMessageBundles")}
                   instructions={t("noMessageBundlesInstructions")}
                   onPrimaryAction={handleModalToggle}
-                  primaryActionText={t("addMessageBundle")}
                 />
-              }
-              canSelectAll
-              columns={[
-                {
-                  name: "Key",
-                  cellRenderer: (row) => row[0],
-                },
-                {
-                  name: "Value",
-                  cellRenderer: (row) => row[1],
-                },
-              ]}
-            />
+              )}
+              {messageBundles.length === 0 && filter && (
+                <ListEmptyState
+                  hasIcon
+                  icon={SearchIcon}
+                  isSearchVariant
+                  message={t("common:noSearchResults")}
+                  instructions={t("common:noSearchResultsInstructions")}
+                />
+              )}
+              {messageBundles.length !== 0 && (
+                <Table
+                  aria-label={t("editableRowsTable")}
+                  data-testid="editable-rows-table"
+                  variant={TableVariant.compact}
+                  cells={[t("common:key"), t("common:value")]}
+                  rows={tableRows}
+                  onRowEdit={updateEditableRows}
+                >
+                  <TableHeader />
+                  <TableBody />
+                </Table>
+              )}
+            </PaginatingTableToolbar>
           </div>
         </FormPanel>
       </PageSection>

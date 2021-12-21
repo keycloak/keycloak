@@ -79,15 +79,10 @@ describe("Realm settings events tab tests", () => {
   };
 
   const addBundle = () => {
-    const localizationUrl = `/auth/admin/realms/${realmName}/localization/en`;
-    cy.intercept(localizationUrl).as("localizationFetch");
-
     realmSettingsPage.addKeyValuePair(
       "key_" + (Math.random() + 1).toString(36).substring(7),
       "value_" + (Math.random() + 1).toString(36).substring(7)
     );
-
-    cy.wait(["@localizationFetch"]);
 
     return this;
   };
@@ -177,10 +172,24 @@ describe("Realm settings events tab tests", () => {
 
     cy.findByTestId("rs-localization-tab").click();
 
+    cy.findByTestId("internationalization-disabled").click({ force: true });
+
+    cy.get(realmSettingsPage.supportedLocalesTypeahead)
+      .click()
+      .get(".pf-c-select__menu-item")
+      .contains("Dansk")
+      .click();
+
+    cy.get("#kc-l-supported-locales").click();
+
+    cy.findByTestId("localization-tab-save").click();
+
+    cy.findByTestId("add-bundle-button").click({ force: true });
+
     addBundle();
 
     masthead.checkNotificationMessage(
-      "Success! The localization text has been created."
+      "Success! The message bundle has been added."
     );
   });
 
