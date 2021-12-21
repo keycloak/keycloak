@@ -46,7 +46,6 @@
         <microprofile-metrics-api.version>3.0</microprofile-metrics-api.version>
         <wildfly.common.version>1.5.4.Final-format-001</wildfly.common.version>
         <infinispan.version>13.0.0.Final</infinispan.version>
-        <xmlsec.version>2.1.7</xmlsec.version>
 
         <!--
             Java EE dependencies. Not available from JDK 11+.
