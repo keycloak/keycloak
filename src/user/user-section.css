@@ -123,18 +123,8 @@ article.pf-c-card.pf-m-flat.kc-available-idps > div > div > h1 {
   margin: 6px 0 10px 35px;
 }
 
-.kc-password, .kc-passwordConfirmation {
-  width: 355px;
-  float: right;
-}
-
-.pf-c-form__group-label {
-  width: max-content;
-}
-
-.pf-m-error {
-  display: inline-block;
-  margin-left: var(--pf-global--spacer--xl);
+.keycloak__user-credentials__reset-form {
+  --pf-c-form--m-horizontal__group-label--md--GridColumnWidth: 13rem;
 }
 
 .kc-edit-icon {
