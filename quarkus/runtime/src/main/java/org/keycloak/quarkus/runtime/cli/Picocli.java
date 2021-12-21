@@ -395,8 +395,9 @@ public final class Picocli {
         while (iterator.hasNext()) {
             String arg = iterator.next();
 
-            if (arg.startsWith("--spi")) {
+            if (arg.startsWith("--spi") || arg.startsWith("-D")) {
                 // TODO: ignore properties for providers for now, need to fetch them from the providers, otherwise CLI will complain about invalid options
+                // also ignores system properties as they are set when starting the JVM
                 // change this once we are able to obtain properties from providers
                 iterator.remove();
 

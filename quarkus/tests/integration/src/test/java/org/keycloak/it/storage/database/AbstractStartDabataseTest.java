@@ -15,36 +15,40 @@
  * limitations under the License.
  */
 
-package org.keycloak.it.database.dist;
+package org.keycloak.it.storage.database;
 
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
-import org.keycloak.it.junit5.extension.DistributionTest;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 
-@DistributionTest
-public class CustomTransactionTest {
+public abstract class AbstractStartDabataseTest {
 
     @Test
-    @Launch({ "-Dkc.db.tx-type=enabled", "-Dkc.db.driver=org.postgresql.xa.PGXADataSource", "build", "--db=postgres" })
-    void failNoXAUsingXADriver(LaunchResult result) {
+    @Launch({ "start-dev" })
+    void testSuccessful(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertError("Driver org.postgresql.xa.PGXADataSource is an XA datasource, but XA transactions have not been enabled on the default datasource");
+        cliResult.assertStartedDevMode();
     }
 
     @Test
-    @Launch({ "-Dkc.db.driver=com.microsoft.sqlserver.jdbc.SQLServerDriver", "build", "--db=mssql" })
-    void failXAUsingNonXADriver(LaunchResult result) {
+    @Launch({ "start-dev", "--db-username=wrong" })
+    void testWrongUsername(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertError("Driver is not an XA dataSource, while XA has been enabled in the configuration of the default datasource");
+        cliResult.assertMessage("ERROR: Failed to obtain JDBC connection");
+        assertWrongUsername(cliResult);
     }
 
+    protected abstract void assertWrongUsername(CLIResult cliResult);
+
     @Test
-    @Launch({ "-Dkc.db.tx-type=enabled", "-Dkc.db.driver=com.microsoft.sqlserver.jdbc.SQLServerDriver", "build", "--db=mssql" })
-    void testNoXa(LaunchResult result) {
+    @Launch({ "start-dev", "--db-password=wrong" })
+    void testWrongPassword(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertBuild();
+        cliResult.assertMessage("ERROR: Failed to obtain JDBC connection");
+        assertWrongPassword(cliResult);
     }
+
+    protected abstract void assertWrongPassword(CLIResult cliResult);
 }
