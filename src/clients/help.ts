@@ -173,5 +173,8 @@ export default {
     ownerManagedAccess:
       "If enabled, the access to this resource can be managed by the resource owner.",
     resourceAttribute: "The attributes associated wth the resource.",
+    resetActions:
+      "Set of actions to execute when sending the user a Reset Actions Email. 'Verify email' sends an email to the user to verify their email address. 'Update profile' requires user to enter in new personal information. 'Update password' requires user to enter in a new password. 'Configure OTP' requires setup of a mobile password generator.",
+    lifespan: "Maximum time before the action permit expires.",
   },
 };

@@ -6,18 +6,20 @@ import {
   SplitItem,
   TextInput,
   TextInputProps,
+  ToggleMenuBaseProps,
 } from "@patternfly/react-core";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 export type Unit = "seconds" | "minutes" | "hours" | "days";
 
-export type TimeSelectorProps = TextInputProps & {
-  value: number;
-  units?: Unit[];
-  onChange: (time: number | string) => void;
-  className?: string;
-};
+export type TimeSelectorProps = TextInputProps &
+  ToggleMenuBaseProps & {
+    value: number;
+    units?: Unit[];
+    onChange: (time: number | string) => void;
+    className?: string;
+  };
 
 export const TimeSelector = ({
   value,
@@ -25,6 +27,7 @@ export const TimeSelector = ({
   onChange,
   className,
   min,
+  menuAppendTo,
   ...rest
 }: TimeSelectorProps) => {
   const { t } = useTranslation("common");
@@ -102,6 +105,7 @@ export const TimeSelector = ({
             updateTimeout(timeValue, value as number);
             setOpen(false);
           }}
+          menuAppendTo={menuAppendTo}
           selections={[multiplier]}
           onToggle={() => {
             setOpen(!open);

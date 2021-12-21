@@ -10,6 +10,7 @@ import { keycloakBefore } from "../support/util/keycloak_before";
 import GroupModal from "../support/pages/admin_console/manage/groups/GroupModal";
 import UserGroupsPage from "../support/pages/admin_console/manage/users/UserGroupsPage";
 import AdminClient from "../support/util/AdminClient";
+import CredentialsPage from "../support/pages/admin_console/manage/users/CredentialsPage";
 
 let groupName = "group";
 let groupsList: string[] = [];
@@ -54,9 +55,11 @@ describe("Users test", () => {
   const modalUtils = new ModalUtils();
   const listingPage = new ListingPage();
   const userDetailsPage = new UserDetailsPage();
+  const credentialsPage = new CredentialsPage();
   const attributesTab = new AttributesTab();
 
   let itemId = "user_crud";
+  let itemIdWithCred = "user_crud_cred";
 
   describe("User creation", () => {
     beforeEach(() => {
@@ -102,6 +105,34 @@ describe("Users test", () => {
       createUserPage.save();
 
       masthead.checkNotificationMessage("The user has been created");
+
+      sidebarPage.goToUsers();
+    });
+
+    it("Create user with credentials test", () => {
+      itemIdWithCred += "_" + (Math.random() + 1).toString(36).substring(7);
+
+      createUserPage.goToCreateUser();
+
+      createUserPage.createUser(itemIdWithCred);
+
+      createUserPage.save();
+
+      masthead.checkNotificationMessage("The user has been created");
+
+      sidebarPage.goToUsers();
+
+      listingPage.goToItemDetails(itemIdWithCred);
+
+      userDetailsPage.fillUserData().save();
+      masthead.checkNotificationMessage("The user has been saved");
+
+      credentialsPage
+        .goToCredentialsTab()
+        .clickEmptyStatePasswordBtn()
+        .fillPasswordForm()
+        .clickConfirmationBtn()
+        .clickSetPasswordBtn();
 
       sidebarPage.goToUsers();
     });
@@ -199,6 +230,27 @@ describe("Users test", () => {
       cy.findByTestId("empty-state").contains("No consents");
     });
 
+    it("Reset credential of User with empty state", () => {
+      cy.wait("@brute-force");
+      listingPage.goToItemDetails(itemId);
+      credentialsPage
+        .goToCredentialsTab()
+        .clickEmptyStateResetBtn()
+        .fillResetCredentialForm();
+      masthead.checkNotificationMessage("Failed to send email to user.");
+    });
+
+    it("Reset credential of User with existing credentials", () => {
+      cy.wait("@brute-force");
+      listingPage.goToItemDetails(itemIdWithCred);
+      credentialsPage
+        .goToCredentialsTab()
+        .clickResetBtn()
+        .fillResetCredentialForm();
+
+      masthead.checkNotificationMessage("Failed to send email to user.");
+    });
+
     it("Delete user test", () => {
       // Delete
       listingPage.deleteItem(itemId);
@@ -208,6 +260,17 @@ describe("Users test", () => {
       masthead.checkNotificationMessage("The user has been deleted");
 
       listingPage.itemExist(itemId, false);
+    });
+
+    it("Delete user with credential test", () => {
+      // Delete
+      listingPage.deleteItem(itemIdWithCred);
+
+      modalUtils.checkModalTitle("Delete user?").confirmModal();
+
+      masthead.checkNotificationMessage("The user has been deleted");
+
+      listingPage.itemExist(itemIdWithCred, false);
     });
   });
 });

@@ -4,7 +4,7 @@ export default class UserDetailsPage {
   saveBtn: string;
   cancelBtn: string;
   emailInput: string;
-  emailValue: string;
+  emailValue: () => string;
   firstNameInput: string;
   firstNameValue: string;
   lastNameInput: string;
@@ -17,7 +17,7 @@ export default class UserDetailsPage {
     this.saveBtn = "save-user";
     this.cancelBtn = "cancel-create-user";
     this.emailInput = "email-input";
-    this.emailValue =
+    this.emailValue = () =>
       "example" +
       "_" +
       (Math.random() + 1).toString(36).substring(7) +
@@ -32,7 +32,7 @@ export default class UserDetailsPage {
   }
 
   fillUserData() {
-    cy.findByTestId(this.emailInput).type(this.emailValue);
+    cy.findByTestId(this.emailInput).type(this.emailValue());
     cy.findByTestId(this.firstNameInput).type(this.firstNameValue);
     cy.findByTestId(this.lastNameInput).type(this.lastNameValue);
     cy.findByTestId(this.enabledSwitch).check({ force: true });

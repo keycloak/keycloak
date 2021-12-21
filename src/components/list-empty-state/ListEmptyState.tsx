@@ -66,6 +66,9 @@ export const ListEmptyState = ({
           {secondaryActions.map((action) => (
             <Button
               key={action.text}
+              data-testid={`${action.text
+                .replace(/\W+/g, "-")
+                .toLowerCase()}-empty-action`}
               variant={action.type || ButtonVariant.secondary}
               onClick={action.onClick}
             >
