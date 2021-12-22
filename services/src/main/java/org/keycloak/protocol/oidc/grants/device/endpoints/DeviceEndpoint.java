@@ -22,6 +22,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -35,6 +36,8 @@ import org.keycloak.models.OAuth2DeviceTokenStoreProvider;
 import org.keycloak.models.OAuth2DeviceUserCodeModel;
 import org.keycloak.models.OAuth2DeviceUserCodeProvider;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpointChecker;
@@ -202,7 +205,7 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
 
         // code is not known, we can infer the client neither. ask the user to provide the code.
         if (StringUtil.isNullOrEmpty(userCode)) {
-            return createVerificationPage(null);
+            return createVerificationPage(null,null);
         } else {
             // code exists, probably due to using a verification_uri_complete. Start the authentication considering the client
             // that started the flow.
@@ -212,20 +215,20 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
             OAuth2DeviceCodeModel deviceCode = store.getByUserCode(realm, formattedUserCode);
 
             if (deviceCode == null) {
-                return invalidUserCodeResponse(Messages.OAUTH2_DEVICE_INVALID_USER_CODE, "device code not found (it may already have been used)");
+                return invalidUserCodeResponse(Messages.OAUTH2_DEVICE_INVALID_USER_CODE_HEADER, Messages.OAUTH2_DEVICE_INVALID_USER_CODE, "device code not found (it may already have been used)");
             }
 
             if (!deviceCode.isPending()) {
                 event.detail("device_code_user_session_id", deviceCode.getUserSessionId());
-                return invalidUserCodeResponse(Messages.OAUTH2_DEVICE_INVALID_USER_CODE, "device code already used and not yet deleted");
+                return invalidUserCodeResponse(Messages.OAUTH2_DEVICE_INVALID_USER_CODE_HEADER, Messages.OAUTH2_DEVICE_INVALID_USER_CODE, "device code already used and not yet deleted");
             }
 
             if (deviceCode.isDenied()) {
-                return invalidUserCodeResponse(Messages.OAUTH2_DEVICE_INVALID_USER_CODE, "device code denied");
+                return invalidUserCodeResponse(Messages.OAUTH2_DEVICE_INVALID_USER_CODE_HEADER, Messages.OAUTH2_DEVICE_INVALID_USER_CODE, "device code denied");
             }
 
             if (deviceCode.isExpired()) {
-                return invalidUserCodeResponse(Messages.OAUTH2_DEVICE_EXPIRED_USER_CODE, "device code expired");
+                return invalidUserCodeResponse(Messages.OAUTH2_DEVICE_EXPIRED_USER_CODE_HEADER, Messages.OAUTH2_DEVICE_EXPIRED_USER_CODE, "device code expired");
             }
 
             return processVerification(deviceCode, formattedUserCode);
@@ -286,27 +289,38 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
      * @param reason For event details; not exposed to end user
      * @return Verification page response with error message
      */
-    private Response invalidUserCodeResponse(String errorMessage, String reason) {
+    private Response invalidUserCodeResponse(String headerMessage, String errorMessage, String reason) {
         event.error(Errors.INVALID_OAUTH2_USER_CODE);
         event.detail(Details.REASON, reason);
         logger.debugf("invalid user code: %s", reason);
-        return createVerificationPage(errorMessage);
+        return createVerificationPage(headerMessage ,errorMessage);
     }
 
-    private Response createVerificationPage(String errorMessage) {
+    private Response createVerificationPage(String errorHeader, String errorMessage) {
         String execution = AuthenticatedClientSessionModel.Action.USER_CODE_VERIFICATION.name();
 
         LoginFormsProvider provider = session.getProvider(LoginFormsProvider.class)
             .setExecution(execution);
 
+        if (errorHeader != null) {
+            FormMessage headerError = new FormMessage(errorHeader, errorHeader);
+            provider = provider.addError(headerError);
+        }
+
         if (errorMessage != null) {
-            provider = provider.setError(errorMessage);
+            FormMessage error = new FormMessage(errorMessage, errorMessage);
+            provider = provider.addError(error);
         }
 
         return provider.createOAuth2DeviceVerifyUserCodePage();
     }
 
     private Response processVerification(OAuth2DeviceCodeModel deviceCode, String userCode) {
+        long expiresIn = deviceCode.getExpiration() - Time.currentTime();
+        if (expiresIn < 0) {
+            return invalidUserCodeResponse(Messages.OAUTH2_DEVICE_EXPIRED_USER_CODE_HEADER, Messages.OAUTH2_DEVICE_EXPIRED_USER_CODE, "device code expired");
+        }
+
         ClientModel client = realm.getClientByClientId(deviceCode.getClientId());
         AuthenticationSessionModel authenticationSession = createAuthenticationSession(client, deviceCode.getScope());
 
