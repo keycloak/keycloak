@@ -42,6 +42,20 @@ public class MessagesPerFieldBean {
         }
     }
 
+    public void addMessage(String field, String messageText, String titleText, MessageType messageType) {
+        if (messageText == null || messageText.trim().isEmpty())
+            return;
+        if (field == null)
+            field = "global";
+
+        MessageBean fm = messagesPerField.get(field);
+        if (fm == null) {
+            messagesPerField.put(field, new MessageBean(messageText, messageType).appendTitle(titleText));
+        } else {
+            fm.appendSummaryLine(messageText);
+        }
+    }
+
     /**
      * Check if message for given field exists
      *
