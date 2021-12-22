@@ -284,6 +284,7 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         }
     }
 
+<<<<<<< HEAD
     /**
      * @param errorMessage Message code for the verification page
      * @param reason For event details; not exposed to end user
@@ -296,19 +297,15 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         return createVerificationPage(headerMessage ,errorMessage);
     }
 
-    private Response createVerificationPage(String errorHeader, String errorMessage) {
+    private Response createVerificationPage(String errorTitle, String errorMessage) {
         String execution = AuthenticatedClientSessionModel.Action.USER_CODE_VERIFICATION.name();
 
         LoginFormsProvider provider = session.getProvider(LoginFormsProvider.class)
             .setExecution(execution);
 
-        if (errorHeader != null) {
-            FormMessage headerError = new FormMessage(errorHeader, errorHeader);
-            provider = provider.addError(headerError);
-        }
-
         if (errorMessage != null) {
             FormMessage error = new FormMessage(errorMessage, errorMessage);
+            error.setTitle(errorTitle);
             provider = provider.addError(error);
         }
 

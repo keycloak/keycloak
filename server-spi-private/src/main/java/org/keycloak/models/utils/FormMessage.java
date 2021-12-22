@@ -32,6 +32,7 @@ public class FormMessage {
 
 	private String field;
 	private String message;
+	private String title;
 	private Object[] parameters;
 
 	public FormMessage() {
@@ -79,9 +80,16 @@ public class FormMessage {
 		return parameters;
 	}
 
-	@Override
-	public String toString() {
-		return "FormMessage [field=" + field + ", message=" + message + ", parameters=" + Arrays.toString(parameters) + "]";
+	public String getTitle() {
+		return title;
 	}
 
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	@Override
+	public String toString() {
+		return "FormMessage [field=" + field + ", message=" + message + ", title="  + title + ", parameters=" + Arrays.toString(parameters) + "]";
+	}
 }
