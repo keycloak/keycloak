@@ -1,104 +1,106 @@
 
 [[_saml-jboss-adapter-installation]]
-===== Adapter Installation
+==== Installing adapters from a ZIP file
 
 Each adapter is a separate download on the {project_name} download site.
 
 ifeval::[{project_community}==true]
 
-NOTE: We only test and maintain adapter with the most recent version of WildFly available upon the release. Once new version of
-WildFly is released, the current adapters become deprecated and support for them will be removed after next WildFly release.
-The other alternative is to switch your applications from WildFly to the JBoss EAP, as the JBoss EAP adapter is supported for much longer period.
+NOTE: We only test and maintain adapter with the most recent version of WildFly available upon the release. Once the new version of WildFly is released, the current adapters become deprecated and support for them will be removed after the next WildFly release.
+The other alternative is to switch your applications from WildFly to the JBoss EAP, as the JBoss EAP adapter is supported for a much longer period.
 
-Install on WildFly 9 or newer or on JBoss EAP 7:
+.Procedure
 
+. Install the adapter that applies to your application server from the link:https://www.keycloak.org/downloads[Downloads] site.
+
+* Install on WildFly 9 or newer on JBoss EAP 7:
++
 [source]
 ----
-
 $ cd $WILDFLY_HOME
 $ unzip keycloak-saml-wildfly-adapter-dist.zip
 ----
 
-Install on JBoss EAP 6.x:
+* Install on JBoss EAP 6.x:
++
 [source]
 ----
-
 $ cd $JBOSS_HOME
 $ unzip keycloak-saml-eap6-adapter-dist.zip
 ----
-
++
 These zip files create new JBoss Modules specific to the WildFly/JBoss EAP SAML Adapter within your WildFly or JBoss EAP distro.
 endif::[]
-
 ifeval::[{project_product}==true]
-Install on JBoss EAP 7.x:
+.Procedure
+
+. Install the adapter that applies to your application server from the link:https://access.redhat.com/jbossnetwork/restricted/listSoftware.html?downloadType=distributions&product=core.service.rhsso[Downloads] site.
+
+* Install on JBoss EAP 7.x:
++
 [source]
 ----
-
 $ cd $EAP_HOME
 $ unzip rh-sso-saml-eap7-adapter.zip
 ----
 
-Install on JBoss EAP 6.x:
+* Install on JBoss EAP 6.x:
++
 [source]
++
 ----
-
 $ cd $EAP_HOME
 $ unzip rh-sso-saml-eap6-adapter.zip
 ----
-
-These zip files create new JBoss Modules specific to the JBoss EAP SAML Adapter within your JBoss EAP distro.
++
+These ZIP files create new JBoss Modules specific to the JBoss EAP SAML Adapter within your JBoss EAP distribution.
 endif::[]
 
-
-After adding the modules, you must then enable the {project_name} SAML Subsystem within your app server's server configuration: `domain.xml` or `standalone.xml`.
-
-There is a CLI script that will help you modify your server configuration.
-Start the server and run the script  from the server's bin directory: 
-
+. Use a CLI script to enable the {project_name} SAML Subsystem within your app server's server configuration: `domain.xml` or `standalone.xml`.
++
+Start the server and run the script that applies to your application server.
 ifeval::[{project_community}==true]
-.WildFly 11 or newer
+
+* Install on WildFly 11 or newer.
++
 [source]
 ----
 $ cd $JBOSS_HOME
 $ ./bin/jboss-cli.sh -c --file=bin/adapter-elytron-install-saml.cli
 ----
 
-.WildFly 10 and older
+* Install on WildFly 10 and older.
++
 [source]
 ----
-
 $ cd $JBOSS_HOME
 $ ./bin/jboss-cli.sh -c --file=bin/adapter-install-saml.cli
 ----
-
++
 NOTE: It is possible to use the legacy non-Elytron adapter on WildFly 11 or newer as well, meaning you can use `adapter-install-saml.cli`
 even on those versions. However, we recommend to use the newer Elytron adapter.
-
 endif::[]
-
 ifeval::[{project_product}==true]
-.JBoss EAP 7.1 or newer
+* Use this command for JBoss EAP 7.1 or newer
++
 [source]
 ----
 $ cd $JBOSS_HOME
 $ ./bin/jboss-cli.sh -c --file=bin/adapter-elytron-install-saml.cli
 ----
 
-.JBoss EAP 7.0 and EAP 6.4
+* Use this command for JBoss EAP 7.0 and EAP 6.4
++
 [source]
 ----
-
 $ cd $JBOSS_HOME
 $ ./bin/jboss-cli.sh -c --file=bin/adapter-install-saml.cli
 ----
-
++
 NOTE: It is possible to use the legacy non-Elytron adapter on JBoss EAP 7.1 or newer as well, meaning you can use `adapter-install-saml.cli`
 even on those versions. However, we recommend to use the newer Elytron adapter.
-
++
 endif::[]
-
-
 The script will add the extension, subsystem, and optional security-domain as described below. 
 
 [source,xml]

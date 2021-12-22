@@ -1,8 +1,5 @@
 [[_spring_boot_adapter]]
-==== Spring Boot Adapter
-
-To be able to secure Spring Boot apps you must add the Keycloak Spring Boot adapter JAR to your app.
-You then have to provide some extra configuration via normal Spring Boot configuration (`application.properties`).  Let's go over these steps.
+==== Spring Boot adapter
 
 ifeval::[{project_product}==true]
 ====
@@ -13,29 +10,29 @@ endif::[]
 
 
 [[_spring_boot_adapter_installation]]
-===== Adapter Installation
+===== Installing the Spring Boot adapter
 
-The Keycloak Spring Boot adapter takes advantage of Spring Boot's autoconfiguration so all you need to do is add the Keycloak Spring Boot starter to your project.
+To be able to secure Spring Boot apps you must add the Keycloak Spring Boot adapter JAR to your app.
+You then have to provide some extra configuration via normal Spring Boot configuration (`application.properties`).
 
-To add it using Maven, add the following to your dependencies:
+The Keycloak Spring Boot adapter takes advantage of Spring Boot's autoconfiguration so all you need to do is add this adapter Keycloak Spring Boot starter to your project.
 
+.Procedure
+
+. To add the starter to your project using Maven, add the following to your dependencies:
++
 [source,xml,subs="attributes+"]
 ----
-
-
 <dependency>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-spring-boot-starter</artifactId>
 </dependency>
-
 ----
 
-Add the Adapter BOM dependency:
-
+. Add the Adapter BOM dependency:
++
 [source,xml,subs="attributes+"]
 ----
-
-
 <dependencyManagement>
   <dependencies>
     <dependency>
@@ -47,7 +44,6 @@ Add the Adapter BOM dependency:
     </dependency>
   </dependencies>
 </dependencyManagement>
-
 ----
 
 
@@ -58,17 +54,16 @@ Currently the following embedded containers are supported and do not require any
 * Jetty
 
 [[_spring_boot_adapter_configuration]]
-===== Required Spring Boot Adapter Configuration
+===== Configuring the Spring Boot Adapter 
 
-This section describes how to configure your Spring Boot app to use Keycloak.
+Use the procedure to configure your Spring Boot app to use {project_name}.
 
-Instead of a `keycloak.json` file, you configure the realm for the Spring Boot Keycloak adapter via the normal Spring Boot configuration.
-For example:
+.Procedure
 
+. Instead of a `keycloak.json` file, you configure the realm for the Spring Boot  adapter via the normal Spring Boot configuration. For example:
++
 [source]
 ----
-
-
 keycloak.realm = demorealm
 keycloak.auth-server-url = http://127.0.0.1:8080/auth
 keycloak.ssl-required = external
@@ -76,19 +71,17 @@ keycloak.resource = demoapp
 keycloak.credentials.secret = 11111111-1111-1111-1111-111111111111
 keycloak.use-resource-role-mappings = true
 ----
-
++
 You can disable the Keycloak Spring Boot Adapter (for example in tests) by setting `keycloak.enabled = false`.
 
-To configure a Policy Enforcer, unlike keycloak.json, `policy-enforcer-config` must be used instead of just `policy-enforcer`.
+. To configure a Policy Enforcer, unlike keycloak.json, use `policy-enforcer-config` instead of just `policy-enforcer`.
 
-You also need to specify the Jakarta EE security config that would normally go in the `web.xml`.
-The Spring Boot Adapter will set the `login-method` to `KEYCLOAK` and configure the `security-constraints` at startup time.
-Here's an example configuration:
-
+. Specify the Jakarta EE security config that would normally go in the `web.xml`.
++
+The Spring Boot Adapter will set the `login-method` to `KEYCLOAK` and configure the `security-constraints` at startup time. Here's an example configuration:
++
 [source]
 ----
-
-
 keycloak.securityConstraints[0].authRoles[0] = admin
 keycloak.securityConstraints[0].authRoles[1] = user
 keycloak.securityConstraints[0].securityCollections[0].name = insecure stuff
@@ -99,4 +92,4 @@ keycloak.securityConstraints[1].securityCollections[0].name = admin stuff
 keycloak.securityConstraints[1].securityCollections[0].patterns[0] = /admin
 ----
 
-WARNING: If you plan to deploy your Spring Application as a WAR then you should not use the Spring Boot Adapter and use the dedicated adapter for the application server or servlet container you are using. Your Spring Boot should also contain a `web.xml` file. 
+WARNING: If you plan to deploy your Spring Application as a WAR then you should not use the Spring Boot Adapter and use the dedicated adapter for the application server or servlet container you are using. Your Spring Boot should also contain a `web.xml` file.

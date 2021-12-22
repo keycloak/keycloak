@@ -1,12 +1,20 @@
 [[_jboss_adapter]]
 
 ifeval::[{project_community}==true]
-==== JBoss EAP/WildFly Adapter
+==== JBoss EAP/WildFly adapter
 endif::[]
 ifeval::[{project_product}==true]
-==== JBoss EAP Adapter
+==== JBoss EAP adapter
 endif::[]
 
+You can install this adapter from a ZIP file or from an RPM.
+
+* xref:jboss_adapter_installation[Installing JBOSS EAP adapters from a ZIP file]
+* xref:jboss7_adapter_rpm[Installing JBoss EAP 7 Adapters from an RPM]
+* xref:jboss6_adapter_rpm[Installing JBoss EAP 6 Adapters from an RPM]
+
+[id="jboss_adapter_installation"]
+==== Installing JBOSS EAP adapters from a ZIP file
 ifeval::[{project_community}==true]
 To be able to secure WAR apps deployed on JBoss EAP, WildFly or JBoss AS, you must install and configure the
 {project_name} adapter subsystem. You then have two options to secure your WARs.
@@ -16,144 +24,137 @@ To be able to secure WAR apps deployed on JBoss EAP, you must install and config
 {project_name} adapter subsystem. You then have two options to secure your WARs.
 endif::[]
 
-You can provide an adapter config file in your WAR and change the auth-method to KEYCLOAK within web.xml.
+* You can provide an adapter config file in your WAR and change the auth-method to KEYCLOAK within web.xml.
 
-Alternatively, you don't have to modify your WAR at all and you can secure it via the {project_name} adapter subsystem configuration in the configuration file, such as `standalone.xml`.
+* Alternatively, you do not have to modify your WAR at all and you can secure it via the {project_name} adapter subsystem configuration in the configuration file, such as `standalone.xml`.
+
 Both methods are described in this section.
-
-[[_jboss_adapter_installation]]
-===== Installing the adapter
 
 Adapters are available as a separate archive depending on what server version you are using.
 
 ifeval::[{project_community}==true]
 
-NOTE: We only test and maintain adapter with the most recent version of WildFly available upon the release. Once new version of
+NOTE: We test and maintain adapters only with the most recent version of WildFly available upon the release. Once a new version of
 WildFly is released, the current adapters become deprecated and support for them will be removed after next WildFly release.
 The other alternative is to switch your applications from WildFly to the JBoss EAP, as the JBoss EAP adapter is supported for much longer period.
 
-Install on WildFly 9 or newer:
+.Procedure
 
+. Install the adapter that applies to your application server from the link:https://www.keycloak.org/downloads[Downloads] site.
+
+* Install on WildFly 9 or newer:
++
 [source, subs="attributes"]
 ----
 $ cd $WILDFLY_HOME
 $ unzip keycloak-wildfly-adapter-dist-{project_version}.zip
 ----
 
-Install on JBoss EAP 7:
-
+* Install on JBoss EAP 7:
++
 [source, subs="attributes"]
 ----
 $ cd $EAP_HOME
 $ unzip keycloak-eap7-adapter-dist-{project_version}.zip
 ----
 
-Install on JBoss EAP 6:
-
+* Install on JBoss EAP 6:
++
 [source, subs="attributes"]
 ----
 $ cd $EAP_HOME
 $ unzip keycloak-eap6-adapter-dist-{project_version}.zip
 ----
 
-Install on JBoss AS 7.1:
-
+* Install on JBoss AS 7.1:
++
 [source, subs="attributes"]
 ----
 $ cd $JBOSS_HOME
 $ unzip keycloak-as7-adapter-dist-{project_version}.zip
 ----
 endif::[]
-
 ifeval::[{project_product}==true]
 
-Install on JBoss EAP 7:
+.Procedure
 
-You can install the EAP 7 adapters either by unzipping a ZIP file, or by using an RPM.
+. Install the adapter that applies to your application server from the link:https://access.redhat.com/jbossnetwork/restricted/listSoftware.html?downloadType=distributions&product=core.service.rhsso[Sotware Downloads] site.
 
-Install the EAP 7 Adapters from a ZIP File:
-
+* Install on JBoss EAP 7:
++
 [source, subs="attributes"]
 ----
 $ cd $EAP_HOME
 $ unzip rh-sso-{project_version}-eap7-adapter.zip
 ----
 
-
-Install on JBoss EAP 6:
-
-You can install the EAP 6 adapters either by unzipping a ZIP file, or by using an RPM.
-
-Install the EAP 6 Adapters from a ZIP File:
-
+* Install on JBoss EAP 6:
++
 [source, subs="attributes"]
 ----
 $ cd $EAP_HOME
 $ unzip rh-sso-{project_version}-eap6-adapter.zip
 ----
 endif::[]
-
++
 This ZIP archive contains JBoss Modules specific to the {project_name} adapter. It also contains JBoss CLI scripts to configure the adapter subsystem.
 
-To configure the adapter subsystem if the server is not running execute:
-
-NOTE: Alternatively, you can specify the `server.config` property while installing adapters from the command line to install adapters using a different config, for example: `-Dserver.config=standalone-ha.xml`.
-
+. To configure the adapter subsystem, execute the appropriate command.
 ifeval::[{project_community}==true]
-.WildFly 11 or newer
+* Install on WildFly 11 or newer if the server *is not* running
++
 [source]
 ----
 $ ./bin/jboss-cli.sh --file=bin/adapter-elytron-install-offline.cli
 ----
-
-.WildFly 10 or older
++
+* Install on WildFly 11 or newer if the server *is* running
++
+[source]
+----
+$ ./bin/jboss-cli.sh -c --file=bin/adapter-elytron-install.cli
+----
++
+NOTE: It is possible to use the legacy non-Elytron adapter on WildFly 11 or newer as well, meaning you can use `adapter-install-offline.cli`
+even on those versions. However, we recommend to use the newer Elytron adapter.
++
+* Install on WildFly 10 or older if the server *is not* running
++
 [source]
 ----
 $ ./bin/jboss-cli.sh --file=bin/adapter-install-offline.cli
 ----
-
-NOTE: It is possible to use the legacy non-Elytron adapter on WildFly 11 or newer as well, meaning you can use `adapter-install-offline.cli`
-even on those versions. However, we recommend to use the newer Elytron adapter.
-
-endif::[]
-
-ifeval::[{project_product}==true]
-.JBoss EAP 7.1 or newer
-[source]
-----
-$ ./bin/jboss-cli.sh --file=bin/adapter-elytron-install-offline.cli
-----
-
-NOTE: The offline script is not available for JBoss EAP 6.4
-
-endif::[]
-
-Alternatively, if the server is running execute:
-
-ifeval::[{project_community}==true]
-.WildFly 11 or newer
-[source]
-----
-$ ./bin/jboss-cli.sh -c --file=bin/adapter-elytron-install.cli
-----
-
-.WildFly 10 or older
++
+* Install on WildFly 10 or older if the server *is* running
++
 [source]
 ----
 $ ./bin/jboss-cli.sh -c --file=bin/adapter-install.cli
 ----
-endif::[]
 
+NOTE: Alternatively, you can specify the `server.config` property while installing adapters from the command line to install adapters using a different config, for example: `-Dserver.config=standalone-ha.xml`.
+endif::[]
 ifeval::[{project_product}==true]
-.JBoss EAP 7.1 or newer
+* Install on JBoss EAP 7.1 or newer if the server *is not* running.
++
+[source]
+----
+$ ./bin/jboss-cli.sh --file=bin/adapter-elytron-install-offline.cli
+----
++
+NOTE: The offline script is not available for JBoss EAP 6.4
+
+* Install on JBoss EAP 7.1 or newer if the server *is* running.
++
 [source]
 ----
 $ ./bin/jboss-cli.sh -c --file=bin/adapter-elytron-install.cli
 ----
-
++
 NOTE: It is possible to use the legacy non-Elytron adapter on JBoss EAP 7.1 or newer as well, meaning you can use `adapter-install-offline.cli`
 
-.JBoss EAP 6.4
+* Install on  JBoss EAP 6.4
++
 [source]
 ----
 $ ./bin/jboss-cli.sh -c --file=bin/adapter-install.cli
@@ -166,19 +167,21 @@ endif::[]
 {appserver_name} has built-in support for single sign-on for web applications deployed to the same {appserver_name}
 instance. This should not be enabled when using {project_name}.
 
-===== Required Per WAR Configuration
+===== Securing a WAR
 
 This section describes how to secure a WAR directly by adding configuration and editing files within your WAR package.
 
-The first thing you must do is create a `keycloak.json` adapter configuration file within the `WEB-INF` directory of your WAR.
+.Procedure
 
+. Create a `keycloak.json` adapter configuration file within the `WEB-INF` directory of your WAR.
++
 The format of this configuration file is described in the <<_java_adapter_config,Java adapter configuration>> section.
+. Set the `auth-method` to `KEYCLOAK` in `web.xml`.
 
-Next you must set the `auth-method` to `KEYCLOAK` in `web.xml`.
-You also have to use standard servlet security to specify role-base constraints on your URLs.
-
+. Use standard servlet security to specify role-base constraints on your URLs.
++
 Here's an example:
-
++
 [source,xml]
 ----
 
@@ -228,12 +231,12 @@ Here's an example:
 </web-app>
 ----
 
-===== Securing WARs via Adapter Subsystem
+===== Securing WARs via adapter subsystem
 
 You do not have to modify your WAR to secure it with {project_name}. Instead you can externally secure it via the {project_name} Adapter Subsystem.
 While you don't have to specify KEYCLOAK as an `auth-method`, you still have to define the `security-constraints` in `web.xml`.
 You do not, however, have to create a `WEB-INF/keycloak.json` file.
-This metadata is instead defined within server configuration (i.e. `standalone.xml`) in the {project_name} subsystem definition.
+The metadata is instead defined within server configuration (`standalone.xml`) in the {project_name} subsystem definition.
 
 [source,xml]
 ----
@@ -259,7 +262,7 @@ Its value is the `module-name` defined in `web.xml` with `.war` appended. The re
 
 The exception is the `credential` element.
 
-To make it easier for you, you can go to the {project_name} Administration Console and go to the Client/Installation tab of the application this WAR is aligned with.
+To make it easier for you, you can go to the {project_name} Admin Console and go to the Client/Installation tab of the application this WAR is aligned with.
 It provides an example XML file you can cut and paste.
 
 If you have multiple deployments secured by the same realm you can share the realm configuration in a separate element. For example:
@@ -289,7 +292,6 @@ If you have multiple deployments secured by the same realm you can share the rea
 </subsystem>
 ----
 
-
-===== Security Domain
+===== Security domain
 
 The security context is propagated to the EJB tier automatically.

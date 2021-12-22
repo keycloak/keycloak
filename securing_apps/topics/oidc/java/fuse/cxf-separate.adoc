@@ -1,8 +1,10 @@
 
 [[_fuse_adapter_cxf_separate]]
-===== Securing an Apache CXF Endpoint on a Separate Jetty Engine
+===== Securing an Apache CXF endpoint on a separate Jetty engine
 
-To run your CXF endpoints secured by {project_name} on separate Jetty engines, complete the following steps:
+.Procedure
+
+To run your CXF endpoints secured by {project_name} on separate Jetty engines, perform the following procedure.
 
 . Add `META-INF/spring/beans.xml` to your application, and in it,  declare `httpj:engine-factory` with Jetty SecurityHandler with injected `KeycloakJettyAuthenticator`. The configuration for a CFX JAX-WS application might resemble this one:
 +

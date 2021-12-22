@@ -1,8 +1,8 @@
 
 [[_fuse7_adapter_classic_war]]
-===== Securing a Classic WAR Application
+===== Securing a Classic WAR application
 
-The needed steps to secure your WAR application are:
+.Procedure
 
 . In the `/WEB-INF/web.xml` file, declare the necessary:
 * security constraints in the <security-constraint> element
@@ -69,7 +69,7 @@ For example:
 . Contrary to the Fuse 6 adapter, there are no special OSGi imports needed in MANIFEST.MF. 
 
 [[_fuse7_config_external_adapter]]
-====== Configuration Resolvers
+====== Configuration resolvers
 
 The `keycloak.json` adapter configuration file can be stored inside a bundle,
 which is default behaviour, or in a directory on a filesystem. To specify the

@@ -1,5 +1,5 @@
 
-===== RoleIdentifiers Element
+===== RoleIdentifiers element
 
 The `RoleIdentifiers` element defines what SAML attributes within the assertion received from the user should be used
 as role identifiers within the Jakarta EE Security Context for the user.

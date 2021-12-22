@@ -1,8 +1,10 @@
 
 [[_fuse7_adapter_cxf_separate]]
-===== Securing an Apache CXF Endpoint on a Separate Undertow Engine
+===== Securing an Apache CXF endpoint on a separate Undertow Engine
 
-To run your CXF endpoints secured by {project_name} on a separate Undertow engine, complete the following steps:
+To run your CXF endpoints secured by {project_name} on a separate Undertow engine, perform the following procedure.
+
+.Procedure
 
 . Add `OSGI-INF/blueprint/blueprint.xml` to your application, and in it, add the proper configuration resolver bean similarly to <<_fuse7_adapter_camel,Camel configuration>>.
 In the `httpu:engine-factory` declare `org.keycloak.adapters.osgi.undertow.CxfKeycloakAuthHandler` handler using that camel configuration. The configuration for a CFX JAX-WS application might resemble this one:

@@ -1,5 +1,5 @@
 [[_params_forwarding]]
-==== Parameters Forwarding
+==== Parameters forwarding
 
 The {project_name}  initial authorization endpoint request has support for various parameters. Most of the parameters are described in
 https://openid.net/specs/openid-connect-core-1_0.html#AuthorizationEndpoint[OIDC specification]. Some parameters are added automatically by the adapter based
@@ -39,7 +39,7 @@ More info in the link:{adminguide_link}#_client_suggested_idp[Identity Provider 
 
 Most of the parameters are described in the https://openid.net/specs/openid-connect-core-1_0.html#AuthorizationEndpoint[OIDC specification].
 The only exception is parameter `kc_idp_hint`, which is specific to {project_name} and contains the name of the identity provider to automatically use.
-For more information see the `Identity Brokering` section in link:{adminguide_link}[{adminguide_name}].
+For more information see the `Identity Brokering` section in the link:{adminguide_link}[{adminguide_name}].
 
 WARNING: If you open the URL using the attached parameters, the adapter will not redirect you to {project_name} if you are already authenticated
 in the application. For example, opening $$http://myappserver/mysecuredapp?prompt=login$$ will not automatically redirect you to

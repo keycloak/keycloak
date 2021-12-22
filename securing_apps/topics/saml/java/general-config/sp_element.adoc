@@ -1,5 +1,5 @@
 
-===== SP Element
+===== SP element
 
 Here is the explanation of the SP element attributes: 
 
@@ -52,10 +52,10 @@ turnOffChangeSessionIdOnLogin::
   Default value is `false`.
 
 autodetectBearerOnly::
-  This should be set to __true__ if your application serves both a web application and web services (e.g. SOAP or REST).
-  It allows you to redirect unauthenticated users of the web application to the Keycloak login page,
+  This should be set to __true__ if your application serves both a web application and web services (for example SOAP or REST).
+  It allows you to redirect unauthenticated users of the web application to the {project_name} login page,
   but send an HTTP `401` status code to unauthenticated SOAP or REST clients instead as they would not understand a redirect to the login page.
-  Keycloak auto-detects SOAP or REST clients based on typical headers like `X-Requested-With`, `SOAPAction` or `Accept`.
+  {project_name} auto-detects SOAP or REST clients based on typical headers like `X-Requested-With`, `SOAPAction` or `Accept`.
   The default value is _false_.
 
 logoutPage::

@@ -1,10 +1,10 @@
 
 [[_fuse7_adapter_servlet_whiteboard]]
-===== Securing a Servlet Deployed as an OSGI Service
+===== Securing a servlet deployed as an OSGI Service
 
 You can use this method if you have a servlet class inside your OSGI bundled project that is not deployed as a classic WAR application. Fuse uses Pax Web Whiteboard Extender to deploy such servlets as web applications.
 
-To secure your servlet with {project_name}, complete the following steps:
+.Procedure
 
 . {project_name} provides `org.keycloak.adapters.osgi.undertow.PaxWebIntegrationService`, which allows configuring authentication method and security constraints for your application. You need to declare such services in the `OSGI-INF/blueprint/blueprint.xml` file inside your application. Note that your servlet needs to depend on it.
 An example configuration:
@@ -48,8 +48,8 @@ An example configuration:
     </service>
 </blueprint>
 ----
-
-* You might need to have the `WEB-INF` directory inside your project (even if your project is not a web application) and create the `/WEB-INF/keycloak.json` file as  described in the <<_fuse7_adapter_classic_war,Classic WAR application>> section.
++
+You might need to have the `WEB-INF` directory inside your project (even if your project is not a web application) and create the `/WEB-INF/keycloak.json` file as  described in the <<_fuse7_adapter_classic_war,Classic WAR application>> section.
 Note you don't need the `web.xml` file as the security-constraints are declared in the blueprint configuration file.
 
 . Contrary to the Fuse 6 adapter, there are no special OSGi imports needed in MANIFEST.MF.

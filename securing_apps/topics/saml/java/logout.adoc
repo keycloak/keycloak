@@ -6,7 +6,7 @@ the browser at any url of your web application that has a security constraint an
 This will log you out if you have an SSO session with your browser.
 
 [[_saml_logout_in_cluster]]
-===== Logout in Clustered Environment
+===== Logout in clustered environment
 
 Internally, the SAML adapter stores a mapping between the SAML session index, principal name (when known), and HTTP session ID.
 This mapping can be maintained in JBoss application server family (WildFly 10/11, EAP 6/7) across cluster for distributable
@@ -63,7 +63,7 @@ The data center 2 has to log out all sessions that are present in data center 1 
 share HTTP sessions).
 
 To cover this case, the SAML session cache described <<_saml_logout_in_cluster,above>> needs to be replicated
-not only within individual clusters but across all the data centers e.g.
+not only within individual clusters but across all the data centers for example
 https://access.redhat.com/documentation/en-us/red_hat_data_grid/6.6/html/administration_and_configuration_guide/chap-externalize_sessions#Externalize_HTTP_Session_from_JBoss_EAP_6.x_to_JBoss_Data_Grid[via standalone Infinispan/JDG server]:
 
 1. A cache has to be added to the standalone Infinispan/JDG server.

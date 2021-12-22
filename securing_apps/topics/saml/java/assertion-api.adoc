@@ -1,5 +1,5 @@
 
-==== Obtaining Assertion Attributes
+==== Obtaining assertion attributes
 
 After a successful SAML login, your application code may want to obtain attribute values passed with the SAML assertion.
 `HttpServletRequest.getUserPrincipal()` returns a `Principal` object that you can typecast into a {project_name} specific class

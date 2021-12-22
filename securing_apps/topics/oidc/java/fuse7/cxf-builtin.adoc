@@ -1,6 +1,6 @@
 
 [[_fuse7_adapter_cxf_builtin]]
-===== Securing an Apache CXF Endpoint on the Default Undertow Engine
+===== Securing an Apache CXF endpoint on the default Undertow Engine
 
 Some services automatically come with deployed servlets on startup. One such service is the CXF servlet running in the $$http://localhost:8181/cxf$$ context. Fuse's Pax Web supports altering existing contexts via configuration admin. This can be used to secure endpoints by {project_name}.
 

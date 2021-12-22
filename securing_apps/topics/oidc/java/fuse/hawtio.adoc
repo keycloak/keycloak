@@ -2,7 +2,9 @@
 [[_hawtio]]
 ===== Securing the Hawtio Administration Console
 
-To secure the Hawtio Administration Console with {project_name}, complete the following steps:
+To secure the Hawtio Administration Console with {project_name}, perform the following procedure.
+
+.Procedure
 
 . Add these properties to the `$FUSE_HOME/etc/system.properties` file:
 +
@@ -14,10 +16,10 @@ hawtio.keycloakClientConfig=file://${karaf.base}/etc/keycloak-hawtio-client.json
 hawtio.rolePrincipalClasses=org.keycloak.adapters.jaas.RolePrincipal,org.apache.karaf.jaas.boot.principal.RolePrincipal
 ----
 
-. Create a client in the {project_name} administration console in your realm. For example, in the {project_name} `demo` realm, create a client `hawtio-client`, specify `public` as the Access Type, and specify a redirect URI pointing to Hawtio: \http://localhost:8181/hawtio/*. You must also have a corresponding Web Origin configured (in this case, \http://localhost:8181).
+. Create a client in the {project_name} Admin Console in your realm. For example, in the {project_name} `demo` realm, create a client `hawtio-client`, specify `public` as the Access Type, and specify a redirect URI pointing to Hawtio: \http://localhost:8181/hawtio/*. You must also have a corresponding Web Origin configured (in this case, \http://localhost:8181).
 
 . Create the `keycloak-hawtio-client.json` file in the `$FUSE_HOME/etc` directory using content similar to that shown in the example below. Change the `realm`, `resource`, and `auth-server-url` properties according to your {project_name} environment. The `resource` property must point to the client created in the previous step. This file is used by the client (Hawtio JavaScript application) side.
-+
+
 [source,json]
 ----
 {
@@ -58,12 +60,15 @@ Note that the user needs to have the proper realm role to successfully authentic
 
 ====== Securing Hawtio on {fuseHawtioEAPVersion}
 
-To run Hawtio on the {fuseHawtioEAPVersion} server, complete the following steps:
+.Prerequisites
 
-. Set up {project_name} as described in the previous section, Securing the Hawtio Administration Console. It is assumed that:
+Set up {project_name} as described in <<_hawtio,Securing the Hawtio Administration Console>>. It is assumed that:
+
 * you have a {project_name} realm `demo` and client `hawtio-client`
 * your {project_name} is running on `localhost:8080`
 * the {fuseHawtioEAPVersion} server with deployed Hawtio will be running on `localhost:8181`. The directory with this server is referred in next steps as `$EAP_HOME`.
+
+.Procedure
 
 . Copy the `{fuseHawtioWARVersion}` archive to the `$EAP_HOME/standalone/configuration` directory. For more details about deploying Hawtio see the https://access.redhat.com/documentation/en-us/red_hat_jboss_fuse/6.3/html-single/deploying_into_a_web_server/[Fuse Hawtio documentation].
 

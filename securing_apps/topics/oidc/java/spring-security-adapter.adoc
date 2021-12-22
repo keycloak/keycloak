@@ -1,5 +1,6 @@
-<[[_spring_security_adapter]]
-==== Spring Security Adapter
+
+[[_spring_security_adapter]]
+==== Spring Security adapter
 
 To secure an application with Spring Security and Keycloak, add this adapter as a dependency to your project.
 You then have to provide some extra beans in your Spring Security configuration file and add the Keycloak security filter to your pipeline.
@@ -26,7 +27,7 @@ public ServletListenerRegistrationBean<HttpSessionEventPublisher> httpSessionEve
 ----
 
 
-===== Adapter Installation
+===== Installing the adapter
 
 Add Keycloak Spring Security adapter as a dependency to your Maven POM or Gradle build.
 
@@ -40,11 +41,11 @@ Add Keycloak Spring Security adapter as a dependency to your Maven POM or Gradle
 </dependency>
 ----
 
-===== Spring Security Configuration
+===== Configuring the Spring Security Adapter
 
 The Keycloak Spring Security adapter takes advantage of Spring Security's flexible security configuration syntax.
 
-====== Java Configuration
+====== Java configuration
 
 Keycloak provides a KeycloakWebSecurityConfigurerAdapter as a convenient base class for creating a https://docs.spring.io/spring-security/site/docs/4.0.x/apidocs/org/springframework/security/config/annotation/web/WebSecurityConfigurer.html[WebSecurityConfigurer]                instance.
 The implementation allows customization by overriding methods.
@@ -103,7 +104,7 @@ TIP: The `@KeycloakConfiguration` annotation is a metadata annotation that defin
 the `@KeycloakConfiguration` annotation and create your own custom meta annotation or just use specific Spring annotations
 for the {project_name} adapter.
 
-====== XML Configuration
+====== XML configuration
 
 While Spring Security's XML namespace simplifies configuration, customizing the configuration can be a bit verbose.
 
@@ -183,11 +184,11 @@ While Spring Security's XML namespace simplifies configuration, customizing the 
 
 ===== Multi Tenancy
 
-The Keycloak Spring Security adapter also supports multi tenancy.
+The Keycloak Spring Security adapter also supports Multi Tenancy.
 Instead of injecting `AdapterDeploymentContextFactoryBean` with the path to `keycloak.json` you can inject an implementation of the `KeycloakConfigResolver` interface.
 More details on how to implement the `KeycloakConfigResolver` can be found in <<_multi_tenancy,Multi Tenancy>>.
 
-===== Naming Security Roles
+===== Naming security roles
 
 Spring Security, when using role-based authentication, requires that role names start with `ROLE_`.
 For example, an administrator role must be declared in Keycloak as `ROLE_ADMIN` or similar, not simply `ADMIN`.

@@ -8,7 +8,9 @@
 with {project_name}, protecting non-web administration services such as SSH with {project_name} credentials is a best pracrice. You can do this using the JAAS login module, which allows remote connection to {project_name} and verifies credentials based on
 <<_resource_owner_password_credentials_flow,Resource Owner Password Credentials>>.
 
-To enable SSH authentication, complete the following steps:
+To enable SSH authentication, perform the following procedure.
+
+.Procedure
 
 . In  {project_name} create a client (for example, `ssh-jmx-admin-client`), which will be used for SSH authentication.
 This client needs to have `Direct Access Grants Enabled` selected to `On`.
@@ -58,11 +60,13 @@ NOTE: On some later operating systems, you might also need to use the SSH comman
 
 Note that the user needs to have realm role `admin` to perform all operations or another role to perform a subset of operations (for example, the *viewer* role that restricts the user to run only read-only Karaf commands). The available roles are configured in `$FUSE_HOME/etc/org.apache.karaf.shell.cfg` or `$FUSE_HOME/etc/system.properties`.
 
-====== Using JMX Authentication
+====== Using JMX authentication
 
 JMX authentication might be necessary if you want to use jconsole or another external tool to remotely connect to JMX through RMI. Otherwise it might be better to use hawt.io/jolokia, since the jolokia agent is installed in hawt.io by default. For more details see <<_fuse7_hawtio,Hawtio Admin Console>>.
 
-To use JMX authentication, complete the following steps:
+To use JMX authentication, perform the following procedure.
+
+.Procedure
 
 . In the `$FUSE_HOME/etc/org.apache.karaf.management.cfg` file, change the jmxRealm property to:
 +

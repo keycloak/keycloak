@@ -2,6 +2,8 @@
 
 === Supported Protocols
 
+{project_name} supports both OpenID Connect and SAML protocols.
+
 ==== OpenID Connect
 
 link:https://openid.net/connect/[OpenID Connect] (OIDC) is an authentication protocol that is an extension of link:https://datatracker.ietf.org/doc/html/rfc6749[OAuth 2.0].

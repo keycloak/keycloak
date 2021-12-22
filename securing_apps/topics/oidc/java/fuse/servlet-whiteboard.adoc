@@ -1,12 +1,12 @@
 
 [[_fuse_adapter_servlet_whiteboard]]
-===== Securing a Servlet Deployed as an OSGI Service
+===== Securing a servlet deployed as an OSGI Service
 
 You can use this method if you have a servlet class inside your OSGI bundled project that is not deployed as a classic WAR application. Fuse uses Pax Web Whiteboard Extender to deploy such servlets as web applications.
 
-To secure your servlet with {project_name}, complete the following steps:
+.Procedure
 
-. {project_name} provides PaxWebIntegrationService, which allows injecting jetty-web.xml and configuring security constraints for your application. You need to declare such services in the `OSGI-INF/blueprint/blueprint.xml` file inside your application. Note that your servlet needs to depend on it.
+. {project_name} provides `org.keycloak.adapters.osgi.undertow.PaxWebIntegrationService`, which allows injecting jetty-web.xml and configuring security constraints for your application. You need to declare such services in the `OSGI-INF/blueprint/blueprint.xml` file inside your application. Note that your servlet needs to depend on it.
 An example configuration:
 +
 [source,xml]

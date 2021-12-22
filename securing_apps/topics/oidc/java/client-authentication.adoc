@@ -1,12 +1,12 @@
 [[_client_authentication_adapter]]
-==== Client Authentication
+==== Client authentication
 
 When a confidential OIDC client needs to send a backchannel request (for example, to exchange code for the token, or to refresh the token) it needs to authenticate against the {project_name} server. By default, there are three ways to authenticate the client: client ID and client secret, client authentication with signed JWT, or client authentication with signed JWT using client secret.
 
 ===== Client ID and Client Secret
 
 This is the traditional method described in the OAuth2 specification. The client has a secret, which needs to be known to both the adapter (application) and the {project_name} server.
-You can generate the secret for a particular client in the {project_name} administration console, and then paste this secret into the `keycloak.json` file on the application side:
+You can generate the secret for a particular client in the {project_name} Admin Console, and then paste this secret into the `keycloak.json` file on the application side:
 
 
 [source,json]
@@ -16,7 +16,7 @@ You can generate the secret for a particular client in the {project_name} admini
 }
 ----
 
-===== Client Authentication with Signed JWT
+===== Client authentication with Signed JWT
 
 This is based on the https://datatracker.ietf.org/doc/html/rfc7523[RFC7523] specification. It works this way:
 
@@ -27,12 +27,12 @@ This is based on the https://datatracker.ietf.org/doc/html/rfc7523[RFC7523] spec
 * During authentication, the client generates a JWT token and signs it with its private key and sends it to {project_name} in
 the particular backchannel request (for example, code-to-token request) in the `client_assertion` parameter.
 
-* {project_name} must have the public key or certificate of the client so that it can verify the signature on JWT. In {project_name} you need to configure client credentials for your client. First you need to choose `Signed JWT` as the method of authenticating your client in the tab `Credentials` in administration console.
+* {project_name} must have the public key or certificate of the client so that it can verify the signature on JWT. In {project_name} you need to configure client credentials for your client. First you need to choose `Signed JWT` as the method of authenticating your client in the tab `Credentials` in the Admin Console.
 Then you can choose to either in the tab `Keys`:
 ** Configure the JWKS URL where {project_name} can download the client's public keys. This can be a URL such as  \http://myhost.com/myapp/k_jwks (see details above). This option is the most flexible, since the client can rotate its keys anytime and {project_name} then always downloads new keys when needed without needing to change the configuration. More accurately,  {project_name} downloads new keys when it sees the token signed by an unknown `kid` (Key ID).
 ** Upload the client's public key or certificate, either in PEM format, in JWK format, or from the keystore. With this option, the public key is hardcoded and must be changed when the client generates a new key pair.
-You can even generate your own keystore from the {project_name} admininstration console if you don't have your own available.
-For more details on how to set up the {project_name} administration console see {adminguide_link}[{adminguide_name}].
+You can even generate your own keystore from the {project_name} Admin Console if you don't have your own available.
+For more details on how to set up the {project_name} Admin Console, see the {adminguide_link}[{adminguide_name}].
 
 For set up on the adapter side you need to have something like this in your `keycloak.json` file:
 
@@ -56,11 +56,11 @@ you can point to any file on the file system where the client application is run
 ifeval::[{project_community}==true]
 For inspiration, you can take a look at the examples distribution into the main demo example into the `product-portal` application.
 
-===== Client Authentication with Signed JWT using Client Secret
+===== Client authentication with Signed JWT using client secret
 
 This is the same as Client Authentication with Signed JWT except for using the client secret instead of the private key and certificate.
 
-The client has a secret, which needs to be known to both the adapter (application) and the {project_name} server. You need to choose `Signed JWT with Client Secret` as the method of authenticating your client in the tab `Credentials` in administration console, and then paste this secret into the `keycloak.json` file on the application side:
+The client has a secret, which needs to be known to both the adapter (application) and the {project_name} server. You need to choose `Signed JWT with Client Secret` as the method of authenticating your client in the tab `Credentials` in the Admin Console, and then paste this secret into the `keycloak.json` file on the application side:
 
 [source,json]
 ----
@@ -76,9 +76,7 @@ The "algorithm" field specifies the algorithm for Signed JWT using Client Secret
 
 This "algorithm" field is optional so that HS256 is applied automatically if the "algorithm" field does not exist on the `keycloak.json` file.
 
-===== Add Your Own Client Authentication Method
+===== Add your own client authentication method
 
 You can add your own client authentication method as well. You will need to implement both client-side and server-side providers. For more details see the `Authentication SPI` section in link:{developerguide_link}[{developerguide_name}].
 endif::[]
-
-

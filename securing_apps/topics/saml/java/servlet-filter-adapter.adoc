@@ -1,5 +1,5 @@
 
-==== Java Servlet Filter Adapter
+==== Java Servlet filter adapter
 
 If you want to use SAML with a Java servlet application that doesn't have an adapter for that servlet platform, you can
 opt to use the servlet filter adapter that {project_name} has.

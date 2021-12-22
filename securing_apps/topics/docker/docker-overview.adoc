@@ -1,5 +1,5 @@
 
-== Docker Registry Configuration
+== Configuring a Docker registry to use {project_name}
 
 NOTE: Docker authentication is disabled by default. To enable see link:{installguide_profile_link}[{installguide_profile_name}].
 
@@ -9,7 +9,7 @@ For more information on how to set up and configure a Docker registry, see the l
 
 
 
-=== Docker Registry Configuration File Installation
+=== Docker registry configuration file installation
 
 For users with more advanced Docker registry configurations, it is generally recommended to provide your own registry configuration file.  The {project_name} Docker provider supports this mechanism via the _Registry Config File_ Format Option.  Choosing this option will generate output similar to the following:
 
@@ -24,7 +24,7 @@ This output can then be copied into any existing registry config file.  See the 
 WARNING: Don't forget to configure the `rootcertbundle` field with the location of the {project_name} realm's public key.  The auth configuration will not work without this argument.
 
 
-=== Docker Registry Environment Variable Override Installation
+=== Docker registry environment variable override installation
 
 Often times it is appropriate to use a simple environment variable override for develop or POC Docker registries.  While this approach is usually not recommended for production use, it can be helpful when one requires quick-and-dirty way to stand up a registry.  Simply use the _Variable Override_ Format Option from the client installation tab, and an output should appear like the one below:
 
@@ -41,7 +41,9 @@ WARNING: This installation method is meant to be an easy way to get a docker reg
 
 The zip file installation mechanism provides a quickstart for developers who want to understand how the {project_name} server can interact with the Docker registry.  In order to configure:
 
- 1. From the desired realm, create a client configuration.  At this point you won't have a Docker registry - the quickstart will take care of that part.
+.Procedure
+
+1. From the desired realm, create a client configuration.  At this point you won't have a Docker registry - the quickstart will take care of that part.
  2. Choose the "Docker Compose YAML" option from the installation tab and download the .zip file
  3. Unzip the archive to the desired location, and open the directory.
  4. Start the Docker registry with `docker-compose up`

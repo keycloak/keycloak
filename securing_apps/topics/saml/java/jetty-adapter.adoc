@@ -1,7 +1,7 @@
 [[_jetty_saml_adapter]]
 
-==== Jetty SAML Adapters
+==== Jetty SAML adapters
 
-To be able to secure WAR apps deployed on Jetty you must install the {project_name} Jetty 9.x SAML adapter into your Jetty installation.
-You then have to provide some extra configuration in each WAR you deploy to Jetty.
-Let's go over these steps.
+To be able to secure WAR apps deployed on Jetty you must install the {project_name} Jetty 9.x SAML adapter into your Jetty installation. You then provide some extra configuration in each WAR you deploy to Jetty.
+
+Use the following installation and configuration procedures.

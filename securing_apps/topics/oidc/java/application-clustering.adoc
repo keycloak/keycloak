@@ -1,5 +1,5 @@
 [[_applicationclustering]]
-==== Application Clustering
+==== Application clustering
 
 ifeval::[{project_community}==true]
 This chapter is related to supporting clustered applications deployed to JBoss EAP, WildFly and JBoss AS.
@@ -30,7 +30,7 @@ To use the cookie store for saving the security context, edit your applications 
 [source,json]
 ----
 "token-store": "cookie"
-----        
+----
 
 NOTE: The default value for `token-store` is `session`, which stores the security context in the HTTP session.
 
@@ -54,7 +54,7 @@ the redirect-uri `/myapp` instead of `$$https://acme.org/myapp$$`.
 
 ===== Admin URL configuration
 
-Admin URL for a particular client can be configured in the {project_name} Administration Console.
+Admin URL for a particular client can be configured in the {project_name} Admin Console.
 It's used by the {project_name} server to send backend requests to the application for various tasks, like logout users or push revocation policies.
 
 For example the way backchannel logout works is:
@@ -75,7 +75,7 @@ However, in some cases admin may want to propagate admin tasks to all registered
 For example to push a new not before policy to the application or to logout all users from the application.
 
 In this case {project_name} needs to be aware of all application cluster nodes, so it can send the event to all of them.
-To achieve this, we support auto-discovery mechanism: 
+To achieve this, we support auto-discovery mechanism:
 
 . When a new application node joins the cluster, it sends a registration request to the {project_name} server
 . The request may be re-sent to {project_name} in configured periodic intervals
@@ -95,8 +95,8 @@ To enable the feature edit the `WEB-INF/keycloak.json` file for your application
 
 This means the adapter will send the registration request on startup and re-register every 10 minutes.
 
-In the {project_name} Administration Console you can specify the maximum node re-registration timeout (should be larger than _register-node-period_ from
-the adapter configuration). You can also manually add and remove cluster nodes in through the Adminstration Console, which is useful if you don't want to rely
+In the {project_name} Admin Console you can specify the maximum node re-registration timeout (should be larger than _register-node-period_ from
+the adapter configuration). You can also manually add and remove cluster nodes in through the Admin Console, which is useful if you don't want to rely
 on the automatic registration feature or if you want to remove stale application nodes in the event your not using the automatic unregistration feature.
 
 [[_refresh_token_each_req]]
@@ -110,7 +110,7 @@ To enable the feature edit the `WEB-INF/keycloak.json` file for your application
 [source,json]
 ----
 "always-refresh-token": true
-----        
+----
 
 NOTE: This may have a significant impact on performance. Only enable this feature if you can't rely on backchannel messages to propagate logout and not before
     policies. Another thing to consider is that by default access tokens has a short expiration so even if logout is not propagated the token will expire within

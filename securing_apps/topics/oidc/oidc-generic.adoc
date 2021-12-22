@@ -1,4 +1,4 @@
-=== Other OpenID Connect Libraries
+=== Other OpenID Connect libraries
 
 {project_name} can be secured by supplied adapters that are usually easier to use and provide better integration with {project_name}. However, if an adapter is not available for your programming language, framework, or platform you might opt to use a generic OpenID Connect Relying Party (RP) library instead. This chapter describes details specific to {project_name} and does not contain specific protocol details. For more information see the https://openid.net/connect/[OpenID Connect specifications] and https://datatracker.ietf.org/doc/html/rfc6749[OAuth2 specification].
 
@@ -16,7 +16,7 @@ $$http://localhost:8080/auth/realms/master/.well-known/openid-configuration$$
 
 Some RP libraries retrieve all required endpoints from this endpoint, but for others you might need to list the endpoints individually.
 
-===== Authorization Endpoint
+===== Authorization endpoint
 ....
 /realms/{realm-name}/protocol/openid-connect/auth
 ....
@@ -25,7 +25,7 @@ The authorization endpoint performs authentication of the end-user. This is done
 
 For more details see the https://openid.net/specs/openid-connect-core-1_0.html#AuthorizationEndpoint[Authorization Endpoint] section in the OpenID Connect specification.
 
-===== Token Endpoint
+===== Token endpoint
 ....
 /realms/{realm-name}/protocol/openid-connect/token
 ....
@@ -35,7 +35,7 @@ The token endpoint is also used to obtain new access tokens when they expire.
 
 For more details see the https://openid.net/specs/openid-connect-core-1_0.html#TokenEndpoint[Token Endpoint] section in the OpenID Connect specification.
 
-===== Userinfo Endpoint
+===== Userinfo endpoint
 ....
 /realms/{realm-name}/protocol/openid-connect/userinfo
 ....
@@ -44,7 +44,7 @@ The userinfo endpoint returns standard claims about the authenticated user, and 
 
 For more details see the https://openid.net/specs/openid-connect-core-1_0.html#UserInfo[Userinfo Endpoint] section in the OpenID Connect specification.
 
-===== Logout Endpoint
+===== Logout endpoint
 ....
 /realms/{realm-name}/protocol/openid-connect/logout
 ....
@@ -56,7 +56,7 @@ The user agent can be redirected to the endpoint, in which case the active user 
 The endpoint can also be invoked directly by the application. To invoke this endpoint directly the refresh token needs to be included as well as the credentials required to authenticate the client.
 
 [[_certificate_endpoint]]
-===== Certificate Endpoint
+===== Certificate endpoint
 ....
 /realms/{realm-name}/protocol/openid-connect/certs
 ....
@@ -64,7 +64,7 @@ The endpoint can also be invoked directly by the application. To invoke this end
 The certificate endpoint returns the public keys enabled by the realm, encoded as a JSON Web Key (JWK). Depending on the realm settings there can be one or more keys enabled for verifying tokens. For more information see the link:{adminguide_link}[{adminguide_name}] and the https://datatracker.ietf.org/doc/html/rfc7517[JSON Web Key specification].
 
 [[_token_introspection_endpoint]]
-===== Introspection Endpoint
+===== Introspection endpoint
 ....
 /realms/{realm-name}/protocol/openid-connect/token/introspect
 ....
@@ -74,7 +74,7 @@ It can only be invoked by confidential clients.
 
 For more details on how to invoke on this endpoint, see https://datatracker.ietf.org/doc/html/rfc7662[OAuth 2.0 Token Introspection specification].
 
-===== Dynamic Client Registration Endpoint
+===== Dynamic Client Registration endpoint
 ....
 /realms/{realm-name}/clients-registrations/openid-connect
 ....
@@ -85,7 +85,7 @@ For more details see the <<_client_registration,Client Registration chapter>> an
 https://openid.net/specs/openid-connect-registration-1_0.html[OpenID Connect Dynamic Client Registration specification].
 
 [[_token_revocation_endpoint]]
-===== Token Revocation Endpoint
+===== Token Revocation endpoint
 ....
 /realms/{realm-name}/protocol/openid-connect/revoke
 ....
@@ -94,7 +94,7 @@ The token revocation endpoint is used to revoke tokens. Both refresh tokens and 
 
 For more details on how to invoke on this endpoint, see https://datatracker.ietf.org/doc/html/rfc7009[OAuth 2.0 Token Revocation specification].
 
-===== Device Authorization Endpoint
+===== Device Authorization endpoint
 ....
 /realms/{realm-name}/protocol/openid-connect/auth/device
 ....
@@ -104,7 +104,7 @@ The device authorization endpoint is used to obtain a device code and a user cod
 For more details on how to invoke on this endpoint, see https://datatracker.ietf.org/doc/html/rfc8628[OAuth 2.0 Device Authorization Grant specification].
 
 [[_backchannel_authentication_endpoint]]
-===== Backchannel Authentication Endpoint
+===== Backchannel Authentication endpoint
 ....
 /realms/{realm-name}/protocol/openid-connect/ext/ciba/auth
 ....
@@ -115,7 +115,7 @@ For more details on how to invoke on this endpoint, see https://openid.net/specs
 
 Also please refer to other places of {project_name} documentation like <<_client_initiated_backchannel_authentication_grant,Client Initiated Backchannel Authentication Grant section of this guide>> and link:{adminguide_link}#_client_initiated_backchannel_authentication_grant[Client Initiated Backchannel Authentication Grant section] of {adminguide_name}.
 
-==== Validating Access Tokens
+==== Validating access tokens
 
 If you need to manually validate access tokens issued by {project_name} you can invoke the <<_token_introspection_endpoint,Introspection Endpoint>>.
 The downside to this approach is that you have to make a network invocation to the {project_name} server.  This can be slow and possibly overload the
@@ -127,7 +127,7 @@ JWS.  Depending what language you code in, there are a multitude of third party 
 
 ==== Flows
 
-===== Authorization Code
+===== Authorization code
 
 The Authorization Code flow redirects the user agent to {project_name}. Once the user has successfully authenticated with {project_name} an
 Authorization Code is created and the user agent is redirected back to the application. The application then uses the authorization code along with its
@@ -190,7 +190,7 @@ curl \
   "http://localhost:8080/auth/realms/master/protocol/openid-connect/token"
 ----
 
-===== Client Credentials
+===== Client credentials
 
 Client Credentials is used when clients (applications and services) wants to obtain access on behalf of themselves rather than on behalf of a user. This can
 for example be useful for background services that applies changes to the system in general rather than for a specific user.

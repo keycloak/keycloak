@@ -1,5 +1,5 @@
 [[_client_registration]]
-== Client Registration
+== Using the client registration service
 
 In order for an application or service to utilize {project_name} it has to register a client in {project_name}.
 An admin can do this through the admin console (or admin REST endpoints), but clients can also register themselves through the {project_name} client
@@ -22,7 +22,7 @@ The following sections will describe how to use the different providers.
 To invoke the Client Registration Services you usually need a token. The token can be a bearer token, an initial access token or a registration access token.
 There is an alternative to register new client without any token as well, but then you need to configure Client Registration Policies (see below).
 
-==== Bearer Token
+==== Bearer token
 
 The bearer token can be issued on behalf of a user or a Service Account. The following permissions are required to invoke the endpoints (see link:{adminguide_link}[{adminguide_name}] for more details):
 
@@ -90,7 +90,7 @@ It will also return a new registration access token.
 To delete the Client Representation perform an HTTP DELETE request to:
 `/auth/realms/<realm>/clients-registrations/default/<client id>`
 
-=== {project_name} Adapter Configuration
+=== {project_name} adapter configuration
 
 The `installation` client registration provider can be used to retrieve the adapter configuration for a client.
 In addition to token authentication you can also authenticate with client credentials using HTTP basic authentication.

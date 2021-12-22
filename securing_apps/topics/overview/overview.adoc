@@ -1,4 +1,4 @@
-== Overview
+== Planning for securing applications and services
 
 {project_name} supports both OpenID Connect (an extension to OAuth 2.0) and SAML 2.0. When securing clients and services the first thing you need to
 decide is which of the two you are going to use. If you want you can also choose to secure some with OpenID Connect and others with SAML.

@@ -2,7 +2,8 @@ include::topics/overview/overview.adoc[]
 include::topics/overview/what-are-client-adapters.adoc[]
 include::topics/overview/supported-platforms.adoc[]
 include::topics/overview/supported-protocols.adoc[]
-
+include::topics/overview/terminology.adoc[]
+include::topics/overview/basic-steps.adoc[]
 include::topics/oidc/oidc-overview.adoc[]
 
 include::topics/oidc/java/java-adapters.adoc[]

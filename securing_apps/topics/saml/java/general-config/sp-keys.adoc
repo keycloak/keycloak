@@ -1,6 +1,6 @@
 [[_saml-sp-keys]]
 
-===== Service Provider Keys and Key Elements
+===== Service Provider keys and key elements
 
 If the IdP requires that the client application (or SP) sign all of its requests and/or if the IdP will encrypt assertions, you must define the keys used to do this.
 For client-signed documents you must define both the private and public key or certificate that is used to sign documents.

@@ -1,11 +1,11 @@
 
 [[_fuse_adapter]]
-==== JBoss Fuse 6 Adapter
+==== JBoss Fuse 6 adapter
 
 {project_name} supports securing your web applications running inside https://developers.redhat.com/products/fuse/overview[JBoss Fuse 6].
 
 ifeval::[{project_community}==true]
-JBoss Fuse 6 leverages <<_jetty9_adapter,Jetty 9 adapter>> as {fuseVersion} is bundled with http://www.eclipse.org/jetty/[Jetty 9.2 server]
+JBoss Fuse 6 uses <<_jetty9_adapter,Jetty 9 adapter>> as {fuseVersion} is bundled with http://www.eclipse.org/jetty/[Jetty 9.2 server]
 under the covers and Jetty is used for running various kinds of web applications.
 endif::[]
 
@@ -21,11 +21,11 @@ Security for the following items is supported for Fuse:
 * SSH and JMX admin access
 * https://hawt.io/[Hawtio administration console]
 
-===== Securing Your Web Applications Inside Fuse 6
+===== Securing your web applications inside Fuse 6
 
 You must first install the {project_name} Karaf feature. Next you will need to perform the steps according to the type of application you want to secure.
 All referenced web applications require injecting the {project_name} Jetty authenticator into the underlying Jetty server. The steps to achieve this depend on the application type. The details are described below.
 
 ifeval::[{project_community}==true]
-The best place to start is look at Fuse demo bundled as part of {project_name} examples in directory `fuse` . Most of the steps should be understandable from testing and understanding the demo.
+The best place to start is look at Fuse demo bundled as part of {project_name} examples in directory `fuse`. Most of the steps should be understandable from testing and understanding the demo.
 endif::[]

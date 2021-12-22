@@ -1,5 +1,7 @@
 === Supported Platforms
 
+{project_name} enables you to protect applications running on different platforms and using different technology stacks using OpenID Connect and SAML protocols.
+
 ==== OpenID Connect
 
 ===== Java

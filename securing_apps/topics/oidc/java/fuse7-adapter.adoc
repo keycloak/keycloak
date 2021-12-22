@@ -26,7 +26,7 @@ Security for the following items is supported for Fuse:
 * SSH and JMX admin access
 * https://hawt.io/[Hawtio administration console]
 
-===== Securing Your Web Applications Inside Fuse 7
+===== Securing your web applications inside Fuse 7
 
 You must first install the {project_name} Karaf feature. Next you will need to perform the steps according to the type of application you want to secure.
 All referenced web applications require injecting the {project_name} Undertow authentication mechanism into the underlying web server. The steps to achieve this depend on the application type. The details are described below.

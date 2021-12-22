@@ -1,6 +1,6 @@
 
 [[_java_adapter_config]]
-==== Java Adapter Config
+==== Java adapter configuration
 
 Each Java adapter supported by {project_name} can be configured by a simple JSON file.
 This is what one might look like:
@@ -47,7 +47,7 @@ This is what one might look like:
 ----
 
 You can use `${...}` enclosure for system property replacement. For example `${jboss.server.config.dir}` would be replaced by `/path/to/{project_name}`.
-Replacement of environment variables is also supported via the `env` prefix, e.g. `${env.MY_ENVIRONMENT_VARIABLE}`.
+Replacement of environment variables is also supported via the `env` prefix, for example `${env.MY_ENVIRONMENT_VARIABLE}`.
 
 The initial config file can be obtained from the admin console. This can be done by opening the admin console, select `Clients` from the menu and clicking
 on the corresponding client. Once the page for the client is opened click on the `Installation` tab and select `Keycloak OIDC JSON`.
@@ -63,7 +63,7 @@ resource::
   This is _REQUIRED._
 
 realm-public-key::
-  PEM format of the realm public key. You can obtain this from the administration console.
+  PEM format of the realm public key. You can obtain this from the Admin Console.
   This is _OPTIONAL_ and it's not recommended to set it. If not set, the adapter will download this from {project_name} and
   it will always re-download it when needed (eg. {project_name} rotates its keys). However if realm-public-key is set, then adapter
   will never download new keys from {project_name}, so when {project_name} rotate it's keys, adapter will break.
@@ -128,10 +128,10 @@ bearer-only::
   The default value is _false_.
 
 autodetect-bearer-only::
-  This should be set to __true__ if your application serves both a web application and web services (e.g. SOAP or REST).
-  It allows you to redirect unauthenticated users of the web application to the Keycloak login page,
+  This should be set to __true__ if your application serves both a web application and web services (for example SOAP or REST).
+  It allows you to redirect unauthenticated users of the web application to the {project_name} login page,
   but send an HTTP `401` status code to unauthenticated SOAP or REST clients instead as they would not understand a redirect to the login page.
-  Keycloak auto-detects SOAP or REST clients based on typical headers like `X-Requested-With`, `SOAPAction` or `Accept`.
+  {project_name} auto-detects SOAP or REST clients based on typical headers like `X-Requested-With`, `SOAPAction` or `Accept`.
   The default value is _false_.
 
 enable-basic-auth::

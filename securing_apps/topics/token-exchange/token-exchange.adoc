@@ -1,7 +1,7 @@
 
 [[_token-exchange]]
 
-== Token Exchange
+== Using token exchange
 
 :tech_feature_name: Token Exchange
 :tech_feature_setting: -Dkeycloak.profile.feature.token_exchange=enabled
@@ -9,8 +9,10 @@ include::../templates/techpreview.adoc[]
 
 [NOTE]
 ====
-In order to use token exchange you should also enable the `token_exchange` feature. Please, take a look at link:{installguide_profile_link}[{installguide_profile_name}]. 
+In order to use token exchange you should also enable the `token_exchange` feature. Please, take a look at link:{installguide_profile_link}[{installguide_profile_name}].
 ====
+
+=== How token exchange works
 
 In {project_name}, token exchange is the process of using a set of credentials or token to obtain an entirely different token.
 A client may want to invoke on a less trusted application so it may want to downgrade the current token it has.
@@ -35,7 +37,9 @@ It accepts form parameters (`application/x-www-form-urlencoded`) as input and th
 Token exchange is a client endpoint so requests must provide authentication information for the calling client.
 Public clients specify their client identifier as a form parameter.  Confidential clients can also use form parameters
 to pass their client id and secret, Basic Auth, or however your admin has configured the client authentication flow in your
-realm.  Here's a list of form parameters
+realm.
+
+==== Form parameters
 
 client_id::
     _REQUIRED MAYBE._  This parameter is required for clients using form parameters for authentication.  If you are using
@@ -75,6 +79,8 @@ scope::
     scopes in general.
 
 NOTE:   We currently only support OpenID Connect and OAuth exchanges.  Support for SAML based clients and identity providers may be added in the future depending on user demand.
+
+==== Responses from a token exchange request
 
 A successful response from an exchange invocation will return the HTTP 200 response code with a content type that
 depends on the `requested-token-type` and `requested_issuer` the client asks for.  OAuth requested token types will return
@@ -117,55 +123,63 @@ For simplicity's sake, let's call a token minted by the current realm as an _int
 an external realm or identity provider as an _external_ token.
 
 
-=== Internal Token to Internal Token Exchange
+=== Internal token to internal token exchange
 
 With an internal token to token exchange you have an existing token minted to a specific client and you want to exchange
-this token for a new one minted for a different target client.  Why would you want to do this?  This generally happens
+this token for a new one minted for a different target client.  Why would you want to do this?  This generally happens+
 when a client has a token minted for itself, and needs to make additional requests to other applications that require different
 claims and permissions within the access token.  Other reasons this type of exchange might be required is if you
 need to perform a "permission downgrade" where your app needs to invoke on a less trusted app and you don't want
 to propagate your current access token.
 
 [[_client_to_client_permission]]
-==== Granting Permission for the Exchange
+==== Granting permission for the exchange
 
-Clients that want to exchange tokens for a different client need to be authorized in the admin console to do so.
-You'll need to define a `token-exchange` fine grain permission in the target client you want permission to exchange to.
+Clients that want to exchange tokens for a different client need to be authorized in the Admin Console.
+You need to define a `token-exchange` fine grain permission in the target client you want permission to exchange to.
 
 .Target Client Permission
-image:{project_images}/exchange-target-client-permission-unset.png[]
+image:{project_images}/exchange-target-client-permission-unset.png[Target Client Permission]
 
-Toggle the `Permissions Enabled` switch to ON.
+.Procedure
 
+. Toggle *Permissions Enabled* to *ON*.
++
 .Target Client Permission
 image:{project_images}/exchange-target-client-permission-set.png[]
++
+That page displays a *token-exchange* link.
 
-You should see a `token-exchange` link on the page.  Click that to start defining the permission.  It will bring you
-to this page.
-
+. Click that link to start defining the permission.
++
+This setup page displays.
++
 .Target Client Exchange Permission Setup
-image:{project_images}/exchange-target-client-permission-setup.png[]
+image:{project_images}/exchange-target-client-permission-setup.png[Target Client Exchange Permission Setup]
 
-You'll have to define a policy for this permission.  Click the `Authorization` link, go to the `Policies` tab and create
-a `Client` Policy.
+. Define a policy for this permission by clicking the *Authorization* link
 
+. Click the *Policies* tab.
+
+. Create a *Client* Policy.
++
 .Client Policy Creation
 image:{project_images}/exchange-target-client-policy.png[]
 
-Here you enter in the starting client, that is the authenticated client that is requesting a token exchange.  After you
-create this policy, go back to the target client's `token-exchange` permission and add the client policy you just
-defined.
+. Enter in the starting client that is the authenticated client that is requesting a token exchange.
 
+. After you create this policy, go back to the target client's *token-exchange* permission and add the client policy you just defined.
++
 .Apply Client Policy
 image:{project_images}/exchange-target-client-exchange-apply-policy.png[]
 
 Your client now has permission to invoke.  If you do not do this correctly, you will get a 403 Forbidden response if you
 try to make an exchange.
 
-==== Making the Request
+==== Making the request
 
-When your client is exchanging an existing token for a token targeting another client, you must use the `audience` parameter.
-This parameter must be the client identifier for the target client that you configured in the admin console.
+When your client is exchanging an existing token for a token targeting another client, you use the `audience` parameter.
+This parameter must be the client identifier for the target client that you configured in the Admin Console.
 
 [source,bash]
 ----
@@ -193,10 +207,10 @@ an example JSON response you get back from this call.
 }
 ----
 
-=== Internal Token to External Token Exchange
+=== Internal token to external token exchange
 
 You can exchange a realm token for an externl token minted by an external identity provider.  This external identity provider
-must be configured within the `Identity Provider` section of the admin console.  Currently only OAuth/OpenID Connect based external
+must be configured within the `Identity Provider` section of the Admin Console.  Currently only OAuth/OpenID Connect based external
 identity providers are supported, this includes all social providers.  {project_name} does not perform a backchannel exchange to the external provider.  So if the account
 is not linked, you will not be able to get the external token.  To be able to obtain an external token one of
 these conditions must be met:
@@ -212,47 +226,47 @@ If the account is not linked, the exchange response will contain a link you can 
 discussed more in the <<_internal_external_making_request, Making the Request>> section.
 
 [[_grant_permission_external_exchange]]
-==== Granting Permission for the Exchange
+==== Granting permission for the exchange
 
-Internal to external token exchange requests will be denied with a 403, Forbidden response until you grant
-permission for the calling client to exchange tokens with the external identity provider.  To grant permission
-to the client you must go to the identity provider's configuration page to the `Permissions` tab.
+Internal to external token exchange requests will be denied with a 403, Forbidden response until you grant permission for the calling client to exchange tokens with the external identity provider.  To grant permission to the client, you go to the identity provider's configuration page to the *Permissions* tab.
 
 .Identity Provider Permission
 image:{project_images}/exchange-idp-permission-unset.png[]
 
-Toggle the `Permissions Enabled` switch to true.
+.Procedure
 
+. Toggle *Permissions Enabled* to *ON*.
++
 .Identity Provider Permission
 image:{project_images}/exchange-idp-permission-set.png[]
++
+The page displays *token-exchange* link.
 
-You should see a `token-exchange` link on the page.  Click that to start defining the permission.  It will bring you
-to this page.
-
+. Click the link to start defining the permission.
++
+This setup page appears.
++
 .Identity Provider Exchange Permission Setup
-image:{project_images}/exchange-idp-permission-setup.png[]
+image:{project_images}/exchange-idp-permission-setup.png[Identity Provider Exchange Permission Setup]
 
-You'll have to define a policy for this permission.  Click the `Authorization` link, go to the `Policies` tab and create
-a `Client` Policy.
-
+. Click the *Authorization* link and go to the *Policies* tab to create a client policy.
++
 .Client Policy Creation
-image:{project_images}/exchange-idp-client-policy.png[]
+image:{project_images}/exchange-idp-client-policy.png[Client Policy Creation]
 
-Here you enter in the starting client, that is the authenticated client that is requesting a token exchange.  After you
-create this policy, go back to the identity providers's `token-exchange` permission and add the client policy you just
-defined.
+. Enter the starting client that is the authenticated client that is requesting a token exchange.
 
+. Return to the identity provider's *token-exchange* permission and add the client policy you just defined.
++
 .Apply Client Policy
-image:{project_images}/exchange-idp-apply-policy.png[]
+image:{project_images}/exchange-idp-apply-policy.png[Apply Client Policy]
 
-Your client now has permission to invoke.  If you do not do this correctly, you will get a 403 Forbidden response if you
-try to make an exchange.
+Your client now has permission to invoke.  If you do not do this correctly, you will get a 403 Forbidden response if you try to make an exchange.
 
 [[_internal_external_making_request]]
-==== Making the Request
+==== Making the request
 
-When your client is exchanging an existing internal token to an external one, you must provide the
-`requested_issuer` parameter.  The parameter must be the alias of a configured identity provider.
+When your client is exchanging an existing internal token to an external one, you provide the `requested_issuer` parameter.  The parameter must be the alias of a configured identity provider.
 
 [source,bash]
 ----
@@ -265,7 +279,6 @@ curl -X POST \
     -d "requested_issuer=google" \
     http://localhost:8080/auth/realms/myrealm/protocol/openid-connect/token
 ----
-
 
 The `subject_token` parameter must be an access token for the target realm.  The `requested_token_type` parameter
 must be `urn:ietf:params:oauth:token-type:access_token` or left blank.  No other requested token type is supported
@@ -294,11 +307,11 @@ this JSON document:
 ----
 
 The `error` claim will be either `token_expired` or `not_linked`.  The `account-link-url` claim is provided
-so that the client can perform link:{developerguide_link}[Client Initiated Account Linking].  Most (all?)
-providers are requiring linking through browser OAuth protocol.  With the `account-link-url` just add a `redirect_uri`
+so that the client can perform link:{developerguide_link}[Client Initiated Account Linking].  Most, if not all,
+providers require linking through browser OAuth protocol.  With the `account-link-url` just add a `redirect_uri`
 query parameter to it and you can forward browsers to perform the link.
 
-=== External Token to Internal Token Exchange
+=== External token to internal token exchange
 
 You can trust and exchange external tokens minted by external identity providers for internal tokens.  This can be
 used to bridge between realms or just to trust tokens from your social provider.  It works similarly to an identity provider
@@ -313,24 +326,23 @@ and or refresh token depending on the `requested_token_type` parameter value.  Y
 user session will remain active until it times out or until you call the logout endpoint of the realm passing this
 new access token.
 
-These types of changes required a configured identity provider in the admin console.
+These types of changes required a configured identity provider in the Admin Console.
 
 NOTE:  SAML identity providers are not supported at this time.  Twitter tokens cannot be exchanged either.
 
+==== Granting permission for the exchange
 
-==== Granting Permission for the Exchange
-
-Before external token exchanges can be done, you must grant permission for the calling client to make the exchange.  This
+Before external token exchanges can be done, you grant permission for the calling client to make the exchange.  This
 permission is granted in the same manner as <<_grant_permission_external_exchange, internal to external permission is granted>>.
 
 If you also provide an `audience` parameter whose value points to a different client other than the calling one, you
 must also grant the calling client permission to exchange to the target client specific in the `audience` parameter.  How
 to do this is <<_client_to_client_permission, discussed earlier>> in this section.
 
-==== Making the Request
+==== Making the request
 
 The `subject_token_type` must either be `urn:ietf:params:oauth:token-type:access_token` or `urn:ietf:params:oauth:token-type:jwt`.
-If the type is `urn:ietf:params:oauth:token-type:access_token` you must specify the `subject_issuer` parameter and it must be the
+If the type is `urn:ietf:params:oauth:token-type:access_token` you specify the `subject_issuer` parameter and it must be the
 alias of the configured identity provider.  If the type is `urn:ietf:params:oauth:token-type:jwt`, the provider will be matched via
 the `issuer` claim within the JWT which must be the alias of the provider, or a registered issuer within the providers configuration.
 
@@ -377,14 +389,14 @@ For example, you may have an admin application that needs to impersonate a user 
 a problem.
 
 
-==== Granting Permission for the Exchange
+==== Granting permission for the exchange
 
 The user that the subject token represents must have permission to impersonate other users.  See the
 link:{adminguide_link}[{adminguide_name}] on how to enable this permission.  It can be done through a role or through
 fine grain admin permissions.
 
 
-==== Making the Request
+==== Making the request
 
 Make the request as described in other chapters except additionally specify the `requested_subject` parameter.  The
 value of this parameter must be a username or user id.
@@ -413,40 +425,50 @@ is able to authenticate users itself, but not able to obtain a token.
 WARNING: It is very risky to enable direct naked impersonation for a client.  If the client's credentials are ever
          stolen, that client can impersonate any user in the system.
 
-==== Granting Permission for the Exchange
+==== Granting permission for the exchange
 
 If the `audience` parameter is provided, then the calling client must have permission to exchange to the client.  How
 to set this up is discussed earlier in this chapter.
 
-Additionally, the calling client must be granted permission to impersonate users.  In the admin console, go to the
-`Users` screen and click on the `Permissions` tab.
+Additionally, the calling client must be granted permission to impersonate users.  In the Admin Console.
 
-.Users Permission
-image:{project_images}/exchange-users-permission-unset.png[]
+.Procedure
 
-Toggle the `Permissions Enabled` switch to true.
+. Click *Users* in the menu.
 
+. Click the *Permissions* tab.
++
+.User Permissions
+image:{project_images}/exchange-users-permission-unset.png[User Permissions]
+
+. Toggle *Permissions Enabled* to true.
++
 .Identity Provider Permission
 image:{project_images}/exchange-users-permission-set.png[]
++
+The page displays an *impersonation* link.
 
-You should see a `impersonation` link on the page.  Click that to start defining the permission.  It will bring you
-to this page.
-
+. Click that link to start defining the permission.
++
+This setup page displays.
++
 .Users Impersonation Permission Setup
-image:{project_images}/exchange-users-permission-setup.png[]
+image:{project_images}/exchange-users-permission-setup.png[Users Impersonation Permission Setup]
 
-You'll have to define a policy for this permission.  Click the `Authorization` link, go to the `Policies` tab and create
-a `Client` Policy.
+. Click the *Authorization* link
 
+. Go to the *Policies* tab and create a client policy.
++
 .Client Policy Creation
-image:{project_images}/exchange-users-client-policy.png[]
+image:{project_images}/exchange-users-client-policy.png[Client Policy Creation]
 
-Here you enter in the starting client, that is the authenticated client that is requesting a token exchange.  After you
-create this policy, go back to the users' `impersonation` permission and add the client policy you just
+. Enter the starting client that is the authenticated client that is requesting a token exchange.
+
+. Return to the users' *impersonation* permission and add the client policy you just
 defined.
-
++
 .Apply Client Policy
-image:{project_images}/exchange-users-apply-policy.png[]
+image:{project_images}/exchange-users-apply-policy.png[Apply Client Policy]
 
 Your client now has permission to impersonate users.  If you do not do this correctly, you will get a 403 Forbidden response if you
 try to make this type of exchange.
@@ -454,7 +476,7 @@ try to make this type of exchange.
 NOTE: Public clients are not allowed to do direct naked impersonations.
 
 
-==== Making the Request
+==== Making the request
 
 To make the request, simply specify the `requested_subject` parameter.  This must be the username or user id of
 a valid user.  You can also specify an `audience` parameter if you wish.
@@ -469,16 +491,16 @@ curl -X POST \
     http://localhost:8080/auth/realms/myrealm/protocol/openid-connect/token
 ----
 
-=== Expand Permission Model With Service Accounts
+=== Expand permission model with service accounts
 
-When granting clients permission to exchange, you don't necessarily have to manually enable those permissions for each and every client.
+When granting clients permission to exchange, you don't necessarily  manually enable those permissions for each and every client.
 If the client has a service account associated with it, you can use a role to group permissions together and assign exchange permissions
 by assigning a role to the client's service account.  For example, you might define a `naked-exchange` role and any service account that has that
 role can do a naked exchange.
 
-=== Exchange Vulnerabilities
+=== Exchange vulnerabilities
 
-When you start allowing token exchanges, there's various things you have to both be aware of and careful of.
+When you start allowing token exchanges, there are various things you have to both be aware of and careful of.
 
 The first is public clients.  Public clients do not have or require a client credential in order to perform an exchange.  Anybody that has a valid
 token will be able to __impersonate__ the public client and perform the exchanges that public client is allowed to perform.  If there
@@ -493,8 +515,3 @@ Direct naked exchanges are quite dangerous.  You are putting a lot of trust in t
 its client credentials.  If those credentials are leaked, then the thief can impersonate anybody in your system.  This is in direct
 contrast to confidential clients that have existing tokens.  You have two factors of authentication, the access token and the client
 credentials, and you're only dealing with one user.  So use direct naked exchanges sparingly.
-
-
-
-
-
