@@ -24,13 +24,19 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.testsuite.ui.account2.page.SigningInPage;
 import org.keycloak.testsuite.webauthn.authenticators.UseVirtualAuthenticators;
+import org.keycloak.testsuite.webauthn.pages.WebAuthnAuthenticatorsList;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnLoginPage;
 
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
@@ -182,11 +188,118 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest implement
 
         webAuthnLoginPage.assertCurrent();
 
-        assertThat(webAuthnLoginPage.getAuthenticatorsCount(), is(2));
-        assertThat(webAuthnLoginPage.getAuthenticatorsLabels(), Matchers.contains("authenticator#1", "authenticator#2"));
+        WebAuthnAuthenticatorsList authenticators = webAuthnLoginPage.getAuthenticators();
+        assertThat(authenticators.getCount(), is(2));
+        assertThat(authenticators.getLabels(), Matchers.contains("authenticator#1", "authenticator#2"));
 
         webAuthnLoginPage.clickAuthenticate();
         signingInPage.assertCurrent();
+    }
+
+    @Test
+    public void notDisplayAvailableAuthenticatorsPasswordless() {
+        addWebAuthnCredential("authenticator#1", true);
+        addWebAuthnCredential("authenticator#2", true);
+
+        final int passwordlessCount = webAuthnPwdlessCredentialType.getUserCredentialsCount();
+        assertThat(passwordlessCount, is(2));
+
+        setUpWebAuthnFlow("passwordlessFlow", true);
+        logout();
+
+        signingInPage.navigateTo();
+        loginToAccount();
+
+        webAuthnLoginPage.assertCurrent();
+        assertThat(webAuthnLoginPage.getAuthenticators().getCount(), is(0));
+
+        webAuthnLoginPage.clickAuthenticate();
+        signingInPage.assertCurrent();
+    }
+
+    @Test
+    public void checkAuthenticatorTimeLocale() throws ParseException {
+        addWebAuthnCredential("authenticator#1");
+
+        final int webAuthnCount = webAuthnCredentialType.getUserCredentialsCount();
+        assertThat(webAuthnCount, is(1));
+
+        setUpWebAuthnFlow("webAuthnFlow");
+        logout();
+
+        signingInPage.navigateTo();
+        loginToAccount();
+
+        webAuthnLoginPage.assertCurrent();
+
+        WebAuthnAuthenticatorsList authenticators = webAuthnLoginPage.getAuthenticators();
+        assertThat(authenticators.getCount(), is(1));
+        assertThat(authenticators.getLabels(), Matchers.contains("authenticator#1"));
+
+        WebAuthnAuthenticatorsList.WebAuthnAuthenticatorItem item = authenticators.getItems().get(0);
+        assertThat(item, notNullValue());
+        assertThat(item.getName(), is("authenticator#1"));
+
+        final String dateEnglishString = item.getCreatedDate();
+        assertThat(dateEnglishString, notNullValue());
+
+        DateFormat format = WebAuthnAuthenticatorsList.getDateFormat(Locale.ENGLISH);
+        final Date dateEnglishFormat = format.parse(dateEnglishString);
+        assertThat(dateEnglishFormat, notNullValue());
+
+        webAuthnLoginPage.clickAuthenticate();
+        signingInPage.assertCurrent();
+
+        logout();
+
+        RealmRepresentation realm = testRealmResource().toRepresentation();
+        assertThat(realm, notNullValue());
+        realm.setInternationalizationEnabled(true);
+        realm.setDefaultLocale(Locale.CHINA.getLanguage());
+        testRealmResource().update(realm);
+
+        signingInPage.navigateTo();
+        loginToAccount();
+
+        webAuthnLoginPage.assertCurrent();
+
+        authenticators = webAuthnLoginPage.getAuthenticators();
+        assertThat(authenticators.getCount(), is(1));
+        item = webAuthnLoginPage.getAuthenticators().getItems().get(0);
+
+        final String dateChineseString = item.getCreatedDate();
+        assertThat(dateChineseString, notNullValue());
+
+        format = WebAuthnAuthenticatorsList.getDateFormat(Locale.CHINA);
+        final Date dateChineseFormat = format.parse(dateChineseString);
+        assertThat(dateChineseFormat, notNullValue());
+
+        assertThat(dateEnglishString, is(not(dateChineseString)));
+        assertThat(dateEnglishFormat, is(dateChineseFormat));
+
+        webAuthnLoginPage.clickAuthenticate();
+        signingInPage.assertCurrent();
+
+        logout();
+
+        realm = testRealmResource().toRepresentation();
+        assertThat(realm, notNullValue());
+        realm.setDefaultLocale("xx");
+        testRealmResource().update(realm);
+
+        signingInPage.navigateTo();
+        loginToAccount();
+
+        webAuthnLoginPage.assertCurrent();
+
+        authenticators = webAuthnLoginPage.getAuthenticators();
+        assertThat(authenticators.getCount(), is(1));
+        item = webAuthnLoginPage.getAuthenticators().getItems().get(0);
+
+        final String dateInvalidString = item.getCreatedDate();
+        assertThat(dateInvalidString, notNullValue());
+
+        assertThat(dateInvalidString, is(dateEnglishString));
     }
 
     @Test

@@ -170,13 +170,19 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
     }
 
     protected void setUpWebAuthnFlow(String newFlowAlias) {
+        setUpWebAuthnFlow(newFlowAlias, false);
+    }
+
+    protected void setUpWebAuthnFlow(String newFlowAlias, boolean passwordless) {
+        final String providerID = passwordless ? WebAuthnPasswordlessAuthenticatorFactory.PROVIDER_ID : WebAuthnAuthenticatorFactory.PROVIDER_ID;
+
         testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
         testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
                 .selectFlow(newFlowAlias)
                 .inForms(forms -> forms
                         .clear()
                         .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, UsernamePasswordFormFactory.PROVIDER_ID)
-                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, WebAuthnAuthenticatorFactory.PROVIDER_ID)
+                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, providerID)
                 )
                 .defineAsBrowserFlow() // Activate this new flow
         );

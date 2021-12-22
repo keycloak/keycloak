@@ -104,6 +104,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         // read options from policy
         String userVerificationRequirement = policy.getUserVerificationRequirement();
         form.setAttribute(WebAuthnConstants.USER_VERIFICATION, userVerificationRequirement);
+        form.setAttribute(WebAuthnConstants.SHOULD_DISPLAY_AUTHENTICATORS, shouldDisplayAuthenticators(context));
 
         context.challenge(form.createLoginWebAuthn());
     }
@@ -123,6 +124,9 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         return WebAuthnCredentialModel.TYPE_TWOFACTOR;
     }
 
+    protected boolean shouldDisplayAuthenticators(AuthenticationFlowContext context) {
+        return context.getUser() != null;
+    }
 
     public void action(AuthenticationFlowContext context) {
         MultivaluedMap<String, String> params = context.getHttpRequest().getDecodedFormParameters();

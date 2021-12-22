@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.webauthn.pages.WebAuthnAuthenticatorsList;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnErrorPage;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnLoginPage;
 import org.keycloak.testsuite.webauthn.updaters.WebAuthnRealmAttributeUpdater;
@@ -68,8 +69,9 @@ public class WebAuthnErrorTest extends AbstractWebAuthnAccountTest {
 
             webAuthnLoginPage.assertCurrent();
 
-            assertThat(webAuthnLoginPage.getAuthenticatorsCount(), is(1));
-            assertThat(webAuthnLoginPage.getAuthenticatorsLabels(), Matchers.contains(authenticatorLabel));
+            final WebAuthnAuthenticatorsList authenticators = webAuthnLoginPage.getAuthenticators();
+            assertThat(authenticators.getCount(), is(1));
+            assertThat(authenticators.getLabels(), Matchers.contains(authenticatorLabel));
 
             webAuthnLoginPage.clickAuthenticate();
 

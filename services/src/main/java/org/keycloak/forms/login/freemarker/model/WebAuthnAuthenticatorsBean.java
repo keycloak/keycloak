@@ -15,22 +15,25 @@
  */
 package org.keycloak.forms.login.freemarker.model;
 
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.jboss.logging.Logger;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
+import java.text.DateFormat;
 
 public class WebAuthnAuthenticatorsBean {
+    private static final Logger log = Logger.getLogger(WebAuthnAuthenticatorsBean.class);
+
     private List<WebAuthnAuthenticatorBean> authenticators = new LinkedList<WebAuthnAuthenticatorBean>();
 
     public WebAuthnAuthenticatorsBean(KeycloakSession session, RealmModel realm, UserModel user, String credentialType) {
@@ -40,19 +43,24 @@ public class WebAuthnAuthenticatorsBean {
                 .map(webAuthnCredential -> {
                     String credentialId = Base64Url.encodeBase64ToBase64Url(webAuthnCredential.getWebAuthnCredentialData().getCredentialId());
                     String label = (webAuthnCredential.getUserLabel() == null || webAuthnCredential.getUserLabel().isEmpty()) ? "label missing" : webAuthnCredential.getUserLabel();
-                    String createdAt = getDateTimeFromMillis(webAuthnCredential.getCreatedDate());
+                    String createdAt = getDateTimeFromMillis(realm, webAuthnCredential.getCreatedDate());
                     return new WebAuthnAuthenticatorBean(credentialId, label, createdAt);
                 }).collect(Collectors.toList());
     }
 
-    private String getDateTimeFromMillis(long millis) {
-        return getDateTimeFromMillis(millis, "dd-MM-yyyy HH:mm");
-    }
+    private static String getDateTimeFromMillis(RealmModel realm, long millis) {
+        Locale locale;
+        try {
+            locale = Optional.ofNullable(realm.getDefaultLocale())
+                    .map(Locale::new)
+                    .orElse(Locale.ENGLISH);
+        } catch (Exception e) {
+            log.debugf("Invalid locale '%s'", realm.getDefaultLocale());
+            locale = Locale.ENGLISH;
+        }
 
-    private String getDateTimeFromMillis(long millis, String format) {
-        final LocalDateTime date = LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneId.systemDefault());
-        final DateTimeFormatter createdFormat = DateTimeFormatter.ofPattern(format);
-        return date.format(createdFormat);
+        DateFormat format = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, locale);
+        return format.format(new Date(millis));
     }
 
     public List<WebAuthnAuthenticatorBean> getAuthenticators() {

@@ -52,6 +52,7 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.SelectAuthenticatorPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.FlowUtil;
+import org.keycloak.testsuite.webauthn.pages.WebAuthnAuthenticatorsList;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnLoginPage;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnRegisterPage;
 import org.keycloak.testsuite.webauthn.updaters.WebAuthnRealmAttributeUpdater;
@@ -179,8 +180,10 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             loginPage.login(username, password);
 
             webAuthnLoginPage.assertCurrent();
-            assertThat(webAuthnLoginPage.getAuthenticatorsCount(), is(1));
-            assertThat(webAuthnLoginPage.getAuthenticatorsLabels(), Matchers.contains(authenticatorLabel));
+
+            final WebAuthnAuthenticatorsList authenticators = webAuthnLoginPage.getAuthenticators();
+            assertThat(authenticators.getCount(), is(1));
+            assertThat(authenticators.getLabels(), Matchers.contains(authenticatorLabel));
 
             webAuthnLoginPage.clickAuthenticate();
 
@@ -284,8 +287,10 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             passwordPage.login("password");
 
             webAuthnLoginPage.assertCurrent();
-            assertThat(webAuthnLoginPage.getAuthenticatorsCount(), is(1));
-            assertThat(webAuthnLoginPage.getAuthenticatorsLabels(), Matchers.contains(WEBAUTHN_LABEL));
+
+            final WebAuthnAuthenticatorsList authenticators = webAuthnLoginPage.getAuthenticators();
+            assertThat(authenticators.getCount(), is(1));
+            assertThat(authenticators.getLabels(), Matchers.contains(WEBAUTHN_LABEL));
 
             webAuthnLoginPage.clickAuthenticate();
 
@@ -306,6 +311,8 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             selectAuthenticatorPage.selectLoginMethod(SelectAuthenticatorPage.SECURITY_KEY);
 
             webAuthnLoginPage.assertCurrent();
+            assertThat(webAuthnLoginPage.getAuthenticators().getCount(), is(0));
+
             webAuthnLoginPage.clickAuthenticate();
 
             appPage.assertCurrent();

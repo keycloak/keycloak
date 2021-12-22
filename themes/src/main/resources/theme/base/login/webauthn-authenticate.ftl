@@ -17,30 +17,40 @@
 
             <div class="${properties.kcFormGroupClass!} no-bottom-margin">
                 <#if authenticators??>
-                    <#if authenticators.authenticators?size gt 1>
-                        <p class="${properties.kcSelectAuthListItemTitle!}">${kcSanitize(msg("webauthn-available-authenticators"))}</p>
-                    </#if>
-
                     <form id="authn_select" class="${properties.kcFormClass!}">
                         <#list authenticators.authenticators as authenticator>
                             <input type="hidden" name="authn_use_chk" value="${authenticator.credentialId}"/>
-                            <div class="${properties.kcSelectAuthListItemClass!}">
-
-                                <div class="${properties.kcSelectAuthListItemIconClass!}">
-                                    <i class="${properties.kcWebAuthnKeyIcon} fa-2x"></i>
-                                </div>
-                                <div class="${properties.kcSelectAuthListItemBodyClass!}">
-                                    <div id="kc-webauthn-authenticator-label" class="${properties.kcSelectAuthListItemHeadingClass!}">
-                                        ${msg('${authenticator.label}')}
-                                    </div>
-                                    <div class="${properties.kcSelectAuthListItemDescriptionClass!}">
-                                        ${msg('webauthn-createdAt-label')} ${authenticator.createdAt}
-                                    </div>
-                                </div>
-                                <div class="${properties.kcSelectAuthListItemFillClass!}"></div>
-                            </div>
                         </#list>
                     </form>
+
+                    <#if shouldDisplayAuthenticators?? && shouldDisplayAuthenticators>
+                        <#if authenticators.authenticators?size gt 1>
+                            <p class="${properties.kcSelectAuthListItemTitle!}">${kcSanitize(msg("webauthn-available-authenticators"))}</p>
+                        </#if>
+
+                        <div class="${properties.kcFormClass!}">
+                            <#list authenticators.authenticators as authenticator>
+                                <div id="kc-webauthn-authenticator" class="${properties.kcSelectAuthListItemClass!}">
+                                    <div class="${properties.kcSelectAuthListItemIconClass!}">
+                                        <i class="${properties.kcWebAuthnKeyIcon} fa-2x"></i>
+                                    </div>
+                                    <div class="${properties.kcSelectAuthListItemBodyClass!}">
+                                        <div id="kc-webauthn-authenticator-label"
+                                             class="${properties.kcSelectAuthListItemHeadingClass!}">
+                                            ${msg('${authenticator.label}')}
+                                        </div>
+                                        <div class="${properties.kcSelectAuthListItemDescriptionClass!}">
+                                            ${msg('webauthn-createdAt-label')}
+                                            <span id="kc-webauthn-authenticator-created">
+                                                ${authenticator.createdAt}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="${properties.kcSelectAuthListItemFillClass!}"></div>
+                                </div>
+                            </#list>
+                        </div>
+                    </#if>
                 </#if>
 
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
