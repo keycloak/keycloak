@@ -1311,7 +1311,7 @@ $ kcadm.sh create groups/51204821-0580-46db-8f2d-27106c6b5ded/children -r demore
 For example:
 [options="nowrap"]
 ----
-$ kcadm.sh create groups/51204821-0580-46db-8f2d-27106c6b5ded/children -r demorealm -s id=08d410c6-d585-4059-bb07-54dcb92c5094
+$ kcadm.sh create groups/51204821-0580-46db-8f2d-27106c6b5ded/children -r demorealm -s id=08d410c6-d585-4059-bb07-54dcb92c5094 -s name=SubGroup
 ----
 
 [discrete]
