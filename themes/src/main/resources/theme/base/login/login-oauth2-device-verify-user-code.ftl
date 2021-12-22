@@ -2,12 +2,15 @@
 <@layout.registrationLayout; section>
     <#if section = "header">
         ${msg("oauth2DeviceVerificationTitle")}
+    <#elseif section = "subHeader">
+        <div class="${properties.kcLabelWrapperClass!}">
+            <label for="device-user-code" class="${properties.kcFormLabelClass!}">${msg("verifyOAuth2DeviceUserCode")}</label>
+        </div>
+    <#elseif section = "errorDesc">
+        ${msg("oauth2DeviceInvalidUserCodeTitle")}
     <#elseif section = "form">
     
         <form id="kc-user-verify-device-user-code-form" class="${properties.kcFormClass!}" action="${url.oauth2DeviceVerificationAction}" method="post">
-            <div class="${properties.kcLabelWrapperClass!}">
-                <label for="device-user-code" class="${properties.kcFormLabelClass!}">${msg("verifyOAuth2DeviceUserCode")}</label>
-            </div>
             <div class="${properties.kcFormGroupClass!} pf-u-mt-lg">
                 <div class="${properties.kcInputWrapperClass!}">
                     <label class=${properties.kcFormLabelClass}>

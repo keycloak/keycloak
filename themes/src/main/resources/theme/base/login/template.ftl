@@ -94,12 +94,14 @@
                             <#if displayRequiredFields>
                                 <div class="${properties.kcContentWrapperClass!}">
                                     <h1 id="kc-page-title" class="pf-c-title pf-m-3xl"><#nested "header"></h1>
+                                    <span class="${properties.kcSubHeaderClass}"><#nested "subHeader"></span>
                                     <div class="${properties.kcLabelWrapperClass!} subtitle">
                                         <span class="subtitle"><span class="required">*</span> ${msg("requiredFields")}</span>
                                     </div>
                                 </div>
                             <#else>
                                 <h1 id="kc-page-title" class="pf-c-title pf-m-3xl"><#nested "header"></h1>
+                                <span class="${properties.kcSubHeaderClass}"><#nested "subHeader"></span>
                             </#if>
                         <#else>
                             <#if displayRequiredFields>
@@ -138,15 +140,29 @@
                         <#-- App-initiated actions should not see warning messages about the need to complete the action -->
                         <#-- during login.                                                                               -->
                         <#if displayMessage && message?has_content && (message.type != 'warning' || !isAppInitiatedAction??)>
-                            <div class="alert-${message.type} ${properties.kcAlertClass!} pf-m-<#if message.type = 'error'>danger<#else>${message.type}</#if>">
+                            <div class="${properties.kcAlertClass!} pf-m-<#if message.type = 'error'>danger<#else>${message.type}</#if>" >
                                 <div class="pf-c-alert__icon">
-                                    <#if message.type = 'success'><span class="${properties.kcFeedbackSuccessIcon!}"></span></#if>
-                                    <#if message.type = 'warning'><span class="${properties.kcFeedbackWarningIcon!}"></span></#if>
-                                    <#if message.type = 'error'><span class="${properties.kcFeedbackErrorIcon!}"></span></#if>
-                                    <#if message.type = 'info'><span class="${properties.kcFeedbackInfoIcon!}"></span></#if>
+                                    <#if message.type = 'success'><i class="${properties.kcFeedbackSuccessIcon!}"></i></#if>
+                                    <#if message.type = 'warning'><i class="${properties.kcFeedbackWarningIcon!}"></i></#if>
+                                    <#if message.type = 'error'><i class="${properties.kcFeedbackErrorIcon!}"></i></#if>
+                                    <#if message.type = 'info'><i class="${properties.kcFeedbackInfoIcon!}"></i></#if>
                                 </div>
-                                    <span class="${properties.kcAlertTitleClass!}">${kcSanitize(message.summary)?no_esc}</span>
+                                <p class="${properties.kcAlertTitleRaw!}">
+                                    <#if message.type = 'error' && message.summary?contains("timed out")>
+                                        <span class="${properties.kcScreenReader!}"><#nested "errorDesc"></span>
+                                        ${msg("timeoutErrorTitle")}
+                                    <#elseif message.type = 'error'>
+                                        <span class="${properties.kcScreenReader!}"><#nested "errorDesc"></span>
+                                        <#nested "errorDesc">
+                                    </#if>
+                                </p>
+                                <div class="pf-c-alert__description">
+                                    <p>${kcSanitize(message.summary)?no_esc}</p>
+                                </div>
+                                <br>
                             </div>
+                            
+                            <@dump_object object=message/>
                         </#if>
 
                         <#nested "form">
@@ -175,4 +191,32 @@
         </div>
     </body>
 </html>
+</#macro>
+
+<#macro dump_object object debug=false>
+  <#compress>
+    <#if object??>
+      <#attempt>
+        <#if object?is_node>
+          <#if object?node_type == "text">${object?json_string}
+          <#else>${object?node_name}<#if object?node_type=="element" && object.@@?has_content><#list object.@@ as attr>
+            "${attr?node_name}":"${attr?json_string}"</#list></#if>
+             <#if object?children?has_content><#list object?children as item>
+                <@dump_object object=item/></#list><#else>${object}</#if>"${object?node_name}"</#if>
+             <#elseif object?is_method>
+               "#method"
+             <#elseif object?is_sequence>
+               [<#list object as item><@dump_object object=item/><#if !item?is_last>, </#if></#list>]
+             <#elseif object?is_hash_ex>
+               {<#list object as key, item>"${key?json_string}":<@dump_object object=item/><#if !item?is_last>, </#if></#list>}
+             <#else>
+              "${object?string?json_string}"
+             </#if>
+      <#recover>
+        <#if !debug>"<!-- </#if>LOG: Could not parse object <#if debug><pre>${.error}</pre><#else>-->"</#if>
+      </#attempt>
+    <#else>
+      null
+    </#if>
+  </#compress>
 </#macro>
