@@ -130,4 +130,12 @@ public final class Constants {
     public static final String CLIENT_PROFILES = "client-policies.profiles";
     public static final String CLIENT_POLICIES = "client-policies.policies";
 
+
+    public static final String LEVEL_OF_AUTHENTICATION = "level-of-authentication";
+    public static final String REQUESTED_LEVEL_OF_AUTHENTICATION = "requested-level-of-authentication";
+    public static final String FORCE_LEVEL_OF_AUTHENTICATION = "force-level-of-authentication";
+    public static final String ACR_LOA_MAP = "acr.loa.map";
+    public static final int MINIMUM_LOA = 0;
+    public static final int MAXIMUM_LOA = Integer.MAX_VALUE;
+    public static final int NO_LOA = -1;
 }
