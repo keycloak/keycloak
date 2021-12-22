@@ -81,7 +81,7 @@ public final class QuarkusJpaConnectionProviderFactory implements JpaConnectionP
 
     public static final String QUERY_PROPERTY_PREFIX = "kc.query.";
     private static final Logger logger = Logger.getLogger(QuarkusJpaConnectionProviderFactory.class);
-    private static final String SQL_GET_LATEST_VERSION = "SELECT VERSION FROM %sMIGRATION_MODEL";
+    private static final String SQL_GET_LATEST_VERSION = "SELECT VERSION FROM %sMIGRATION_MODEL ORDER BY UPDATE_TIME DESC";
 
     enum MigrationStrategy {
         UPDATE, VALIDATE, MANUAL
