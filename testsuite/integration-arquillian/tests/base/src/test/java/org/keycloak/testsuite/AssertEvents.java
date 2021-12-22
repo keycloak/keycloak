@@ -221,7 +221,7 @@ public class AssertEvents implements TestRule {
                 .user(defaultUserId())
                 .ipAddress(
                         System.getProperty("auth.server.host", "localhost").contains("localhost")
-                        ? CoreMatchers.anyOf(is(DEFAULT_IP_ADDRESS), is(DEFAULT_IP_ADDRESS_V6), is(DEFAULT_IP_ADDRESS_V6_SHORT))
+                        ? Matchers.anyOf(is(DEFAULT_IP_ADDRESS), is(DEFAULT_IP_ADDRESS_V6), is(DEFAULT_IP_ADDRESS_V6_SHORT))
                         : Matchers.any(String.class))
                 .session((String) null)
                 .event(event);
