@@ -398,7 +398,7 @@ class SigningInPage extends React.Component<
                 <Title
                     id={`${category}-categ-title`}
                     headingLevel="h2"
-                    size="2xl"
+                    size="xl"
                 >
                     <Msg msgKey={category} />
                 </Title>
@@ -407,12 +407,12 @@ class SigningInPage extends React.Component<
                     <SplitItem>
                         <Title
                             headingLevel="h3"
-                            size="xl"
+                            size="md"
                             className="pf-u-mb-md"
                         >
-                            <strong id={`${credContainer.type}-cred-title`}>
+                            <span id={`${credContainer.type}-cred-title`}>
                                 <Msg msgKey={credContainer.displayName} />
-                            </strong>
+                            </span>
                         </Title>
 
                         <span id={`${credContainer.type}-cred-help`}>

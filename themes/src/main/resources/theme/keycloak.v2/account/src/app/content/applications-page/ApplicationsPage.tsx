@@ -136,7 +136,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
         <PageSection isFilled variant={PageSectionVariants.light}>
 
           <Stack hasGutter>
-            <DataList id="applications-list" aria-label={Msg.localize('applicationsPageTitle')} isCompact>
+            <DataList id="applications-list" aria-label={Msg.localize('applicationsPageTitle')}>
               <DataListItem id="applications-list-header" aria-labelledby="Columns names">
                 <DataListItemRow>
                   // invisible toggle allows headings to line up properly
@@ -201,7 +201,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                     <DescriptionList>
                       <DescriptionListGroup>
                         <DescriptionListTerm>{Msg.localize('client')}</DescriptionListTerm>
-                        <DescriptionListDescription><strong>{application.clientId}</strong></DescriptionListDescription>
+                        <DescriptionListDescription>{application.clientId}</DescriptionListDescription>
                       </DescriptionListGroup>
                       {application.description &&
                         <DescriptionListGroup>
