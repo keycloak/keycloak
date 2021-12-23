@@ -78,8 +78,8 @@
         <jakarta.persistence.version>2.2.3</jakarta.persistence.version>
         <hibernate.core.version>5.3.20.Final</hibernate.core.version>
         <hibernate.c3p0.version>5.3.20.Final</hibernate.c3p0.version>
-        <infinispan.version>11.0.9.Final</infinispan.version>
-        <infinispan.protostream.processor.version>4.3.4.Final</infinispan.protostream.processor.version>
+        <infinispan.version>12.1.7.Final</infinispan.version>
+        <infinispan.protostream.processor.version>4.4.1.Final</infinispan.protostream.processor.version>
         <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
         <jackson.version>2.12.1</jackson.version>
         <jackson.databind.version>${jackson.version}</jackson.databind.version>
