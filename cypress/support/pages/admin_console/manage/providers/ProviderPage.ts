@@ -45,7 +45,7 @@ export default class ProviderPage {
   private ldapAttNameInput = "ldap.attribute.name";
   private ldapAttValueInput = "ldap.attribute.value";
   private groupInput = "group";
-  private ldapDnInput = "groups.dn";
+  private ldapDnInput = "roles.dn";
 
   // mapper types
   private msadUserAcctMapper = "msad-user-account-control-mapper";
@@ -60,24 +60,14 @@ export default class ProviderPage {
   private roleLdapMapper = "role-ldap-mapper";
   private hcLdapRoleMapper = "hardcoded-ldap-role-mapper";
 
-  private tab = "#pf-tab-serviceAccount-serviceAccount";
-  private scopeTab = "scopeTab";
-  private assignRole = "assignRole";
-  private unAssign = "unAssignRole";
-  private assign = "assign";
-  private hide = "#hideInheritedRoles";
-  private assignedRolesTable = "assigned-roles";
-  private namesColumn = 'td[data-label="Name"]:visible';
-
   private rolesTab = "#pf-tab-roles-roles";
   private createRoleBtn = "data-testid=no-roles-for-this-client-empty-action";
   private realmRolesSaveBtn = "data-testid=realm-roles-save-button";
   private roleNameField = "#kc-name";
-  private clientIdSelect = "#kc-client-id";
+  private clientIdSelect = "#client\\.id-select-typeahead";
 
   private groupName = "aa-uf-mappers-group";
   private clientName = "aa-uf-mappers-client";
-  private roleName = "aa-uf-mappers-role";
 
   changeCacheTime(unit: string, time: string) {
     switch (unit) {
@@ -275,16 +265,17 @@ export default class ProviderPage {
         break;
 
       case this.hcLdapRoleMapper:
-        cy.get(`[data-testid="selectRole"]`).click();
-        cy.wait(2000);
-        cy.get(this.namesColumn)
-          .contains(this.clientName)
-          .parent()
-          .parent()
-          .within(() => {
-            cy.get('input[name="radioGroup"]').click();
-          });
-        cy.findByTestId(this.assign).click();
+        cy.get("#group-role-select-typeahead")
+          .click()
+          .get(".pf-c-select__menu-item")
+          .first()
+          .click();
+        cy.get("#role-role-select-typeahead")
+          .click()
+          .get(".pf-c-select__menu-item")
+          .first()
+          .click();
+
         break;
       default:
         console.log("Invalid mapper type.");
