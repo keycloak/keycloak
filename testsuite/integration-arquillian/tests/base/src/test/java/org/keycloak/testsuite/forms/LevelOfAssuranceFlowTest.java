@@ -189,6 +189,18 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void stepupToUnknownEssentialAcrFails() {
+        openLoginFormWithAcrClaim(true, "silver");
+        authenticateWithUsername();
+        assertLoggedInWithAcr("silver");
+        // step-up to unknown acr
+        openLoginFormWithAcrClaim(true, "uranium");
+        authenticateWithPassword();
+        authenticateWithButton();
+        wait.until(driver -> errorPage.isCurrent());
+    }
+
+    @Test
     public void reauthenticationWithNoAcr() {
         openLoginFormWithAcrClaim(true, "silver");
         authenticateWithUsername();
@@ -216,6 +228,15 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void essentialClaimNotReachedFails() {
+        openLoginFormWithAcrClaim(true, "4");
+        authenticateWithUsername();
+        authenticateWithPassword();
+        authenticateWithButton();
+        wait.until(driver -> errorPage.isCurrent());
+    }
+
+    @Test
     public void optionalClaimNotReachedSucceeds() {
         openLoginFormWithAcrClaim(false, "4");
         authenticateWithUsername();
@@ -224,6 +245,15 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         // the reached loa is 3, but there is no mapping for it, and it was not explicitly
         // requested, so the highest known and reached ACR is returned
         assertLoggedInWithAcr("gold");
+    }
+
+    @Test
+    public void essentialUnknownClaimFails() {
+        openLoginFormWithAcrClaim(true, "uranium");
+        authenticateWithUsername();
+        authenticateWithPassword();
+        authenticateWithButton();
+        wait.until(driver -> errorPage.isCurrent());
     }
 
     @Test
