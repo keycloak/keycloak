@@ -23,5 +23,5 @@ Valid options for database vendors include:
 
 Once configured you can easily connect to the database with:
 
-<@kc.start parameters="--db-host <hostname> --db-schema <schema> --db-user <username> --db-password <password>"/>
+<@kc.start parameters="--db-url-host <hostname> --db-schema <schema> --db-username <username> --db-password <password>"/>
 </@tmpl.guide>
