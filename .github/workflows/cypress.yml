@@ -41,7 +41,7 @@ jobs:
 
       - name: Build Keycloak Server
         working-directory: ${{ env.KEYCLOAK_SERVER_PATH }}
-        run: mvn clean install --no-snapshot-updates --batch-mode --errors -DskipTests -Pdistribution
+        run: mvn clean install --no-snapshot-updates --batch-mode --errors -DskipTests -Pdistribution,admin-preview
 
       - name: Configure distribution path
         working-directory: ${{ env.KEYCLOAK_SERVER_PATH }}
