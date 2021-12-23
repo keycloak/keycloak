@@ -75,13 +75,6 @@ public class WebAuthnAuthenticatorsList {
         }
     }
 
-    /**
-     * Get same DateFormat as in <code>org.keycloak.forms.login.freemarker.model.WebAuthnAuthenticatorsBean</code>
-     */
-    public static DateFormat getDateFormat(Locale locale) {
-        return DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, locale);
-    }
-
     public static class WebAuthnAuthenticatorItem {
         private final String name;
         private final String createdAt;

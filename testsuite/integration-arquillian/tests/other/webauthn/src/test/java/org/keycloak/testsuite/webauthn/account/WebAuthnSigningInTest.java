@@ -30,6 +30,7 @@ import org.keycloak.testsuite.ui.account2.page.SigningInPage;
 import org.keycloak.testsuite.webauthn.authenticators.UseVirtualAuthenticators;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnAuthenticatorsList;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnLoginPage;
+import org.keycloak.theme.DateTimeFormatterUtil;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -243,9 +244,9 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest implement
         final String dateEnglishString = item.getCreatedDate();
         assertThat(dateEnglishString, notNullValue());
 
-        DateFormat format = WebAuthnAuthenticatorsList.getDateFormat(Locale.ENGLISH);
-        final Date dateEnglishFormat = format.parse(dateEnglishString);
-        assertThat(dateEnglishFormat, notNullValue());
+        DateFormat format = DateTimeFormatterUtil.getDefaultDateFormat(Locale.ENGLISH);
+        final Date dateEnglish = format.parse(dateEnglishString);
+        assertThat(dateEnglish, notNullValue());
 
         webAuthnLoginPage.clickAuthenticate();
         signingInPage.assertCurrent();
@@ -270,12 +271,12 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest implement
         final String dateChineseString = item.getCreatedDate();
         assertThat(dateChineseString, notNullValue());
 
-        format = WebAuthnAuthenticatorsList.getDateFormat(Locale.CHINA);
-        final Date dateChineseFormat = format.parse(dateChineseString);
-        assertThat(dateChineseFormat, notNullValue());
+        format = DateTimeFormatterUtil.getDefaultDateFormat(Locale.CHINA);
+        final Date dateChinese = format.parse(dateChineseString);
+        assertThat(dateChinese, notNullValue());
 
         assertThat(dateEnglishString, is(not(dateChineseString)));
-        assertThat(dateEnglishFormat, is(dateChineseFormat));
+        assertThat(dateEnglish, is(dateChinese));
 
         webAuthnLoginPage.clickAuthenticate();
         signingInPage.assertCurrent();
