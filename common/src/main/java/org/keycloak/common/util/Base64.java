@@ -1,5 +1,7 @@
 package org.keycloak.common.util;
 
+import java.io.IOException;
+
 /**
  * <p>Encodes and decodes to and from Base64 notation.</p>
  * <p>Homepage: <a href="http://iharder.net/base64">http://iharder.net/base64</a>.</p>
@@ -35,6 +37,10 @@ package org.keycloak.common.util;
  * Change Log:
  * </p>
  * <ul>
+ *  <li>v2.3.8 - Fixed automatic gzip decoding, based on the content,
+ *  as this may lead to unexpected behaviour. Request either gzipped
+ *  or non gzipped decoding as excepted. Automatic encoding is especially
+ *  problematic with generated input (see KEYCLOAK-18914 for a detailed case).</li>
  *  <li>v2.3.7 - Fixed subtle bug when base 64 input stream contained the
  *   value 01111111, which is an invalid base 64 character but should not
  *   throw an ArrayIndexOutOfBoundsException either. Led to discovery of
@@ -76,7 +82,7 @@ package org.keycloak.common.util;
  *      <a href="http://www.faqs.org/rfcs/rfc3548.html">RFC3548</a>.</li>
  *    <li><em>Throws exceptions instead of returning null values.</em> Because some operations
  *      (especially those that may permit the GZIP option) use IO streams, there
- *      is a possiblity of an java.io.IOException being thrown. After some discussion and
+ *      is a possibility of an java.io.IOException being thrown. After some discussion and
  *      thought, I've changed the behavior of the methods to throw java.io.IOExceptions
  *      rather than return null if ever there's an error. I think this is more
  *      appropriate, though it will require some changes to your code. Sorry,
@@ -167,9 +173,8 @@ public class Base64
     /** Specify that data should be gzip-compressed in second bit. Value is two. */
     public final static int GZIP = 2;
 
-    /** Specify that gzipped data should <em>not</em> be automatically gunzipped. */
-    public final static int DONT_GUNZIP = 4;
-
+    /** Specify that data should be gunzipped. */
+    public final static int GUNZIP = 4;
 
     /** Do break lines when encoding. Value is 8. */
     public final static int DO_BREAK_LINES = 8;
@@ -179,7 +184,7 @@ public class Base64
      * in Section 4 of RFC3548:
      * <a href="http://www.faqs.org/rfcs/rfc3548.html">http://www.faqs.org/rfcs/rfc3548.html</a>.
      * It is important to note that data encoded this way is <em>not</em> officially valid Base64,
-     * or at the very least should not be called Base64 without also specifying that is
+     * or at the very least should not be called Base64 without also specifying that it
      * was encoded using the URL- and Filename-safe dialect.
      */
     public final static int URL_SAFE = 16;
@@ -476,7 +481,7 @@ public class Base64
      * anywhere along their length by specifying
      * <var>srcOffset</var> and <var>destOffset</var>.
      * This method does not check to make sure your arrays
-     * are large enough to accomodate <var>srcOffset</var> + 3 for
+     * are large enough to accommodate <var>srcOffset</var> + 3 for
      * the <var>source</var> array or <var>destOffset</var> + 4 for
      * the <var>destination</var> array.
      * The actual number of significant bytes in your array is
@@ -548,7 +553,7 @@ public class Base64
      * writing it to the <code>encoded</code> ByteBuffer.
      * This is an experimental feature. Currently it does not
      * pass along any options (such as {@link #DO_BREAK_LINES}
-     * or {@link #GZIP}.
+     * or {@link #GZIP}).
      *
      * @param raw input buffer
      * @param encoded output buffer
@@ -733,7 +738,7 @@ public class Base64
      * Example options:<pre>
      *   GZIP: gzip-compresses object before encoding it.
      *   DO_BREAK_LINES: break lines at 76 characters
-     *     <i>Note: Technically, this makes your encoding non-compliant.</i>
+     *     <i>Note: Technically, without line break your encoding may become non-compliant (see rfc2045 and rfc4648).</i>
      * </pre>
      * <p>
      * Example: <code>encodeBytes( myData, Base64.GZIP )</code> or
@@ -1115,15 +1120,8 @@ public class Base64
      * @return decoded data
      * @since 2.3.1
      */
-    public static byte[] decode( byte[] source )
-            throws java.io.IOException {
-        byte[] decoded = null;
-//        try {
-        decoded = decode( source, 0, source.length, Base64.NO_OPTIONS );
-//        } catch( java.io.IOException ex ) {
-//            assert false : "IOExceptions only come from GZipping, which is turned off: " + ex.getMessage();
-//        }
-        return decoded;
+    public static byte[] decode( byte[] source ) throws java.io.IOException {
+        return decode( source, 0, source.length, Base64.NO_OPTIONS );
     }
 
 
@@ -1231,9 +1229,9 @@ public class Base64
      * detecting gzip-compressed data and decompressing it.
      *
      * @param s the string to decode
-     * @param options encode options such as URL_SAFE
+     * @param options decode options such as URL_SAFE or GUNZIP
      * @return the decoded data
-     * @throws java.io.IOException if there is an error
+     * @throws java.io.IOException if there is an error (invalid character in source string or gunzip error)
      * @throws NullPointerException if <tt>s</tt> is null
      * @since 1.4
      */
@@ -1257,46 +1255,41 @@ public class Base64
 
         // Check to see if it's gzip-compressed
         // GZIP Magic Two-Byte Number: 0x8b1f (35615)
-        boolean dontGunzip = (options & DONT_GUNZIP) != 0;
-        if( (bytes != null) && (bytes.length >= 4) && (!dontGunzip) ) {
+        boolean doGunzip = (options & GUNZIP) != 0;
+        if( (bytes != null) && (bytes.length >= 4) && doGunzip ) {
 
             int head = ((int)bytes[0] & 0xff) | ((bytes[1] << 8) & 0xff00);
-            if( java.util.zip.GZIPInputStream.GZIP_MAGIC == head )  {
-                java.io.ByteArrayInputStream  bais = null;
-                java.util.zip.GZIPInputStream gzis = null;
-                java.io.ByteArrayOutputStream baos = null;
-                byte[] buffer = new byte[2048];
-                int    length = 0;
+            if( java.util.zip.GZIPInputStream.GZIP_MAGIC != head )  {
+                throw new IOException("Provided data has no GZIP magic header.");
+            }
+            java.io.ByteArrayInputStream  bais = null;
+            java.util.zip.GZIPInputStream gzis = null;
+            java.io.ByteArrayOutputStream baos = null;
+            byte[] buffer = new byte[2048];
+            int    length = 0;
 
-                try {
-                    baos = new java.io.ByteArrayOutputStream();
-                    bais = new java.io.ByteArrayInputStream( bytes );
-                    gzis = new java.util.zip.GZIPInputStream( bais );
+            try {
+                baos = new java.io.ByteArrayOutputStream();
+                bais = new java.io.ByteArrayInputStream( bytes );
+                gzis = new java.util.zip.GZIPInputStream( bais );
 
-                    while( ( length = gzis.read( buffer ) ) >= 0 ) {
-                        baos.write(buffer,0,length);
-                    }   // end while: reading input
+                while( ( length = gzis.read( buffer ) ) >= 0 ) {
+                    baos.write(buffer,0,length);
+                }   // end while: reading input
 
-                    // No error? Get new bytes.
-                    bytes = baos.toByteArray();
+                // No error? Get new bytes.
+                bytes = baos.toByteArray();
 
-                }   // end try
-                catch( java.io.IOException e ) {
-                    if (e.getMessage().equals("Unsupported compression method")) {
-                        System.out.println("Base64 decoding: Ignoring GZIP header and just returning originally-decoded bytes."); // Better to log as debug, but jboss logging not available in the module :/
-                    } else {
-                        e.printStackTrace();
-                    }
+            }   // end try
+            catch( java.io.IOException e ) {
+                throw new IOException("Failed to gunzip", e);
+            }   // end catch
+            finally {
+                try{ baos.close(); } catch( Exception e ){}
+                try{ gzis.close(); } catch( Exception e ){}
+                try{ bais.close(); } catch( Exception e ){}
+            }   // end finally
 
-                    // Just return originally-decoded bytes
-                }   // end catch
-                finally {
-                    try{ baos.close(); } catch( Exception e ){}
-                    try{ gzis.close(); } catch( Exception e ){}
-                    try{ bais.close(); } catch( Exception e ){}
-                }   // end finally
-
-            }   // end if: gzipped
         }   // end if: bytes.length >= 2
 
         return bytes;
