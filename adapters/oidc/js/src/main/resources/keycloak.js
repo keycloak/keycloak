@@ -242,7 +242,6 @@
                     ifrm.setAttribute("src", src);
                     ifrm.setAttribute("title", "keycloak-silent-check-sso");
                     ifrm.style.display = "none";
-                    document.body.appendChild(ifrm);
 
                     var messageCallback = function(event) {
                         if (event.origin !== window.location.origin || ifrm.contentWindow !== event.source) {
@@ -257,6 +256,7 @@
                     };
 
                     window.addEventListener("message", messageCallback);
+                    document.body.appendChild(ifrm);
                 };
 
                 var options = {};
