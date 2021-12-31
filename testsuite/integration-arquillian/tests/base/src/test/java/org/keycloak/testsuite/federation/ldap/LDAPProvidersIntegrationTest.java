@@ -366,7 +366,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
         registerPage.register("firstName", "lastName", email,
-                username, "Password1", "Password1");
+            username, "Password1", "Password1");
 
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -565,8 +565,8 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
 
             ComponentModel hardcodedMapperModel = KeycloakModelUtils.createComponentModel("hardcodedAttr-description", ctx.getLdapModel().getId(), HardcodedLDAPAttributeMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
-                    HardcodedLDAPAttributeMapper.LDAP_ATTRIBUTE_NAME, "description",
-                    HardcodedLDAPAttributeMapper.LDAP_ATTRIBUTE_VALUE, "some-${RANDOM}");
+                HardcodedLDAPAttributeMapper.LDAP_ATTRIBUTE_NAME, "description",
+                HardcodedLDAPAttributeMapper.LDAP_ATTRIBUTE_VALUE, "some-${RANDOM}");
             ctx.getRealm().addComponentModel(hardcodedMapperModel);
         });
 
@@ -630,8 +630,8 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             Assert.assertFalse(john.hasRole(hardcodedRole));
 
             ComponentModel hardcodedMapperModel = KeycloakModelUtils.createComponentModel("hardcoded role", ctx.getLdapModel().getId(),
-                    HardcodedLDAPRoleStorageMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
-                    HardcodedLDAPRoleStorageMapper.ROLE, "hardcoded-role");
+                HardcodedLDAPRoleStorageMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
+                HardcodedLDAPRoleStorageMapper.ROLE, "hardcoded-role");
             appRealm.addComponentModel(hardcodedMapperModel);
         });
 
@@ -672,8 +672,8 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             Assert.assertFalse(john.isMemberOf(hardcodedGroup));
 
             ComponentModel hardcodedMapperModel = KeycloakModelUtils.createComponentModel("hardcoded group",
-                    ctx.getLdapModel().getId(), HardcodedLDAPGroupStorageMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
-                    HardcodedLDAPGroupStorageMapper.GROUP, "hardcoded-group");
+                ctx.getLdapModel().getId(), HardcodedLDAPGroupStorageMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
+                HardcodedLDAPGroupStorageMapper.GROUP, "hardcoded-group");
             appRealm.addComponentModel(hardcodedMapperModel);
         });
 
@@ -782,7 +782,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             appRealm.updateComponent(ctx.getLdapModel());
 
             Assert.assertEquals(UserStorageProvider.EditMode.WRITABLE.toString(),
-                    appRealm.getComponent(ctx.getLdapModel().getId()).getConfig().getFirst(LDAPConstants.EDIT_MODE));
+                appRealm.getComponent(ctx.getLdapModel().getId()).getConfig().getFirst(LDAPConstants.EDIT_MODE));
         });
     }
 
@@ -871,6 +871,50 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             ctx.getLdapModel().getConfig().remove(LDAPConstants.CUSTOM_USER_SEARCH_FILTER);
             appRealm.updateComponent(ctx.getLdapModel());
         });
+
+        // Get username5 ID. Username5 is covered by the custom filter
+        String user5Id = testingClient.server().fetch(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            // Fetch user from LDAP
+            UserModel testedUser = session.users().getUserByUsername(ctx.getRealm(), "username5");
+            return testedUser.getId();
+        },String.class);
+
+        // Get username7 ID. Username7 is not covered by the custom filter
+        String user7Id = testingClient.server().fetch(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            // Fetch user from LDAP
+            UserModel testedUser = session.users().getUserByUsername(ctx.getRealm(), "username7");
+            return testedUser.getId();
+        },String.class);
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            session.userCache().clear();
+            // Add custom filter again
+            ctx.getLdapModel().getConfig().putSingle(LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(|(mail=user5@email.org)(mail=user6@email.org))");
+
+            appRealm.updateComponent(ctx.getLdapModel());
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            session.userCache().clear();
+
+            // search by id using custom filter. Must return the user
+            UserModel testUser5 = session.users().getUserById(appRealm, user5Id);
+            Assert.assertNotNull(testUser5);
+
+            // search by id using custom filter. Must not return the user
+            UserModel testUser7 = session.users().getUserById(appRealm, user7Id);
+            Assert.assertNull(testUser7);
+
+            // Remove custom filter
+            ctx.getLdapModel().getConfig().remove(LDAPConstants.CUSTOM_USER_SEARCH_FILTER);
+            appRealm.updateComponent(ctx.getLdapModel());
+        });
     }
 
     @Test
@@ -896,8 +940,8 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             UserCredentialModel cred = UserCredentialModel.password("Candycand1", true);
             session.userCredentialManager().updateCredential(appRealm, user, cred);
             CredentialModel userCredentialValueModel = session.userCredentialManager()
-                    .getStoredCredentialsByTypeStream(appRealm, user, PasswordCredentialModel.TYPE)
-                    .findFirst().orElse(null);
+                .getStoredCredentialsByTypeStream(appRealm, user, PasswordCredentialModel.TYPE)
+                .findFirst().orElse(null);
             Assert.assertNotNull(userCredentialValueModel);
             Assert.assertEquals(PasswordCredentialModel.TYPE, userCredentialValueModel.getType());
             Assert.assertTrue(session.userCredentialManager().isValid(appRealm, user, cred));
@@ -916,8 +960,8 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
         // Assert password is stored locally
         List<String> storedCredentials = userResource.credentials().stream()
-                .map(CredentialRepresentation::getType)
-                .collect(Collectors.toList());
+            .map(CredentialRepresentation::getType)
+            .collect(Collectors.toList());
         Assert.assertTrue(storedCredentials.contains(PasswordCredentialModel.TYPE));
 
         // Assert password is supported in the LDAP too.
@@ -971,7 +1015,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
             // search for user by attribute
             List<UserModel> users = ctx.getLdapProvider().searchForUserByUserAttributeStream(appRealm, ATTRIBUTE, ATTRIBUTE_VALUE)
-                    .collect(Collectors.toList());
+                .collect(Collectors.toList());
             assertEquals(2, users.size());
             List<String> attrList = users.get(0).getAttributeStream(ATTRIBUTE).collect(Collectors.toList());
             assertEquals(1, attrList.size());
@@ -981,7 +1025,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             assertEquals(1, attrList.size());
             assertEquals(ATTRIBUTE_VALUE, attrList.get(0));
 
-	        // user are now imported to local store
+            // user are now imported to local store
             LDAPTestAsserts.assertUserImported(session.userLocalStorage(), appRealm, "username8", "John8", "Doel8", "user8@email.org", ATTRIBUTE_VALUE);
             LDAPTestAsserts.assertUserImported(session.userLocalStorage(), appRealm, "username9", "John9", "Doel9", "user9@email.org", ATTRIBUTE_VALUE);
             // but the one not looked up is not
@@ -1139,7 +1183,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             Assert.assertTrue(userVerified.get().isEmailVerified());
         });
 
-        //Test untrusted email option 
+        //Test untrusted email option
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             ctx.getLdapModel().put(LDAPConstants.TRUST_EMAIL, "false");
@@ -1230,4 +1274,5 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             Assert.assertEquals(origKeycloakUserId.replace("\"",""), newKeycloakUserId);
         });
     }
+
 }

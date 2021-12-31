@@ -28,6 +28,8 @@ import org.keycloak.models.KeycloakSessionFactory;
  */
 public class LiquibaseJpaUpdaterProviderFactory implements JpaUpdaterProviderFactory {
 
+    public static final String PROVIDER_ID = "liquibase";
+
     @Override
     public JpaUpdaterProvider create(KeycloakSession session) {
         return new LiquibaseJpaUpdaterProvider(session);
@@ -48,7 +50,7 @@ public class LiquibaseJpaUpdaterProviderFactory implements JpaUpdaterProviderFac
 
     @Override
     public String getId() {
-        return "liquibase";
+        return PROVIDER_ID;
     }
 
 }

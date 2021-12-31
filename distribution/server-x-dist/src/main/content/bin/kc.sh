@@ -68,6 +68,11 @@ else
    echo "JAVA_OPTS already set in environment; overriding default settings with values: $JAVA_OPTS"
 fi
 
+if [ "x$JAVA_OPTS_APPEND" != "x" ]; then
+  echo "Appending additional Java properties to JAVA_OPTS: $JAVA_OPTS_APPEND"
+  JAVA_OPTS="$JAVA_OPTS $JAVA_OPTS_APPEND"
+fi
+
 # Set debug settings if not already set
 if [ "$DEBUG_MODE" = "true" ]; then
     DEBUG_OPT=`echo $JAVA_OPTS | $GREP "\-agentlib:jdwp"`

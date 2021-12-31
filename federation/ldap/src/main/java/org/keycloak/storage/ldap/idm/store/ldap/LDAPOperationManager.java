@@ -370,26 +370,35 @@ public class LDAPOperationManager {
     }
 
     public String getFilterById(String id) {
-        String filter = null;
+        StringBuilder filter = new StringBuilder();
+        filter.insert(0, "(&");
 
         if (this.config.isObjectGUID()) {
             byte[] objectGUID = LDAPUtil.encodeObjectGUID(id);
-
-            filter = "(&(objectClass=*)(" + getUuidAttributeName() + LDAPConstants.EQUAL + LDAPUtil.convertObjectGUIDToByteString(objectGUID) + "))";
+            filter.append("(objectClass=*)(").append(
+                    getUuidAttributeName()).append(LDAPConstants.EQUAL)
+                .append(LDAPUtil.convertObjectGUIDToByteString(
+                    objectGUID)).append(")");
 
         } else if (this.config.isEdirectoryGUID()) {
-            filter = "(&(objectClass=*)(" + getUuidAttributeName().toUpperCase() + LDAPConstants.EQUAL + LDAPUtil.convertGUIDToEdirectoryHexString(id) + "))";
+            filter.append("(objectClass=*)(").append(getUuidAttributeName().toUpperCase())
+                .append(LDAPConstants.EQUAL
+                ).append(LDAPUtil.convertGUIDToEdirectoryHexString(id)).append(")");
+        } else {
+            filter.append("(objectClass=*)(").append(getUuidAttributeName()).append(LDAPConstants.EQUAL)
+                .append(id).append(")");
         }
 
-        if (filter == null) {
-            filter = "(&(objectClass=*)(" + getUuidAttributeName() + LDAPConstants.EQUAL + id + "))";
+        if (config.getCustomUserSearchFilter() != null) {
+            filter.append(config.getCustomUserSearchFilter());
         }
 
-        if (logger.isTraceEnabled()) {
-            logger.tracef("Using filter for lookup user by LDAP ID: %s", filter);
-        }
+        filter.append(")");
+        String ldapIdFilter = filter.toString();
 
-        return filter;
+        logger.tracef("Using filter for lookup user by LDAP ID: %s", ldapIdFilter);
+
+        return ldapIdFilter;
     }
 
     public SearchResult lookupById(final String baseDN, final String id, final Collection<String> returningAttributes) {

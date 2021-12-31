@@ -200,7 +200,7 @@ public class MapRoleProvider implements RoleProvider {
 
         DefaultModelCriteria<RoleModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.NAME, Operator.ILIKE, name);
+          .compare(SearchableFields.NAME, Operator.EQ, name);
 
         String roleId = tx.read(withCriteria(mcb))
                 .map(entityToAdapterFunc(realm))
@@ -221,7 +221,7 @@ public class MapRoleProvider implements RoleProvider {
         DefaultModelCriteria<RoleModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId())
           .compare(SearchableFields.CLIENT_ID, Operator.EQ, client.getId())
-          .compare(SearchableFields.NAME, Operator.ILIKE, name);
+          .compare(SearchableFields.NAME, Operator.EQ, name);
 
         String roleId = tx.read(withCriteria(mcb))
                 .map(entityToAdapterFunc(client.getRealm()))

@@ -53,12 +53,12 @@ public interface CLIResult extends LaunchResult {
 
     default void assertNotDevMode() {
         assertFalse(getOutput().contains("Running the server in dev mode."),
-                () -> "The standard output:\n" + getOutput() + "does include the Start Dev output");
+                () -> "The standard output:\n" + getOutput() + "\ndoes include the Start Dev output");
     }
 
     default void assertStartedDevMode() {
         assertTrue(getOutput().contains("Running the server in dev mode."),
-                () -> "The standard output:\n" + getOutput() + "doesn't include the Start Dev output");
+                () -> "The standard output:\n" + getOutput() + "\ndoesn't include the Start Dev output");
     }
 
     default void assertError(String msg) {
@@ -76,5 +76,9 @@ public interface CLIResult extends LaunchResult {
 
     default void assertMessage(String message) {
         assertTrue(getOutput().contains(message));
+    }
+
+    default void assertBuild() {
+        assertMessage("Server configuration updated and persisted");
     }
 }

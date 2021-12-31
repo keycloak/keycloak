@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright 2021 Red Hat, Inc. and/or its affiliates
+and other contributors as indicated by the @author tags.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <!-- format of id of changeSet: clients-${JpaClientMapStorage.SUPPORTED_VERSION} -->
+    <changeSet author="keycloak" id="clients-1">
+
+        <sql>
+            create table client (
+                id uuid primary key not null,
+                entityVersion integer generated always as ((metadata->>'entityVersion')::int) stored,
+                realmId varchar(36) generated always as (metadata->>'fRealmId') stored,
+                clientId varchar(255) generated always as (metadata->>'fClientId') stored,
+                protocol varchar(36) generated always as (metadata->>'fProtocol') stored,
+                enabled boolean generated always as ((metadata->>'fEnabled')::boolean) stored,
+                metadata jsonb
+            );
+
+            create index client_entityVersion on client(entityVersion);
+            create index client_realmId_clientId on client(realmId, clientId);
+            create index client_scopeMappings on client using gin ((metadata->'fScopeMappings') jsonb_path_ops);
+
+            create table client_attribute (
+                id uuid primary key not null,
+                fk_client uuid references client(id) on delete cascade,
+                name varchar(255),
+                value text
+            );
+
+            create index client_attr_fk_client on client_attribute(fk_client);
+            create index client_attr_name_value on client_attribute(name, (value::varchar(250))); 
+        </sql>
+
+    </changeSet>
+
+</databaseChangeLog>

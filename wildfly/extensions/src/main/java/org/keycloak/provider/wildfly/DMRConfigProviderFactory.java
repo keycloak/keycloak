@@ -26,7 +26,7 @@ import java.util.Properties;
 import javax.servlet.ServletContext;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.jboss.resteasy.core.ResteasyContext;
 import org.keycloak.Config;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.common.util.SystemEnvProperties;
@@ -88,7 +88,7 @@ public class DMRConfigProviderFactory extends JsonConfigProviderFactory {
 
     private Map<String, String> getPropertyOverrides() {
 
-        ServletContext context = ResteasyProviderFactory.getContextData(ServletContext.class);
+        ServletContext context = ResteasyContext.getContextData(ServletContext.class);
         Map<String, String> propertyOverridesMap = new HashMap<>();
         String propertyOverrides = context.getInitParameter(SERVER_CONTEXT_CONFIG_PROPERTY_OVERRIDES);
 

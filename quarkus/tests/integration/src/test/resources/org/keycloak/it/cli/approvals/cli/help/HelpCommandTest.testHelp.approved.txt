@@ -31,7 +31,7 @@ Commands:
   export                  Export data from realms to a file or directory.
   import                  Import data from a directory or a file.
   show-config             Print out the current configuration.
-  tools                   %nUtilities for use and interaction with the server.
+  tools                   Utilities for use and interaction with the server.
     completion            Generate bash/zsh completion script for kc.sh.
 
 Examples:
