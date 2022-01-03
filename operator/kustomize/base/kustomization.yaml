@@ -1,0 +1,3 @@
+resources:
+  - minikube.yml
+  - deployments-role.yaml

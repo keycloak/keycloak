@@ -2041,6 +2041,19 @@
         </profile>
 
         <profile>
+            <id>operator</id>
+            <activation>
+                <jdk>[11,)</jdk>
+                <property>
+                    <name>operator</name>
+                </property>
+            </activation>
+            <modules>
+                <module>operator</module>
+            </modules>
+        </profile>
+
+        <profile>
             <id>doclint-java8-disable</id>
             <activation>
                 <jdk>[1.8,)</jdk>

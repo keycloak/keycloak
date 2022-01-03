@@ -1,0 +1,39 @@
+name: Keycloak Operator CI
+
+on: [push, pull_request]
+
+env:
+  JDK_VERSION: 11
+
+concurrency:
+  # Only run once for latest commit per ref and cancel other (previous) runs.
+  group: ci-operator-keycloak-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Update maven settings
+        run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
+      - uses: actions/setup-java@v1
+        with:
+          java-version: ${{ env.JDK_VERSION }}
+      - name: Cache Maven packages
+        id: cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.m2/repository
+          key: cache-1-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: cache-1-${{ runner.os }}-m2
+
+      - name: Create the Keycloak distribution
+        run: |
+          mvn clean install -DskipTests -DskipExamples -DskipTestsuite
+
+      - name: Build the Keycloak Operator
+        run: |
+          mvn clean package -nsu -B -e -pl operator -Doperator -Dquarkus.container-image.build=true -Dquarkus.kubernetes.deployment-target=minikube
