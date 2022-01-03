@@ -74,32 +74,6 @@ public class TreeStorageNodeInstance<V extends AbstractEntity>
         this.original = null;
     }
 
-    public TreeStorageNodeInstance<V> asDisconnectedSubtree() {
-        final TreeStorageNodeInstance<V> res = cloneNodeOnly();
-        this.getChildren().forEach(c -> res.addChild(c.asDisconnectedSubtree()));
-        return res;
-    }
-
-    public <R extends TreeNode<R>> R asDisconnectedSubtree(Predicate<TreeStorageNodeInstance<V>> filter, Function<TreeStorageNodeInstance<V>, R> cloner) {
-        if (! filter.test(this)) {
-            return null;
-        }
-        final R res = cloner.apply(this);
-        this.getChildren().forEach(c -> res.addChild(c.asDisconnectedSubtree(filter, cloner)));
-        return res;
-    }
-
-    public TreeStorageNodeInstance<V> asDisconnectedBranchToParent() {
-        final TreeStorageNodeInstance<V> res = cloneNodeOnly();
-        final Optional<TreeStorageNodeInstance<V>> parent = getParent();
-        while (parent.isPresent()) {
-            TreeStorageNodeInstance<V> pCloned = parent.get().asDisconnectedBranchToParent();
-            pCloned.addChild(res);
-            return pCloned;
-        }
-        return res;
-    }
-
     public TreeStorageNodeInstance<V> cloneNodeOnly() {
         return new TreeStorageNodeInstance<>(session, this.original == null ? this : this.original);
     }
@@ -107,10 +81,6 @@ public class TreeStorageNodeInstance<V extends AbstractEntity>
     @Override
     public String getId() {
         return prescription.getId();
-    }
-
-    public boolean getStronglyAuthoritativeFlag() {
-        return getNodeProperty(NodeProperties.STRONGLY_AUTHORITATIVE, Boolean.class).orElse(false);
     }
 
     public boolean isReadOnly() {

@@ -99,6 +99,20 @@ public class TreeStorageNodePrescription extends DefaultTreeNode<TreeStorageNode
             }
         };
 
+        /**
+         * Returns the status of the field if this field status in this node was stripped off the field status {@code s}.
+         * Specifically, for two nodes in parent/child relationship, {@code parent.minus(child)} answers the question:
+         * "How much of the field does parent contain that is not contained in the child?"
+         * <ul>
+         * <li>If the field in this node is contained {@link #FULLY} or {@link #PARTIALLY}, and the
+         *     field in the other node is contained {@link #FULLY}, then
+         *     there is no need to store any part of the field in this node,
+         *     i.e. the result is {@link #NOT_CONTAINED}</li>
+         * <li>If the field in this node is contained {@link #PARTIALLY} and the field in the other node is also only contained {@link #PARTIALLY}, then
+         *     the portions might be disjunct, so it is still necessary to store a part of the field in this node, i.e. the result is {@link #PARTIALLY}</li>
+         * <li>If the field in this node is {@link #NOT_CONTAINED} at all, then the result remains {@link #NOT_CONTAINED} regardless of the other node status</li>
+         * </ul>
+         */
         public abstract FieldContainedStatus minus(FieldContainedStatus s);
         /**
          * Returns higher of this and the {@code other} field status: {@link #FULLY} &gt; {@link #PARTIALLY} &gt; {@link #NOT_CONTAINED}
@@ -133,11 +147,6 @@ public class TreeStorageNodePrescription extends DefaultTreeNode<TreeStorageNode
         Map<?, ?> cf = (Map<?, ?>) this.nodeProperties.get(NodeProperties.CACHE_FOR);
         Map<?, ?> cfe = (Map<?, ?>) this.nodeProperties.get(NodeProperties.CACHE_FOR_EXCLUDED);
         isCacheForAnything = (cf != null && ! cf.isEmpty()) || (cfe != null && ! cfe.isEmpty());
-    }
-
-    public boolean isStronglyAuthoritative(DefaultModelCriteria<?> criteria) {
-        Optional<DefaultModelCriteria> dmc = getNodeProperty(NodeProperties.ENTITY_RESTRICTION, DefaultModelCriteria.class);
-        return false;
     }
 
     public <V extends AbstractEntity> TreeStorageNodePrescription forEntityClass(Class<V> targetEntityClass) {
