@@ -45,7 +45,8 @@ export default class ProviderPage {
   private ldapAttNameInput = "ldap.attribute.name";
   private ldapAttValueInput = "ldap.attribute.value";
   private groupInput = "group";
-  private ldapDnInput = "roles.dn";
+  private ldapGroupsDnInput = "groups.dn";
+  private ldapRolesDnInput = "roles.dn";
 
   // mapper types
   private msadUserAcctMapper = "msad-user-account-control-mapper";
@@ -254,11 +255,11 @@ export default class ProviderPage {
         cy.findByTestId(this.groupInput).type(this.groupName);
         break;
       case this.groupLdapMapper:
-        cy.findByTestId(this.ldapDnInput).type(ldapDnValue);
+        cy.findByTestId(this.ldapGroupsDnInput).type(ldapDnValue);
         break;
 
       case this.roleLdapMapper:
-        cy.findByTestId(this.ldapDnInput).type(ldapDnValue);
+        cy.findByTestId(this.ldapRolesDnInput).type(ldapDnValue);
         // cy select clientID dropdown and choose clientName (var)
         cy.get(this.clientIdSelect).click();
         cy.get("button").contains(this.clientName).click({ force: true });

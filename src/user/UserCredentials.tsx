@@ -445,8 +445,8 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
           width={600}
           title={
             isResetPassword
-              ? `${t("resetPasswordFor")} ${user.username}`
-              : `${t("setPasswordFor")} ${user.username}`
+              ? t("resetPasswordFor", { username: user.username })
+              : t("setPasswordFor", { username: user.username })
           }
           isOpen
           onClose={() => {
@@ -500,6 +500,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
               isRequired
             >
               <PasswordInput
+                data-testid="passwordField"
                 name="password"
                 aria-label="password"
                 ref={register({ required: true })}
@@ -522,6 +523,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
               isRequired
             >
               <PasswordInput
+                data-testid="passwordConfirmationField"
                 name="passwordConfirmation"
                 aria-label="passwordConfirm"
                 ref={register({ required: true })}

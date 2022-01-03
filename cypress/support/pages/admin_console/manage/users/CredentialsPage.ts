@@ -7,10 +7,8 @@ export default class CredentialsPage {
   private readonly credentialResetModal = "credential-reset-modal";
   private readonly resetModalActionsToggleBtn =
     "[data-testid=credential-reset-modal] #actions";
-  private readonly passwordField =
-    ".kc-password > .pf-c-input-group > .pf-c-form-control";
-  private readonly passwordConfirmationField =
-    ".kc-passwordConfirmation > .pf-c-input-group > .pf-c-form-control";
+  private readonly passwordField = "passwordField";
+  private readonly passwordConfirmationField = "passwordConfirmationField";
   private readonly resetActions = [
     "VERIFY_EMAIL-option",
     "UPDATE_PROFILE-option",
@@ -62,8 +60,8 @@ export default class CredentialsPage {
   }
 
   fillPasswordForm() {
-    cy.get(this.passwordField).type("test");
-    cy.get(this.passwordConfirmationField).type("test");
+    cy.findByTestId(this.passwordField).type("test");
+    cy.findByTestId(this.passwordConfirmationField).type("test");
 
     return this;
   }
