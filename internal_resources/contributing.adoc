@@ -3,7 +3,7 @@
 
 This guide will help new contributors use `git` and GitHub for Keycloak documentation submissions and suggestions.
 
-Before you start, please take a look at our writing templates contained in the link:https://github.com/keycloak/keycloak-documentation/tree/master/internal_resources[internal resources directory], which also describes each template file with information about when to use which. We are working to update our documentation to put procedural content, conceptual content, and reference content into separate .adoc files, and we kindly request that new contributions please use these templates.
+Before you start, please take a look at our writing templates contained in the link:https://github.com/keycloak/keycloak-documentation/tree/main/internal_resources[internal resources directory], which also describes each template file with information about when to use which. We are working to update our documentation to put procedural content, conceptual content, and reference content into separate .adoc files, and we kindly request that new contributions please use these templates.
 
 There are two ways to start. The first is the easiest, but it is less flexible. The second is more powerful, but requires setting up. For either method, you must already have a GitHub account, as described in link:https://github.com/join[Join GitHub].
 
@@ -67,16 +67,16 @@ NOTE: It is possible to clone using SSH so you don't have to enter a username/pa
 
 When contributing, follow this procedure. Enter commands from the command line on your local machine in the  `keycloak-documentation` directory created earlier when cloning the repository.
 
-. Enter `git checkout master` to checkout the master branch locally.
+. Enter `git checkout main` to checkout the main branch locally.
 . Enter `git fetch upstream` to download the current files from the upstream repository.
-. Enter `git rebase upstream/master` to update your cloned branch on your local machine with the most current content from the upstream repository.
-. Enter `git push origin master` to update your fork in GitHub with the most current content from the upstream repository.
+. Enter `git rebase upstream/main` to update your cloned branch on your local machine with the most current content from the upstream repository.
+. Enter `git push origin main` to update your fork in GitHub with the most current content from the upstream repository.
 . Enter `git checkout -b {branchname}` where you create a `{branchname}` that describes the work you are about to do.
 . Make your changes
 . (Optional) Enter `git status` now or at any time to see what branch you are on, what files you have changed, and whether those files are staged to be committed.
 . Enter `git add -A` to stage your changes to the commit you are about to make.
 . Enter `git commit -m 'KEYCLOAK-XXXX include meaningful information about changes'` where `KEYCLOAK-XXXX` refers to the link:https://issues.redhat.com/projects/KEYCLOAK/issues[Jira issue] being fixed in this commit (if any) and where you add a short sentence that clearly describes what the commit contains.
-. Follow the steps in the link:https://github.com/keycloak/keycloak-documentation/blob/master/README.md[README] to create a test build locally and confirm that your changes look correct. Make more changes and repeat steps to here, as needed.
+. Follow the steps in the link:https://github.com/keycloak/keycloak-documentation/blob/main/README.md[README] to create a test build locally and confirm that your changes look correct. Make more changes and repeat steps to here, as needed.
 . Enter `git push origin {branchname}` to push your changes to your fork in GitHub.
 . Use the GitHub web interface to create a pull request. First, navigate to your branch in the web UI and click *Compare*. This will show you a diff of the changes. Examine them one more time. If necessary, make more changes locally and repeat the steps to here. When you are ready, click *Create a pull request*. Enter a title and a description with enough detail for reviewers to know what you have changed and why. Click *Submit*.
 . Wait. The documentation team will usually review pull requests within a few days. Often suggestions and changes are requested of you to help the contribution better fit within the style guidelines for the project or to fill in information that may have been missed. If this happens, repeat the steps from making your changes to `git push origin {branchname}`. No need to create another PR as the existing one will be updated automatically.
