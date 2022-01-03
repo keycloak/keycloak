@@ -66,7 +66,8 @@ const run = () => {
   addProc.on("exit", () => {
     const proc = spawn(path.join(serverPath, "bin", `standalone${extension}`), [
       "-Djboss.socket.binding.port-offset=100",
-      "-Dprofile.feature.newadmin=enabled",
+      "-Dkeycloak.profile.feature.admin2=enabled",
+      "-Dkeycloak.profile.feature.declarative_user_profile=enabled",
       ...args,
     ]);
     proc.stdout.on("data", (data) => {

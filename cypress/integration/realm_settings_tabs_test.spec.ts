@@ -37,6 +37,15 @@ describe("Realm settings tabs tests", () => {
     masthead.checkNotificationMessage("Realm successfully updated");
   });
 
+  it("shows the 'user profile' tab if enabled", () => {
+    sidebarPage.goToRealmSettings();
+    cy.findByTestId(realmSettingsPage.userProfileTab).should("not.exist");
+    realmSettingsPage.toggleSwitch(realmSettingsPage.profileEnabledSwitch);
+    realmSettingsPage.save(realmSettingsPage.generalSaveBtn);
+    masthead.checkNotificationMessage("Realm successfully updated");
+    cy.findByTestId(realmSettingsPage.userProfileTab).should("exist");
+  });
+
   it("Go to login tab", () => {
     sidebarPage.goToRealmSettings();
     cy.findByTestId("rs-login-tab").click();
@@ -79,10 +88,7 @@ describe("Realm settings tabs tests", () => {
 
   it("Go to themes tab", () => {
     sidebarPage.goToRealmSettings();
-    cy.intercept(`/auth/admin/realms/${realmName}/keys`).as("load");
-
     cy.findByTestId("rs-themes-tab").click();
-    cy.wait(["@load"]);
 
     realmSettingsPage.selectLoginThemeType("keycloak");
     realmSettingsPage.selectAccountThemeType("keycloak");

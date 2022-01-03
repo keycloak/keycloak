@@ -53,7 +53,7 @@ jobs:
         working-directory: ${{ env.KEYCLOAK_SERVER_BIN }}
         run: |
           ./add-user-keycloak.sh --user admin --password admin
-          ./standalone.sh -Dkeycloak.profile.feature.admin2=enabled &
+          ./standalone.sh -Dkeycloak.profile.feature.admin2=enabled -Dkeycloak.profile.feature.declarative_user_profile=enabled &
 
       - name: Configure Keycloak Server
         working-directory: ${{ env.KEYCLOAK_SERVER_BIN }}

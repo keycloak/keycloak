@@ -162,6 +162,7 @@ export default {
     },
     placeholderText: "Select one",
     userManagedAccess: "User-managed access",
+    userProfileEnabled: "User Profile Enabled",
     endpoints: "Endpoints",
     openIDEndpointConfiguration: "OpenID Endpoint Configuration",
     samlIdentityProviderMetadata: "SAML 2.0 Identity Provider Metadata",

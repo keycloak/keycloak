@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
-import { Controller, FormProvider, useForm } from "react-hook-form";
+import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
@@ -51,8 +51,9 @@ import { HelpItem } from "../components/help-enabler/HelpItem";
 import { UserRegistration } from "./UserRegistration";
 import { toDashboard } from "../dashboard/routes/Dashboard";
 import environment from "../environment";
-import { UserProfileTab } from "./UserProfileTab";
 import helpUrls from "../help-urls";
+import { UserProfileTab } from "./user-profile/UserProfileTab";
+import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 
 type RealmSettingsHeaderProps = {
   onChange: (value: boolean) => void;
@@ -175,6 +176,7 @@ export const RealmSettingsTabs = ({
   const { realm: realmName } = useRealm();
   const { refresh: refreshRealms } = useRealms();
   const history = useHistory();
+  const isFeatureEnabled = useIsFeatureEnabled();
 
   const kpComponentTypes =
     useServerInfo().componentTypes?.[KEY_PROVIDER_TYPE] ?? [];
@@ -221,6 +223,12 @@ export const RealmSettingsTabs = ({
     }
   };
 
+  const userProfileEnabled = useWatch({
+    control,
+    name: "attributes.userProfileEnabled",
+    defaultValue: "false",
+  });
+
   return (
     <>
       <Controller
@@ -239,7 +247,7 @@ export const RealmSettingsTabs = ({
       />
       <PageSection variant="light" className="pf-u-p-0">
         <FormProvider {...form}>
-          <KeycloakTabs isBox>
+          <KeycloakTabs isBox mountOnEnter>
             <Tab
               eventKey="general"
               title={<TabTitleText>{t("general")}</TabTitleText>}
@@ -423,15 +431,20 @@ export const RealmSettingsTabs = ({
                 </Tab>
               </Tabs>
             </Tab>
-            <Tab
-              eventKey="userProfile"
-              data-testid="rs-user-profile-tab"
-              title={
-                <TabTitleText>{t("realm-settings:userProfile")}</TabTitleText>
-              }
-            >
-              <UserProfileTab />
-            </Tab>
+            {isFeatureEnabled(Feature.DeclarativeUserProfile) &&
+              userProfileEnabled === "true" && (
+                <Tab
+                  eventKey="userProfile"
+                  data-testid="rs-user-profile-tab"
+                  title={
+                    <TabTitleText>
+                      {t("realm-settings:userProfile")}
+                    </TabTitleText>
+                  }
+                >
+                  <UserProfileTab />
+                </Tab>
+              )}
             <Tab
               eventKey="userRegistration"
               title={<TabTitleText>{t("userRegistration")}</TabTitleText>}

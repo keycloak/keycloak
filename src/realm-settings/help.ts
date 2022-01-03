@@ -12,6 +12,7 @@ export default {
       "Is HTTPS required? 'None' means HTTPS is not required for any client IP address. 'External requests' means localhost and private IP addresses can access without HTTPS. 'All requests' means HTTPS is required for all IP addresses.",
     userManagedAccess:
       "If enabled, users are allowed to manage their resources and permissions using the Account Management Console.",
+    userProfileEnabled: "If enabled, allows managing user profiles.",
     endpoints: "Shows the configuration of the protocol endpoints",
     loginTheme:
       "Select theme for login, OTP, grant, registration and forgot password pages.",

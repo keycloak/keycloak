@@ -18,6 +18,7 @@ import {
 
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { getBaseUrl } from "../util";
+import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { FormAccess } from "../components/form-access/FormAccess";
@@ -42,6 +43,7 @@ export const RealmSettingsGeneralTab = ({
     handleSubmit,
     formState: { isDirty },
   } = useFormContext();
+  const isFeatureEnabled = useIsFeatureEnabled();
   const [open, setOpen] = useState(false);
 
   const baseUrl = getBaseUrl(adminClient);
@@ -166,6 +168,35 @@ export const RealmSettingsGeneralTab = ({
             )}
           />
         </FormGroup>
+        {isFeatureEnabled(Feature.DeclarativeUserProfile) && (
+          <FormGroup
+            hasNoPaddingTop
+            label={t("userProfileEnabled")}
+            labelIcon={
+              <HelpItem
+                helpText="realm-settings-help:userProfileEnabled"
+                fieldLabelId="realm-settings:userProfileEnabled"
+              />
+            }
+            fieldId="kc-user-profile-enabled"
+          >
+            <Controller
+              name="attributes.userProfileEnabled"
+              control={control}
+              defaultValue={false}
+              render={({ onChange, value }) => (
+                <Switch
+                  id="kc-user-profile-enabled"
+                  data-testid="user-profile-enabled-switch"
+                  label={t("common:on")}
+                  labelOff={t("common:off")}
+                  isChecked={value === "true"}
+                  onChange={(value) => onChange(value.toString())}
+                />
+              )}
+            />
+          </FormGroup>
+        )}
         <FormGroup
           label={t("endpoints")}
           labelIcon={

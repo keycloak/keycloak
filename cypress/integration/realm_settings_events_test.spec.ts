@@ -88,11 +88,13 @@ describe("Realm settings events tab tests", () => {
   };
 
   it("Enable user events", () => {
-    cy.intercept("GET", `/auth/admin/realms/${realmName}/keys`).as("load");
+    cy.intercept("GET", `/auth/admin/realms/${realmName}/events/config`).as(
+      "load"
+    );
     sidebarPage.goToRealmSettings();
     cy.findByTestId("rs-realm-events-tab").click();
     cy.findByTestId("rs-events-tab").click();
-    cy.wait(["@load"]);
+    cy.wait("@load");
     realmSettingsPage
       .toggleSwitch(realmSettingsPage.enableEvents)
       .save(realmSettingsPage.eventsUserSave);
