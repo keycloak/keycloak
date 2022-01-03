@@ -131,7 +131,7 @@
         <freemarker.version>2.3.31</freemarker.version>
 
         <jetty9.version>${jetty92.version}</jetty9.version>
-        <liquibase.version>3.5.5</liquibase.version>
+        <liquibase.version>4.6.2</liquibase.version>
         <osgi.version>4.2.0</osgi.version>
         <pax.web.version>7.1.0</pax.web.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>

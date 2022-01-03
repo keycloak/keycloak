@@ -20,6 +20,7 @@ package org.keycloak.quarkus.runtime;
 import java.util.List;
 import java.util.Map;
 
+import liquibase.Scope;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.configuration.parsing.ParserRegistry;
 import org.infinispan.jboss.marshalling.core.JBossUserMarshaller;
@@ -31,7 +32,6 @@ import org.keycloak.common.Profile;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
-import org.keycloak.quarkus.runtime.storage.database.liquibase.KeycloakLogger;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
@@ -40,34 +40,15 @@ import org.keycloak.quarkus.runtime.storage.infinispan.CacheManagerFactory;
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.ShutdownContext;
 import io.quarkus.runtime.annotations.Recorder;
-import liquibase.logging.LogFactory;
 import liquibase.servicelocator.ServiceLocator;
 
 @Recorder
 public class KeycloakRecorder {
 
     public void configureLiquibase(Map<String, List<String>> services) {
-        LogFactory.setInstance(new LogFactory() {
-            final KeycloakLogger logger = new KeycloakLogger();
-
-            @Override
-            public liquibase.logging.Logger getLog(String name) {
-                return logger;
-            }
-
-            @Override
-            public liquibase.logging.Logger getLog() {
-                return logger;
-            }
-        });
-        
-        // we set this property to avoid Liquibase to lookup resources from the classpath and access JAR files
-        // we already index the packages we want so Liquibase will still be able to load these services
-        // for uber-jar, this is not a problem because everything is inside the JAR, but once we move to fast-jar we'll have performance penalties
-        // it seems that v4 of liquibase provides a more smart way of initialization the ServiceLocator that may allow us to remove this
-        System.setProperty("liquibase.scan.packages", "org.liquibase.core");
-        
-        ServiceLocator.setInstance(new FastServiceLocator(services));
+        ServiceLocator locator = Scope.getCurrentScope().getServiceLocator();
+        if (locator instanceof FastServiceLocator)
+            ((FastServiceLocator) locator).initServices(services);
     }
 
     public void configSessionFactory(
