@@ -23,11 +23,13 @@ import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
 import io.quarkus.hibernate.orm.runtime.dialect.QuarkusH2Dialect;
+import io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL10Dialect;
 import io.quarkus.runtime.LaunchMode;
 import io.smallrye.config.SmallRyeConfig;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -44,6 +46,8 @@ import io.quarkus.runtime.configuration.ConfigUtils;
 import io.smallrye.config.SmallRyeConfigProviderResolver;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.vault.FilesPlainTextVaultProviderFactory;
+import org.mariadb.jdbc.MySQLDataSource;
+import org.postgresql.xa.PGXADataSource;
 
 public class ConfigurationTest {
 
@@ -281,11 +285,25 @@ public class ConfigurationTest {
         SmallRyeConfig config = createConfig();
         assertEquals(QuarkusH2Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
         assertEquals("jdbc:h2:file:test-dir" + File.separator + "data" + File.separator + "h2" + File.separator + "keycloakdb;;test=test;test1=test1", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals("xa", config.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
+
+        System.setProperty(CLI_ARGS, "");
+        config = createConfig();
+        assertEquals(QuarkusH2Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
+        assertEquals("jdbc:h2:file:test-dir" + File.separator + "data" + File.separator + "h2" + File.separator + "keycloakdb;;test=test;test1=test1", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
 
         System.setProperty("kc.db.url.properties", "?test=test&test1=test1");
         System.setProperty(CLI_ARGS, "--db=mariadb");
         config = createConfig();
         assertEquals("jdbc:mariadb://localhost/keycloak?test=test&test1=test1", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals(MariaDBDialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
+        assertEquals(MySQLDataSource.class.getName(), config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
+
+        System.setProperty(CLI_ARGS, "--db=postgres");
+        config = createConfig();
+        assertEquals("jdbc:postgresql://localhost/keycloak?test=test&test1=test1", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals(QuarkusPostgreSQL10Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
+        assertEquals(PGXADataSource.class.getName(), config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
     }
 
     // KEYCLOAK-15632
@@ -340,6 +358,19 @@ public class ConfigurationTest {
 
         System.setProperty(CLI_ARGS, "--spi-client-jpa-searchable-attributes=bar,foo, \"foo bar\"" + ARG_SEPARATOR + "--spi-hostname-default-frontend-url=http://foo.unittest");
         assertEquals("http://foo.unittest", initConfig("hostname-default").get("frontend-url"));
+    }
+
+    @Test
+    public void testDatabaseDriverSetExplicitly() {
+        System.setProperty(CLI_ARGS, "--db=mssql" + ARG_SEPARATOR + "--db-url=jdbc:sqlserver://localhost/keycloak");
+        System.setProperty("kc.db.driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver");
+        System.setProperty("kc.db.tx-type", "enabled");
+        assertTrue(System.getProperty(CLI_ARGS, "").contains("mssql"));
+        SmallRyeConfig config = createConfig();
+        assertEquals("jdbc:sqlserver://localhost/keycloak", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals("mssql", config.getConfigValue("quarkus.datasource.db-kind").getValue());
+        assertEquals("com.microsoft.sqlserver.jdbc.SQLServerDriver", config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
+        assertEquals("enabled", config.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
     }
 
     private Config.Scope initConfig(String... scope) {

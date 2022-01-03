@@ -90,8 +90,9 @@ public class SigningInTest extends BaseAccountPageTest {
     public void categoriesTest() {
         testContext.setTestRealmReps(emptyList()); // reimport realm after this test
 
-        assertThat(signingInPage.getCategoriesCount(), is(1));
+        assertThat(signingInPage.getCategoriesCount(), is(2));
         assertThat(signingInPage.getCategoryTitle("basic-authentication"), is("Basic Authentication"));
+        assertThat(signingInPage.getCategoryTitle("two-factor"), is("Two-Factor Authentication"));
     }
 
     @Test

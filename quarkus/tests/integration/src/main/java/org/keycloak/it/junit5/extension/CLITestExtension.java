@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import io.quarkus.dev.console.QuarkusConsole;
 import io.quarkus.runtime.configuration.QuarkusConfigFactory;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
@@ -41,6 +42,7 @@ import io.quarkus.test.junit.QuarkusMainTestExtension;
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import org.keycloak.quarkus.runtime.configuration.KeycloakPropertiesConfigSource;
+import org.keycloak.quarkus.runtime.configuration.test.TestConfigArgsConfigSource;
 
 public class CLITestExtension extends QuarkusMainTestExtension {
 
@@ -72,6 +74,8 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             }
         } else {
             configureProfile(context);
+            // WORKAROUND: this intercepts the output when actually starting the server.
+            QuarkusConsole.installRedirects();
             super.beforeEach(context);
         }
     }
@@ -96,6 +100,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         System.getProperties().remove(KeycloakPropertiesConfigSource.KEYCLOAK_CONFIG_FILE_PROP);
         System.getProperties().remove(Environment.PROFILE);
         System.getProperties().remove("quarkus.profile");
+        TestConfigArgsConfigSource.setCliArgs(new String[0]);
     }
 
     @Override

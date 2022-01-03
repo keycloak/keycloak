@@ -925,6 +925,26 @@
                 <kc-tooltip>{{:: 'require-pushed-authorization-requests.tooltip' | translate}}</kc-tooltip>
             </div>
 
+            <div class="form-group clearfix block" data-ng-show="(!clientEdit.bearerOnly && protocol == 'openid-connect') && (clientEdit.standardFlowEnabled || clientEdit.directAccessGrantsEnabled || clientEdit.implicitFlowEnabled)">
+                <label class="col-md-2 control-label" for="newAcr">{{:: 'acr-loa-map' | translate}}</label>
+                <div class="col-sm-6">
+                    <div class="input-group input-map" ng-repeat="(acr, loa) in acrLoaMap">
+                        <input class="form-control" readonly value="{{acr}}">
+                        <input class="form-control" ng-model="acrLoaMap[acr]">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="deleteAcrLoaMapping(acr)"><span class="fa fa-minus"></span></button>
+                        </div>
+                    </div>
+                    <div class="input-group input-map">
+                        <input class="form-control" ng-model="newAcr" id="newAcr" placeholder="ACR">
+                        <input class="form-control" ng-model="newLoa" id="newLoa" placeholder="LOA">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="newAcr.length > 0 && newLoa.length > 0 && addAcrLoaMapping()"><span class="fa fa-plus"></span></button>
+                        </div>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'acr-loa-map.tooltip' | translate}}</kc-tooltip>
+            </div>
         </fieldset>
 
         <fieldset>

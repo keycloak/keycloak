@@ -29,13 +29,12 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
 import org.keycloak.testsuite.util.UIUtils;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnPolicyPage;
 import org.keycloak.testsuite.webauthn.updaters.AbstractWebAuthnRealmUpdater;
 import org.keycloak.testsuite.webauthn.utils.PropertyRequirement;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ISelect;
+import org.openqa.selenium.support.ui.Select;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -155,7 +154,7 @@ public abstract class AbstractWebAuthnPolicySettingsTest extends AbstractConsole
             getPolicyPage().navigateTo();
             waitForPageToLoad();
 
-            ISelect selectedAlg = getPolicyPage().getSignatureAlgorithms();
+            Select selectedAlg = getPolicyPage().getSignatureAlgorithms();
             assertThat(selectedAlg, notNullValue());
 
             try {
@@ -170,7 +169,7 @@ public abstract class AbstractWebAuthnPolicySettingsTest extends AbstractConsole
     protected void checkSignatureAlgorithms() {
         getPolicyPage().assertCurrent();
 
-        final ISelect algorithms = getPolicyPage().getSignatureAlgorithms();
+        final Select algorithms = getPolicyPage().getSignatureAlgorithms();
         assertThat(algorithms, notNullValue());
 
         algorithms.selectByValue("ES256");

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage.jpa.hibernate.jsonb;
+package org.keycloak.models.map.storage.jpa.hibernate.jsonb.migration;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.Arrays;
@@ -23,19 +23,7 @@ import java.util.function.Function;
 
 public class JpaClientMigration {
 
-    private static final List<Function<ObjectNode, ObjectNode>> MIGRATORS = Arrays.asList(
+    public static final List<Function<ObjectNode, ObjectNode>> MIGRATORS = Arrays.asList(
         o -> o // no migration yet
     );
-
-    public static ObjectNode migrateTreeTo(int currentVersion, int targetVersion, ObjectNode node) {
-        while (currentVersion < targetVersion) {
-            Function<ObjectNode, ObjectNode> migrator = MIGRATORS.get(currentVersion);
-            if (migrator != null) {
-                node = migrator.apply(node);
-            }
-            currentVersion++;
-        }
-        return node;
-    }
-
 }

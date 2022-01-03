@@ -24,6 +24,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenCategory;
 import org.keycloak.TokenVerifier;
+import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.cluster.ClusterProvider;
@@ -43,6 +44,7 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -57,6 +59,7 @@ import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenResponseMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
+import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
@@ -555,6 +558,7 @@ public class TokenManager {
             userSession.setNote(entry.getKey(), entry.getValue());
         }
 
+        clientSession.setNote(Constants.LEVEL_OF_AUTHENTICATION, String.valueOf(AuthenticatorUtil.getCurrentLevelOfAuthentication(authSession)));
         clientSession.setTimestamp(Time.currentTime());
 
         // Remove authentication session now
@@ -832,10 +836,7 @@ public class TokenManager {
         token.setNonce(clientSessionCtx.getAttribute(OIDCLoginProtocol.NONCE_PARAM, String.class));
         token.setScope(clientSessionCtx.getScopeString());
 
-        // Best effort for "acr" value. Use 0 if clientSession was authenticated through cookie ( SSO )
-        // TODO: Add better acr support. See KEYCLOAK-3314
-        String acr = (AuthenticationManager.isSSOAuthentication(clientSession)) ? "0" : "1";
-        token.setAcr(acr);
+        token.setAcr(getAcr(clientSession));
 
         String authTime = session.getNote(AuthenticationManager.AUTH_TIME);
         if (authTime != null) {
@@ -850,6 +851,29 @@ public class TokenManager {
         token.expiration(getTokenExpiration(realm, client, session, clientSession, offlineTokenRequested));
 
         return token;
+    }
+
+    private String getAcr(AuthenticatedClientSessionModel clientSession) {
+        int loa = Integer.parseInt(clientSession.getNote(Constants.LEVEL_OF_AUTHENTICATION));
+        if (loa < Constants.MINIMUM_LOA) {
+            loa = AuthenticationManager.isSSOAuthentication(clientSession) ? 0 : 1;
+        }
+
+        Map<String, Integer> acrLoaMap = AcrUtils.getAcrLoaMap(clientSession.getClient());
+        String acr = AcrUtils.mapLoaToAcr(loa, acrLoaMap, AcrUtils.getRequiredAcrValues(
+            clientSession.getNote(OIDCLoginProtocol.CLAIMS_PARAM)));
+        if (acr == null) {
+            acr = AcrUtils.mapLoaToAcr(loa, acrLoaMap, AcrUtils.getAcrValues(
+                clientSession.getNote(OIDCLoginProtocol.CLAIMS_PARAM),
+                clientSession.getNote(OIDCLoginProtocol.ACR_PARAM)));
+            if (acr == null) {
+                acr = AcrUtils.mapLoaToAcr(loa, acrLoaMap, acrLoaMap.keySet());
+                if (acr == null) {
+                    acr = String.valueOf(loa);
+                }
+            }
+        }
+        return acr;
     }
 
     private int getTokenExpiration(RealmModel realm, ClientModel client, UserSessionModel userSession,

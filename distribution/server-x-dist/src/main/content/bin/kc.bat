@@ -72,6 +72,11 @@ if not "x%JAVA_OPTS%" == "x" (
   set "JAVA_OPTS=-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Djava.net.preferIPv4Stack=true"
 )
 
+if not "x%JAVA_OPTS_APPEND%" == "x" (
+  echo "Appending additional Java properties to JAVA_OPTS: %JAVA_OPTS_APPEND%"
+  set "JAVA_OPTS=%JAVA_OPTS% %JAVA_OPTS_APPEND%"
+)
+
 if NOT "x%DEBUG%" == "x" (
   set "DEBUG_MODE=%DEBUG%
 )

@@ -38,7 +38,7 @@ import static org.keycloak.models.map.common.DeepCloner.DUMB_CLONER;
 public class MapClientEntityClonerTest {
 
     private final static DeepCloner CLONER = new DeepCloner.Builder()
-      .constructorDC(MapClientEntityImpl.class,         MapClientEntityImpl::new)
+      .constructor(MapClientEntityImpl.class,           MapClientEntityImpl::new)
       .constructor(MapProtocolMapperEntity.class,       MapProtocolMapperEntityImpl::new)
       .build();
 
