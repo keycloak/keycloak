@@ -26,6 +26,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.NoType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -119,7 +120,7 @@ public abstract class AbstractGenerateEntityImplementationsProcessor extends Abs
     protected Map<String, HashSet<ExecutableElement>> methodsPerAttributeMapping(TypeElement e) {
         Map<String, HashSet<ExecutableElement>> methodsPerAttribute = getAllAbstractMethods(e)
           .filter(Util::isNotIgnored)
-          .filter(ee -> ! (ee.getReceiverType() instanceof NoType))
+          .filter(ee -> !(ee.getReceiverType() instanceof NoType && ee.getReceiverType().getKind() != TypeKind.NONE))
           .collect(Collectors.toMap(this::determineAttributeFromMethodName, v -> new HashSet<>(Arrays.asList(v)), (a,b) -> { a.addAll(b); return a; }));
 
         // Merge plurals with singulars
