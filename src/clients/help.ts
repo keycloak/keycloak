@@ -176,5 +176,9 @@ export default {
     resetActions:
       "Set of actions to execute when sending the user a Reset Actions Email. 'Verify email' sends an email to the user to verify their email address. 'Update profile' requires user to enter in new personal information. 'Update password' requires user to enter in a new password. 'Configure OTP' requires setup of a mobile password generator.",
     lifespan: "Maximum time before the action permit expires.",
+    scopeName:
+      "A unique name for this scope. The name can be used to uniquely identify a scope, useful when querying for a specific scope.",
+    scopeDisplayName:
+      "A unique name for this scope. The name can be used to uniquely identify a scope, useful when querying for a specific scope.",
   },
 };

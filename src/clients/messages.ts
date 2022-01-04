@@ -93,6 +93,22 @@ export default {
       "The permissions below will be removed when they are no longer used by other resources:",
     resourceDeletedSuccess: "The resource successfully deleted",
     resourceDeletedError: "Could not remove the resource {{error}}",
+    deleteScope: "Permanently delete authorization scope?",
+    deleteScopeConfirm:
+      "If you delete this authorization scope, some permissions will be affected.",
+    deleteScopeWarning:
+      "The permissions below will be removed when they are no longer used by other authorization scopes:",
+    resourceScopeSuccess: "The authorization scope successfully deleted",
+    resourceScopeError:
+      "Could not remove the authorization scope due to {{error}}",
+    createAuthorizationScope: "Create authorization scope",
+    permissions: "Permissions",
+    emptyAuthorizationScopes: "No authorization scopes",
+    emptyAuthorizationInstructions:
+      "If you want to create authorization scopes, please click the button below to create the authorization scope",
+    createScopeSuccess: "Authorization scope created successfully",
+    updateScopeSuccess: "Authorization scope successfully updated",
+    scopeSaveError: "Could not persist authorization scope due to {{error}}",
     assignedClientScope: "Assigned client scope",
     assignedType: "Assigned type",
     hideInheritedRoles: "Hide inherited roles",

@@ -5,7 +5,6 @@ import {
   Alert,
   AlertVariant,
   Button,
-  Label,
   PageSection,
   ToolbarItem,
 } from "@patternfly/react-core";
@@ -30,6 +29,7 @@ import { DetailCell } from "./DetailCell";
 import { toCreateResource } from "../routes/NewResource";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toResourceDetails } from "../routes/Resource";
+import { MoreLabel } from "./MoreLabel";
 
 type ResourcesProps = {
   clientId: string;
@@ -79,12 +79,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
 
   const UriRenderer = ({ row }: { row: ResourceRepresentation }) => (
     <>
-      {row.uris?.[0]}{" "}
-      {(row.uris?.length || 0) > 1 && (
-        <Label color="blue">
-          {t("common:more", { count: (row.uris?.length || 1) - 1 })}
-        </Label>
-      )}
+      {row.uris?.[0]} <MoreLabel array={row.uris} />
     </>
   );
 
@@ -229,7 +224,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
                       },
                     ],
                   }}
-                ></Td>
+                />
               </Tr>
               <Tr
                 key={`child-${resource._id}`}

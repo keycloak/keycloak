@@ -37,12 +37,6 @@ import { AttributeInput } from "../../components/attribute-input/AttributeInput"
 
 import "./resource-details.css";
 
-type FetchResource = {
-  client?: ClientRepresentation;
-  resource?: ResourceRepresentation;
-  permissions?: ResourceServerRepresentation[];
-};
-
 type SubmittedResource = Omit<ResourceRepresentation, "attributes" | "uris"> & {
   attributes: KeyValueType[];
   uris: MultiLine[];
@@ -72,8 +66,8 @@ export default function ResourceDetails() {
   };
 
   useFetch(
-    async (): Promise<FetchResource> => {
-      const [client, resource, permissions] = await Promise.all([
+    () =>
+      Promise.all([
         adminClient.clients.findOne({ id }),
         resourceId
           ? adminClient.clients.getResource({ id, resourceId })
@@ -81,11 +75,8 @@ export default function ResourceDetails() {
         resourceId
           ? adminClient.clients.listPermissionsByResource({ id, resourceId })
           : Promise.resolve(undefined),
-      ]);
-
-      return { client, resource, permissions };
-    },
-    ({ client, resource, permissions }) => {
+      ]),
+    ([client, resource, permissions]) => {
       if (!client) {
         throw new Error(t("common:notFound"));
       }

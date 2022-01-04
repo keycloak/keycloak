@@ -7,6 +7,8 @@ import { ImportClientRoute } from "./routes/ImportClient";
 import { MapperRoute } from "./routes/Mapper";
 import { NewResourceRoute } from "./routes/NewResource";
 import { ResourceDetailsRoute } from "./routes/Resource";
+import { NewScopeRoute } from "./routes/NewScope";
+import { ScopeDetailsRoute } from "./routes/Scope";
 
 const routes: RouteDef[] = [
   AddClientRoute,
@@ -17,6 +19,8 @@ const routes: RouteDef[] = [
   MapperRoute,
   NewResourceRoute,
   ResourceDetailsRoute,
+  NewScopeRoute,
+  ScopeDetailsRoute,
 ];
 
 export default routes;
