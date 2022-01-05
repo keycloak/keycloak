@@ -79,6 +79,7 @@ import org.keycloak.services.clientpolicy.executor.ConsentRequiredExecutorFactor
 import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.RejectRequestExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCredentialsGrantExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientUrisExecutorFactory;
@@ -2736,6 +2737,43 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
         assertEquals("resource owner password credentials grant is prohibited.", response.getErrorDescription());
 
+    }
+
+    @Test
+    public void testRejectRequestExecutor() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
+                    .addExecutor(RejectRequestExecutorFactory.PROVIDER_ID, null)
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
+
+        String clientBetaId = generateSuffixedName("Beta-App");
+        createClientByAdmin(clientBetaId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret("secretBeta");
+        });
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                    .addCondition(AnyClientConditionFactory.PROVIDER_ID, 
+                        createAnyClientConditionConfig())
+                    .addProfile(PROFILE_NAME)
+                    .toRepresentation()
+                ).toString();
+        updatePolicies(json);
+
+        try {
+            oauth.clientId(clientBetaId);
+            oauth.openLoginForm();
+            assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+            assertEquals(ERR_MSG_REQ_NOT_ALLOWED, oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
+            revertToBuiltinProfiles();
+            successfulLoginAndLogout(clientBetaId, "secretBeta");
+        } catch (Exception e) {
+            fail();
+        }
     }
 
     private void openVerificationPage(String verificationUri) {

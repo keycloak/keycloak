@@ -181,6 +181,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     protected static final String ERR_MSG_MISSING_NONCE = "Missing parameter: nonce";
     protected static final String ERR_MSG_MISSING_STATE = "Missing parameter: state";
     protected static final String ERR_MSG_CLIENT_REG_FAIL = "Failed to send request";
+    protected static final String ERR_MSG_REQ_NOT_ALLOWED = "request not allowed";
 
     protected ClientRegistration reg;
 
