@@ -16,28 +16,36 @@
  */
 package org.keycloak.models.map.common.delegate;
 
-import org.keycloak.models.map.common.EntityField;
-import org.keycloak.models.map.common.UpdatableEntity;
+import java.util.concurrent.atomic.AtomicMarkableReference;
+import java.util.function.Supplier;
 
 /**
  *
  * @author hmlnarik
  */
-public class SimpleDelegateProvider<T extends UpdatableEntity> implements DelegateProvider<T> {
+public class LazilyInitialized<T> {
 
-    private final T delegate;
+    private final Supplier<T> supplier;
 
-    public SimpleDelegateProvider(T delegate) {
-        this.delegate = delegate;
+    private final AtomicMarkableReference<T> supplierRef = new AtomicMarkableReference<>(null, false);
+
+    public LazilyInitialized(Supplier<T> supplier) {
+        this.supplier = supplier;
     }
 
-    @Override
-    public T getDelegate(boolean isRead, Enum<? extends EntityField<T>> field, Object... parameters) {
-        return this.delegate;
+    public T get() {
+        if (! isInitialized()) {
+            supplierRef.compareAndSet(null, supplier == null ? null : supplier.get(), false, true);
+        }
+        return supplierRef.getReference();
     }
 
-    @Override
-    public boolean isUpdated() {
-        return this.delegate.isUpdated();
+    /**
+     * Returns {@code true} if the reference to the object has been initialized
+     * @return
+     */
+    public boolean isInitialized() {
+        return supplierRef.isMarked();
     }
+
 }

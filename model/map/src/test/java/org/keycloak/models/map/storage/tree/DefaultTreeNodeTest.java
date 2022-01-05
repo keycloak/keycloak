@@ -44,16 +44,16 @@ public class DefaultTreeNodeTest {
     private class Node extends DefaultTreeNode<Node> {
 
         public Node() {
-            super(treeProperties);
+            super(DefaultTreeNodeTest.this.treeProperties);
         }
 
         public Node(String id) {
-            super(treeProperties);
+            super(DefaultTreeNodeTest.this.treeProperties);
             setId(id);
         }
 
         public Node(Node parent, String id) {
-            super(treeProperties);
+            super(DefaultTreeNodeTest.this.treeProperties);
             setId(id);
             setParent(parent);
         }
