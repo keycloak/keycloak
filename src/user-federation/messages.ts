@@ -7,9 +7,8 @@ export default {
       "Keycloak can federate external user databases. Out of the box we have support for LDAP and Active Directory.",
     getStarted: "To get started, select a provider from the list below.",
     providers: "Add providers",
-    addKerberos: "Add Kerberos providers",
-    addLdap: "Add LDAP providers",
-    addOneLdap: "Add LDAP provider",
+    addProvider_one: "Add {{provider}} provider",
+    addProvider_other: "Add {{provider}} providers",
     addKerberosWizardTitle: "Add Kerberos user federation provider",
     addLdapWizardTitle: "Add LDAP user federation provider",
 
@@ -97,6 +96,8 @@ export default {
 
     learnMore: "Learn more",
     addNewProvider: "Add new provider",
+    addCustomProvider: "Add custom provider",
+    providerDetails: "Provider details",
     userFedDeletedSuccess: "The user federation provider has been deleted.",
     userFedDeleteError:
       "Could not delete user federation provider: '{{error}}'",

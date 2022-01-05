@@ -105,10 +105,10 @@ export default class ProviderPage {
     return this;
   }
 
-  deleteCardFromMenu(providerType: string, card: string) {
+  deleteCardFromMenu(card: string) {
     this.clickExistingCard(card);
     cy.get('[data-testid="action-dropdown"]').click();
-    cy.get(`[data-testid="delete-${providerType}-cmd"]`).click();
+    cy.get(`[data-testid="delete-cmd"]`).click();
     return this;
   }
 

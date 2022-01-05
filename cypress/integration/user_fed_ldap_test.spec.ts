@@ -181,7 +181,7 @@ describe("User Fed LDAP tests", () => {
   });
 
   it("Delete an LDAP provider using the Settings view's Action menu", () => {
-    providersPage.deleteCardFromMenu(provider, firstLdapName);
+    providersPage.deleteCardFromMenu(firstLdapName);
     modalUtils.checkModalTitle(deleteModalTitle).confirmModal();
     masthead.checkNotificationMessage(deletedSuccessMessage);
   });

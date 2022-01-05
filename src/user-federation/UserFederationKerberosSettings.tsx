@@ -3,8 +3,6 @@ import {
   ActionGroup,
   AlertVariant,
   Button,
-  ButtonVariant,
-  DropdownItem,
   Form,
   PageSection,
 } from "@patternfly/react-core";
@@ -14,69 +12,13 @@ import { SettingsCache } from "./shared/SettingsCache";
 import { useRealm } from "../context/realm-context/RealmContext";
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 
-import { Controller, useForm } from "react-hook-form";
-import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { FormProvider, useForm } from "react-hook-form";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 import { useTranslation } from "react-i18next";
-import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useHistory, useParams } from "react-router-dom";
-
-type KerberosSettingsHeaderProps = {
-  onChange: (value: string) => void;
-  value: string;
-  save: () => void;
-  toggleDeleteDialog: () => void;
-};
-
-const KerberosSettingsHeader = ({
-  onChange,
-  value,
-  save,
-  toggleDeleteDialog,
-}: KerberosSettingsHeaderProps) => {
-  const { t } = useTranslation("user-federation");
-  const { id } = useParams<{ id?: string }>();
-  const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
-    titleKey: "user-federation:userFedDisableConfirmTitle",
-    messageKey: "user-federation:userFedDisableConfirm",
-    continueButtonLabel: "common:disable",
-    onConfirm: () => {
-      onChange("false");
-      save();
-    },
-  });
-  return (
-    <>
-      <DisableConfirm />
-      {!id ? (
-        <ViewHeader titleKey="Kerberos" />
-      ) : (
-        <ViewHeader
-          titleKey="Kerberos"
-          dropdownItems={[
-            <DropdownItem
-              key="delete"
-              onClick={() => toggleDeleteDialog()}
-              data-testid="delete-kerberos-cmd"
-            >
-              {t("deleteProvider")}
-            </DropdownItem>,
-          ]}
-          isEnabled={value === "true"}
-          onToggle={(value) => {
-            if (!value) {
-              toggleDisableDialog();
-            } else {
-              onChange(value.toString());
-              save();
-            }
-          }}
-        />
-      )}
-    </>
-  );
-};
+import { Header } from "./shared/Header";
+import { toUserFederation } from "./routes/UserFederation";
 
 export default function UserFederationKerberosSettings() {
   const { t } = useTranslation("user-federation");
@@ -124,38 +66,11 @@ export default function UserFederationKerberosSettings() {
     }
   };
 
-  const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "user-federation:userFedDeleteConfirmTitle",
-    messageKey: "user-federation:userFedDeleteConfirm",
-    continueButtonLabel: "common:delete",
-    continueButtonVariant: ButtonVariant.danger,
-    onConfirm: async () => {
-      try {
-        await adminClient.components.del({ id: id! });
-        addAlert(t("userFedDeletedSuccess"), AlertVariant.success);
-        history.replace(`/${realm}/user-federation`);
-      } catch (error: any) {
-        addAlert("user-federation:userFedDeleteError", error);
-      }
-    },
-  });
-
   return (
     <>
-      <DeleteConfirm />
-      <Controller
-        name="config.enabled[0]"
-        defaultValue={["true"][0]}
-        control={form.control}
-        render={({ onChange, value }) => (
-          <KerberosSettingsHeader
-            value={value}
-            onChange={onChange}
-            save={() => save(form.getValues())}
-            toggleDeleteDialog={toggleDeleteDialog}
-          />
-        )}
-      />
+      <FormProvider {...form}>
+        <Header provider="Kerberos" save={() => form.handleSubmit(save)()} />
+      </FormProvider>
       <PageSection variant="light">
         <KerberosSettingsRequired form={form} showSectionHeading />
       </PageSection>
@@ -173,7 +88,7 @@ export default function UserFederationKerberosSettings() {
             </Button>
             <Button
               variant="link"
-              onClick={() => history.push(`/${realm}/user-federation`)}
+              onClick={() => history.push(toUserFederation({ realm }))}
               data-testid="kerberos-cancel"
             >
               {t("common:cancel")}

@@ -15,15 +15,19 @@ import {
 } from "@patternfly/react-core";
 import { DatabaseIcon } from "@patternfly/react-icons";
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useHistory, useRouteMatch } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { KeycloakCard } from "../components/keycloak-card/KeycloakCard";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import { toUpperCase } from "../util";
+import { toProvider } from "./routes/NewProvider";
+
 import "./user-federation.css";
 import helpUrls from "../help-urls";
 
@@ -37,8 +41,12 @@ export default function UserFederationSection() {
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
 
-  const { url } = useRouteMatch();
   const history = useHistory();
+
+  const providers =
+    useServerInfo().componentTypes?.[
+      "org.keycloak.storage.UserStorageProvider"
+    ] || [];
 
   useFetch(
     async () => {
@@ -55,20 +63,20 @@ export default function UserFederationSection() {
     [key]
   );
 
-  const ufAddProviderDropdownItems = [
-    <DropdownItem
-      key="itemLDAP"
-      onClick={() => history.push(`${url}/ldap/new`)}
-    >
-      LDAP
-    </DropdownItem>,
-    <DropdownItem
-      key="itemKerberos"
-      onClick={() => history.push(`${url}/kerberos/new`)}
-    >
-      Kerberos
-    </DropdownItem>,
-  ];
+  const ufAddProviderDropdownItems = useMemo(
+    () =>
+      providers.map((p) => (
+        <DropdownItem
+          key={p.id}
+          onClick={() =>
+            history.push(toProvider({ realm, providerId: p.id!, id: "new" }))
+          }
+        >
+          {toUpperCase(p.id)}
+        </DropdownItem>
+      )),
+    []
+  );
 
   // const learnMoreLinkProps = {
   //   title: t("common:learnMore"),
@@ -122,9 +130,7 @@ export default function UserFederationSection() {
             dropdownItems={ufCardDropdownItems}
             providerId={userFederation.providerId!}
             title={userFederation.name!}
-            footerText={
-              userFederation.providerId === "ldap" ? "LDAP" : "Kerberos"
-            }
+            footerText={toUpperCase(userFederation.providerId!)}
             labelText={
               userFederation.config!["enabled"][0] !== "false"
                 ? `${t("common:enabled")}`
@@ -170,36 +176,31 @@ export default function UserFederationSection() {
             </TextContent>
             <hr className="pf-u-mb-lg" />
             <Gallery hasGutter>
-              <Card
-                className="keycloak-empty-state-card"
-                isHoverable
-                onClick={() => history.push(`${url}/kerberos/new`)}
-                data-testid="kerberos-card"
-              >
-                <CardTitle>
-                  <Split hasGutter>
-                    <SplitItem>
-                      <DatabaseIcon size="lg" />
-                    </SplitItem>
-                    <SplitItem isFilled>{t("addKerberos")}</SplitItem>
-                  </Split>
-                </CardTitle>
-              </Card>
-              <Card
-                className="keycloak-empty-state-card"
-                isHoverable
-                onClick={() => history.push(`${url}/ldap/new`)}
-                data-testid="ldap-card"
-              >
-                <CardTitle>
-                  <Split hasGutter>
-                    <SplitItem>
-                      <DatabaseIcon size="lg" />
-                    </SplitItem>
-                    <SplitItem isFilled>{t("addLdap")}</SplitItem>
-                  </Split>
-                </CardTitle>
-              </Card>
+              {providers.map((p) => (
+                <Card
+                  key={p.id}
+                  className="keycloak-empty-state-card"
+                  isHoverable
+                  onClick={() =>
+                    history.push(toProvider({ realm, providerId: p.id! }))
+                  }
+                  data-testid={`${p.id}-card`}
+                >
+                  <CardTitle>
+                    <Split hasGutter>
+                      <SplitItem>
+                        <DatabaseIcon size="lg" />
+                      </SplitItem>
+                      <SplitItem isFilled>
+                        {t("addProvider", {
+                          provider: toUpperCase(p.id!),
+                          count: 4,
+                        })}
+                      </SplitItem>
+                    </Split>
+                  </CardTitle>
+                </Card>
+              ))}
             </Gallery>
           </>
         )}

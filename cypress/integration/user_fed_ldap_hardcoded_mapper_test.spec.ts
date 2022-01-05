@@ -207,7 +207,7 @@ describe("User Fed LDAP mapper tests", () => {
 
   // *** test cleanup ***
   it("Cleanup - delete LDAP provider", () => {
-    providersPage.deleteCardFromMenu(provider, ldapName);
+    providersPage.deleteCardFromMenu(ldapName);
     modalUtils.checkModalTitle(providerDeleteTitle).confirmModal();
     masthead.checkNotificationMessage(providerDeleteSuccess);
   });

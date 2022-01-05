@@ -150,7 +150,7 @@ describe("User Fed Kerberos tests", () => {
   });
 
   it("Delete a Kerberos provider using the Settings view's Action menu", () => {
-    providersPage.deleteCardFromMenu(provider, firstKerberosName);
+    providersPage.deleteCardFromMenu(firstKerberosName);
 
     modalUtils.checkModalTitle(deleteModalTitle).confirmModal();
     masthead.checkNotificationMessage(deletedSuccessMessage);
