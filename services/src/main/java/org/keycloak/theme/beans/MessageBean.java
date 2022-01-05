@@ -41,6 +41,10 @@ public class MessageBean {
         return summary;
     }
 
+    public String getTitle() {
+        return title;
+    }
+
     public void appendSummaryLine(String newLine) {
         if (newLine == null)
             return;
