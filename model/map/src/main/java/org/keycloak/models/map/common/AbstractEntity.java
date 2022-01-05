@@ -23,5 +23,5 @@ package org.keycloak.models.map.common;
 public interface AbstractEntity {
 
     String getId();
-
+    void setId(String id);
 }

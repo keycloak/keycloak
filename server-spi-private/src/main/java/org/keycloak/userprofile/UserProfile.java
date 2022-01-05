@@ -66,7 +66,7 @@ public interface UserProfile {
      * @param changeListener a set of one or more listeners to listen for attribute changes
      * @throws ValidationException in case of any validation error
      */
-    void update(boolean removeAttributes, BiConsumer<String, UserModel>... changeListener) throws ValidationException;
+    void update(boolean removeAttributes, AttributeChangeListener... changeListener) throws ValidationException;
 
     /**
      * <p>The same as {@link #update(boolean, BiConsumer[])} but forcing the removal of attributes.
@@ -74,7 +74,7 @@ public interface UserProfile {
      * @param changeListener a set of one or more listeners to listen for attribute changes
      * @throws ValidationException in case of any validation error
      */
-    default void update(BiConsumer<String, UserModel>... changeListener) throws            ValidationException, RuntimeException {
+    default void update(AttributeChangeListener... changeListener) throws            ValidationException, RuntimeException {
         update(true, changeListener);
     }
 

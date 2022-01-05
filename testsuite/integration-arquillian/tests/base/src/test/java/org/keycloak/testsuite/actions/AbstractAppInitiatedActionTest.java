@@ -19,7 +19,6 @@ package org.keycloak.testsuite.actions;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
@@ -32,8 +31,19 @@ import org.keycloak.testsuite.util.WaitUtils;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.keycloak.OAuth2Constants.REDIRECT_URI;
+import static org.keycloak.OAuth2Constants.RESPONSE_TYPE;
+import static org.keycloak.OAuth2Constants.SCOPE;
+import static org.keycloak.models.Constants.CLIENT_ID;
+import static org.keycloak.models.Constants.KC_ACTION;
+import static org.keycloak.models.Constants.KC_ACTION_STATUS;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 /**
@@ -58,39 +68,40 @@ public abstract class AbstractAppInitiatedActionTest extends AbstractTestRealmKe
     
     protected void doAIA() {
         UriBuilder builder = OIDCLoginProtocolService.authUrl(authServerPage.createUriBuilder());
-        String uri = builder.queryParam("kc_action", this.aiaAction)
-                            .queryParam("response_type", "code")
-                            .queryParam("client_id", "test-app")
-                            .queryParam("scope", "openid")
-                            .queryParam("redirect_uri", getAuthServerContextRoot() + "/auth/realms/master/app/auth")
+        String uri = builder.queryParam(KC_ACTION, this.aiaAction)
+                            .queryParam(RESPONSE_TYPE, "code")
+                            .queryParam(CLIENT_ID, "test-app")
+                            .queryParam(SCOPE, "openid")
+                            .queryParam(REDIRECT_URI, getAuthServerContextRoot() + "/auth/realms/master/app/auth")
                             .build(TEST_REALM_NAME).toString();
         driver.navigate().to(uri);
         WaitUtils.waitForPageToLoad();
     }
 
     protected void assertKcActionStatus(String expectedStatus) {
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        assertThat(appPage.getRequestType(),is(RequestType.AUTH_RESPONSE));
 
-        URI url = null;
+        final URI url;
         try {
             url = new URI(this.driver.getCurrentUrl());
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
-        List<NameValuePair> pairs = URLEncodedUtils.parse(url, "UTF-8");
+
+        List<NameValuePair> pairs = URLEncodedUtils.parse(url, StandardCharsets.UTF_8);
         String kcActionStatus = null;
         for (NameValuePair p : pairs) {
-            if (p.getName().equals("kc_action_status")) {
+            if (p.getName().equals(KC_ACTION_STATUS)) {
                 kcActionStatus = p.getValue();
                 break;
             }
         }
-        Assert.assertEquals(expectedStatus, kcActionStatus);
+        assertThat(expectedStatus, is(kcActionStatus));
     }
     
     protected void assertSilentCancelMessage() {
         String url = this.driver.getCurrentUrl();
-        Assert.assertFalse("Expected no 'error=' in url", url.contains("error="));
-        Assert.assertFalse("Expected no 'error_description=' in url", url.contains("error_description="));
+        assertThat("Expected no 'error=' in url", url, not(containsString("error=")));
+        assertThat("Expected no 'error_description=' in url", url, not(containsString("error_description=")));
     }
 }

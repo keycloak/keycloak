@@ -29,9 +29,9 @@ import org.keycloak.models.map.authorization.adapter.MapResourceAdapter;
 import org.keycloak.models.map.authorization.entity.MapResourceEntity;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 
+import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -41,16 +41,15 @@ import java.util.stream.Collectors;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
+import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 
 public class MapResourceStore implements ResourceStore {
 
     private static final Logger LOG = Logger.getLogger(MapResourceStore.class);
     private final AuthorizationProvider authorizationProvider;
     final MapKeycloakTransaction<MapResourceEntity, Resource> tx;
-    private final MapStorage<MapResourceEntity, Resource> resourceStore;
 
     public MapResourceStore(KeycloakSession session, MapStorage<MapResourceEntity, Resource> resourceStore, AuthorizationProvider provider) {
-        this.resourceStore = resourceStore;
         this.tx = resourceStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
         authorizationProvider = provider;
@@ -62,8 +61,8 @@ public class MapResourceStore implements ResourceStore {
         return new MapResourceAdapter(origEntity, authorizationProvider.getStoreFactory());
     }
     
-    private ModelCriteriaBuilder<Resource> forResourceServer(String resourceServerId) {
-        ModelCriteriaBuilder<Resource> mcb = resourceStore.createCriteriaBuilder();
+    private DefaultModelCriteria<Resource> forResourceServer(String resourceServerId) {
+        DefaultModelCriteria<Resource> mcb = criteria();
 
         return resourceServerId == null
                 ? mcb
@@ -75,7 +74,7 @@ public class MapResourceStore implements ResourceStore {
     public Resource create(String id, String name, ResourceServer resourceServer, String owner) {
         LOG.tracef("create(%s, %s, %s, %s)%s", id, name, resourceServer, owner, getShortStackTrace());
         // @UniqueConstraint(columnNames = {"NAME", "RESOURCE_SERVER_ID", "OWNER"})
-        ModelCriteriaBuilder<Resource> mcb = forResourceServer(resourceServer.getId())
+        DefaultModelCriteria<Resource> mcb = forResourceServer(resourceServer.getId())
                 .compare(SearchableFields.NAME, Operator.EQ, name)
                 .compare(SearchableFields.OWNER, Operator.EQ, owner);
 
@@ -157,10 +156,10 @@ public class MapResourceStore implements ResourceStore {
     @Override
     public List<Resource> findByResourceServer(Map<Resource.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
         LOG.tracef("findByResourceServer(%s, %s, %d, %d)%s", attributes, resourceServerId, firstResult, maxResult, getShortStackTrace());
-        ModelCriteriaBuilder<Resource> mcb = forResourceServer(resourceServerId).and(
+        DefaultModelCriteria<Resource> mcb = forResourceServer(resourceServerId).and(
                 attributes.entrySet().stream()
-                        .map(this::filterEntryToModelCriteriaBuilder)
-                        .toArray(ModelCriteriaBuilder[]::new)
+                        .map(this::filterEntryToDefaultModelCriteria)
+                        .toArray(DefaultModelCriteria[]::new)
         );
 
         return tx.read(withCriteria(mcb).pagination(firstResult, maxResult, SearchableFields.NAME))
@@ -168,28 +167,25 @@ public class MapResourceStore implements ResourceStore {
                 .collect(Collectors.toList());
     }
 
-    private ModelCriteriaBuilder<Resource> filterEntryToModelCriteriaBuilder(Map.Entry<Resource.FilterOption, String[]> entry) {
+    private DefaultModelCriteria<Resource> filterEntryToDefaultModelCriteria(Map.Entry<Resource.FilterOption, String[]> entry) {
         Resource.FilterOption name = entry.getKey();
         String[] value = entry.getValue();
 
+        DefaultModelCriteria<Resource> mcb = criteria();
         switch (name) {
             case ID:
             case SCOPE_ID:
             case OWNER:
             case URI:
-                return resourceStore.createCriteriaBuilder()
-                        .compare(name.getSearchableModelField(), Operator.IN, Arrays.asList(value));
+                return mcb.compare(name.getSearchableModelField(), Operator.IN, Arrays.asList(value));
             case URI_NOT_NULL:
-                return resourceStore.createCriteriaBuilder().compare(SearchableFields.URI, Operator.EXISTS);
+                return mcb.compare(SearchableFields.URI, Operator.EXISTS);
             case OWNER_MANAGED_ACCESS:
-                return resourceStore.createCriteriaBuilder()
-                        .compare(SearchableFields.OWNER_MANAGED_ACCESS, Operator.EQ, Boolean.valueOf(value[0]));
+                return mcb.compare(SearchableFields.OWNER_MANAGED_ACCESS, Operator.EQ, Boolean.valueOf(value[0]));
             case EXACT_NAME:
-                return resourceStore.createCriteriaBuilder()
-                        .compare(SearchableFields.NAME, Operator.EQ, value[0]);
+                return mcb.compare(SearchableFields.NAME, Operator.EQ, value[0]);
             case NAME:
-                return  resourceStore.createCriteriaBuilder()
-                        .compare(SearchableFields.NAME, Operator.ILIKE, "%" + value[0] + "%");
+                return mcb.compare(SearchableFields.NAME, Operator.ILIKE, "%" + value[0] + "%");
             default:
                 throw new IllegalArgumentException("Unsupported filter [" + name + "]");
 
@@ -235,7 +231,7 @@ public class MapResourceStore implements ResourceStore {
     public void findByType(String type, String owner, String resourceServerId, Consumer<Resource> consumer) {
         LOG.tracef("findByType(%s, %s, %s, %s)%s", type, owner, resourceServerId, consumer, getShortStackTrace());
 
-        ModelCriteriaBuilder<Resource> mcb = forResourceServer(resourceServerId)
+        DefaultModelCriteria<Resource> mcb = forResourceServer(resourceServerId)
                 .compare(SearchableFields.TYPE, Operator.EQ, type);
 
         if (owner != null) {

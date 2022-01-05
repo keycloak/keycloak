@@ -19,7 +19,7 @@ ADD *.sh /usr/local/bin/
 
 USER root
 RUN chown -R jboss .; chgrp -R jboss .; chmod -R -v ug+x bin/*.sh ; \
-    chmod -R -v ug+x /usr/local/bin/ 
+    chmod -R -v +x /usr/local/bin/ 
 
 USER jboss
 

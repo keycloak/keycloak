@@ -88,6 +88,7 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
                          .validateTrust()
                          .validateKeyUsage()
                          .validateExtendedKeyUsage()
+                         .validatePolicy()
                          .validateTimestamps();
             } catch(Exception e) {
                 logger.error(e.getMessage(), e);

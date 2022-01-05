@@ -93,7 +93,7 @@ public class ServiceProviderDefinition extends SimpleResourceDefinition {
 
     static final ListAttributeDefinition ROLE_ATTRIBUTES =
             new StringListAttributeDefinition.Builder(Constants.Model.ROLE_ATTRIBUTES)
-                    .setAllowNull(true)
+                    .setRequired(false)
                     .build();
 
     static final SimpleAttributeDefinition ROLE_MAPPINGS_PROVIDER_ID =

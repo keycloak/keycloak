@@ -78,6 +78,8 @@ public class Templates {
                 return "update-user-profile.ftl";
             case IDP_REVIEW_USER_PROFILE:
                 return "idp-review-user-profile.ftl";
+            case FRONTCHANNEL_LOGOUT:
+                return "frontchannel-logout.ftl";
             default:
                 throw new IllegalArgumentException();
         }

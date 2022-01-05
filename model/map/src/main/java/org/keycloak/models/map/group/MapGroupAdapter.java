@@ -26,6 +26,7 @@ import org.keycloak.models.RoleModel;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 
@@ -83,7 +84,8 @@ public class MapGroupAdapter extends AbstractGroupModel<MapGroupEntity> {
 
     @Override
     public Map<String, List<String>> getAttributes() {
-        return entity.getAttributes();
+        Map<String, List<String>> attrs = entity.getAttributes();
+        return attrs == null ? Collections.emptyMap() : attrs;
     }
 
     @Override
@@ -146,8 +148,14 @@ public class MapGroupAdapter extends AbstractGroupModel<MapGroupEntity> {
     }
 
     @Override
+    public boolean hasDirectRole(RoleModel role) {
+        Set<String> grantedRoles = entity.getGrantedRoles();
+        return grantedRoles != null && grantedRoles.contains(role.getId());
+    }
+
+    @Override
     public boolean hasRole(RoleModel role) {
-        return entity.getGrantedRoles().contains(role.getId());
+        return hasDirectRole(role);
     }
 
     @Override
@@ -157,12 +165,13 @@ public class MapGroupAdapter extends AbstractGroupModel<MapGroupEntity> {
 
     @Override
     public Stream<RoleModel> getRoleMappingsStream() {
-        return entity.getGrantedRoles().stream()
+        Set<String> grantedRoles = entity.getGrantedRoles();
+        return grantedRoles == null ? Stream.empty() : grantedRoles.stream()
             .map(roleId -> session.roles().getRoleById(realm, roleId));
     }
 
     @Override
     public void deleteRoleMapping(RoleModel role) {
-        entity.removeRole(role.getId());
+        entity.removeGrantedRole(role.getId());
     }
 }

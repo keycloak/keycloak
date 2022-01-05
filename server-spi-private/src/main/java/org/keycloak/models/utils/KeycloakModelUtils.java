@@ -24,6 +24,7 @@ import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -40,7 +41,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
-import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.storage.UserStorageProviderModel;
@@ -54,7 +54,6 @@ import java.security.Key;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.HashSet;
@@ -83,16 +82,6 @@ public final class KeycloakModelUtils {
 
     public static String generateId() {
         return UUID.randomUUID().toString();
-    }
-
-    public static byte[] generateSecret() {
-        return generateSecret(32);
-    }
-
-    public static byte[] generateSecret(int bytes) {
-        byte[] buf = new byte[bytes];
-        new SecureRandom().nextBytes(buf);
-        return buf;
     }
 
     public static PublicKey getPublicKey(String publicKeyPem) {
@@ -156,9 +145,9 @@ public final class KeycloakModelUtils {
         return rep;
     }
 
-    public static UserCredentialModel generateSecret(ClientModel client) {
-        UserCredentialModel secret = UserCredentialModel.generateSecret();
-        client.setSecret(secret.getChallengeResponse());
+    public static String generateSecret(ClientModel client) {
+        String secret = SecretGenerator.getInstance().randomString();
+        client.setSecret(secret);
         return secret;
     }
 
@@ -317,7 +306,7 @@ public final class KeycloakModelUtils {
         String componentId = config.get("componentId");
         if (realmId == null || componentId == null) {
             realmId = "ROOT";
-            ComponentModel cm = new ScopeComponentModel(providerClass, config, spiName);
+            ComponentModel cm = new ScopeComponentModel(providerClass, config, spiName, realmId);
             return factory.getProviderFactory(providerClass, realmId, cm.getId(), k -> cm);
         } else {
             return factory.getProviderFactory(providerClass, realmId, componentId, componentModelGetter(realmId, componentId));
@@ -329,14 +318,16 @@ public final class KeycloakModelUtils {
         private final String componentId;
         private final String providerId;
         private final String providerType;
+        private final String realmId;
         private final Scope config;
 
-        public ScopeComponentModel(Class<?> providerClass, Scope baseConfiguration, String spiName) {
+        public ScopeComponentModel(Class<?> providerClass, Scope baseConfiguration, String spiName, String realmId) {
             final String pr = baseConfiguration.get("provider", Config.getProvider(spiName));
 
             this.providerId = pr == null ? "default" : pr;
             this.config = baseConfiguration.scope(this.providerId);
-            this.componentId = spiName + "-" + this.providerId;
+            this.componentId = spiName + "- " + (realmId == null ? "" : "f:" + realmId + ":") + this.providerId;
+            this.realmId = realmId;
             this.providerType = providerClass.getName();
         }
 
@@ -361,6 +352,11 @@ public final class KeycloakModelUtils {
         }
 
         @Override
+        public String getParentId() {
+            return realmId;
+        }
+
+        @Override
         public boolean get(String key, boolean defaultValue) {
             return config.getBoolean(key, defaultValue);
         }
@@ -377,7 +373,6 @@ public final class KeycloakModelUtils {
 
         @Override
         public String get(String key, String defaultValue) {
-
             return config.get(key, defaultValue);
         }
 

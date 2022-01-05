@@ -48,6 +48,9 @@ public class VaultTestExecutionDecider implements TestExecutionDecider {
                 if (suiteContext != null && suiteContext.getAuthServerInfo() != null && suiteContext.getAuthServerInfo().isUndertow()) {
                     return ExecutionDecision.dontExecute("@EnableVault with Elytron credential store provider not supported on Undertow, skipping");
                 }
+                if (suiteContext != null && suiteContext.getAuthServerInfo() != null && suiteContext.getAuthServerInfo().isQuarkus()) {
+                    return ExecutionDecision.dontExecute("@EnableVault with Elytron credential store provider not supported on Quarkus, skipping");
+                }
             }
         }
         return ExecutionDecision.execute();

@@ -932,4 +932,13 @@ if (result == undefined) of /subsystem=infinispan/cache-container=keycloak/distr
     echo
 end-if
 
+# Migrate from 15.0.0 to 16.0.0
+
+if (outcome == failed) of /subsystem=infinispan/cache-container=hibernate/local-cache=pending-puts/:read-resource
+    echo Add pending-puts local cache clustered and expiration time 60000L
+    /subsystem=infinispan/cache-container=hibernate/local-cache=pending-puts/:add
+    /subsystem=infinispan/cache-container=hibernate/local-cache=pending-puts/component=expiration/:write-attribute(name=max-idle,value=60000L)
+    echo
+end-if
+
 echo *** End Migration ***

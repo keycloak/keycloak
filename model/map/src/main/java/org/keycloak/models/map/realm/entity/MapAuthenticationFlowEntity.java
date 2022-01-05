@@ -22,7 +22,7 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-public class MapAuthenticationFlowEntity implements UpdatableEntity {
+public class MapAuthenticationFlowEntity extends UpdatableEntity.Impl {
 
     private String id;
     private String alias;
@@ -31,7 +31,6 @@ public class MapAuthenticationFlowEntity implements UpdatableEntity {
     private Boolean builtIn = false;
     private Boolean topLevel = false;
 
-    private boolean updated;
 
     private MapAuthenticationFlowEntity() {}
 
@@ -59,11 +58,6 @@ public class MapAuthenticationFlowEntity implements UpdatableEntity {
         model.setProviderId(entity.getProviderId());
         model.setTopLevel(entity.isTopLevel());
         return model;
-    }
-
-    @Override
-    public boolean isUpdated() {
-        return updated;
     }
 
     public String getId() {

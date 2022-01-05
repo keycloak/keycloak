@@ -31,13 +31,12 @@ import java.util.Objects;
 import java.util.Set;
 
 
-public class UserConsentEntity implements UpdatableEntity {
+public class UserConsentEntity extends UpdatableEntity.Impl {
 
     private String clientId;
     private final Set<String> grantedClientScopesIds = new HashSet<>();
     private Long createdDate;
     private Long lastUpdatedDate;
-    private boolean updated;
     
     private UserConsentEntity() {}
 
@@ -76,11 +75,6 @@ public class UserConsentEntity implements UpdatableEntity {
                 .forEach(model::addGrantedClientScope);
         
         return model;
-    }
-
-    @Override
-    public boolean isUpdated() {
-        return updated;
     }
 
     public String getClientId() {

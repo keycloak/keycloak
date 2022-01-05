@@ -29,12 +29,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.EntityWithAttributes;
 import org.keycloak.models.map.common.UpdatableEntity;
 
-public class MapClientScopeEntity implements AbstractEntity, UpdatableEntity {
+public class MapClientScopeEntity extends UpdatableEntity.Impl implements AbstractEntity, EntityWithAttributes {
 
-    private final String id;
-    private final String realmId;
+    private String id;
+    private String realmId;
 
     private String name;
     private String protocol;
@@ -47,16 +48,10 @@ public class MapClientScopeEntity implements AbstractEntity, UpdatableEntity {
     /**
      * Flag signalizing that any of the setters has been meaningfully used.
      */
-    protected boolean updated;
 
-    protected MapClientScopeEntity() {
-        this.id = null;
-        this.realmId = null;
-    }
+    public MapClientScopeEntity() {}
 
     public MapClientScopeEntity(String id, String realmId) {
-        Objects.requireNonNull(realmId, "realmId");
-
         this.id = id;
         this.realmId = realmId;
     }
@@ -67,8 +62,10 @@ public class MapClientScopeEntity implements AbstractEntity, UpdatableEntity {
     }
 
     @Override
-    public boolean isUpdated() {
-        return this.updated;
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     public String getName() {
@@ -98,10 +95,19 @@ public class MapClientScopeEntity implements AbstractEntity, UpdatableEntity {
         this.protocol = protocol;
     }
 
+    @Override
     public Map<String, List<String>> getAttributes() {
         return attributes;
     }
 
+    @Override
+    public void setAttributes(Map<String, List<String>> attributes) {
+        this.attributes.clear();
+        this.attributes.putAll(attributes);
+        this.updated = true;
+    }
+
+    @Override
     public void setAttribute(String name, List<String> values) {
         this.updated |= ! Objects.equals(this.attributes.put(name, values), values);
     }
@@ -136,16 +142,23 @@ public class MapClientScopeEntity implements AbstractEntity, UpdatableEntity {
         return id == null ? null : protocolMappers.get(id);
     }
 
+    @Override
     public void removeAttribute(String name) {
         this.updated |= this.attributes.remove(name) != null;
     }
 
+    @Override
     public List<String> getAttribute(String name) {
         return attributes.getOrDefault(name, Collections.EMPTY_LIST);
     }
 
     public String getRealmId() {
         return this.realmId;
+    }
+
+    public void setRealmId(String realmId) {
+        this.updated |= !Objects.equals(this.realmId, realmId);
+        this.realmId = realmId;
     }
 
     public Stream<String> getScopeMappings() {

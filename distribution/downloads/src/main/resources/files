@@ -1,12 +1,8 @@
 ./
     keycloak-server-dist:keycloak
     keycloak-server-x-dist:keycloak.x-preview
-    keycloak-server-overlay:keycloak-overlay
     keycloak-api-docs-dist:keycloak-api-docs
-    keycloak-examples-dist:keycloak-examples
 
-    keycloak-as7-adapter-dist:keycloak-oidc-as7-adapter
-    keycloak-eap6-adapter-dist:keycloak-oidc-eap6-adapter
     keycloak-jetty92-adapter-dist:keycloak-oidc-jetty92-adapter
     keycloak-jetty93-adapter-dist:keycloak-oidc-jetty93-adapter
     keycloak-jetty94-adapter-dist:keycloak-oidc-jetty94-adapter
@@ -16,8 +12,6 @@
     keycloak-wildfly-adapter-dist:keycloak-oidc-wildfly-adapter
     keycloak-fuse-adapter-dist:keycloak-oidc-fuse-adapter
 
-    keycloak-saml-as7-adapter-dist:keycloak-saml-as7-adapter
-    keycloak-saml-eap6-adapter-dist:keycloak-saml-eap6-adapter
     keycloak-saml-jetty92-adapter-dist:keycloak-saml-jetty92-adapter
     keycloak-saml-jetty93-adapter-dist:keycloak-saml-jetty93-adapter
     keycloak-saml-jetty94-adapter-dist:keycloak-saml-jetty94-adapter

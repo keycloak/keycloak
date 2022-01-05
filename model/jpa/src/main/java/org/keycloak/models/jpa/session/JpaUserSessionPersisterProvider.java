@@ -434,7 +434,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     private PersistentAuthenticatedClientSessionAdapter toAdapter(RealmModel realm, PersistentUserSessionAdapter userSession, PersistentClientSessionEntity entity) {
         String clientId = entity.getClientId();
         if (!entity.getExternalClientId().equals("local")) {
-            clientId = new StorageId(entity.getClientId(), entity.getExternalClientId()).getId();
+            clientId = new StorageId(entity.getClientStorageProvider(), entity.getExternalClientId()).getId();
         }
         ClientModel client = realm.getClientById(clientId);
 

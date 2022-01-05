@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import io.quarkus.runtime.Quarkus;
-import org.keycloak.util.Environment;
 
 /**
  * <p>This main class should be used to start the server in dev mode for development purposes. By running this class,

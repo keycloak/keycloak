@@ -53,7 +53,7 @@ public class DigitsPasswordPolicyProvider implements PasswordPolicyProvider {
 
     @Override
     public Object parseConfig(String value) {
-        return value != null ? Integer.parseInt(value) : 1;
+        return value != null ? Integer.valueOf(value) : Integer.valueOf(1);
     }
 
     @Override

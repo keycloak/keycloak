@@ -68,6 +68,9 @@ interface Application {
   offlineAccess: boolean;
   userConsentRequired: boolean;
   scope: string[];
+  logoUri: string;
+  policyUri: string;
+  tosUri: string;
 }
 
 export class ApplicationsPage extends React.Component<ApplicationsPageProps, ApplicationsPageState> {
@@ -175,7 +178,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                   id={this.elementId("expandable", application)}
                   isHidden={!this.state.isRowOpen[appIndex]}
                 >
-                  <Grid sm={12} md={12} lg={12}>
+                  <Grid sm={6} md={6} lg={6}>
                     <div className='pf-c-content'>
                       <GridItem><strong>{Msg.localize('client') + ': '}</strong> {application.clientId}</GridItem>
                       {application.description &&
@@ -196,6 +199,8 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                               </React.Fragment>
                             )
                           })}
+                          {application.tosUri && <GridItem><strong>{Msg.localize('termsOfService') + ': '}</strong>{application.tosUri}</GridItem>}
+                          {application.policyUri && <GridItem><strong>{Msg.localize('policy') + ': '}</strong>{application.policyUri}</GridItem>}
                           <GridItem><strong>{Msg.localize('accessGrantedOn') + ': '}</strong>
                             {new Intl.DateTimeFormat(locale, {
                               year: 'numeric',
@@ -209,6 +214,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                         </React.Fragment>
                       }
                     </div>
+                    {application.logoUri && <div className='pf-c-content'><img src={application.logoUri} /></div> }
                   </Grid>
                   {(application.consent || application.offlineAccess) &&
                     <Grid gutter='sm'>

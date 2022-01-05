@@ -220,31 +220,33 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper implemen
         return "Import declared saml attribute if it exists in assertion into the specified user property or attribute.";
     }
 
-    // ISpMetadataAttributeProvider interface
+    // SamlMetadataDescriptorUpdater interface
     @Override
     public void updateMetadata(IdentityProviderMapperModel mapperModel, EntityDescriptorType entityDescriptor) {
-        RequestedAttributeType requestedAttribute = new RequestedAttributeType(mapperModel.getConfig().get(UserAttributeMapper.ATTRIBUTE_NAME));
+        String attributeName = mapperModel.getConfig().get(UserAttributeMapper.ATTRIBUTE_NAME);
+        String attributeFriendlyName = mapperModel.getConfig().get(UserAttributeMapper.ATTRIBUTE_FRIENDLY_NAME);
+
+        RequestedAttributeType requestedAttribute = new RequestedAttributeType(attributeName);
         requestedAttribute.setIsRequired(null);
         requestedAttribute.setNameFormat(ATTRIBUTE_FORMAT_BASIC.get());
 
-        String attributeFriendlyName = mapperModel.getConfig().get(UserAttributeMapper.ATTRIBUTE_FRIENDLY_NAME);
         if (attributeFriendlyName != null && attributeFriendlyName.length() > 0)
             requestedAttribute.setFriendlyName(attributeFriendlyName);
 
         // Add the requestedAttribute item to any AttributeConsumingServices
-        for (EntityDescriptorType.EDTChoiceType choiceType: entityDescriptor.getChoiceType()) {
+        for (EntityDescriptorType.EDTChoiceType choiceType : entityDescriptor.getChoiceType()) {
             List<EntityDescriptorType.EDTDescriptorChoiceType> descriptors = choiceType.getDescriptors();
+            for (EntityDescriptorType.EDTDescriptorChoiceType descriptor : descriptors) {
+                for (AttributeConsumingServiceType attributeConsumingService : descriptor.getSpDescriptor().getAttributeConsumingService()) {
+                    boolean alreadyPresent = attributeConsumingService.getRequestedAttribute().stream()
+                        .anyMatch(t -> (attributeName == null || attributeName.equalsIgnoreCase(t.getName())) &&
+                                       (attributeFriendlyName == null || attributeFriendlyName.equalsIgnoreCase(t.getFriendlyName())));
 
-            if (descriptors != null) {
-                for (EntityDescriptorType.EDTDescriptorChoiceType descriptor: descriptors) {
-                    if (descriptor.getSpDescriptor() != null && descriptor.getSpDescriptor().getAttributeConsumingService() != null) {
-                        for (AttributeConsumingServiceType attributeConsumingService: descriptor.getSpDescriptor().getAttributeConsumingService())
-                        {
-                            attributeConsumingService.addRequestedAttribute(requestedAttribute);
-                        }
-                    }
+                    if (!alreadyPresent)
+                        attributeConsumingService.addRequestedAttribute(requestedAttribute);
                 }
             }
+
         }
     }
 }

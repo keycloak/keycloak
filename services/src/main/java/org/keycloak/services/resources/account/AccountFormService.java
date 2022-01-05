@@ -76,6 +76,7 @@ import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.ValidationException;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.userprofile.EventAuditingAttributeChangeListener;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.CredentialHelper;
 
@@ -364,28 +365,14 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
         UserModel user = auth.getUser();
 
-        String oldFirstName = user.getFirstName();
-        String oldLastName = user.getLastName();
-        String oldEmail = user.getEmail();
-
-        event.event(EventType.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser());
+        event.event(EventType.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser()).detail(Details.CONTEXT, UserProfileContext.ACCOUNT_OLD.name());
 
         UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
         UserProfile profile = profileProvider.create(UserProfileContext.ACCOUNT_OLD, formData, user);
 
         try {
             // backward compatibility with old account console where attributes are not removed if missing
-            profile.update(false, (attributeName, userModel) -> {
-                if (attributeName.equals(UserModel.EMAIL)) {
-                    event.detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, user.getEmail()).success();
-                }
-                if (attributeName.equals(UserModel.FIRST_NAME)) {
-                    event.detail(Details.PREVIOUS_FIRST_NAME, oldFirstName).detail(Details.UPDATED_FIRST_NAME, user.getFirstName());
-                }
-                if (attributeName.equals(UserModel.LAST_NAME)) {
-                    event.detail(Details.PREVIOUS_LAST_NAME, oldLastName).detail(Details.UPDATED_LAST_NAME, user.getLastName());
-                }
-            });
+            profile.update(false, new EventAuditingAttributeChangeListener(profile, event));
         } catch (ValidationException pve) {
             List<FormMessage> errors = Validation.getFormErrorsFromValidation(pve.getErrors());
 

@@ -22,26 +22,30 @@ import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.Objects;
 
-public class MapScopeEntity implements AbstractEntity, UpdatableEntity {
+public class MapScopeEntity extends UpdatableEntity.Impl implements AbstractEntity {
 
-    private final String id;
+    private String id;
     private String name;
     private String displayName;
     private String iconUri;
     private String resourceServerId;
-    private boolean updated = false;
 
     public MapScopeEntity(String id) {
         this.id = id;
     }
 
-    public MapScopeEntity() {
-        this.id = null;
-    }
+    public MapScopeEntity() {}
 
     @Override
     public String getId() {
         return id;
+    }
+
+    @Override
+    public void setId(String id) {
+        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+        this.id = id;
+        this.updated |= id != null;
     }
 
     public String getName() {
@@ -78,11 +82,6 @@ public class MapScopeEntity implements AbstractEntity, UpdatableEntity {
     public void setResourceServerId(String resourceServerId) {
         this.updated |= !Objects.equals(this.resourceServerId, resourceServerId);
         this.resourceServerId = resourceServerId;
-    }
-
-    @Override
-    public boolean isUpdated() {
-        return updated;
     }
 
     @Override

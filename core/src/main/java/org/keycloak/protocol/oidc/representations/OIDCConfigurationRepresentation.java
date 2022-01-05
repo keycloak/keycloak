@@ -49,6 +49,12 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("end_session_endpoint")
     private String logoutEndpoint;
 
+    @JsonProperty("frontchannel_logout_session_supported")
+    private Boolean frontChannelLogoutSessionSupported = true;
+
+    @JsonProperty("frontchannel_logout_supported")
+    private Boolean frontChannelLogoutSupported = true;
+
     @JsonProperty("jwks_uri")
     private String jwksUri;
 
@@ -576,5 +582,13 @@ public class OIDCConfigurationRepresentation {
 
     public void setAuthorizationEncryptionEncValuesSupported(List<String> authorizationEncryptionEncValuesSupported) {
         this.authorizationEncryptionEncValuesSupported = authorizationEncryptionEncValuesSupported;
+    }
+
+    public Boolean getFrontChannelLogoutSessionSupported() {
+        return frontChannelLogoutSessionSupported;
+    }
+
+    public Boolean getFrontChannelLogoutSupported() {
+        return frontChannelLogoutSupported;
     }
 }

@@ -141,6 +141,10 @@ public class AuthServerTestEnricher {
     public static final String AUTH_SERVER_CROSS_DC_PROPERTY = "auth.server.crossdc";
     public static final boolean AUTH_SERVER_CROSS_DC = Boolean.parseBoolean(System.getProperty(AUTH_SERVER_CROSS_DC_PROPERTY, "false"));
 
+
+    public static final String HOT_ROD_STORE_ENABLED_PROPERTY = "hotrod.store.enabled";
+    public static final boolean HOT_ROD_STORE_ENABLED = Boolean.parseBoolean(System.getProperty(HOT_ROD_STORE_ENABLED_PROPERTY, "false"));
+
     public static final String AUTH_SERVER_HOME_PROPERTY = "auth.server.home";
 
     public static final String CACHE_SERVER_LIFECYCLE_SKIP_PROPERTY = "cache.server.lifecycle.skip";
@@ -342,6 +346,17 @@ public class AuthServerTestEnricher {
             if (suiteContext.getMigratedAuthServerInfo() == null) {
                 throw new RuntimeException(String.format("Migration test was enabled but no auth server from which to migrate was activated. "
                         + "A container matching auth-server-jboss-migration needs to be enabled in arquillian.xml."));
+            }
+        }
+
+        if (HOT_ROD_STORE_ENABLED) {
+            HotRodStoreTestEnricher.initializeSuiteContext(suiteContext);
+
+            for (ContainerInfo container : suiteContext.getContainers()) {
+                // migrated auth server
+                if (container.getQualifier().equals("hot-rod-store")) {
+                    suiteContext.setHotRodStoreInfo(container);
+                }
             }
         }
 
@@ -556,13 +571,9 @@ public class AuthServerTestEnricher {
         TestContext testContext = new TestContext(suiteContext, event.getTestClass().getJavaClass());
         testContextProducer.set(testContext);
 
-        if (!isAuthServerRemote() && !isAuthServerQuarkus()) {
+        if (!isAuthServerRemote()) {
             boolean wasUpdated = false;
 
-            if (event.getTestClass().isAnnotationPresent(EnableVault.class)) {
-                VaultUtils.enableVault(suiteContext, event.getTestClass().getAnnotation(EnableVault.class).providerId());
-                wasUpdated = true;
-            }
             if (event.getTestClass().isAnnotationPresent(SetDefaultProvider.class)) {
                 SetDefaultProvider defaultProvider = event.getTestClass().getAnnotation(SetDefaultProvider.class);
 
@@ -570,6 +581,11 @@ public class AuthServerTestEnricher {
                     SpiProvidersSwitchingUtils.addProviderDefaultValue(suiteContext, defaultProvider);
                     wasUpdated = true;
                 }
+            }
+
+            if (event.getTestClass().isAnnotationPresent(EnableVault.class)) {
+                VaultUtils.enableVault(suiteContext, event.getTestClass().getAnnotation(EnableVault.class).providerId());
+                wasUpdated = true;
             }
 
             if (wasUpdated) {
@@ -807,10 +823,12 @@ public class AuthServerTestEnricher {
         Administration administration = new Administration(client);
         Operations operations = new Operations(client);
 
-        if(!operations.exists(Address.coreService("management").and("security-realm", "UndertowRealm"))) {
-            client.execute("/core-service=management/security-realm=UndertowRealm:add()");
-            client.execute("/core-service=management/security-realm=UndertowRealm/server-identity=ssl:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=keycloak.jks");
-            client.execute("/core-service=management/security-realm=UndertowRealm/authentication=truststore:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=keycloak.truststore");
+        if(!operations.exists(Address.subsystem("elytron").and("server-ssl-context", "httpsSSC"))) {
+            client.execute("/subsystem=elytron/key-store=httpsKS:add(relative-to=jboss.server.config.dir,path=keycloak.jks,credential-reference={clear-text=secret},type=JKS)");
+            client.execute("/subsystem=elytron/key-manager=httpsKM:add(key-store=httpsKS,credential-reference={clear-text=secret})");
+            client.execute("/subsystem=elytron/key-store=twoWayTS:add(relative-to=jboss.server.config.dir,path=keycloak.truststore,credential-reference={clear-text=secret},type=JKS)");
+            client.execute("/subsystem=elytron/trust-manager=twoWayTM:add(key-store=twoWayTS)");
+            client.execute("/subsystem=elytron/server-ssl-context=httpsSSC:add(key-manager=httpsKM,protocols=[\"TLSv1.2\"],trust-manager=twoWayTM,want-client-auth=true)");
 
             removeHttpsListener(client, administration);
             addHttpsListener(client);
@@ -883,16 +901,17 @@ public class AuthServerTestEnricher {
 
         removeTestRealms(testContext, adminClient);
 
-        if (!isAuthServerRemote() && !isAuthServerQuarkus()) {
+        if (!isAuthServerRemote()) {
             
             boolean wasUpdated = false;
-            if (event.getTestClass().isAnnotationPresent(EnableVault.class)) {
-                VaultUtils.disableVault(suiteContext, event.getTestClass().getAnnotation(EnableVault.class).providerId());
+
+            if (event.getTestClass().isAnnotationPresent(SetDefaultProvider.class)) {
+                SpiProvidersSwitchingUtils.resetProvider(suiteContext, event.getTestClass().getAnnotation(SetDefaultProvider.class));
                 wasUpdated = true;
             }
 
-            if (event.getTestClass().isAnnotationPresent(SetDefaultProvider.class)) {
-                SpiProvidersSwitchingUtils.removeProvider(suiteContext, event.getTestClass().getAnnotation(SetDefaultProvider.class));
+            if (event.getTestClass().isAnnotationPresent(EnableVault.class) && !isAuthServerQuarkus()) {
+                VaultUtils.disableVault(suiteContext, event.getTestClass().getAnnotation(EnableVault.class).providerId());
                 wasUpdated = true;
             }
 

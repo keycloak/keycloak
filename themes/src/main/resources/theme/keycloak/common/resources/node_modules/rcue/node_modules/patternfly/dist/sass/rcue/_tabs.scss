@@ -1,0 +1,118 @@
+//
+// Tabs
+// --------------------------------------------------
+
+.nav-tabs {
+  font-size: $font-size-large;
+  > li {
+    > a {
+      color: $nav-tabs-color;
+      margin-right: -1px;
+      padding-bottom: 5px;
+      padding-top: 5px;
+      &:active,
+      &:focus,
+      &:hover {
+        background: transparent;
+        border-color: $nav-tabs-border-color;
+        color: $gray-darker;
+      }
+    }
+    > .dropdown-menu {
+      border-top: 0;
+      border-color: $nav-tabs-border-color;
+      &.pull-right {
+        right: -1px;
+      }
+    }
+  }
+  + .nav-tabs-pf, &.nav-tabs-pf-secondary {
+    font-size: $font-size-base;
+    > li:first-child > a {
+      padding-left: 15px;
+      &:before {
+        left: 15px !important;
+      }
+    }
+  }
+  .open > a {
+    &,
+    &:hover,
+    &:focus {
+      background-color: transparent;
+      border-color: $nav-tabs-border-color;
+    }
+  }
+}
+
+.nav-tabs-pf {
+  &.nav-justified {
+    @media (min-width: $grid-float-breakpoint) {
+      border-bottom: 1px solid $nav-tabs-justified-link-border-color;
+    }
+    > li {
+      &:first-child > a {
+        padding-left: 15px;
+      }
+      > a {
+        border-bottom: 0;
+        &:before {
+          left: 0 !important;
+          right: 0 !important;
+        }
+      }
+    }
+  }
+  > li {
+    margin-bottom: 0;
+    &.active > a {
+      @include tab-indicator($background: $nav-tabs-active-link-hover-color);
+      &,
+      &:active,
+      &:focus,
+      &:hover {
+        background-color: transparent;
+        border: 0 !important;
+        color: $link-color;
+        &:before {
+          background: $nav-tabs-active-link-hover-color;
+        }
+      }
+    }
+    &:first-child {
+      > a {
+        padding-left: 0;
+        &:before {
+          left: 0 !important;
+        }
+      }
+    }
+    > a {
+      border: 0;
+      line-height: 1;
+      margin-right: 0;
+      padding-bottom: 10px;
+      padding-top: 10px;
+      &:active,
+      &:focus,
+      &:hover {
+        @include tab-indicator()
+      }
+    }
+    > .dropdown-menu {
+      left: 15px;
+      margin-top: 1px;
+      &.pull-right {
+        left: auto;
+        right: 15px;
+      }
+    }
+  }
+  .open > a {
+    &,
+    &:hover,
+    &:focus {
+      background-color: transparent;
+    }
+  }
+}

@@ -23,7 +23,7 @@ import org.keycloak.models.map.common.UpdatableEntity;
 
 import java.util.Objects;
 
-public class UserCredentialEntity implements UpdatableEntity {
+public class UserCredentialEntity extends UpdatableEntity.Impl {
 
     private String id;
     private String type;
@@ -31,7 +31,6 @@ public class UserCredentialEntity implements UpdatableEntity {
     private Long createdDate;
     private String secretData;
     private String credentialData;
-    private boolean updated;
 
     UserCredentialEntity() {}
 
@@ -111,10 +110,5 @@ public class UserCredentialEntity implements UpdatableEntity {
     public void setCredentialData(String credentialData) {
         this.updated |= !Objects.equals(this.credentialData, credentialData);
         this.credentialData = credentialData;
-    }
-
-    @Override
-    public boolean isUpdated() {
-        return updated;
     }
 }

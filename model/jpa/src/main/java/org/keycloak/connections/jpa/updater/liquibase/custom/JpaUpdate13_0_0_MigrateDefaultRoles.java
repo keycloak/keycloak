@@ -18,8 +18,8 @@ package org.keycloak.connections.jpa.updater.liquibase.custom;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import liquibase.exception.CustomChangeException;
 import liquibase.statement.core.InsertStatement;
@@ -30,44 +30,44 @@ import org.keycloak.models.Constants;
 
 public class JpaUpdate13_0_0_MigrateDefaultRoles extends CustomKeycloakTask {
 
-    private final Set<String> realmIds = new HashSet<>();
+    private final Map<String, String> realmIdsAndNames = new HashMap<>();
 
     @Override
     protected void generateStatementsImpl() throws CustomChangeException {
 
-        extractRealmIds("SELECT ID FROM " + getTableName("REALM"));
+        extractRealmIdsAndNames("SELECT ID,NAME FROM " + getTableName("REALM"));
 
         String clientTable = getTableName("CLIENT");
         String clientDefaultRolesTable = getTableName("CLIENT_DEFAULT_ROLES");
         String compositeRoleTable = getTableName("COMPOSITE_ROLE");
 
-        for (String realmId : realmIds) {
+        for (Map.Entry<String, String> entry : realmIdsAndNames.entrySet()) {
             String id = UUID.randomUUID().toString();
-            String roleName = determineDefaultRoleName(realmId);
+            String roleName = determineDefaultRoleName(entry.getKey(), entry.getValue());
             statements.add(
                 // create new default role
                 new InsertStatement(null, null, database.correctObjectName("KEYCLOAK_ROLE", Table.class))
                     .addColumnValue("ID", id)
-                    .addColumnValue("CLIENT_REALM_CONSTRAINT", realmId)
+                    .addColumnValue("CLIENT_REALM_CONSTRAINT", entry.getKey())
                     .addColumnValue("CLIENT_ROLE", Boolean.FALSE)
                     .addColumnValue("DESCRIPTION", "${role_" + roleName + "}")
                     .addColumnValue("NAME", roleName)
-                    .addColumnValue("REALM_ID", realmId)
-                    .addColumnValue("REALM", realmId)
+                    .addColumnValue("REALM_ID", entry.getKey())
+                    .addColumnValue("REALM", entry.getKey())
             );
             statements.add(
                 // assign the role to the realm
                 new UpdateStatement(null, null, database.correctObjectName("REALM", Table.class))
                     .addNewColumnValue("DEFAULT_ROLE", id)
                     .setWhereClause("REALM.ID=?")
-                    .addWhereParameter(realmId)
+                    .addWhereParameter(entry.getKey())
             );
 
             statements.add(
                 // copy data from REALM_DEFAULT_ROLES to COMPOSITE_ROLE
                 new RawSqlStatement("INSERT INTO " + compositeRoleTable + " (COMPOSITE, CHILD_ROLE) " +
                         "SELECT '" + id + "', ROLE_ID FROM " + getTableName("REALM_DEFAULT_ROLES") +
-                        " WHERE REALM_ID = '" + database.escapeStringForDatabase(realmId) + "'")
+                        " WHERE REALM_ID = '" + database.escapeStringForDatabase(entry.getKey()) + "'")
             );
             statements.add(
                 // copy data from CLIENT_DEFAULT_ROLES to COMPOSITE_ROLE
@@ -75,17 +75,17 @@ public class JpaUpdate13_0_0_MigrateDefaultRoles extends CustomKeycloakTask {
                         "SELECT '" + id + "', " + clientDefaultRolesTable + ".ROLE_ID FROM " + 
                         clientDefaultRolesTable + " INNER JOIN " + clientTable + " ON " + 
                         clientTable + ".ID = " + clientDefaultRolesTable + ".CLIENT_ID AND " +
-                        clientTable + ".REALM_ID = '" + database.escapeStringForDatabase(realmId) + "'")
+                        clientTable + ".REALM_ID = '" + database.escapeStringForDatabase(entry.getKey()) + "'")
             );
         }
     }
 
-    private void extractRealmIds(String sql) throws CustomChangeException {
+    private void extractRealmIdsAndNames(String sql) throws CustomChangeException {
         try (PreparedStatement statement = jdbcConnection.prepareStatement(sql);
                 ResultSet rs = statement.executeQuery()) {
 
             while (rs.next()) {
-                realmIds.add(rs.getString(1));
+                realmIdsAndNames.put(rs.getString(1), rs.getString(2));
             }
 
         } catch (Exception e) {
@@ -93,13 +93,13 @@ public class JpaUpdate13_0_0_MigrateDefaultRoles extends CustomKeycloakTask {
         }
     }
 
-    private String determineDefaultRoleName(String realmId) throws CustomChangeException {
-        String roleName = Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realmId.toLowerCase();
+    private String determineDefaultRoleName(String realmId, String realmName) throws CustomChangeException {
+        String roleName = Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realmName.toLowerCase();
         if (isRoleNameAvailable(realmId, roleName)) {
             return roleName;
         } else {
             for (int i = 1; i < Integer.MAX_VALUE; i++) {
-                roleName = Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realmId.toLowerCase() + "-" + i;
+                roleName = Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realmName.toLowerCase() + "-" + i;
                 if (isRoleNameAvailable(realmId, roleName)) return roleName;
             }
         }

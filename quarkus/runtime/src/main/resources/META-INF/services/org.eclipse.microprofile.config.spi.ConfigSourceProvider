@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.configuration.KeycloakConfigSourceProvider
+org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider

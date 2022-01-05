@@ -19,6 +19,7 @@ package org.keycloak.forms.login.freemarker;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticator;
 import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
 import org.keycloak.authentication.requiredactions.util.UserUpdateProfileContext;
@@ -32,6 +33,7 @@ import org.keycloak.forms.login.freemarker.model.CodeBean;
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
 import org.keycloak.forms.login.freemarker.model.IdpReviewProfileBean;
 import org.keycloak.forms.login.freemarker.model.LoginBean;
+import org.keycloak.forms.login.freemarker.model.FrontChannelLogoutBean;
 import org.keycloak.forms.login.freemarker.model.OAuthGrantBean;
 import org.keycloak.forms.login.freemarker.model.ProfileBean;
 import org.keycloak.forms.login.freemarker.model.RealmBean;
@@ -51,6 +53,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
@@ -68,6 +71,7 @@ import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.MediaType;
 
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -187,7 +191,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     @SuppressWarnings("incomplete-switch")
     protected Response createResponse(LoginFormsPages page) {
-        
+
         Theme theme;
         try {
             theme = getTheme();
@@ -265,6 +269,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 UpdateProfileContext idpCtx = (UpdateProfileContext) attributes.get(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR);
                 attributes.put("profile", new IdpReviewProfileBean(idpCtx, formData, session));
                 break;
+            case FRONTCHANNEL_LOGOUT:
+                attributes.put("logout", new FrontChannelLogoutBean(session));
+                break;
         }
 
         return processTemplate(theme, Templates.getTemplate(page), locale);
@@ -273,7 +280,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     private boolean isDynamicUserProfile() {
         return session.getProvider(UserProfileProvider.class).getConfiguration() != null;
     }
-    
+
     @Override
     public Response createForm(String form) {
         Theme theme;
@@ -530,6 +537,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     @Override
     public Response createPasswordReset() {
+        String loginHint = authenticationSession.getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
+        if (loginHint != null && !loginHint.isEmpty()) {
+            authenticationSession.setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, loginHint);
+        }
         return createResponse(LoginFormsPages.LOGIN_RESET_PASSWORD);
     }
 
@@ -545,6 +556,16 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     @Override
     public Response createRegistration() {
+        String loginHint = authenticationSession.getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
+        if (loginHint != null && !loginHint.isEmpty()) {
+            this.formData = new MultivaluedHashMap<>();
+            if(this.realm.isRegistrationEmailAsUsername()) {
+                this.formData.putSingle("email", loginHint);
+            } else {
+                this.formData.putSingle("username", loginHint);
+            }
+        }
+
         return createResponse(LoginFormsPages.REGISTER);
     }
 
@@ -565,7 +586,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             if(userCtx != null && userCtx.getUserProfileContext() == UserProfileContext.IDP_REVIEW)
                 return createResponse(LoginFormsPages.IDP_REVIEW_USER_PROFILE);
             else
-                return createResponse(LoginFormsPages.UPDATE_USER_PROFILE); 
+                return createResponse(LoginFormsPages.UPDATE_USER_PROFILE);
         } else {
             return createResponse(LoginFormsPages.LOGIN_UPDATE_PROFILE);
         }
@@ -634,6 +655,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     @Override
     public Response createSamlPostForm() {
         return createResponse(LoginFormsPages.SAML_POST_FORM);
+    }
+
+    @Override
+    public Response createFrontChannelLogoutPage() {
+        return createResponse(LoginFormsPages.FRONTCHANNEL_LOGOUT);
     }
 
     protected void setMessage(MessageType type, String message, Object... parameters) {

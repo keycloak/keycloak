@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.quarkus.agroal.spi.JdbcDataSourceBuildItem;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.ClassInfo;
@@ -17,7 +18,7 @@ import org.jboss.jandex.IndexView;
 import org.keycloak.connections.jpa.updater.liquibase.lock.CustomInsertLockRecordGenerator;
 import org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockDatabaseChangeLogGenerator;
 import org.keycloak.connections.jpa.updater.liquibase.lock.DummyLockService;
-import org.keycloak.connections.liquibase.KeycloakLogger;
+import org.keycloak.quarkus.runtime.storage.database.liquibase.KeycloakLogger;
 
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;
@@ -29,17 +30,18 @@ import liquibase.parser.ChangeLogParser;
 import liquibase.parser.core.xml.XMLChangeLogSAXParser;
 import liquibase.servicelocator.LiquibaseService;
 import liquibase.sqlgenerator.SqlGenerator;
-import org.keycloak.quarkus.KeycloakRecorder;
+import org.keycloak.quarkus.runtime.KeycloakRecorder;
 
 class LiquibaseProcessor {
 
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
-    void configure(KeycloakRecorder recorder, CombinedIndexBuildItem indexBuildItem) {
+    void configure(KeycloakRecorder recorder, List<JdbcDataSourceBuildItem> jdbcDataSources, CombinedIndexBuildItem indexBuildItem) {
         DotName liquibaseServiceName = DotName.createSimple(LiquibaseService.class.getName());
         Map<String, List<String>> services = new HashMap<>();
-
         IndexView index = indexBuildItem.getIndex();
+        JdbcDataSourceBuildItem dataSourceBuildItem = jdbcDataSources.get(0);
+        String dbKind = dataSourceBuildItem.getDbKind();
 
         for (Class<?> c : Arrays.asList(liquibase.diff.compare.DatabaseObjectComparator.class,
                 liquibase.parser.NamespaceDetails.class,
@@ -61,7 +63,7 @@ class LiquibaseProcessor {
             } else {
                 classes.addAll(index.getAllKnownSubclasses(DotName.createSimple(c.getName())));
             }
-            filterImplementations(c, classes);
+            filterImplementations(c, dbKind, classes);
             for (ClassInfo found : classes) {
                 if (Modifier.isAbstract(found.flags()) ||
                         Modifier.isInterface(found.flags()) ||
@@ -85,10 +87,10 @@ class LiquibaseProcessor {
         recorder.configureLiquibase(services);
     }
 
-    private void filterImplementations(Class<?> types, Set<ClassInfo> classes) {
+    private void filterImplementations(Class<?> types, String dbKind, Set<ClassInfo> classes) {
         if (Database.class.equals(types)) {
             // removes unsupported databases
-            classes.removeIf(classInfo -> !org.keycloak.configuration.Database.isSupported(classInfo.name().toString()));
+            classes.removeIf(classInfo -> !org.keycloak.quarkus.runtime.storage.database.Database.isLiquibaseDatabaseSupported(classInfo.name().toString(), dbKind));
         }
     }
 }

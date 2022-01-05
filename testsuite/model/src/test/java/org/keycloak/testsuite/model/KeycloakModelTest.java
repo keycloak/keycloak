@@ -242,6 +242,12 @@ public abstract class KeycloakModelTest {
           )
           .collect(Collectors.toList());
 
+
+        for (KeycloakModelParameters kmp : KeycloakModelTest.MODEL_PARAMETERS) {
+            kmp.beforeSuite(CONFIG);
+        }
+
+        // TODO move to a class rule
         reinitializeKeycloakSessionFactory();
         DEFAULT_FACTORY = getFactory();
     }

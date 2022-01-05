@@ -60,7 +60,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
-import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutor;
+import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditionFactory;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
@@ -93,6 +93,7 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateContextConditionConfig;
 
 /**
  * Test for the FAPI 1 specifications:
@@ -198,6 +199,24 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
     }
 
 
+    // KEYCLOAK-19555
+    @Test
+    public void testFAPIBaselineSecureSettingsWhenUseAdminPolicy() throws Exception {
+        // Apply policy for admin REST API and Dynamic Client Registration requests
+        setupPolicyFAPIBaselineForAdminRESTAndDynamicClientRegistrationRequests();
+
+        // Try to register client with default authenticator - should pass. Client authenticator should be "client-jwt"
+        String clientUUID = createClientByAdmin("client-jwt-3", (ClientRepresentation clientRep) -> {
+        });
+        ClientRepresentation client = getClientByAdmin(clientUUID);
+        Assert.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
+
+        // Check the Consent is enabled, PKCS set to S256
+        Assert.assertTrue(client.isConsentRequired());
+        Assert.assertEquals(OAuth2Constants.PKCE_METHOD_S256, OIDCAdvancedConfigWrapper.fromClientRepresentation(client).getPkceCodeChallengeMethod());
+    }
+
+
     @Test
     public void testFAPIBaselineOIDCClientRegistration() throws Exception {
         setupPolicyFAPIBaselineForAllClient();
@@ -278,6 +297,16 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
         });
         ClientRepresentation client = getClientByAdmin(clientUUID);
         Assert.assertNames(client.getRedirectUris(), "https://hostname.com");
+        getCleanup().addClientUuid(clientUUID);
+
+        // Try to register client with valid root URL. Makes sure that there is not auto-created redirect URI with wildcard at the end (See KEYCLOAK-19556)
+        String clientUUID2 = createClientByAdmin("invalid2", (ClientRepresentation clientRep) -> {
+            clientRep.setRootUrl("https://hostname2.com");
+            clientRep.setRedirectUris(null);
+        });
+        ClientRepresentation client2 = getClientByAdmin(clientUUID2);
+        Assert.assertNames(client2.getRedirectUris(), "https://hostname2.com");
+        getCleanup().addClientUuid(clientUUID2);
     }
 
 
@@ -681,6 +710,20 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
                 (new ClientPolicyBuilder()).createPolicy("MyPolicy", "Policy for enable FAPI Baseline for all clients", Boolean.TRUE)
                         .addCondition(AnyClientConditionFactory.PROVIDER_ID,
                                 createAnyClientConditionConfig())
+                        .addProfile(FAPI1_BASELINE_PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+    }
+
+    private void setupPolicyFAPIBaselineForAdminRESTAndDynamicClientRegistrationRequests() throws Exception {
+        String json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "MyClientUpdaterContextPolicy", Boolean.TRUE)
+                        .addCondition(ClientUpdaterContextConditionFactory.PROVIDER_ID,
+                                createClientUpdateContextConditionConfig(Arrays.asList(
+                                        ClientUpdaterContextConditionFactory.BY_AUTHENTICATED_USER,
+                                        ClientUpdaterContextConditionFactory.BY_INITIAL_ACCESS_TOKEN,
+                                        ClientUpdaterContextConditionFactory.BY_REGISTRATION_ACCESS_TOKEN)))
                         .addProfile(FAPI1_BASELINE_PROFILE_NAME)
                         .toRepresentation()
         ).toString();

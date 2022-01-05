@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<!--[if IE 9]><html lang="en-us" class="ie9"><![endif]-->
+<!--[if gt IE 9]><!-->
+<html lang="en-us">
+<!--<![endif]-->
+  <head>
+    <title>Pie Charts - PatternFly</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="../img/favicon.ico">
+    <!-- iPad retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../img/apple-touch-icon-precomposed-152.png">
+    <!-- iPad retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="../img/apple-touch-icon-precomposed-144.png">
+    <!-- iPad non-retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="76x76" href="../img/apple-touch-icon-precomposed-76.png">
+    <!-- iPad non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="../img/apple-touch-icon-precomposed-72.png">
+    <!-- iPhone 6 Plus icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="120x120" href="../img/apple-touch-icon-precomposed-180.png">
+    <!-- iPhone retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../img/apple-touch-icon-precomposed-114.png">
+    <!-- iPhone non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="57x57" href="../img/apple-touch-icon-precomposed-57.png">
+    <link rel="stylesheet" href="../css/patternfly.min.css" >
+    <link rel="stylesheet" href="../css/patternfly-additions.min.css" >
+      <link href="tests.css" rel="stylesheet" media="screen, print">
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+    <script src="../js/patternfly.min.js"></script>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="page-header">
+        <h1>Pie Charts</h1>
+      </div>
+      <div class="alert alert-warning">
+        <span class="pficon pficon-warning-triangle-o"></span>
+        These examples are included for development testing purposes.  For official documentation, see <a href="https://www.patternfly.org" class="alert-link">https://www.patternfly.org</a>, <a href="http://getbootstrap.com" class="alert-link">http://getbootstrap.com</a>, and <a href="http://c3js.org/">http://c3js.org/</a>
+      </div>
+      <hr>
+<style>
+  .example-pie-chart, .example-pie-chart-right-legend, .example-pie-chart-bottom-legend {
+    width: 440px;
+  }
+
+  .example-pie-chart {
+    margin-left: 10px;
+  }
+
+  .example-pie-chart-right-legend {
+    margin-left: 27px;
+  }
+
+  .example-pie-chart-bottom-legend {
+    margin-left: -50px;
+  }
+
+  .example-pie-chart-mini {
+    margin-left: 23px;
+  }
+</style>
+<div>
+  <h2>Donut Chart - Relationship to a Whole</h2>
+  <div>
+    <div id="donut-chart-no-legend" class="example-pie-chart"></div>
+<div id="donut-chart-right-legend" class="example-pie-chart-right-legend"></div>
+<div id="donut-chart-bottom-legend" class="example-pie-chart-bottom-legend"></div>
+<script>
+  var c3ChartDefaults = $().c3ChartDefaults();
+
+  var pieData = {
+    type : 'pie',
+    colors: {
+      Dogs: $.pfPaletteColors.red,
+      Cats: $.pfPaletteColors.blue,
+      Fish: $.pfPaletteColors.orange,
+      Hamsters: $.pfPaletteColors.green
+    },
+    columns: [
+      ['Dogs', 3],
+      ['Cats', 2],
+      ['Fish', 10],
+      ['Hamsters', 2]
+    ],
+    onclick: function (d, i) { console.log("onclick", d, i); },
+    onmouseover: function (d, i) { console.log("onmouseover", d, i); },
+    onmouseout: function (d, i) { console.log("onmouseout", d, i); }
+  };
+
+  // Pie Chart without Legend
+  var pieChartConfig = c3ChartDefaults.getDefaultPieConfig();
+  pieChartConfig.bindto = '#donut-chart-no-legend';
+  pieChartConfig.data = pieData;
+  pieChartConfig.size = {
+    width: 200,
+    height: 171
+  };
+  var pieChartNoLegend = c3.generate(pieChartConfig);
+
+  // Right Legend
+  var pieChartRightConfig = c3ChartDefaults.getDefaultPieConfig();
+  pieChartRightConfig.bindto = '#donut-chart-right-legend';
+  pieChartRightConfig.data = pieData;
+  pieChartRightConfig.legend = {
+    show: true,
+    position: 'right'
+  };
+  pieChartRightConfig.size = {
+    width: 251,
+    height: 161
+  };
+  var pieChartRightLegend = c3.generate(pieChartRightConfig);
+
+  // Pie Chart Bottom Legend
+  var pieChartBottomConfig = c3ChartDefaults.getDefaultPieConfig();
+  pieChartBottomConfig.bindto = '#donut-chart-bottom-legend';
+  pieChartBottomConfig.data = pieData;
+  pieChartBottomConfig.legend = {
+    show: true,
+    position: 'bottom'
+  };
+  pieChartBottomConfig.size = {
+    width: 321,
+    height: 191
+  };
+  var pieChartBottomLegend = c3.generate(pieChartBottomConfig);
+</script>
+
+  </div>
+  <h2>Pie Chart - Small</h2>
+  <div>
+    <div id="smallDonutChart" class="pie-chart-pf example-pie-chart-mini"></div>
+<div style="text-align: center; width: 220px;">Animals</div>
+<script>
+  var pieData = {
+    type : 'pie',
+    colors: {
+      Dogs: $.pfPaletteColors.red,
+      Cats: $.pfPaletteColors.blue,
+      Fish: $.pfPaletteColors.orange,
+      Hamsters: $.pfPaletteColors.green
+    },
+    columns: [
+      ['Dogs', 3],
+      ['Cats', 2],
+      ['Fish', 10],
+      ['Hamsters', 2]
+    ],
+    onclick: function (d, i) { console.log("onclick", d, i); },
+    onmouseover: function (d, i) { console.log("onmouseover", d, i); },
+    onmouseout: function (d, i) { console.log("onmouseout", d, i); }
+  };
+
+  var c3ChartDefaults = $().c3ChartDefaults();
+  var pieChartSmallConfig = c3ChartDefaults.getDefaultPieConfig();
+  pieChartSmallConfig.bindto = '#smallDonutChart';
+  pieChartSmallConfig.data = pieData;
+  pieChartSmallConfig.legend = {
+    show: true,
+    position: 'right'
+  };
+  pieChartSmallConfig.size = {
+    width: 260,
+    height: 115
+  };
+
+  var pieChartSmall = c3.generate(pieChartSmallConfig);
+</script>
+
+  </div>
+</div>
+
+    </div><!-- /container -->
+  </body>
+</html>

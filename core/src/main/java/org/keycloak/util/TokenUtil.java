@@ -154,7 +154,7 @@ public class TokenUtil {
     }
 
     public static String jweKeyEncryptionEncode(Key encryptionKEK, byte[] contentBytes, String algAlgorithm, String encAlgorithm, String kid, JWEAlgorithmProvider jweAlgorithmProvider, JWEEncryptionProvider jweEncryptionProvider) throws JWEException {
-        JWEHeader jweHeader = new JWEHeader(algAlgorithm, encAlgorithm, null, kid);
+        JWEHeader jweHeader = new JWEHeader(algAlgorithm, encAlgorithm, null, kid, "JWT");
         return jweKeyEncryptionEncode(encryptionKEK, contentBytes, jweHeader, jweAlgorithmProvider, jweEncryptionProvider);
     }
 

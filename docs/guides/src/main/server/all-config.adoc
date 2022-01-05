@@ -1,0 +1,27 @@
+<#import "/templates/guide.adoc" as template>
+
+<@template.guide
+title="All configuration"
+summary="All the configuration you will ever need and want">
+
+<#list ctx.options.categories as category>
+<#assign categoryOptions=ctx.options.getValues(category)>
+<#if categoryOptions?has_content>
+== ${category.heading}
+|===
+|Key|CLI|ENV|Description|Default|Values
+<#list categoryOptions as option>
+|${option.key}
+|${option.keyCli}
+|${option.keyEnv}
+|${option.description}
+|${option.defaultValue!}
+|${option.expectedValues?join(", ")}
+<#if option?has_next>
+
+</#if>
+</#list>
+|===
+</#if>
+</#list>
+</@template.guide>

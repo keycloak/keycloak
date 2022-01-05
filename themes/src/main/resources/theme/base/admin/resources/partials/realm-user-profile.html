@@ -273,7 +273,7 @@
                     <td>{{key}}</td>
                     <td><input ng-model="currentAttribute.annotations[key]" class="form-control" type="text" name="{{key}}"
                                id="attribute-{{key}}"/></td>
-                    <td class="kc-action-cell" data-ng-click="removeAnnotation(key)">{{:: 'delete' | translate}}</td>
+                    <td class="kc-action-cell" data-ng-click="removeAttributeAnnotation(key)">{{:: 'delete' | translate}}</td>
                 </tr>
                 <tr>
                     <td><input ng-model="newAnnotation.key" class="form-control" type="text" id="newAnnotationKey"/></td>

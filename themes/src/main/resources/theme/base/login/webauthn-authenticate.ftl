@@ -28,7 +28,7 @@
     <form class="${properties.kcFormClass!}">
         <div class="${properties.kcFormGroupClass!}">
             <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                <input type="button" onclick="webAuthnAuthenticate()" value="${kcSanitize(msg("webauthn-doAuthenticate"))}"
+                <input id="authenticateWebAuthnButton" type="button" onclick="webAuthnAuthenticate()" value="${kcSanitize(msg("webauthn-doAuthenticate"))}"
                    class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}">
             </div>
         </div>
@@ -85,6 +85,9 @@
             rpId : rpId,
             challenge: base64url.decode(challenge, { loose: true })
         };
+
+        let createTimeout = ${createTimeout};
+        if (createTimeout !== 0) publicKey.timeout = createTimeout * 1000;
 
         if (allowCredentials.length) {
             publicKey.allowCredentials = allowCredentials;

@@ -114,6 +114,13 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
     }
 
     @Override
+    public Stream<RoleModel> getCompositesStream(String search, Integer first, Integer max) {
+        return session.roles().getRolesStream(realm,
+                getEntity().getCompositeRoles().stream().map(RoleEntity::getId),
+                search, first, max);
+    }
+
+    @Override
     public boolean hasRole(RoleModel role) {
         return this.equals(role) || KeycloakModelUtils.searchFor(role, this, new HashSet<>());
     }

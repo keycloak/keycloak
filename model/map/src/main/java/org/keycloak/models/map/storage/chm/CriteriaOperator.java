@@ -144,10 +144,10 @@ class CriteriaOperator {
         if (value.length == 1) {
             final Object value0 = value[0];
             if (value0 instanceof Collection) {
-                operand = (Collection) value0;
+                operand = (Collection<?>) value0;
             } else if (value0 instanceof Stream) {
-                try (Stream valueS = (Stream) value0) {
-                    operand = (Set) valueS.collect(Collectors.toSet());
+                try (Stream<?> valueS = (Stream<?>) value0) {
+                    operand = valueS.collect(Collectors.toSet());
                 }
             } else {
                 operand = Collections.singleton(value0);

@@ -39,6 +39,8 @@ import java.util.concurrent.TimeUnit;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.util.EntityUtils;
 
+import static org.keycloak.utils.StringUtil.isBlank;
+
 /**
  * The default {@link HttpClientFactory} for {@link HttpClientProvider HttpClientProvider's} used by Keycloak for outbound HTTP calls.
  * <p>
@@ -62,6 +64,10 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
 
     private static final Logger logger = Logger.getLogger(DefaultHttpClientFactory.class);
     private static final String configScope = "keycloak.connectionsHttpClient.default.";
+
+    private static final String HTTPS_PROXY = "https_proxy";
+    private static final String HTTP_PROXY = "http_proxy";
+    private static final String NO_PROXY = "no_proxy";
 
     private volatile CloseableHttpClient httpClient;
     private Config.Scope config;
@@ -145,11 +151,26 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                     String clientKeystore = config.get("client-keystore");
                     String clientKeystorePassword = config.get("client-keystore-password");
                     String clientPrivateKeyPassword = config.get("client-key-password");
-                    String[] proxyMappings = config.getArray("proxy-mappings");
                     boolean disableTrustManager = config.getBoolean("disable-trust-manager", false);
 
                     boolean expectContinueEnabled = getBooleanConfigWithSysPropFallback("expect-continue-enabled", false);
                     boolean resuseConnections = getBooleanConfigWithSysPropFallback("reuse-connections", true);
+
+                    // optionally configure proxy mappings
+                    // direct SPI config (e.g. via standalone.xml) takes precedence over env vars
+                    // lower case env vars take precedence over upper case env vars
+                    ProxyMappings proxyMappings = ProxyMappings.valueOf(config.getArray("proxy-mappings"));
+                    if (proxyMappings == null || proxyMappings.isEmpty()) {
+                        logger.debug("Trying to use proxy mapping from env vars");
+                        String httpProxy = getEnvVarValue(HTTPS_PROXY);
+                        if (isBlank(httpProxy)) {
+                            httpProxy = getEnvVarValue(HTTP_PROXY);
+                        }
+                        String noProxy = getEnvVarValue(NO_PROXY);
+
+                        logger.debugf("httpProxy: %s, noProxy: %s", httpProxy, noProxy);
+                        proxyMappings = ProxyMappings.withFixedProxyMapping(httpProxy, noProxy);
+                    }
 
                     HttpClientBuilder builder = new HttpClientBuilder();
 
@@ -161,7 +182,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                             .connectionTTL(connectionTTL, TimeUnit.MILLISECONDS)
                             .maxConnectionIdleTime(maxConnectionIdleTime, TimeUnit.MILLISECONDS)
                             .disableCookies(disableCookies)
-                            .proxyMappings(ProxyMappings.valueOf(proxyMappings))
+                            .proxyMappings(proxyMappings)
                             .expectContinueEnabled(expectContinueEnabled)
                             .reuseConnections(resuseConnections);
 
@@ -213,6 +234,14 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
             }
         }
         return value != null ? value : defaultValue;
+    }
+
+    private String getEnvVarValue(String name) {
+        String value = System.getenv(name.toLowerCase());
+        if (isBlank(value)) {
+            value = System.getenv(name.toUpperCase());
+        }
+        return value;
     }
 
 }

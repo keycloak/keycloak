@@ -58,7 +58,7 @@ import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
-import static org.keycloak.testsuite.arquillian.ServerTestEnricherUtil.addHttpsListener;
+import static org.keycloak.testsuite.arquillian.ServerTestEnricherUtil.addHttpsListenerAppServer;
 import static org.keycloak.testsuite.arquillian.ServerTestEnricherUtil.reloadOrRestartTimeoutClient;
 import static org.keycloak.testsuite.arquillian.ServerTestEnricherUtil.removeHttpsListener;
 import static org.keycloak.testsuite.util.ServerURLs.getAppServerContextRoot;
@@ -250,7 +250,7 @@ public class AppServerTestEnricher {
             }
         } else {
             removeHttpsListener(client, administration);
-            addHttpsListener(client);
+            addHttpsListenerAppServer(client);
         }
 
         reloadOrRestartTimeoutClient(administration);

@@ -50,7 +50,6 @@ import io.undertow.util.AttachmentKey;
 import io.undertow.util.StatusCodes;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -168,9 +167,10 @@ public class UndertowKeycloakConsumer extends UndertowConsumer {
                     httpExchange.putAttachment(KEYCLOAK_PRINCIPAL_KEY, (KeycloakPrincipal) kua.getPrincipal());
                 }
 
-                Set<String> roles = Optional
-                  .ofNullable(authenticatedAccount.getRoles())
-                  .orElse((Set<String>) Collections.EMPTY_SET);
+                Set<String> roles = authenticatedAccount.getRoles();
+                if (roles == null) {
+                    roles = Collections.EMPTY_SET;
+                }
 
                 LOG.log(Level.FINE, "Allowed roles: {0}, current roles: {1}", new Object[] {allowedRoles, roles});
 

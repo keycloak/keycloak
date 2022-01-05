@@ -20,8 +20,10 @@ package org.keycloak.protocol.oidc;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.utils.StringUtil;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -197,6 +199,16 @@ public class OIDCAdvancedConfigWrapper {
         setAttribute(X509ClientAuthenticator.ATTR_SUBJECT_DN, tls_client_auth_subject_dn);
     }
 
+    public boolean getAllowRegexPatternComparison() {
+        String attrVal = getAttribute(X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON);
+        // Allow Regex Pattern Comparison by default due the backwards compatibility
+        return attrVal == null || Boolean.parseBoolean(attrVal);
+    }
+
+    public void setAllowRegexPatternComparison(boolean allowRegexPatternComparison) {
+        setAttribute(X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON, String.valueOf(allowRegexPatternComparison));
+    }
+
     public String getPkceCodeChallengeMethod() {
         return getAttribute(OIDCConfigAttributes.PKCE_CODE_CHALLENGE_METHOD);
     }
@@ -285,6 +297,36 @@ public class OIDCAdvancedConfigWrapper {
     public void setBackchannelLogoutRevokeOfflineTokens(boolean backchannelLogoutRevokeOfflineTokens) {
         String val = String.valueOf(backchannelLogoutRevokeOfflineTokens);
         setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_REVOKE_OFFLINE_TOKENS, val);
+    }
+
+    public void setFrontChannelLogoutUrl(String frontChannelLogoutUrl) {
+        if (clientRep != null) {
+            clientRep.setFrontchannelLogout(StringUtil.isNotBlank(frontChannelLogoutUrl));
+        }
+        if (clientModel != null) {
+            clientModel.setFrontchannelLogout(StringUtil.isNotBlank(frontChannelLogoutUrl));
+        }
+        setAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, frontChannelLogoutUrl);
+    }
+
+    public boolean isFrontChannelLogoutEnabled() {
+        return clientModel != null && clientModel.isFrontchannelLogout() && StringUtil.isNotBlank(getFrontChannelLogoutUrl());
+    }
+
+    public String getFrontChannelLogoutUrl() {
+        return getAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI);
+    }
+
+    public void setLogoUri(String logoUri) {
+        setAttribute(ClientModel.LOGO_URI, logoUri);
+    }
+
+    public void setPolicyUri(String policyUri) {
+        setAttribute(ClientModel.POLICY_URI, policyUri);
+    }
+
+    public void setTosUri(String tosUri) {
+        setAttribute(ClientModel.TOS_URI, tosUri);
     }
 
     private String getAttribute(String attrKey) {

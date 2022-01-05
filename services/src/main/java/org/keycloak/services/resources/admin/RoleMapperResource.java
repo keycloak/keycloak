@@ -200,7 +200,7 @@ public class RoleMapperResource {
 
         return realm.getRolesStream()
                 .filter(this::canMapRole)
-                .filter(((Predicate<RoleModel>) roleMapper::hasRole).negate())
+                .filter(((Predicate<RoleModel>) roleMapper::hasDirectRole).negate())
                 .map(ModelToRepresentation::toBriefRepresentation);
     }
 
