@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import {
@@ -21,7 +21,7 @@ import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import useToggle from "../../utils/useToggle";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useAlerts } from "../../components/alert/Alerts";
 
@@ -31,10 +31,16 @@ const POLICY_TYPES = ["totp", "hotp"] as const;
 const OTP_HASH_ALGORITHMS = ["SHA1", "SHA256", "SHA512"] as const;
 const NUMBER_OF_DIGITS = [6, 8] as const;
 
-export const OtpPolicy = () => {
+type OtpPolicyProps = {
+  realm: RealmRepresentation;
+  realmUpdated: (realm: RealmRepresentation) => void;
+};
+
+export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
   const { t } = useTranslation("authentication");
   const {
     control,
+    register,
     errors,
     reset,
     handleSubmit,
@@ -45,7 +51,6 @@ export const OtpPolicy = () => {
   const { addAlert, addError } = useAlerts();
 
   const [open, toggle] = useToggle();
-  const [realm, setRealm] = useState<RealmRepresentation>();
 
   const otpType = useWatch<typeof POLICY_TYPES[number]>({
     name: "otpPolicyType",
@@ -53,14 +58,13 @@ export const OtpPolicy = () => {
     defaultValue: POLICY_TYPES[0],
   });
 
-  useFetch(
-    () => adminClient.realms.findOne({ realm: realmName }),
-    (realm) => {
-      setRealm(realm);
-      reset({ ...realm });
-    },
-    []
-  );
+  const setupForm = (realm: RealmRepresentation) =>
+    reset({
+      ...realm,
+      otpSupportedApplications: realm.otpSupportedApplications?.join(", "),
+    });
+
+  useEffect(() => setupForm(realm), []);
 
   const save = async (realm: RealmRepresentation) => {
     try {
@@ -68,8 +72,8 @@ export const OtpPolicy = () => {
       const updatedRealm = await adminClient.realms.findOne({
         realm: realmName,
       });
-      setRealm(updatedRealm);
-      reset({ ...updatedRealm });
+      realmUpdated(updatedRealm!);
+      setupForm(updatedRealm!);
       addAlert(t("updateOtpSuccess"), AlertVariant.success);
     } catch (error) {
       addError("authentication:updateOtpError", error);
@@ -310,9 +314,12 @@ export const OtpPolicy = () => {
         >
           <TextInput
             id="supportedActions"
+            name="otpSupportedApplications"
+            ref={register({
+              setValueAs: (value) => value.split(", "),
+            })}
             data-testid="supportedActions"
             isReadOnly
-            value={realm?.otpSupportedApplications?.join(", ")}
           />
         </FormGroup>
         <ActionGroup>

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
@@ -23,10 +23,9 @@ import { PlusCircleIcon } from "@patternfly/react-icons";
 
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type PasswordPolicyTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/passwordPolicyTypeRepresentation";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useAlerts } from "../../components/alert/Alerts";
 import { parsePolicy, SubmittedValues } from "./util";
@@ -72,15 +71,22 @@ const PolicySelect = ({ onSelect, selectedPolicies }: PolicySelectProps) => {
   );
 };
 
-export const PasswordPolicy = () => {
+type PasswordPolicyProps = {
+  realm: RealmRepresentation;
+  realmUpdated: (realm: RealmRepresentation) => void;
+};
+
+export const PasswordPolicy = ({
+  realm,
+  realmUpdated,
+}: PasswordPolicyProps) => {
   const { t } = useTranslation("authentication");
   const { passwordPolicies } = useServerInfo();
 
   const adminClient = useAdminClient();
-  const { realm: realmName } = useRealm();
   const { addAlert, addError } = useAlerts();
+  const { realm: realmName } = useRealm();
 
-  const [realm, setRealm] = useState<RealmRepresentation>();
   const [rows, setRows] = useState<PasswordPolicyTypeRepresentation[]>([]);
   const onSelect = (row: PasswordPolicyTypeRepresentation) =>
     setRows([...rows, row]);
@@ -96,20 +102,7 @@ export const PasswordPolicy = () => {
     setRows(values);
   };
 
-  useFetch(
-    async () => {
-      const realm = await adminClient.realms.findOne({ realm: realmName });
-      if (!realm) {
-        throw new Error(t("common:notFound"));
-      }
-      return realm;
-    },
-    (realm) => {
-      setRealm(realm);
-      setupForm(realm);
-    },
-    []
-  );
+  useEffect(() => setupForm(realm), []);
 
   const save = async (values: SubmittedValues) => {
     const updatedRealm = {
@@ -118,16 +111,13 @@ export const PasswordPolicy = () => {
     };
     try {
       await adminClient.realms.update({ realm: realmName }, updatedRealm);
-      setRealm(updatedRealm);
+      realmUpdated(updatedRealm);
+      setupForm(updatedRealm);
       addAlert(t("updatePasswordPolicySuccess"), AlertVariant.success);
     } catch (error: any) {
       addError("authentication:updatePasswordPolicyError", error);
     }
   };
-
-  if (!realm) {
-    return <KeycloakSpinner />;
-  }
 
   return (
     <PageSection variant="light" className="pf-u-p-0">

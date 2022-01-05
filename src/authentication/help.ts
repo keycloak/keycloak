@@ -24,5 +24,28 @@ export default {
       "How many seconds should an OTP token be valid? Defaults to 30 seconds.",
     supportedActions:
       "Applications that are known to work with the current OTP policy",
+    webauthnIntro: "What is this form used for?",
+    webAuthnPolicyFormHelp:
+      "Policy for WebAuthn authentication. This one will be used by 'WebAuthn Register' required action and 'WebAuthn Authenticator' authenticator. Typical usage is, when WebAuthn will be used for the two-factor authentication.",
+    webAuthnPolicyPasswordlessFormHelp:
+      "Policy for passwordless WebAuthn authentication. This one will be used by 'Webauthn Register Passwordless' required action and 'WebAuthn Passwordless Authenticator' authenticator. Typical usage is, when WebAuthn will be used as first-factor authentication. Having both 'WebAuthn Policy' and 'WebAuthn Passwordless Policy' allows to use WebAuthn as both first factor and second factor authenticator in the same realm.",
+    webAuthnPolicySignatureAlgorithms:
+      "What signature algorithms should be used for Authentication Assertion.",
+    webAuthnPolicyRpId:
+      "This is ID as WebAuthn Relying Party. It must be origin's effective domain.",
+    webAuthnPolicyAttestationConveyancePreference:
+      "Communicates to an authenticator the preference of how to generate an attestation statement.",
+    webAuthnPolicyAuthenticatorAttachment:
+      "Communicates to an authenticator an acceptable attachment pattern.",
+    webAuthnPolicyRequireResidentKey:
+      "It tells an authenticator create a public key credential as Resident Key or not.",
+    webAuthnPolicyUserVerificationRequirement:
+      "Communicates to an authenticator to confirm actually verifying a user.",
+    webAuthnPolicyCreateTimeout:
+      "Timeout value for creating user's public key credential in seconds. if set to 0, this timeout option is not adapted.",
+    webAuthnPolicyAvoidSameAuthenticatorRegister:
+      "Avoid registering the authenticator that has already been registered.",
+    webAuthnPolicyAcceptableAaguids:
+      "The list of AAGUID of which an authenticator can be registered.",
   },
 };
