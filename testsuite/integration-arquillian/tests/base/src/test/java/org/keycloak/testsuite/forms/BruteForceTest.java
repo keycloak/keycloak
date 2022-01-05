@@ -607,6 +607,17 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         events.clear();
     }
 
+    @Test
+    public void testTemporaryLockedStatus() throws Exception {
+        loginInvalidPassword();
+        loginInvalidPassword();
+
+        UserRepresentation userBySearch = adminClient.realm("test").users().search("test-user@localhost").get(0);
+        assertFalse(userBySearch.isEnabled());
+        UserRepresentation userById = adminClient.realm("test").users().get(userBySearch.getId()).toRepresentation();
+        assertFalse(userById.isEnabled());
+    }
+
     public void expectTemporarilyDisabled() throws Exception {
         expectTemporarilyDisabled("test-user@localhost", null, "password");
     }
