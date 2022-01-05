@@ -59,6 +59,9 @@ import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenResponseMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
+import org.keycloak.rar.AuthorizationDetails;
+import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
+import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
@@ -631,6 +634,38 @@ public class TokenManager {
         // Add optional client scopes requested by scope parameter
         return Stream.concat(parseScopeParameter(scopeParam).map(allOptionalScopes::get).filter(Objects::nonNull),
                 clientScopes).distinct();
+    }
+
+    /**
+     * Check that all the ClientScopes that have been parsed into authorization_resources are actually in the requested scopes
+     * otherwise, the scope wasn't parsed correctly
+     * @param scopes
+     * @param authorizationRequestContext
+     * @param client
+     * @return
+     */
+    public static boolean isValidScope(String scopes, AuthorizationRequestContext authorizationRequestContext, ClientModel client) {
+        if (authorizationRequestContext.getAuthorizationDetailEntries() == null || authorizationRequestContext.getAuthorizationDetailEntries().isEmpty()) {
+            return false;
+        }
+        Collection<String> requestedScopes = TokenManager.parseScopeParameter(scopes).collect(Collectors.toSet());
+        Set<String> rarScopes = authorizationRequestContext.getAuthorizationDetailEntries()
+                .stream()
+                .map(AuthorizationDetails::getAuthorizationDetails)
+                .map(AuthorizationDetailsJSONRepresentation::getScopeNameFromCustomData)
+                .collect(Collectors.toSet());
+
+        if (TokenUtil.isOIDCRequest(scopes)) {
+            requestedScopes.remove(OAuth2Constants.SCOPE_OPENID);
+        }
+
+        for (String requestedScope : requestedScopes) {
+            // We keep the check to the getDynamicClientScope for the OpenshiftSAClientAdapter
+            if (!rarScopes.contains(requestedScope) && client.getDynamicClientScope(requestedScope) == null) {
+                return false;
+            }
+        }
+        return true;
     }
     
     public static boolean isValidScope(String scopes, ClientModel client) {
