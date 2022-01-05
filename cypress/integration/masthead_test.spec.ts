@@ -19,7 +19,7 @@ const goToAcctMgtTest = () => {
     masthead.accountManagement();
     cy.contains("Welcome to Keycloak Account Management");
     cy.get("#landingReferrerLink").click({ force: true });
-    masthead.isAdminConsole();
+    masthead.checkIsAdminConsole();
   });
 };
 

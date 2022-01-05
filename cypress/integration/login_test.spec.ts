@@ -22,7 +22,7 @@ describe("Logging In", () => {
   it("logs in", () => {
     loginPage.logIn(username, password);
 
-    masthead.isAdminConsole();
+    masthead.checkIsAdminConsole();
 
     cy.getCookie("KEYCLOAK_SESSION_LEGACY").should("exist");
   });

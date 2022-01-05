@@ -5,9 +5,8 @@ export default class Masthead {
 
   private userDrpDwn = "#user-dropdown";
   private userDrpDwnKebab = "#user-dropdown-kebab";
-  private isMobile = false;
 
-  isAdminConsole() {
+  checkIsAdminConsole() {
     cy.get(this.logoBtn).should("exist");
     cy.get(this.userDrpDwn).should("exist");
 
@@ -15,11 +14,10 @@ export default class Masthead {
   }
 
   get isMobileMode() {
-    return this.isMobile;
+    return window.parent[0].innerWidth < 1024;
   }
 
   setMobileMode(isMobileMode: boolean) {
-    this.isMobile = isMobileMode;
     if (isMobileMode) {
       cy.viewport("iphone-6");
     } else {
