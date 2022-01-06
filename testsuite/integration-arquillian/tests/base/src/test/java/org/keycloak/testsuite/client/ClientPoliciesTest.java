@@ -74,6 +74,7 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditio
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceGroupsConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceHostsConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesConditionFactory;
+import org.keycloak.services.clientpolicy.executor.ClientRolesExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.ConfidentialClientAcceptExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.ConsentRequiredExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutorFactory;
@@ -150,6 +151,7 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureSigning
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createFullScopeDisabledExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createRejectisResourceOwnerPasswordCredentialsGrantExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientRolesExecutorConfig;
 
 import javax.ws.rs.BadRequestException;
 
@@ -2736,6 +2738,51 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
         assertEquals("resource owner password credentials grant is prohibited.", response.getErrorDescription());
 
+    }
+
+    @Test
+    public void testClientRolesExecutor() throws Exception {
+        // register profiles
+        String roleAlphaName = "sample-client-role-alpha";
+        String roleZetaName = "sample-client-role-zeta";
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
+                    .addExecutor(ClientRolesExecutorFactory.PROVIDER_ID, createClientRolesExecutorConfig(Arrays.asList(roleAlphaName, roleZetaName)))
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                    .addCondition(AnyClientConditionFactory.PROVIDER_ID, 
+                        createAnyClientConditionConfig())
+                    .addProfile(PROFILE_NAME)
+                    .toRepresentation()
+                ).toString();
+        updatePolicies(json);
+
+        String clientAlphaId = generateSuffixedName("Alpha-App");
+        String clientAlphaSecret = "secretAlpha";
+        String cAlphaId = createClientByAdmin(clientAlphaId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientAlphaSecret);
+        });
+        adminClient.realm(REALM_NAME).clients().get(cAlphaId).roles().create(RoleBuilder.create().name(roleAlphaName).build());
+
+        String clientBetaId = generateSuffixedName("Beta-App");
+        createClientByAdmin(clientBetaId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret("secretBeta");
+        });
+
+        try {
+            oauth.clientId(clientBetaId);
+            oauth.openLoginForm();
+            assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+            assertEquals("no adequate client role", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
+            successfulLoginAndLogout(clientAlphaId, clientAlphaSecret);
+        } catch (Exception e) {
+            fail();
+        }
     }
 
     private void openVerificationPage(String verificationUri) {

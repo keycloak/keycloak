@@ -37,6 +37,7 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditio
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceGroupsCondition;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceHostsCondition;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesCondition;
+import org.keycloak.services.clientpolicy.executor.ClientRolesExecutor;
 import org.keycloak.services.clientpolicy.executor.ConsentRequiredExecutor;
 import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutor;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutor;
@@ -215,6 +216,12 @@ public final class ClientPoliciesUtil {
     public static RejectResourceOwnerPasswordCredentialsGrantExecutor.Configuration createRejectisResourceOwnerPasswordCredentialsGrantExecutorConfig(Boolean autoConfigure) {
         RejectResourceOwnerPasswordCredentialsGrantExecutor.Configuration config = new RejectResourceOwnerPasswordCredentialsGrantExecutor.Configuration();
         config.setAutoConfigure(autoConfigure);
+        return config;
+    }
+
+    public static ClientRolesExecutor.Configuration createClientRolesExecutorConfig(List<String> roles) {
+        ClientRolesExecutor.Configuration config = new ClientRolesExecutor.Configuration();
+        config.setRoles(roles);
         return config;
     }
 
