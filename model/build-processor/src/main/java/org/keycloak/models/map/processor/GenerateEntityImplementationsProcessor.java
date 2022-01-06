@@ -424,7 +424,7 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
                 case SETTER:
                     pw.println("    @SuppressWarnings(\"unchecked\") @Override public " + method.getReturnType() + " " + method.getSimpleName() + "(" + firstParameterType + " p0) {");
                     if (! isImmutableFinalType(fieldType)) {
-                        pw.println("        p0 = " + deepClone(fieldType, "p0") + ";");
+                        pw.println("        p0 = " + deepClone(firstParameterType, "p0") + ";");
                     }
                     pw.println("        updated |= ! Objects.equals(" + fieldName + ", p0);");
                     pw.println("        " + fieldName + " = p0;");
@@ -434,7 +434,7 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
                     pw.println("    @SuppressWarnings(\"unchecked\") @Override public " + method.getReturnType() + " " + method.getSimpleName() + "(" + firstParameterType + " p0) {");
                     pw.println("        if (" + fieldName + " == null) { " + fieldName + " = " + interfaceToImplementation(typeElement, "") + "; }");
                     if (! isImmutableFinalType(firstParameterType)) {
-                        pw.println("        p0 = " + deepClone(fieldType, "p0") + ";");
+                        pw.println("        p0 = " + deepClone(firstParameterType, "p0") + ";");
                     }
                     if (isSetType(typeElement)) {
                         pw.println("        updated |= " + fieldName + ".add(p0);");

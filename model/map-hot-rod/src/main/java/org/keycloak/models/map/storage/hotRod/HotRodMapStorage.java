@@ -39,6 +39,7 @@ import org.keycloak.models.map.storage.chm.MapFieldPredicates;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
 import org.keycloak.storage.SearchableModelField;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Spliterators;
@@ -51,7 +52,7 @@ import java.util.stream.StreamSupport;
 import static org.keycloak.models.map.storage.hotRod.common.HotRodUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
-public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRodEntityDelegate<E>, M> implements MapStorage<V, M>, ConcurrentHashMapCrudOperations<V, M> {
+public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRodEntityDelegate<E> & AbstractEntity, M> implements MapStorage<V, M>, ConcurrentHashMapCrudOperations<V, M> {
 
     private static final Logger LOG = Logger.getLogger(HotRodMapStorage.class);
 
@@ -146,7 +147,7 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRo
 
         QueryFactory queryFactory = Search.getQueryFactory(remoteCache);
 
-        Query<V> query = queryFactory.create(queryString);
+        Query<E> query = queryFactory.create(queryString);
         query.setParameters(iqmcb.getParameters());
 
         return query.execute().hitCount().orElse(0);
@@ -167,17 +168,18 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRo
 
         QueryFactory queryFactory = Search.getQueryFactory(remoteCache);
 
-        Query<V> query = paginateQuery(queryFactory.create(queryString), queryParameters.getOffset(),
+        Query<Object[]> query = paginateQuery(queryFactory.create(queryString), queryParameters.getOffset(),
                 queryParameters.getLimit());
 
         query.setParameters(iqmcb.getParameters());
 
         AtomicLong result = new AtomicLong();
 
-        CloseableIterator<V> iterator = query.iterator();
+        CloseableIterator<Object[]> iterator = query.iterator();
         StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, 0), false)
                 .peek(e -> result.incrementAndGet())
-                .map(AbstractEntity::getId)
+                .map(a -> a[0])
+                .map(String.class::cast)
                 .forEach(this::delete);
         iterator.close();
 

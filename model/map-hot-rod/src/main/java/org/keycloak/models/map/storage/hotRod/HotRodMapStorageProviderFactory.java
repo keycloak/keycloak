@@ -25,6 +25,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.map.group.MapGroupEntity;
 import org.keycloak.models.map.storage.hotRod.client.HotRodClientEntity;
 import org.keycloak.models.map.storage.hotRod.client.HotRodClientEntityDelegate;
@@ -38,6 +39,15 @@ import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
 import org.keycloak.models.map.storage.hotRod.group.HotRodGroupEntity;
 import org.keycloak.models.map.storage.hotRod.group.HotRodGroupEntityDelegate;
+import org.keycloak.models.map.storage.hotRod.user.HotRodUserConsentEntityDelegate;
+import org.keycloak.models.map.storage.hotRod.user.HotRodUserCredentialEntityDelegate;
+import org.keycloak.models.map.storage.hotRod.user.HotRodUserEntity;
+import org.keycloak.models.map.storage.hotRod.user.HotRodUserEntityDelegate;
+import org.keycloak.models.map.storage.hotRod.user.HotRodUserFederatedIdentityEntityDelegate;
+import org.keycloak.models.map.user.MapUserConsentEntity;
+import org.keycloak.models.map.user.MapUserCredentialEntity;
+import org.keycloak.models.map.user.MapUserEntity;
+import org.keycloak.models.map.user.MapUserFederatedIdentityEntity;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 import java.util.HashMap;
@@ -49,9 +59,13 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
     private static final Logger LOG = Logger.getLogger(HotRodMapStorageProviderFactory.class);
 
     private final static DeepCloner CLONER = new DeepCloner.Builder()
-            .constructor(MapClientEntity.class,               HotRodClientEntityDelegate::new)
-            .constructor(MapProtocolMapperEntity.class,       HotRodProtocolMapperEntityDelegate::new)
-            .constructor(MapGroupEntity.class,                HotRodGroupEntityDelegate::new)
+            .constructor(MapClientEntity.class,                     HotRodClientEntityDelegate::new)
+            .constructor(MapProtocolMapperEntity.class,             HotRodProtocolMapperEntityDelegate::new)
+            .constructor(MapGroupEntity.class,                      HotRodGroupEntityDelegate::new)
+            .constructor(MapUserEntity.class,                       HotRodUserEntityDelegate::new)
+            .constructor(MapUserCredentialEntity.class,             HotRodUserCredentialEntityDelegate::new)
+            .constructor(MapUserFederatedIdentityEntity.class,      HotRodUserFederatedIdentityEntityDelegate::new)
+            .constructor(MapUserConsentEntity.class,                HotRodUserConsentEntityDelegate::new)
             .build();
 
     public static final Map<Class<?>, HotRodEntityDescriptor<?, ?>> ENTITY_DESCRIPTOR_MAP = new HashMap<>();
@@ -67,6 +81,11 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
                 new HotRodEntityDescriptor<>(GroupModel.class,
                         HotRodGroupEntity.class,
                         HotRodGroupEntityDelegate::new));
+        // Users descriptor
+        ENTITY_DESCRIPTOR_MAP.put(UserModel.class,
+                new HotRodEntityDescriptor<>(UserModel.class,
+                        HotRodUserEntity.class,
+                        HotRodUserEntityDelegate::new));
     }
 
     @Override
