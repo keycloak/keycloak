@@ -18,6 +18,8 @@
 package org.keycloak.models.map.storage.hotRod.common;
 
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.storage.hotRod.user.HotRodUserConsentEntity;
+import org.keycloak.models.map.storage.hotRod.user.HotRodUserFederatedIdentityEntity;
 
 import java.util.List;
 import java.util.Map;
@@ -90,5 +92,21 @@ public class HotRodTypesUtils {
 
     public static String getKey(AbstractEntity entity) {
         return entity.getId();
+    }
+
+    public static String getKey(HotRodUserFederatedIdentityEntity hotRodUserFederatedIdentityEntity) {
+        return hotRodUserFederatedIdentityEntity.identityProvider;
+    }
+
+    public static String getKey(HotRodUserConsentEntity hotRodUserConsentEntity) {
+        return hotRodUserConsentEntity.clientId;
+    }
+
+    public static <T, V> List<V> migrateList(List<T> p0, Function<T, V> migrator) {
+        return p0 == null ? null : p0.stream().map(migrator).collect(Collectors.toList());
+    }
+
+    public static <T, V> Set<V> migrateSet(Set<T> p0, Function<T, V> migrator) {
+        return p0 == null ? null : p0.stream().map(migrator).collect(Collectors.toSet());
     }
 }

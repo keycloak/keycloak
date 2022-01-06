@@ -18,5 +18,15 @@
             </indexing>
             <encoding media-type="application/x-protostream"/>
         </distributed-cache>
+        <distributed-cache name="users" mode="SYNC">
+            <indexing>
+                <indexed-entities>
+                    <indexed-entity>kc.HotRodUserEntity</indexed-entity>
+                    <indexed-entity>kc.HotRodAttributeEntity</indexed-entity>
+                    <indexed-entity>kc.HotRodUserFederatedIdentityEntity</indexed-entity>
+                </indexed-entities>
+            </indexing>
+            <encoding media-type="application/x-protostream"/>
+        </distributed-cache>
     </cache-container>
 </infinispan>

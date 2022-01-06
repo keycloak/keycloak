@@ -593,11 +593,11 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
         LOG.tracef("searchForUserStream(%s, %s, %d, %d)%s", realm, attributes, firstResult, maxResults, getShortStackTrace());
 
-        DefaultModelCriteria<UserModel> mcb = criteria();
-        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+        final DefaultModelCriteria<UserModel> mcb = criteria();
+        DefaultModelCriteria<UserModel> criteria = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         if (! session.getAttributeOrDefault(UserModel.INCLUDE_SERVICE_ACCOUNT, true)) {
-            mcb = mcb.compare(SearchableFields.SERVICE_ACCOUNT_CLIENT, Operator.NOT_EXISTS);
+            criteria = criteria.compare(SearchableFields.SERVICE_ACCOUNT_CLIENT, Operator.NOT_EXISTS);
         }
 
         final boolean exactSearch = Boolean.parseBoolean(attributes.getOrDefault(UserModel.EXACT, Boolean.FALSE.toString()));
@@ -614,47 +614,54 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
 
             switch (key) {
                 case UserModel.SEARCH:
+                    DefaultModelCriteria<UserModel> searchCriteria = null;
                     for (String stringToSearch : value.split("\\s+")) {
-                        mcb = addSearchToModelCriteria(stringToSearch, mcb);
+                        if (searchCriteria == null) {
+                            searchCriteria = addSearchToModelCriteria(stringToSearch, mcb);
+                        } else {
+                            searchCriteria = mcb.and(searchCriteria, addSearchToModelCriteria(stringToSearch, mcb));
+                        }
                     }
+
+                    criteria = mcb.and(criteria, searchCriteria);
                     break;
                 case USERNAME:
-                    mcb = mcb.compare(SearchableFields.USERNAME, Operator.ILIKE, searchedString);
+                    criteria = criteria.compare(SearchableFields.USERNAME, Operator.ILIKE, searchedString);
                     break;
                 case FIRST_NAME:
-                    mcb = mcb.compare(SearchableFields.FIRST_NAME, Operator.ILIKE, searchedString);
+                    criteria = criteria.compare(SearchableFields.FIRST_NAME, Operator.ILIKE, searchedString);
                     break;
                 case LAST_NAME:
-                    mcb = mcb.compare(SearchableFields.LAST_NAME, Operator.ILIKE, searchedString);
+                    criteria = criteria.compare(SearchableFields.LAST_NAME, Operator.ILIKE, searchedString);
                     break;
                 case EMAIL:
-                    mcb = mcb.compare(SearchableFields.EMAIL, Operator.ILIKE, searchedString);
+                    criteria = criteria.compare(SearchableFields.EMAIL, Operator.ILIKE, searchedString);
                     break;
                 case EMAIL_VERIFIED: {
                     boolean booleanValue = Boolean.parseBoolean(value);
-                    mcb = mcb.compare(SearchableFields.EMAIL_VERIFIED, Operator.EQ, booleanValue);
+                    criteria = criteria.compare(SearchableFields.EMAIL_VERIFIED, Operator.EQ, booleanValue);
                     break;
                 }
                 case UserModel.ENABLED: {
                     boolean booleanValue = Boolean.parseBoolean(value);
-                    mcb = mcb.compare(SearchableFields.ENABLED, Operator.EQ, booleanValue);
+                    criteria = criteria.compare(SearchableFields.ENABLED, Operator.EQ, booleanValue);
                     break;
                 }
                 case UserModel.IDP_ALIAS: {
                     if (!attributes.containsKey(UserModel.IDP_USER_ID)) {
-                        mcb = mcb.compare(SearchableFields.IDP_AND_USER, Operator.EQ, value);
+                        criteria = criteria.compare(SearchableFields.IDP_AND_USER, Operator.EQ, value);
                     }
                     break;
                 }
                 case UserModel.IDP_USER_ID: {
-                    mcb = mcb.compare(SearchableFields.IDP_AND_USER, Operator.EQ, attributes.get(UserModel.IDP_ALIAS),
+                    criteria = criteria.compare(SearchableFields.IDP_AND_USER, Operator.EQ, attributes.get(UserModel.IDP_ALIAS),
                             value);
                     break;
                 }
                 case UserModel.EXACT:
                     break;
                 default:
-                    mcb = mcb.compare(SearchableFields.ATTRIBUTE, Operator.EQ, key, value);
+                    criteria = criteria.compare(SearchableFields.ATTRIBUTE, Operator.EQ, key, value);
                     break;
             }
         }
@@ -680,10 +687,10 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
                 return resourceStore.findByResourceServer(values, null, 0, 1).isEmpty();
             });
 
-            mcb = mcb.compare(SearchableFields.ASSIGNED_GROUP, Operator.IN, authorizedGroups);
+            criteria = criteria.compare(SearchableFields.ASSIGNED_GROUP, Operator.IN, authorizedGroups);
         }
 
-        return tx.read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.USERNAME))
+        return tx.read(withCriteria(criteria).pagination(firstResult, maxResults, SearchableFields.USERNAME))
                 .map(entityToAdapterFunc(realm))
                 .filter(Objects::nonNull);
     }

@@ -51,6 +51,7 @@ import javax.lang.model.SourceVersion;
 import static org.keycloak.models.map.processor.FieldAccessorType.GETTER;
 import static org.keycloak.models.map.processor.Util.getGenericsDeclaration;
 import static org.keycloak.models.map.processor.Util.isMapType;
+import static org.keycloak.models.map.processor.Util.isSetType;
 import static org.keycloak.models.map.processor.Util.singularToPlural;
 
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
@@ -204,6 +205,9 @@ public abstract class AbstractGenerateEntityImplementationsProcessor extends Abs
                             ", (o1, o2) -> o1" +
                             ", java.util.HashMap::new" +
                     "))";
+        } else if (isCollection(typeElement.asType())) {
+            TypeMirror collectionType = getGenericsDeclaration(fieldType).get(0);
+            return parameterName + " == null ? null : " + parameterName + ".stream().map(entry -> " + deepClone(collectionType, "entry") + ").collect(java.util.stream.Collectors.toCollection(" + (isSetType(typeElement) ? "java.util.HashSet::new" : "java.util.LinkedList::new") + "))";
         }
         return "deepClone(" + parameterName + ")";
     }

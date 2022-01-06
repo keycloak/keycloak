@@ -22,6 +22,10 @@ import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.keycloak.models.map.storage.hotRod.client.HotRodClientEntity;
 import org.keycloak.models.map.storage.hotRod.client.HotRodProtocolMapperEntity;
 import org.keycloak.models.map.storage.hotRod.group.HotRodGroupEntity;
+import org.keycloak.models.map.storage.hotRod.user.HotRodUserConsentEntity;
+import org.keycloak.models.map.storage.hotRod.user.HotRodUserCredentialEntity;
+import org.keycloak.models.map.storage.hotRod.user.HotRodUserEntity;
+import org.keycloak.models.map.storage.hotRod.user.HotRodUserFederatedIdentityEntity;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
@@ -34,6 +38,12 @@ import org.keycloak.models.map.storage.hotRod.group.HotRodGroupEntity;
 
                 // Groups
                 HotRodGroupEntity.class,
+
+                // Users
+                HotRodUserEntity.class,
+                HotRodUserConsentEntity.class,
+                HotRodUserCredentialEntity.class,
+                HotRodUserFederatedIdentityEntity.class,
 
                 // Common
                 HotRodPair.class,
