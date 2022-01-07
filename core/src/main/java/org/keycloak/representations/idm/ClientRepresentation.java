@@ -21,6 +21,7 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -80,6 +81,7 @@ public class ClientRepresentation {
     private ResourceServerRepresentation authorizationSettings;
     private Map<String, Boolean> access;
     protected String origin;
+    private Set<RoleRepresentation> roles;
 
 
     public String getId() {
@@ -424,6 +426,14 @@ public class ClientRepresentation {
 
     public void setOrigin(String origin) {
         this.origin = origin;
+    }
+
+    public Set<RoleRepresentation> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(Set<RoleRepresentation> roles) {
+        this.roles = roles;
     }
 
 }

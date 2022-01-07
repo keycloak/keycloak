@@ -24,13 +24,10 @@ import org.keycloak.common.Profile;
 import org.keycloak.events.Errors;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
@@ -58,6 +55,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.Boolean.TRUE;
@@ -145,6 +144,15 @@ public class ClientsResource {
                         representation.setDescription(c.getDescription());
                     }
 
+                    if (representation != null) {
+                        final Set<RoleRepresentation> roles = session.roles().getClientRolesStream(c)
+                                .map(ModelToRepresentation::toRepresentation)
+                                .collect(Collectors.toSet());
+                        if (!roles.isEmpty()) {
+                            representation.setRoles(roles);
+                        }
+                    }
+
                     return representation;
                 })
                 .filter(Objects::nonNull);
@@ -177,6 +185,16 @@ public class ClientsResource {
             session.clientPolicy().triggerOnEvent(new AdminClientRegisterContext(rep, auth.adminAuth()));
 
             ClientModel clientModel = ClientManager.createClient(session, realm, rep);
+
+            if (rep.getRoles() != null && !rep.getRoles().isEmpty()) {
+                rep.getRoles()
+                        .forEach(roleRepresentation -> {
+                            final RoleModel role = clientModel.addRole(roleRepresentation.getName());
+                            if (roleRepresentation.getAttributes() != null && !roleRepresentation.getAttributes().isEmpty()) {
+                                roleRepresentation.getAttributes().forEach(role::setAttribute);
+                            }
+                        });
+            }
 
             if (TRUE.equals(rep.isServiceAccountsEnabled())) {
                 UserModel serviceAccount = session.users().getServiceAccount(clientModel);
