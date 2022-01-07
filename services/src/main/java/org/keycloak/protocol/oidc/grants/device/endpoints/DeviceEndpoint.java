@@ -249,21 +249,25 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
     public Response status(@QueryParam("error") String error) {
         if (!StringUtil.isNullOrEmpty(error)) {
             String message;
+            String header;
             switch (error) {
                 case OAuthErrorException.ACCESS_DENIED:
                     // cased by CANCELLED_BY_USER or CONSENT_DENIED:
                     message = Messages.OAUTH2_DEVICE_CONSENT_DENIED;
+                    header = Messages.OAUTH2_DEVICE_CONSENT_DENIED_HEADER;
                     break;
                 case OAuthErrorException.EXPIRED_TOKEN:
                     message = Messages.OAUTH2_DEVICE_EXPIRED_USER_CODE;
+                    header = Messages.OAUTH2_DEVICE_VERIFICATION_FAILED_HEADER;
                     break;
                 default:
                     message = Messages.OAUTH2_DEVICE_VERIFICATION_FAILED;
+                    header = Messages.OAUTH2_DEVICE_VERIFICATION_FAILED_HEADER;
             }
             LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);
             String restartUri = DeviceGrantType.oauth2DeviceVerificationUrl(session.getContext().getUri())
                 .build(realm.getName()).toString();
-            return forms.setAttribute("messageHeader", forms.getMessage(Messages.OAUTH2_DEVICE_VERIFICATION_FAILED_HEADER))
+            return forms.setAttribute("messageHeader", forms.getMessage(header))
                 .setAttribute(Constants.TEMPLATE_ATTR_ACTION_URI, restartUri).setError(message).createInfoPage();
         } else {
             LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class);

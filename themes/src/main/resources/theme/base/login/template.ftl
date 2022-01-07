@@ -147,24 +147,23 @@
                                     <#if message.type = 'error'><i class="${properties.kcFeedbackErrorIcon!}"></i></#if>
                                     <#if message.type = 'info'><i class="${properties.kcFeedbackInfoIcon!}"></i></#if>
                                 </div>
-                                <p class="${properties.kcAlertTitleRaw!}">
-                                    <#if message.type = 'error' && message.summary?contains("timed out")>
-                                        <span class="${properties.kcScreenReader!}"><#nested "errorDesc"></span>
-                                        ${msg("timeoutErrorTitle")}
-                                    <#elseif message.type = 'error'>
-                                        <span class="${properties.kcScreenReader!}"><#nested "errorDesc"></span>
-                                        <#nested "errorDesc">
-                                    </#if>
-                                </p>
-                                <div class="pf-c-alert__description">
-                                    <p>${kcSanitize(message.summary)?no_esc}</p>
-                                </div>
+                                <#if message.title?has_content >
+                                    <p class="${properties.kcAlertTitleRaw!}">
+                                        <span class="${properties.kcScreenReader!}">${kcSanitize(message.title)}</span>
+                                        ${kcSanitize(message.title)}
+                                    </p>
+                                    <div class="pf-c-alert__description">
+                                        <p>${kcSanitize(message.summary)?no_esc}</p>
+                                    </div>
+                                <#else>
+                                    <p class="${properties.kcAlertTitleRaw!}">
+                                        <span class="${properties.kcScreenReader!}">${kcSanitize(message.summary)}</span>
+                                        ${kcSanitize(message.summary)}
+                                    </p>
+                                </#if>
                                 <br>
                             </div>
-                            
-                            <@dump_object object=message/>
                         </#if>
-
                         <#nested "form">
 
                         <#if auth?has_content && auth.showTryAnotherWayLink() && showAnotherWayIfPresent>
@@ -191,32 +190,4 @@
         </div>
     </body>
 </html>
-</#macro>
-
-<#macro dump_object object debug=false>
-  <#compress>
-    <#if object??>
-      <#attempt>
-        <#if object?is_node>
-          <#if object?node_type == "text">${object?json_string}
-          <#else>${object?node_name}<#if object?node_type=="element" && object.@@?has_content><#list object.@@ as attr>
-            "${attr?node_name}":"${attr?json_string}"</#list></#if>
-             <#if object?children?has_content><#list object?children as item>
-                <@dump_object object=item/></#list><#else>${object}</#if>"${object?node_name}"</#if>
-             <#elseif object?is_method>
-               "#method"
-             <#elseif object?is_sequence>
-               [<#list object as item><@dump_object object=item/><#if !item?is_last>, </#if></#list>]
-             <#elseif object?is_hash_ex>
-               {<#list object as key, item>"${key?json_string}":<@dump_object object=item/><#if !item?is_last>, </#if></#list>}
-             <#else>
-              "${object?string?json_string}"
-             </#if>
-      <#recover>
-        <#if !debug>"<!-- </#if>LOG: Could not parse object <#if debug><pre>${.error}</pre><#else>-->"</#if>
-      </#attempt>
-    <#else>
-      null
-    </#if>
-  </#compress>
 </#macro>

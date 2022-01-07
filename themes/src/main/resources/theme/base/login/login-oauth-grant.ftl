@@ -6,13 +6,14 @@
         <#else>
             ${msg("oauthGrantTitle",client.clientId)}
         </#if>
+    <#elseif section = "subHeader">
+      ${msg("oauthGrantRequest")}
     <#elseif section = "form">
-        <div id="kc-oauth" class="content-area">
-            <h3>${msg("oauthGrantRequest")}</h3>
-            <ul>
+        <div id="kc-oauth" class="${properties.kcLargeMarginTop} content-area">
+            <ul class="${properties.kcUnorderedList}">
                 <#if oauth.clientScopesRequested??>
                     <#list oauth.clientScopesRequested as clientScope>
-                        <li>
+                        <li class="${properties.kcBoldText} ${properties.kc0TopPadding} ${properties.kc0TopMargin} ${properties.kcMdFont}">
                             <span>${advancedMsg(clientScope.consentScreenText)}</span>
                         </li>
                     </#list>
@@ -29,8 +30,8 @@
 
                     <div id="kc-form-buttons">
                         <div class="${properties.kcFormButtonsWrapperClass!}">
-                            <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" name="accept" id="kc-login" type="submit" value="${msg("doYes")}"/>
-                            <input class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!}" name="cancel" id="kc-cancel" type="submit" value="${msg("doNo")}"/>
+                            <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!}" name="accept" id="kc-login" type="submit" value="${msg("doYes")}"/>
+                            <input class="${properties.kcButtonClass!} ${properties.kcButtonLinkClass!} " name="cancel" id="kc-cancel" type="submit" value="${msg("doNo")}"/>
                         </div>
                     </div>
                 </div>

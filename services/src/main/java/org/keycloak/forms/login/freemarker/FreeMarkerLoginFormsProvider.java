@@ -673,7 +673,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     protected String formatMessageTitle(FormMessage message, Properties messagesBundle, Locale locale) {
         if (message == null)
             return null;
-        if (messagesBundle.containsKey(message.getTitle())) {
+        if (message.getTitle() != null && messagesBundle.containsKey(message.getTitle())) {
             return new MessageFormat(messagesBundle.getProperty(message.getTitle()), locale).format(message.getParameters());
         } else {
             return message.getTitle();
