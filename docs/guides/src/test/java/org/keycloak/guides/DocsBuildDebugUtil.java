@@ -12,7 +12,7 @@ public class DocsBuildDebugUtil {
         String userDir = System.getProperty("user.dir");
         File usrDir = new File(System.getProperty("user.dir"));
         File srcDir = usrDir.toPath().resolve("docs/guides/src/main").toFile();
-        File targetDir = usrDir.toPath().resolve("target/generated-guides-tests").toFile();
+        File targetDir = usrDir.toPath().resolve("docs/guides/target/generated-guides-tests").toFile();
         targetDir.mkdirs();
         GuideBuilder builder = new GuideBuilder(srcDir, targetDir, null);
         builder.server();

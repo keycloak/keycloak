@@ -1,0 +1,128 @@
+<#import "/templates/guide.adoc" as template>
+<#import "/templates/kc.adoc" as kc>
+
+<@template.guide
+title="Core concepts for configuring Keycloak"
+summary="Understand main aspects around Keycloaks configuration">
+
+With the underlying Quarkus distribution, configuring Keycloak got a lot easier. There are some main aspects to understand, though. This guide will help you to understand the core concepts around the configuration of Keycloak.
+
+== Distinction between runtime- and buildtime options
+Configuration options are divided in two categories:
+
+- Runtime Options are options that can be set at runtime when starting the server
+
+- Buildtime Options are options that can only be set when configuring the server through the `build` command
+
+This distinction is used to optimize Keycloak for a good startup time and memory footprint.
+
+The `build` command starts a build process during which Keycloaks configuration gets baked into the jar, and thus optimizes the resulting Keycloak server image.
+
+Under the covers, Keycloak leverages Quarkus' "reaugmentation" phase to produce a fully optimized Keycloak server image including all settings. In this phase, multiple initialization steps (e.g. loading providers, switching features on or off, setting up the db connection) are executed and baked into the Keycloak server image. This saves a good amount of time when starting up.
+
+We recommend you to use the `build` step to get the best behaviour you can out of Keycloak.
+
+To summarize, this distinction and the underlying concepts provide a way to tailor a fully optimized Keycloak server image for the specific environment Keycloak runs in, and is essential to achieve fast startup time and low memory footprint.
+
+=== List of buildtime options
+
+<#list ctx.options.categories as category>
+<#assign categoryBuildTimeOptions=ctx.options.getBuildTimeValues(category)>
+<#if categoryBuildTimeOptions?has_content>
+==== ${category.heading}
+|===
+|Key|CLI|ENV|Description|Default|Values
+<#list categoryBuildTimeOptions as option>
+|${option.key}
+|${option.keyCli}
+|${option.keyEnv}
+|${option.description}
+|${option.defaultValue!}
+|${option.expectedValues?join(", ")}
+<#if option?has_next>
+
+</#if>
+</#list>
+|===
+
+</#if>
+</#list>
+
+To see all buildtime options in the CLI, use e.g.
+<@kc.build parameters="--help"/>
+
+=== List of runtime options
+
+<#list ctx.options.categories as category>
+<#assign categoryRunTimeOptions=ctx.options.getRunTimeValues(category)>
+<#if categoryRunTimeOptions?has_content>
+==== ${category.heading}
+|===
+|Key|CLI|ENV|Description|Default|Values
+<#list categoryRunTimeOptions as option>
+|${option.key}
+|${option.keyCli}
+|${option.keyEnv}
+|${option.description}
+|${option.defaultValue!}
+|${option.expectedValues?join(", ")}
+<#if option?has_next>
+
+</#if>
+</#list>
+|===
+</#if>
+</#list>
+
+
+To see all runtime options in the CLI, use e.g.
+<@kc.start parameters="--help"/>
+
+== Different configuration sources
+Keycloak can read configuration values from multiple sources by default. To be able to decide which configuration should be used when it's set in more than one place, Keycloak uses the ordinal concept. The higher the Ordinal, the higher the precedence of the configuration value.
+
+The different Ordinals and property sources, in descending order, are:
+
+|===
+|Ordinal|Property source|Example
+|500| CLI properties| `--http-enabled=true`
+|400| System Properties|`-Dkc.http.enabled=true`
+|350| Environment variables|`KC_HTTP_ENABLED=true`
+|300| Persisted Properties^1^|
+|250| explicit properties file vie `--config-file` command (if used)|`http.enabled=false`
+|240| keycloak.properties file|`http.enabled=true`
+|===
+
+^1^ Persisted properties are internal properties containing the configuration of a previously built server image via the `build` command. They are not meant to be modified directly and thus are located in the classpath.
+
+== Configuration profiles
+To use different configuration profiles, for example a dev, staging and production profile, Keycloak allows you to define profiles  using a `%` followed
+by the profile name and a dot `.` in the syntax `%{profile-name}.config.key=value`.
+
+To start Keycloak using a specific profile, use
+[source,bash]
+----
+bin/kc.[sh|bat] [--profile|-pf]=<profile> [build|start]
+----
+
+For example, `kc.sh --profile=staging start` would start Keycloak in a staging profile, which could be set in `conf/keycloak.properties`:
+
+[source,properties]
+----
+...
+http.enabled=false
+https.port=8443
+%dev.http.enabled=true
+%staging.https.port=8553
+...
+----
+
+If a profile does not define a value for a specific attribute, the default value is used. In the example above this would be `http.enabled=false` for the staging profile.
+
+== Different modes for running Keycloak
+Why? -> different contexts.
+
+How? -> build && start / start-dev / auto-build
+How?-> Syntax for env/cli/sysvars
+
+</@template.guide>

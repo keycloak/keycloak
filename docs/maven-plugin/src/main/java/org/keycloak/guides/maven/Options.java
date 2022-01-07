@@ -1,6 +1,7 @@
 package org.keycloak.guides.maven;
 
 import org.keycloak.quarkus.runtime.configuration.mappers.ConfigCategory;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import java.util.Collection;
@@ -12,12 +13,24 @@ import java.util.stream.StreamSupport;
 public class Options {
 
     private final Map<String, Option> options;
+    private final Map<String, Option> buildTimeOptions;
+    private final Map<String, Option> runTimeOptions;
 
     public Options() {
-        options = PropertyMappers.getMappers().stream()
+        Collection<PropertyMapper> mappers = PropertyMappers.getMappers();
+
+        options = mappers.stream()
                 .filter(m -> !m.isHidden())
                 .map(m -> new Option(m.getFrom(), m.getCategory(), m.isBuildTime(), m.getDescription(), m.getDefaultValue(), m.getExpectedValues()))
                 .collect(Collectors.toMap(Option::getKey, o -> o, (o1, o2) -> o1)); // Need to ignore duplicate keys??
+        buildTimeOptions = mappers.stream()
+                .filter(m -> !m.isHidden() && m.isBuildTime())
+                .map(m -> new Option(m.getFrom(), m.getCategory(), m.isBuildTime(), m.getDescription(), m.getDefaultValue(), m.getExpectedValues()))
+                .collect(Collectors.toMap(Option::getKey, o -> o, (o1, o2) -> o1));
+        runTimeOptions = mappers.stream()
+                .filter(m -> !m.isHidden() && !m.isBuildTime())
+                .map(m -> new Option(m.getFrom(), m.getCategory(), m.isBuildTime(), m.getDescription(), m.getDefaultValue(), m.getExpectedValues()))
+                .collect(Collectors.toMap(Option::getKey, o -> o, (o1, o2) -> o1));
     }
 
     public ConfigCategory[] getCategories() {
@@ -28,8 +41,24 @@ public class Options {
         return options.values();
     }
 
+    public Collection<Option> getBuildTimeValues() {
+        return buildTimeOptions.values();
+    }
+
+    public Collection<Option> getRunTimeValues() {
+        return runTimeOptions.values();
+    }
+
     public Collection<Option> getValues(ConfigCategory category) {
         return options.values().stream().filter(o -> o.category.equals(category)).collect(Collectors.toList());
+    }
+
+    public Collection<Option> getBuildTimeValues(ConfigCategory category) {
+        return buildTimeOptions.values().stream().filter(o -> o.category.equals(category)).collect(Collectors.toList());
+    }
+
+    public Collection<Option> getRunTimeValues(ConfigCategory category) {
+        return runTimeOptions.values().stream().filter(o -> o.category.equals(category)).collect(Collectors.toList());
     }
 
     public Option getOption(String key) {

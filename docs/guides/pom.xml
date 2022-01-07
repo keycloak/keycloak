@@ -16,6 +16,8 @@
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <artifactId>keycloak-docs-parent</artifactId>
         <groupId>org.keycloak</groupId>
@@ -23,10 +25,8 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <modelVersion>4.0.0</modelVersion>
-
-    <name>Keycloak Guides</name>
     <artifactId>keycloak-guides</artifactId>
+    <name>Keycloak Guides</name>
     <description>Keycloak Guides</description>
 
     <dependencies>
@@ -42,6 +42,7 @@
             <plugin>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-guides-maven-plugin</artifactId>
+                <version>17.0.0-SNAPSHOT</version>
                 <executions>
                     <execution>
                         <id>generate-asciidoc</id>
