@@ -42,32 +42,6 @@
                 <module>94</module>
             </modules>
         </profile>
-        <profile>
-            <id>app-server-jetty93</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>jetty93</value>
-                </property>
-            </activation>
-            <modules>
-                <module>common</module>
-                <module>93</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>app-server-jetty92</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>jetty92</value>
-                </property>
-            </activation>
-            <modules>
-                <module>common</module>
-                <module>92</module>
-            </modules>
-        </profile>
     </profiles>
 
 </project>

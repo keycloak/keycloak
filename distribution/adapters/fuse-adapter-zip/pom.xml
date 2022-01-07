@@ -227,7 +227,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-jetty92-adapter</artifactId>
+            <artifactId>keycloak-jetty94-adapter</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>

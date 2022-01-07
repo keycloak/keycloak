@@ -295,14 +295,7 @@
                 </plugins>
             </build>
         </profile>
-        
-        <profile>
-            <id>app-server-tomcat7</id>
-            <modules>
-                <module>tomcat7</module>
-                <module>common</module>
-            </modules>
-        </profile>
+
         <profile>
             <id>app-server-tomcat8</id>
             <modules>

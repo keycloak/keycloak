@@ -51,7 +51,7 @@
         <feature version="[9.2,9.3)">jetty</feature>
         <bundle>mvn:org.keycloak/keycloak-jetty-adapter-spi/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-jetty-core/${project.version}</bundle>
-        <bundle>mvn:org.keycloak/keycloak-jetty92-adapter/${project.version}</bundle>
+        <bundle>mvn:org.keycloak/keycloak-jetty94-adapter/${project.version}</bundle>
     </feature>
 
     <!-- Keycloak adapter for PaxWeb jetty provider -->

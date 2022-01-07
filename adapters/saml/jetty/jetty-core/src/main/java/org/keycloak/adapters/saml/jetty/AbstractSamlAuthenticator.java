@@ -156,7 +156,7 @@ public abstract class AbstractSamlAuthenticator extends LoginAuthenticator {
         }
 
         @Override
-        public UserIdentity login(String username, Object credentials) {
+        public UserIdentity login(String username, Object credentials, ServletRequest request) {
             return null;
         }
 

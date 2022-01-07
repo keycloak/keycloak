@@ -482,64 +482,6 @@
             </build>
         </profile>
         <profile>
-            <id>app-server-jetty93</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>jetty93</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>jetty93</app.server> <!--in case the profile is called directly-->
-                <app.server.skip.unpack>true</app.server.skip.unpack>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-jetty-93</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.commonjava.maven.plugins</groupId>
-                        <artifactId>directory-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>app-server-jetty92</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>jetty92</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>jetty92</app.server> <!--in case the profile is called directly-->
-                <app.server.skip.unpack>true</app.server.skip.unpack>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-jetty-92</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.commonjava.maven.plugins</groupId>
-                        <artifactId>directory-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
             <id>app-server-wildfly</id>
             <activation>
                 <property>
@@ -885,40 +827,6 @@
                                 <app.server.karaf.jvm.debug.args>${app.server.karaf.jvm.debug.args}</app.server.karaf.jvm.debug.args>
                             </systemPropertyVariables>
                         </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>app-server-tomcat7</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>tomcat7</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>tomcat7</app.server> <!--in case the profile is called directly-->
-                <app.server.skip.unpack>false</app.server.skip.unpack>
-                <app.server.artifactId>integration-arquillian-servers-app-server-tomcat7</app.server.artifactId><!-- Need to override -->
-                <app.server.port.offset>0</app.server.port.offset>
-                <app.server.http.port>8080</app.server.http.port>
-                <app.server.management.port>9990</app.server.management.port>
-                <app.server.keystore.dir>${app.server.home}/lib</app.server.keystore.dir>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-tomcat7</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.commonjava.maven.plugins</groupId>
-                        <artifactId>directory-maven-plugin</artifactId>
                     </plugin>
                 </plugins>
             </build>
