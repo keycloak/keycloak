@@ -279,7 +279,7 @@ public class MapFieldPredicates {
         String providerId = ensureEqSingleValue(UserModel.SearchableFields.CONSENT_CLIENT_FEDERATION_LINK, "provider_id", op, values);
         String providerIdS = new StorageId((String) providerId, "").getId();
         Function<MapUserEntity, ?> getter;
-        getter = ue -> Optional.ofNullable(ue.getUserConsents()).orElseGet(Collections::emptyMap).values().stream().map(MapUserConsentEntity::getClientId).anyMatch(v -> v != null && v.startsWith(providerIdS));
+        getter = ue -> Optional.ofNullable(ue.getUserConsents()).orElseGet(Collections::emptySet).stream().map(MapUserConsentEntity::getClientId).anyMatch(v -> v != null && v.startsWith(providerIdS));
 
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
     }
@@ -445,7 +445,7 @@ public class MapFieldPredicates {
     private static MapModelCriteriaBuilder<Object, MapUserEntity, UserModel> checkUserClientConsent(MapModelCriteriaBuilder<Object, MapUserEntity, UserModel> mcb, Operator op, Object[] values) {
         String clientIdS = ensureEqSingleValue(UserModel.SearchableFields.CONSENT_FOR_CLIENT, "client_id", op, values);
         Function<MapUserEntity, ?> getter;
-        getter = ue -> ue.getUserConsent(clientIdS);
+        getter = ue -> ue.getUserConsent(clientIdS).orElse(null);
 
         return mcb.fieldCompare(Operator.EXISTS, getter, null);
     }
@@ -453,7 +453,7 @@ public class MapFieldPredicates {
     private static MapModelCriteriaBuilder<Object, MapUserEntity, UserModel> checkUserConsentsWithClientScope(MapModelCriteriaBuilder<Object, MapUserEntity, UserModel> mcb, Operator op, Object[] values) {
         String clientScopeIdS = ensureEqSingleValue(UserModel.SearchableFields.CONSENT_FOR_CLIENT, "client_scope_id", op, values);
         Function<MapUserEntity, ?> getter;
-        getter = ue -> Optional.ofNullable(ue.getUserConsents()).orElseGet(Collections::emptyMap).values().stream().anyMatch(consent -> Optional.ofNullable(consent.getGrantedClientScopesIds()).orElseGet(Collections::emptySet).contains(clientScopeIdS));
+        getter = ue -> Optional.ofNullable(ue.getUserConsents()).orElseGet(Collections::emptySet).stream().anyMatch(consent -> Optional.ofNullable(consent.getGrantedClientScopesIds()).orElseGet(Collections::emptySet).contains(clientScopeIdS));
 
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
     }
@@ -469,15 +469,15 @@ public class MapFieldPredicates {
         final Object idpAlias = values[0];
         Function<MapUserEntity, ?> getter;
         if (values.length == 1) {
-            getter = ue -> Optional.ofNullable(ue.getFederatedIdentities()).orElseGet(Collections::emptyMap).values().stream()
+            getter = ue -> Optional.ofNullable(ue.getFederatedIdentities()).orElseGet(Collections::emptySet).stream()
               .anyMatch(aue -> Objects.equals(idpAlias, aue.getIdentityProvider()));
         } else if (idpAlias == null) {
             final Object idpUserId = values[1];
-            getter = ue -> Optional.ofNullable(ue.getFederatedIdentities()).orElseGet(Collections::emptyMap).values().stream()
+            getter = ue -> Optional.ofNullable(ue.getFederatedIdentities()).orElseGet(Collections::emptySet).stream()
               .anyMatch(aue -> Objects.equals(idpUserId, aue.getUserId()));
         } else {
             final Object idpUserId = values[1];
-            getter = ue -> Optional.ofNullable(ue.getFederatedIdentities()).orElseGet(Collections::emptyMap).values().stream()
+            getter = ue -> Optional.ofNullable(ue.getFederatedIdentities()).orElseGet(Collections::emptySet).stream()
               .anyMatch(aue -> Objects.equals(idpAlias, aue.getIdentityProvider()) && Objects.equals(idpUserId, aue.getUserId()));
         }
 

@@ -17,6 +17,7 @@
 
 package org.keycloak.models.map.user;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.map.annotations.GenerateEntityImplementations;
 import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
 import org.keycloak.models.map.common.AbstractEntity;
@@ -26,12 +27,11 @@ import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
 
 @GenerateEntityImplementations(
         inherits = "org.keycloak.models.map.user.MapUserEntity.AbstractUserEntity"
@@ -41,22 +41,23 @@ public interface MapUserEntity extends UpdatableEntity, AbstractEntity, EntityWi
 
     public abstract class AbstractUserEntity extends UpdatableEntity.Impl implements MapUserEntity {
 
+        private static final Logger LOG = Logger.getLogger(MapUserProvider.class);
         private String id;
 
         @Override
         public boolean isUpdated() {
             return this.updated
-                    || Optional.ofNullable(getUserConsents()).orElseGet(Collections::emptyMap).values().stream().anyMatch(MapUserConsentEntity::isUpdated)
-                    || Optional.ofNullable(getCredentials()).orElseGet(Collections::emptyMap).values().stream().anyMatch(MapUserCredentialEntity::isUpdated)
-                    || Optional.ofNullable(getFederatedIdentities()).orElseGet(Collections::emptyMap).values().stream().anyMatch(MapUserFederatedIdentityEntity::isUpdated);
+                    || Optional.ofNullable(getUserConsents()).orElseGet(Collections::emptySet).stream().anyMatch(MapUserConsentEntity::isUpdated)
+                    || Optional.ofNullable(getCredentials()).orElseGet(Collections::emptyList).stream().anyMatch(MapUserCredentialEntity::isUpdated)
+                    || Optional.ofNullable(getFederatedIdentities()).orElseGet(Collections::emptySet).stream().anyMatch(MapUserFederatedIdentityEntity::isUpdated);
         }
 
         @Override
         public void clearUpdatedFlag() {
             this.updated = false;
-            Optional.ofNullable(getUserConsents()).orElseGet(Collections::emptyMap).values().forEach(UpdatableEntity::clearUpdatedFlag);
-            Optional.ofNullable(getCredentials()).orElseGet(Collections::emptyMap).values().forEach(UpdatableEntity::clearUpdatedFlag);
-            Optional.ofNullable(getFederatedIdentities()).orElseGet(Collections::emptyMap).values().forEach(UpdatableEntity::clearUpdatedFlag);
+            Optional.ofNullable(getUserConsents()).orElseGet(Collections::emptySet).forEach(UpdatableEntity::clearUpdatedFlag);
+            Optional.ofNullable(getCredentials()).orElseGet(Collections::emptyList).forEach(UpdatableEntity::clearUpdatedFlag);
+            Optional.ofNullable(getFederatedIdentities()).orElseGet(Collections::emptySet).forEach(UpdatableEntity::clearUpdatedFlag);
 
         }
 
@@ -76,6 +77,97 @@ public interface MapUserEntity extends UpdatableEntity, AbstractEntity, EntityWi
         public void setEmail(String email, boolean duplicateEmailsAllowed) {
             this.setEmail(email);
             this.setEmailConstraint(email == null || duplicateEmailsAllowed ? KeycloakModelUtils.generateId() : email);
+        }
+
+        @Override
+        public Optional<MapUserConsentEntity> getUserConsent(String clientId) {
+            Set<MapUserConsentEntity> ucs = getUserConsents();
+            if (ucs == null || ucs.isEmpty()) return Optional.empty();
+
+            return ucs.stream().filter(uc -> Objects.equals(uc.getClientId(), clientId)).findFirst();
+        }
+
+        @Override
+        public Boolean removeUserConsent(String clientId) {
+            Set<MapUserConsentEntity> consents = getUserConsents();
+            boolean removed = consents != null && consents.removeIf(uc -> Objects.equals(uc.getClientId(), clientId));
+            this.updated |= removed;
+            return removed;
+        }
+
+        @Override
+        public Optional<MapUserCredentialEntity> getCredential(String id) {
+            List<MapUserCredentialEntity> uce = getCredentials();
+            if (uce == null || uce.isEmpty()) return Optional.empty();
+
+            return uce.stream().filter(uc -> Objects.equals(uc.getId(), id)).findFirst();
+        }
+
+        @Override
+        public Boolean removeCredential(String id) {
+            List<MapUserCredentialEntity> credentials = getCredentials();
+            boolean removed = credentials != null && credentials.removeIf(c -> Objects.equals(c.getId(), id));
+            this.updated |= removed;
+            return removed;
+        }
+
+        @Override
+        public Boolean moveCredential(String credentialId, String newPreviousCredentialId) {
+            // 1 - Get all credentials from the entity.
+            List<MapUserCredentialEntity> credentialsList = getCredentials();
+
+            // 2 - Find indexes of our and newPrevious credential
+            int ourCredentialIndex = -1;
+            int newPreviousCredentialIndex = -1;
+            MapUserCredentialEntity ourCredential = null;
+            int i = 0;
+            for (MapUserCredentialEntity credential : credentialsList) {
+                if (credentialId.equals(credential.getId())) {
+                    ourCredentialIndex = i;
+                    ourCredential = credential;
+                } else if(newPreviousCredentialId != null && newPreviousCredentialId.equals(credential.getId())) {
+                    newPreviousCredentialIndex = i;
+                }
+                i++;
+            }
+
+            if (ourCredentialIndex == -1) {
+                LOG.warnf("Not found credential with id [%s] of user [%s]", credentialId, getUsername());
+                return false;
+            }
+
+            if (newPreviousCredentialId != null && newPreviousCredentialIndex == -1) {
+                LOG.warnf("Can't move up credential with id [%s] of user [%s]", credentialId, getUsername());
+                return false;
+            }
+
+            // 3 - Compute index where we move our credential
+            int toMoveIndex = newPreviousCredentialId==null ? 0 : newPreviousCredentialIndex + 1;
+
+            // 4 - Insert our credential to new position, remove it from the old position
+            if (toMoveIndex == ourCredentialIndex) return true;
+            credentialsList.add(toMoveIndex, ourCredential);
+            int indexToRemove = toMoveIndex < ourCredentialIndex ? ourCredentialIndex + 1 : ourCredentialIndex;
+            credentialsList.remove(indexToRemove);
+
+            this.updated = true;
+            return true;
+        }
+
+        @Override
+        public Optional<MapUserFederatedIdentityEntity> getFederatedIdentity(String identityProviderId) {
+            Set<MapUserFederatedIdentityEntity> fes = getFederatedIdentities();
+            if (fes == null || fes.isEmpty()) return Optional.empty();
+
+            return fes.stream().filter(fi -> Objects.equals(fi.getIdentityProvider(), identityProviderId)).findFirst();
+        }
+
+        @Override
+        public Boolean removeFederatedIdentity(String identityProviderId) {
+            Set<MapUserFederatedIdentityEntity> federatedIdentities = getFederatedIdentities();
+            boolean removed = federatedIdentities != null && federatedIdentities.removeIf(fi -> Objects.equals(fi.getIdentityProvider(), identityProviderId));
+            this.updated |= removed;
+            return removed;
         }
     }
 
@@ -119,20 +211,27 @@ public interface MapUserEntity extends UpdatableEntity, AbstractEntity, EntityWi
     void addRequiredAction(String requiredAction);
     void removeRequiredAction(String requiredAction);
 
-    Map<String, MapUserCredentialEntity> getCredentials();
-    void setCredential(String id, MapUserCredentialEntity credentialEntity);
-    Boolean removeCredential(String credentialId);
-    MapUserCredentialEntity getCredential(String id);
+    List<MapUserCredentialEntity> getCredentials();
+    Optional<MapUserCredentialEntity> getCredential(String id);
+    void setCredentials(List<MapUserCredentialEntity> credentials);
+    void addCredential(MapUserCredentialEntity credentialEntity);
+    Boolean removeCredential(MapUserCredentialEntity credentialEntity);
+    Boolean removeCredential(String id);
+    @IgnoreForEntityImplementationGenerator
+    Boolean moveCredential(String credentialId, String newPreviousCredentialId);
 
-    Map<String, MapUserFederatedIdentityEntity> getFederatedIdentities();
-    void setFederatedIdentities(Map<String, MapUserFederatedIdentityEntity> federatedIdentities);
-    void setFederatedIdentity(String id, MapUserFederatedIdentityEntity federatedIdentity);
-    MapUserFederatedIdentityEntity getFederatedIdentity(String federatedIdentity);
-    Boolean removeFederatedIdentity(String providerId);
+    Set<MapUserFederatedIdentityEntity> getFederatedIdentities();
+    Optional<MapUserFederatedIdentityEntity> getFederatedIdentity(String identityProviderId);
+    void setFederatedIdentities(Set<MapUserFederatedIdentityEntity> federatedIdentities);
+    void addFederatedIdentity(MapUserFederatedIdentityEntity federatedIdentity);
+    Boolean removeFederatedIdentity(MapUserFederatedIdentityEntity providerId);
+    Boolean removeFederatedIdentity(String identityProviderId);
 
-    Map<String, MapUserConsentEntity> getUserConsents();
-    MapUserConsentEntity getUserConsent(String clientId);
-    void setUserConsent(String id, MapUserConsentEntity userConsentEntity);
+    Set<MapUserConsentEntity> getUserConsents();
+    Optional<MapUserConsentEntity> getUserConsent(String clientId);
+    void setUserConsents(Set<MapUserConsentEntity> userConsentEntity);
+    void addUserConsent(MapUserConsentEntity userConsentEntity);
+    Boolean removeUserConsent(MapUserConsentEntity userConsentEntity);
     Boolean removeUserConsent(String clientId);
 
     Set<String> getGroupsMembership();
