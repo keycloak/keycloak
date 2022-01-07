@@ -14,17 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.operator;
+package org.keycloak.operator.v2alpha1;
 
 import javax.inject.Inject;
 
-import io.fabric8.kubernetes.api.model.ListOptions;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import org.jboss.logging.Logger;
-import org.keycloak.operator.crds.Keycloak;
-import org.keycloak.operator.crds.KeycloakStatus;
+import org.keycloak.operator.v2alpha1.crds.Keycloak;
+import org.keycloak.operator.v2alpha1.crds.KeycloakStatus;
 
 @ControllerConfiguration(namespaces = Constants.WATCH_CURRENT_NAMESPACE, finalizerName = Constants.NO_FINALIZER)
 public class KeycloakController implements Reconciler<Keycloak> {

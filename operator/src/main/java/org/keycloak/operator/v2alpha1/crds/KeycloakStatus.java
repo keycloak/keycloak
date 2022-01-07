@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.operator.crds;
+package org.keycloak.operator.v2alpha1.crds;
 
 public class KeycloakStatus {
     public enum State {

@@ -14,18 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.operator;
+package org.keycloak.operator.v2alpha1;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import org.keycloak.operator.crds.Keycloak;
-import org.keycloak.operator.crds.KeycloakSpec;
-import org.keycloak.operator.crds.KeycloakStatus;
+import org.keycloak.operator.v2alpha1.crds.Keycloak;
+import org.keycloak.operator.v2alpha1.crds.KeycloakSpec;
+import org.keycloak.operator.v2alpha1.crds.KeycloakStatus;
 
 import java.net.URL;
 
-import static org.keycloak.operator.crds.KeycloakStatus.State.*;
+import static org.keycloak.operator.v2alpha1.crds.KeycloakStatus.State.*;
 
 public class KeycloakDeployment {
 

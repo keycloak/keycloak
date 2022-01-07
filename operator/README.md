@@ -33,21 +33,8 @@ Compile the project and generate the Docker image with JIB:
 mvn clean package -Doperator -Dquarkus.container-image.build=true -Dquarkus.kubernetes.deployment-target=minikube
 ```
 
-Install the CRD definition in the cluster:
+Install the CRD definition and the operator in the cluster:
 
 ```bash
-kubectl apply -f target/kubernetes/keycloaks.keycloak.io-v1.yml 
-```
-
-And install the operator:
-
-```bash
-cp kustomize/base/* target/kubernetes
-kubectl apply -k target/kubernetes
-```
-
-As a one-liner:
-
-```bash
-cp kustomize/base/* target/kubernetes && kubectl apply -k target/kubernetes
+kubectl apply -k .
 ```
