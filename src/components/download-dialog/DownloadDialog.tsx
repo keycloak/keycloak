@@ -53,8 +53,8 @@ export const DownloadDialog = ({
 
   const sanitizeSnippet = (snippet: string) =>
     snippet.replace(
-      /(?<=<PrivateKeyPem>).*(?=<\/PrivateKeyPem>)/gs,
-      t("clients:privateKeyMask")
+      /<PrivateKeyPem>.*<\/PrivateKeyPem>/gs,
+      `<PrivateKeyPem>${t("clients:privateKeyMask")}</PrivateKeyPem>`
     );
 
   useFetch(
