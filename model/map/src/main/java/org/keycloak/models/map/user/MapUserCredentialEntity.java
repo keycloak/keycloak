@@ -29,8 +29,6 @@ import java.util.Comparator;
 @DeepCloner.Root
 public interface MapUserCredentialEntity extends UpdatableEntity {
 
-    Comparator<MapUserCredentialEntity> ORDER_BY_PRIORITY = Comparator.comparing(MapUserCredentialEntity::getPriority);
-
     public static MapUserCredentialEntity fromModel(CredentialModel model) {
         MapUserCredentialEntity credentialEntity = new MapUserCredentialEntityImpl();
         String id = model.getId() == null ? KeycloakModelUtils.generateId() : model.getId();
@@ -72,7 +70,4 @@ public interface MapUserCredentialEntity extends UpdatableEntity {
 
     String getCredentialData();
     void setCredentialData(String credentialData);
-
-    Integer getPriority();
-    void setPriority(Integer priority);
 }

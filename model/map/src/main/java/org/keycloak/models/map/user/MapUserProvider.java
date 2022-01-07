@@ -51,11 +51,9 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -79,8 +77,6 @@ import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.crit
 
 public class MapUserProvider implements UserProvider.Streams, UserCredentialStore.Streams {
 
-    // Typical priority difference between 2 credentials
-    public static final int PRIORITY_DIFFERENCE = 10;
     private static final Logger LOG = Logger.getLogger(MapUserProvider.class);
     private final KeycloakSession session;
     final MapKeycloakTransaction<MapUserEntity, UserModel> tx;
@@ -145,7 +141,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
 
         getEntityById(realm, user.getId())
                 .ifPresent(userEntity ->
-                        userEntity.setFederatedIdentity(socialLink.getIdentityProvider(), MapUserFederatedIdentityEntity.fromModel(socialLink)));
+                        userEntity.addFederatedIdentity(MapUserFederatedIdentityEntity.fromModel(socialLink)));
     }
 
     @Override
@@ -175,7 +171,12 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     public void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {
         LOG.tracef("updateFederatedIdentity(%s, %s, %s)%s", realm, federatedUser.getId(), federatedIdentityModel.getIdentityProvider(), getShortStackTrace());
         getEntityById(realm, federatedUser.getId())
-                .ifPresent(entity -> entity.setFederatedIdentity(federatedIdentityModel.getIdentityProvider(), MapUserFederatedIdentityEntity.fromModel(federatedIdentityModel)));
+                .flatMap(u -> u.getFederatedIdentity(federatedIdentityModel.getIdentityProvider()))
+                .ifPresent(fi -> {
+                    fi.setUserId(federatedIdentityModel.getUserId());
+                    fi.setUserName(federatedIdentityModel.getUserName());
+                    fi.setToken(federatedIdentityModel.getToken());
+                });
     }
 
     @Override
@@ -183,7 +184,6 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         LOG.tracef("getFederatedIdentitiesStream(%s, %s)%s", realm, user.getId(), getShortStackTrace());
         return getEntityById(realm, user.getId())
                 .map(MapUserEntity::getFederatedIdentities)
-                .map(Map::values)
                 .map(Collection::stream)
                 .orElseGet(Stream::empty)
                 .map(MapUserFederatedIdentityEntity::toModel);
@@ -193,7 +193,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     public FederatedIdentityModel getFederatedIdentity(RealmModel realm, UserModel user, String socialProvider) {
         LOG.tracef("getFederatedIdentity(%s, %s, %s)%s", realm, user.getId(), socialProvider, getShortStackTrace());
         return getEntityById(realm, user.getId())
-                .map(userEntity -> userEntity.getFederatedIdentity(socialProvider))
+                .flatMap(userEntity -> userEntity.getFederatedIdentity(socialProvider))
                 .map(MapUserFederatedIdentityEntity::toModel)
                 .orElse(null);
     }
@@ -225,14 +225,14 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         LOG.tracef("addConsent(%s, %s, %s)%s", realm, userId, consent, getShortStackTrace());
 
         getEntityByIdOrThrow(realm, userId)
-                .setUserConsent(consent.getClient().getId(), MapUserConsentEntity.fromModel(consent));
+                .addUserConsent(MapUserConsentEntity.fromModel(consent));
     }
 
     @Override
     public UserConsentModel getConsentByClient(RealmModel realm, String userId, String clientInternalId) {
         LOG.tracef("getConsentByClient(%s, %s, %s)%s", realm, userId, clientInternalId, getShortStackTrace());
         return getEntityById(realm, userId)
-                .map(userEntity -> userEntity.getUserConsent(clientInternalId))
+                .flatMap(userEntity -> userEntity.getUserConsent(clientInternalId))
                 .map(consent -> MapUserConsentEntity.toModel(realm, consent))
                 .orElse(null);
     }
@@ -242,9 +242,8 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         LOG.tracef("getConsentByClientStream(%s, %s)%s", realm, userId, getShortStackTrace());
         return getEntityById(realm, userId)
                 .map(MapUserEntity::getUserConsents)
-                .map(Map::values)
                 .map(Collection::stream)
-                .orElse(Stream.empty())
+                .orElseGet(Stream::empty)
                 .map(consent -> MapUserConsentEntity.toModel(realm, consent));
     }
 
@@ -253,10 +252,8 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         LOG.tracef("updateConsent(%s, %s, %s)%s", realm, userId, consent, getShortStackTrace());
 
         MapUserEntity user = getEntityByIdOrThrow(realm, userId);
-        MapUserConsentEntity userConsentEntity = user.getUserConsent(consent.getClient().getId());
-        if (userConsentEntity == null) {
-            throw new ModelException("Consent not found for client [" + consent.getClient().getId() + "] and user [" + userId + "]");
-        }
+        MapUserConsentEntity userConsentEntity = user.getUserConsent(consent.getClient().getId())
+                .orElseThrow(() -> new ModelException("Consent not found for client [" + consent.getClient().getId() + "] and user [" + userId + "]"));
 
         userConsentEntity.setGrantedClientScopesIds(
                 consent.getGrantedClientScopes().stream()
@@ -447,7 +444,6 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         try (Stream<MapUserEntity> s = tx.read(withCriteria(mcb))) {
             s.map(MapUserEntity::getUserConsents)
                 .filter(Objects::nonNull)
-                .map(Map::values)
                 .flatMap(Collection::stream)
                 .forEach(consent -> consent.removeGrantedClientScopesId(clientScopeId));
         }
@@ -474,9 +470,9 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
 
     private Consumer<MapUserEntity> removeConsentsForExternalClient(String idPrefix) {
         return userEntity -> {
-            Map<String, MapUserConsentEntity> userConsents = userEntity.getUserConsents();
+            Set<MapUserConsentEntity> userConsents = userEntity.getUserConsents();
             if (userConsents == null || userConsents.isEmpty()) return;
-            List<String> consentClientIds = userConsents.values().stream()
+            List<String> consentClientIds = userConsents.stream()
               .map(MapUserConsentEntity::getClientId)
               .filter(clientId -> clientId != null && clientId.startsWith(idPrefix))
               .collect(Collectors.toList());
@@ -756,16 +752,13 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     }
     
     private Consumer<MapUserEntity> updateCredential(CredentialModel credentialModel) {
-        return user -> {
-            MapUserCredentialEntity credentialEntity = user.getCredential(credentialModel.getId());
-            if (credentialEntity == null) return;
-
-            credentialEntity.setCreatedDate(credentialModel.getCreatedDate());
-            credentialEntity.setUserLabel(credentialModel.getUserLabel());
-            credentialEntity.setType(credentialModel.getType());
-            credentialEntity.setSecretData(credentialModel.getSecretData());
-            credentialEntity.setCredentialData(credentialModel.getCredentialData());
-        };
+        return user -> user.getCredential(credentialModel.getId()).ifPresent(c -> {
+            c.setCreatedDate(credentialModel.getCreatedDate());
+            c.setUserLabel(credentialModel.getUserLabel());
+            c.setType(credentialModel.getType());
+            c.setSecretData(credentialModel.getSecretData());
+            c.setCredentialData(credentialModel.getCredentialData());
+        });
     }
 
     @Override
@@ -774,19 +767,11 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         MapUserEntity userEntity = getEntityByIdOrThrow(realm, user.getId());
         MapUserCredentialEntity credentialEntity = MapUserCredentialEntity.fromModel(cred);
 
-        if (userEntity.getCredential(cred.getId()) != null) {
+        if (userEntity.getCredential(cred.getId()).isPresent()) {
             throw new ModelDuplicateException("A CredentialModel with given id already exists");
         }
 
-        Map<String, MapUserCredentialEntity> credentials = userEntity.getCredentials();
-        int priority = PRIORITY_DIFFERENCE;
-
-        if (credentials != null && !credentials.isEmpty()) {
-            priority = credentials.values().stream().max(MapUserCredentialEntity.ORDER_BY_PRIORITY).map(MapUserCredentialEntity::getPriority).orElse(0) + PRIORITY_DIFFERENCE;
-        }
-
-        credentialEntity.setPriority(priority);
-        userEntity.setCredential(credentialEntity.getId(), credentialEntity);
+        userEntity.addCredential(credentialEntity);
 
         return MapUserCredentialEntity.toModel(credentialEntity);
     }
@@ -806,7 +791,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     public CredentialModel getStoredCredentialById(RealmModel realm, UserModel user, String id) {
         LOG.tracef("getStoredCredentialById(%s, %s, %s)%s", realm, user.getId(), id, getShortStackTrace());
         return getEntityById(realm, user.getId())
-                .map(mapUserEntity -> mapUserEntity.getCredential(id))
+                .flatMap(mapUserEntity -> mapUserEntity.getCredential(id))
                 .map(MapUserCredentialEntity::toModel)
                 .orElse(null);
     }
@@ -817,10 +802,8 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
 
         return getEntityById(realm, user.getId())
                 .map(MapUserEntity::getCredentials)
-                .map(Map::values)
                 .map(Collection::stream)
                 .orElseGet(Stream::empty)
-                .sorted(MapUserCredentialEntity.ORDER_BY_PRIORITY)
                 .map(MapUserCredentialEntity::toModel);
     }
 
@@ -841,60 +824,8 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
 
     @Override
     public boolean moveCredentialTo(RealmModel realm, UserModel user, String id, String newPreviousCredentialId) {
-
-        MapUserEntity userEntity = getEntityByIdOrThrow(realm, user.getId());
-
-        // 1 - Create new list and move everything to it.
-        Map<String, MapUserCredentialEntity> credentialEntityMap = userEntity.getCredentials();
-        List<MapUserCredentialEntity> newList = credentialEntityMap == null ? new LinkedList<>()
-                : credentialEntityMap.values().stream()
-                        .sorted(MapUserCredentialEntity.ORDER_BY_PRIORITY)
-                        .collect(Collectors.toList());
-
-        // 2 - Find indexes of our and newPrevious credential
-        int ourCredentialIndex = -1;
-        int newPreviousCredentialIndex = -1;
-        MapUserCredentialEntity ourCredential = null;
-        int i = 0;
-        for (MapUserCredentialEntity credential : newList) {
-            if (id.equals(credential.getId())) {
-                ourCredentialIndex = i;
-                ourCredential = credential;
-            } else if(newPreviousCredentialId != null && newPreviousCredentialId.equals(credential.getId())) {
-                newPreviousCredentialIndex = i;
-            }
-            i++;
-        }
-
-        if (ourCredentialIndex == -1) {
-            LOG.warnf("Not found credential with id [%s] of user [%s]", id, user.getUsername());
-            return false;
-        }
-
-        if (newPreviousCredentialId != null && newPreviousCredentialIndex == -1) {
-            LOG.warnf("Can't move up credential with id [%s] of user [%s]", id, user.getUsername());
-            return false;
-        }
-
-        // 3 - Compute index where we move our credential
-        int toMoveIndex = newPreviousCredentialId==null ? 0 : newPreviousCredentialIndex + 1;
-
-        // 4 - Insert our credential to new position, remove it from the old position
-        newList.add(toMoveIndex, ourCredential);
-        int indexToRemove = toMoveIndex < ourCredentialIndex ? ourCredentialIndex + 1 : ourCredentialIndex;
-        newList.remove(indexToRemove);
-
-        // 5 - newList contains credentials in requested order now. Iterate through whole list and change priorities accordingly.
-        int expectedPriority = 0;
-        for (MapUserCredentialEntity credential : newList) {
-            expectedPriority += PRIORITY_DIFFERENCE;
-            if (credential.getPriority() != expectedPriority) {
-                credential.setPriority(expectedPriority);
-
-                LOG.tracef("Priority of credential [%s] of user [%s] changed to [%d]", credential.getId(), user.getUsername(), expectedPriority);
-            }
-        }
-        return true;
+        LOG.tracef("moveCredentialTo(%s, %s, %s, %s)%s", realm, user, id, newPreviousCredentialId, getShortStackTrace());
+        return getEntityByIdOrThrow(realm, user.getId()).moveCredential(id, newPreviousCredentialId);
     }
 
     @Override
