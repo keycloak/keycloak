@@ -1,4 +1,3 @@
-import type ClientProfilesRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfilesRepresentation";
 import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import { ActionGroup, Button, Form, PageSection } from "@patternfly/react-core";
@@ -7,10 +6,11 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAlerts } from "../../components/alert/Alerts";
 import { prettyPrintJSON } from "../../util";
+import type { OnSaveCallback } from "./UserProfileTab";
 
 type JsonEditorTabProps = {
   config?: UserProfileConfig;
-  onSave: (profiles: ClientProfilesRepresentation) => void;
+  onSave: OnSaveCallback;
   isSaving: boolean;
 };
 

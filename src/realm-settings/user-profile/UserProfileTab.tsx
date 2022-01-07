@@ -1,4 +1,3 @@
-import type ClientProfilesRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfilesRepresentation";
 import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import { AlertVariant, Tab, Tabs, TabTitleText } from "@patternfly/react-core";
 import React, { useState } from "react";
@@ -6,7 +5,18 @@ import { useTranslation } from "react-i18next";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { AttributesGroupTab } from "./AttributesGroupTab";
 import { JsonEditorTab } from "./JsonEditorTab";
+
+export type OnSaveCallback = (
+  updatedProfiles: UserProfileConfig,
+  options?: OnSaveOptions
+) => Promise<void>;
+
+export type OnSaveOptions = {
+  successMessageKey?: string;
+  errorMessageKey?: string;
+};
 
 export const UserProfileTab = () => {
   const adminClient = useAdminClient();
@@ -24,23 +34,32 @@ export const UserProfileTab = () => {
     [refreshCount]
   );
 
-  async function onSave(updatedProfiles: ClientProfilesRepresentation) {
+  const onSave: OnSaveCallback = async (
+    updatedProfiles: UserProfileConfig,
+    options?: OnSaveOptions
+  ) => {
     setIsSaving(true);
 
     try {
-      await adminClient.clientPolicies.createProfiles({
+      await adminClient.users.updateProfile({
         ...updatedProfiles,
         realm,
       });
 
       setRefreshCount(refreshCount + 1);
-      addAlert(t("userProfileSuccess"), AlertVariant.success);
+      addAlert(
+        t(options?.successMessageKey ?? "userProfileSuccess"),
+        AlertVariant.success
+      );
     } catch (error) {
-      addError("realm-settings:userProfileError", error);
+      addError(
+        options?.errorMessageKey ?? "realm-settings:userProfileError",
+        error
+      );
     }
 
     setIsSaving(false);
-  }
+  };
 
   return (
     <Tabs
@@ -55,7 +74,10 @@ export const UserProfileTab = () => {
       <Tab
         eventKey="attributesGroup"
         title={<TabTitleText>{t("attributesGroup")}</TabTitleText>}
-      ></Tab>
+        data-testid="attributesGroupTab"
+      >
+        <AttributesGroupTab config={config} onSave={onSave} />
+      </Tab>
       <Tab
         eventKey="jsonEditor"
         title={<TabTitleText>{t("jsonEditor")}</TabTitleText>}

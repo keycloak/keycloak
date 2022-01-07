@@ -33,6 +33,7 @@ export default {
     clearFileExplain: "Are you sure you want to clear this file?",
     on: "On",
     off: "Off",
+    edit: "Edit",
     enabled: "Enabled",
     disabled: "Disabled",
     disable: "Disable",

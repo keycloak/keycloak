@@ -2,6 +2,9 @@ import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import { merge } from "lodash";
 
 export default class AdminClient {
   private client: KeycloakAdminClient;
@@ -21,9 +24,14 @@ export default class AdminClient {
     });
   }
 
-  async createRealm(realm: string) {
+  async createRealm(realm: string, payload?: RealmRepresentation) {
     await this.login();
-    await this.client.realms.create({ realm });
+    await this.client.realms.create({ realm, ...payload });
+  }
+
+  async updateRealm(realm: string, payload: RealmRepresentation) {
+    await this.login();
+    await this.client.realms.update({ realm }, payload);
   }
 
   async deleteRealm(realm: string) {
@@ -128,5 +136,15 @@ export default class AdminClient {
       id: client[0]?.id!,
       clientScopeId: scope?.id!,
     });
+  }
+
+  async patchUserProfile(realm: string, payload: UserProfileConfig) {
+    await this.login();
+
+    const currentProfile = await this.client.users.getProfile({ realm });
+
+    await this.client.users.updateProfile(
+      merge(currentProfile, payload, { realm })
+    );
   }
 }

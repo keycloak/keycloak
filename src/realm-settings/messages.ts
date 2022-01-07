@@ -781,4 +781,19 @@ export default {
     exportSuccess: "Realm successfully exported.",
     exportFail: "Could not export realm: '{{error}}'",
   },
+  "attributes-group": {
+    createButtonText: "Create attributes group",
+    tableTitle: "Attributes groups",
+    columnName: "Name",
+    columnDisplayName: "Display name",
+    columnDisplayDescription: "Display description",
+    emptyStateMessage: "No attributes groups",
+    emptyStateInstructions:
+      "If you want to add an attributes group click the button below.",
+    deleteDialogTitle: "Delete attribute group?",
+    deleteDialogDescription:
+      "Are you sure you want to permanently delete the attributes group <1>{{group}}</1>?",
+    deleteSuccess: "Attributes group deleted.",
+    deleteError: "Could not delete user attributes group: {{error}}",
+  },
 };
