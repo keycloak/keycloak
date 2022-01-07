@@ -1,0 +1,5 @@
+<#macro expectedValues option>
+<#list ctx.options.getOption(option).expectedValues as expectedValue>
+* ${expectedValue}
+</#list>
+</#macro>

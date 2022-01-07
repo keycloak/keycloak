@@ -22,12 +22,11 @@ import org.keycloak.models.map.common.UpdatableEntity;
 
 import java.util.Objects;
 
-public class UserFederatedIdentityEntity implements UpdatableEntity {
+public class UserFederatedIdentityEntity extends UpdatableEntity.Impl {
     private String token;
     private String userId;
     private String identityProvider;
     private String userName;
-    private boolean updated;
     
     private UserFederatedIdentityEntity() {}
 
@@ -81,10 +80,5 @@ public class UserFederatedIdentityEntity implements UpdatableEntity {
     public void setUserName(String userName) {
         this.updated |= !Objects.equals(this.userName, userName);
         this.userName = userName;
-    }
-
-    @Override
-    public boolean isUpdated() {
-        return updated;
     }
 }

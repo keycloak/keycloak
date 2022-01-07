@@ -1,0 +1,13 @@
+<!-- Used for configuration of remote caches on the Infinispan server if the configureRemoteCaches option is set to true
+ in DefaultHotRodConnectionProviderFactory configuration. -->
+<infinispan>
+    <cache-container>
+       <!-- Specify all remote caches that should be created on the Infinispan server. -->
+        <distributed-cache name="clients" mode="SYNC">
+            <encoding media-type="application/x-protostream"/>
+        </distributed-cache>
+        <distributed-cache name="groups" mode="SYNC">
+            <encoding media-type="application/x-protostream"/>
+        </distributed-cache>
+    </cache-container>
+</infinispan>

@@ -1294,7 +1294,7 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
     }
 
     @Override
-    public void patchRealmLocalizationTexts(String locale, Map<String, String> localizationTexts) {
+    public void createOrUpdateRealmLocalizationTexts(String locale, Map<String, String> localizationTexts) {
         Map<String, Map<String, String>> realmLocalizationTexts = entity.getLocalizationTexts();
 
         if (realmLocalizationTexts.containsKey(locale)) {

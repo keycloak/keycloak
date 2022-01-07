@@ -1,0 +1,76 @@
+---
+categories: [Layouts]
+css-extra: false
+layout: layout
+title: Tab
+resource: true
+full-page: true
+url-js-extra: [ '//cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js',
+                '//cdn.datatables.net/select/1.2.0/js/dataTables.select.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/js/bootstrap-select.min.js',
+                '../../dist/js/patternfly.dataTables.pfEmpty.js',
+                '../../dist/js/patternfly.dataTables.pfFilter.js',
+                '../../dist/js/patternfly.dataTables.pfResize.js',
+                '../../dist/js/patternfly.dataTables.pfSelect.js' ]
+weight: 5
+---
+{% include widgets/layouts/navbar-primary.html %}
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+          <ol class="breadcrumb">
+            <li><a href="#">Home</a></li>
+            <li>{{ page.title }}</li>
+          </ol>
+          <h1>{{ page.title }}</h1>
+           <!--Note: the markup semantics used to create "nested" tabs are sub-optimal in order to easily achieve a responsive layout.-->
+           <ul class="nav nav-tabs">
+            <li class="active"><a href="#">Tab One</a></li>
+            <li><a href="#">Tab Two</a></li>
+            <li><a href="#">Tab Three</a></li>
+            <li><a href="#">Tab Four</a></li>
+            <li><a href="#">Tab Five</a></li>
+            <li><a href="#">Tab Six</a></li>
+            <li><a href="#">Tab Seven</a></li>
+          </ul>
+          <ul class="nav nav-tabs nav-tabs-pf">
+            <li class="active"><a href="#">Secondary Tab One</a></li>
+            <li><a href="#">Secondary Tab Two</a></li>
+            <li><a href="#">Secondary Tab Three</a></li>
+            <li><a href="#">Secondary Tab Four</a></li>
+            <li><a href="#">Secondary Tab Five</a></li>
+          </ul>
+{% include widgets/table-view/table-view.html %}
+          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum eget eros tincidunt, semper ante nec, dapibus ante.</p>
+        </div><!-- /col -->
+        <div class="col-sm-3 col-md-2 col-sm-pull-9 col-md-pull-10 sidebar-pf sidebar-pf-left">
+          <div class="nav-category">
+            <h2>First Category</h2>
+            <ul class="nav nav-pills nav-stacked">
+              <li class="active"><a href="#"><i class="fa fa-desktop"></i>System Information</a></li>
+              <li><a href="#"><i class="fa fa-cog"></i>System Services</a></li>
+              <li><a href="#"><i class="fa fa-file-text-o"></i>Journal</a></li>
+              <li><a href="#"><i class="fa fa-cloud"></i>Storage</a></li>
+            </ul>
+          </div>
+          <div class="nav-category">
+            <h2>Second Category</h2>
+            <ul class="nav nav-pills nav-stacked">
+              <li><a href="#">User Accounts</a></li>
+              <li><a href="#">Containers</a></li>
+              <li><a href="#">Shutdown and Reboot</a></li>
+            </ul>
+          </div>
+        </div><!-- /col -->
+      </div><!-- /row -->
+    </div><!-- /container -->
+    <script>
+      $(document).ready(function () {
+        $("#table1").DataTable().on("draw.dt", function () {
+          // if .sidebar-pf exists, call sidebar() after the data table is drawn
+          if ($('.sidebar-pf').length > 0) {
+            $(document).sidebar();
+          }
+        });
+      });
+    </script>

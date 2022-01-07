@@ -16,135 +16,65 @@
  */
 package org.keycloak.models.map.role;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
+import org.keycloak.models.map.annotations.GenerateEntityImplementations;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.EntityWithAttributes;
 import org.keycloak.models.map.common.UpdatableEntity;
 
-public class MapRoleEntity implements AbstractEntity, UpdatableEntity {
+@GenerateEntityImplementations(
+  inherits = "org.keycloak.models.map.role.MapRoleEntity.AbstractRoleEntity"
+)
+@DeepCloner.Root
+public interface MapRoleEntity extends AbstractEntity, UpdatableEntity, EntityWithAttributes {
 
-    private String id;
-    private String realmId;
+    public abstract class AbstractRoleEntity extends UpdatableEntity.Impl implements MapRoleEntity {
 
-    private String name;
-    private String description;
-    private boolean clientRole;
-    private String clientId;
-    private Set<String> compositeRoles = new HashSet<>();
-    private Map<String, List<String>> attributes = new HashMap<>();
+        private String id;
 
-    /**
-     * Flag signalizing that any of the setters has been meaningfully used.
-     */
-    protected boolean updated;
+        @Override
+        public String getId() {
+            return this.id;
+        }
 
-    protected MapRoleEntity() {
-        this.id = null;
-        this.realmId = null;
+        @Override
+        public void setId(String id) {
+            if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+            this.id = id;
+            this.updated |= id != null;
+        }
+
     }
 
-    public MapRoleEntity(String id, String realmId) {
-        Objects.requireNonNull(realmId, "realmId");
-
-        this.id = id;
-        this.realmId = realmId;
+    default Boolean isComposite() {
+        return ! (getCompositeRoles() == null || getCompositeRoles().isEmpty());
     }
 
-    @Override
-    public String getId() {
-        return this.id;
-    }
+    Boolean isClientRole();
 
-    @Override
-    public boolean isUpdated() {
-        return this.updated;
-    }
+    String getRealmId();
 
-    public String getName() {
-        return name;
-    }
+    String getClientId();
 
-    public void setName(String name) {
-        this.updated |= ! Objects.equals(this.name, name);
-        this.name = name;
-    }
+    String getName();
 
-    public String getDescription() {
-        return description;
-    }
+    String getDescription();
 
-    public void setDescription(String description) {
-        this.updated |= ! Objects.equals(this.description, description);
-        this.description = description;
-    }
+    void setClientRole(Boolean clientRole);
 
-    public Map<String, List<String>> getAttributes() {
-        return attributes;
-    }
+    void setRealmId(String realmId);
 
-    public void setAttributes(Map<String, List<String>> attributes) {
-        this.updated |= ! Objects.equals(this.attributes, attributes);
-        this.attributes = attributes;
-    }
+    void setClientId(String clientId);
 
-    public void setAttribute(String name, List<String> values) {
-        this.updated |= ! Objects.equals(this.attributes.put(name, values), values);
-    }
+    void setName(String name);
 
-    public void removeAttribute(String name) {
-        this.updated |= this.attributes.remove(name) != null;
-    }
+    void setDescription(String description);
 
-    public String getRealmId() {
-        return realmId;
-    }
-
-    public void setRealmId(String realmId) {
-        this.updated |= ! Objects.equals(this.realmId, realmId);
-        this.realmId = realmId;
-    }
-
-    public boolean isClientRole() {
-        return clientRole;
-    }
-
-    public void setClientRole(boolean clientRole) {
-        this.updated |= ! Objects.equals(this.clientRole, clientRole);
-        this.clientRole = clientRole;
-    }
-
-    public boolean isComposite() {
-        return ! (compositeRoles == null || compositeRoles.isEmpty());
-    }
-
-    public Set<String> getCompositeRoles() {
-        return compositeRoles;
-    }
-
-    public String getClientId() {
-        return clientId;
-    }
-
-    public void setClientId(String clientId) {
-        this.updated |= ! Objects.equals(this.clientId, clientId);
-        this.clientId = clientId;
-    }
-
-    public void setCompositeRoles(Set<String> compositeRoles) {
-        this.updated |= ! Objects.equals(this.compositeRoles, compositeRoles);
-        this.compositeRoles.clear();
-        this.compositeRoles.addAll(compositeRoles);
-    }
-
-    public void addCompositeRole(String roleId) {
-        this.updated |= this.compositeRoles.add(roleId);
-    }
-
-    public void removeCompositeRole(String roleId) {
-        this.updated |= this.compositeRoles.remove(roleId);
-    }
+    Set<String> getCompositeRoles();
+    void setCompositeRoles(Set<String> compositeRoles);
+    void addCompositeRole(String roleId);
+    void removeCompositeRole(String roleId);
 }

@@ -114,7 +114,7 @@ public class HardcodedRoleStorageProvider implements RoleStorageProvider {
         }
 
         @Override
-        public Stream<RoleModel> getCompositesStream() {
+        public Stream<RoleModel> getCompositesStream(String search, Integer first, Integer max) {
             return Stream.empty();
         }
 

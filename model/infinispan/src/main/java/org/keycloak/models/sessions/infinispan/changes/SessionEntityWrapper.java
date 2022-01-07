@@ -112,7 +112,7 @@ public class SessionEntityWrapper<S extends SessionEntity> {
 
     public Integer getLocalMetadataNoteInt(String key) {
         String note = getLocalMetadataNote(key);
-        return note==null ? null : Integer.parseInt(note);
+        return note==null ? null : Integer.valueOf(note);
     }
 
     public void putLocalMetadataNoteInt(String key, int value) {

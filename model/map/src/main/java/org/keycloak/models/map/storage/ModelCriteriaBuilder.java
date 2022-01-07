@@ -51,7 +51,7 @@ import org.keycloak.storage.SearchableModelField;
  *
  * @author hmlnarik
  */
-public interface ModelCriteriaBuilder<M> {
+public interface ModelCriteriaBuilder<M, Self extends ModelCriteriaBuilder<M, Self>> {
 
     /**
      * The operators are very basic ones for this use case. In the real scenario,
@@ -117,7 +117,7 @@ public interface ModelCriteriaBuilder<M> {
      * @return
      * @throws CriterionNotSupported If the operator is not supported for the given field.
      */
-    ModelCriteriaBuilder<M> compare(SearchableModelField<M> modelField, Operator op, Object... value);
+    Self compare(SearchableModelField<? super M> modelField, Operator op, Object... value);
 
     /**
      * Creates and returns a new instance of {@code ModelCriteriaBuilder} that
@@ -136,7 +136,7 @@ public interface ModelCriteriaBuilder<M> {
      *
      * @throws CriterionNotSupported If the operator is not supported for the given field.
      */
-    ModelCriteriaBuilder<M> and(ModelCriteriaBuilder<M>... builders);
+    Self and(Self... builders);
 
     /**
      * Creates and returns a new instance of {@code ModelCriteriaBuilder} that
@@ -155,7 +155,7 @@ public interface ModelCriteriaBuilder<M> {
      *
      * @throws CriterionNotSupported If the operator is not supported for the given field.
      */
-    ModelCriteriaBuilder<M> or(ModelCriteriaBuilder<M>... builders);
+    Self or(Self... builders);
 
     /**
      * Creates and returns a new instance of {@code ModelCriteriaBuilder} that
@@ -168,20 +168,6 @@ public interface ModelCriteriaBuilder<M> {
      * @return
      * @throws CriterionNotSupported If the operator is not supported for the given field.
      */
-    ModelCriteriaBuilder<M> not(ModelCriteriaBuilder<M> builder);
-
-    /**
-     * Returns this object cast to the given class, or {@code null} if the class cannot be cast to that {@code clazz}.
-     * @param <T>
-     * @param clazz
-     * @return
-     */
-    default <T extends ModelCriteriaBuilder> T unwrap(Class<T> clazz) {
-        if (clazz.isInstance(this)) {
-            return clazz.cast(this);
-        } else {
-            return null;
-        }
-    }
+    Self not(Self builder);
 
 }

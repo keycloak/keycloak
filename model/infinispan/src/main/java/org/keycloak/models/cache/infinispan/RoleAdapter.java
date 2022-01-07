@@ -144,6 +144,13 @@ public class RoleAdapter implements RoleModel {
     }
 
     @Override
+    public Stream<RoleModel> getCompositesStream(String search, Integer first, Integer max) {
+        if (isUpdated()) return updated.getCompositesStream(search, first, max);
+
+        return cacheSession.getRoleDelegate().getRolesStream(realm, cached.getComposites().stream(), search, first, max);
+    }
+
+    @Override
     public boolean isClientRole() {
         return cached instanceof CachedClientRole;
     }

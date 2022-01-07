@@ -17,10 +17,11 @@
 package org.keycloak.validation;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
-import org.keycloak.protocol.oidc.grants.ciba.CibaClientValidation;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.grants.ciba.CibaClientValidation;
 import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
 import org.keycloak.protocol.oidc.utils.PairwiseSubMapperUtils;
 import org.keycloak.protocol.oidc.utils.PairwiseSubMapperValidator;
@@ -58,7 +59,22 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         BACKCHANNEL_LOGOUT_URL("backchannelLogoutUrl",
                 "Backchannel logout URL is not a valid URL", "backchannelLogoutUrlIsInvalid",
                 null, null,
-                "Backchannel logout URL uses an illegal scheme", "backchannelLogoutUrlIllegalSchemeError");
+                "Backchannel logout URL uses an illegal scheme", "backchannelLogoutUrlIllegalSchemeError"),
+
+        LOGO_URI(ClientModel.LOGO_URI,
+                "Logo URL is not a valid URL", "logoURLInvalid",
+                null, null,
+                "Logo URL uses an illegal scheme", "logoURLIllegalSchemeError"),
+
+        POLICY_URI(ClientModel.POLICY_URI,
+                "Policy URL is not a valid URL", "policyURLInvalid",
+                null, null,
+                "Policy URL uses an illegal scheme", "policyURLIllegalSchemeError"),
+
+        TOS_URI(ClientModel.TOS_URI,
+                "Terms of service URL is not a valid URL", "tosURLInvalid",
+                null, null,
+                "Terms of service URL uses an illegal scheme", "tosURLIllegalSchemeError");
 
         private String fieldId;
 
@@ -151,6 +167,9 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         client.getRedirectUris().stream()
                 .map(u -> ResolveRelative.resolveRelativeUri(authServerUrl, authServerUrl, rootUrl, u))
                 .forEach(u -> checkUri(FieldMessages.REDIRECT_URIS, u, context, false, true));
+        checkUriLogo(FieldMessages.LOGO_URI, client.getAttribute(ClientModel.LOGO_URI), context);
+        checkUri(FieldMessages.POLICY_URI, client.getAttribute(ClientModel.POLICY_URI), context, true, false);
+        checkUri(FieldMessages.TOS_URI, client.getAttribute(ClientModel.TOS_URI), context, true, false);
     }
 
     private void checkUri(FieldMessages field, String url, ValidationContext<ClientModel> context, boolean checkValidUrl, boolean checkFragment) {
@@ -181,6 +200,24 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
             }
         }
         catch (MalformedURLException | IllegalArgumentException | URISyntaxException e) {
+            context.addError(field.getFieldId(), field.getInvalid(), field.getInvalidKey());
+        }
+    }
+
+    private void checkUriLogo(FieldMessages field, String url, ValidationContext<ClientModel> context) {
+        if (url == null || url.isEmpty()) {
+            return;
+        }
+
+        try {
+            URI uri = new URI(url);
+
+            if (uri.getScheme() != null &&  uri.getScheme().equals("javascript")) {
+                context.addError(field.getFieldId(), field.getScheme(), field.getSchemeKey());
+            }
+
+        }
+        catch (URISyntaxException e) {
             context.addError(field.getFieldId(), field.getInvalid(), field.getInvalidKey());
         }
     }

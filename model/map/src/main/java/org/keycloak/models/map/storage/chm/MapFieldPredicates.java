@@ -66,7 +66,9 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
+import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.Optional;
 import static org.keycloak.models.UserSessionModel.CORRESPONDING_SESSION_ID;
 
 /**
@@ -104,6 +106,7 @@ public class MapFieldPredicates {
         put(CLIENT_PREDICATES, ClientModel.SearchableFields.CLIENT_ID,            MapClientEntity::getClientId);
         put(CLIENT_PREDICATES, ClientModel.SearchableFields.SCOPE_MAPPING_ROLE,   MapFieldPredicates::checkScopeMappingRole);
         put(CLIENT_PREDICATES, ClientModel.SearchableFields.ENABLED,              MapClientEntity::isEnabled);
+        put(CLIENT_PREDICATES, ClientModel.SearchableFields.ALWAYS_DISPLAY_IN_CONSOLE, MapClientEntity::isAlwaysDisplayInConsole);
         put(CLIENT_PREDICATES, ClientModel.SearchableFields.ATTRIBUTE,            MapFieldPredicates::checkClientAttributes);
 
         put(CLIENT_SCOPE_PREDICATES, ClientScopeModel.SearchableFields.REALM_ID,  MapClientScopeEntity::getRealmId);
@@ -261,14 +264,14 @@ public class MapFieldPredicates {
     private static MapModelCriteriaBuilder<Object, MapClientEntity, ClientModel> checkScopeMappingRole(MapModelCriteriaBuilder<Object, MapClientEntity, ClientModel> mcb, Operator op, Object[] values) {
         String roleIdS = ensureEqSingleValue(ClientModel.SearchableFields.SCOPE_MAPPING_ROLE, "role_id", op, values);
         Function<MapClientEntity, ?> getter;
-        getter = ce -> ce.getScopeMappings().contains(roleIdS);
+        getter = ce -> Optional.ofNullable(ce.getScopeMappings()).orElse(Collections.emptyList()).contains(roleIdS);
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
     }
 
     private static MapModelCriteriaBuilder<Object, MapGroupEntity, GroupModel> checkGrantedGroupRole(MapModelCriteriaBuilder<Object, MapGroupEntity, GroupModel> mcb, Operator op, Object[] values) {
         String roleIdS = ensureEqSingleValue(GroupModel.SearchableFields.ASSIGNED_ROLE, "role_id", op, values);
         Function<MapGroupEntity, ?> getter;
-        getter = ge -> ge.getGrantedRoles().contains(roleIdS);
+        getter = ge -> Optional.ofNullable(ge.getGrantedRoles()).orElse(Collections.emptySet()).contains(roleIdS);
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
     }
 
@@ -525,7 +528,7 @@ public class MapFieldPredicates {
     }
 
     @SuppressWarnings("unchecked")
-    public static <K, V extends AbstractEntity, M> Map<SearchableModelField<M>, UpdatePredicatesFunc<K, V, M>> getPredicates(Class<M> clazz) {
+    public static <K, V extends AbstractEntity, M> Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> getPredicates(Class<M> clazz) {
         return PREDICATES.get(clazz);
     }
 }

@@ -27,23 +27,24 @@ import org.keycloak.models.ClientProvider;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer;
 import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
 import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.junit.Assert.assertThat;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-@AuthServerContainerExclude({REMOTE, QUARKUS})
+@AuthServerContainerExclude(REMOTE)
 public class ClientSearchTest extends AbstractClientTest {
     @ArquillianResource
     protected ContainerController controller;
@@ -151,6 +152,15 @@ public class ClientSearchTest extends AbstractClientTest {
             String s = "\\\"" + String.join("\\\",\\\"", searchableAttributes) + "\\\"";
             executeCli("/subsystem=keycloak-server/spi=client:add()",
                     "/subsystem=keycloak-server/spi=client/provider=jpa/:add(properties={searchableAttributes => \"[" + s + "]\"},enabled=true)");
+        } else if(suiteContext.getAuthServerInfo().isQuarkus()) {
+            searchableAttributes = Arrays.stream(searchableAttributes)
+                    .map(a -> a.replace(" ", "\\ ").replace("\"", "\\\\\\\""))
+                    .toArray(String[]::new);
+            String s = String.join(",",searchableAttributes);
+            controller.stop(suiteContext.getAuthServerInfo().getQualifier());
+            KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer)suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
+            container.setAdditionalBuildArgs(Collections.singletonList("--spi-client-jpa-searchable-attributes=\""+ s + "\""));
+            controller.start(suiteContext.getAuthServerInfo().getQualifier());
         } else {
             throw new RuntimeException("Don't know how to config");
         }
@@ -167,6 +177,10 @@ public class ClientSearchTest extends AbstractClientTest {
             controller.start(suiteContext.getAuthServerInfo().getQualifier());
         } else if (suiteContext.getAuthServerInfo().isJBossBased()) {
             executeCli("/subsystem=keycloak-server/spi=client:remove");
+        } else if(suiteContext.getAuthServerInfo().isQuarkus()) {
+            KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer)suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
+            container.setAdditionalBuildArgs(Collections.emptyList());
+            container.restartServer();
         } else {
             throw new RuntimeException("Don't know how to config");
         }

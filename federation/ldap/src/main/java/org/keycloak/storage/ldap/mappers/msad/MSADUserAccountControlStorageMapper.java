@@ -276,9 +276,6 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
 
         @Override
         public void addRequiredAction(String action) {
-            // Always update DB
-            super.addRequiredAction(action);
-
             if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE && RequiredAction.UPDATE_PASSWORD.toString().equals(action)) {
                 MSADUserAccountControlStorageMapper.logger.debugf("Going to propagate required action UPDATE_PASSWORD to MSAD for ldap user '%s'. Keycloak user '%s' in realm '%s'",
                         ldapUser.getDn().toString(), getUsername(), getRealmName());
@@ -289,6 +286,10 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
                 ldapUser.setSingleAttribute(LDAPConstants.PWD_LAST_SET, "0");
 
                 markUpdatedRequiredActionInTransaction(action);
+            } else {
+                // Update DB
+                MSADUserAccountControlStorageMapper.logger.debugf("Going to add required action '%s' of user '%s' in realm '%s' to the DB", action, getUsername(), getRealmName());
+                super.addRequiredAction(action);
             }
         }
 

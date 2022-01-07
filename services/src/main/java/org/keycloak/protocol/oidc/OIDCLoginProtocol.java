@@ -31,6 +31,7 @@ import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -40,7 +41,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
-import org.keycloak.protocol.oidc.grants.device.DeviceGrantType;
 import org.keycloak.protocol.oidc.utils.OIDCRedirectUriBuilder;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
@@ -338,8 +338,15 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
     @Override
     public Response frontchannelLogout(UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
-        // todo oidc redirect support
-        throw new RuntimeException("NOT IMPLEMENTED");
+        if (clientSession != null) {
+            ClientModel client = clientSession.getClient();
+            if (OIDCAdvancedConfigWrapper.fromClientModel(client).isFrontChannelLogoutEnabled()) {
+                FrontChannelLogoutHandler logoutInfo = FrontChannelLogoutHandler.currentOrCreate(session, clientSession);
+                logoutInfo.addClient(client);
+            }
+            clientSession.setAction(AuthenticationSessionModel.Action.LOGGED_OUT.name());
+        }
+        return null;
     }
 
     @Override
@@ -351,7 +358,10 @@ public class OIDCLoginProtocol implements LoginProtocol {
             event.detail(Details.REDIRECT_URI, redirectUri);
         }
         event.user(userSession.getUser()).session(userSession).success();
-
+        FrontChannelLogoutHandler frontChannelLogoutHandler = FrontChannelLogoutHandler.current(session);
+        if (frontChannelLogoutHandler != null) {
+            return frontChannelLogoutHandler.renderLogoutPage(redirectUri);
+        }
         if (redirectUri != null) {
             UriBuilder uriBuilder = UriBuilder.fromUri(redirectUri);
             if (state != null)

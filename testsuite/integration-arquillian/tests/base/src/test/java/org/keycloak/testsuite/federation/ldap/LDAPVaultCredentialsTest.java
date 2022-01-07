@@ -9,12 +9,13 @@ import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import java.util.Map;
 
 import static org.keycloak.models.LDAPConstants.BIND_CREDENTIAL;
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
  * @author mhajas
  */
 @EnableVault
-@AuthServerContainerExclude(value = {AuthServerContainerExclude.AuthServer.QUARKUS, AuthServerContainerExclude.AuthServer.REMOTE}, details = "java.io.NotSerializableException: com.sun.jndi.ldap.LdapCtx")
+@AuthServerContainerExclude(value = REMOTE, details = "java.io.NotSerializableException: com.sun.jndi.ldap.LdapCtx")
 public class LDAPVaultCredentialsTest extends LDAPSyncTest {
 
     private static final String VAULT_EXPRESSION = "${vault.ldap_bindCredential}";

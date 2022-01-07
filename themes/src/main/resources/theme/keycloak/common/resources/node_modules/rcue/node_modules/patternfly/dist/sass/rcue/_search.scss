@@ -1,0 +1,64 @@
+//
+// Search
+// --------------------------------------------------
+
+.search-pf {
+  &.has-button {
+    border-collapse: separate;
+    display: table;
+    .form-group {
+      display: table-cell;
+      width: 100%;
+      .btn {
+        @include box-shadow(none);
+        float: left;
+        margin-left: -1px;
+        &.btn-lg {
+          font-size: ($font-size-large + .5); // to make button height consistent across browsers!
+        }
+        &.btn-sm {
+          font-size: ($font-size-small - .3); // to make button height consistent across browsers!
+        }
+      }
+      .form-control {
+        float: left;
+      }
+    }
+  }
+  .has-clear {
+    .clear {
+      background: rgba($color-pf-white, (0/100)); // to make the whole button clickable in IE9+
+      border: 0;
+      height: ($input-height-base - 1);
+      line-height: 1;
+      padding: 0;
+      position: absolute;
+      right: 1px;
+      top: 1px;
+      width: 28px;
+      &:focus {
+        outline: none;
+      }
+    }
+    .form-control {
+      padding-right: 30px;
+      &::-ms-clear {
+        display: none;
+      }
+    }
+    .input-lg + .clear {
+      height: ($input-height-large - 2);
+      width: 28px;
+    }
+    .input-sm + .clear {
+      height: ($input-height-small - 2);
+      width: 28px;
+      span {
+        font-size: ($font-size-base - 2);
+      }
+    }
+    .search-pf-input-group {
+      position: relative;
+    }
+  }
+}

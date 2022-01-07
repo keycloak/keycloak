@@ -62,6 +62,8 @@ public class Messages {
 
     public static final String MISSING_TOTP_DEVICE_NAME = "missingTotpDeviceNameMessage";
 
+    public static final String COOKIE_NOT_FOUND = "cookieNotFoundMessage";
+
     public static final String NOTMATCH_PASSWORD = "notMatchPasswordMessage";
 
     public static final String INVALID_PASSWORD_EXISTING = "invalidPasswordExistingMessage";
@@ -226,6 +228,8 @@ public class Messages {
     public static final String INVALID_PARAMETER = "invalidParameterMessage";
 
     public static final String IDENTITY_PROVIDER_LOGIN_FAILURE = "identityProviderLoginFailure";
+
+    public static final String INSUFFICIENT_LEVEL_OF_AUTHENTICATION = "insufficientLevelOfAuthentication";
 
     public static final String FAILED_LOGOUT = "failedLogout";
 

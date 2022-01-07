@@ -72,4 +72,29 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         rep.setRememberMe(rememberMe);
         return this;
     }
+
+    public RealmAttributeUpdater setRegistrationEmailAsUsername(Boolean value) {
+        rep.setRegistrationEmailAsUsername(value);
+        return this;
+    }
+
+    public RealmAttributeUpdater setDuplicateEmailsAllowed(Boolean value) {
+        rep.setDuplicateEmailsAllowed(value);
+        return this;
+    }
+
+    public RealmAttributeUpdater setPasswordPolicy(String policy) {
+        rep.setPasswordPolicy(policy);
+        return this;
+    }
+
+    public RealmAttributeUpdater setVerifyEmail(Boolean value) {
+        rep.setVerifyEmail(value);
+        return this;
+    }
+
+    public RealmAttributeUpdater setBrowserFlow(String browserFlow) {
+        rep.setBrowserFlow(browserFlow);
+        return this;
+    }
 }

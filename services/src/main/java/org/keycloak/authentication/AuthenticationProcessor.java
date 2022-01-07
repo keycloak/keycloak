@@ -990,7 +990,12 @@ public class AuthenticationProcessor {
         Response challenge = authenticationFlow.processFlow();
         if (challenge != null) return challenge;
         if (authenticationSession.getAuthenticatedUser() == null) {
-            throw new AuthenticationFlowException(AuthenticationFlowError.UNKNOWN_USER);
+            if (this.forwardedErrorMessageStore.getForwardedMessage() != null) {
+                LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authenticationSession);
+                forms.addError(this.forwardedErrorMessageStore.getForwardedMessage());
+                return forms.createErrorPage(Response.Status.BAD_REQUEST);
+            } else
+                throw new AuthenticationFlowException(AuthenticationFlowError.UNKNOWN_USER);
         }
         if (!authenticationFlow.isSuccessful()) {
             throw new AuthenticationFlowException(authenticationFlow.getFlowExceptions());
@@ -1037,7 +1042,7 @@ public class AuthenticationProcessor {
                 if (!authSession.getAuthenticatedUser().equals(userSession.getUser())) {
                     event.detail(Details.EXISTING_USER, userSession.getUser().getId());
                     event.error(Errors.DIFFERENT_USER_AUTHENTICATED);
-                    throw new ErrorPageException(session, authSession, Response.Status.INTERNAL_SERVER_ERROR, Messages.DIFFERENT_USER_AUTHENTICATED, userSession.getUser().getUsername());
+                    throw new ErrorPageException(session, authSession, Response.Status.BAD_REQUEST, Messages.DIFFERENT_USER_AUTHENTICATED, userSession.getUser().getUsername());
                 }
             }
             userSession.setState(UserSessionModel.State.LOGGED_IN);

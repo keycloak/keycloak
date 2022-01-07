@@ -16,10 +16,15 @@
  */
 package org.keycloak.testsuite.model.infinispan;
 
+import org.hamcrest.Matchers;
+import org.infinispan.Cache;
+import org.junit.Assume;
+import org.junit.Test;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -31,11 +36,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.hamcrest.Matchers;
-import org.infinispan.Cache;
-import org.junit.Assume;
-import org.junit.Test;
+
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assume.assumeThat;
@@ -65,7 +68,9 @@ public class CacheExpirationTest extends KeycloakModelTest {
 
         assumeThat("jmap output format unsupported", getNumberOfInstancesOfClass(AuthenticationSessionAuthNoteUpdateEvent.class), notNullValue());
 
-        assertThat(getNumberOfInstancesOfClass(AuthenticationSessionAuthNoteUpdateEvent.class), is(2));
+        // Infinispan server is decoding the client request before processing the request at the cache level,
+        // therefore there are sometimes three instances of AuthenticationSessionAuthNoteUpdateEvent class in the memory
+        assertThat(getNumberOfInstancesOfClass(AuthenticationSessionAuthNoteUpdateEvent.class), greaterThanOrEqualTo(2));
 
         AtomicInteger maxCountOfInstances = new AtomicInteger();
         AtomicInteger minCountOfInstances = new AtomicInteger(100);
@@ -80,6 +85,17 @@ public class CacheExpirationTest extends KeycloakModelTest {
                 cache.keySet().forEach(s -> {});
             });
             log.debug("Cluster joined");
+
+            // access the items in the local cache in the different site (site-2) in order to fetch them from the remote cache
+            String site = CONFIG.scope("connectionsInfinispan", "default").get("siteName");
+            if ("site-2".equals(site)) {
+                inComittedTransaction(session -> {
+                    InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
+                    Cache<String, Object> cache = provider.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
+                    cache.get("1-2");
+                    cache.get("1-2-3");
+                });
+            }
             int c = getNumberOfInstancesOfClass(AuthenticationSessionAuthNoteUpdateEvent.class);
             maxCountOfInstances.getAndAccumulate(c, Integer::max);
             assumeThat("Seems we're running on a way too slow a computer", System.currentTimeMillis() - putTime.get(), Matchers.lessThan(20000L));

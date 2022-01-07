@@ -25,17 +25,25 @@ import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ADMIN_E
 import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ADMIN_ONLY;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.Profile;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.representations.account.UserProfileAttributeMetadata;
 import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.forms.VerifyProfileTest;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.EventAuditingAttributeChangeListener;
 
 /**
  * 
@@ -162,6 +170,78 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
         assertNotNull("Missing validators for attribute " + uam.getName(), uam.getValidators());
         assertTrue("Missing validtor "+validatorId+" for attribute " + uam.getName(), uam.getValidators().containsKey(validatorId));
         return uam.getValidators().get(validatorId);
+    }
+    
+    @Test
+    public void testUpdateProfileEventWithAdditionalAttributesAuditing() throws IOException {
+        
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"attr1\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"attr2\"," + PERMISSIONS_ALL + "}"
+                + "]}");
+        
+        UserRepresentation user = getUser();
+        String originalUsername = user.getUsername();
+        String originalFirstName = user.getFirstName();
+        String originalLastName = user.getLastName();
+        String originalEmail = user.getEmail();
+        Map<String, List<String>> originalAttributes = new HashMap<>(user.getAttributes());
+
+        try {
+            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+
+            realmRep.setRegistrationEmailAsUsername(false);
+            adminClient.realm("test").update(realmRep);
+
+            user.setEmail("bobby@localhost");
+            user.setFirstName("Homer");
+            user.setLastName("Simpsons");
+            user.getAttributes().put("attr1", Collections.singletonList("val1"));
+            user.getAttributes().put("attr2", Collections.singletonList("val2"));
+
+            user = updateAndGet(user);
+
+            //skip login to the REST API event
+            events.poll();
+            events.expectAccount(EventType.UPDATE_PROFILE).user(user.getId())
+                .detail(Details.CONTEXT, UserProfileContext.ACCOUNT.name())
+                .detail(Details.PREVIOUS_EMAIL, originalEmail)
+                .detail(Details.UPDATED_EMAIL, "bobby@localhost")
+                .detail(Details.PREVIOUS_FIRST_NAME, originalFirstName)
+                .detail(Details.PREVIOUS_LAST_NAME, originalLastName)
+                .detail(Details.UPDATED_FIRST_NAME, "Homer")
+                .detail(Details.UPDATED_LAST_NAME, "Simpsons")
+                .detail(Details.PREF_UPDATED+"attr2", "val2")
+                .assertEvent();
+            events.assertEmpty();
+            
+        } finally {
+            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            realmRep.setEditUsernameAllowed(true);
+            adminClient.realm("test").update(realmRep);
+
+            user.setUsername(originalUsername);
+            user.setFirstName(originalFirstName);
+            user.setLastName(originalLastName);
+            user.setEmail(originalEmail);
+            user.setAttributes(originalAttributes);
+            SimpleHttp.Response response = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
+            System.out.println(response.asString());
+            assertEquals(204, response.getStatus());
+        }
+    }
+    
+    @Test
+    public void testUpdateProfileEvent() throws IOException {
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"attr1\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"attr2\"," + PERMISSIONS_ALL + "}"
+                + "]}");
+        super.testUpdateProfileEvent();
     }
     
     @Test

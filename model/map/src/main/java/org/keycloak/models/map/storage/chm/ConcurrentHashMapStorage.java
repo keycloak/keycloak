@@ -20,11 +20,11 @@ import org.keycloak.models.map.common.StringKeyConvertor;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.common.AbstractEntity;
-import org.keycloak.models.map.common.Serialization;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.QueryParameters;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.storage.SearchableModelField;
 
 import java.util.Comparator;
@@ -42,19 +42,26 @@ import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 /**
  *
+ * It contains basic object CRUD operations as well as bulk {@link #read(org.keycloak.models.map.storage.QueryParameters)}
+ * and bulk {@link #delete(org.keycloak.models.map.storage.QueryParameters)} operations,
+ * and operation for determining the number of the objects satisfying given criteria
+ * ({@link #getCount(org.keycloak.models.map.storage.QueryParameters)}).
+ *
  * @author hmlnarik
  */
-public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEntity, M> implements MapStorage<V, M> {
+public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEntity, M> implements MapStorage<V, M>, ConcurrentHashMapCrudOperations<V, M> {
 
-    private final ConcurrentMap<K, V> store = new ConcurrentHashMap<>();
+    protected final ConcurrentMap<K, V> store = new ConcurrentHashMap<>();
 
-    private final Map<SearchableModelField<M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates;
-    private final StringKeyConvertor<K> keyConvertor;
+    protected final Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates;
+    protected final StringKeyConvertor<K> keyConvertor;
+    protected final DeepCloner cloner;
 
     @SuppressWarnings("unchecked")
-    public ConcurrentHashMapStorage(Class<M> modelClass, StringKeyConvertor<K> keyConvertor) {
+    public ConcurrentHashMapStorage(Class<M> modelClass, StringKeyConvertor<K> keyConvertor, DeepCloner cloner) {
         this.fieldPredicates = MapFieldPredicates.getPredicates(modelClass);
         this.keyConvertor = keyConvertor;
+        this.cloner = cloner;
     }
 
     @Override
@@ -62,7 +69,7 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
         K key = keyConvertor.fromStringSafe(value.getId());
         if (key == null) {
             key = keyConvertor.yieldNewUniqueKey();
-            value = Serialization.from(value, keyConvertor.keyToString(key));
+            value = cloner.from(keyConvertor.keyToString(key), value);
         }
         store.putIfAbsent(key, value);
         return value;
@@ -89,7 +96,7 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
 
     @Override
     public long delete(QueryParameters<M> queryParameters) {
-        ModelCriteriaBuilder<M> criteria = queryParameters.getModelCriteriaBuilder();
+        DefaultModelCriteria<M> criteria = queryParameters.getModelCriteriaBuilder();
 
         if (criteria == null) {
             long res = store.size();
@@ -97,12 +104,10 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
             return res;
         }
 
-        MapModelCriteriaBuilder<K, V, M> b = criteria.unwrap(MapModelCriteriaBuilder.class);
-        if (b == null) {
-            throw new IllegalStateException("Incompatible class: " + criteria.getClass());
-        }
-        Predicate<? super K> keyFilter = b.getKeyFilter();
-        Predicate<? super V> entityFilter = b.getEntityFilter();
+        @SuppressWarnings("unchecked")
+        MapModelCriteriaBuilder<K,V,M> mcb = criteria.flashToModelCriteriaBuilder(createCriteriaBuilder());
+        Predicate<? super K> keyFilter = mcb.getKeyFilter();
+        Predicate<? super V> entityFilter = mcb.getEntityFilter();
         Stream<Entry<K, V>> storeStream = store.entrySet().stream();
         final AtomicLong res = new AtomicLong(0);
 
@@ -121,15 +126,14 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
     }
 
     @Override
-    public ModelCriteriaBuilder<M> createCriteriaBuilder() {
-        return new MapModelCriteriaBuilder<>(keyConvertor, fieldPredicates);
-    }
-
-    @Override
     @SuppressWarnings("unchecked")
     public MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session) {
         MapKeycloakTransaction<V, M> sessionTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
-        return sessionTransaction == null ? new ConcurrentHashMapKeycloakTransaction<>(this, keyConvertor) : sessionTransaction;
+        return sessionTransaction == null ? new ConcurrentHashMapKeycloakTransaction<>(this, keyConvertor, cloner, fieldPredicates) : sessionTransaction;
+    }
+
+    public MapModelCriteriaBuilder<K, V, M> createCriteriaBuilder() {
+        return new MapModelCriteriaBuilder<>(keyConvertor, fieldPredicates);
     }
 
     public StringKeyConvertor<K> getKeyConvertor() {
@@ -138,22 +142,25 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
 
     @Override
     public Stream<V> read(QueryParameters<M> queryParameters) {
-        ModelCriteriaBuilder<M> criteria = queryParameters.getModelCriteriaBuilder();
+        DefaultModelCriteria<M> criteria = queryParameters.getModelCriteriaBuilder();
 
         if (criteria == null) {
             return Stream.empty();
         }
+
+        MapModelCriteriaBuilder<K,V,M> mcb = criteria.flashToModelCriteriaBuilder(createCriteriaBuilder());
         Stream<Entry<K, V>> stream = store.entrySet().stream();
 
-        MapModelCriteriaBuilder<K, V, M> b = criteria.unwrap(MapModelCriteriaBuilder.class);
-        if (b == null) {
-            throw new IllegalStateException("Incompatible class: " + criteria.getClass());
-        }
-        Predicate<? super K> keyFilter = b.getKeyFilter();
-        Predicate<? super V> entityFilter = b.getEntityFilter();
-        stream = stream.filter(me -> keyFilter.test(me.getKey()) && entityFilter.test(me.getValue()));
+        Predicate<? super K> keyFilter = mcb.getKeyFilter();
+        Predicate<? super V> entityFilter = mcb.getEntityFilter();
+        Stream<V> valueStream = stream.filter(me -> keyFilter.test(me.getKey()) && entityFilter.test(me.getValue()))
+                .map(Map.Entry::getValue);
 
-        return stream.map(Map.Entry::getValue);
+        if (!queryParameters.getOrderBy().isEmpty()) {
+            valueStream = valueStream.sorted(MapFieldPredicates.getComparator(queryParameters.getOrderBy().stream()));
+        }
+
+        return paginatedStream(valueStream, queryParameters.getOffset(), queryParameters.getLimit());
     }
 
     @Override

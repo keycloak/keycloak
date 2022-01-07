@@ -52,6 +52,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.AccountRestApiVersion;
 import org.keycloak.common.util.StringPropertyReplacer;
+import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
@@ -85,6 +86,7 @@ import org.keycloak.userprofile.Attributes;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.userprofile.EventAuditingAttributeChangeListener;
 import org.keycloak.userprofile.ValidationException;
 import org.keycloak.userprofile.ValidationException.Error;
 import org.keycloak.validate.Validators;
@@ -199,14 +201,14 @@ public class AccountRestService {
     public Response updateAccount(UserRepresentation rep) {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
 
-        event.event(EventType.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser());
+        event.event(EventType.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser()).detail(Details.CONTEXT, UserProfileContext.ACCOUNT.name());
 
         UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
         UserProfile profile = profileProvider.create(UserProfileContext.ACCOUNT, rep.toAttributes(), auth.getUser());
 
         try {
 
-            profile.update();
+            profile.update(new EventAuditingAttributeChangeListener(profile, event));
 
             event.success();
 
@@ -285,6 +287,9 @@ public class AccountRestService {
         UserConsentModel consentModel = consents.get(model.getClientId());
         if(consentModel != null) {
             representation.setConsent(modelToRepresentation(consentModel));
+            representation.setLogoUri(model.getAttribute(ClientModel.LOGO_URI));
+            representation.setPolicyUri(model.getAttribute(ClientModel.POLICY_URI));
+            representation.setTosUri(model.getAttribute(ClientModel.TOS_URI));
         }
         return representation;
     }

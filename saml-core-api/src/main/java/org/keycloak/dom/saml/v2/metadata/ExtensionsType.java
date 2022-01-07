@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.keycloak.dom.saml.v2.mdattr.EntityAttributes;
+import org.keycloak.dom.saml.v2.mdui.UIInfoType;
 import org.w3c.dom.Element;
 
 /**
@@ -106,6 +107,15 @@ public class ExtensionsType {
         for (Object o : this.any) {
             if (o instanceof EntityAttributes) {
                 return (EntityAttributes) o;
+            }
+        }
+        return null;
+    }
+
+    public UIInfoType getUIInfo() {
+        for (Object o : this.any) {
+            if (o instanceof UIInfoType) {
+                return (UIInfoType) o;
             }
         }
         return null;

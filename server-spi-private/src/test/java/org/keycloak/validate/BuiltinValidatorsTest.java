@@ -14,6 +14,7 @@ import org.junit.Test;
 import org.keycloak.validate.validators.DoubleValidator;
 import org.keycloak.validate.validators.IntegerValidator;
 import org.keycloak.validate.validators.LengthValidator;
+import org.keycloak.validate.validators.OptionsValidator;
 import org.keycloak.validate.validators.PatternValidator;
 import org.keycloak.validate.validators.UriValidator;
 
@@ -24,7 +25,7 @@ public class BuiltinValidatorsTest {
     private static final ValidatorConfig valConfigIgnoreEmptyValues = ValidatorConfig.builder().config(AbstractSimpleValidator.IGNORE_EMPTY_VALUE, true).build();
 
     @Test
-    public void validateLength() {
+    public void testLengthValidator() {
 
         Validator validator = Validators.lengthValidator();
 
@@ -82,7 +83,7 @@ public class BuiltinValidatorsTest {
     }
 
     @Test
-    public void validateLength_ConfigValidation() {
+    public void testLengthValidator_ConfigValidation() {
 
         // invalid min and max config values
         ValidatorConfig config = new ValidatorConfig(ImmutableMap.of(LengthValidator.KEY_MIN, new Object(), LengthValidator.KEY_MAX, "invalid"));
@@ -118,7 +119,7 @@ public class BuiltinValidatorsTest {
     }
 
     @Test
-    public void validateEmail() {
+    public void testEmailValidator() {
         // this also validates StringFormatValidatorBase for simple values
 
         Validator validator = Validators.emailValidator();
@@ -140,7 +141,7 @@ public class BuiltinValidatorsTest {
     }
 
     @Test
-    public void validateStringFormatValidatorBaseForCollections() {
+    public void testAbstractSimpleValidatorSupportForCollections() {
 
         Validator validator = Validators.emailValidator();
 
@@ -164,7 +165,7 @@ public class BuiltinValidatorsTest {
     }
 
     @Test
-    public void validateNotBlank() {
+    public void testNotBlankValidator() {
 
         Validator validator = Validators.notBlankValidator();
 
@@ -187,7 +188,7 @@ public class BuiltinValidatorsTest {
     }
 
     @Test
-    public void validateNotEmpty() {
+    public void testNotEmptyValidator() {
 
         Validator validator = Validators.notEmptyValidator();
 
@@ -205,7 +206,7 @@ public class BuiltinValidatorsTest {
     }
 
     @Test
-    public void validateDoubleNumber() {
+    public void testDoubleValidator() {
 
         Validator validator = Validators.doubleValidator();
 
@@ -271,7 +272,7 @@ public class BuiltinValidatorsTest {
     }
 
     @Test
-    public void validateDoubleNumber_ConfigValidation() {
+    public void testDoubleValidator_ConfigValidation() {
 
         // invalid min and max config values
         ValidatorConfig config = new ValidatorConfig(ImmutableMap.of(DoubleValidator.KEY_MIN, new Object(), DoubleValidator.KEY_MAX, "invalid"));
@@ -307,7 +308,7 @@ public class BuiltinValidatorsTest {
     }
 
     @Test
-    public void validateIntegerNumber() {
+    public void testIntegerValidator() {
         Validator validator = Validators.integerValidator();
 
         // null value and empty String
@@ -373,7 +374,7 @@ public class BuiltinValidatorsTest {
     }
 
     @Test
-    public void validateIntegerNumber_ConfigValidation() {
+    public void testIntegerValidator_ConfigValidation() {
 
         // invalid min and max config values
         ValidatorConfig config = new ValidatorConfig(ImmutableMap.of(IntegerValidator.KEY_MIN, new Object(), IntegerValidator.KEY_MAX, "invalid"));
@@ -409,7 +410,7 @@ public class BuiltinValidatorsTest {
     }
 
     @Test
-    public void validatePattern() {
+    public void testPatternValidator() {
 
         Validator validator = Validators.patternValidator();
 
@@ -440,7 +441,7 @@ public class BuiltinValidatorsTest {
     }
 
     @Test
-    public void validateUri() throws Exception {
+    public void testUriValidator() throws Exception {
 
         Validator validator = Validators.uriValidator();
 
@@ -462,5 +463,58 @@ public class BuiltinValidatorsTest {
 
         Assert.assertFalse(Validators.uriValidator().validateUri(new URI("http://customurl"), Collections.singleton("https"), true, true));
     }
+    
+    @Test
+    public void testOptionsValidator(){
+        Validator validator = Validators.optionsValidator();
+        
+        // options not configured - always invalid
+        Assert.assertFalse(validator.validate(null, "test", ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, null).build()).isValid());
+        Assert.assertFalse(validator.validate("", "test", ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, null).build()).isValid());
+        Assert.assertFalse(validator.validate(" ", "test", ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, null).build()).isValid());
+        Assert.assertFalse(validator.validate("s", "test", ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, null).build()).isValid());
+        
+        // options not configured but empty and blanks ignored, others invalid
+        Assert.assertTrue(validator.validate(null, "test", ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, null).config(valConfigIgnoreEmptyValues).build()).isValid());
+        Assert.assertTrue(validator.validate("", "test", ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, null).config(valConfigIgnoreEmptyValues).build()).isValid());
+        Assert.assertFalse(validator.validate(" ", "test", ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, null).config(valConfigIgnoreEmptyValues).build()).isValid());
+        Assert.assertFalse(validator.validate("s", "test", ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, null).config(valConfigIgnoreEmptyValues).build()).isValid());
+        
+        List<String> options = Arrays.asList("opt1", "opt2");
+        
+        // options configured
+        Assert.assertFalse(validator.validate(null, "test", ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, options).build()).isValid());
+        Assert.assertFalse(validator.validate("", "test", ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, options).build()).isValid());
+        Assert.assertFalse(validator.validate(" ", "test", ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, options).build()).isValid());
+        Assert.assertFalse("must be case sensitive", validator.validate("Opt1", "test", ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, options).build()).isValid());
+        Assert.assertTrue(validator.validate("opt1", "test", ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, options).build()).isValid());
+        Assert.assertTrue(validator.validate("opt2", "test", ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, options).build()).isValid());
+        Assert.assertFalse("trim not expected", validator.validate("opt2 ", "test", ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, options).build()).isValid());
+        Assert.assertFalse("trim not expected", validator.validate(" opt2", "test", ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, options).build()).isValid());
+        
+        // options configured - empty and blanks ignored
+        Assert.assertTrue(validator.validate(null, "test", ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, options).config(valConfigIgnoreEmptyValues).build()).isValid());
+        Assert.assertTrue(validator.validate("", "test", ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, options).config(valConfigIgnoreEmptyValues).build()).isValid());
+        Assert.assertFalse(validator.validate(" ", "test", ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, options).config(valConfigIgnoreEmptyValues).build()).isValid());
+        Assert.assertFalse("must be case sensitive", validator.validate("Opt1", "test", ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, options).config(valConfigIgnoreEmptyValues).build()).isValid());
+        Assert.assertTrue(validator.validate("opt1", "test", ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, options).config(valConfigIgnoreEmptyValues).build()).isValid());
+        Assert.assertTrue(validator.validate("opt2", "test", ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, options).config(valConfigIgnoreEmptyValues).build()).isValid());
+        Assert.assertFalse("trim not expected", validator.validate(" opt2", "test", ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, options).config(valConfigIgnoreEmptyValues).build()).isValid());
+        Assert.assertFalse("trim not expected", validator.validate("opt2 ", "test", ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, options).config(valConfigIgnoreEmptyValues).build()).isValid());
+    }
 
+    @Test
+    public void testOptionsValidator_Config_Validation() {
+        
+        ValidationResult result = Validators.validatorConfigValidator().validate(ValidatorConfig.builder().build(), OptionsValidator.ID).toResult();
+        Assert.assertFalse(result.isValid());
+
+        // invalid type of the config value
+        result = Validators.validatorConfigValidator().validate(ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, "a").build(), OptionsValidator.ID).toResult();
+        Assert.assertFalse(result.isValid());
+        
+        result = Validators.validatorConfigValidator().validate(ValidatorConfig.builder().config(OptionsValidator.KEY_OPTIONS, Arrays.asList("opt1")).build(), OptionsValidator.ID).toResult();
+        Assert.assertTrue(result.isValid());
+
+    }
 }

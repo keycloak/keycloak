@@ -51,7 +51,6 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.authz.AbstractAuthzTest;
@@ -88,8 +87,8 @@ public class DeployedScriptPolicyTest extends AbstractAuthzTest {
     @BeforeClass
     public static void verifyEnvironment() {
         ContainerAssume.assumeNotAuthServerUndertow();
-        ContainerAssume.assumeNotAuthServerQuarkus();
     }
+
     @ArquillianResource
     private Deployer deployer;
 
@@ -109,15 +108,17 @@ public class DeployedScriptPolicyTest extends AbstractAuthzTest {
     }
 
     @Before
-    public void onBefore() {
+    public void onBefore() throws Exception {
         deployer.deploy(SCRIPT_DEPLOYMENT_NAME);
+        reconnectAdminClient();
         AuthorizationResource authorization = getAuthorizationResource();
         authorization.resources().create(new ResourceRepresentation("Default Resource"));
     }
 
     @After
-    public void onAfter() {
+    public void onAfter() throws Exception {
         deployer.undeploy(SCRIPT_DEPLOYMENT_NAME);
+        reconnectAdminClient();
     }
 
     @Test

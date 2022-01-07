@@ -312,6 +312,16 @@ public class ModelToRepresentation {
         return rep;
     }
 
+    public static RealmRepresentation toBriefRepresentation(RealmModel realm) {
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setId(realm.getId());
+        rep.setRealm(realm.getName());
+        rep.setDisplayName(realm.getDisplayName());
+        rep.setDisplayNameHtml(realm.getDisplayNameHtml());
+        rep.setEnabled(realm.isEnabled());
+        return rep;
+    }
+
     public static RealmRepresentation toRepresentation(KeycloakSession session, RealmModel realm, boolean internal) {
         RealmRepresentation rep = new RealmRepresentation();
         rep.setId(realm.getId());
@@ -474,7 +484,8 @@ public class ModelToRepresentation {
 
         session.clientPolicy().updateRealmRepresentationFromModel(realm, rep);
 
-        rep.setAttributes(stripRealmAttributesIncludedAsFields(realm.getAttributes()));
+        // Append realm attributes to representation
+        rep.getAttributes().putAll(stripRealmAttributesIncludedAsFields(realm.getAttributes()));
 
         if (!internal) {
             rep = StripSecretsUtils.strip(rep);

@@ -26,7 +26,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.sessions.infinispan.InfinispanStickySessionEncoderProviderFactory;
-import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
+import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.sessions.StickySessionEncoderProvider;
 import org.keycloak.testsuite.pages.AppPage;

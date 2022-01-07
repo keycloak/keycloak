@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<build xmlns="urn:wildfly:feature-pack-build:1.1">
+<build xmlns="urn:wildfly:feature-pack-build:3.1">
     <dependencies>
         <artifact name="${feature.parent}" />
     </dependencies>

@@ -1,0 +1,49 @@
+<div id="{{include.id}}"></div>
+<script>
+  var c3ChartDefaults = $().c3ChartDefaults();
+
+  var chartUrls = [
+    'https://www.google.com',
+    'https://www.yahoo.com',
+    'https://www.bing.com/',
+    'https://duckduckgo.com/'
+  ];
+  var stackedColumnsData = [
+    ['Q1', 400, 250, 375],
+    ['Q2', 355, 305, 300],
+    ['Q3', 315, 340, 276],
+    ['Q4', 180, 390, 190]
+  ];
+  var stackedGroups = [['Q1', 'Q2', 'Q3', 'Q4']];
+  var stackedCategories = ['2013', '2014', '2015'];
+  var stackedColors = {
+    pattern: [
+      $.pfPaletteColors.red,
+      $.pfPaletteColors.blue,
+      $.pfPaletteColors.orange,
+      $.pfPaletteColors.green
+    ]
+  };
+
+  var stackedHorizontalBarChartConfig = c3ChartDefaults.getDefaultStackedBarConfig();
+  stackedHorizontalBarChartConfig.axis = {
+    rotated: true,
+    x: {
+      categories: stackedCategories,
+      type: 'category'
+    }
+  };
+  stackedHorizontalBarChartConfig.bindto = '#{{include.id}}';
+  stackedHorizontalBarChartConfig.color = stackedColors;
+  stackedHorizontalBarChartConfig.data = {
+    columns: stackedColumnsData,
+    groups: stackedGroups,
+    type: 'bar',
+    // optional drilldown behavior
+    onclick: function (d, element) {
+      window.location = chartUrls[d.index];
+    },
+    order: null
+  };
+  var stackedVerticalBarChart = c3.generate(stackedHorizontalBarChartConfig);
+</script>

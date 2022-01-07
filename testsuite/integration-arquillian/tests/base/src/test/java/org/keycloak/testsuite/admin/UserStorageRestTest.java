@@ -233,7 +233,7 @@ public class UserStorageRestTest extends AbstractAdminTest {
 
 
     @Test
-    public void testValidateAndCreateLdapProvider() {
+    public void testValidateAndCreateLdapProviderCustomSearchFilter() {
         // Invalid filter
 
         ComponentRepresentation ldapRep = createBasicLDAPProviderRep();
@@ -271,6 +271,7 @@ public class UserStorageRestTest extends AbstractAdminTest {
         ldapRep2.setProviderType(UserStorageProvider.class.getName());
         ldapRep2.setConfig(new MultivaluedHashMap<>());
         ldapRep2.getConfig().putSingle("priority", Integer.toString(2));
+        ldapRep2.getConfig().putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.UNSYNCED.name());
         ldapRep2.getConfig().putSingle(LDAPConstants.BIND_DN, "cn=manager");
         ldapRep2.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, "password");
         String id2 = createComponent(ldapRep2);
@@ -282,6 +283,40 @@ public class UserStorageRestTest extends AbstractAdminTest {
         // Cleanup
         removeComponent(id1);
         removeComponent(id2);
+    }
+
+    @Test
+    public void testValidateAndCreateLdapProviderEditMode() {
+        // Test provider without editMode should fail
+        ComponentRepresentation ldapRep = createBasicLDAPProviderRep();
+        ldapRep.getConfig().remove(LDAPConstants.EDIT_MODE);
+
+        Response resp = realm.components().add(ldapRep);
+        Assert.assertEquals(400, resp.getStatus());
+        resp.close();
+
+        // Test provider with READ_ONLY edit mode and validatePasswordPolicy will fail
+        ldapRep = createBasicLDAPProviderRep();
+        ldapRep.getConfig().putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.READ_ONLY.name());
+        ldapRep.getConfig().putSingle(LDAPConstants.VALIDATE_PASSWORD_POLICY, "true");
+        resp = realm.components().add(ldapRep);
+        Assert.assertEquals(400, resp.getStatus());
+        resp.close();
+
+        // Test provider with UNSYNCED edit mode and validatePasswordPolicy will fail
+        ldapRep.getConfig().putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.UNSYNCED.name());
+        ldapRep.getConfig().putSingle(LDAPConstants.VALIDATE_PASSWORD_POLICY, "true");
+        resp = realm.components().add(ldapRep);
+        Assert.assertEquals(400, resp.getStatus());
+        resp.close();
+
+        // Test provider with WRITABLE edit mode and validatePasswordPolicy will fail
+        ldapRep.getConfig().putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.WRITABLE.name());
+        ldapRep.getConfig().putSingle(LDAPConstants.SYNC_REGISTRATIONS, "true");
+        String id1 = createComponent(ldapRep);
+
+        // Cleanup
+        removeComponent(id1);
     }
 
     @Test
@@ -392,6 +427,7 @@ public class UserStorageRestTest extends AbstractAdminTest {
         ldapRep.setProviderType(UserStorageProvider.class.getName());
         ldapRep.setConfig(new MultivaluedHashMap<>());
         ldapRep.getConfig().putSingle("priority", Integer.toString(2));
+        ldapRep.getConfig().putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.WRITABLE.name());
         return ldapRep;
     }
 

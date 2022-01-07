@@ -89,6 +89,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         client.setClientName("RegistrationAccessTokenTest");
         client.setClientUri("http://root");
         client.setRedirectUris(Collections.singletonList("http://redirect"));
+        client.setFrontChannelLogoutUri("http://frontchannel");
         return client;
     }
 
@@ -157,6 +158,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         assertEquals(Arrays.asList(OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.REFRESH_TOKEN), response.getGrantTypes());
         assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, response.getTokenEndpointAuthMethod());
         Assert.assertNull(response.getUserinfoSignedResponseAlg());
+        assertEquals("http://frontchannel", response.getFrontChannelLogoutUri());
     }
 
     @Test
@@ -574,6 +576,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
              OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
              Assert.assertEquals(X509ClientAuthenticator.PROVIDER_ID, kcClient.getClientAuthenticatorType());
              Assert.assertEquals("Ein", config.getTlsClientAuthSubjectDn());
+             Assert.assertFalse(config.getAllowRegexPatternComparison());
 
              // update
              reg.auth(Auth.token(response));

@@ -18,6 +18,7 @@ package org.keycloak.forms.login.freemarker.model;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -52,7 +53,7 @@ public class RegisterBean extends AbstractUserProfileBean {
     }
 
     @Override
-    protected String getAttributeDefaultValue(String name) {
+    protected Stream<String> getAttributeDefaultValues(String name) {
         return null;
     }
     

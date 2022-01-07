@@ -46,11 +46,12 @@
             </div>
 
             <div class="form-group">
-                <label class="col-md-2 control-label" for="editMode">{{:: 'edit-mode' | translate}}</label>
+                <label class="col-md-2 control-label" for="editMode"><span class="required">*</span> {{:: 'edit-mode' | translate}}</label>
                 <div class="col-md-6">
                     <div>
                         <select class="form-control" id="editMode"
-                                ng-model="instance.config['editMode'][0]">
+                                ng-model="instance.config['editMode'][0]"
+                                required>
                             <option>READ_ONLY</option>
                             <option>WRITABLE</option>
                             <option>UNSYNCED</option>

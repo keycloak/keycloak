@@ -59,6 +59,7 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
     public static final String REGULAR_EXPRESSION = "x509-cert-auth.regular-expression";
     public static final String ENABLE_CRL = "x509-cert-auth.crl-checking-enabled";
     public static final String ENABLE_OCSP = "x509-cert-auth.ocsp-checking-enabled";
+    public static final String OCSP_FAIL_OPEN = "x509-cert-auth.ocsp-fail-open";
     public static final String ENABLE_CRLDP = "x509-cert-auth.crldp-checking-enabled";
     public static final String CANONICAL_DN = "x509-cert-auth.canonical-dn-enabled";
     public static final String TIMESTAMP_VALIDATION = "x509-cert-auth.timestamp-validation-enabled";
@@ -83,8 +84,13 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
     public static final String CUSTOM_ATTRIBUTE_NAME = "x509-cert-auth.mapper-selection.user-attribute-name";
     public static final String CERTIFICATE_KEY_USAGE = "x509-cert-auth.keyusage";
     public static final String CERTIFICATE_EXTENDED_KEY_USAGE = "x509-cert-auth.extendedkeyusage";
+    public static final String CERTIFICATE_POLICY = "x509-cert-auth.certificate-policy";
+    public static final String CERTIFICATE_POLICY_MODE = "x509-cert-auth.certificate-policy-mode";
+    public static final String CERTIFICATE_POLICY_MODE_ALL = "All";
+    public static final String CERTIFICATE_POLICY_MODE_ANY = "Any";
     static final String DEFAULT_MATCH_ALL_EXPRESSION = "(.*?)(?:$)";
     public static final String CONFIRMATION_PAGE_DISALLOWED = "x509-cert-auth.confirmation-page-disallowed";
+    public static final String REVALIDATE_CERTIFICATE = "x509-cert-auth.revalidate-certificate-enabled";
 
 
     protected Response createInfoResponse(AuthenticationFlowContext context, String infoMessage, Object ... parameters) {
@@ -103,13 +109,19 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
                         .parse(config.getKeyUsage())
                     .extendedKeyUsage()
                         .parse(config.getExtendedKeyUsage())
+                    .certificatePolicy()
+                        .mode(config.getCertificatePolicyMode().getMode())
+                        .parse(config.getCertificatePolicy())
                     .revocation()
                         .cRLEnabled(config.getCRLEnabled())
                         .cRLDPEnabled(config.getCRLDistributionPointEnabled())
                         .cRLrelativePath(config.getCRLRelativePath())
                         .oCSPEnabled(config.getOCSPEnabled())
+                        .oCSPFailOpen(config.getOCSPFailOpen())
                         .oCSPResponseCertificate(config.getOCSPResponderCertificate())
                         .oCSPResponderURI(config.getOCSPResponder())
+                    .trustValidation()
+                        .enabled(config.getRevalidateCertificateEnabled())
                     .timestampValidation()
                         .enabled(config.isCertValidationEnabled());
         }

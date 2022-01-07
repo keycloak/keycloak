@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<!--[if IE 9]><html lang="en-us" class="ie9 login-pf"><![endif]-->
+<!--[if gt IE 9]><!-->
+
+<html lang="en-us">
+
+<!--<![endif]-->
+  <head>
+    <title>Login Social Account (two column) - PatternFly</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="../img/favicon.ico">
+    <!-- iPad retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../img/apple-touch-icon-precomposed-152.png">
+    <!-- iPad retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="../img/apple-touch-icon-precomposed-144.png">
+    <!-- iPad non-retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="76x76" href="../img/apple-touch-icon-precomposed-76.png">
+    <!-- iPad non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="../img/apple-touch-icon-precomposed-72.png">
+    <!-- iPhone 6 Plus icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="120x120" href="../img/apple-touch-icon-precomposed-180.png">
+    <!-- iPhone retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../img/apple-touch-icon-precomposed-114.png">
+    <!-- iPhone non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="57x57" href="../img/apple-touch-icon-precomposed-57.png">
+    <link rel="stylesheet" href="../css/patternfly.min.css" >
+    <link rel="stylesheet" href="../css/patternfly-additions.min.css" >
+      <link href="tests.css" rel="stylesheet" media="screen, print">
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/js/bootstrap-select.min.js"></script>
+    <script src="../js/patternfly.min.js"></script>
+  </head>
+  <div class="toast-notifications-list-pf">
+    <div class="toast-pf alert alert-warning alert-dismissable">
+      <button type="button" class="close" data-dismiss="alert" aria-hidden="true">
+        <span class="pficon pficon-close"></span>
+      </button>
+      <span class="pficon pficon-warning-triangle-o"></span>
+      These examples are included for development testing purposes.  For official documentation, see <a href="https://www.patternfly.org" class="alert-link">https://www.patternfly.org</a> and <a href="http://getbootstrap.com" class="alert-link">http://getbootstrap.com</a>.
+    </div>
+  </div>
+
+  <body class="login-pf">
+<div class="login-pf-page login-pf-page-accounts">
+          <header class="login-pf-page-header">
+            <img class="login-pf-brand" src="..//img/Logo_Horizontal_Reversed.svg" alt="PatternFly logo" />
+          </header>
+          <div class="card-pf login-pf-accounts">
+              <header class="login-pf-header">
+                <select class="selectpicker">
+                  <option>English</option>
+                  <option>French</option>
+                  <option>Italian</option>
+                </select>
+                <h1>Log In to Your Account</h1>
+              </header>
+                    <section class="login-pf-social-section" role="contentinfo" aria-label="Log in to your patternfly account">
+                    <form>
+                      <div class="form-group">
+                        <label class="sr-only" for="exampleInputEmail1">Email address</label>
+                        <input type="email" class="form-control  input-lg" id="exampleInputEmail1" placeholder="Email address">
+                      </div>
+                      <div class="form-group">
+                        <label class="sr-only"  for="exampleInputPassword1">Password
+                        </label>
+                        <input type="password" class="form-control input-lg" id="exampleInputPassword1" placeholder="Password">
+                      </div>
+                      <div class="login-pf-settings">
+                            <label class="checkbox-label">
+                              <input type="checkbox"> Keep me logged in for 30 days
+                            </label>
+                            <a href="#">Forgot password?</a>
+                      </div>
+                      <button type="submit" class="btn btn-primary btn-block btn-lg">Log In</button>
+                    </form>
+                </section><!--login-pf-section-->
+                <section class="login-pf-social-section" role="contentinfo" aria-label="Log in with third party account">
+                  <ul class="login-pf-social login-pf-social-double-col list-unstyled">
+                    <li class="login-pf-social-link"><a href="#"><img src="../img/google-logo.svg" alt="Google account login">Google</a></li>
+                    <li class="login-pf-social-link"><a href="#"><img src="../img/github-logo.svg" alt="github account login">Github</a></li>
+                    <li class="login-pf-social-link"><a href="#"><img src="../img/facebook-logo.svg" alt="Facebook account login">Facebook</a></li>
+                    <li class="login-pf-social-link"><a href="#"><img src="../img/twitter-logo.svg" alt="Twitter account login">Twitter</a></li>
+                    <li class="login-pf-social-link"><a href="#"><img src="../img/linkedin-logo.svg" alt="LinkIn account login">LinkIn</a></li>
+                    <li class="login-pf-social-link"><a href="#"><img src="../img/stack-exchange-logo.svg" alt="Stack Exchange logo">Stack Exchange</a></li>
+                    <li class="login-pf-social-link"><a href="#"><img src="../img/open-id-logo.svg" alt="Open ID account login">Open ID</a></li>
+                    <li class="login-pf-social-link"><a href="#"><img src="../img/instagram-logo.png" alt="Instagram account login">Instagram</a></li>
+                    <li class="login-pf-social-link login-pf-social-link-more"><a href="#"><img src="../img/git-logo.svg" alt="Git account login">Git</a></li>
+                    <li class="login-pf-social-link login-pf-social-link-more"><a href="#"><img src="../img/dropbox-logo.svg" alt="dropbox account login">Dropbox</a></li>
+                    <li class="login-pf-social-link login-pf-social-link-more"><a href="#"><img src="../img/fedora-logo.png" alt="fedora account login">Fedora</a></li>
+                    <li class="login-pf-social-link login-pf-social-link-more"><a href="#"><img src="../img/skype-logo.svg" alt="skype account logingit ">Skype</a></li>
+                  </ul>
+                  <button type="button" id="socialAccountsToggle" class="btn btn-link login-pf-social-toggle">More<span class="caret"></span></button>
+              </section><!--login-pf-section-->
+                <p class="login-pf-signup">Need an account?<a href="#">Sign up</a></p>
+        </div><!-- card -->
+        <div class="row">
+          <div class="col-md-6 col-md-offset-3">
+            <footer class="login-pf-page-footer">
+              <ul class="login-pf-page-footer-links list-unstyled">
+                <li><a class="login-pf-page-footer-link" href="#">Terms of Use</a></li>
+                <li><a class="login-pf-page-footer-link" href="#">Help</a></li>
+                <li><a class="login-pf-page-footer-link" href="#">Privacy Policy</a></li>
+              </ul>
+            </footer>
+          </div>
+        </div>
+
+</div><!-- login-pf-page -->
+<script>
+  $("#socialAccountsToggle").on("click", function(e) {
+    var $toggle = $(e.target);
+    var text = $toggle.contents().first()[0];
+    var socialContainer = $('.login-pf-social-section > .login-pf-social');
+
+    if ($toggle.hasClass('login-pf-social-toggle-active')) {
+      $toggle.removeClass('login-pf-social-toggle-active');
+      text.textContent = 'More';
+      socialContainer.removeClass('login-pf-social-all');
+    } else {
+      $toggle.addClass('login-pf-social-toggle-active');
+      text.textContent = 'Less';
+      socialContainer.addClass('login-pf-social-all');
+    }
+  });
+</script>
+
+
+  </body>
+</html>

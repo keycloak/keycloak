@@ -41,12 +41,20 @@
             <kc-tooltip>{{:: 'otp.number-of-digits.tooltip' | translate}}</kc-tooltip>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" data-ng-if="realm.otpPolicyType == 'hotp'">
             <label class="col-md-2 control-label" for="lookAhead">{{:: 'look-ahead-window' | translate}}</label>
             <div class="col-md-6">
-                <input class="form-control" type="number" required min="0" max="120" id="lookAhead" name="lookAhead" data-ng-model="realm.otpPolicyLookAheadWindow" autofocus>
+                <input class="form-control" type="number" data-ng-required="realm.otpPolicyType == 'hotp'" min="0" max="120" id="lookAhead" name="lookAhead" data-ng-model="realm.otpPolicyLookAheadWindow">
             </div>
             <kc-tooltip>{{:: 'otp.look-ahead-window.tooltip' | translate}}</kc-tooltip>
+        </div>
+
+        <div class="form-group" data-ng-if="realm.otpPolicyType == 'totp'">
+            <label class="col-md-2 control-label" for="lookAhead">{{:: 'look-around-window' | translate}}</label>
+            <div class="col-md-6">
+                <input class="form-control" type="number" data-ng-required="realm.otpPolicyType == 'totp'" min="0" max="120" id="lookAround" name="lookAround" data-ng-model="realm.otpPolicyLookAheadWindow">
+            </div>
+            <kc-tooltip>{{:: 'otp.look-around-window.tooltip' | translate}}</kc-tooltip>
         </div>
 
         <div class="form-group" data-ng-if="realm.otpPolicyType == 'hotp'">

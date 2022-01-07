@@ -47,16 +47,25 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
-import java.security.cert.CRLException;
+import java.security.cert.CertPathBuilder;
+import java.security.cert.CertPathBuilderException;
 import java.security.cert.CertPathValidatorException;
+import java.security.cert.CertStore;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.security.cert.X509CRL;
+import java.security.cert.CollectionCertStoreParameters;
+import java.security.cert.CRLException;
+import java.security.cert.PKIXBuilderParameters;
+import java.security.cert.PKIXCertPathBuilderResult;
+import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
+import java.security.cert.X509CertSelector;
+import java.security.cert.X509CRL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
@@ -66,6 +75,12 @@ import java.util.stream.Collectors;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
+
+import org.bouncycastle.asn1.x509.Extensions;
+import org.bouncycastle.asn1.x509.CertificatePolicies;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
+
+import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_POLICY_MODE_ANY;
 
 /**
  * @author <a href="mailto:pnalyvayko@agi.com">Peter Nalyvayko</a>
@@ -382,35 +397,46 @@ public class CertificateValidator {
     X509Certificate[] _certChain;
     int _keyUsageBits;
     List<String> _extendedKeyUsage;
+    List<String> _certificatePolicy;
+    String _certificatePolicyMode;
     boolean _crlCheckingEnabled;
     boolean _crldpEnabled;
     CRLLoaderImpl _crlLoader;
     boolean _ocspEnabled;
+    boolean _ocspFailOpen;
     OCSPChecker ocspChecker;
     boolean _timestampValidationEnabled;
+    boolean _trustValidationEnabled;
 
     public CertificateValidator() {
 
     }
     protected CertificateValidator(X509Certificate[] certChain,
                          int keyUsageBits, List<String> extendedKeyUsage,
+                                   List<String> certificatePolicy, String certificatePolicyMode,
                                    boolean cRLCheckingEnabled,
                                    boolean cRLDPCheckingEnabled,
                                    CRLLoaderImpl crlLoader,
                                    boolean oCSPCheckingEnabled,
+                                   boolean ocspFailOpen,
                                    OCSPChecker ocspChecker,
                                    KeycloakSession session,
-                                   boolean timestampValidationEnabled) {
+                                   boolean timestampValidationEnabled,
+                                   boolean trustValidationEnabled) {
         _certChain = certChain;
         _keyUsageBits = keyUsageBits;
         _extendedKeyUsage = extendedKeyUsage;
+        _certificatePolicy = certificatePolicy;
+        _certificatePolicyMode = certificatePolicyMode;
         _crlCheckingEnabled = cRLCheckingEnabled;
         _crldpEnabled = cRLDPCheckingEnabled;
         _crlLoader = crlLoader;
         _ocspEnabled = oCSPCheckingEnabled;
+        _ocspFailOpen = ocspFailOpen;
         this.ocspChecker = ocspChecker;
         this.session = session;
         _timestampValidationEnabled = timestampValidationEnabled;
+        _trustValidationEnabled = trustValidationEnabled;
 
         if (ocspChecker == null)
             throw new IllegalArgumentException("ocspChecker");
@@ -483,12 +509,58 @@ public class CertificateValidator {
         }
     }
 
+    private static void validatePolicy(X509Certificate[] certs, List<String> expectedPolicies, String policyCheckMode) throws GeneralSecurityException {
+        if (expectedPolicies == null || expectedPolicies.size() == 0) {
+            logger.debug("Certificate Policy validation is not enabled.");
+            return;
+        }
+
+        Extensions certExtensions = new JcaX509CertificateHolder(certs[0]).getExtensions();
+        if (certExtensions == null)
+            throw new GeneralSecurityException("Certificate Policy validation was expected, but no certificate extensions were found");
+
+        CertificatePolicies policies = CertificatePolicies.fromExtensions(certExtensions);
+
+        if (policies == null)
+            throw new GeneralSecurityException("Certificate Policy validation was expected, but no certificate policy extensions were found");
+
+        List<String> policyList = new LinkedList<>();
+        Arrays.stream(policies.getPolicyInformation()).forEach(p -> policyList.add(p.getPolicyIdentifier().toString().toLowerCase()));
+
+        logger.debugf("Certificate policies found: %s", String.join(",", policyList));
+
+        if (policyCheckMode == CERTIFICATE_POLICY_MODE_ANY)
+        {
+            boolean hasMatch = expectedPolicies.stream().anyMatch(p -> policyList.contains(p.toLowerCase()));
+            if (!hasMatch) {
+                String message = String.format("Certificate Policy check failed: mode = ANY, found = \'%s\', expected = \'%s\'.",
+                    String.join(",", policyList), String.join(",", expectedPolicies));
+                throw new GeneralSecurityException(message);
+            }
+        }
+        else
+        {
+            for (String policy : expectedPolicies) {
+                if (!policyList.contains(policy.toLowerCase())) {
+                    String message = String.format("Certificate Policy check failed: mode = ALL, certificate policy \'%s\' is missing.", policy);
+                    throw new GeneralSecurityException(message);
+                }
+            }
+        }
+    }
+
     public CertificateValidator validateKeyUsage() throws GeneralSecurityException {
         validateKeyUsage(_certChain, _keyUsageBits);
         return this;
     }
+
     public CertificateValidator validateExtendedKeyUsage() throws GeneralSecurityException {
         validateExtendedKeyUsage(_certChain, _extendedKeyUsage);
+        return this;
+    }
+
+    public CertificateValidator validatePolicy() throws GeneralSecurityException {
+        validatePolicy(_certChain, _certificatePolicy, _certificatePolicyMode);
         return this;
     }
 
@@ -517,6 +589,79 @@ public class CertificateValidator {
         }
 
         return this;
+    }
+
+    public CertificateValidator validateTrust() throws GeneralSecurityException {
+        if (!_trustValidationEnabled)
+            return this;
+
+        TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
+        if (truststoreProvider == null || truststoreProvider.getTruststore() == null) {
+            logger.error("Cannot validate client certificate trust: Truststore not available");
+        }
+        else
+        {
+            Set<X509Certificate> trustedRootCerts = truststoreProvider.getRootCertificates().entrySet().stream().map(t -> t.getValue()).collect(Collectors.toSet());
+            Set<X509Certificate> trustedIntermediateCerts = truststoreProvider.getIntermediateCertificates().entrySet().stream().map(t -> t.getValue()).collect(Collectors.toSet());
+
+            logger.debugf("Found %d trusted root certs, %d trusted intermediate certs", trustedRootCerts.size(), trustedIntermediateCerts.size());
+
+            verifyCertificateTrust(_certChain, trustedRootCerts, trustedIntermediateCerts);
+        }
+
+        return this;
+    }
+
+    /**
+    * Attempts to build a certification chain for given certificate and to verify
+    * it. Relies on a set of root CA certificates (trust anchors) and a set of
+    * intermediate certificates (to be used as part of the chain).
+    * @param certChain - client chain presented for validation. cert to validate is assumed to be the first in the chain
+    * @param trustedRootCerts - set of trusted root CA certificates
+    * @param trustedIntermediateCerts - set of intermediate certificates
+    * @return the certification chain (if verification is successful)
+    * @throws GeneralSecurityException - if the verification is not successful
+    *       (e.g. certification path cannot be built or some certificate in the
+    *       chain is expired)
+    */
+    private static PKIXCertPathBuilderResult verifyCertificateTrust(X509Certificate[] certChain, Set<X509Certificate> trustedRootCerts,
+        Set<X509Certificate> trustedIntermediateCerts) throws GeneralSecurityException {
+
+        // Create the selector that specifies the starting certificate
+        X509CertSelector selector = new X509CertSelector();
+        selector.setCertificate(certChain[0]);
+
+        // Create the trust anchors (set of root CA certificates)
+        Set<TrustAnchor> trustAnchors = new HashSet<TrustAnchor>();
+        for (X509Certificate trustedRootCert : trustedRootCerts) {
+            trustAnchors.add(new TrustAnchor(trustedRootCert, null));
+        }
+
+        // Configure the PKIX certificate builder algorithm parameters
+        PKIXBuilderParameters pkixParams =
+            new PKIXBuilderParameters(trustAnchors, selector);
+
+        // Disable CRL checks (this is done manually as additional step)
+        pkixParams.setRevocationEnabled(false);
+
+        // Specify a list of intermediate certificates
+        Set<X509Certificate> intermediateCerts = new HashSet<X509Certificate>();
+        for (X509Certificate intermediateCert : trustedIntermediateCerts) {
+            intermediateCerts.add(intermediateCert);
+        }
+        // Client certificates have to be added to the list of intermediate certs
+        for (X509Certificate clientCert : certChain) {
+            intermediateCerts.add(clientCert);
+        }
+        CertStore intermediateCertStore = CertStore.getInstance("Collection",
+            new CollectionCertStoreParameters(intermediateCerts), "BC");
+        pkixParams.addCertStore(intermediateCertStore);
+
+        // Build and verify the certification chain
+        CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", "BC");
+        PKIXCertPathBuilderResult result =
+            (PKIXCertPathBuilderResult) builder.build(pkixParams);
+        return result;
     }
 
     private X509Certificate findCAInTruststore(X500Principal issuer) throws GeneralSecurityException {
@@ -563,25 +708,38 @@ public class CertificateValidator {
             }
         }
 
-        OCSPUtils.OCSPRevocationStatus rs = ocspChecker.check(cert, issuer);
+        try {
+            OCSPUtils.OCSPRevocationStatus rs = ocspChecker.check(cert, issuer);
 
-        if (rs == null) {
-            throw new GeneralSecurityException("Unable to check client revocation status using OCSP");
-        }
+            if (rs == null) {
+                if (_ocspFailOpen)
+                    logger.warnf("Unable to check client revocation status using OCSP - continuing certificate authentication because of fail-open OCSP configuration setting");
+                else
+                    throw new GeneralSecurityException("Unable to check client revocation status using OCSP");
+            }
 
-        if (rs.getRevocationStatus() == OCSPUtils.RevocationStatus.UNKNOWN) {
-            throw new GeneralSecurityException("Unable to determine certificate's revocation status.");
-        }
-        else if (rs.getRevocationStatus() == OCSPUtils.RevocationStatus.REVOKED) {
+            if (rs.getRevocationStatus() == OCSPUtils.RevocationStatus.UNKNOWN) {
+                if (_ocspFailOpen)
+                    logger.warnf("Unable to determine certificate's revocation status - continuing certificate authentication because of fail-open OCSP configuration setting");
+                else
+                    throw new GeneralSecurityException("Unable to determine certificate's revocation status.");
+            }
+            else if (rs.getRevocationStatus() == OCSPUtils.RevocationStatus.REVOKED) {
 
-            StringBuilder sb = new StringBuilder();
-            sb.append("Certificate's been revoked.");
-            sb.append("\n");
-            sb.append(rs.getRevocationReason().toString());
-            sb.append("\n");
-            sb.append(String.format("Revoked on: %s",rs.getRevocationTime().toString()));
+                StringBuilder sb = new StringBuilder();
+                sb.append("Certificate's been revoked.");
+                sb.append("\n");
+                sb.append(rs.getRevocationReason().toString());
+                sb.append("\n");
+                sb.append(String.format("Revoked on: %s",rs.getRevocationTime().toString()));
 
-            throw new GeneralSecurityException(sb.toString());
+                throw new GeneralSecurityException(sb.toString());
+            }
+        } catch (CertPathValidatorException e) {
+            if (_ocspFailOpen)
+                logger.warnf("Unable to check client revocation status using OCSP - continuing certificate authentication because of fail-open OCSP configuration setting");
+            else
+                throw e;
         }
     }
 
@@ -593,6 +751,7 @@ public class CertificateValidator {
             }
         }
     }
+
     private static List<String> getCRLDistributionPoints(X509Certificate cert) {
         try {
             return CRLUtils.getCRLDistributionPoints(cert);
@@ -643,16 +802,21 @@ public class CertificateValidator {
         KeycloakSession session;
         int _keyUsageBits;
         List<String> _extendedKeyUsage;
+        List<String> _certificatePolicy;
+        String _certificatePolicyMode;
         boolean _crlCheckingEnabled;
         boolean _crldpEnabled;
         CRLLoaderImpl _crlLoader;
         boolean _ocspEnabled;
+        boolean _ocspFailOpen;
         String _responderUri;
         X509Certificate _responderCert;
         boolean _timestampValidationEnabled;
+        boolean _trustValidationEnabled;
 
         public CertificateValidatorBuilder() {
             _extendedKeyUsage = new LinkedList<>();
+            _certificatePolicy = new LinkedList<>();
             _keyUsageBits = 0;
         }
 
@@ -756,6 +920,30 @@ public class CertificateValidator {
             }
         }
 
+        public class CertificatePolicyValidationBuilder {
+
+            CertificateValidatorBuilder _parent;
+            protected CertificatePolicyValidationBuilder(CertificateValidatorBuilder parent) {
+                _parent = parent;
+            }
+
+            public CertificatePolicyValidationBuilder mode(String mode) {
+                _certificatePolicyMode = mode;
+                return this;
+            }
+
+            public CertificateValidatorBuilder parse(String certificatePolicy) {
+                if (certificatePolicy == null || certificatePolicy.trim().length() == 0)
+                    return _parent;
+
+                String[] strs = certificatePolicy.split("[,;:]");
+                for (String str : strs) {
+                    _certificatePolicy.add(str.trim());
+                }
+                return _parent;
+            }
+        }
+
         public class RevocationStatusCheckBuilder {
 
             CertificateValidatorBuilder _parent;
@@ -796,7 +984,14 @@ public class CertificateValidator {
             }
 
             public class GotOCSP {
-                public GotOCSP oCSPResponseCertificate(String responderCert) {
+                public GotOCSPFailOpen oCSPFailOpen(boolean ocspFailOpen) {
+                    _ocspFailOpen = ocspFailOpen;
+                    return new GotOCSPFailOpen();
+                }
+            }
+
+            public class GotOCSPFailOpen {
+                public GotOCSPFailOpen oCSPResponseCertificate(String responderCert) {
                     if (responderCert != null && !responderCert.isEmpty()) {
                         try {
                             _responderCert = XMLSignatureUtil.getX509CertificateFromKeyInfoString(responderCert);
@@ -808,7 +1003,7 @@ public class CertificateValidator {
                             throw new RuntimeException(e);
                         }
                     }
-                    return new GotOCSP();
+                    return new GotOCSPFailOpen();
                 }
 
                 public CertificateValidatorBuilder oCSPResponderURI(String responderURI) {
@@ -831,6 +1026,19 @@ public class CertificateValidator {
             }
         }
 
+        public class TrustValidationBuilder {
+
+            CertificateValidatorBuilder _parent;
+            protected TrustValidationBuilder(CertificateValidatorBuilder parent) {
+                _parent = parent;
+            }
+
+            public CertificateValidatorBuilder enabled(boolean value) {
+                _trustValidationEnabled = value;
+                return _parent;
+            }
+        }
+
         public CertificateValidatorBuilder session(KeycloakSession session) {
             this.session = session;
             return this;
@@ -844,6 +1052,10 @@ public class CertificateValidator {
             return new ExtendedKeyUsageValidationBuilder(this);
         }
 
+        public CertificatePolicyValidationBuilder certificatePolicy() {
+            return new CertificatePolicyValidationBuilder(this);
+        }
+
         public RevocationStatusCheckBuilder revocation() {
             return new RevocationStatusCheckBuilder(this);
         }
@@ -852,13 +1064,18 @@ public class CertificateValidator {
             return new TimestampValidationBuilder(this);
         }
 
+        public TrustValidationBuilder trustValidation() {
+            return new TrustValidationBuilder(this);
+        }
+
         public CertificateValidator build(X509Certificate[] certs) {
             if (_crlLoader == null) {
                  _crlLoader = new CRLFileLoader(session, "");
             }
             return new CertificateValidator(certs, _keyUsageBits, _extendedKeyUsage,
-                    _crlCheckingEnabled, _crldpEnabled, _crlLoader, _ocspEnabled,
-                    new BouncyCastleOCSPChecker(session, _responderUri, _responderCert), session, _timestampValidationEnabled);
+                    _certificatePolicy, _certificatePolicyMode,
+                    _crlCheckingEnabled, _crldpEnabled, _crlLoader, _ocspEnabled, _ocspFailOpen,
+                    new BouncyCastleOCSPChecker(session, _responderUri, _responderCert), session, _timestampValidationEnabled, _trustValidationEnabled);
         }
     }
 

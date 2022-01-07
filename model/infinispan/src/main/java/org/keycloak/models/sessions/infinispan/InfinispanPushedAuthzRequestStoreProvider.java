@@ -24,7 +24,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.PushedAuthzRequestStoreProvider;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenValueEntity;
-import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
+import org.keycloak.connections.infinispan.InfinispanUtil;
 
 import java.util.Map;
 import java.util.UUID;

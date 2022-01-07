@@ -2,7 +2,7 @@ package org.keycloak.protocol.oidc.utils;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.Base64Url;
-import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.common.util.SecretGenerator;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -10,7 +10,7 @@ import java.security.MessageDigest;
 public class PkceUtils {
 
     public static String generateCodeVerifier() {
-        return Base64Url.encode(KeycloakModelUtils.generateSecret(64));
+        return Base64Url.encode(SecretGenerator.getInstance().randomBytes(64));
     }
 
     public static String encodeCodeChallenge(String codeVerifier, String codeChallengeMethod) {

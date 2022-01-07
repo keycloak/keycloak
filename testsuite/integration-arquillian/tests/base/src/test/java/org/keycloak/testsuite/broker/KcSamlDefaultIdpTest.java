@@ -1,12 +1,16 @@
 package org.keycloak.testsuite.broker;
 
 import org.junit.Test;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.browser.IdentityProviderAuthenticatorFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.FlowUtil;
+import org.keycloak.testsuite.util.UIUtils;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -16,9 +20,7 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import java.util.UUID;
 
 /**
@@ -26,6 +28,18 @@ import java.util.UUID;
  * in the Identity Provider Redirector authenticator
  */
 public class KcSamlDefaultIdpTest extends AbstractInitializedBaseBrokerTest {
+
+    @Override
+    public void beforeBrokerTest() {
+        super.beforeBrokerTest();
+        // Require broker to show consent screen
+        RealmResource brokeredRealm = adminClient.realm(bc.providerRealmName());
+        List<ClientRepresentation> clients = brokeredRealm.clients().findByClientId(bc.getIDPClientIdInProviderRealm());
+        org.junit.Assert.assertEquals(1, clients.size());
+        ClientRepresentation brokerApp = clients.get(0);
+        brokerApp.setConsentRequired(true);
+        brokeredRealm.clients().get(brokerApp.getId()).update(brokerApp);
+    }
 
     @Test
     public void testDefaultIdpNotSet() {
@@ -55,6 +69,39 @@ public class KcSamlDefaultIdpTest extends AbstractInitializedBaseBrokerTest {
         // Make sure we got redirected to the remote IdP automatically
         Assert.assertTrue("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+    }
+
+    // KEYCLOAK-17368
+    @Test
+    public void testDefaultIdpSetTriedAndReturnedError() {
+        // Set the Default Identity Provider option to the remote IdP name
+        configureFlow("kc-saml-idp");
+
+        String username = "all-info-set@localhost.com";
+        createUser(bc.providerRealmName(), username, "password", "FirstName");
+
+        // Navigate to the auth page
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        waitForPage(driver, "sign in to", true);
+
+        // Make sure we got redirected to the remote IdP automatically
+        Assert.assertTrue("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+
+        // Attempt login
+        log.debug("Logging in");
+        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+
+        // Deny user consent
+        grantPage.assertCurrent();
+        grantPage.cancel();
+
+        waitForPage(driver, "sign in to", true);
+
+        WebElement errorElement = driver.findElement(By.className("alert-error"));
+        assertNotNull("Page should show an error message but it's missing", errorElement);
+
+        assertEquals("Unexpected error when authenticating with identity provider", UIUtils.getTextFromElement(errorElement));
     }
 
     private void configureFlow(String defaultIdpValue)

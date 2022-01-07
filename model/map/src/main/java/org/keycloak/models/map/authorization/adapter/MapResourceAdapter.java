@@ -136,7 +136,8 @@ public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity>
 
     @Override
     public String getSingleAttribute(String name) {
-        return entity.getSingleAttribute(name);
+        List<String> attributeValues = entity.getAttribute(name);
+        return  attributeValues == null || attributeValues.isEmpty() ? null : attributeValues.get(0);
     }
 
     @Override

@@ -26,23 +26,48 @@
     },
 
     "realm": {
-        "provider": "${keycloak.realm.provider:jpa}"
+        "provider": "${keycloak.realm.provider:jpa}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.realm.map.storage.provider:concurrenthashmap}"
+            }
+        }
     },
 
     "client": {
-        "provider": "${keycloak.client.provider:jpa}"
+        "provider": "${keycloak.client.provider:jpa}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.client.map.storage.provider:concurrenthashmap}"
+            }
+        }
     },
 
     "clientScope": {
-        "provider": "${keycloak.clientScope.provider:jpa}"
+        "provider": "${keycloak.clientScope.provider:jpa}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.clientScope.map.storage.provider:concurrenthashmap}"
+            }
+        }
     },
 
     "group": {
-        "provider": "${keycloak.group.provider:jpa}"
+        "provider": "${keycloak.group.provider:jpa}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.group.map.storage.provider:concurrenthashmap}"
+            }
+        }
     },
 
     "role": {
-        "provider": "${keycloak.role.provider:jpa}"
+        "provider": "${keycloak.role.provider:jpa}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.role.map.storage.provider:concurrenthashmap}"
+            }
+        }
     },
 
     "authenticationSessions": {
@@ -66,11 +91,24 @@
             "dir": "${project.build.directory:target/map}",
             "keyType.realms": "string", 
             "keyType.authz-resource-servers": "string"
+        },
+        "jpa-map-storage": {
+            "url": "${keycloak.map.storage.connectionsJpa.url:}",
+            "user": "${keycloak.map.storage.connectionsJpa.user:}",
+            "password": "${keycloak.map.storage.connectionsJpa.password:}",
+            "driver": "org.postgresql.Driver",
+            "driverDialect": "org.keycloak.models.map.storage.jpa.hibernate.dialect.JsonbPostgreSQL95Dialect",
+            "showSql": "${keycloak.map.storage.connectionsJpa,showSql:false}"
         }
     },
 
     "user": {
-        "provider": "${keycloak.user.provider:jpa}"
+        "provider": "${keycloak.user.provider:jpa}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.user.map.storage.provider:concurrenthashmap}"
+            }
+        }
     },
 
     "userFederatedStorage": {
@@ -124,6 +162,14 @@
         }
     },
 
+    "connectionsHotRod": {
+        "default": {
+            "embedded": "${keycloak.connectionsHotRod.embedded:true}",
+            "embeddedPort": "${keycloak.connectionsHotRod.embeddedPort:11444}",
+            "enableSecurity": "${keycloak.connectionsHotRod.enableSecurity:false}"
+        }
+    },
+
     "scripting": {
     },
 
@@ -141,7 +187,7 @@
     },
 
     "userProfile": {
-        "provider": "${keycloak.userProfile.provider:}",
+        "provider": "${keycloak.userProfile.provider:declarative-user-profile}",
         "declarative-user-profile": {
             "read-only-attributes": [ "deniedFoo", "deniedBar*", "deniedSome/thing", "deniedsome*thing" ],
             "admin-read-only-attributes": [ "deniedSomeAdmin" ]

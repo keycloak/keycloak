@@ -24,9 +24,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -304,7 +306,12 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         List<String> email = newAttributes.get(UserModel.EMAIL);
 
         if (email != null && realm.isRegistrationEmailAsUsername()) {
-            newAttributes.put(UserModel.USERNAME, email);
+            final List<String> lowerCaseEmailList = email.stream()
+                    .filter(Objects::nonNull)
+                    .map(String::toLowerCase)
+                    .collect(Collectors.toList());
+
+            newAttributes.put(UserModel.USERNAME, lowerCaseEmailList);
         }
 
         return newAttributes;

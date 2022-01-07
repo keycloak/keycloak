@@ -18,3 +18,5 @@
 *.eot binary
 *.otf binary
 *.woff binary
+# See https://github.com/approvals/ApprovalTests.Java#approved-file-artifacts (used in golden testing for help output of quarkus based dist)
+*.approved.* binary

@@ -7,3 +7,4 @@ org.keycloak.validate.validators.PatternValidator
 org.keycloak.validate.validators.DoubleValidator
 org.keycloak.validate.validators.IntegerValidator
 org.keycloak.validate.validators.LocalDateValidator
+org.keycloak.validate.validators.OptionsValidator

@@ -9,24 +9,30 @@ import com.google.common.collect.ImmutableMap;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.broker.provider.HardcodedUserSessionAttributeMapper;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailServerConfiguration;
 import org.keycloak.testsuite.util.SecondBrowser;
+import org.keycloak.userprofile.UserProfileContext;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
@@ -55,6 +61,9 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
     @Drone
     @SecondBrowser
     protected WebDriver driver2;
+    
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
     
     protected void enableDynamicUserProfile() {
         
@@ -971,7 +980,85 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         //test if the user has verified email
         assertTrue(consumerRealm.users().get(linkedUserId).toRepresentation().isEmailVerified());
     }
+    
+    @Test
+    public void testEventsOnUpdateProfileNoEmailChange() {
+        updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
 
+        createUser(bc.providerRealmName(), "no-first-name", "password", null, "LastName", "no-first-name@localhost.com");
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        log.debug("Clicking social " + bc.getIDPAlias());
+        loginPage.clickSocial(bc.getIDPAlias());
+        waitForPage(driver, "sign in to", true);
+        Assert.assertTrue("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        log.debug("Logging in");
+        loginPage.login("no-first-name", "password");
+
+        waitForPage(driver, "update account information", false);
+        
+        updateAccountInformationPage.assertCurrent();
+        updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
+        waitForAccountManagementTitle();
+        accountUpdateProfilePage.assertCurrent();
+        Assert.assertEquals("FirstName", accountUpdateProfilePage.getFirstName());
+        Assert.assertEquals("LastName", accountUpdateProfilePage.getLastName());
+        Assert.assertEquals("no-first-name@localhost.com", accountUpdateProfilePage.getEmail());
+        Assert.assertEquals("no-first-name", accountUpdateProfilePage.getUsername());
+
+        RealmRepresentation consumerRealmRep = adminClient.realm(bc.consumerRealmName()).toRepresentation();
+        events.expectAccount(EventType.LOGIN).realm(consumerRealmRep).user(Matchers.any(String.class)).session(Matchers.any(String.class))
+            .detail(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
+            .detail(Details.REGISTER_METHOD, "broker")
+            .assertEvent(getFirstConsumerEvent());
+    }
+
+    @Test
+    public void testEventsOnUpdateProfileWithEmailChange() {
+        updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
+
+        createUser(bc.providerRealmName(), "no-first-name", "password", null, "LastName", "no-first-name@localhost.com");
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        log.debug("Clicking social " + bc.getIDPAlias());
+        loginPage.clickSocial(bc.getIDPAlias());
+        waitForPage(driver, "sign in to", true);
+        Assert.assertTrue("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        log.debug("Logging in");
+        loginPage.login("no-first-name", "password");
+
+        waitForPage(driver, "update account information", false);
+        
+        updateAccountInformationPage.assertCurrent();
+        updateAccountInformationPage.updateAccountInformation("new-email@localhost.com","FirstName", "LastName");
+        waitForAccountManagementTitle();
+        accountUpdateProfilePage.assertCurrent();
+        Assert.assertEquals("FirstName", accountUpdateProfilePage.getFirstName());
+        Assert.assertEquals("LastName", accountUpdateProfilePage.getLastName());
+        Assert.assertEquals("new-email@localhost.com", accountUpdateProfilePage.getEmail());
+        Assert.assertEquals("no-first-name", accountUpdateProfilePage.getUsername());
+
+        RealmRepresentation consumerRealmRep = adminClient.realm(bc.consumerRealmName()).toRepresentation();
+        events.expectAccount(EventType.UPDATE_EMAIL).realm(consumerRealmRep).user((String)null).session((String) null)
+            .detail(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name())
+            .detail(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
+            .detail(Details.PREVIOUS_EMAIL, "no-first-name@localhost.com")
+            .detail(Details.UPDATED_EMAIL, "new-email@localhost.com")
+            .assertEvent(getFirstConsumerEvent());
+        events.expectAccount(EventType.LOGIN).realm(consumerRealmRep).user(Matchers.any(String.class)).session(Matchers.any(String.class))
+            .detail(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
+            .detail(Details.REGISTER_METHOD, "broker")
+            .assertEvent(events.poll());
+    }
+
+    protected EventRepresentation getFirstConsumerEvent() {
+        String providerRealmId = adminClient.realm(bc.providerRealmName()).toRepresentation().getId();
+        EventRepresentation er = events.poll();
+        while(er != null && providerRealmId.equals(er.getRealmId())) {
+            er = events.poll();
+        }
+        return er;
+    }
 
     /**
      * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractKeycloakIdentityProviderTest.testSuccessfulAuthenticationUpdateProfileOnMissing_missingEmail
@@ -991,6 +1078,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         loginPage.login("no-first-name", "password");
 
         waitForPage(driver, "update account information", false);
+        
         updateAccountInformationPage.assertCurrent();
         updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
         waitForAccountManagementTitle();
@@ -999,7 +1087,6 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         Assert.assertEquals("LastName", accountUpdateProfilePage.getLastName());
         Assert.assertEquals("no-first-name@localhost.com", accountUpdateProfilePage.getEmail());
         Assert.assertEquals("no-first-name", accountUpdateProfilePage.getUsername());
-
 
         logoutFromRealm(getProviderRoot(), bc.providerRealmName());
         logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
