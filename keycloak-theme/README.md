@@ -19,7 +19,7 @@ For development, you can also just copy the contents of `./target/classes` to `<
 Until New Admin Console becomes the default, you will need to start Keycloak server like this:
 
 ```bash
-$> bin/standalone.sh -Dprofile.feature.newadmin=enabled
+$> bin/standalone.sh -Dkeycloak.profile.feature.admin2=enabled
 ```
 
 Then go to `Realm Settings --> Themes` and set Admin Console Theme to `keycloak.v2`.

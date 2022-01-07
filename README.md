@@ -31,7 +31,7 @@ For development on this project you will need a running Keycloak server listenin
     git checkout git@github.com:keycloak/keycloak-admin-ui.git
     cd keycloak-admin-ui
     docker build -t keycloak-v2 .
-    docker run --name keycloak-v2 -d -p 127.0.0.1:8080:8080 -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin keycloak-v2 -Dprofile.feature.newadmin=enabled
+    docker run --name keycloak-v2 -d -p 127.0.0.1:8080:8080 -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin keycloak-v2 -Dkeycloak.profile.feature.admin2=enabled
 
 You can reach the new admin interface at `http://localhost:8080`. Then go to `Realm Settings --> Themes` and set Admin Console Theme to `keycloak.v2`.
 
