@@ -38,15 +38,7 @@
         "provider": "${keycloak.client.provider:jpa}",
         "map": {
             "storage": {
-                "provider": "${keycloak.client.map.storage.provider:concurrenthashmap}",
-                "jpa-client-map-storage": {
-                    "url": "${keycloak.client.map.storage.connectionsJpa.url:}",
-                    "driver": "org.postgresql.Driver",
-                    "driverDialect": "org.keycloak.models.map.jpa.hibernate.dialect.JsonbPostgreSQL95Dialect",
-                    "user": "${keycloak.client.map.storage.connectionsJpa.user:}",
-                    "password": "${keycloak.client.map.storage.connectionsJpa.password:}",
-                    "showSql": "${keycloak.client.map.storage.connectionsJpa,showSql:false}"
-                }
+                "provider": "${keycloak.client.map.storage.provider:concurrenthashmap}"
             }
         }
     },
@@ -99,6 +91,14 @@
             "dir": "${project.build.directory:target/map}",
             "keyType.realms": "string", 
             "keyType.authz-resource-servers": "string"
+        },
+        "jpa-map-storage": {
+            "url": "${keycloak.map.storage.connectionsJpa.url:}",
+            "user": "${keycloak.map.storage.connectionsJpa.user:}",
+            "password": "${keycloak.map.storage.connectionsJpa.password:}",
+            "driver": "org.postgresql.Driver",
+            "driverDialect": "org.keycloak.models.map.storage.jpa.hibernate.dialect.JsonbPostgreSQL95Dialect",
+            "showSql": "${keycloak.map.storage.connectionsJpa,showSql:false}"
         }
     },
 

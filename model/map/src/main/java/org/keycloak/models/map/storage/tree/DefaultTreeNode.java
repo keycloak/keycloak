@@ -45,9 +45,9 @@ public class DefaultTreeNode<Self extends DefaultTreeNode<Self>> implements Tree
 
     private static final AtomicInteger COUNTER = new AtomicInteger();
 
-    private final Map<String, Object> nodeProperties;
-    private final Map<String, Object> edgeProperties;
-    private final Map<String, Object> treeProperties;
+    protected final Map<String, Object> nodeProperties;
+    protected final Map<String, Object> edgeProperties;
+    protected final Map<String, Object> treeProperties;
     private final LinkedList<Self> children = new LinkedList<>();
     private String id;
     private Self parent;
@@ -222,6 +222,14 @@ public class DefaultTreeNode<Self extends DefaultTreeNode<Self>> implements Tree
     @Override
     public List<Self> getChildren() {
         return Collections.unmodifiableList(this.children);
+    }
+
+    public boolean hasChildren() {
+        return ! this.children.isEmpty();
+    }
+
+    public boolean hasNoChildren() {
+        return this.children.isEmpty();
     }
 
     @Override

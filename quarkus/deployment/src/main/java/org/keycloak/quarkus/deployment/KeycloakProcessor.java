@@ -52,9 +52,8 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import io.quarkus.agroal.spi.JdbcDataSourceBuildItem;
+import io.quarkus.datasource.deployment.spi.DevServicesDatasourceResultBuildItem;
 import io.quarkus.deployment.IsDevelopment;
-import io.quarkus.deployment.IsNormal;
-import io.quarkus.deployment.IsTest;
 import io.quarkus.deployment.annotations.Consume;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.GeneratedResourceBuildItem;
@@ -84,6 +83,8 @@ import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.Config;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.integration.jaxrs.QuarkusKeycloakApplication;
 import org.keycloak.authentication.AuthenticatorSpi;
 import org.keycloak.authentication.authenticators.browser.DeployedScriptAuthenticatorFactory;
@@ -273,8 +274,32 @@ class KeycloakProcessor {
     }
 
     @BuildStep(onlyIf = IsIntegrationTest.class)
-    void prepareTestEnvironment(BuildProducer<StaticInitConfigSourceProviderBuildItem> configSources) {
+    void prepareTestEnvironment(BuildProducer<StaticInitConfigSourceProviderBuildItem> configSources, DevServicesDatasourceResultBuildItem dbConfig) {
         configSources.produce(new StaticInitConfigSourceProviderBuildItem("org.keycloak.quarkus.runtime.configuration.test.TestKeycloakConfigSourceProvider"));
+
+        // we do not enable dev services by default and the DevServicesDatasourceResultBuildItem might not be available when discovering build steps
+        // Quarkus seems to allow that when the DevServicesDatasourceResultBuildItem is not the only parameter to the build step
+        // this might be too sensitive and break if Quarkus changes the behavior
+        if (dbConfig != null && dbConfig.getDefaultDatasource() != null) {
+            Map<String, String> configProperties = dbConfig.getDefaultDatasource().getConfigProperties();
+
+            for (Entry<String, String> dbConfigProperty : configProperties.entrySet()) {
+                PropertyMapper mapper = PropertyMappers.getMapper(dbConfigProperty.getKey());
+
+                if (mapper == null) {
+                    continue;
+                }
+
+                String kcProperty = mapper.getFrom();
+
+                if (kcProperty.endsWith("db")) {
+                    // db kind set when running tests
+                    continue;
+                }
+
+                System.setProperty(kcProperty, dbConfigProperty.getValue());
+            }
+        }
     }
 
     /**

@@ -41,9 +41,8 @@ import org.hibernate.annotations.TypeDef;
 import org.hibernate.annotations.TypeDefs;
 import org.keycloak.models.map.client.MapClientEntity.AbstractClientEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
-import static org.keycloak.models.map.storage.jpa.client.JpaClientMapStorage.SUPPORTED_VERSION;
-
 import org.keycloak.models.map.common.DeepCloner;
+import static org.keycloak.models.map.storage.jpa.Constants.SUPPORTED_VERSION_CLIENT;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
 @Entity
@@ -118,8 +117,8 @@ public class JpaClientEntity extends AbstractClientEntity implements Serializabl
      */
     private void checkEntityVersionForUpdate() {
         Integer ev = getEntityVersion();
-        if (ev != null && ev < SUPPORTED_VERSION) {
-            setEntityVersion(SUPPORTED_VERSION);
+        if (ev != null && ev < SUPPORTED_VERSION_CLIENT) {
+            setEntityVersion(SUPPORTED_VERSION_CLIENT);
         }
     }
 
