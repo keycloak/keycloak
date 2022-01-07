@@ -3,7 +3,7 @@ import RealmSettingsPage from "../support/pages/admin_console/manage/realm_setti
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
 import AdminClient from "../support/util/AdminClient";
-import { keycloakBefore } from "../support/util/keycloak_before";
+import { keycloakBefore } from "../support/util/keycloak_hooks";
 import ModalUtils from "../support/util/ModalUtils";
 
 const loginPage = new LoginPage();
