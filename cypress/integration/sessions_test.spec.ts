@@ -1,7 +1,7 @@
 import LoginPage from "../support/pages/LoginPage";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import SessionsPage from "../support/pages/admin_console/manage/sessions/SessionsPage";
-import { keycloakBefore } from "../support/util/keycloak_before";
+import { keycloakBefore } from "../support/util/keycloak_hooks";
 
 const loginPage = new LoginPage();
 const sidebarPage = new SidebarPage();

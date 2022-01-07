@@ -13,3 +13,7 @@ export const keycloakBefore = () => {
   });
   cy.visit("");
 };
+
+export const keycloakBeforeEach = () => {
+  Cypress.Cookies.preserveOnce("KEYCLOAK_SESSION", "KEYCLOAK_IDENTITY");
+};

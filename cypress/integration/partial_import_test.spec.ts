@@ -3,7 +3,7 @@ import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
 import PartialImportModal from "../support/pages/admin_console/configure/realm_settings/PartialImportModal";
 import RealmSettings from "../support/pages/admin_console/configure/realm_settings/RealmSettings";
-import { keycloakBefore } from "../support/util/keycloak_before";
+import { keycloakBefore } from "../support/util/keycloak_hooks";
 import AdminClient from "../support/util/AdminClient";
 
 describe("Partial import test", () => {

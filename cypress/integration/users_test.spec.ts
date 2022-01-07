@@ -6,7 +6,7 @@ import ListingPage from "../support/pages/admin_console/ListingPage";
 import UserDetailsPage from "../support/pages/admin_console/manage/users/UserDetailsPage";
 import AttributesTab from "../support/pages/admin_console/manage/AttributesTab";
 import ModalUtils from "../support/util/ModalUtils";
-import { keycloakBefore } from "../support/util/keycloak_before";
+import { keycloakBefore } from "../support/util/keycloak_hooks";
 import GroupModal from "../support/pages/admin_console/manage/groups/GroupModal";
 import UserGroupsPage from "../support/pages/admin_console/manage/users/UserGroupsPage";
 import AdminClient from "../support/util/AdminClient";

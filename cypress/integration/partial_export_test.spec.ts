@@ -3,7 +3,7 @@ import RealmSettings from "../support/pages/admin_console/configure/realm_settin
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
 import AdminClient from "../support/util/AdminClient";
-import { keycloakBefore } from "../support/util/keycloak_before";
+import { keycloakBefore } from "../support/util/keycloak_hooks";
 
 describe("Partial realm export", () => {
   const REALM_NAME = "partial-export-test-realm";

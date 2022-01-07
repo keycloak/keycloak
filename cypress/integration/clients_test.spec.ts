@@ -7,7 +7,10 @@ import ModalUtils from "../support/util/ModalUtils";
 import AdvancedTab from "../support/pages/admin_console/manage/clients/AdvancedTab";
 import AdminClient from "../support/util/AdminClient";
 import InitialAccessTokenTab from "../support/pages/admin_console/manage/clients/InitialAccessTokenTab";
-import { keycloakBefore } from "../support/util/keycloak_before";
+import {
+  keycloakBefore,
+  keycloakBeforeEach,
+} from "../support/util/keycloak_hooks";
 import RoleMappingTab from "../support/pages/admin_console/manage/RoleMappingTab";
 import KeysTab from "../support/pages/admin_console/manage/clients/KeysTab";
 import ClientScopesTab from "../support/pages/admin_console/manage/clients/ClientScopesTab";
@@ -78,9 +81,13 @@ describe("Clients test", () => {
   });
 
   describe("Client creation", () => {
-    beforeEach(() => {
+    before(() => {
       keycloakBefore();
       loginPage.logIn();
+    });
+
+    beforeEach(() => {
+      keycloakBeforeEach();
       sidebarPage.goToClients();
     });
 
@@ -155,9 +162,13 @@ describe("Clients test", () => {
     const advancedTab = new AdvancedTab();
     let client: string;
 
-    beforeEach(() => {
+    before(() => {
       keycloakBefore();
       loginPage.logIn();
+    });
+
+    beforeEach(() => {
+      keycloakBeforeEach();
       sidebarPage.goToClients();
 
       client = "client_" + (Math.random() + 1).toString(36).substring(7);
@@ -205,13 +216,14 @@ describe("Clients test", () => {
     const serviceAccountName = "service-account-client";
 
     beforeEach(() => {
-      keycloakBefore();
-      loginPage.logIn();
+      keycloakBeforeEach();
       sidebarPage.goToClients();
     });
 
-    before(async () => {
-      await new AdminClient().createClient({
+    before(() => {
+      keycloakBefore();
+      loginPage.logIn();
+      new AdminClient().createClient({
         protocol: "openid-connect",
         clientId: serviceAccountName,
         publicClient: false,
@@ -234,7 +246,6 @@ describe("Clients test", () => {
         .checkRoles(["manage-account", "offline_access", "uma_authorization"]);
     });
 
-    /* this test causes the test(s) that follow it to fail - it should be rewritten
     it("assign", () => {
       listingPage.goToItemDetails(serviceAccountName);
       serviceAccountTab
@@ -244,7 +255,6 @@ describe("Clients test", () => {
         .clickAssign();
       masthead.checkNotificationMessage("Role mapping updated");
     });
-    */
   });
 
   describe("Mapping tab", () => {
@@ -280,13 +290,14 @@ describe("Clients test", () => {
   describe("Keys tab test", () => {
     const keysName = "keys-client";
     beforeEach(() => {
-      keycloakBefore();
-      loginPage.logIn();
+      keycloakBeforeEach();
       sidebarPage.goToClients();
       listingPage.searchItem(keysName).goToItemDetails(keysName);
     });
 
     before(() => {
+      keycloakBefore();
+      loginPage.logIn();
       new AdminClient().createClient({
         protocol: "openid-connect",
         clientId: keysName,
@@ -319,11 +330,15 @@ describe("Clients test", () => {
   describe("Realm client", () => {
     const clientName = "master-realm";
 
-    beforeEach(() => {
+    before(() => {
       keycloakBefore();
       loginPage.logIn();
       sidebarPage.goToClients();
       listingPage.searchItem(clientName).goToItemDetails(clientName);
+    });
+
+    beforeEach(() => {
+      keycloakBeforeEach();
     });
 
     it("displays the correct tabs", () => {
@@ -352,12 +367,18 @@ describe("Clients test", () => {
     const clientId = "bearer-only";
 
     before(() => {
+      keycloakBefore();
+      loginPage.logIn();
       new AdminClient().createClient({
         clientId,
         protocol: "openid-connect",
         publicClient: false,
         bearerOnly: true,
       });
+      sidebarPage.goToClients();
+      cy.intercept("/auth/admin/realms/master/clients/*").as("fetchClient");
+      listingPage.searchItem(clientId).goToItemDetails(clientId);
+      cy.wait("@fetchClient");
     });
 
     after(() => {
@@ -365,12 +386,7 @@ describe("Clients test", () => {
     });
 
     beforeEach(() => {
-      keycloakBefore();
-      loginPage.logIn();
-      sidebarPage.goToClients();
-      cy.intercept("/auth/admin/realms/master/clients/*").as("fetchClient");
-      listingPage.searchItem(clientId).goToItemDetails(clientId);
-      cy.wait("@fetchClient");
+      keycloakBeforeEach();
     });
 
     it("shows an explainer text for bearer only clients", () => {

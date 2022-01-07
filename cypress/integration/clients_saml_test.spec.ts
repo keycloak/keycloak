@@ -4,7 +4,7 @@ import ListingPage from "../support/pages/admin_console/ListingPage";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import ModalUtils from "../support/util/ModalUtils";
 import AdminClient from "../support/util/AdminClient";
-import { keycloakBefore } from "../support/util/keycloak_before";
+import { keycloakBefore } from "../support/util/keycloak_hooks";
 import AuthenticationTab from "../support/pages/admin_console/manage/clients/Authentication";
 
 const loginPage = new LoginPage();

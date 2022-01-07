@@ -4,7 +4,7 @@ import UserEventsTab from "../support/pages/admin_console/manage/events/UserEven
 import AdminEventsTab from "../support/pages/admin_console/manage/events/AdminEventsTab";
 import RealmSettingsPage from "../support/pages/admin_console/manage/realm_settings/RealmSettingsPage";
 import Masthead from "../support/pages/admin_console/Masthead";
-import { keycloakBefore } from "../support/util/keycloak_before";
+import { keycloakBefore } from "../support/util/keycloak_hooks";
 
 const loginPage = new LoginPage();
 const sidebarPage = new SidebarPage();

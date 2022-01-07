@@ -3,7 +3,7 @@ import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import CreateRealmPage from "../support/pages/admin_console/CreateRealmPage";
 import Masthead from "../support/pages/admin_console/Masthead";
 import AdminClient from "../support/util/AdminClient";
-import { keycloakBefore } from "../support/util/keycloak_before";
+import { keycloakBefore } from "../support/util/keycloak_hooks";
 
 const masthead = new Masthead();
 const loginPage = new LoginPage();
