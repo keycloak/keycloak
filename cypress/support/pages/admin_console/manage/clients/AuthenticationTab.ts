@@ -6,7 +6,7 @@ export default class AuthenticationTab {
   private nameColumnPrefix = "name-column-";
   private createResourceButton = "createResource";
 
-  goToTab() {
+  goToAuthenticationTab() {
     cy.get(this.tabName).click();
     return this;
   }

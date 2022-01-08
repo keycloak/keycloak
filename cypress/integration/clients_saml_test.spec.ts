@@ -5,7 +5,7 @@ import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import ModalUtils from "../support/util/ModalUtils";
 import AdminClient from "../support/util/AdminClient";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
-import AuthenticationTab from "../support/pages/admin_console/manage/clients/Authentication";
+import AuthenticationTab from "../support/pages/admin_console/manage/clients/AuthenticationTab";
 
 const loginPage = new LoginPage();
 const masthead = new Masthead();
@@ -137,7 +137,7 @@ describe("Clients SAML tests", () => {
 
     it("Should update the resource server settings", () => {
       listingPage.searchItem(clientName).goToItemDetails(clientName);
-      authenticationTab.goToTab();
+      authenticationTab.goToAuthenticationTab();
       authenticationTab.setPolicy("DISABLED").saveSettings();
 
       masthead.checkNotificationMessage("Resource successfully updated");
@@ -145,7 +145,7 @@ describe("Clients SAML tests", () => {
 
     it("Should create a resource", () => {
       listingPage.searchItem(clientName).goToItemDetails(clientName);
-      authenticationTab.goToTab().goToResourceSubTab();
+      authenticationTab.goToAuthenticationTab().goToResourceSubTab();
       authenticationTab.assertDefaultResource();
 
       authenticationTab

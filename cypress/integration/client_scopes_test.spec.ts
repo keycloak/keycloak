@@ -124,10 +124,10 @@ describe("Client Scopes test", () => {
     it("Assign role", () => {
       const role = "offline_access";
       listingPage.searchItem(scopeName, false).goToItemDetails(scopeName);
-      scopeTab.goToScopeTab().clickAssignRole().selectRow(role).clickAssign();
+      scopeTab.goToScopeTab().assignRole().selectRow(role).assign();
       masthead.checkNotificationMessage("Role mapping updated");
       scopeTab.checkRoles([role]);
-      scopeTab.hideInheritedRoles().selectRow(role).clickUnAssign();
+      scopeTab.hideInheritedRoles().selectRow(role).unAssign();
       modalUtils.checkModalTitle("Remove mapping?").confirmModal();
       scopeTab.checkRoles([]);
     });

@@ -72,7 +72,9 @@ export default function UserFederationSection() {
             history.push(toProvider({ realm, providerId: p.id!, id: "new" }))
           }
         >
-          {toUpperCase(p.id)}
+          {p.id.toUpperCase() == "LDAP"
+            ? p.id.toUpperCase()
+            : toUpperCase(p.id)}
         </DropdownItem>
       )),
     []

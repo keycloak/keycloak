@@ -1,7 +1,7 @@
 export default class ClientScopesTab {
   private clientScopesTab = "#pf-tab-clientScopes-clientScopes";
 
-  goToTab() {
+  goToClientScopesTab() {
     cy.get(this.clientScopesTab).click();
     return this;
   }

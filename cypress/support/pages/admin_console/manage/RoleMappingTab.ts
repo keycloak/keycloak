@@ -2,13 +2,14 @@ const expect = chai.expect;
 export default class RoleMappingTab {
   private tab = "#pf-tab-serviceAccount-serviceAccount";
   private scopeTab = "scopeTab";
-  private assignEmptyRole = "no-roles-for-this-client-empty-action";
-  private assignRole = "assignRole";
-  private unAssign = "unAssignRole";
-  private assign = "assign";
-  private hide = "#hideInheritedRoles";
+  private assignEmptyRoleBtn = "no-roles-for-this-client-empty-action";
+  private assignRoleBtn = "assignRole";
+  private unAssignBtn = "unAssignRole";
+  private assignBtn = "assign";
+  private hideInheritedRolesBtn = "#hideInheritedRoles";
   private assignedRolesTable = "assigned-roles";
   private namesColumn = 'td[data-label="Name"]:visible';
+  private confirmModalBtn = "modalConfirm";
 
   goToServiceAccountTab() {
     cy.get(this.tab).click();
@@ -20,23 +21,25 @@ export default class RoleMappingTab {
     return this;
   }
 
-  clickAssignRole(notEmpty = true) {
-    cy.findByTestId(notEmpty ? this.assignEmptyRole : this.assignRole).click();
+  assignRole(notEmpty = true) {
+    cy.findByTestId(
+      notEmpty ? this.assignEmptyRoleBtn : this.assignRoleBtn
+    ).click();
     return this;
   }
 
-  clickAssign() {
-    cy.findByTestId(this.assign).click();
+  assign() {
+    cy.findByTestId(this.assignBtn).click();
     return this;
   }
 
-  clickUnAssign() {
-    cy.findByTestId(this.unAssign).click();
+  unAssign() {
+    cy.findByTestId(this.unAssignBtn).click();
     return this;
   }
 
   hideInheritedRoles() {
-    cy.get(this.hide).check();
+    cy.get(this.hideInheritedRolesBtn).check();
     return this;
   }
 

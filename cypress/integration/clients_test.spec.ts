@@ -64,7 +64,7 @@ describe("Clients test", () => {
       cy.intercept("/auth/admin/realms/master/clients/*").as("fetchClient");
       listingPage.searchItem(clientId).goToItemDetails(clientId);
       cy.wait("@fetchClient");
-      clientScopesTab.goToTab();
+      clientScopesTab.goToClientScopesTab();
     });
 
     after(async () => {
@@ -181,7 +181,7 @@ describe("Clients test", () => {
         .continue()
         .continue();
 
-      advancedTab.goToTab();
+      advancedTab.goToAdvancedTab();
     });
 
     afterEach(() => {
@@ -191,10 +191,7 @@ describe("Clients test", () => {
     it("Clustering", () => {
       advancedTab.expandClusterNode();
 
-      advancedTab
-        .clickRegisterNodeManually()
-        .fillHost("localhost")
-        .clickSaveHost();
+      advancedTab.registerNodeManually().fillHost("localhost").saveHost();
       advancedTab.checkTestClusterAvailability(true);
     });
 
@@ -202,11 +199,11 @@ describe("Clients test", () => {
       const algorithm = "ES384";
       advancedTab
         .selectAccessTokenSignatureAlgorithm(algorithm)
-        .clickSaveFineGrain();
+        .saveFineGrain();
 
       advancedTab
         .selectAccessTokenSignatureAlgorithm("HS384")
-        .clickRevertFineGrain();
+        .revertFineGrain();
       advancedTab.checkAccessTokenSignatureAlgorithm(algorithm);
     });
   });
@@ -214,11 +211,6 @@ describe("Clients test", () => {
   describe("Service account tab test", () => {
     const serviceAccountTab = new RoleMappingTab();
     const serviceAccountName = "service-account-client";
-
-    beforeEach(() => {
-      keycloakBeforeEach();
-      sidebarPage.goToClients();
-    });
 
     before(() => {
       keycloakBefore();
@@ -231,6 +223,11 @@ describe("Clients test", () => {
         serviceAccountsEnabled: true,
         standardFlowEnabled: true,
       });
+    });
+
+    beforeEach(() => {
+      keycloakBeforeEach();
+      sidebarPage.goToClients();
     });
 
     after(() => {
@@ -250,10 +247,13 @@ describe("Clients test", () => {
       listingPage.goToItemDetails(serviceAccountName);
       serviceAccountTab
         .goToServiceAccountTab()
-        .clickAssignRole(false)
+        .assignRole(false)
         .selectRow("create-realm")
-        .clickAssign();
+        .assign();
       masthead.checkNotificationMessage("Role mapping updated");
+      serviceAccountTab.selectRow("create-realm").unAssign();
+      modalUtils.checkModalTitle("Remove mapping?").confirmModal();
+      masthead.checkNotificationMessage("Scope mapping successfully removed");
     });
   });
 
