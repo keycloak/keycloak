@@ -2899,9 +2899,7 @@ public class RepresentationToModel {
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
         UserModel serviceAccount = session.users().getServiceAccount(client);
 
-        if (serviceAccount == null) {
-            client.setServiceAccountsEnabled(true);
-        }
+        client.setServiceAccountsEnabled(serviceAccount != null);
 
         if (addDefaultRoles) {
             RoleModel umaProtectionRole = client.getRole(Constants.AUTHZ_UMA_PROTECTION);
