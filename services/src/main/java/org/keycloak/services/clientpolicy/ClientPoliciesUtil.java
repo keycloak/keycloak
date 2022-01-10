@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -338,6 +339,7 @@ public class ClientPoliciesUtil {
             policyModel.setName(policyRep.getName());
             policyModel.setDescription(policyRep.getDescription());
             policyModel.setEnable(true);
+            policyModel.setNegativeLogic(Optional.ofNullable(policyRep.isNegativelogic()).orElse(Boolean.FALSE));
 
             List<ClientPolicyConditionProvider> conditions = new ArrayList<>();
             if (policyRep.getConditions() != null) {
@@ -436,11 +438,14 @@ public class ClientPoliciesUtil {
             // newly proposed builtin policy not allowed because builtin policy cannot added/deleted/modified.
             Boolean enabled = (proposedPolicyRep.isEnabled() != null) ? proposedPolicyRep.isEnabled() : Boolean.FALSE;
 
+            Boolean negativeLogic = Optional.ofNullable(proposedPolicyRep.isNegativelogic()).orElse(Boolean.FALSE);
+
             // basically, proposed policy totally overrides existing policy except for enabled field..
             ClientPolicyRepresentation policyRep = new ClientPolicyRepresentation();
             policyRep.setName(proposedPolicyRep.getName());
             policyRep.setDescription(proposedPolicyRep.getDescription());
             policyRep.setEnabled(enabled);
+            policyRep.setNegativelogic(negativeLogic);
 
             policyRep.setConditions(new ArrayList<>());
             if (proposedPolicyRep.getConditions() != null) {

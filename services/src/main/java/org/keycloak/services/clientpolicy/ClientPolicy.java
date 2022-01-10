@@ -31,6 +31,7 @@ class ClientPolicy implements Serializable {
     protected String name;
     protected String description;
     protected boolean enable;
+    protected boolean negativeLogic;
     protected List<ClientPolicyConditionProvider> conditions;
     protected List<String> profiles;
 
@@ -56,6 +57,14 @@ class ClientPolicy implements Serializable {
 
     public void setEnable(boolean enable) {
         this.enable = enable;
+    }
+
+    public boolean isNegativeLogic() {
+        return negativeLogic;
+    }
+
+    public void setNegativeLogic(boolean negativeLogic) {
+        this.negativeLogic = negativeLogic;
     }
 
     public List<ClientPolicyConditionProvider> getConditions() {

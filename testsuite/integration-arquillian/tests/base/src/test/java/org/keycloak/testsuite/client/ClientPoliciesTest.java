@@ -2738,6 +2738,51 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 
     }
 
+    @Test
+    public void testNegativeLogicPolicy() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
+                    .addExecutor(SecureSessionEnforceExecutorFactory.PROVIDER_ID, null)
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
+
+        // register policies
+        String roleBetaName = "sample-client-role-beta";
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Den Forste Politikken", Boolean.TRUE)
+                    .addCondition(ClientRolesConditionFactory.PROVIDER_ID, 
+                        createClientRolesConditionConfig(Arrays.asList(roleBetaName)))
+                    .addProfile(PROFILE_NAME)
+                    .toRepresentation()
+                ).toString();
+        updatePolicies(json);
+
+        String clientBetaId = generateSuffixedName("Beta-App");
+        String clientBetaSecret = "secretBeta";
+        String cBetaId = createClientByAdmin(clientBetaId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientBetaSecret);
+        });
+        adminClient.realm(REALM_NAME).clients().get(cBetaId).roles().create(RoleBuilder.create().name(roleBetaName).build());
+
+        oauth.openid(true);
+        failLoginWithoutSecureSessionParameter(clientBetaId, ERR_MSG_MISSING_NONCE);
+
+        // updated as negative logic policy
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Den Forste Politikken", Boolean.TRUE, Boolean.TRUE)
+                    .addCondition(ClientRolesConditionFactory.PROVIDER_ID, 
+                        createClientRolesConditionConfig(Arrays.asList(roleBetaName)))
+                    .addProfile(PROFILE_NAME)
+                    .toRepresentation()
+                ).toString();
+        updatePolicies(json);
+
+        oauth.openid(true);
+        successfulLoginAndLogout(clientBetaId, clientBetaSecret);
+    }
+
     private void openVerificationPage(String verificationUri) {
         driver.navigate().to(verificationUri);
     }

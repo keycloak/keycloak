@@ -3977,6 +3977,7 @@ module.controller('ClientPoliciesEditCtrl', function($scope, realm, clientProfil
         $scope.editedPolicy = {
             name: "",
             enabled: true,
+            negativelogic: false,
             profiles: [],
             conditions: []
         };

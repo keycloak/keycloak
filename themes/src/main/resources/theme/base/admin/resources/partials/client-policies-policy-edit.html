@@ -54,6 +54,14 @@
                 <kc-tooltip>{{:: 'client-policy-enabled.tooltip' | translate}}</kc-tooltip>
             </div>
 
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="negativelogic">{{:: 'negativelogic' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="editedPolicy.negativelogic" name="negativelogic" id="negativelogic" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'client-policy-negativelogic.tooltip' | translate}}</kc-tooltip>
+            </div>
+
         </fieldset>
 
         <fieldset data-ng-hide="isReadOnly()">

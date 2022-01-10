@@ -255,7 +255,7 @@ public final class ClientPoliciesUtil {
             policyRep = new ClientPolicyRepresentation();
         }
 
-        public ClientPolicyBuilder createPolicy(String name, String description, Boolean isEnabled) {
+        public ClientPolicyBuilder createPolicy(String name, String description, Boolean isEnabled, Boolean isNegativeLogic) {
             policyRep.setName(name);
             if (description != null) {
                 policyRep.setDescription(description);
@@ -265,11 +265,18 @@ public final class ClientPoliciesUtil {
             } else {
                 policyRep.setEnabled(Boolean.FALSE);
             }
+            if (isNegativeLogic != null) {
+                policyRep.setNegativelogic(isNegativeLogic);
+            }
 
             policyRep.setConditions(new ArrayList<>());
             policyRep.setProfiles(new ArrayList<>());
 
             return this;
+        }
+
+        public ClientPolicyBuilder createPolicy(String name, String description, Boolean isEnabled) {
+            return createPolicy(name, description, isEnabled, null);
         }
 
         public ClientPolicyBuilder addCondition(String providerId, ClientPolicyConditionConfigurationRepresentation config) throws Exception {

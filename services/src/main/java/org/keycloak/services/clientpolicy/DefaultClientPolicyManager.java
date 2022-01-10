@@ -111,12 +111,22 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
                     continue;
                 } else if (vote == ClientPolicyVote.NO) {
                     logger.tracev("CONDITION NEGATIVE :: policy name = {0}, condition name = {1}, provider id = {2}", policy.getName(), condition.getName(), condition.getProviderId());
-                    return false;
+                    ret = false;
+                    break;
                 }
                 ret = true;
             } catch (ClientPolicyException e) {
                 logger.tracev("CONDITION EXCEPTION :: policy name = {0}, provider id = {1}, error = {2}, error detail = {3}", condition.getName(), condition.getProviderId(), e.getError(), e.getErrorDetail());
                 throw e;
+            }
+        }
+
+        if (policy.isNegativeLogic()) {
+            logger.tracev("CONDITIONS POLICY LEVEL NEGATIVE LOGIC ENABLED :: policy name = {0}", policy.getName());
+            if (ret == true) {
+                ret = false;
+            } else {
+                ret = true;
             }
         }
 

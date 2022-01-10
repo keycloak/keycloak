@@ -19,6 +19,8 @@ package org.keycloak.representations.idm;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * Client Policy's external representation class
  *
@@ -29,6 +31,8 @@ public class ClientPolicyRepresentation {
     protected String name;
     protected String description;
     protected Boolean enabled;
+    protected Boolean negativelogic;
+
     protected List<ClientPolicyConditionRepresentation> conditions;
     protected List<String> profiles;
 
@@ -54,6 +58,14 @@ public class ClientPolicyRepresentation {
 
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public Boolean isNegativelogic() {
+        return negativelogic;
+    }
+
+    public void setNegativelogic(Boolean negativelogic) {
+        this.negativelogic = negativelogic;
     }
 
     public List<ClientPolicyConditionRepresentation> getConditions() {
