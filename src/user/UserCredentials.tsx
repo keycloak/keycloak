@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useMemo, useState } from "react";
+import React, { Fragment, FunctionComponent, useMemo, useState } from "react";
 import {
   AlertVariant,
   Button,
@@ -27,7 +27,6 @@ import {
   TableComposable,
   TableHeader,
   TableVariant,
-  Tbody,
   Td,
   Th,
   Thead,
@@ -44,7 +43,7 @@ import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { Controller, useForm, UseFormMethods, useWatch } from "react-hook-form";
 import { PasswordInput } from "../components/password-input/PasswordInput";
 import { HelpItem } from "../components/help-enabler/HelpItem";
-import "./user-section.css";
+import "./user-credentials.css";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import type CredentialRepresentation from "@keycloak/keycloak-admin-client/lib/defs/credentialRepresentation";
 import { FormAccess } from "../components/form-access/FormAccess";
@@ -88,6 +87,12 @@ type UserLabelForm = {
 
 const userLabelDefaultValues: UserLabelForm = {
   userLabel: "",
+};
+
+type ExpandableCredentialRepresentation = {
+  key: string;
+  value: CredentialRepresentation[];
+  isExpanded: boolean;
 };
 
 const DisplayDialog: FunctionComponent<DisplayDialogProps> = ({
@@ -241,6 +246,9 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
   const [userCredentials, setUserCredentials] = useState<
     CredentialRepresentation[]
   >([]);
+  const [groupedUserCredentials, setGroupedUserCredentials] = useState<
+    ExpandableCredentialRepresentation[]
+  >([]);
   const [selectedCredential, setSelectedCredential] =
     useState<CredentialRepresentation>({});
   const [isResetPassword, setIsResetPassword] = useState(false);
@@ -256,6 +264,23 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
     () => adminClient.users.getCredentials({ id: user.id! }),
     (credentials) => {
       setUserCredentials(credentials);
+
+      const groupedCredentials = credentials.reduce((r, a) => {
+        r[a.type!] = r[a.type!] || [];
+        r[a.type!].push(a);
+        return r;
+      }, Object.create(null));
+
+      const groupedCredentialsArray = Object.keys(groupedCredentials).map(
+        (key) => ({ key, value: groupedCredentials[key] })
+      );
+
+      setGroupedUserCredentials(
+        groupedCredentialsArray.map((groupedCredential) => ({
+          ...groupedCredential,
+          isExpanded: false,
+        }))
+      );
     },
     [key]
   );
@@ -671,7 +696,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
         <>
           <Button
             key={`confirmSaveBtn-table-${user.id}`}
-            className="setPasswordBtn-table"
+            className="kc-setPasswordBtn-tbl"
             data-testid="setPasswordBtn-table"
             variant="primary"
             form="userCredentials-form"
@@ -684,7 +709,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
           <Divider />
         </>
       )}
-      {userCredentials.length !== 0 ? (
+      {groupedUserCredentials.length !== 0 ? (
         <>
           {user.email && (
             <Button
@@ -712,161 +737,330 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
                 <Th />
               </Tr>
             </Thead>
-            <Tbody>
-              {userCredentials.map((credential) => (
-                <Tr key={`table-${credential.id}`}>
-                  <>
+            {groupedUserCredentials.map((groupedCredential, rowIndex) => (
+              <Fragment key={`table-${groupedCredential.key}`}>
+                <Tr>
+                  {groupedCredential.value.length > 1 ? (
                     <Td
-                      draggableRow={{
-                        id: `draggable-row-${credential.id}`,
+                      className="kc-expandRow-btn"
+                      expand={{
+                        rowIndex,
+                        isExpanded: groupedCredential.isExpanded,
+                        onToggle: (_, rowIndex) => {
+                          const rows = groupedUserCredentials.map(
+                            (credential, index) =>
+                              index === rowIndex
+                                ? {
+                                    ...credential,
+                                    isExpanded: !credential.isExpanded,
+                                  }
+                                : credential
+                          );
+                          setGroupedUserCredentials(rows);
+                        },
                       }}
                     />
-                    <Td
-                      key={`table-item-${credential.id}`}
-                      dataLabel={`columns-${credential.id}`}
-                    >
-                      {credential.type?.charAt(0).toUpperCase()! +
-                        credential.type?.slice(1)}
-                    </Td>
-                    <Td>
-                      <FormAccess isHorizontal role="view-users">
-                        <FormGroup
-                          fieldId="kc-userLabel"
-                          className="kc-userLabel-row"
+                  ) : (
+                    <Td />
+                  )}
+                  <Td
+                    key={`table-item-${groupedCredential.key}`}
+                    dataLabel={`columns-${groupedCredential.key}`}
+                    className="kc-notExpandableRow-credentialType"
+                  >
+                    {groupedCredential.key.charAt(0).toUpperCase()! +
+                      groupedCredential.key.slice(1)}
+                  </Td>
+                  {groupedCredential.value.length <= 1 &&
+                    groupedCredential.value.map((credential) => (
+                      <>
+                        <Td>
+                          <FormAccess
+                            isHorizontal
+                            role="view-users"
+                            className="kc-form-userLabel"
+                          >
+                            <FormGroup
+                              fieldId="kc-userLabel"
+                              className="kc-userLabel-row"
+                            >
+                              <div className="kc-form-group-userLabel">
+                                {isUserLabelEdit?.status &&
+                                isUserLabelEdit.rowKey === credential.id ? (
+                                  <>
+                                    <TextInput
+                                      name="userLabel"
+                                      ref={register1()}
+                                      type="text"
+                                      className="kc-userLabel"
+                                      aria-label={t("userLabel")}
+                                      data-testid="user-label-fld"
+                                    />
+                                    <div className="kc-userLabel-actionBtns">
+                                      <Button
+                                        key={`editUserLabel-accept-${credential.id}`}
+                                        variant="link"
+                                        className="kc-editUserLabel-acceptBtn"
+                                        onClick={() => {
+                                          handleSubmit1(saveUserLabel)();
+                                          setIsUserLabelEdit({
+                                            status: false,
+                                            rowKey: credential.id!,
+                                          });
+                                        }}
+                                        data-testid="editUserLabel-acceptBtn"
+                                        icon={<CheckIcon />}
+                                      />
+                                      <Button
+                                        key={`editUserLabel-cancel-${credential.id}`}
+                                        variant="link"
+                                        className="kc-editUserLabel-cancelBtn"
+                                        onClick={() =>
+                                          setIsUserLabelEdit({
+                                            status: false,
+                                            rowKey: credential.id!,
+                                          })
+                                        }
+                                        data-testid="editUserLabel-cancelBtn"
+                                        icon={<TimesIcon />}
+                                      />
+                                    </div>
+                                  </>
+                                ) : (
+                                  <>
+                                    {credential.userLabel ?? ""}
+                                    <Button
+                                      key={`editUserLabel-${credential.id}`}
+                                      variant="link"
+                                      className="kc-editUserLabel-btn"
+                                      onClick={() => {
+                                        setEditedUserCredential(credential);
+                                        setIsUserLabelEdit({
+                                          status: true,
+                                          rowKey: credential.id!,
+                                        });
+                                      }}
+                                      data-testid="editUserLabelBtn"
+                                      icon={<PencilAltIcon />}
+                                    />
+                                  </>
+                                )}
+                              </div>
+                            </FormGroup>
+                          </FormAccess>
+                        </Td>
+                        <Td>
+                          <Button
+                            className="kc-showData-btn"
+                            variant="link"
+                            data-testid="showDataBtn"
+                            onClick={() => {
+                              setShowData(true);
+                              setSelectedCredential(credential);
+                            }}
+                          >
+                            {t("showDataBtn")}
+                          </Button>
+                        </Td>
+                        {credential.type === "password" ? (
+                          <Td>
+                            <Button
+                              variant="secondary"
+                              data-testid="resetPasswordBtn"
+                              onClick={resetPassword}
+                            >
+                              {t("resetPasswordBtn")}
+                            </Button>
+                          </Td>
+                        ) : (
+                          <Td />
+                        )}
+                        <Td>
+                          <Dropdown
+                            isPlain
+                            position={DropdownPosition.right}
+                            toggle={
+                              <KebabToggle
+                                onToggle={(status) =>
+                                  setKebabOpen({
+                                    status,
+                                    rowKey: credential.id!,
+                                  })
+                                }
+                              />
+                            }
+                            isOpen={
+                              kebabOpen.status &&
+                              kebabOpen.rowKey === credential.id
+                            }
+                            onSelect={() => {
+                              setSelectedCredential(credential);
+                            }}
+                            dropdownItems={[
+                              <DropdownItem
+                                key={`delete-dropdown-item-${credential.id}`}
+                                data-testid="deleteDropdownItem"
+                                component="button"
+                                onClick={() => {
+                                  toggleDeleteDialog();
+                                  setKebabOpen({
+                                    status: false,
+                                    rowKey: credential.id!,
+                                  });
+                                }}
+                              >
+                                {t("deleteBtn")}
+                              </DropdownItem>,
+                            ]}
+                          />
+                        </Td>
+                      </>
+                    ))}
+                </Tr>
+                {groupedCredential.isExpanded &&
+                  groupedCredential.value.map((credential) => (
+                    <Tr key={`child-key-${credential.id}`}>
+                      <Td />
+                      <Td
+                        key={`child-item-${credential.id}`}
+                        dataLabel={`child-columns-${credential.id}`}
+                        className="kc-expandableRow-credentialType"
+                      >
+                        {credential.type!.charAt(0).toUpperCase()! +
+                          credential.type!.slice(1)}
+                      </Td>
+                      <Td>
+                        <FormAccess
+                          isHorizontal
+                          role="view-users"
+                          className="kc-form-userLabel"
                         >
-                          <div className="kc-form-group-userLabel">
-                            {isUserLabelEdit?.status &&
-                            isUserLabelEdit.rowKey === credential.id ? (
-                              <>
-                                <TextInput
-                                  name="userLabel"
-                                  ref={register1()}
-                                  type="text"
-                                  className="kc-userLabel"
-                                  aria-label={t("userLabel")}
-                                  data-testid="user-label-fld"
-                                />
-                                <div className="kc-userLabel-actionBtns">
+                          <FormGroup
+                            fieldId="kc-userLabel"
+                            className="kc-userLabel-row"
+                          >
+                            <div className="kc-form-group-userLabel">
+                              {isUserLabelEdit?.status &&
+                              isUserLabelEdit.rowKey === credential.id ? (
+                                <>
+                                  <TextInput
+                                    name="userLabel"
+                                    ref={register1()}
+                                    type="text"
+                                    className="kc-userLabel"
+                                    aria-label={t("userLabel")}
+                                    data-testid="user-label-fld"
+                                  />
+                                  <div className="kc-userLabel-actionBtns">
+                                    <Button
+                                      key={`editUserLabel-accept-${credential.id}`}
+                                      variant="link"
+                                      className="kc-editUserLabel-acceptBtn"
+                                      onClick={() => {
+                                        handleSubmit1(saveUserLabel)();
+                                        setIsUserLabelEdit({
+                                          status: false,
+                                          rowKey: credential.id!,
+                                        });
+                                      }}
+                                      data-testid="editUserLabel-acceptBtn"
+                                      icon={<CheckIcon />}
+                                    />
+                                    <Button
+                                      key={`editUserLabel-cancel-${credential.id}`}
+                                      variant="link"
+                                      className="kc-editUserLabel-cancelBtn"
+                                      onClick={() =>
+                                        setIsUserLabelEdit({
+                                          status: false,
+                                          rowKey: credential.id!,
+                                        })
+                                      }
+                                      data-testid="editUserLabel-cancelBtn"
+                                      icon={<TimesIcon />}
+                                    />
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  {credential.userLabel ?? ""}
                                   <Button
-                                    key={`editUserLabel-accept-${credential.id}`}
+                                    key={`editUserLabel-${credential.id}`}
                                     variant="link"
-                                    className="kc-editUserLabel-acceptBtn"
+                                    className="kc-editUserLabel-btn"
                                     onClick={() => {
-                                      handleSubmit1(saveUserLabel)();
+                                      setEditedUserCredential(credential);
                                       setIsUserLabelEdit({
-                                        status: false,
+                                        status: true,
                                         rowKey: credential.id!,
                                       });
                                     }}
-                                    data-testid="editUserLabel-acceptBtn"
-                                    icon={<CheckIcon />}
+                                    data-testid="editUserLabelBtn"
+                                    icon={<PencilAltIcon />}
                                   />
-                                  <Button
-                                    key={`editUserLabel-cancel-${credential.id}`}
-                                    variant="link"
-                                    className="kc-editUserLabel-cancelBtn"
-                                    onClick={() =>
-                                      setIsUserLabelEdit({
-                                        status: false,
-                                        rowKey: credential.id!,
-                                      })
-                                    }
-                                    data-testid="editUserLabel-cancelBtn"
-                                    icon={<TimesIcon />}
-                                  />
-                                </div>
-                              </>
-                            ) : (
-                              <>
-                                {credential.userLabel ?? ""}
-                                <Button
-                                  key={`editUserLabel-${credential.id}`}
-                                  variant="link"
-                                  className="kc-editUserLabel-btn"
-                                  onClick={() => {
-                                    setEditedUserCredential(credential);
-                                    setIsUserLabelEdit({
-                                      status: true,
-                                      rowKey: credential.id!,
-                                    });
-                                  }}
-                                  data-testid="editUserLabelBtn"
-                                  icon={<PencilAltIcon />}
-                                />
-                              </>
-                            )}
-                          </div>
-                        </FormGroup>
-                      </FormAccess>
-                    </Td>
-                    <Td>
-                      <Button
-                        className="kc-showData-btn"
-                        variant="link"
-                        data-testid="showDataBtn"
-                        onClick={() => {
-                          setShowData(true);
-                          setSelectedCredential(credential);
-                        }}
-                      >
-                        {t("showDataBtn")}
-                      </Button>
-                    </Td>
-                    {credential.type === "password" ? (
+                                </>
+                              )}
+                            </div>
+                          </FormGroup>
+                        </FormAccess>
+                      </Td>
                       <Td>
                         <Button
-                          variant="secondary"
-                          data-testid="resetPasswordBtn"
-                          onClick={resetPassword}
+                          className="kc-showData-btn"
+                          variant="link"
+                          data-testid="showDataBtn"
+                          onClick={() => {
+                            setShowData(true);
+                            setSelectedCredential(credential);
+                          }}
                         >
-                          {t("resetPasswordBtn")}
+                          {t("showDataBtn")}
                         </Button>
                       </Td>
-                    ) : (
                       <Td />
-                    )}
-                    <Td>
-                      <Dropdown
-                        isPlain
-                        position={DropdownPosition.right}
-                        toggle={
-                          <KebabToggle
-                            onToggle={(status) =>
-                              setKebabOpen({
-                                status,
-                                rowKey: credential.id!,
-                              })
-                            }
-                          />
-                        }
-                        isOpen={
-                          kebabOpen.status && kebabOpen.rowKey === credential.id
-                        }
-                        onSelect={() => {
-                          setSelectedCredential(credential);
-                        }}
-                        dropdownItems={[
-                          <DropdownItem
-                            key={`delete-dropdown-item-${credential.id}`}
-                            data-testid="deleteDropdownItem"
-                            component="button"
-                            onClick={() => {
-                              toggleDeleteDialog();
-                              setKebabOpen({
-                                status: false,
-                                rowKey: credential.id!,
-                              });
-                            }}
-                          >
-                            {t("deleteBtn")}
-                          </DropdownItem>,
-                        ]}
-                      />
-                    </Td>
-                  </>
-                </Tr>
-              ))}
-            </Tbody>
+                      <Td>
+                        <Dropdown
+                          isPlain
+                          position={DropdownPosition.right}
+                          toggle={
+                            <KebabToggle
+                              onToggle={(status) =>
+                                setKebabOpen({
+                                  status,
+                                  rowKey: credential.id!,
+                                })
+                              }
+                            />
+                          }
+                          isOpen={
+                            kebabOpen.status &&
+                            kebabOpen.rowKey === credential.id
+                          }
+                          onSelect={() => {
+                            setSelectedCredential(credential);
+                          }}
+                          dropdownItems={[
+                            <DropdownItem
+                              key={`delete-dropdown-item-${credential.id}`}
+                              data-testid="deleteDropdownItem"
+                              component="button"
+                              onClick={() => {
+                                toggleDeleteDialog();
+                                setKebabOpen({
+                                  status: false,
+                                  rowKey: credential.id!,
+                                });
+                              }}
+                            >
+                              {t("deleteBtn")}
+                            </DropdownItem>,
+                          ]}
+                        />
+                      </Td>
+                    </Tr>
+                  ))}
+              </Fragment>
+            ))}
           </TableComposable>
         </>
       ) : (
