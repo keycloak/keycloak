@@ -53,6 +53,9 @@ public class OAuthErrorException extends Exception {
     public static final String SLOW_DOWN = "slow_down";
     public static final String EXPIRED_TOKEN = "expired_token";
 
+    // CIBA
+    public static final String INVALID_BINDING_MESSAGE = "invalid_binding_message";
+
     // Others
     public static final String INVALID_CLIENT = "invalid_client";
     public static final String INVALID_GRANT = "invalid_grant";
