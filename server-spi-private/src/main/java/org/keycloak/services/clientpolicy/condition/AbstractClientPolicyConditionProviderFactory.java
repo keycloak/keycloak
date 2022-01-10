@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,40 +20,33 @@ package org.keycloak.services.clientpolicy.condition;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.keycloak.models.KeycloakSession;
+import org.keycloak.Config.Scope;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class AnyClientConditionFactory extends AbstractClientPolicyConditionProviderFactory {
+public abstract class AbstractClientPolicyConditionProviderFactory implements ClientPolicyConditionProviderFactory {
 
-    public static final String PROVIDER_ID = "any-client";
+    public static final String IS_NEGATIVE_LOGIC = "is-negative-logic";
 
-    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
-
-    static {
-        addCommonConfigProperties(configProperties);
+    static protected void addCommonConfigProperties(List<ProviderConfigProperty> configProperties) {
+        ProviderConfigProperty property = new ProviderConfigProperty(IS_NEGATIVE_LOGIC, "Negative Logic",
+                "If On, the result of condition's evaluation is reverted from true to false and vice versa.",
+                ProviderConfigProperty.BOOLEAN_TYPE, false);
+        configProperties.add(property);
     }
 
     @Override
-    public ClientPolicyConditionProvider create(KeycloakSession session) {
-        return new AnyClientCondition(session);
+    public void init(Scope config) {
     }
 
     @Override
-    public String getId() {
-        return PROVIDER_ID;
+    public void postInit(KeycloakSessionFactory factory) {
     }
 
     @Override
-    public String getHelpText() {
-        return "The condition is satisfied by any client on any event.";
-    }
-
-
-    @Override
-    public List<ProviderConfigProperty> getConfigProperties() {
-        return configProperties;
+    public void close() {
     }
 }
