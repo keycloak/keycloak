@@ -90,11 +90,15 @@ public interface LoginFormsProvider extends Provider {
 
     Response createSelectAuthenticator();
 
+    Response createOAuth2DeviceVerifyUserCodePage();
+
     Response createCode();
 
     Response createX509ConfirmPage();
 
     Response createSamlPostForm();
+
+    Response createFrontChannelLogoutPage();
 
     LoginFormsProvider setAuthenticationSession(AuthenticationSessionModel authenticationSession);
 

@@ -218,4 +218,18 @@ public final class UIUtils {
         String ariaInvalid = element.getAttribute(ARIA_INVALID_ATTR_NAME);
         return !Boolean.parseBoolean(ariaInvalid);
     }
+
+    public static String getRawPageSource(WebDriver driver) {
+        if (driver instanceof FirefoxDriver) {
+            // firefox has some weird "bug" – it wraps xml in html
+            return driver.findElement(By.tagName("body")).getText();
+        }
+        else {
+            return driver.getPageSource();
+        }
+    }
+
+    public static String getRawPageSource() {
+        return getRawPageSource(getCurrentDriver());
+    }
 }

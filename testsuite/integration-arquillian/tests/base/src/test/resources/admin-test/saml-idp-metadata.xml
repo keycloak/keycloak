@@ -1,8 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <EntityDescriptor entityID="http://localhost:8080/auth/realms/master"
                   xmlns="urn:oasis:names:tc:SAML:2.0:metadata"
+                  xmlns:mdattr="urn:oasis:names:tc:SAML:metadata:attribute"
+                  xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
                   xmlns:dsig="http://www.w3.org/2000/09/xmldsig#"
 >
+     <Extensions>
+	 <mdattr:EntityAttributes>
+        <saml:Attribute Name="http://macedir.org/entity-category" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+          <saml:AttributeValue>http://refeds.org/category/hide-from-discovery</saml:AttributeValue>
+        </saml:Attribute>
+      </mdattr:EntityAttributes>
+      </Extensions>
    <IDPSSODescriptor WantAuthnRequestsSigned="true"
       protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
       <KeyDescriptor use="signing">

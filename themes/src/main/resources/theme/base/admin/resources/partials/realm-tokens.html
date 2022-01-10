@@ -321,6 +321,22 @@
         </div>
 
         <div class="form-group">
+            <label class="col-md-2 control-label" for="requestUriLifespan" class="two-lines">{{:: 'request-uri-lifespan' | translate}}</label>
+
+            <div class="col-md-6 time-selector">
+                <input class="form-control" type="number" required min="1" max="31536000" string-to-number data-ng-model="realm.attributes.parRequestUriLifespan.time"
+                       id="requestUriLifespan" name="requestUriLifespan">
+                <select class="form-control" name="requestUriLifespanUnit" data-ng-model="realm.attributes.parRequestUriLifespan.unit">
+                    <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                    <option value="Hours">{{:: 'hours' | translate}}</option>
+                </select>
+            </div>
+            <kc-tooltip>
+                {{:: 'request-uri-lifespan.tooltip' | translate}}
+            </kc-tooltip>
+        </div>
+
+        <div class="form-group">
             <label class="col-md-2 control-label" for="actionTokenAttributeSelect" class="two-lines">
                 {{:: 'action-token-generated-by-user.operation' | translate }} </label>
             <div class="form-inline col-md-6 time-selector">
@@ -344,6 +360,31 @@
             <kc-tooltip>
                 {{:: 'action-token-generated-by-user.tooltip' | translate}}
             </kc-tooltip>
+        </div>
+
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="oauth2DeviceCodeLifespan">{{:: 'oauth2-device-code-lifespan' | translate}}</label>
+
+            <div class="col-md-6 time-selector">
+                <input class="form-control" type="number" required min="1" max="31536000" data-ng-model="realm.oauth2DeviceCodeLifespan.time" id="oauth2DeviceCodeLifespan"
+                       name="oauth2DeviceCodeLifespan">
+                <select class="form-control" name="oauth2DeviceCodeLifespanUnit" data-ng-model="realm.oauth2DeviceCodeLifespan.unit">
+                    <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                    <option value="Hours">{{:: 'hours' | translate}}</option>
+                    <option value="Days">{{:: 'days' | translate}}</option>
+                </select>
+            </div>
+            <kc-tooltip>{{:: 'oauth2-device-code-lifespan.tooltip' | translate}}</kc-tooltip>
+        </div>
+
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="oauth2DevicePollingInterval">{{:: 'oauth2-device-polling-interval' | translate}}</label>
+
+            <div class="col-md-6 time-selector">
+                <input class="form-control" type="number" required min="1" max="31536000" data-ng-model="realm.oauth2DevicePollingInterval" id="oauth2DevicePollingInterval"
+                       name="oauth2DevicePollingInterval">
+            </div>
+            <kc-tooltip>{{:: 'oauth2-device-polling-interval.tooltip' | translate}}</kc-tooltip>
         </div>
 
         <div class="form-group">

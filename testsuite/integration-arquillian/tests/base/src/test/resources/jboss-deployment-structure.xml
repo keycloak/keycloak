@@ -24,6 +24,8 @@
             <module name="io.undertow.servlet"/>
             <module name="org.keycloak.keycloak-common"/>
             <module name="org.keycloak.keycloak-core"/>
+            <module name="org.keycloak.keycloak-saml-core"/>
+            <module name="org.keycloak.keycloak-saml-core-public"/>
             <module name="org.keycloak.keycloak-server-spi"/>
             <module name="org.keycloak.keycloak-server-spi-private"/>
             <module name="org.keycloak.keycloak-services" services="import"/>
@@ -31,6 +33,7 @@
             <module name="org.keycloak.keycloak-model-jpa"/>
             <module name="org.keycloak.keycloak-ldap-federation"/>
             <module name="org.infinispan"/>
+            <module name="org.infinispan.commons"/>
             <module name="org.infinispan.client.hotrod"/>
             <module name="org.jgroups"/>
             <module name="org.jboss.logging"/>

@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.resource.AuthorizationResource;
 import org.keycloak.authorization.client.resource.ProtectionResource;
@@ -30,7 +32,7 @@ import org.keycloak.authorization.client.util.Http;
 import org.keycloak.authorization.client.util.TokenCallable;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.SystemPropertiesJsonParserFactory;
 
 /**
  * <p>This is class serves as an entry point for clients looking for access to Keycloak Authorization Services.
@@ -67,12 +69,16 @@ public class AuthzClient {
      * @return a new instance
      */
     public static AuthzClient create(InputStream configStream) throws RuntimeException {
-        if (Objects.isNull(configStream)) {
+        if (configStream == null) {
             throw new IllegalArgumentException("Config input stream can not be null");
         }
 
         try {
-            return create(JsonSerialization.readValue(configStream, Configuration.class));
+            ObjectMapper mapper = new ObjectMapper(new SystemPropertiesJsonParserFactory());
+
+            mapper.setSerializationInclusion(JsonInclude.Include.NON_DEFAULT);
+
+            return create(mapper.readValue(configStream, Configuration.class));
         } catch (IOException e) {
             throw new RuntimeException("Could not parse configuration.", e);
         }
@@ -182,7 +188,12 @@ public class AuthzClient {
      * @return a {@link AuthorizationResource}
      */
     public AuthorizationResource authorization(final String userName, final String password) {
-        return new AuthorizationResource(configuration, serverConfiguration, this.http, createRefreshableAccessTokenSupplier(userName, password));
+        return authorization(userName, password, null);
+    }
+
+    public AuthorizationResource authorization(final String userName, final String password, final String scope) {
+        return new AuthorizationResource(configuration, serverConfiguration, this.http,
+            createRefreshableAccessTokenSupplier(userName, password, scope));
     }
 
     /**
@@ -270,6 +281,11 @@ public class AuthzClient {
     }
 
     private TokenCallable createRefreshableAccessTokenSupplier(final String userName, final String password) {
-        return new TokenCallable(userName, password, http, configuration, serverConfiguration);
+        return createRefreshableAccessTokenSupplier(userName, password, null);
+    }
+
+    private TokenCallable createRefreshableAccessTokenSupplier(final String userName, final String password,
+        final String scope) {
+        return new TokenCallable(userName, password, scope, http, configuration, serverConfiguration);
     }
 }

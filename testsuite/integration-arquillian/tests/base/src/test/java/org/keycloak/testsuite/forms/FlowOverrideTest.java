@@ -60,6 +60,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.util.AdminClientUtil;
 
 /**
  * Test that clients can override auth flows
@@ -99,12 +100,12 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
 
-            ClientModel client = session.realms().getClientByClientId("test-app-flow", realm);
+            ClientModel client = session.clients().getClientByClientId(realm, "test-app-flow");
             if (client != null) {
                 return;
             }
 
-            client = session.realms().getClientByClientId("test-app", realm);
+            client = session.clients().getClientByClientId(realm, "test-app");
             client.setDirectAccessGrantsEnabled(true);
 
             // Parent flow
@@ -293,7 +294,7 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void testDirectGrantNoOverride(String clientId) {
-        Client httpClient = javax.ws.rs.client.ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
         String grantUri = oauth.getResourceOwnerPasswordCredentialGrantUrl();
         WebTarget grantTarget = httpClient.target(grantUri);
 
@@ -343,7 +344,7 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testGrantAccessTokenWithClientOverride() throws Exception {
         String clientId = TEST_APP_DIRECT_OVERRIDE;
-        Client httpClient = javax.ws.rs.client.ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
         String grantUri = oauth.getResourceOwnerPasswordCredentialGrantUrl();
         WebTarget grantTarget = httpClient.target(grantUri);
 
@@ -365,7 +366,7 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testClientOverrideFlowUsingDirectGrantHttpChallenge() {
-        Client httpClient = javax.ws.rs.client.ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
         String grantUri = oauth.getResourceOwnerPasswordCredentialGrantUrl();
         WebTarget grantTarget = httpClient.target(grantUri);
 
@@ -401,7 +402,7 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
 
         setupBruteForce();
 
-        Client httpClient = javax.ws.rs.client.ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
         String grantUri = oauth.getResourceOwnerPasswordCredentialGrantUrl();
         WebTarget grantTarget = httpClient.target(grantUri);
 
@@ -443,7 +444,7 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
     public void testDirectGrantHttpChallengeUserDisabled() {
         setupBruteForce();
 
-        Client httpClient = javax.ws.rs.client.ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
         String grantUri = oauth.getResourceOwnerPasswordCredentialGrantUrl();
         WebTarget grantTarget = httpClient.target(grantUri);
 
@@ -489,7 +490,7 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testClientOverrideFlowUsingBrowserHttpChallenge() {
-        Client httpClient = javax.ws.rs.client.ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
         oauth.clientId(TEST_APP_HTTP_CHALLENGE);
         String grantUri = oauth.getLoginFormUrl();
         WebTarget grantTarget = httpClient.target(grantUri);

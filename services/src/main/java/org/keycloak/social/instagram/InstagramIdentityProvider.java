@@ -27,6 +27,8 @@ import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.models.KeycloakSession;
 
+import java.io.IOException;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -34,9 +36,11 @@ public class InstagramIdentityProvider extends AbstractOAuth2IdentityProvider im
 
 	public static final String AUTH_URL = "https://api.instagram.com/oauth/authorize";
 	public static final String TOKEN_URL = "https://api.instagram.com/oauth/access_token";
-	public static final String PROFILE_URL = "https://api.instagram.com/v1/users/self";
-	public static final String DEFAULT_SCOPE = "basic";
-
+	public static final String PROFILE_URL = "https://graph.instagram.com/me";
+	public static final String PROFILE_FIELDS = "id,username";
+	public static final String DEFAULT_SCOPE = "user_profile";
+	public static final String LEGACY_ID_FIELD = "ig_id";
+	
 	public InstagramIdentityProvider(KeycloakSession session, OAuth2IdentityProviderConfig config) {
 		super(session, config);
 		config.setAuthorizationUrl(AUTH_URL);
@@ -46,25 +50,29 @@ public class InstagramIdentityProvider extends AbstractOAuth2IdentityProvider im
 
 	protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
 		try {
-			JsonNode raw = SimpleHttp.doGet(PROFILE_URL,session).param("access_token", accessToken).asJson();
-			
-			JsonNode profile = raw.get("data");
+			// try to get the profile incl. legacy Instagram ID to allow existing users to log in
+			JsonNode profile = fetchUserProfile(accessToken, true);
+			// ig_id field will get deprecated in the future and eventually might stop working (returning error)
+			if (!profile.has("id")) {
+				logger.debugf("Could not fetch user profile from instagram. Trying without %s.", LEGACY_ID_FIELD);
+				profile = fetchUserProfile(accessToken, false);
+			}
 			
 			logger.debug(profile.toString());
 
-			String id = getJsonProperty(profile, "id");
+			// it's not documented whether the new ID system can or cannot have conflicts with the legacy system, therefore
+			// we're using a custom prefix just to be sure
+			String id = "graph_" + getJsonProperty(profile, "id");
+	  		String username = getJsonProperty(profile, "username");
+			String legacyId = getJsonProperty(profile, LEGACY_ID_FIELD);
 
 			BrokeredIdentityContext user = new BrokeredIdentityContext(id);
-
-			String username = getJsonProperty(profile, "username");
-
 			user.setUsername(username);
-
-			String full_name = getJsonProperty(profile, "full_name");
-			
-			user.setName(full_name);
 			user.setIdpConfig(getConfig());
 			user.setIdp(this);
+			if (legacyId != null && !legacyId.isEmpty()) {
+				user.setLegacyId(legacyId);
+			}
 
 			AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());
 
@@ -72,6 +80,18 @@ public class InstagramIdentityProvider extends AbstractOAuth2IdentityProvider im
 		} catch (Exception e) {
 			throw new IdentityBrokerException("Could not obtain user profile from instagram.", e);
 		}
+	}
+
+	protected JsonNode fetchUserProfile(String accessToken, boolean includeIgId) throws IOException {
+		String fields = PROFILE_FIELDS;
+		if (includeIgId) {
+			fields += "," + LEGACY_ID_FIELD;
+		}
+
+		return SimpleHttp.doGet(PROFILE_URL,session)
+				.param("access_token", accessToken)
+				.param("fields", fields)
+				.asJson();
 	}
 
 	@Override

@@ -17,17 +17,27 @@
 
 package org.keycloak.connections.httpclient;
 
-import org.apache.http.client.HttpClient;
 import org.keycloak.provider.Provider;
 
 import java.io.IOException;
 import java.io.InputStream;
+import org.apache.http.impl.client.CloseableHttpClient;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public interface HttpClientProvider extends Provider {
-    HttpClient getHttpClient();
+    /**
+     * Returns the {@code CloseableHttpClient} that can be freely used.
+     * <p>
+     * <b>The returned {@code HttpClient} instance must never be {@code close()}d by the caller.</b>
+     * <p>
+     * Closing the {@code HttpClient} instance is responsibility of this provider. However,
+     * the objects created via the returned {@code HttpClient} need to be closed properly
+     * by the code that instantiated them.
+     * @return 
+     */
+    CloseableHttpClient getHttpClient();
 
     /**
      * Helper method

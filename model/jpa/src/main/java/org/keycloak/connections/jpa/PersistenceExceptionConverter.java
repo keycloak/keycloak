@@ -18,6 +18,8 @@
 package org.keycloak.connections.jpa;
 
 import org.hibernate.exception.ConstraintViolationException;
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 
@@ -27,28 +29,49 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class PersistenceExceptionConverter implements InvocationHandler {
 
-    private EntityManager em;
+    private static final Pattern WRITE_METHOD_NAMES = Pattern.compile("persist|merge");
 
-    public static EntityManager create(EntityManager em) {
-        return (EntityManager) Proxy.newProxyInstance(EntityManager.class.getClassLoader(), new Class[]{EntityManager.class}, new PersistenceExceptionConverter(em));
+    private final EntityManager em;
+    private final boolean batchEnabled;
+    private final int batchSize;
+    private int changeCount = 0;
+
+    public static EntityManager create(KeycloakSession session, EntityManager em) {
+        return (EntityManager) Proxy.newProxyInstance(EntityManager.class.getClassLoader(), new Class[]{EntityManager.class}, new PersistenceExceptionConverter(session, em));
     }
 
-    private PersistenceExceptionConverter(EntityManager em) {
+    private PersistenceExceptionConverter(KeycloakSession session, EntityManager em) {
+        batchEnabled = session.getAttributeOrDefault(Constants.STORAGE_BATCH_ENABLED, false);
+        batchSize = session.getAttributeOrDefault(Constants.STORAGE_BATCH_SIZE, 100);
         this.em = em;
     }
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         try {
+            flushInBatchIfEnabled(method);
             return method.invoke(em, args);
         } catch (InvocationTargetException e) {
             throw convert(e.getCause());
+        }
+    }
+
+    private void flushInBatchIfEnabled(Method method) {
+        if (batchEnabled) {
+            if (WRITE_METHOD_NAMES.matcher(method.getName()).matches()) {
+                if (changeCount++ > batchSize) {
+                    em.flush();
+                    em.clear();
+                    changeCount = 0;
+                }
+            }
         }
     }
 

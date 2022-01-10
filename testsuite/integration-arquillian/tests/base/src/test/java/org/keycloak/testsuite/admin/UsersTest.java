@@ -18,10 +18,12 @@
 package org.keycloak.testsuite.admin;
 
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionRepresentation;
@@ -31,6 +33,7 @@ import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.util.AdminClientUtil;
 
 import java.io.IOException;
@@ -44,6 +47,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 
 public class UsersTest extends AbstractAdminTest {
@@ -54,6 +59,47 @@ public class UsersTest extends AbstractAdminTest {
         for (UserRepresentation user : userRepresentations) {
             realm.users().delete(user.getId());
         }
+    }
+
+    /**
+     * https://issues.redhat.com/browse/KEYCLOAK-15146
+     */
+    @Test
+    public void findUsersByEmailVerifiedStatus() {
+
+        createUser(realmId, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com", rep -> rep.setEmailVerified(true));
+        createUser(realmId, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com", rep -> rep.setEmailVerified(false));
+
+        boolean emailVerified;
+        emailVerified = true;
+        List<UserRepresentation> usersEmailVerified = realm.users().search(null, null, null, null, emailVerified, null, null, null, true);
+        assertThat(usersEmailVerified, is(not(empty())));
+        assertThat(usersEmailVerified.get(0).getUsername(), is("user1"));
+
+        emailVerified = false;
+        List<UserRepresentation> usersEmailNotVerified = realm.users().search(null, null, null, null, emailVerified, null, null, null, true);
+        assertThat(usersEmailNotVerified, is(not(empty())));
+        assertThat(usersEmailNotVerified.get(0).getUsername(), is("user2"));
+    }
+
+    /**
+     * https://issues.redhat.com/browse/KEYCLOAK-15146
+     */
+    @Test
+    public void countUsersByEmailVerifiedStatus() {
+
+        createUser(realmId, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com", rep -> rep.setEmailVerified(true));
+        createUser(realmId, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com", rep -> rep.setEmailVerified(false));
+        createUser(realmId, "user3", "password", "user3FirstName", "user3LastName", "user3@example.com", rep -> rep.setEmailVerified(true));
+
+        boolean emailVerified;
+        emailVerified = true;
+        assertThat(realm.users().countEmailVerified(emailVerified), is(2));
+        assertThat(realm.users().count(null,null,null,emailVerified,null), is(2));
+
+        emailVerified = false;
+        assertThat(realm.users().countEmailVerified(emailVerified), is(1));
+        assertThat(realm.users().count(null,null,null,emailVerified,null), is(1));
     }
 
     @Test
@@ -124,12 +170,16 @@ public class UsersTest extends AbstractAdminTest {
 
     @Test
     public void countUsersWithGroupViewPermission() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, IOException {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
+
         RealmResource testRealmResource = setupTestEnvironmentWithPermissions(true);
         assertThat(testRealmResource.users().count(), is(3));
     }
 
     @Test
     public void countUsersBySearchWithGroupViewPermission() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, IOException {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
+
         RealmResource testRealmResource = setupTestEnvironmentWithPermissions(true);
         //search all
         assertThat(testRealmResource.users().count("user"), is(3));
@@ -152,6 +202,8 @@ public class UsersTest extends AbstractAdminTest {
 
     @Test
     public void countUsersByFiltersWithGroupViewPermission() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, IOException {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
+
         RealmResource testRealmResource = setupTestEnvironmentWithPermissions(true);
         //search username
         assertThat(testRealmResource.users().count(null, null, null, "user"), is(3));
@@ -187,12 +239,16 @@ public class UsersTest extends AbstractAdminTest {
 
     @Test
     public void countUsersWithNoViewPermission() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
+
         RealmResource testRealmResource = setupTestEnvironmentWithPermissions(false);
         assertThat(testRealmResource.users().count(), is(0));
     }
 
     @Test
     public void countUsersBySearchWithNoViewPermission() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, IOException {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
+
         RealmResource testRealmResource = setupTestEnvironmentWithPermissions(false);
         //search all
         assertThat(testRealmResource.users().count("user"), is(0));
@@ -215,6 +271,8 @@ public class UsersTest extends AbstractAdminTest {
 
     @Test
     public void countUsersByFiltersWithNoViewPermission() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, IOException {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
+
         RealmResource testRealmResource = setupTestEnvironmentWithPermissions(false);
         //search username
         assertThat(testRealmResource.users().count(null, null, null, "user"), is(0));
@@ -266,7 +324,7 @@ public class UsersTest extends AbstractAdminTest {
             String policyName = "test-policy";
             policy.setName(policyName);
             policy.setUsers(Collections.singleton(testUserId));
-            authorizationResource.policies().user().create(policy);
+            authorizationResource.policies().user().create(policy).close();
             PolicyRepresentation policyRepresentation = authorizationResource.policies().findByName(policyName);
             //add the policy to grp1
             Optional<GroupRepresentation> optional = groups.stream().filter(g -> g.getName().equals("grp1")).findFirst();

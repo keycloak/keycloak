@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature-group-spec name="host-slave" xmlns="urn:jboss:galleon:feature-group:1.0">
+    <feature-group name="servlet-host-slave">
+        <exclude feature-id="host.interface:host=slave,interface=unsecure"/>
+        <exclude feature-id="host.interface:host=slave,interface=private"/>
+        <exclude spec="host.server-config"/>
+    </feature-group>
+    <feature spec="host">
+        <param name="host" value="slave"/>
+        <feature spec="host.interface">
+            <param name="interface" value="public"/>
+            <param name="inet-address" value="${jboss.bind.address:127.0.0.1}"/>
+        </feature>
+        <feature spec="host.jvm">
+            <param name="jvm" value="default"/>
+            <param name="jvm-options" value="[&quot;-server&quot;,&quot;-XX:MetaspaceSize=96m&quot;,&quot;-XX:MaxMetaspaceSize=256m&quot;]"/>
+        </feature>
+        <feature spec="host.server-config">
+            <param name="server-config" value="server-two"/>
+            <param name="group" value="auth-server-group"/>
+            <param name="auto-start" value="true"/>
+            <param name="socket-binding-port-offset" value="250"/>
+            <feature spec="host.server-config.jvm">
+                <param name="jvm" value="default"/>
+            </feature>
+        </feature>
+    </feature>
+</feature-group-spec>

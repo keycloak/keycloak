@@ -25,6 +25,8 @@ import org.keycloak.testsuite.arquillian.migration.Migration;
 
 import javax.ws.rs.NotFoundException;
 import java.util.List;
+import org.keycloak.models.RealmModel;
+import org.keycloak.services.managers.RealmManager;
 
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
@@ -61,10 +63,11 @@ public class MigrationTest extends AbstractMigrationTest {
     @Migration(versionFrom = "9.")
     public void migration9_xTest() throws Exception {
         testMigratedData(false);
-//        testMigrationTo10_x();
+        testMigrationTo12_x(true);
 
         // Always test offline-token login during migration test
         testOfflineTokenLogin();
+        testExtremelyLongClientAttribute(migrationRealm);
     }
 
     @Test
@@ -76,9 +79,11 @@ public class MigrationTest extends AbstractMigrationTest {
         testMigrationTo7_x(true);
         testMigrationTo8_x();
         testMigrationTo9_x();
+        testMigrationTo12_x(true);
 
         // Always test offline-token login during migration test
         testOfflineTokenLogin();
+        testExtremelyLongClientAttribute(migrationRealm);
     }
 
     @Test
@@ -91,6 +96,7 @@ public class MigrationTest extends AbstractMigrationTest {
         testMigrationTo7_x(true);
         testMigrationTo8_x();
         testMigrationTo9_x();
+        testMigrationTo12_x(true);
 
         // Always test offline-token login during migration test
         testOfflineTokenLogin();
@@ -99,6 +105,14 @@ public class MigrationTest extends AbstractMigrationTest {
     @Test
     @Migration(versionFrom = "2.")
     public void migration2_xTest() throws Exception {
+        //the realm with special characters in its id was succesfully migrated (no error during migration)
+        //removing it now as testMigratedData() expects specific clients and roles
+        //we need to perform the removal via run on server to workaround escaping parameters when using rest call
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealm("test ' and ; and -- and \"");
+            new RealmManager(session).removeRealm(realm);
+        });
+
         testMigratedData();
         testMigrationTo3_x();
         testMigrationTo4_x();
@@ -107,6 +121,7 @@ public class MigrationTest extends AbstractMigrationTest {
         testMigrationTo7_x(true);
         testMigrationTo8_x();
         testMigrationTo9_x();
+        testMigrationTo12_x(false);
 
         // Always test offline-token login during migration test
         testOfflineTokenLogin();
@@ -124,6 +139,7 @@ public class MigrationTest extends AbstractMigrationTest {
         testMigrationTo7_x(false);
         testMigrationTo8_x();
         testMigrationTo9_x();
+        testMigrationTo12_x(false);
 
         // Always test offline-token login during migration test
         testOfflineTokenLogin();

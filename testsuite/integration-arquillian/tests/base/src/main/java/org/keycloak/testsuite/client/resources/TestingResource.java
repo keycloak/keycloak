@@ -38,6 +38,7 @@ import javax.ws.rs.core.Response;
 
 import java.util.List;
 import java.util.Map;
+import org.infinispan.commons.time.TimeService;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -89,9 +90,9 @@ public interface TestingResource {
     void clearEventStore(@QueryParam("realmId") String realmId);
 
     @GET
-    @Path("/clear-event-store-older-than")
+    @Path("/clear-expired-events")
     @Produces(MediaType.APPLICATION_JSON)
-    void clearEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan);
+    void clearExpiredEvents();
 
     /**
      * Query events
@@ -196,6 +197,20 @@ public interface TestingResource {
     @Produces(MediaType.APPLICATION_JSON)
     void removeExpired(@QueryParam("realm") final String realm);
 
+    /**
+     * Will set Inifispan's {@link TimeService} that is aware of Keycloak time shifts to the infinispan {@code CacheManager} before the test.
+     * This will allow infinispan expiration to be aware of Keycloak {@link org.keycloak.common.util.Time#setOffset}
+     */
+    @POST
+    @Path("/set-testing-infinispan-time-service")
+    @Produces(MediaType.APPLICATION_JSON)
+    void setTestingInfinispanTimeService();
+
+    @POST
+    @Path("/revert-testing-infinispan-time-service")
+    @Produces(MediaType.APPLICATION_JSON)
+    void revertTestingInfinispanTimeService();
+
     @GET
     @Path("/get-client-sessions-count")
     @Produces(MediaType.APPLICATION_JSON)
@@ -253,6 +268,11 @@ public interface TestingResource {
     @Path("/test-component")
     @Produces(MediaType.APPLICATION_JSON)
     Map<String, TestProvider.DetailsRepresentation> getTestComponentDetails();
+
+    @GET
+    @Path("/test-amphibian-component")
+    @Produces(MediaType.APPLICATION_JSON)
+    Map<String, Map<String, Object>> getTestAmphibianComponentDetails();
 
 
     @GET
@@ -321,6 +341,14 @@ public interface TestingResource {
     @Path("/disable-feature/{feature}")
     @Consumes(MediaType.APPLICATION_JSON)
     Response disableFeature(@PathParam("feature") String feature);
+
+    /**
+     * If property-value is null, the system property will be unset (removed) on the server
+     */
+    @GET
+    @Path("/set-system-property")
+    @Consumes(MediaType.TEXT_HTML_UTF_8)
+    void setSystemPropertyOnServer(@QueryParam("property-name") String propertyName, @QueryParam("property-value") String propertyValue);
 
 
     /**

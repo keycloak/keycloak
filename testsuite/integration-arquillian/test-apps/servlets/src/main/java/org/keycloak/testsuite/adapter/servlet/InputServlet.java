@@ -37,7 +37,7 @@ public class InputServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String appBase = ServletTestUtils.getUrlBase(req);
+        String appBase = ServletTestUtils.getUrlBase();
         String actionUrl = appBase + "/input-portal/secured/post";
 
         if (req.getRequestURI().endsWith("insecure")) {

@@ -64,8 +64,9 @@ public class TextFileChecker {
             try (InputStream in = Files.newInputStream(path)) {
                 Long lastCheckedPosition = lastCheckedPositions.computeIfAbsent(path, p -> 0L);
                 in.skip(lastCheckedPosition);
-                BufferedReader b = new BufferedReader(new InputStreamReader(in));
-                lineChecker.accept(b.lines());
+                try (BufferedReader b = new BufferedReader(new InputStreamReader(in))) {
+                    lineChecker.accept(b.lines());
+                }
             }
         }
     }

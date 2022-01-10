@@ -25,6 +25,7 @@ import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
+import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.GroupModel;
 import org.keycloak.representations.idm.authorization.Permission;
@@ -59,8 +60,13 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
     GroupPermissions(AuthorizationProvider authz, MgmtPermissions root) {
         this.authz = authz;
         this.root = root;
-        resourceStore = authz.getStoreFactory().getResourceStore();
-        policyStore = authz.getStoreFactory().getPolicyStore();
+        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
+            resourceStore = authz.getStoreFactory().getResourceStore();
+            policyStore = authz.getStoreFactory().getPolicyStore();
+        } else {
+            resourceStore = null;
+            policyStore = null;
+        }
     }
 
     private static String getGroupResourceName(GroupModel group) {
@@ -363,6 +369,13 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
     @Override
     public void requireManageMembership(GroupModel group) {
         if (!canManageMembership(group)) {
+            throw new ForbiddenException();
+        }
+    }
+
+    @Override
+    public void requireManageMembers(GroupModel group) {
+        if (!canManageMembers(group)) {
             throw new ForbiddenException();
         }
     }

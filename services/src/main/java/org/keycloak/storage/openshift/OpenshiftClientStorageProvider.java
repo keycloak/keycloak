@@ -19,16 +19,19 @@ package org.keycloak.storage.openshift;
 import com.openshift.restclient.IClient;
 import com.openshift.restclient.NotFoundException;
 import com.openshift.restclient.model.IResource;
+import java.util.Collections;
+import java.util.Map;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -46,15 +49,15 @@ public class OpenshiftClientStorageProvider implements ClientStorageProvider {
     }
 
     @Override
-    public ClientModel getClientById(String id, RealmModel realm) {
+    public ClientModel getClientById(RealmModel realm, String id) {
         StorageId storageId = new StorageId(id);
         if (!storageId.getProviderId().equals(providerModel.getId())) return null;
         String clientId = storageId.getExternalId();
-        return getClientByClientId(clientId, realm);
+        return getClientByClientId(realm, clientId);
     }
 
     @Override
-    public ClientModel getClientByClientId(String clientId, RealmModel realm) {
+    public ClientModel getClientByClientId(RealmModel realm, String clientId) {
         Matcher matcher = OpenshiftClientStorageProviderFactory.SERVICE_ACCOUNT_PATTERN.matcher(clientId);
         IResource resource = null;
 
@@ -76,9 +79,15 @@ public class OpenshiftClientStorageProvider implements ClientStorageProvider {
     }
 
     @Override
-    public List<ClientModel> searchClientsByClientId(String clientId, Integer firstResult, Integer maxResults, RealmModel realm) {
+    public Stream<ClientModel> searchClientsByClientIdStream(RealmModel realm, String clientId, Integer firstResult, Integer maxResults) {
         // TODO not sure about this, but I don't see this implementation using the search now
-        return Collections.singletonList(getClientByClientId(clientId, realm));
+        return Stream.of(getClientByClientId(realm, clientId));
+    }
+
+    @Override
+    public Stream<ClientModel> searchClientsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+        // TODO not sure if we support searching clients for this provider
+        return Stream.empty();
     }
 
     @Override
@@ -92,5 +101,11 @@ public class OpenshiftClientStorageProvider implements ClientStorageProvider {
         } catch (NotFoundException nfe) {
             return null;
         }
+    }
+
+    @Override
+    public Map<String, ClientScopeModel> getClientScopes(RealmModel realm, ClientModel client, boolean defaultScopes) {
+        // TODO not sure about this, this implementation doesn't use it now
+        return Collections.EMPTY_MAP;
     }
 }

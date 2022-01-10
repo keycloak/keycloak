@@ -36,7 +36,8 @@ import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
+import java.util.UUID;
+import java.util.function.Predicate;
 
 public class AdminEventBuilder {
 
@@ -72,9 +73,9 @@ public class AdminEventBuilder {
     }
 
     /**
-     * Refreshes the builder assuming that the realm event information has 
+     * Refreshes the builder assuming that the realm event information has
      * changed. Thought to be used when the updateRealmEventsConfig has
-     * modified the events configuration. Now the store and the listeners are 
+     * modified the events configuration. Now the store and the listeners are
      * updated to have previous and new setup.
      * @param session The session
      * @return The same builder
@@ -82,7 +83,7 @@ public class AdminEventBuilder {
     public AdminEventBuilder refreshRealmEventsConfig(KeycloakSession session) {
         return this.updateStore(session).addListeners(session);
     }
-    
+
     private AdminEventBuilder updateStore(KeycloakSession session) {
         if (realm.isAdminEventsEnabled() && store == null) {
             this.store = session.getProvider(EventStoreProvider.class);
@@ -92,21 +93,18 @@ public class AdminEventBuilder {
         }
         return this;
     }
-    
+
     private AdminEventBuilder addListeners(KeycloakSession session) {
-        Set<String> extraListeners = realm.getEventsListeners();
-        if (extraListeners != null && !extraListeners.isEmpty()) {
-            for (String id : extraListeners) {
-                if (!listeners.containsKey(id)) {
+        realm.getEventsListenersStream()
+                .filter(((Predicate<String>) listeners::containsKey).negate())
+                .forEach(id -> {
                     EventListenerProvider listener = session.getProvider(EventListenerProvider.class, id);
                     if (listener != null) {
                         listeners.put(id, listener);
                     } else {
                         ServicesLogger.LOGGER.providerNotFound(id);
                     }
-                }
-            }
-        }
+                });
         return this;
     }
 
@@ -236,24 +234,21 @@ public class AdminEventBuilder {
     }
 
     private void send() {
-        boolean includeRepresentation = false;
-        if(realm.isAdminEventsDetailsEnabled()) {
-            includeRepresentation = true;
-        }
-        adminEvent.setTime(Time.currentTimeMillis());
+        boolean includeRepresentation = realm.isAdminEventsDetailsEnabled();
+
+        // Event needs to be copied because the same builder can be used with another event
+        AdminEvent eventCopy = new AdminEvent(adminEvent);
+        eventCopy.setTime(Time.currentTimeMillis());
+        eventCopy.setId(UUID.randomUUID().toString());
 
         if (store != null) {
-            try {
-                store.onEvent(adminEvent, includeRepresentation);
-            } catch (Throwable t) {
-                ServicesLogger.LOGGER.failedToSaveEvent(t);
-            }
+            store.onEvent(eventCopy, includeRepresentation);
         }
 
         if (listeners != null) {
             for (EventListenerProvider l : listeners.values()) {
                 try {
-                    l.onEvent(adminEvent, includeRepresentation);
+                    l.onEvent(eventCopy, includeRepresentation);
                 } catch (Throwable t) {
                     ServicesLogger.LOGGER.failedToSendType(t, l);
                 }

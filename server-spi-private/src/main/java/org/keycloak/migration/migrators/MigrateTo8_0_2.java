@@ -19,6 +19,10 @@
 package org.keycloak.migration.migrators;
 
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 import org.keycloak.migration.ModelVersion;
@@ -27,6 +31,8 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
+
+import static org.keycloak.models.AuthenticationExecutionModel.Requirement.*;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -44,7 +50,7 @@ public class MigrateTo8_0_2 implements Migration {
 
     @Override
     public void migrate(KeycloakSession session) {
-        session.realms().getRealms().forEach(this::migrateAuthenticationFlowsWithAlternativeRequirements);
+        session.realms().getRealmsStream().forEach(this::migrateAuthenticationFlowsWithAlternativeRequirements);
     }
 
     @Override
@@ -54,47 +60,39 @@ public class MigrateTo8_0_2 implements Migration {
 
 
     protected void migrateAuthenticationFlowsWithAlternativeRequirements(RealmModel realm) {
-        for (AuthenticationFlowModel flow : realm.getAuthenticationFlows()) {
+        for (AuthenticationFlowModel flow : realm.getAuthenticationFlowsStream().collect(Collectors.toList())) {
+            List<AuthenticationExecutionModel> executions = realm.getAuthenticationExecutionsStream(flow.getId())
+                    .collect(Collectors.toList());
 
-            boolean alternativeFound = false;
-            boolean requiredFound = false;
-            for (AuthenticationExecutionModel execution : realm.getAuthenticationExecutions(flow.getId())) {
-                switch (execution.getRequirement()) {
-                    case REQUIRED:
-                    case CONDITIONAL:
-                        requiredFound = true;
-                        break;
-                    case ALTERNATIVE:
-                        alternativeFound = true;
-                        break;
-                }
-            }
+            Set<AuthenticationExecutionModel.Requirement> requirements = executions.stream()
+                    .map(AuthenticationExecutionModel::getRequirement)
+                    .collect(Collectors.toSet());
 
             // This flow contains some REQUIRED and ALTERNATIVE at the same level. We will migrate ALTERNATIVES to separate subflows
             // to try to preserve same behaviour as in previous versions
-            if (requiredFound && alternativeFound) {
+            if (requirements.contains(REQUIRED) || requirements.contains(CONDITIONAL) && requirements.contains(ALTERNATIVE)) {
 
                 // Suffix used just to avoid name conflicts
-                int suffix = 0;
+                AtomicInteger suffix = new AtomicInteger(0);
                 LinkedList<AuthenticationExecutionModel> alternativesToMigrate = new LinkedList<>();
-                for (AuthenticationExecutionModel execution : realm.getAuthenticationExecutions(flow.getId())) {
+                for (AuthenticationExecutionModel execution: executions) {
                     if (AuthenticationExecutionModel.Requirement.ALTERNATIVE.equals(execution.getRequirement())) {
                         alternativesToMigrate.add(execution);
                     }
 
                     // If we have some REQUIRED then ALTERNATIVE and then REQUIRED/CONDITIONAL, we migrate the alternatives to the new subflow.
-                    if (AuthenticationExecutionModel.Requirement.REQUIRED.equals(execution.getRequirement()) ||
-                            AuthenticationExecutionModel.Requirement.CONDITIONAL.equals(execution.getRequirement())) {
+                    if (REQUIRED.equals(execution.getRequirement()) ||
+                            CONDITIONAL.equals(execution.getRequirement())) {
                         if (!alternativesToMigrate.isEmpty()) {
-                            migrateAlternatives(realm, flow, alternativesToMigrate, suffix);
-                            suffix += 1;
+                            migrateAlternatives(realm, flow, alternativesToMigrate, suffix.get());
+                            suffix.addAndGet(1);
                             alternativesToMigrate.clear();
                         }
                     }
                 }
 
                 if (!alternativesToMigrate.isEmpty()) {
-                    migrateAlternatives(realm, flow, alternativesToMigrate, suffix);
+                    migrateAlternatives(realm, flow, alternativesToMigrate, suffix.get());
                 }
             }
         }
@@ -116,7 +114,7 @@ public class MigrateTo8_0_2 implements Migration {
 
         AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
         execution.setParentFlow(parentFlow.getId());
-        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        execution.setRequirement(REQUIRED);
         execution.setFlowId(newFlow.getId());
         // Use same priority as the first ALTERNATIVE as new execution will defacto replace it in the parent flow
         execution.setPriority(alternativesToMigrate.getFirst().getPriority());

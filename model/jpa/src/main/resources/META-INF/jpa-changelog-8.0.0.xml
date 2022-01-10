@@ -52,18 +52,23 @@
     </changeSet>
 
     <!--Update format of credential to fill secret_data and credential_data - used on all databases beside Oracle DB -->
-    <changeSet author="keycloak" id="8.0.0-updating-credential-data-not-oracle">
+    <changeSet author="keycloak" id="8.0.0-updating-credential-data-not-oracle-fixed">
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
-            <not>
-                <dbms type="oracle" />
-            </not>
+            <and>
+                <not>
+                    <dbms type="oracle" />
+                </not>
+                <not>
+                    <changeSetExecuted id="8.0.0-updating-credential-data-not-oracle" author="keycloak" changeLogFile="META-INF/jpa-changelog-8.0.0.xml"/>
+                </not>
+            </and>
         </preConditions>
 
         <!-- SALT was saved in tinyblob in previous version. -->
         <!-- Can't be automatically updated for all users to new format in single UPDATE statement, so existing users will be updated on-the-fly -->
         <update tableName="CREDENTIAL">
             <column name="PRIORITY" value="10" />
-            <column name="SECRET_DATA" valueComputed="CONCAT('{&quot;value&quot;:&quot;', VALUE, '&quot;,&quot;salt&quot;:&quot;__SALT__&quot;}')"/>
+            <column name="SECRET_DATA" valueComputed="CONCAT('{&quot;value&quot;:&quot;', REPLACE(VALUE, '&quot;', '\\&quot;'), '&quot;,&quot;salt&quot;:&quot;__SALT__&quot;}')"/>
             <column name="CREDENTIAL_DATA" valueComputed="CONCAT('{&quot;hashIterations&quot;:', HASH_ITERATIONS, ',&quot;algorithm&quot;:&quot;', ALGORITHM, '&quot;}')"/>
             <where>TYPE = 'password' OR TYPE = 'password-history'</where>
         </update>
@@ -71,7 +76,7 @@
         <update tableName="CREDENTIAL">
             <column name="PRIORITY" value="20" />
             <column name="TYPE" value="otp" />
-            <column name="SECRET_DATA" valueComputed="CONCAT('{&quot;value&quot;:&quot;', VALUE, '&quot;}')"/>
+            <column name="SECRET_DATA" valueComputed="CONCAT('{&quot;value&quot;:&quot;', REPLACE(VALUE, '&quot;', '\\&quot;'), '&quot;}')"/>
             <column name="CREDENTIAL_DATA" valueComputed="CONCAT('{&quot;subType&quot;:&quot;totp&quot;,&quot;digits&quot;:', DIGITS, ',&quot;period&quot;:', PERIOD, ',&quot;algorithm&quot;:&quot;', ALGORITHM, '&quot;}')"/>
             <where>TYPE = 'totp'</where>
         </update>
@@ -79,7 +84,7 @@
         <update tableName="CREDENTIAL">
             <column name="PRIORITY" value="20" />
             <column name="TYPE" value="otp" />
-            <column name="SECRET_DATA" valueComputed="CONCAT('{&quot;value&quot;:&quot;', VALUE, '&quot;}')"/>
+            <column name="SECRET_DATA" valueComputed="CONCAT('{&quot;value&quot;:&quot;', REPLACE(VALUE, '&quot;', '\\&quot;'), '&quot;}')"/>
             <column name="CREDENTIAL_DATA" valueComputed="CONCAT('{&quot;subType&quot;:&quot;hotp&quot;,&quot;digits&quot;:', DIGITS, ',&quot;counter&quot;:', COUNTER, ',&quot;algorithm&quot;:&quot;', ALGORITHM, '&quot;}')"/>
             <where>TYPE = 'hotp'</where>
         </update>
@@ -87,7 +92,7 @@
         <!--Update format of fed_user_credential to fill secret_data and credential_data-->
         <update tableName="FED_USER_CREDENTIAL">
             <column name="PRIORITY" value="10" />
-            <column name="SECRET_DATA" valueComputed="CONCAT('{&quot;value&quot;:&quot;', VALUE, '&quot;,&quot;salt&quot;:&quot;__SALT__&quot;}')"/>
+            <column name="SECRET_DATA" valueComputed="CONCAT('{&quot;value&quot;:&quot;', REPLACE(VALUE, '&quot;', '\\&quot;'), '&quot;,&quot;salt&quot;:&quot;__SALT__&quot;}')"/>
             <column name="CREDENTIAL_DATA" valueComputed="CONCAT('{&quot;hashIterations&quot;:', HASH_ITERATIONS, ',&quot;algorithm&quot;:&quot;', ALGORITHM, '&quot;}')"/>
             <where>TYPE = 'password' OR TYPE = 'password-history'</where>
         </update>
@@ -95,7 +100,7 @@
         <update tableName="FED_USER_CREDENTIAL">
             <column name="PRIORITY" value="20" />
             <column name="TYPE" value="otp" />
-            <column name="SECRET_DATA" valueComputed="CONCAT('{&quot;value&quot;:&quot;', VALUE, '&quot;}')"/>
+            <column name="SECRET_DATA" valueComputed="CONCAT('{&quot;value&quot;:&quot;', REPLACE(VALUE, '&quot;', '\\&quot;'), '&quot;}')"/>
             <column name="CREDENTIAL_DATA" valueComputed="CONCAT('{&quot;subType&quot;:&quot;totp&quot;,&quot;digits&quot;:', DIGITS, ',&quot;period&quot;:', PERIOD, ',&quot;algorithm&quot;:&quot;', ALGORITHM, '&quot;}')"/>
             <where>TYPE = 'totp'</where>
         </update>
@@ -103,7 +108,7 @@
         <update tableName="FED_USER_CREDENTIAL">
             <column name="PRIORITY" value="20" />
             <column name="TYPE" value="otp" />
-            <column name="SECRET_DATA" valueComputed="CONCAT('{&quot;value&quot;:&quot;', VALUE, '&quot;}')"/>
+            <column name="SECRET_DATA" valueComputed="CONCAT('{&quot;value&quot;:&quot;', REPLACE(VALUE, '&quot;', '\\&quot;'), '&quot;}')"/>
             <column name="CREDENTIAL_DATA" valueComputed="CONCAT('{&quot;subType&quot;:&quot;hotp&quot;,&quot;digits&quot;:', DIGITS, ',&quot;counter&quot;:', COUNTER, ',&quot;algorithm&quot;:&quot;', ALGORITHM, '&quot;}')"/>
             <where>TYPE = 'hotp'</where>
         </update>
@@ -111,16 +116,21 @@
     </changeSet>
 
     <!--Update format of credential to fill secret_data and credential_data - used on Oracle DB. Oracle doesn't support CONCAT with more than 2 arguments -->
-    <changeSet author="keycloak" id="8.0.0-updating-credential-data-oracle">
+    <changeSet author="keycloak" id="8.0.0-updating-credential-data-oracle-fixed">
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
-            <dbms type="oracle" />
+            <and>
+                <dbms type="oracle" />
+                <not>
+                    <changeSetExecuted id="8.0.0-updating-credential-data-not-oracle" author="keycloak" changeLogFile="META-INF/jpa-changelog-8.0.0.xml"/>
+                </not>
+            </and>
         </preConditions>
 
         <!-- SALT was saved in tinyblob in previous version. -->
         <!-- Can't be automatically updated for all users to new format in single UPDATE statement, so existing users will be updated on-the-fly -->
         <update tableName="CREDENTIAL">
             <column name="PRIORITY" value="10" />
-            <column name="SECRET_DATA" valueComputed="'{&quot;value&quot;:&quot;' || VALUE || '&quot;,&quot;salt&quot;:&quot;__SALT__&quot;}'"/>
+            <column name="SECRET_DATA" valueComputed="'{&quot;value&quot;:&quot;' || REPLACE(VALUE, '&quot;', '\&quot;') || '&quot;,&quot;salt&quot;:&quot;__SALT__&quot;}'"/>
             <column name="CREDENTIAL_DATA" valueComputed="'{&quot;hashIterations&quot;:' || HASH_ITERATIONS || ',&quot;algorithm&quot;:&quot;' || ALGORITHM || '&quot;}'"/>
             <where>TYPE = 'password' OR TYPE = 'password-history'</where>
         </update>
@@ -128,7 +138,7 @@
         <update tableName="CREDENTIAL">
             <column name="PRIORITY" value="20" />
             <column name="TYPE" value="otp" />
-            <column name="SECRET_DATA" valueComputed="'{&quot;value&quot;:&quot;' || VALUE || '&quot;}'"/>
+            <column name="SECRET_DATA" valueComputed="'{&quot;value&quot;:&quot;' || REPLACE(VALUE, '&quot;', '\&quot;') || '&quot;}'"/>
             <column name="CREDENTIAL_DATA" valueComputed="'{&quot;subType&quot;:&quot;totp&quot;,&quot;digits&quot;:' || DIGITS || ',&quot;period&quot;:' || PERIOD || ',&quot;algorithm&quot;:&quot;' || ALGORITHM || '&quot;}'"/>
             <where>TYPE = 'totp'</where>
         </update>
@@ -136,7 +146,7 @@
         <update tableName="CREDENTIAL">
             <column name="PRIORITY" value="20" />
             <column name="TYPE" value="otp" />
-            <column name="SECRET_DATA" valueComputed="'{&quot;value&quot;:&quot;' || VALUE || '&quot;}'"/>
+            <column name="SECRET_DATA" valueComputed="'{&quot;value&quot;:&quot;' || REPLACE(VALUE, '&quot;', '\&quot;') || '&quot;}'"/>
             <column name="CREDENTIAL_DATA" valueComputed="'{&quot;subType&quot;:&quot;hotp&quot;,&quot;digits&quot;:' || DIGITS || ',&quot;counter&quot;:' || COUNTER || ',&quot;algorithm&quot;:&quot;' || ALGORITHM || '&quot;}'"/>
             <where>TYPE = 'hotp'</where>
         </update>
@@ -144,7 +154,7 @@
         <!--Update format of fed_user_credential to fill secret_data and credential_data-->
         <update tableName="FED_USER_CREDENTIAL">
             <column name="PRIORITY" value="10" />
-            <column name="SECRET_DATA" valueComputed="'{&quot;value&quot;:&quot;' || VALUE || '&quot;,&quot;salt&quot;:&quot;__SALT__&quot;}'"/>
+            <column name="SECRET_DATA" valueComputed="'{&quot;value&quot;:&quot;' || REPLACE(VALUE, '&quot;', '\&quot;') || '&quot;,&quot;salt&quot;:&quot;__SALT__&quot;}'"/>
             <column name="CREDENTIAL_DATA" valueComputed="'{&quot;hashIterations&quot;:' || HASH_ITERATIONS || ',&quot;algorithm&quot;:&quot;' || ALGORITHM || '&quot;}'"/>
             <where>TYPE = 'password' OR TYPE = 'password-history'</where>
         </update>
@@ -152,7 +162,7 @@
         <update tableName="FED_USER_CREDENTIAL">
             <column name="PRIORITY" value="20" />
             <column name="TYPE" value="otp" />
-            <column name="SECRET_DATA" valueComputed="'{&quot;value&quot;:&quot;' || VALUE || '&quot;}'"/>
+            <column name="SECRET_DATA" valueComputed="'{&quot;value&quot;:&quot;' || REPLACE(VALUE, '&quot;', '\&quot;') || '&quot;}'"/>
             <column name="CREDENTIAL_DATA" valueComputed="'{&quot;subType&quot;:&quot;totp&quot;,&quot;digits&quot;:' || DIGITS || ',&quot;period&quot;:' || PERIOD || ',&quot;algorithm&quot;:&quot;' || ALGORITHM || '&quot;}'"/>
             <where>TYPE = 'totp'</where>
         </update>
@@ -160,7 +170,7 @@
         <update tableName="FED_USER_CREDENTIAL">
             <column name="PRIORITY" value="20" />
             <column name="TYPE" value="otp" />
-            <column name="SECRET_DATA" valueComputed="'{&quot;value&quot;:&quot;' || VALUE || '&quot;}'"/>
+            <column name="SECRET_DATA" valueComputed="'{&quot;value&quot;:&quot;' || REPLACE(VALUE, '&quot;', '\&quot;') || '&quot;}'"/>
             <column name="CREDENTIAL_DATA" valueComputed="'{&quot;subType&quot;:&quot;hotp&quot;,&quot;digits&quot;:' || DIGITS || ',&quot;counter&quot;:' || COUNTER || ',&quot;algorithm&quot;:&quot;' || ALGORITHM || '&quot;}'"/>
             <where>TYPE = 'hotp'</where>
         </update>

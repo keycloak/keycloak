@@ -23,15 +23,9 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bruno@abstractj.org">Bruno Oliveira</a>
@@ -42,11 +36,7 @@ public class MigrateTo3_4_2 implements Migration {
 
     @Override
     public void migrate(KeycloakSession session) {
-        session.realms().getRealms().stream().forEach(
-                r -> {
-                    migrateRealm(r);
-                }
-        );
+        session.realms().getRealmsStream().forEach(this::migrateRealm);
     }
 
     @Override
@@ -65,10 +55,7 @@ public class MigrateTo3_4_2 implements Migration {
 
     private void clearScope(ClientModel cli) {
         if (cli.isFullScopeAllowed()) cli.setFullScopeAllowed(false);
-        Set<RoleModel> scope = cli.getScopeMappings();
-        if (scope.size() > 0) {
-            for (RoleModel role : scope) cli.deleteScopeMapping(role);
-        }
+        cli.getScopeMappingsStream().collect(Collectors.toList()).forEach(cli::deleteScopeMapping);
     }
 
     @Override

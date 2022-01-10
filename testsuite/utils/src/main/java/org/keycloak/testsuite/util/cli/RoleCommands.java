@@ -17,16 +17,12 @@
 
 package org.keycloak.testsuite.util.cli;
 
-import java.util.HashSet;
-import java.util.Set;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -83,7 +79,7 @@ public class RoleCommands {
                 return realm;
             } else {
                 String clientId = parts[1];
-                ClientModel client = session.realms().getClientByClientId(clientId, realm);
+                ClientModel client = session.clients().getClientByClientId(realm, clientId);
                 if (client == null) {
                     log.errorf("Unknown client: %s", clientId);
                     throw new HandledException();

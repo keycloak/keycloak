@@ -1,25 +1,25 @@
 package org.keycloak.testsuite.broker;
 
-class BrokerTestConstants {
+public class BrokerTestConstants {
 
-    final static String REALM_PROV_NAME = "provider";
-    final static String REALM_CONS_NAME = "consumer";
+    public final static String REALM_PROV_NAME = "provider";
+    public final static String REALM_CONS_NAME = "consumer";
 
-    final static String IDP_OIDC_ALIAS = "kc-oidc-idp";
-    final static String IDP_OIDC_PROVIDER_ID = "keycloak-oidc";
+    public final static String IDP_OIDC_ALIAS = "kc-oidc-idp";
+    public final static String IDP_OIDC_PROVIDER_ID = "keycloak-oidc";
 
-    final static String IDP_SAML_ALIAS = "kc-saml-idp";
-    final static String IDP_SAML_PROVIDER_ID = "saml";
+    public final static String IDP_SAML_ALIAS = "kc-saml-idp";
+    public final static String IDP_SAML_PROVIDER_ID = "saml";
 
-    final static String CLIENT_ID = "brokerapp";
-    final static String CLIENT_SECRET = "secret";
-    final static String VAULT_CLIENT_SECRET = "${vault.oidc_idp}";
+    public final static String CLIENT_ID = "brokerapp";
+    public final static String CLIENT_SECRET = "secret";
+    public final static String VAULT_CLIENT_SECRET = "${vault.oidc_idp}";
 
-    final static String USER_LOGIN = "testuser";
-    final static String USER_EMAIL = "user@localhost.com";
-    final static String USER_PASSWORD = "password";
+    public final static String USER_LOGIN = "testuser";
+    public final static String USER_EMAIL = "user@localhost.com";
+    public final static String USER_PASSWORD = "password";
 
-    final static String IDP_SAML_SIGN_KEY = "MIICWwIBAAKBgQDVG8a7xGN6ZIkDbeecySygc" +
+    public final static String IDP_SAML_SIGN_KEY = "MIICWwIBAAKBgQDVG8a7xGN6ZIkDbeecySygc" +
             "DfsypjUMNPE4QJjis8B316CvsZQ0hcTTLUyiRpHlHZys2k3xEhHBHymFC1AONcvzZzpb4" +
             "0tAhLHO1qtAnut00khjAdjR3muLVdGkM/zMC7G5s9iIwBVhwOQhy+VsGnCH91EzkjZ4SV" +
             "Er55KJoyQJQIDAQABAoGADaTtoG/+foOZUiLjRWKL/OmyavK9vjgyFtThNkZY4qHOh0h3" +
@@ -33,7 +33,7 @@ class BrokerTestConstants {
             "kAC5loUGwU5dLaugsGH/a2Q8Ac8bmPglwfCstYDpl8Gp/eimb1eKyvDEELOhyImAv4/uZ" +
             "V9wN85V0xZXWsw==";
 
-    final static String IDP_SAML_SIGN_CERT = "MIIDdzCCAl+gAwIBAgIEbySuqTANBgkqhkiG" +
+    public final static String IDP_SAML_SIGN_CERT = "MIIDdzCCAl+gAwIBAgIEbySuqTANBgkqhkiG" +
             "9w0BAQsFADBsMRAwDgYDVQQGEwdVbmtub3duMRAwDgYDVQQIEwdVbmtub3duMRAwDgYDV" +
             "QQHEwdVbmtub3duMRAwDgYDVQQKEwdVbmtub3duMRAwDgYDVQQLEwdVbmtub3duMRAwDg" +
             "YDVQQDEwdVbmtub3duMB4XDTE1MDEyODIyMTYyMFoXDTE3MTAyNDIyMTYyMFowbDEQMA4" +
@@ -52,7 +52,7 @@ class BrokerTestConstants {
             "KAXjMeHfzbiBr+cWz8NYZEtxUEDYDjTpKrYCSMJBXpmgVJCZ00BswbksxJwaGqGMPpUKm" +
             "CV671pf3m8nq3xyiHMDGuGwtbU+GE8kVx85menmp8+964nin";
 
-    final static String REALM_PRIVATE_KEY = "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwg" +
+    public final static String REALM_PRIVATE_KEY = "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwg" +
             "gSkAgEAAoIBAQCCPyvTTb14vSMkpe/pds2P5Cqxk7bkeFnQiNMS1vyZ+HS2O79fxzp1eA" +
             "guHnBTs4XTRT7SZJhIT/6utgqZjmDigKV5N7X5ptq8BM/W1qa1cYBRip261pc+tWf3Iyw" +
             "JYQ9yFI9mUQarmIEl0D7GH16NSZklheaWfbodRVarvX+ML0amNtGYVDft/RftYmgbKKrK" +
@@ -77,7 +77,7 @@ class BrokerTestConstants {
             "spPC1kySiy+Ndr9jNohRZkR7pEjgqA5E8rdzc88LirUN7bY5HFHRWN9KXrs5/o3O1K3GF" +
             "Cp64N6nvnPEYZ2zSJalcMC2fjSsJg26z8Dg1H+gfTIDUMoGiEAAnJXuqk+WayPU+fZMLn";
 
-    final static String REALM_PUBLIC_KEY = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgK" +
+    public final static String REALM_PUBLIC_KEY = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgK" +
             "CAQEAgj8r0029eL0jJKXv6XbNj+QqsZO25HhZ0IjTEtb8mfh0tju/X8c6dXgILh5wU7OF0" +
             "0U+0mSYSE/+rrYKmY5g4oCleTe1+abavATP1tamtXGAUYqdutaXPrVn9yMsCWEPchSPZlE" +
             "Gq5iBJdA+xh9ejUmZJYXmln26HUVWq71/jC9GpjbRmFQ37f0X7WJoGyiqyttfKkKfUeBmR" +

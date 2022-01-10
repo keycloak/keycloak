@@ -40,18 +40,20 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("token_endpoint")
     private String tokenEndpoint;
 
-    /**
-     * The name 'token_introspection_endpoint' is deprecated and will be replaced by 'introspection_endpoint' as defined by RFC-8414.
-     * Until there, we just add {@code getIntrospectionEndpoint} claim to avoid breaking backward compatibility.
-     */
-    @JsonProperty("token_introspection_endpoint")
-    private String tokenIntrospectionEndpoint;
+    @JsonProperty("introspection_endpoint")
+    private String introspectionEndpoint;
 
     @JsonProperty("userinfo_endpoint")
     private String userinfoEndpoint;
 
     @JsonProperty("end_session_endpoint")
     private String logoutEndpoint;
+
+    @JsonProperty("frontchannel_logout_session_supported")
+    private Boolean frontChannelLogoutSessionSupported = true;
+
+    @JsonProperty("frontchannel_logout_supported")
+    private Boolean frontChannelLogoutSupported = true;
 
     @JsonProperty("jwks_uri")
     private String jwksUri;
@@ -83,6 +85,12 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("request_object_signing_alg_values_supported")
     private List<String> requestObjectSigningAlgValuesSupported;
 
+    @JsonProperty("request_object_encryption_alg_values_supported")
+    private List<String> requestObjectEncryptionAlgValuesSupported;
+
+    @JsonProperty("request_object_encryption_enc_values_supported")
+    private List<String> requestObjectEncryptionEncValuesSupported;
+
     @JsonProperty("response_modes_supported")
     private List<String> responseModesSupported;
 
@@ -94,6 +102,21 @@ public class OIDCConfigurationRepresentation {
 
     @JsonProperty("token_endpoint_auth_signing_alg_values_supported")
     private List<String> tokenEndpointAuthSigningAlgValuesSupported;
+
+    @JsonProperty("introspection_endpoint_auth_methods_supported")
+    private List<String> introspectionEndpointAuthMethodsSupported;
+
+    @JsonProperty("introspection_endpoint_auth_signing_alg_values_supported")
+    private List<String> introspectionEndpointAuthSigningAlgValuesSupported;
+
+    @JsonProperty("authorization_signing_alg_values_supported")
+    private List<String> authorizationSigningAlgValuesSupported;
+
+    @JsonProperty("authorization_encryption_alg_values_supported")
+    private List<String> authorizationEncryptionAlgValuesSupported;
+
+    @JsonProperty("authorization_encryption_enc_values_supported")
+    private List<String> authorizationEncryptionEncValuesSupported;
 
     @JsonProperty("claims_supported")
     private List<String> claimsSupported;
@@ -113,6 +136,9 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("request_uri_parameter_supported")
     private Boolean requestUriParameterSupported;
 
+    @JsonProperty("require_request_uri_registration")
+    private Boolean requireRequestUriRegistration;
+
     // KEYCLOAK-7451 OAuth Authorization Server Metadata for Proof Key for Code Exchange
     @JsonProperty("code_challenge_methods_supported")
     private List<String> codeChallengeMethodsSupported;
@@ -121,6 +147,42 @@ public class OIDCConfigurationRepresentation {
     // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.2
     @JsonProperty("tls_client_certificate_bound_access_tokens")
     private Boolean tlsClientCertificateBoundAccessTokens;
+
+    @JsonProperty("revocation_endpoint")
+    private String revocationEndpoint;
+
+    @JsonProperty("revocation_endpoint_auth_methods_supported")
+    private List<String> revocationEndpointAuthMethodsSupported;
+
+    @JsonProperty("revocation_endpoint_auth_signing_alg_values_supported")
+    private List<String> revocationEndpointAuthSigningAlgValuesSupported;
+
+    @JsonProperty("backchannel_logout_supported")
+    private Boolean backchannelLogoutSupported;
+
+    @JsonProperty("backchannel_logout_session_supported")
+    private Boolean backchannelLogoutSessionSupported;
+
+    @JsonProperty("device_authorization_endpoint")
+    private String deviceAuthorizationEndpoint;
+
+    @JsonProperty("backchannel_token_delivery_modes_supported")
+    private List<String> backchannelTokenDeliveryModesSupported;
+
+    @JsonProperty("backchannel_authentication_endpoint")
+    private String backchannelAuthenticationEndpoint;
+
+    @JsonProperty("backchannel_authentication_request_signing_alg_values_supported")
+    private List<String> backchannelAuthenticationRequestSigningAlgValuesSupported;
+
+    @JsonProperty("require_pushed_authorization_requests")
+    private Boolean requirePushedAuthorizationRequests;
+
+    @JsonProperty("pushed_authorization_request_endpoint")
+    private String pushedAuthorizationRequestEndpoint;
+
+    @JsonProperty("mtls_endpoint_aliases")
+    private MTLSEndpointAliases mtlsEndpointAliases;
 
     protected Map<String, Object> otherClaims = new HashMap<String, Object>();
 
@@ -148,22 +210,12 @@ public class OIDCConfigurationRepresentation {
         this.tokenEndpoint = tokenEndpoint;
     }
 
-    public String getTokenIntrospectionEndpoint() {
-        return this.tokenIntrospectionEndpoint;
+    public String getIntrospectionEndpoint() {
+        return this.introspectionEndpoint;
     }
 
-    /**
-     * See KEYCLOAK-8308. This method should be removed once the standard name is used to advertise the introspection endpoint.
-     * @return
-     */
-    @Deprecated
-    @JsonProperty("introspection_endpoint")
-    private String getIntrospectionEndpoint() {
-        return getTokenIntrospectionEndpoint();
-    }
-
-    public void setTokenIntrospectionEndpoint(String tokenIntrospectionEndpoint) {
-        this.tokenIntrospectionEndpoint = tokenIntrospectionEndpoint;
+    public void setIntrospectionEndpoint(String introspectionEndpoint) {
+        this.introspectionEndpoint = introspectionEndpoint;
     }
 
     public String getUserinfoEndpoint() {
@@ -262,6 +314,22 @@ public class OIDCConfigurationRepresentation {
         this.requestObjectSigningAlgValuesSupported = requestObjectSigningAlgValuesSupported;
     }
 
+    public List<String> getRequestObjectEncryptionAlgValuesSupported() {
+        return requestObjectEncryptionAlgValuesSupported;
+    }
+
+    public void setRequestObjectEncryptionAlgValuesSupported(List<String> requestObjectEncryptionAlgValuesSupported) {
+        this.requestObjectEncryptionAlgValuesSupported = requestObjectEncryptionAlgValuesSupported;
+    }
+
+    public List<String> getRequestObjectEncryptionEncValuesSupported() {
+        return requestObjectEncryptionEncValuesSupported;
+    }
+
+    public void setRequestObjectEncryptionEncValuesSupported(List<String> requestObjectEncryptionEncValuesSupported) {
+        this.requestObjectEncryptionEncValuesSupported = requestObjectEncryptionEncValuesSupported;
+    }
+
     public List<String> getResponseModesSupported() {
         return responseModesSupported;
     }
@@ -292,6 +360,23 @@ public class OIDCConfigurationRepresentation {
 
     public void setTokenEndpointAuthSigningAlgValuesSupported(List<String> tokenEndpointAuthSigningAlgValuesSupported) {
         this.tokenEndpointAuthSigningAlgValuesSupported = tokenEndpointAuthSigningAlgValuesSupported;
+    }
+
+    public List<String> getIntrospectionEndpointAuthMethodsSupported() {
+        return introspectionEndpointAuthMethodsSupported;
+    }
+
+    public void setIntrospectionEndpointAuthMethodsSupported(List<String> introspectionEndpointAuthMethodsSupported) {
+        this.introspectionEndpointAuthMethodsSupported = introspectionEndpointAuthMethodsSupported;
+    }
+
+    public List<String> getIntrospectionEndpointAuthSigningAlgValuesSupported() {
+        return introspectionEndpointAuthSigningAlgValuesSupported;
+    }
+
+    public void setIntrospectionEndpointAuthSigningAlgValuesSupported(
+        List<String> introspectionEndpointAuthSigningAlgValuesSupported) {
+        this.introspectionEndpointAuthSigningAlgValuesSupported = introspectionEndpointAuthSigningAlgValuesSupported;
     }
 
     public List<String> getClaimsSupported() {
@@ -342,6 +427,14 @@ public class OIDCConfigurationRepresentation {
         this.requestUriParameterSupported = requestUriParameterSupported;
     }
 
+    public Boolean getRequireRequestUriRegistration() {
+        return requireRequestUriRegistration;
+    }
+
+    public void setRequireRequestUriRegistration(Boolean requireRequestUriRegistration) {
+        this.requireRequestUriRegistration = requireRequestUriRegistration;
+    }
+
     // KEYCLOAK-7451 OAuth Authorization Server Metadata for Proof Key for Code Exchange
     public List<String> getCodeChallengeMethodsSupported() {
         return codeChallengeMethodsSupported;
@@ -361,6 +454,94 @@ public class OIDCConfigurationRepresentation {
         this.tlsClientCertificateBoundAccessTokens = tlsClientCertificateBoundAccessTokens;
     }
 
+    public String getRevocationEndpoint() {
+        return revocationEndpoint;
+    }
+
+    public void setRevocationEndpoint(String revocationEndpoint) {
+        this.revocationEndpoint = revocationEndpoint;
+    }
+
+    public List<String> getRevocationEndpointAuthMethodsSupported() {
+        return revocationEndpointAuthMethodsSupported;
+    }
+
+    public void setRevocationEndpointAuthMethodsSupported(List<String> revocationEndpointAuthMethodsSupported) {
+        this.revocationEndpointAuthMethodsSupported = revocationEndpointAuthMethodsSupported;
+    }
+
+    public List<String> getRevocationEndpointAuthSigningAlgValuesSupported() {
+        return revocationEndpointAuthSigningAlgValuesSupported;
+    }
+
+    public void setRevocationEndpointAuthSigningAlgValuesSupported(List<String> revocationEndpointAuthSigningAlgValuesSupported) {
+        this.revocationEndpointAuthSigningAlgValuesSupported = revocationEndpointAuthSigningAlgValuesSupported;
+    }
+
+    public Boolean getBackchannelLogoutSupported() {
+        return backchannelLogoutSupported;
+    }
+
+    public Boolean getBackchannelLogoutSessionSupported() {
+        return backchannelLogoutSessionSupported;
+    }
+
+    public void setBackchannelLogoutSessionSupported(Boolean backchannelLogoutSessionSupported) {
+        this.backchannelLogoutSessionSupported = backchannelLogoutSessionSupported;
+    }
+
+    public void setBackchannelLogoutSupported(Boolean backchannelLogoutSupported) {
+        this.backchannelLogoutSupported = backchannelLogoutSupported;
+    }
+
+    public List<String> getBackchannelTokenDeliveryModesSupported() {
+        return backchannelTokenDeliveryModesSupported;
+    }
+
+    public void setBackchannelTokenDeliveryModesSupported(List<String> backchannelTokenDeliveryModesSupported) {
+        this.backchannelTokenDeliveryModesSupported = backchannelTokenDeliveryModesSupported;
+    }
+
+    public String getBackchannelAuthenticationEndpoint() {
+        return backchannelAuthenticationEndpoint;
+    }
+
+    public void setBackchannelAuthenticationEndpoint(String backchannelAuthenticationEndpoint) {
+        this.backchannelAuthenticationEndpoint = backchannelAuthenticationEndpoint;
+    }
+
+    public List<String> getBackchannelAuthenticationRequestSigningAlgValuesSupported() {
+        return backchannelAuthenticationRequestSigningAlgValuesSupported;
+    }
+
+    public void setBackchannelAuthenticationRequestSigningAlgValuesSupported(List<String> backchannelAuthenticationRequestSigningAlgValuesSupported) {
+        this.backchannelAuthenticationRequestSigningAlgValuesSupported = backchannelAuthenticationRequestSigningAlgValuesSupported;
+    }
+
+    public String getPushedAuthorizationRequestEndpoint() {
+        return pushedAuthorizationRequestEndpoint;
+    }
+
+    public void setPushedAuthorizationRequestEndpoint(String pushedAuthorizationRequestEndpoint) {
+        this.pushedAuthorizationRequestEndpoint = pushedAuthorizationRequestEndpoint;
+    }
+
+    public Boolean getRequirePushedAuthorizationRequests() {
+        return requirePushedAuthorizationRequests;
+    }
+
+    public void setRequirePushedAuthorizationRequests(Boolean requirePushedAuthorizationRequests) {
+        this.requirePushedAuthorizationRequests = requirePushedAuthorizationRequests;
+    }
+
+    public MTLSEndpointAliases getMtlsEndpointAliases() {
+        return mtlsEndpointAliases;
+    }
+
+    public void setMtlsEndpointAliases(MTLSEndpointAliases mtlsEndpointAliases) {
+        this.mtlsEndpointAliases = mtlsEndpointAliases;
+    }
+
     @JsonAnyGetter
     public Map<String, Object> getOtherClaims() {
         return otherClaims;
@@ -371,4 +552,43 @@ public class OIDCConfigurationRepresentation {
         otherClaims.put(name, value);
     }
 
+    public void setDeviceAuthorizationEndpoint(String deviceAuthorizationEndpoint) {
+        this.deviceAuthorizationEndpoint = deviceAuthorizationEndpoint;
+    }
+
+    public String getDeviceAuthorizationEndpoint() {
+        return deviceAuthorizationEndpoint;
+    }
+
+    public List<String> getAuthorizationSigningAlgValuesSupported() {
+        return authorizationSigningAlgValuesSupported;
+    }
+
+    public void setAuthorizationSigningAlgValuesSupported(List<String> authorizationSigningAlgValuesSupported) {
+        this.authorizationSigningAlgValuesSupported = authorizationSigningAlgValuesSupported;
+    }
+
+    public List<String> getAuthorizationEncryptionAlgValuesSupported() {
+        return authorizationEncryptionAlgValuesSupported;
+    }
+
+    public void setAuthorizationEncryptionAlgValuesSupported(List<String> authorizationEncryptionAlgValuesSupported) {
+        this.authorizationEncryptionAlgValuesSupported = authorizationEncryptionAlgValuesSupported;
+    }
+
+    public List<String> getAuthorizationEncryptionEncValuesSupported() {
+        return authorizationEncryptionEncValuesSupported;
+    }
+
+    public void setAuthorizationEncryptionEncValuesSupported(List<String> authorizationEncryptionEncValuesSupported) {
+        this.authorizationEncryptionEncValuesSupported = authorizationEncryptionEncValuesSupported;
+    }
+
+    public Boolean getFrontChannelLogoutSessionSupported() {
+        return frontChannelLogoutSessionSupported;
+    }
+
+    public Boolean getFrontChannelLogoutSupported() {
+        return frontChannelLogoutSupported;
+    }
 }

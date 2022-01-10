@@ -190,6 +190,20 @@ th.w-40 {
     height: 26px;
 }
 
+.select2-container-single {
+    padding: 0;
+    margin: 0;
+}
+
+.select2-container-single .form-group {
+    width: 100%;
+    margin: 0;
+}
+
+.select2-container-single .form-group .input-group {
+    width: 100%;
+}
+
 /*********** html select ********/
 .overflow-select {
     overflow: auto;
@@ -355,6 +369,13 @@ h1 i {
     background-image: none;
 }
 
+.kc-action-cell-disabled {
+    background-color: #fafafa;
+    color: #8b8d8f;
+    background-image: none;
+    cursor: not-allowed;
+}
+
 .kc-sorter span {
     margin-left: 10px;
 }
@@ -404,6 +425,10 @@ table.kc-authz-table-expanded {
 .password-conceal {
   font-family: 'text-security-disc';
   font-size: 14px;
+}
+
+.input-map input.form-control {
+  width: 50%;
 }
 
 /* Deactivation styles for user-group membership tree models */

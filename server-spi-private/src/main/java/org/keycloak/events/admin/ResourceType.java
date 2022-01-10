@@ -151,6 +151,11 @@ public enum ResourceType {
     /**
      *
      */
+    , CLIENT_SCOPE_CLIENT_MAPPING
+
+    /**
+     *
+     */
     , CLUSTER_NODE
 
     /**

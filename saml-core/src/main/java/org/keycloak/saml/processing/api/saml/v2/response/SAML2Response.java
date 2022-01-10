@@ -117,7 +117,7 @@ public class SAML2Response {
         String authContextDeclRef = JBossSAMLURIConstants.AC_PASSWORD_PROTECTED_TRANSPORT.get();
         act.addAuthenticatingAuthority(URI.create(authContextDeclRef));
 
-        AuthnContextType.AuthnContextTypeSequence sequence = act.new AuthnContextTypeSequence();
+        AuthnContextType.AuthnContextTypeSequence sequence = new AuthnContextType.AuthnContextTypeSequence();
         sequence.setClassRef(new AuthnContextClassRefType(JBossSAMLURIConstants.AC_PASSWORD.getUri()));
         act.setSequence(sequence);
 

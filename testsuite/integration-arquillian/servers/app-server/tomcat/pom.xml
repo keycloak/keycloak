@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-app-server</artifactId>
-        <version>11.0.0-SNAPSHOT</version>
+        <version>17.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -363,7 +363,7 @@
                                     <goal>copy-resources</goal>
                                 </goals>
                                 <configuration>
-                                    <outputDirectory>${app.server.tomcat.home}/conf</outputDirectory>
+                                    <outputDirectory>${app.server.tomcat.home}/lib</outputDirectory>
                                     <resources>
                                         <resource>
                                             <directory>${common.resources}/keystore</directory>

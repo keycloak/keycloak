@@ -21,8 +21,9 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 
 /**
- * Optional capability interface implemented by UserStorageProviders.
- * Implement this interface if your provider supports adding and removing users.
+ * This is an optional capability interface that is intended to be implemented by any
+ * {@link org.keycloak.storage.UserStorageProvider UserStorageProvider} that supports addition of new users. You must
+ * implement this interface if you want to use this storage for registering new users.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -37,9 +38,9 @@ public interface UserRegistrationProvider {
      * Returning null is useful when you want optional support for adding users.  For example,
      * our LDAP provider can enable and disable the ability to add users.
      *
-     * @param realm
-     * @param username
-     * @return
+     * @param realm a reference to the realm
+     * @param username a username the created user will be assigned
+     * @return a model of created user
      */
     UserModel addUser(RealmModel realm, String username);
 
@@ -54,9 +55,9 @@ public interface UserRegistrationProvider {
      * this method will be called before local storage's removeUser() method is invoked.  Also,
      * you DO NOT need to remove the imported user.  The runtime will handle this for you.
      *
-     * @param realm
-     * @param user
-     * @return
+     * @param realm a reference to the realm
+     * @param user a reference to the user that is removed
+     * @return true if the user was removed, false otherwise
      */
     boolean removeUser(RealmModel realm, UserModel user);
 

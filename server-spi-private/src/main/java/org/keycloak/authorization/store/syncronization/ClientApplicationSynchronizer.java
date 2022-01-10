@@ -18,7 +18,7 @@
 
 package org.keycloak.authorization.store.syncronization;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -30,7 +30,7 @@ import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel.ClientRemovedEvent;
+import org.keycloak.models.ClientModel.ClientRemovedEvent;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
 
@@ -56,10 +56,11 @@ public class ClientApplicationSynchronizer implements Synchronizer<ClientRemoved
             storeFactory.getResourceServerStore().delete(resourceServer.getId());
         }
 
-        Map<String, String[]> attributes = new HashMap<>();
+        Map<Policy.FilterOption, String[]> attributes = new EnumMap<>(Policy.FilterOption.class);
 
-        attributes.put("type", new String[] {"client"});
-        attributes.put("config:clients", new String[] {event.getClient().getId()});
+        attributes.put(Policy.FilterOption.TYPE, new String[] {"client"});
+        attributes.put(Policy.FilterOption.CONFIG, new String[] {"clients", event.getClient().getId()});
+        attributes.put(Policy.FilterOption.ANY_OWNER, Policy.FilterOption.EMPTY_FILTER);
 
         List<Policy> search = storeFactory.getPolicyStore().findByResourceServer(attributes, null, -1, -1);
 

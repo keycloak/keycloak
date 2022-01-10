@@ -106,12 +106,8 @@ public abstract class AbstractLDAPTest extends AbstractTestRealmKeycloakTest {
 
 
     protected ComponentRepresentation findMapperRepByName(String name) {
-        List<ComponentRepresentation> mappers = testRealm().components().query(ldapModelId, LDAPStorageMapper.class.getName());
-        for (ComponentRepresentation mapper : mappers) {
-            if (mapper.getName().equals(name)) {
-                return mapper;
-            }
-        }
-        return null;
+        return testRealm().components().query(ldapModelId, LDAPStorageMapper.class.getName()).stream()
+          .filter(mapper -> mapper.getName().equals(name))
+          .findAny().orElse(null);
     }
 }

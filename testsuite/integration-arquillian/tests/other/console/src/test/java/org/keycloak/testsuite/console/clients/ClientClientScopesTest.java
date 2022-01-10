@@ -20,7 +20,6 @@ package org.keycloak.testsuite.console.clients;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -35,6 +34,8 @@ import org.keycloak.testsuite.console.page.clients.clientscopes.ClientScopesSetu
 import org.keycloak.testsuite.console.page.clients.clientscopes.ClientScopesSetupForm;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
+import org.hamcrest.MatcherAssert;
+import static org.hamcrest.Matchers.hasItems;
 
 import static org.junit.Assert.assertNotNull;
 import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
@@ -97,7 +98,7 @@ public class ClientClientScopesTest extends AbstractClientTest {
 
         // Retrieve client through adminClient
         found = findClientByClientId(TEST_CLIENT_ID);
-        Assert.assertNames(found.getDefaultClientScopes(), "email", "role_list"); // SAML client scope 'role_list' is included too in the rep
+        Assert.assertNames(found.getDefaultClientScopes(), "email");
         Assert.assertNames(found.getOptionalClientScopes(), "profile", "address", "phone", "offline_access", "microprofile-jwt");
 
 
@@ -155,7 +156,8 @@ public class ClientClientScopesTest extends AbstractClientTest {
         // Test roles
         evaluateForm.showRoles();
         Assert.assertNames(evaluateForm.getGrantedRealmRoles(), "offline_access");
-        Assert.assertNames(evaluateForm.getNotGrantedRealmRoles(), "uma_authorization");
+        MatcherAssert.assertThat(evaluateForm.getNotGrantedRealmRoles(),
+                hasItems("uma_authorization", "default-roles-test"));
 
         // Test access token
         evaluateForm.showToken();

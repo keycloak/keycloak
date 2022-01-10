@@ -198,7 +198,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.login("invalid", "invalid");
         loginPage.assertCurrent();
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
 
         // Simulate going back to tab1 and confirm login form. Login page with "action expired" message should be shown (NOTE: WebDriver does it with GET, when real browser would do it with POST. Improve test if needed...)
         driver.navigate().to(actionUrl1);

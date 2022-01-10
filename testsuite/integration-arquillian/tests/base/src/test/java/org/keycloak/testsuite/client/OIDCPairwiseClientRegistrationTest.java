@@ -42,6 +42,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
@@ -354,7 +355,7 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         Assert.assertNotEquals(pairwiseUserId, user.getId());
 
         // Send request to userInfo endpoint
-        Client jaxrsClient = javax.ws.rs.client.ClientBuilder.newClient();
+        Client jaxrsClient = AdminClientUtil.createResteasyClient();
         try {
             // Check that userInfo contains pairwise subjectId as well
             Response userInfoResponse = UserInfoClientUtil.executeUserInfoRequest_getMethod(jaxrsClient, accessTokenResponse.getAccessToken());

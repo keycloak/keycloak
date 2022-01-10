@@ -39,4 +39,26 @@ public class H2TestEnricher {
         }
     }
 
+    // Ability to run H2 database available via TCP in separate process. Useful for dev purposes
+    public static void main(String[] args) {
+        System.setProperty("run.h2", "true");
+
+        final H2TestEnricher h2Enricher = new H2TestEnricher();
+
+        try {
+            h2Enricher.startH2(null);
+        } catch (Exception se) {
+            h2Enricher.stopH2(null);
+        }
+
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+
+            @Override
+            public void run() {
+                h2Enricher.stopH2(null);
+            }
+
+        });
+    }
+
 }

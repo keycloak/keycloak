@@ -18,9 +18,7 @@ package org.keycloak.protocol.saml.mappers;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import org.jboss.logging.Logger;
 import org.keycloak.dom.saml.v2.assertion.AudienceRestrictionType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
@@ -82,29 +80,23 @@ public class SAMLAudienceResolveProtocolMapper extends AbstractSAMLProtocolMappe
         AudienceRestrictionType aud = SAMLAudienceProtocolMapper.locateAudienceRestriction(response);
         if (aud != null) {
             // get all the roles the user has and calculate the clientIds to add
-            Set<RoleModel> roles = clientSessionCtx.getRoles();
-            Set<String> audiences = new HashSet<>();
             // add as audience any SAML clientId with role included (same as OIDC)
-            for (RoleModel role : roles) {
-                logger.tracef("Managing role: %s", role.getName());
-                if (role.isClientRole()) {
-                    ClientModel app = (ClientModel) role.getContainer();
+            clientSessionCtx.getRolesStream()
+                    .peek(r -> logger.tracef("Managing role: %s", r.getName()))
+                    .filter(RoleModel::isClientRole)
+                    .map(r -> (ClientModel) r.getContainer())
                     // only adding SAML clients that are not this clientId (which is added by default)
-                    if (SamlProtocol.LOGIN_PROTOCOL.equals(app.getProtocol()) &&
-                            !app.getClientId().equals(clientSessionCtx.getClientSession().getClient().getClientId())) {
-                        audiences.add(app.getClientId());
-                    }
-                }
-            }
-            logger.debugf("Calculated audiences to add: %s", audiences);
-            // add the audiences
-            for (String audience : audiences) {
-                try {
-                    aud.addAudience(URI.create(audience));
-                } catch (IllegalArgumentException e) {
-                    logger.warnf(e, "Invalid URI syntax for audience: %s", audience);
-                }
-            }
+                    .filter(app -> SamlProtocol.LOGIN_PROTOCOL.equals(app.getProtocol()) &&
+                            !app.getClientId().equals(clientSessionCtx.getClientSession().getClient().getClientId()))
+                    .map(ClientModel::getClientId)
+                    .peek(audience -> logger.debugf("Audience to add: %s", audience))
+                    .forEach(audience -> {
+                        try {
+                            aud.addAudience(URI.create(audience));
+                        } catch (IllegalArgumentException e) {
+                            logger.warnf(e, "Invalid URI syntax for audience: %s", audience);
+                        }
+                    });
         }
         return response;
     }

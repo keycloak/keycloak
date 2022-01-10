@@ -39,6 +39,7 @@ import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthorizationResource;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authorization.client.AuthzClient;
@@ -46,7 +47,9 @@ import org.keycloak.authorization.client.ClientAuthenticator;
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.resource.ProtectionResource;
 import org.keycloak.authorization.client.util.HttpResponseException;
+import org.keycloak.common.util.Time;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -59,6 +62,7 @@ import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.PermissionResponse;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -81,6 +85,7 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
                 .build());
         testRealms.add(configureRealm(RealmBuilder.create().name("authz-test"), ClientBuilder.create().secret("secret")).build());
         testRealms.add(configureRealm(RealmBuilder.create().name("authz-test-session").accessTokenLifespan(1), ClientBuilder.create().secret("secret")).build());
+        testRealms.add(configureRealm(RealmBuilder.create().name("authz-test-no-rt").accessTokenLifespan(1), ClientBuilder.create().secret("secret").attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "false")).build());
     }
 
     @Before
@@ -157,7 +162,27 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
     }
 
     @Test
-    public void testReusingAccessAndRefreshTokens() throws Exception {
+    public void testReusingAccessAndRefreshTokens_refreshDisabled() throws Exception {
+        testReusingAccessAndRefreshTokens(0);
+    }
+
+    @Test
+    public void testReusingAccessAndRefreshTokens_refreshEnabled() throws Exception {
+        // Use userSessions and refresh tokens
+        ClientResource client = ApiUtil.findClientByClientId(getAdminClient().realm("authz-test-session"), "resource-server-test");
+        ClientRepresentation clientRepresentation = ClientBuilder.edit(client.toRepresentation())
+                .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true")
+                .build();
+        client.update(clientRepresentation);
+
+        testReusingAccessAndRefreshTokens( 1);
+
+        // Rollback configuration
+        clientRepresentation.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "false");
+        client.update(clientRepresentation);
+    }
+
+    private void testReusingAccessAndRefreshTokens(int expectedUserSessionsCount) throws Exception {
         ClientsResource clients = getAdminClient().realm("authz-test-session").clients();
         ClientRepresentation clientRepresentation = clients.findByClientId("resource-server-test").get(0);
         List<UserSessionRepresentation> userSessions = clients.get(clientRepresentation.getId()).getUserSessions(-1, -1);
@@ -169,7 +194,7 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
 
         protection.resource().findByName("Default Resource");
         userSessions = clients.get(clientRepresentation.getId()).getUserSessions(null, null);
-        assertEquals(1, userSessions.size());
+        assertEquals(expectedUserSessionsCount, userSessions.size());
 
         Thread.sleep(2000);
         protection = authzClient.protection();
@@ -177,7 +202,7 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
 
         userSessions = clients.get(clientRepresentation.getId()).getUserSessions(null, null);
 
-        assertEquals(1, userSessions.size());
+        assertEquals(expectedUserSessionsCount, userSessions.size());
     }
 
     @Test
@@ -228,6 +253,32 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
         userSessions = clients.get(clientRepresentation.getId()).getUserSessions(null, null);
 
         assertEquals(1, userSessions.size());
+    }
+
+    @Test
+    public void testNoRefreshToken() throws Exception {
+        ClientsResource clients = getAdminClient().realm("authz-test-no-rt").clients();
+        AuthzClient authzClient = getAuthzClient("default-session-keycloak-no-rt.json");
+        org.keycloak.authorization.client.resource.AuthorizationResource authorization = authzClient.authorization();
+        AuthorizationResponse response = authorization.authorize();
+        AccessToken accessToken = toAccessToken(response.getToken());
+
+        assertEquals(1, accessToken.getAuthorization().getPermissions().size());
+        assertEquals("Default Resource", accessToken.getAuthorization().getPermissions().iterator().next().getResourceName());
+
+        ProtectionResource protection = authzClient.protection();
+
+        assertEquals(1, protection.resource().findAll().length);
+
+        try {
+            // force token expiration on the client side
+            Time.setOffset(1000);
+
+            // should refresh tokens by doing client credentials again
+            assertEquals(1, protection.resource().findAll().length);
+        } finally {
+            Time.setOffset(0);
+        }
     }
 
     @Test

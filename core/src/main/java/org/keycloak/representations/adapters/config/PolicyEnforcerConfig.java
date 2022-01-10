@@ -177,6 +177,10 @@ public class PolicyEnforcerConfig {
         @JsonIgnore
         private PathConfig parentConfig;
 
+        private boolean invalidated;
+
+        private boolean staticPath;
+
         public String getPath() {
             return this.path;
         }
@@ -269,6 +273,22 @@ public class PolicyEnforcerConfig {
 
         public PathConfig getParentConfig() {
             return parentConfig;
+        }
+
+        public void invalidate() {
+            this.invalidated = true;
+        }
+
+        public boolean isInvalidated() {
+            return invalidated;
+        }
+
+        public boolean isStatic() {
+            return staticPath;
+        }
+
+        public void setStatic(boolean staticPath) {
+            this.staticPath = staticPath;
         }
     }
 

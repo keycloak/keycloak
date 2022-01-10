@@ -16,9 +16,9 @@
  */
 package org.keycloak.testsuite.actions;
 
+import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
@@ -27,11 +27,17 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.SecondBrowser;
+import org.openqa.selenium.WebDriver;
 
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -54,6 +60,10 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
     @Page
     protected LoginPasswordUpdatePage changePasswordPage;
+
+    @Drone
+    @SecondBrowser
+    private WebDriver driver2;
 
     @After
     public void after() {
@@ -148,6 +158,63 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
 
         assertKcActionStatus("success");
+    }
+
+    @Test
+    public void checkLogoutSessions() {
+        OAuthClient oauth2 = new OAuthClient();
+        oauth2.init(driver2);
+
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        events.expectLogin().assertEvent();
+
+        UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
+        List<UserSessionRepresentation> sessions = testUser.getUserSessions();
+        assertEquals(1, sessions.size());
+        final String firstSessionId = sessions.get(0).getId();
+
+        oauth2.doLogin("test-user@localhost", "password");
+        events.expectLogin().assertEvent();
+        assertEquals(2, testUser.getUserSessions().size());
+
+        doAIA();
+
+        changePasswordPage.assertCurrent();
+        assertTrue("Logout sessions is checked by default", changePasswordPage.isLogoutSessionsChecked());
+        changePasswordPage.changePassword("All Right Then, Keep Your Secrets", "All Right Then, Keep Your Secrets");
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
+        assertKcActionStatus("success");
+
+        sessions = testUser.getUserSessions();
+        assertEquals(1, sessions.size());
+        assertEquals("Old session is still valid", firstSessionId, sessions.get(0).getId());
+    }
+
+    @Test
+    public void uncheckLogoutSessions() {
+        OAuthClient oauth2 = new OAuthClient();
+        oauth2.init(driver2);
+
+        UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
+
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        events.expectLogin().assertEvent();
+
+        oauth2.doLogin("test-user@localhost", "password");
+        events.expectLogin().assertEvent();
+        assertEquals(2, testUser.getUserSessions().size());
+
+        doAIA();
+
+        changePasswordPage.assertCurrent();
+        changePasswordPage.uncheckLogoutSessions();
+        changePasswordPage.changePassword("All Right Then, Keep Your Secrets", "All Right Then, Keep Your Secrets");
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
+        assertKcActionStatus("success");
+
+        assertEquals(2, testUser.getUserSessions().size());
     }
 
 }

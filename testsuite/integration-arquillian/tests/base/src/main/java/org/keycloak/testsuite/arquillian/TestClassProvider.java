@@ -24,7 +24,11 @@ public class TestClassProvider {
             "/org/jboss/arquillian",
             "/org/jboss/shrinkwrap",
             "/org/jboss/jandex",
-            "/org/openqa/selenium"
+            "/org/openqa/selenium",
+            "/com/webauthn4j",
+            "/com/fasterxml/jackson/dataformat/cbor",
+            "/org/slf4j",
+            "/org/apache"
     };
 
     private Undertow server;
@@ -43,7 +47,7 @@ public class TestClassProvider {
         server.stop();
     }
 
-    public class ClassPathResourceManager implements ResourceManager {
+    public static class ClassPathResourceManager implements ResourceManager {
 
         @Override
         public Resource getResource(String className) {

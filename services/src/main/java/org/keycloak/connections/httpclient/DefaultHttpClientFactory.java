@@ -19,7 +19,6 @@ package org.keycloak.connections.httpclient;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.EntityBuilder;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -37,6 +36,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.util.concurrent.TimeUnit;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.util.EntityUtils;
+
+import static org.keycloak.utils.StringUtil.isBlank;
 
 /**
  * The default {@link HttpClientFactory} for {@link HttpClientProvider HttpClientProvider's} used by Keycloak for outbound HTTP calls.
@@ -60,6 +63,11 @@ import java.util.concurrent.TimeUnit;
 public class DefaultHttpClientFactory implements HttpClientFactory {
 
     private static final Logger logger = Logger.getLogger(DefaultHttpClientFactory.class);
+    private static final String configScope = "keycloak.connectionsHttpClient.default.";
+
+    private static final String HTTPS_PROXY = "https_proxy";
+    private static final String HTTP_PROXY = "http_proxy";
+    private static final String NO_PROXY = "no_proxy";
 
     private volatile CloseableHttpClient httpClient;
     private Config.Scope config;
@@ -70,7 +78,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
 
         return new HttpClientProvider() {
             @Override
-            public HttpClient getHttpClient() {
+            public CloseableHttpClient getHttpClient() {
                 return httpClient;
             }
 
@@ -83,16 +91,15 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
             public int postText(String uri, String text) throws IOException {
                 HttpPost request = new HttpPost(uri);
                 request.setEntity(EntityBuilder.create().setText(text).setContentType(ContentType.TEXT_PLAIN).build());
-                HttpResponse response = httpClient.execute(request);
-                try {
-                    return response.getStatusLine().getStatusCode();
-                } finally {
-                    HttpEntity entity = response.getEntity();
-                    if (entity != null) {
-                        InputStream is = entity.getContent();
-                        if (is != null) is.close();
+                try (CloseableHttpResponse response = httpClient.execute(request)) {
+                    try {
+                        return response.getStatusLine().getStatusCode();
+                    } finally {
+                        EntityUtils.consumeQuietly(response.getEntity());
                     }
-
+                } catch (Throwable t) {
+                    logger.warn(t.getMessage(), t);
+                    throw t;
                 }
             }
 
@@ -133,29 +140,51 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
         if (httpClient == null) {
             synchronized(this) {
                 if (httpClient == null) {
-                    long socketTimeout = config.getLong("socket-timeout-millis", -1L);
+                    long socketTimeout = config.getLong("socket-timeout-millis", 5000L);
                     long establishConnectionTimeout = config.getLong("establish-connection-timeout-millis", -1L);
                     int maxPooledPerRoute = config.getInt("max-pooled-per-route", 64);
                     int connectionPoolSize = config.getInt("connection-pool-size", 128);
                     long connectionTTL = config.getLong("connection-ttl-millis", -1L);
+                    boolean reuseConnections = config.getBoolean("reuse-connections", true);
                     long maxConnectionIdleTime = config.getLong("max-connection-idle-time-millis", 900000L);
                     boolean disableCookies = config.getBoolean("disable-cookies", true);
                     String clientKeystore = config.get("client-keystore");
                     String clientKeystorePassword = config.get("client-keystore-password");
                     String clientPrivateKeyPassword = config.get("client-key-password");
-                    String[] proxyMappings = config.getArray("proxy-mappings");
                     boolean disableTrustManager = config.getBoolean("disable-trust-manager", false);
-                    
+
+                    boolean expectContinueEnabled = getBooleanConfigWithSysPropFallback("expect-continue-enabled", false);
+                    boolean resuseConnections = getBooleanConfigWithSysPropFallback("reuse-connections", true);
+
+                    // optionally configure proxy mappings
+                    // direct SPI config (e.g. via standalone.xml) takes precedence over env vars
+                    // lower case env vars take precedence over upper case env vars
+                    ProxyMappings proxyMappings = ProxyMappings.valueOf(config.getArray("proxy-mappings"));
+                    if (proxyMappings == null || proxyMappings.isEmpty()) {
+                        logger.debug("Trying to use proxy mapping from env vars");
+                        String httpProxy = getEnvVarValue(HTTPS_PROXY);
+                        if (isBlank(httpProxy)) {
+                            httpProxy = getEnvVarValue(HTTP_PROXY);
+                        }
+                        String noProxy = getEnvVarValue(NO_PROXY);
+
+                        logger.debugf("httpProxy: %s, noProxy: %s", httpProxy, noProxy);
+                        proxyMappings = ProxyMappings.withFixedProxyMapping(httpProxy, noProxy);
+                    }
+
                     HttpClientBuilder builder = new HttpClientBuilder();
 
                     builder.socketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
                             .establishConnectionTimeout(establishConnectionTimeout, TimeUnit.MILLISECONDS)
                             .maxPooledPerRoute(maxPooledPerRoute)
                             .connectionPoolSize(connectionPoolSize)
+                            .reuseConnections(reuseConnections)
                             .connectionTTL(connectionTTL, TimeUnit.MILLISECONDS)
                             .maxConnectionIdleTime(maxConnectionIdleTime, TimeUnit.MILLISECONDS)
                             .disableCookies(disableCookies)
-                            .proxyMappings(ProxyMappings.valueOf(proxyMappings));
+                            .proxyMappings(proxyMappings)
+                            .expectContinueEnabled(expectContinueEnabled)
+                            .reuseConnections(resuseConnections);
 
                     TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
                     boolean disableTruststoreProvider = truststoreProvider == null || truststoreProvider.getTruststore() == null;
@@ -196,6 +225,23 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
 
     }
 
+    private boolean getBooleanConfigWithSysPropFallback(String key, boolean defaultValue) {
+        Boolean value = config.getBoolean(key);
+        if (value == null) {
+            String s = System.getProperty(configScope + key);
+            if (s != null) {
+                value = Boolean.parseBoolean(s);
+            }
+        }
+        return value != null ? value : defaultValue;
+    }
 
+    private String getEnvVarValue(String name) {
+        String value = System.getenv(name.toLowerCase());
+        if (isBlank(value)) {
+            value = System.getenv(name.toUpperCase());
+        }
+        return value;
+    }
 
 }

@@ -22,7 +22,6 @@ import java.net.URI;
 import java.util.List;
 
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -38,6 +37,7 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.OAuthClient;
 
 @AuthServerContainerExclude(AuthServer.REMOTE)
@@ -54,7 +54,7 @@ public class UmaDiscoveryDocumentTest extends AbstractKeycloakTest {
 
     @Test
     public void testFetchDiscoveryDocument() {
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
         UriBuilder builder = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT);
         URI oidcDiscoveryUri = RealmsResource.wellKnownProviderUrl(builder).build("test", UmaWellKnownProviderFactory.PROVIDER_ID);
         WebTarget oidcDiscoveryTarget = client.target(oidcDiscoveryUri);
@@ -69,7 +69,7 @@ public class UmaDiscoveryDocumentTest extends AbstractKeycloakTest {
             assertEquals(configuration.getAuthorizationEndpoint(), OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT)).build("test").toString());
             assertEquals(configuration.getTokenEndpoint(), oauth.getAccessTokenUrl());
             assertEquals(configuration.getJwksUri(), oauth.getCertsUrl("test"));
-            assertEquals(configuration.getTokenIntrospectionEndpoint(), oauth.getTokenIntrospectionUrl());
+            assertEquals(configuration.getIntrospectionEndpoint(), oauth.getTokenIntrospectionUrl());
 
             String registrationUri = UriBuilder
                     .fromUri(OAuthClient.AUTH_SERVER_ROOT)

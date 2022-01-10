@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<!--[if IE 9]><html lang="en-us" class="ie9 login-pf"><![endif]-->
+<!--[if gt IE 9]><!-->
+{% if site.company == "Red Hat" %}
+<html lang="en-us" class="login-pf">
+{% else %}
+<html lang="en-us">
+{% endif %}
+<!--<![endif]-->
+{% include head.html %}
+  <body class="login-pf">
+{{ content }}
+  </body>
+</html>

@@ -78,6 +78,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.services.util.BrowserHistoryHelper;
 import org.keycloak.services.util.CacheControlUtil;
@@ -395,7 +396,7 @@ public class LoginActionsService {
             throws UriBuilderException, IllegalArgumentException {
         AuthenticationSessionModel authSession;
 
-        ClientModel client = session.realms().getClientByClientId(clientID, realm);
+        ClientModel client = session.clients().getClientByClientId(realm, clientID);
         String redirectUri;
 
         if (client == null) {
@@ -845,7 +846,6 @@ public class LoginActionsService {
         return Response.status(302).location(redirect).build();
     }
 
-
     /**
      * OAuth grant page.  You should not invoked this directly!
      *
@@ -855,7 +855,8 @@ public class LoginActionsService {
     @Path("consent")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processConsent(final MultivaluedMap<String, String> formData) {
+    public Response processConsent() {
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
         event.event(EventType.LOGIN);
         String code = formData.getFirst(SESSION_CODE);
         String clientId = session.getContext().getUri().getQueryParameters().getFirst(Constants.CLIENT_ID);

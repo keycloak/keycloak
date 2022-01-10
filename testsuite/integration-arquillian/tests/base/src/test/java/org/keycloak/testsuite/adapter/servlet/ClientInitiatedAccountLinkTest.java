@@ -26,6 +26,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -42,6 +43,7 @@ import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.broker.BrokerTestTools;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
@@ -49,12 +51,12 @@ import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URL;
 import java.util.LinkedList;
@@ -402,7 +404,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
         OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest(CHILD_IDP, "child", "password", null, "client-linking", "password");
         Assert.assertNotNull(response.getAccessToken());
         Assert.assertNull(response.getError());
-        Client httpClient = ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
         String firstToken = getToken(response, httpClient);
         Assert.assertNotNull(firstToken);
 
@@ -537,6 +539,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
 
 
     @Test
+    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void testAccountNotLinkedAutomatically() throws Exception {
         RealmResource realm = adminClient.realms().realm(CHILD_IDP);
         List<FederatedIdentityRepresentation> links = realm.users().get(childUserId).getFederatedIdentity();
@@ -571,7 +574,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
         loginUpdateProfilePage.update("Joe", "Doe", "joe@parent.com");
 
         errorPage.assertCurrent();
-        Assert.assertEquals("You are already authenticated as different user 'child' in this session. Please log out first.", errorPage.getError());
+        Assert.assertEquals("You are already authenticated as different user 'child' in this session. Please sign out first.", errorPage.getError());
 
         logoutAll();
 
@@ -582,6 +585,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
 
 
     @Test
+    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void testAccountLinkingExpired() throws Exception {
         RealmResource realm = adminClient.realms().realm(CHILD_IDP);
         List<FederatedIdentityRepresentation> links = realm.users().get(childUserId).getFederatedIdentity();

@@ -17,6 +17,8 @@
 
 package org.keycloak;
 
+import java.util.Set;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -75,7 +77,7 @@ public class Config {
 
     public static class SystemPropertiesScope implements Scope {
 
-        private String prefix;
+        protected String prefix;
 
         public SystemPropertiesScope(String prefix) {
             this.prefix = prefix;
@@ -114,7 +116,7 @@ public class Config {
         @Override
         public Integer getInt(String key, Integer defaultValue) {
             String v = get(key, null);
-            return v != null ? Integer.parseInt(v) : defaultValue;
+            return v != null ? Integer.valueOf(v) : defaultValue;
         }
 
         @Override
@@ -125,7 +127,7 @@ public class Config {
         @Override
         public Long getLong(String key, Long defaultValue) {
             String v = get(key, null);
-            return v != null ? Long.parseLong(v) : defaultValue;
+            return v != null ? Long.valueOf(v) : defaultValue;
         }
 
         @Override
@@ -137,7 +139,7 @@ public class Config {
         public Boolean getBoolean(String key, Boolean defaultValue) {
             String v = get(key, null);
             if (v != null) {
-                return Boolean.parseBoolean(v);
+                return Boolean.valueOf(v);
             } else {
                 return defaultValue;
             }
@@ -152,6 +154,11 @@ public class Config {
                 sb.append(".");
             }
             return new SystemPropertiesScope(sb.toString());
+        }
+
+        @Override
+        public Set<String> getPropertyNames() {
+            throw new UnsupportedOperationException("Not implemented");
         }
 
     }
@@ -181,5 +188,6 @@ public class Config {
 
         Scope scope(String... scope);
 
+        Set<String> getPropertyNames();
     }
 }

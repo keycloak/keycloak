@@ -18,11 +18,7 @@
 package org.keycloak.services.resources;
 
 import java.net.URI;
-import java.util.AbstractMap.SimpleEntry;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-
+import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
@@ -372,8 +368,14 @@ public class SessionCodeChecks {
         logger.debug("Authentication session not found. Trying to restart from cookie.");
         AuthenticationSessionModel authSession = null;
 
+        Cookie cook = RestartLoginCookie.getRestartCookie(session);
+        if(cook == null){
+            event.error(Errors.COOKIE_NOT_FOUND);
+            return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.COOKIE_NOT_FOUND);
+        }
+
         try {
-            authSession = RestartLoginCookie.restartSession(session, realm, existingRootSession, clientId);
+            authSession = RestartLoginCookie.restartSession(session, realm, existingRootSession, clientId, cook);
         } catch (Exception e) {
             ServicesLogger.LOGGER.failedToParseRestartLoginCookie(e);
         }

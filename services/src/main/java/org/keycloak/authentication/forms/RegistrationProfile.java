@@ -21,7 +21,6 @@ import org.keycloak.Config;
 import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormActionFactory;
 import org.keycloak.authentication.FormContext;
-import org.keycloak.authentication.ValidationContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
@@ -34,9 +33,12 @@ import org.keycloak.models.utils.FormMessage;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.ValidationException;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileProvider;
 
 import javax.ws.rs.core.MultivaluedMap;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -57,56 +59,41 @@ public class RegistrationProfile implements FormAction, FormActionFactory {
     }
 
     @Override
-    public void validate(ValidationContext context) {
+    public void validate(org.keycloak.authentication.ValidationContext context) {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-        List<FormMessage> errors = new ArrayList<>();
 
         context.getEvent().detail(Details.REGISTER_METHOD, "form");
-        String eventError = Errors.INVALID_REGISTRATION;
 
-        if (Validation.isBlank(formData.getFirst((RegistrationPage.FIELD_FIRST_NAME)))) {
-            errors.add(new FormMessage(RegistrationPage.FIELD_FIRST_NAME, Messages.MISSING_FIRST_NAME));
-        }
+        UserProfileProvider profileProvider = context.getSession().getProvider(UserProfileProvider.class);
+        UserProfile profile = profileProvider.create(UserProfileContext.REGISTRATION_PROFILE, formData);
 
-        if (Validation.isBlank(formData.getFirst((RegistrationPage.FIELD_LAST_NAME)))) {
-            errors.add(new FormMessage(RegistrationPage.FIELD_LAST_NAME, Messages.MISSING_LAST_NAME));
-        }
+        try {
+            profile.validate();
+        } catch (ValidationException pve) {
+            List<FormMessage> errors = Validation.getFormErrorsFromValidation(pve.getErrors());
 
-        String email = formData.getFirst(Validation.FIELD_EMAIL);
-        boolean emailValid = true;
-        if (Validation.isBlank(email)) {
-            errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.MISSING_EMAIL));
-            emailValid = false;
-        } else if (!Validation.isEmailValid(email)) {
-            context.getEvent().detail(Details.EMAIL, email);
-            errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.INVALID_EMAIL));
-            emailValid = false;
-        }
+            if (pve.hasError(Messages.EMAIL_EXISTS, Messages.INVALID_EMAIL)) {
+                context.getEvent().detail(Details.EMAIL, profile.getAttributes().getFirstValue(UserModel.EMAIL));
+            }
 
-        if (emailValid && !context.getRealm().isDuplicateEmailsAllowed() && context.getSession().users().getUserByEmail(email, context.getRealm()) != null) {
-            eventError = Errors.EMAIL_IN_USE;
-            formData.remove(Validation.FIELD_EMAIL);
-            context.getEvent().detail(Details.EMAIL, email);
-            errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.EMAIL_EXISTS));
-        }
+            if (pve.hasError(Messages.EMAIL_EXISTS)) {
+                context.error(Errors.EMAIL_IN_USE);
+            } else
+                context.error(Errors.INVALID_REGISTRATION);
 
-        if (errors.size() > 0) {
-            context.error(eventError);
             context.validationError(formData, errors);
-            return;
 
-        } else {
-            context.success();
+            return;
         }
+
+        context.success();
     }
 
     @Override
     public void success(FormContext context) {
         UserModel user = context.getUser();
-        MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-        user.setFirstName(formData.getFirst(RegistrationPage.FIELD_FIRST_NAME));
-        user.setLastName(formData.getFirst(RegistrationPage.FIELD_LAST_NAME));
-        user.setEmail(formData.getFirst(RegistrationPage.FIELD_EMAIL));
+        UserProfileProvider provider = context.getSession().getProvider(UserProfileProvider.class);
+        provider.create(UserProfileContext.REGISTRATION_PROFILE, context.getHttpRequest().getDecodedFormParameters(), user).update();
     }
 
     @Override

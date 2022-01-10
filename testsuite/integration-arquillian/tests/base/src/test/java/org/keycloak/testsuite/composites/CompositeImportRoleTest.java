@@ -59,7 +59,7 @@ public class CompositeImportRoleTest extends AbstractCompositeKeycloakTest {
 
         Assert.assertEquals(200, response.getStatusCode());
 
-        Assert.assertEquals("bearer", response.getTokenType());
+        Assert.assertEquals("Bearer", response.getTokenType());
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
 
@@ -83,7 +83,7 @@ public class CompositeImportRoleTest extends AbstractCompositeKeycloakTest {
 
         Assert.assertEquals(200, response.getStatusCode());
 
-        Assert.assertEquals("bearer", response.getTokenType());
+        Assert.assertEquals("Bearer", response.getTokenType());
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
 
@@ -106,7 +106,7 @@ public class CompositeImportRoleTest extends AbstractCompositeKeycloakTest {
 
         Assert.assertEquals(200, response.getStatusCode());
 
-        Assert.assertEquals("bearer", response.getTokenType());
+        Assert.assertEquals("Bearer", response.getTokenType());
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
 
@@ -128,7 +128,7 @@ public class CompositeImportRoleTest extends AbstractCompositeKeycloakTest {
 
         Assert.assertEquals(200, response.getStatusCode());
 
-        Assert.assertEquals("bearer", response.getTokenType());
+        Assert.assertEquals("Bearer", response.getTokenType());
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
 
@@ -149,7 +149,7 @@ public class CompositeImportRoleTest extends AbstractCompositeKeycloakTest {
 
         Assert.assertEquals(200, response.getStatusCode());
 
-        Assert.assertEquals("bearer", response.getTokenType());
+        Assert.assertEquals("Bearer", response.getTokenType());
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
 

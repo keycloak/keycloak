@@ -91,6 +91,8 @@ public class BruteForceCrossDCTest extends AbstractAdminCrossDCTest {
                 .bruteForceProtected(true)
                 .build();
 
+        realmRep.setQuickLoginCheckMilliSeconds(0L); // This is necessary so user is not locked out for too fast consecutive login attempts; when user is locked out failure count stops increasing
+
         adminClient.realms().create(realmRep);
     }
 
@@ -265,7 +267,7 @@ public class BruteForceCrossDCTest extends AbstractAdminCrossDCTest {
     private void addUserLoginFailure(KeycloakTestingClient testingClient) throws URISyntaxException, IOException {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName(REALM_NAME);
-            UserLoginFailureModel loginFailure = session.sessions().addUserLoginFailure(realm, "login-test-1");
+            UserLoginFailureModel loginFailure = session.loginFailures().addUserLoginFailure(realm, "login-test-1");
             loginFailure.incrementFailures();
         });
     }

@@ -75,7 +75,7 @@ public class ProtectionResource {
      * @return the {@link TokenIntrospectionResponse}
      */
     public TokenIntrospectionResponse introspectRequestingPartyToken(String rpt) {
-        return this.http.<TokenIntrospectionResponse>post(serverConfiguration.getTokenIntrospectionEndpoint())
+        return this.http.<TokenIntrospectionResponse>post(serverConfiguration.getIntrospectionEndpoint())
                 .authentication()
                     .client()
                 .form()

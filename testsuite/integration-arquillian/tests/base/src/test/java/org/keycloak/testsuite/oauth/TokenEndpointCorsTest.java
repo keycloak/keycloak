@@ -41,7 +41,7 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-        realm.getClients().add(ClientBuilder.create().redirectUris(VALID_CORS_URL + "/realms/master/app").addWebOrigin(VALID_CORS_URL).id("test-app2").clientId("test-app2").publicClient().directAccessGrants().build());
+        realm.getClients().add(ClientBuilder.create().redirectUris(VALID_CORS_URL + "/realms/master/app").addWebOrigin(VALID_CORS_URL).clientId("test-app2").publicClient().directAccessGrants().build());
         testRealms.add(realm);
     }
 
@@ -112,6 +112,29 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
 
         assertEquals(401, response.getStatusCode());
         assertCors(response);
+    }
+
+    @Test
+    public void accessTokenWithConfidentialClientCorsRequest() throws Exception {
+        oauth.realm("test");
+        oauth.clientId("direct-grant");
+        oauth.origin(VALID_CORS_URL);
+
+        // Successful token request with correct origin - cors should work
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        assertEquals(200, response.getStatusCode());
+        assertCors(response);
+
+        // Invalid client authentication with correct origin - cors should work
+        response = oauth.doGrantAccessTokenRequest("invalid", "test-user@localhost", "password");
+        assertEquals(401, response.getStatusCode());
+        assertCors(response);
+
+        // Successful token request with bad origin - cors should NOT work
+        oauth.origin(INVALID_CORS_URL);
+        response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        assertEquals(200, response.getStatusCode());
+        assertNotCors(response);
     }
 
     private static void assertCors(OAuthClient.AccessTokenResponse response) {

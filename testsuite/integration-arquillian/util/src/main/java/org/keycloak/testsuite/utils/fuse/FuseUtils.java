@@ -25,12 +25,17 @@ import org.apache.sshd.client.channel.ChannelExec;
 import org.apache.sshd.client.channel.ClientChannelEvent;
 import org.apache.sshd.client.future.ConnectFuture;
 import org.apache.sshd.client.session.ClientSession;
+import org.hamcrest.Matcher;
 import org.jboss.arquillian.core.spi.Validate;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
-
-import static org.hamcrest.Matchers.*;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.isEmptyString;
+import static org.hamcrest.Matchers.not;
 
 public class FuseUtils {
 
@@ -122,9 +127,12 @@ public class FuseUtils {
             "system:property -p hawtio.keycloakClientConfig ${karaf.etc}/keycloak-hawtio-client.json; " +
             "system:property -p hawtio.keycloakServerConfig ${karaf.etc}/keycloak-bearer.json; " +
             "system:property -p hawtio.roles admin,manager,viewer,ssh; " +
-            "system:property -p hawtio.rolePrincipalClasses org.keycloak.adapters.jaas.RolePrincipal,org.apache.karaf.jaas.boot.principal.RolePrincipal;" +
-            "restart io.hawt.hawtio-war",
+            "system:property -p hawtio.rolePrincipalClasses org.keycloak.adapters.jaas.RolePrincipal,org.apache.karaf.jaas.boot.principal.RolePrincipal;",
         Result.EMPTY);
+
+        // KEYCLOAK-17873 For older version of Fuse
+        final boolean isOSGiBundleAvailable = checkCommand(managementUser, managementPassword, "bundle:id io.hawt.hawtio-osgi", Result.OK);
+        assertCommand(managementUser, managementPassword, isOSGiBundleAvailable ? "restart io.hawt.hawtio-osgi" : "restart io.hawt.hawtio-war", Result.EMPTY);
 
         assertCommand(managementUser, managementPassword,
             "config:edit org.apache.karaf.shell; " +
@@ -177,7 +185,7 @@ public class FuseUtils {
         Result.EMPTY);
 
         String output = getCommandOutput(managementUser, managementPassword, "osgi:list | grep hawtio | grep web;");
-        Assert.assertThat(output, containsString("hawtio"));
+        assertThat(output, containsString("hawtio"));
         String id = output.substring(output.indexOf("[") + 1, output.indexOf("]")).trim();
         log.debug("osgi hawtio-web id: " + id);
         assertCommand(managementUser, managementPassword,
@@ -193,43 +201,18 @@ public class FuseUtils {
         log.debug("Fuse server should be ready");
     }
 
-    public static String assertCommand(String user, String password, String command, Result result) throws IOException {
-        if (!command.endsWith("\n"))
-            command += "\n";
-
+    public static boolean checkCommand(String user, String password, String command, Result result) throws IOException {
         String output = getCommandOutput(user, password, command);
 
-        log.debug("Command: " + command + ", user: " + user + ", password: " + password + ", output: " + output);
+        log.debug("Check command: " + command + ", user: " + user + ", password: " + password + ", output: " + output);
+        return resultToMatcher(result).matches(output);
+    }
 
-        switch(result) {
-            case EMPTY:
-                 Assert.assertThat(output, isEmptyString());
-                 break;
-            case OK:
-                Assert.assertThat(output,
-                    not(anyOf(
-                        containsString("Insufficient credentials"), 
-                        containsString("Command not found"),
-                        containsString("Error executing command"),
-                        containsString("Authentication failed"))
-                    ));
-                break;
-            case NOT_FOUND:
-                Assert.assertThat(output,
-                        containsString("Command not found"));
-                break;
-            case NO_CREDENTIALS:
-                Assert.assertThat(output,
-                        containsString("Insufficient credentials"));
-                break;
-            case NO_ROLES:
-                Assert.assertThat(output,
-                        containsString("Current user has no associated roles"));
-                break;
-            default:
-                Assert.fail("Unexpected enum value: " + result);
-        }
+    public static String assertCommand(String user, String password, String command, Result result) throws IOException {
+        String output = getCommandOutput(user, password, command);
 
+        log.debug("Assert command: " + command + ", user: " + user + ", password: " + password + ", output: " + output);
+        assertThat(output, resultToMatcher(result));
         return output;
     }
     
@@ -245,7 +228,7 @@ public class FuseUtils {
             channel.open();
             channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED, ClientChannelEvent.EOF), 0);
 
-            return new String(out.toByteArray());
+            return out.toString();
         }
     }
 
@@ -267,5 +250,28 @@ public class FuseUtils {
         }
 
         return session;
+    }
+
+    private static Matcher<String> resultToMatcher(Result result) {
+        switch (result) {
+            case EMPTY:
+                return isEmptyString();
+            case OK:
+                return not(anyOf(
+                        containsString("Insufficient credentials"),
+                        containsString("Command not found"),
+                        containsString("Error executing command"),
+                        containsString("Authentication failed"))
+                );
+            case NOT_FOUND:
+                return containsString("Command not found");
+            case NO_CREDENTIALS:
+                return containsString("Insufficient credentials");
+            case NO_ROLES:
+                return containsString("Current user has no associated roles");
+            default:
+                Assert.fail("Unexpected enum value: " + result);
+                return containsString("Unexpected enum value: " + result);
+        }
     }
 }

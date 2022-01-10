@@ -16,10 +16,13 @@
  */
 package org.keycloak.testsuite.account;
 
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 import java.io.IOException;
 import java.util.List;
@@ -132,18 +135,20 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
 
         for (SessionRepresentation session : sessions) {
             assertNotNull(session.getId());
-            assertEquals("127.0.0.1", session.getIpAddress());
+            assertThat(session.getIpAddress(), anyOf(equalTo("127.0.0.1"), equalTo("0:0:0:0:0:0:0:1")));
             assertTrue(session.getLastAccess() > 0);
             assertTrue(session.getExpires() > 0);
             assertTrue(session.getStarted() > 0);
             assertThat(session.getClients(), Matchers.hasItem(Matchers.hasProperty("clientId",
-                    Matchers.anyOf(Matchers.is("direct-grant"), Matchers.is("public-client-0")))));
+                    anyOf(Matchers.is("direct-grant"), Matchers.is("public-client-0")))));
         }
     }
 
     @Test
     @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testGetDevicesResponse() throws Exception {
+        assumeTrue("Browser must be htmlunit. Otherwise we are not able to set desired BrowserHeaders",
+                System.getProperty("browser").equals("htmlUnit"));
         oauth.setBrowserHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0) Gecko/20100101 Firefox/15.0.1");
         OAuthClient.AccessTokenResponse tokenResponse = codeGrant("public-client-0");
         joinSsoSession("public-client-1");
@@ -168,14 +173,17 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         List<ClientRepresentation> clients = session.getClients();
         assertEquals(2, clients.size());
         assertThat(session.getClients(), Matchers.hasItem(Matchers.hasProperty("clientId",
-                Matchers.anyOf(Matchers.is("public-client-0"), Matchers.is("public-client-1")))));
+                anyOf(Matchers.is("public-client-0"), Matchers.is("public-client-1")))));
         assertThat(session.getClients(), Matchers.hasItem(Matchers.hasProperty("clientName",
-                Matchers.anyOf(Matchers.is("Public Client 0"), Matchers.is("Public Client 1")))));
+                anyOf(Matchers.is("Public Client 0"), Matchers.is("Public Client 1")))));
     }
 
     @Test
     public void testGetDevicesSessions() throws Exception {
         ContainerAssume.assumeAuthServerUndertow();
+        assumeTrue("Browser must be htmlunit. Otherwise we are not able to set desired BrowserHeaders",
+                System.getProperty("browser").equals("htmlUnit"));
+
         WebDriver firstBrowser = oauth.getDriver();
 
         // first browser authenticates from Fedora
@@ -343,6 +351,9 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
     @Test
     @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testNullOrEmptyUserAgent() throws Exception {
+        assumeTrue("Browser must be htmlunit. Otherwise we are not able to set desired BrowserHeaders",
+                System.getProperty("browser").equals("htmlUnit"));
+
         oauth.setBrowserHeader("User-Agent", null);
         OAuthClient.AccessTokenResponse tokenResponse = codeGrant("public-client-0");
 
@@ -367,6 +378,9 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
 
     @Test
     public void testNonBrowserSession() throws Exception {
+        assumeTrue("Browser must be htmlunit. Otherwise we are not able to set desired BrowserHeaders",
+                System.getProperty("browser").equals("htmlUnit"));
+
         // one device
         oauth.setBrowserHeader("User-Agent", "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1");
         codeGrant("public-client-0");
@@ -382,7 +396,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         assertEquals(2, devices.size());
 
         assertThat(devices,
-                Matchers.hasItems(Matchers.hasProperty("os", Matchers.anyOf(Matchers.is("Fedora"), Matchers.is("Other")))));
+                Matchers.hasItems(Matchers.hasProperty("os", anyOf(Matchers.is("Fedora"), Matchers.is("Other")))));
 
         // three because tests use another client when booting tests
         assertEquals(3, devices.stream().filter(deviceRepresentation -> "Other".equals(deviceRepresentation.getOs()))

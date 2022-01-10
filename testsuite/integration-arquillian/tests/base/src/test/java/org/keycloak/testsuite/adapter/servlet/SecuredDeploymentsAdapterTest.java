@@ -21,11 +21,16 @@ package org.keycloak.testsuite.adapter.servlet;
 import static org.hamcrest.Matchers.containsString;
 
 import static org.junit.Assert.assertThat;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.CURRENT_APP_SERVER;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.enableHTTPSForAppServer;
+import static org.keycloak.testsuite.util.ServerURLs.APP_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
 
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
+
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
@@ -45,6 +50,9 @@ import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.arquillian.containers.SelfManagedAppContainerLifecycle;
+import org.wildfly.extras.creaper.core.CommandFailedException;
+import org.wildfly.extras.creaper.core.online.CliException;
+import org.wildfly.extras.creaper.core.online.operations.OperationException;
 
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_DEPRECATED)
@@ -84,7 +92,7 @@ public class SecuredDeploymentsAdapterTest extends AbstractServletsAdapterTest i
 
     @Before
     @Override
-    public void startServer() {
+    public void startServer() throws InterruptedException, IOException, OperationException, TimeoutException, CommandFailedException, CliException {
         try {
             AppServerTestEnricher.prepareServerDir("standalone-secured-deployments");
         } catch (IOException ex) {
@@ -92,6 +100,18 @@ public class SecuredDeploymentsAdapterTest extends AbstractServletsAdapterTest i
         }
 
         controller.start(testContext.getAppServerInfo().getQualifier());
+
+        if (!sslConfigured && super.shouldConfigureSSL()) {
+            enableHTTPSForAppServer();
+            sslConfigured = true;
+        }
+    }
+
+    // This is SelfManagedAppContainerLifecycle, we can't enable ssl in before in parent class, because it will fail as 
+    // the container is not started yet
+    @Override
+    public boolean shouldConfigureSSL() {
+        return false;
     }
 
     @After

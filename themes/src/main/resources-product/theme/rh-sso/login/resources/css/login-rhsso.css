@@ -6,12 +6,10 @@
 
 @media (max-width: 767px) {
     .login-pf body {
-      background-image: none;
-    }
-    .login-pf {
-      background-color: white;
+      background: white;
     }
 }
+
 @media (min-width: 767px) {
   .login-pf {
     background-attachment: fixed;

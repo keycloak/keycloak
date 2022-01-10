@@ -17,7 +17,7 @@
 
 package org.keycloak.cluster.infinispan;
 
-import org.infinispan.commons.marshall.jboss.GenericJBossMarshaller;
+import org.infinispan.jboss.marshalling.commons.GenericJBossMarshaller;
 
 /**
  * Needed on Wildfly, so that remoteStore (hotRod client) can find our classes

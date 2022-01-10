@@ -21,10 +21,14 @@ package org.keycloak.events;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public interface Details {
+    String PREF_PREVIOUS = "previous_";
+    String PREF_UPDATED = "updated_";
+    
     String CUSTOM_REQUIRED_ACTION="custom_required_action";
+    String CONTEXT = "context";
     String EMAIL = "email";
-    String PREVIOUS_EMAIL = "previous_email";
-    String UPDATED_EMAIL = "updated_email";
+    String PREVIOUS_EMAIL = PREF_PREVIOUS + "email";
+    String UPDATED_EMAIL = PREF_UPDATED + "email";
     String ACTION = "action";
     String CODE_ID = "code_id";
     String REDIRECT_URI = "redirect_uri";
@@ -37,6 +41,12 @@ public interface Details {
     String IDENTITY_PROVIDER_USERNAME = "identity_provider_identity";
     String REGISTER_METHOD = "register_method";
     String USERNAME = "username";
+    String FIRST_NAME = "first_name";
+    String LAST_NAME = "last_name";
+    String PREVIOUS_FIRST_NAME = PREF_PREVIOUS + "first_name";
+    String UPDATED_FIRST_NAME = PREF_UPDATED + "first_name";
+    String PREVIOUS_LAST_NAME = PREF_PREVIOUS + "last_name";
+    String UPDATED_LAST_NAME = PREF_UPDATED + "last_name";
     String REMEMBER_ME = "remember_me";
     String TOKEN_ID = "token_id";
     String REFRESH_TOKEN_ID = "refresh_token_id";
@@ -47,6 +57,7 @@ public interface Details {
     String REASON = "reason";
     String REVOKED_CLIENT = "revoked_client";
     String AUDIENCE = "audience";
+    String PERMISSION = "permission";
     String SCOPE = "scope";
     String REQUESTED_ISSUER = "requested_issuer";
     String REQUESTED_SUBJECT = "requested_subject";

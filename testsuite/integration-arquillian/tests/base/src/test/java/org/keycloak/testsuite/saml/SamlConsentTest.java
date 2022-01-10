@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.saml;
 
-import org.keycloak.protocol.saml.SamlClient;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.junit.Test;

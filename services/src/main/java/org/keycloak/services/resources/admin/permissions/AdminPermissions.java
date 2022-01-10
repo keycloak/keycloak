@@ -69,8 +69,8 @@ public class AdminPermissions {
                         realm = (RealmModel)role.getContainer();
                     }
                     management(cast.getKeycloakSession(), realm).roles().setPermissionsEnabled(role, false);
-                } else if (event instanceof RealmModel.ClientRemovedEvent) {
-                    RealmModel.ClientRemovedEvent cast = (RealmModel.ClientRemovedEvent)event;
+                } else if (event instanceof ClientModel.ClientRemovedEvent) {
+                    ClientModel.ClientRemovedEvent cast = (ClientModel.ClientRemovedEvent)event;
                     management(cast.getKeycloakSession(), cast.getClient().getRealm()).clients().setPermissionsEnabled(cast.getClient(), false);
                 } else if (event instanceof GroupModel.GroupRemovedEvent) {
                     GroupModel.GroupRemovedEvent cast = (GroupModel.GroupRemovedEvent)event;

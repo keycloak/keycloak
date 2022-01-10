@@ -22,11 +22,15 @@ import org.keycloak.models.OrderedModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.Urls;
+import org.keycloak.theme.Theme;
 
+import java.io.IOException;
 import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -69,8 +73,22 @@ public class IdentityProviderBean {
         if (!hideOnLoginPage) {
             orderedSet.add(new IdentityProvider(identityProvider.getAlias(),
                     displayName, identityProvider.getProviderId(), loginUrl,
-                    config != null ? config.get("guiOrder") : null));
+                    config != null ? config.get("guiOrder") : null, getLoginIconClasses(identityProvider.getAlias())));
         }
+    }
+
+    // Get icon classes defined in properties of current theme with key 'kcLogoIdP-{alias}'
+    // f.e. kcLogoIdP-github = fa fa-github
+    private String getLoginIconClasses(String alias) {
+        final String ICON_THEME_PREFIX = "kcLogoIdP-";
+
+        try {
+            Theme theme = session.theme().getTheme(Theme.Type.LOGIN);
+            return Optional.ofNullable(theme.getProperties().getProperty(ICON_THEME_PREFIX + alias)).orElse("");
+        } catch (IOException e) {
+            //NOP
+        }
+        return "";
     }
 
     public List<IdentityProvider> getProviders() {
@@ -88,13 +106,19 @@ public class IdentityProviderBean {
         private final String loginUrl;
         private final String guiOrder;
         private final String displayName;
+        private final String iconClasses;
 
         public IdentityProvider(String alias, String displayName, String providerId, String loginUrl, String guiOrder) {
+            this(alias, displayName, providerId, loginUrl, guiOrder, "");
+        }
+
+        public IdentityProvider(String alias, String displayName, String providerId, String loginUrl, String guiOrder, String iconClasses) {
             this.alias = alias;
             this.displayName = displayName;
             this.providerId = providerId;
             this.loginUrl = loginUrl;
             this.guiOrder = guiOrder;
+            this.iconClasses = iconClasses;
         }
 
         public String getAlias() {
@@ -116,6 +140,10 @@ public class IdentityProviderBean {
 
         public String getDisplayName() {
             return displayName;
+        }
+
+        public String getIconClasses() {
+            return iconClasses;
         }
     }
 

@@ -8,15 +8,21 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -30,6 +36,7 @@ import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.Archive;
+import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.descriptor.api.Descriptor;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 
@@ -38,14 +45,16 @@ import org.keycloak.testsuite.arquillian.SuiteContext;
  */
 public class KeycloakQuarkusServerDeployableContainer implements DeployableContainer<KeycloakQuarkusConfiguration> {
 
-    protected static final Logger log = Logger.getLogger(KeycloakQuarkusServerDeployableContainer.class);
-    
+    private static final Logger log = Logger.getLogger(KeycloakQuarkusServerDeployableContainer.class);
+
     private KeycloakQuarkusConfiguration configuration;
     private Process container;
     private static AtomicBoolean restart = new AtomicBoolean();
 
     @Inject
     private Instance<SuiteContext> suiteContext;
+
+    private List<String> additionalBuildArgs = Collections.emptyList();
 
     @Override
     public Class<KeycloakQuarkusConfiguration> getConfigurationClass() {
@@ -84,12 +93,27 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
 
     @Override
     public ProtocolMetaData deploy(Archive<?> archive) throws DeploymentException {
-        return null;
+        log.infof("Trying to deploy: " + archive.getName());
+
+        try {
+            deployArchiveToServer(archive);
+            restartServer();
+        } catch (Exception e) {
+            throw new DeploymentException(e.getMessage(),e);
+        }
+
+        return new ProtocolMetaData();
     }
 
     @Override
     public void undeploy(Archive<?> archive) throws DeploymentException {
-
+        File wrkDir = configuration.getProvidersPath().resolve("providers").toFile();
+        try {
+            Files.deleteIfExists(wrkDir.toPath().resolve(archive.getName()));
+            restartServer();
+        } catch (Exception e) {
+            throw new DeploymentException(e.getMessage(),e);
+        }
     }
 
     @Override
@@ -105,7 +129,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
     private Process startContainer() throws IOException {
         ProcessBuilder pb = new ProcessBuilder(getProcessCommands());
         File wrkDir = configuration.getProvidersPath().resolve("bin").toFile();
-        ProcessBuilder builder = pb.directory(wrkDir).inheritIO();
+        ProcessBuilder builder = pb.directory(wrkDir).inheritIO().redirectErrorStream(true);
 
         String javaOpts = configuration.getJavaOpts();
 
@@ -115,7 +139,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
 
         builder.environment().put("KEYCLOAK_ADMIN", "admin");
         builder.environment().put("KEYCLOAK_ADMIN_PASSWORD", "admin");
-        
+
         if (restart.compareAndSet(false, true)) {
             FileUtils.deleteDirectory(configuration.getProvidersPath().resolve("data").toFile());
         }
@@ -127,22 +151,42 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         List<String> commands = new ArrayList<>();
 
         commands.add("./kc.sh");
+        commands.add("start");
+        commands.add("--http-enabled=true");
 
-        if (Boolean.valueOf(System.getProperty("auth.server.debug", "false"))) {
+        if (Boolean.parseBoolean(System.getProperty("auth.server.debug", "false"))) {
             commands.add("--debug");
-            commands.add(System.getProperty("auth.server.debug.port", "5005"));
+            if (configuration.getDebugPort() > 0) {
+                commands.add(Integer.toString(configuration.getDebugPort()));
+            } else {
+                commands.add(System.getProperty("auth.server.debug.port", "5005"));
+            }
         }
 
-        commands.add("-Dquarkus.http.port=" + configuration.getBindHttpPort());
-        commands.add("-Dquarkus.http.ssl-port=" + configuration.getBindHttpsPort());
+        commands.add("--http-port=" + configuration.getBindHttpPort());
+        commands.add("--https-port=" + configuration.getBindHttpsPort());
 
         if (configuration.getRoute() != null) {
             commands.add("-Djboss.node.name=" + configuration.getRoute());
         }
 
-        commands.add("-Dquarkus.profile=" + System.getProperty("auth.server.quarkus.config", "local"));
+        // only run auto-build during restarts or when running cluster tests
+        if (restart.get() || "ha".equals(System.getProperty("auth.server.quarkus.cluster.config"))) {
+            commands.add("--auto-build");
+            commands.add("--http-relative-path=/auth");
 
-        return commands.toArray(new String[commands.size()]);
+            String cacheMode = System.getProperty("auth.server.quarkus.cluster.config", "local");
+
+            if ("local".equals(cacheMode)) {
+                commands.add("--cache=local");
+            } else {
+                commands.add("--cache-config-file=cluster-" + cacheMode + ".xml");
+            }
+        }
+
+        commands.addAll(getAdditionalBuildArgs());
+
+        return commands.toArray(new String[0]);
     }
 
     private void waitForReadiness() throws MalformedURLException, LifecycleException {
@@ -224,7 +268,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         SSLSocketFactory socketFactory;
 
         try {
-            sslContext = SSLContext.getInstance("SSL");
+            sslContext = SSLContext.getInstance("TLS");
             sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
             socketFactory = sslContext.getSocketFactory();
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
@@ -235,5 +279,28 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
 
     private long getStartTimeout() {
         return TimeUnit.SECONDS.toMillis(configuration.getStartupTimeoutInSeconds());
+    }
+
+    public void resetConfiguration() {
+        additionalBuildArgs = Collections.emptyList();
+    }
+
+    private void deployArchiveToServer(Archive<?> archive) throws IOException {
+        File providersDir = configuration.getProvidersPath().resolve("providers").toFile();
+        InputStream zipStream = archive.as(ZipExporter.class).exportAsInputStream();
+        Files.copy(zipStream, providersDir.toPath().resolve(archive.getName()), StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    public void restartServer() throws Exception {
+        stop();
+        start();
+    }
+
+    public List<String> getAdditionalBuildArgs() {
+        return additionalBuildArgs;
+    }
+
+    public void setAdditionalBuildArgs(List<String> newArgs) {
+        additionalBuildArgs = newArgs;
     }
 }

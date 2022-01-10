@@ -28,7 +28,6 @@ import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.EscapeStrategy;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
-import org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapper;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,7 +47,7 @@ public enum MembershipType {
     DN {
 
         @Override
-        public Set<LDAPDn> getLDAPSubgroups(GroupLDAPStorageMapper groupMapper, LDAPObject ldapGroup) {
+        public Set<LDAPDn> getLDAPSubgroups(CommonLDAPGroupMapper groupMapper, LDAPObject ldapGroup) {
             CommonLDAPGroupMapperConfig config = groupMapper.getConfig();
             return getLDAPMembersWithParent(groupMapper.getLdapProvider(), ldapGroup, config.getMembershipLdapAttribute(), LDAPDn.fromString(config.getLDAPGroupsDn()));
         }
@@ -69,7 +68,7 @@ public enum MembershipType {
         }
 
         @Override
-        public List<UserModel> getGroupMembers(RealmModel realm, GroupLDAPStorageMapper groupMapper, LDAPObject ldapGroup, int firstResult, int maxResults) {
+        public List<UserModel> getGroupMembers(RealmModel realm, CommonLDAPGroupMapper groupMapper, LDAPObject ldapGroup, int firstResult, int maxResults) {
             LDAPStorageProvider ldapProvider = groupMapper.getLdapProvider();
             CommonLDAPGroupMapperConfig config = groupMapper.getConfig();
 
@@ -111,8 +110,10 @@ public enum MembershipType {
                 query.addWhereCondition(orCondition);
                 List<LDAPObject> ldapUsers = query.getResultList();
                 for (LDAPObject ldapUser : ldapUsers) {
-                    String username = LDAPUtils.getUsername(ldapUser, ldapConfig);
-                    usernames.add(username);
+                    if (dns.contains(ldapUser.getDn())) {
+                        String username = LDAPUtils.getUsername(ldapUser, ldapConfig);
+                        usernames.add(username);
+                    }
                 }
             }
 
@@ -130,12 +131,12 @@ public enum MembershipType {
 
         // Group inheritance not supported for this config
         @Override
-        public Set<LDAPDn> getLDAPSubgroups(GroupLDAPStorageMapper groupMapper, LDAPObject ldapGroup) {
+        public Set<LDAPDn> getLDAPSubgroups(CommonLDAPGroupMapper groupMapper, LDAPObject ldapGroup) {
             return Collections.emptySet();
         }
 
         @Override
-        public List<UserModel> getGroupMembers(RealmModel realm, GroupLDAPStorageMapper groupMapper, LDAPObject ldapGroup, int firstResult, int maxResults) {
+        public List<UserModel> getGroupMembers(RealmModel realm, CommonLDAPGroupMapper groupMapper, LDAPObject ldapGroup, int firstResult, int maxResults) {
             LDAPStorageProvider ldapProvider = groupMapper.getLdapProvider();
             LDAPConfig ldapConfig = ldapProvider.getLdapIdentityStore().getConfig();
 
@@ -182,7 +183,7 @@ public enum MembershipType {
 
     };
 
-    public abstract Set<LDAPDn> getLDAPSubgroups(GroupLDAPStorageMapper groupMapper, LDAPObject ldapGroup);
+    public abstract Set<LDAPDn> getLDAPSubgroups(CommonLDAPGroupMapper groupMapper, LDAPObject ldapGroup);
 
-    public abstract List<UserModel> getGroupMembers(RealmModel realm, GroupLDAPStorageMapper groupMapper, LDAPObject ldapGroup, int firstResult, int maxResults);
+    public abstract List<UserModel> getGroupMembers(RealmModel realm, CommonLDAPGroupMapper groupMapper, LDAPObject ldapGroup, int firstResult, int maxResults);
 }

@@ -28,7 +28,7 @@
     <table class="table table-striped table-bordered">
         <thead>
         <tr>
-            <th class="kc-table-actions" colspan="7">
+            <th class="kc-table-actions" colspan="8">
                 <div class="form-inline">
                     <div class="form-group">
                         <div class="input-group">
@@ -45,6 +45,7 @@
             <th>{{:: 'algorithm' | translate}}</th>
             <th>{{:: 'type' | translate}}</th>
             <th>{{:: 'kid' | translate}}</th>
+            <th>{{:: 'use' | translate}}</th>
             <th>{{:: 'priority' | translate}}</th>
             <th>{{:: 'provider' | translate}}</th>
             <th colspan="2">{{:: 'publicKeys' | translate}}</th>
@@ -55,6 +56,7 @@
             <td>{{key.algorithm}}</td>
             <td>{{key.type}}</td>
             <td>{{key.kid}}</td>
+            <td>{{key.use}}</td>
             <td>{{key.providerPriority}}</td>
             <td><a href="#/realms/{{realm.realm}}/keys/providers/{{key.provider.providerId}}/{{key.provider.id}}">{{key.provider.name}}</a></td>
 

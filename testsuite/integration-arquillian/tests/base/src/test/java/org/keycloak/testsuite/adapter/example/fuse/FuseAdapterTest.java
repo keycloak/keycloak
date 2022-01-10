@@ -48,6 +48,7 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.Hawtio2Page;
@@ -57,6 +58,7 @@ import org.keycloak.testsuite.adapter.page.fuse.CustomerListing;
 import org.keycloak.testsuite.adapter.page.fuse.CustomerPortalFuseExample;
 import org.keycloak.testsuite.adapter.page.fuse.ProductPortalFuseExample;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
@@ -70,6 +72,7 @@ import org.openqa.selenium.WebDriver;
 
 @AppServerContainer(ContainerConstants.APP_SERVER_FUSE63)
 @AppServerContainer(ContainerConstants.APP_SERVER_FUSE7X)
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class FuseAdapterTest extends AbstractExampleAdapterTest {
 
     @Drone
@@ -378,6 +381,7 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
     }
 
     @Test
+    @AppServerContainer(value = ContainerConstants.APP_SERVER_FUSE63, skip = true)
     public void testProductPortal() {
         productPortal.navigateTo();
         WaitUtils.waitForPageToLoad();

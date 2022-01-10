@@ -94,10 +94,8 @@ public class DropAllServlet extends HttpServlet {
             "_drop_table_ AUTHENTICATOR_CONFIG _cascade_;\n" +
             "_drop_table_ AUTHENTICATOR_CONFIG_ENTRY _cascade_;\n" +
             "_drop_table_ BROKER_LINK _cascade_;\n" +
-            "alter table CLIENT nocheck constraint FK_P56CTINXXB9GSK57FO49F9TAC;\n" +
             "_drop_table_ CLIENT_ATTRIBUTES _cascade_;\n" +
             "_drop_table_ CLIENT_AUTH_FLOW_BINDINGS _cascade_;\n" +
-            "_drop_table_ CLIENT_DEFAULT_ROLES _cascade_;\n" +
             "_drop_table_ CLIENT_INITIAL_ACCESS _cascade_;\n" +
             "_drop_table_ CLIENT_NODE_REGISTRATIONS _cascade_;\n" +
             "_drop_table_ CLIENT_SCOPE_ATTRIBUTES _cascade_;\n" +
@@ -141,7 +139,6 @@ public class DropAllServlet extends HttpServlet {
             "_drop_table_ REALM_ATTRIBUTE _cascade_;\n" +
             "_drop_table_ REALM_DEFAULT_GROUPS _cascade_;\n" +
             "_drop_table_ KEYCLOAK_GROUP _cascade_;\n" +
-            "_drop_table_ REALM_DEFAULT_ROLES _cascade_;\n" +
             "_drop_table_ REALM_ENABLED_EVENT_TYPES _cascade_;\n" +
             "_drop_table_ REALM_EVENTS_LISTENERS _cascade_;\n" +
             "_drop_table_ REALM_REQUIRED_CREDENTIAL _cascade_;\n" +
@@ -180,7 +177,6 @@ public class DropAllServlet extends HttpServlet {
             "_drop_table_ USER_SESSION _cascade_;\n" +
             "_drop_table_ WEB_ORIGINS _cascade_;\n" +
             "_drop_table_ CLIENT _cascade_;\n" +
-            "alter table CLIENT check constraint FK_P56CTINXXB9GSK57FO49F9TAC\n" +
             "";
 
     private void deleteAllData(Connection connection, String dropTable, String cascade, boolean executeAlterTable) throws Exception {

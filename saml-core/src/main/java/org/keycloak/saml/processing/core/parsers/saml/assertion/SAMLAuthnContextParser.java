@@ -58,7 +58,7 @@ public class SAMLAuthnContextParser extends AbstractStaxSamlAssertionParser<Auth
             case AUTHN_CONTEXT_DECL:
                 Element dom = StaxParserUtil.getDOMElement(xmlEventReader);
                 AuthnContextDeclType authnContextDecl = new AuthnContextDeclType(dom);
-                authnContextSequence = target.getSequence() != null ? target.getSequence() : target.new AuthnContextTypeSequence();
+                authnContextSequence = target.getSequence() != null ? target.getSequence() : new AuthnContextType.AuthnContextTypeSequence();
                 authnContextSequence.setAuthnContextDecl(authnContextDecl);
                 target.setSequence(authnContextSequence);
                 break;
@@ -75,7 +75,7 @@ public class SAMLAuthnContextParser extends AbstractStaxSamlAssertionParser<Auth
                 text = StaxParserUtil.getElementText(xmlEventReader);
                 AuthnContextClassRefType authnContextClassRef = new AuthnContextClassRefType(URI.create(text));
 
-                authnContextSequence = target.getSequence() != null ? target.getSequence() : target.new AuthnContextTypeSequence();
+                authnContextSequence = target.getSequence() != null ? target.getSequence() : new AuthnContextType.AuthnContextTypeSequence();
                 authnContextSequence.setClassRef(authnContextClassRef);
 
                 target.setSequence(authnContextSequence);

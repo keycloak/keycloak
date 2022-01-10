@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests</artifactId>
-        <version>11.0.0-SNAPSHOT</version>
+        <version>17.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-other</artifactId>
@@ -32,14 +32,9 @@
     <packaging>pom</packaging>
 
     <name>Other Tests Modules</name>
-    
+
     <description>Test modules that depend on the Base TestSuite.
         This POM contains common configuration for submodules.</description>
-
-    <modules>
-        <module>adapters</module>
-        <module>sssd</module>
-    </modules>
 
     <build>
         <pluginManagement>
@@ -60,7 +55,7 @@
                                         <artifactId>integration-arquillian-tests-base</artifactId>
                                         <version>${project.version}</version>
                                         <classifier>tests</classifier>
-                                        <includes>arquillian.xml,keycloak-add-user.json,test-constants.properties,kerberos/*,keystore/*,password-blacklists/*,log4j.properties,vault/*</includes>
+                                        <includes>arquillian.xml,wildfly-config.xml,keycloak-add-user.json,test-constants.properties,kerberos/*,keystore/*,password-blacklists/*,log4j.properties,vault/*</includes>
                                     </artifactItem>
                                 </artifactItems>
                             </configuration>
@@ -120,6 +115,12 @@
             </dependencies>
         </profile>
         <profile>
+            <id>adapters</id>
+            <modules>
+                <module>adapters</module>
+            </modules>
+        </profile>
+        <profile>
             <id>clean-start</id>
             <modules>
                 <module>clean-start</module>
@@ -150,6 +151,12 @@
             </modules>
         </profile>
         <profile>
+            <id>sssd</id>
+            <modules>
+                <module>sssd</module>
+            </modules>
+        </profile>
+        <profile>
             <id>base-ui</id>
             <modules>
                 <module>base-ui</module>
@@ -159,6 +166,14 @@
             <id>springboot</id>
             <modules>
                 <module>springboot-tests</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>webauthn</id>
+            <modules>
+                <module>console</module>
+                <module>base-ui</module>
+                <module>webauthn</module>
             </modules>
         </profile>
     </profiles>

@@ -21,10 +21,10 @@ import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -39,6 +39,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import org.keycloak.models.Constants;
+import org.keycloak.models.RoleModel;
 
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
@@ -68,8 +70,10 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
                 sessionSetup.users().addUser(realm, "user2").setEmail("user2@localhost");
 
                 realm = sessionSetup.realms().createRealm("original");
+                RoleModel defaultRole = sessionSetup.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName());
+                realm.setDefaultRole(defaultRole);
 
-                client[0] = sessionSetup.realms().addClient(realm, "client");
+                client[0] = sessionSetup.clients().addClient(realm, "client");
                 client[0].setSecret("old");
             });
 
@@ -96,7 +100,7 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
 
                             // Read client
                             RealmModel realm1 = currentSession.realms().getRealmByName("original");
-                            ClientModel client1 = currentSession.realms().getClientByClientId("client", realm1);
+                            ClientModel client1 = currentSession.clients().getClientByClientId(realm1, "client");
                             logger.info("transaction1: Read client finished");
                             readLatch.countDown();
 
@@ -107,7 +111,7 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
 
                             logger.info("transaction1: Going to read client again");
 
-                            client1 = currentSession.realms().getClientByClientId("client", realm1);
+                            client1 = currentSession.clients().getClientByClientId(realm1, "client");
                             logger.info("transaction1: secret: " + client1.getSecret());
 
                         } catch (Exception e) {
@@ -136,7 +140,7 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
                             logger.info("transaction2: Going to update client secret");
 
                             RealmModel realm12 = currentSession.realms().getRealmByName("original");
-                            ClientModel client12 = currentSession.realms().getClientByClientId("client", realm12);
+                            ClientModel client12 = currentSession.clients().getClientByClientId(realm12, "client");
                             client12.setSecret("new");
                         } catch (Exception e) {
                             exceptionHolder.set(e);
@@ -168,8 +172,8 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
                 RealmModel realm = session2.realms().getRealmByName("original");
                 String clientDBId = clientDBIdAtomic.get();
 
-                ClientModel clientFromCache = session2.realms().getClientById(clientDBId, realm);
-                ClientModel clientFromDB = session2.getProvider(RealmProvider.class).getClientById(clientDBId, realm);
+                ClientModel clientFromCache = session2.clients().getClientById(realm, clientDBId);
+                ClientModel clientFromDB = session2.getProvider(ClientProvider.class).getClientById(realm, clientDBId);
 
                 logger.info("SECRET FROM DB : " + clientFromDB.getSecret());
                 logger.info("SECRET FROM CACHE : " + clientFromCache.getSecret());
@@ -195,7 +199,8 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionSet) -> {
 
                 RealmModel realm = sessionSet.realms().createRealm("original");
-
+                realm.setDefaultRole(sessionSet.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
+            
                 UserModel john = sessionSet.users().addUser(realm, "john");
                 john.setSingleAttribute("foo", "val1");
 
@@ -217,10 +222,10 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
                             try {
                                 // Read user attribute
                                 RealmModel realm = session1.realms().getRealmByName("original");
-                                UserModel john = session1.users().getUserByUsername("john", realm);
+                                UserModel john = session1.users().getUserByUsername(realm, "john");
                                 String attrVal = john.getFirstAttribute("foo");
 
-                                UserModel john2 = session1.users().getUserByUsername("john2", realm);
+                                UserModel john2 = session1.users().getUserByUsername(realm, "john2");
                                 String attrVal2 = john2.getFirstAttribute("foo");
 
                                 // Wait until it's read in both threads
@@ -272,8 +277,8 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
 
         RealmModel realm = currentSession.realms().getRealmByName("original");
 
-        UserModel realmUser1 = currentSession.users().getUserByUsername(user1, realm);
-        UserModel realmUser2 = currentSession.users().getUserByUsername(user2, realm);
+        UserModel realmUser1 = currentSession.users().getUserByUsername(realm, user1);
+        UserModel realmUser2 = currentSession.users().getUserByUsername(realm, user2);
 
         UserManager um = new UserManager(currentSession);
         if (realmUser1 != null) {

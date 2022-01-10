@@ -46,7 +46,7 @@ public class KcOidcBrokerPrivateKeyJwtTest extends AbstractBrokerTest {
         public List<ClientRepresentation> createProviderClients() {
             List<ClientRepresentation> clientsRepList = super.createProviderClients();
             log.info("Update provider clients to accept JWT authentication");
-            KeyMetadataRepresentation keyRep = KeyUtils.getActiveKey(adminClient.realm(consumerRealmName()).keys().getKeyMetadata(), Algorithm.RS256);
+            KeyMetadataRepresentation keyRep = KeyUtils.getActiveSigningKey(adminClient.realm(consumerRealmName()).keys().getKeyMetadata(), Algorithm.RS256);
             for (ClientRepresentation client: clientsRepList) {
                 client.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID);
                 if (client.getAttributes() == null) {

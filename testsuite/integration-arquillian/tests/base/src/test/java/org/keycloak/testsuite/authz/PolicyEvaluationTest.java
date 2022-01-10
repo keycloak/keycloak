@@ -133,7 +133,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
     public static void testCheckDateAndTime(KeycloakSession session) {
         session.getContext().setRealm(session.realms().getRealmByName("authz-test"));
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
-        ClientModel clientModel = session.realms().getClientByClientId("resource-server-test", session.getContext().getRealm());
+        ClientModel clientModel = session.clients().getClientByClientId(session.getContext().getRealm(), "resource-server-test");
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
         TimePolicyRepresentation policyRepresentation = new TimePolicyRepresentation();
@@ -168,7 +168,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
     public static void testCheckUserInGroup(KeycloakSession session) {
         session.getContext().setRealm(session.realms().getRealmByName("authz-test"));
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
-        ClientModel clientModel = session.realms().getClientByClientId("resource-server-test", session.getContext().getRealm());
+        ClientModel clientModel = session.clients().getClientByClientId(session.getContext().getRealm(), "resource-server-test");
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
@@ -327,7 +327,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
     public static void testCheckUserInRole(KeycloakSession session) {
         session.getContext().setRealm(session.realms().getRealmByName("authz-test"));
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
-        ClientModel clientModel = session.realms().getClientByClientId("resource-server-test", session.getContext().getRealm());
+        ClientModel clientModel = session.clients().getClientByClientId(session.getContext().getRealm(), "resource-server-test");
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
@@ -374,7 +374,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
     public static void testCheckUserInClientRole(KeycloakSession session) {
         session.getContext().setRealm(session.realms().getRealmByName("authz-test"));
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
-        ClientModel clientModel = session.realms().getClientByClientId("resource-server-test", session.getContext().getRealm());
+        ClientModel clientModel = session.clients().getClientByClientId(session.getContext().getRealm(), "resource-server-test");
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
@@ -421,7 +421,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
     public static void testCheckGroupInRole(KeycloakSession session) {
         session.getContext().setRealm(session.realms().getRealmByName("authz-test"));
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
-        ClientModel clientModel = session.realms().getClientByClientId("resource-server-test", session.getContext().getRealm());
+        ClientModel clientModel = session.clients().getClientByClientId(session.getContext().getRealm(), "resource-server-test");
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
@@ -468,7 +468,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
     public static void testCheckUserRealmRoles(KeycloakSession session) {
         session.getContext().setRealm(session.realms().getRealmByName("authz-test"));
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
-        ClientModel clientModel = session.realms().getClientByClientId("resource-server-test", session.getContext().getRealm());
+        ClientModel clientModel = session.clients().getClientByClientId(session.getContext().getRealm(), "resource-server-test");
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
@@ -500,7 +500,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
     public static void testCheckUserClientRoles(KeycloakSession session) {
         session.getContext().setRealm(session.realms().getRealmByName("authz-test"));
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
-        ClientModel clientModel = session.realms().getClientByClientId("resource-server-test", session.getContext().getRealm());
+        ClientModel clientModel = session.clients().getClientByClientId(session.getContext().getRealm(), "resource-server-test");
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
@@ -532,7 +532,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
     public static void testCheckUserGroups(KeycloakSession session) {
         session.getContext().setRealm(session.realms().getRealmByName("authz-test"));
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
-        ClientModel clientModel = session.realms().getClientByClientId("resource-server-test", session.getContext().getRealm());
+        ClientModel clientModel = session.clients().getClientByClientId(session.getContext().getRealm(), "resource-server-test");
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
@@ -563,14 +563,14 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
     public static void testCheckUserAttributes(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("authz-test");
-        UserModel jdoe = session.users().getUserByUsername("jdoe", realm);
+        UserModel jdoe = session.users().getUserByUsername(realm, "jdoe");
 
         jdoe.setAttribute("a1", Arrays.asList("1", "2"));
         jdoe.setSingleAttribute("a2", "3");
 
         session.getContext().setRealm(realm);
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
-        ClientModel clientModel = session.realms().getClientByClientId("resource-server-test", session.getContext().getRealm());
+        ClientModel clientModel = session.clients().getClientByClientId(session.getContext().getRealm(), "resource-server-test");
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
@@ -602,7 +602,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
     public static void testCheckResourceAttributes(KeycloakSession session) {
         session.getContext().setRealm(session.realms().getRealmByName("authz-test"));
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
-        ClientModel clientModel = session.realms().getClientByClientId("resource-server-test", session.getContext().getRealm());
+        ClientModel clientModel = session.clients().getClientByClientId(session.getContext().getRealm(), "resource-server-test");
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
@@ -639,7 +639,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
     public static void testCheckReadOnlyInstances(KeycloakSession session) {
         session.getContext().setRealm(session.realms().getRealmByName("authz-test"));
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
-        ClientModel clientModel = session.realms().getClientByClientId("resource-server-test", session.getContext().getRealm());
+        ClientModel clientModel = session.clients().getClientByClientId(session.getContext().getRealm(), "resource-server-test");
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
@@ -685,7 +685,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
     public static void testCachedDecisionsWithNegativePolicies(KeycloakSession session) {
         session.getContext().setRealm(session.realms().getRealmByName("authz-test"));
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
-        ClientModel clientModel = session.realms().getClientByClientId("resource-server-test", session.getContext().getRealm());
+        ClientModel clientModel = session.clients().getClientByClientId(session.getContext().getRealm(), "resource-server-test");
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
 

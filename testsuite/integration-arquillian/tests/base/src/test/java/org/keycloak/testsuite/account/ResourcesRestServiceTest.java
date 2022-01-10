@@ -16,25 +16,8 @@
  */
 package org.keycloak.testsuite.account;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import javax.ws.rs.core.Response;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Consumer;
-
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -42,6 +25,7 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AccountRoles;
@@ -56,9 +40,30 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.resources.account.resources.AbstractResourceService;
 import org.keycloak.services.resources.account.resources.AbstractResourceService.Permission;
 import org.keycloak.services.resources.account.resources.AbstractResourceService.Resource;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
+
+import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Consumer;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -67,6 +72,11 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
 
     private AuthzClient authzClient;
     private List<String> userNames = new ArrayList<>(Arrays.asList("alice", "jdoe", "bob"));
+
+    @BeforeClass
+    public static void enabled() {
+        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
+    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -401,6 +411,47 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
                 .json(permissions).asResponse();
 
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+    }
+
+    @Test
+    public void testEndpointPermissions() throws Exception {
+        // resource for view-account-access
+        String resourceId;
+        ResourceRepresentation resource = new ResourceRepresentation();
+        resource.setOwnerManagedAccess(true);
+        resource.setOwner(findUser("view-account-access").getId());
+        resource.setName("Resource view-account-access");
+        resource.setDisplayName("Display Name view-account-access");
+        resource.setIconUri("Icon Uri view-account-access");
+        resource.addScope("Scope A", "Scope B", "Scope C", "Scope D");
+        resource.setUri("http://resourceServer.com/resources/view-account-access");
+        try (Response response1 = getResourceServer().authorization().resources().create(resource)) {
+            resourceId = response1.readEntity(ResourceRepresentation.class).getId();
+        }
+
+        final String resourcesUrl = getAccountUrl("resources");
+        final String sharedWithOthersUrl = resourcesUrl + "/shared-with-others";
+        final String sharedWithMeUrl = resourcesUrl + "/shared-with-me";
+        final String resourceUrl = resourcesUrl + "/" + resourceId;
+        final String permissionsUrl = resourceUrl + "/permissions";
+        final String requestsUrl = resourceUrl + "/permissions/requests";
+
+        TokenUtil viewProfileTokenUtil = new TokenUtil("view-account-access", "password");
+        TokenUtil noAccessTokenUtil = new TokenUtil("no-account-access", "password");
+
+        // test read access
+        for (String url : Arrays.asList(resourcesUrl, sharedWithOthersUrl, sharedWithMeUrl, resourceUrl, permissionsUrl, requestsUrl)) {
+            assertEquals( "no-account-access GET " + url, 403,
+                    SimpleHttp.doGet(url, httpClient).acceptJson().auth(noAccessTokenUtil.getToken()).asStatus());
+            assertEquals("view-account-access GET " + url,200,
+                    SimpleHttp.doGet(url, httpClient).acceptJson().auth(viewProfileTokenUtil.getToken()).asStatus());
+        }
+
+        // test write access
+        assertEquals( "no-account-access PUT " + permissionsUrl, 403,
+                SimpleHttp.doPut(permissionsUrl, httpClient).acceptJson().auth(noAccessTokenUtil.getToken()).json(Collections.emptyList()).asStatus());
+        assertEquals( "view-account-access PUT " + permissionsUrl, 403,
+                SimpleHttp.doPut(permissionsUrl, httpClient).acceptJson().auth(viewProfileTokenUtil.getToken()).json(Collections.emptyList()).asStatus());
     }
 
     @Test

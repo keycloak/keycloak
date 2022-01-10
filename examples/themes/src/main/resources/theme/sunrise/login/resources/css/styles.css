@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-@import url('../../keycloak/lib/zocial/zocial.css');
-
 body {
     background-color: #040507;
     background-image: url('../img/bkgrnd.jpg');
@@ -149,45 +147,36 @@ div#kc-registration {
     margin-bottom: 20px;
 }
 
-div#social-login {
-    border-left: 1px solid rgba(255, 255, 255, 0.2);
-    float: right;
-    width: 150px;
-    padding: 20px 0 200px 40px;
+#input-error {
+    color: orangered;
+    position: relative;
+    top: -15px;
 }
 
-div.social-login span {
-    display: none;
+#kc-social-providers {
+    background-color: rgba(3, 70, 114, 0.15);
+    border: 0 solid rgba(0, 0, 0, 0.2);
+    box-shadow: inset 0 0 2px 2px rgba(0, 0, 0, 0.15);
+    padding: 20px;
+    margin: 20px 0;
+    text-align: center;
+    width: 276px;
 }
 
-div#kc-social-providers ul {
-    list-style: none;
+#kc-social-providers ul {
     margin: 0;
     padding: 0;
 }
 
-div#kc-social-providers ul li {
-    margin-bottom: 20px;
+#kc-social-providers a {
+    display: block;
+    text-decoration: none;
+    padding: 10px;
+    margin: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.2);
 }
 
-div#kc-social-providers ul li span {
-    display: inline;
-    width: 100px;
-}
-
-a.zocial {
-    border: none;
-    background: -webkit-linear-gradient(top, rgba(255,255,255,0.8), rgba(255,255,255,0.1)) !important;
-    background: -moz-linear-gradient(top, rgba(255,255,255,0.8), rgba(255,255,255,0.1)) !important;
-    background: -ms-linear-gradient(top, rgba(255,255,255,0.8), rgba(255,255,255,0.1)) !important;
-    background: -o-linear-gradient(top, rgba(255,255,255,0.8), rgba(255,255,255,0.1)) !important;
-    box-shadow: 0px 0px 6px rgba(0,0,0,0.5);
-    color: rgba(0,0,0,0.6);
-    width: 130px;
-    text-shadow: none;
-    -webkit-border-radius: 0;
-    -moz-border-radius: 0;
-    border-radius: 0;
-    padding-top: 0.2em;
-    padding-bottom: 0.2em;
+#kc-social-providers a:hover{
+    background-color: rgba(3,70,114,0.4);
 }

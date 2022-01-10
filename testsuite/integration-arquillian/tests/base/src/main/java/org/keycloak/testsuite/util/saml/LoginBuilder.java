@@ -116,9 +116,9 @@ public class LoginBuilder implements Step {
     private HttpUriRequest handleLoginPage(String loginPage, URI currentURI) {
         if (idpAlias != null) {
             org.jsoup.nodes.Document theLoginPage = Jsoup.parse(loginPage);
-            Element zocialLink = theLoginPage.getElementById("zocial-" + this.idpAlias);
-            assertThat("Unknown idp: " + this.idpAlias, zocialLink, Matchers.notNullValue());
-            final String link = zocialLink.attr("href");
+            Element socialLink = theLoginPage.getElementById("social-" + this.idpAlias);
+            assertThat("Unknown idp: " + this.idpAlias, socialLink, Matchers.notNullValue());
+            final String link = socialLink.attr("href");
             assertThat("Invalid idp link: " + this.idpAlias, link, Matchers.notNullValue());
             return new HttpGet(currentURI.resolve(link));
         }

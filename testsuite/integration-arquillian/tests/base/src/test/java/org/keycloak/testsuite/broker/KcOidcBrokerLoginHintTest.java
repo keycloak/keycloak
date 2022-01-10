@@ -14,6 +14,7 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -36,7 +37,7 @@ public class KcOidcBrokerLoginHintTest extends AbstractBrokerTest {
 
             Map<String, String> config = idp.getConfig();
             applyDefaultConfiguration(config, syncMode);
-            config.put("loginHint", "true");
+            config.put(IdentityProviderModel.LOGIN_HINT, "true");
             return idp;
         }
     }
@@ -50,7 +51,7 @@ public class KcOidcBrokerLoginHintTest extends AbstractBrokerTest {
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
 
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
 
         Assert.assertTrue("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));

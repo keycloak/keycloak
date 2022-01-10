@@ -66,14 +66,21 @@ public class InfinispanSessionCacheIdMapperUpdater {
 
             Configuration ssoCacheConfiguration = cacheManager.getCacheConfiguration(cacheName);
             if (ssoCacheConfiguration == null) {
-                Configuration cacheConfiguration = cacheManager.getCacheConfiguration(deploymentSessionCacheName);
-                if (cacheConfiguration == null) {
+                // Fallback to use cache "/my-app-deployment-context" as template
+                ssoCacheConfiguration = tryDefineCacheConfigurationFromTemplate(cacheManager, containerName, cacheName, deploymentSessionCacheName);
+
+                if (ssoCacheConfiguration == null) {
+                    // Fallback to use cache "my-app-deployment-context.war" as template
+                    if (cacheName.lastIndexOf('.') != -1) {
+                        String templateName = cacheName.substring(0, cacheName.lastIndexOf('.'));
+                        ssoCacheConfiguration = tryDefineCacheConfigurationFromTemplate(cacheManager, containerName, cacheName, templateName);
+                    }
+                }
+
+                if (ssoCacheConfiguration == null) {
+                    // Finally fallback to the cache container default configuration
                     LOG.debugv("Using default configuration for SSO cache {0}.{1}.", containerName, cacheName);
                     ssoCacheConfiguration = cacheManager.getDefaultCacheConfiguration();
-                } else {
-                    LOG.debugv("Using distributed HTTP session cache configuration for SSO cache {0}.{1}, configuration taken from cache {2}",
-                      containerName, cacheName, deploymentSessionCacheName);
-                    ssoCacheConfiguration = cacheConfiguration;
                     cacheManager.defineConfiguration(cacheName, ssoCacheConfiguration);
                 }
             } else {
@@ -104,6 +111,23 @@ public class InfinispanSessionCacheIdMapperUpdater {
         } catch (NamingException ex) {
             LOG.warnv("Failed to obtain distributed session cache container, lookup={0}", cacheContainerLookup);
             return previousIdMapperUpdater;
+        }
+    }
+
+    /**
+     * Try to define new cache configuration "newCacheName" from the existing configuration "templateCacheName" .
+     *
+     * @return Newly defined configuration or null in case that definition of new configuration was not successful
+     */
+    private static Configuration tryDefineCacheConfigurationFromTemplate(EmbeddedCacheManager cacheManager, String containerName, String newCacheName, String templateCacheName) {
+        Configuration cacheConfiguration = cacheManager.getCacheConfiguration(templateCacheName);
+        if (cacheConfiguration != null) {
+            LOG.debugv("Using distributed HTTP session cache configuration for SSO cache {0}.{1}, configuration taken from cache {2}",
+                    containerName, newCacheName, templateCacheName);
+            return cacheManager.defineConfiguration(newCacheName, cacheConfiguration);
+        } else {
+            // templateCacheName configuration did not exists, so returning null
+            return null;
         }
     }
 

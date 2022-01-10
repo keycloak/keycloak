@@ -26,10 +26,14 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -57,17 +61,19 @@ public class EventBuilder {
             }
         }
 
-        if (realm.getEventsListeners() != null && !realm.getEventsListeners().isEmpty()) {
-            this.listeners = new LinkedList<>();
-            for (String id : realm.getEventsListeners()) {
-                EventListenerProvider listener = session.getProvider(EventListenerProvider.class, id);
-                if (listener != null) {
-                    listeners.add(listener);
-                } else {
-                    log.error("Event listener '" + id + "' registered, but provider not found");
-                }
-            }
-        }
+
+        this.listeners = realm.getEventsListenersStream()
+                .map(id -> {
+                    EventListenerProvider listener = session.getProvider(EventListenerProvider.class, id);
+                    if (listener != null) {
+                        return listener;
+                    } else {
+                        log.error("Event listener '" + id + "' registered, but provider not found");
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
 
         realm(realm);
         ipAddress(clientConnection.getRemoteAddr());
@@ -141,6 +147,35 @@ public class EventBuilder {
         event.getDetails().put(key, value);
         return this;
     }
+    
+    /**
+     * Add event detail where strings from the input Collection are filtered not to contain <code>null</code> and then joined using <code>::</code> character. 
+     * 
+     * @param key of the detail
+     * @param value, can be null
+     * @return builder for chaining
+     */
+    public EventBuilder detail(String key, Collection<String> values) {
+        if (values == null || values.isEmpty()) {
+            return this;
+        }
+        return detail(key, values.stream().filter(Objects::nonNull).collect(Collectors.joining("::")));
+    }
+    
+    /**
+     * Add event detail where strings from the input Stream are filtered not to contain <code>null</code> and then joined using <code>::</code> character. 
+     * 
+     * @param key of the detail
+     * @param value, can be null
+     * @return builder for chaining
+     */
+    public EventBuilder detail(String key, Stream<String> values) {
+        if (values == null) {
+            return this;
+        }
+        return detail(key, values.filter(Objects::nonNull).collect(Collectors.joining("::")));
+    }
+    
 
     public EventBuilder removeDetail(String key) {
         if (event.getDetails() != null) {
@@ -175,9 +210,11 @@ public class EventBuilder {
 
     private void send() {
         event.setTime(Time.currentTimeMillis());
+        event.setId(UUID.randomUUID().toString());
 
         if (store != null) {
-            if (realm.getEnabledEventTypes() != null && !realm.getEnabledEventTypes().isEmpty() ? realm.getEnabledEventTypes().contains(event.getType().name()) : event.getType().isSaveByDefault()) {
+            Set<String> eventTypes = realm.getEnabledEventTypesStream().collect(Collectors.toSet());
+            if (!eventTypes.isEmpty() ? eventTypes.contains(event.getType().name()) : event.getType().isSaveByDefault()) {
                 try {
                     store.onEvent(event);
                 } catch (Throwable t) {

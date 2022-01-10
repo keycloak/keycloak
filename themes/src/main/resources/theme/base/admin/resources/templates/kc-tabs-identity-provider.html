@@ -11,7 +11,6 @@
     <ul class="nav nav-tabs" data-ng-hide="newIdentityProvider">
         <li ng-class="{active: !path[6] && path.length > 5}"><a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}">{{:: 'settings' | translate}}</a></li>
         <li ng-class="{active: path[4] == 'mappers'}"><a href="#/realms/{{realm.realm}}/identity-provider-mappers/{{identityProvider.alias}}/mappers">{{:: 'mappers' | translate}}</a></li>
-        <li ng-class="{active: path[6] == 'export'}"><a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}/export" data-ng-show="!importFile && !newIdentityProvider && identityProvider.providerId == 'saml'">{{:: 'export' | translate}}</a></li>
         <li ng-class="{active: path[6] == 'permissions'}" data-ng-show="serverInfo.featureEnabled('ADMIN_FINE_GRAINED_AUTHZ') && !newIdentityProvider && access.manageAuthorization"><a href="#/realms/{{realm.realm}}/identity-provider-settings/provider/{{identityProvider.providerId}}/{{identityProvider.alias}}/permissions">{{:: 'authz-permissions' | translate}}</a></li>
     </ul>
 </div>

@@ -1,0 +1,38 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+
+<@tmpl.guide
+title="Configuring Keycloak to run behind a reverse proxy"
+summary="Understand how to configure Keycloak when using a reverse proxy"
+includedOptions="proxy proxy.*">
+
+It is pretty common nowadays to use a reverse proxy in distributed environments. If you want to use Keycloak together with such a proxy, you can use different proxy modes depending on the proxy and TLS termination in your specific environment:
+
+The `none` mode disables proxy support. It is the default mode.
+
+The `edge` mode enables communication through HTTP between the proxy and Keycloak. This mode is suitable for deployments with a highly secure internal network where the reverse proxy keeps a secure connection (HTTP over TLS) with clients while communicating with Keycloak using HTTP.
+
+The `reencrypt` mode requires communication through HTTPS between the proxy and Keycloak. This mode is suitable for deployments where internal communication between the reverse proxy and Keycloak should also be protected, and different keys and certificates are used on the reverse proxy as well as on Keycloak.
+
+The `passthrough` mode enables communication through HTTP or HTTPS between the proxy and Keycloak. This mode is suitable for deployments where the reverse proxy is not terminating TLS, but only forwarding the requests to the Keycloak server so that secure connections between the server and clients are based on the keys and certificates used by the Keycloak server itself.
+
+Selecting the reverse proxy mode is done at runtime via:
+
+<@kc.all parameters="--proxy <mode>"/>
+
+Please make sure your reverse proxy is configured correctly. To do so, please:
+
+* Configure your reverse proxy to properly set X-Forwarded-For and X-Forwarded-Proto HTTP headers.
+
+* Configure your reverse proxy to preserve the original 'Host' HTTP header.
+
+Please consult the documentation of your specific reverse proxy on how to set these headers.
+
+_Note_: Take extra precautions to ensure that the X-Forwarded-For header is set by your reverse proxy. If it is not configured correctly, rogue clients can set this header themselves and trick Keycloak into thinking the client is connecting from a different IP address than it actually does. This may become really important if you are doing any black or white listing of IP addresses.
+
+Valid options for the proxy mode include:
+
+<@opts.expectedValues option="proxy"/>
+
+</@tmpl.guide>

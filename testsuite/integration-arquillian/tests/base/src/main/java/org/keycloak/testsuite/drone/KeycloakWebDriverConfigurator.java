@@ -101,7 +101,7 @@ public class KeycloakWebDriverConfigurator {
         }
     }
 
-    public class KcBrowserCapabilities implements BrowserCapabilities {
+    public static class KcBrowserCapabilities implements BrowserCapabilities {
         private Capabilities capabilitiesToAdd;
         private BrowserCapabilities origBrowserCapabilities;
 

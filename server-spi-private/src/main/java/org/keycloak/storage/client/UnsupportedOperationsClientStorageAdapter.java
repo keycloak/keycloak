@@ -20,9 +20,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RoleModel;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * Base helper class.  Unsupported operations are implemented here that throw exception on invocation.
@@ -52,23 +50,23 @@ public abstract class UnsupportedOperationsClientStorageAdapter implements Clien
     }
 
     @Override
-    public final Set<RoleModel> getRoles() {
-        return Collections.EMPTY_SET;
+    public final Stream<RoleModel> getRolesStream() {
+        return Stream.empty();
     }
     
     @Override
-    public final Set<RoleModel> getRoles(Integer first, Integer max) {
-        return Collections.EMPTY_SET;
+    public final Stream<RoleModel> getRolesStream(Integer first, Integer max) {
+        return Stream.empty();
     }
     
     @Override
-    public final Set<RoleModel> searchForRoles(String search, Integer first, Integer max) {
-        return Collections.EMPTY_SET;
+    public final Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max) {
+        return Stream.empty();
     }
 
     @Override
-    public final List<String> getDefaultRoles() {
-        return Collections.EMPTY_LIST;
+    public final Stream<String> getDefaultRolesStream() {
+        return Stream.empty();
     }
 
     @Override

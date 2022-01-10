@@ -7,7 +7,11 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.net.MalformedURLException;
+import java.rmi.UnmarshalException;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -38,6 +42,7 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.arquillian.annotation.JmxInfinispanCacheStatistics;
 import org.keycloak.testsuite.arquillian.annotation.JmxInfinispanChannelStatistics;
+import org.keycloak.testsuite.arquillian.containers.InfinispanServerDeployableContainer;
 import org.keycloak.testsuite.arquillian.jmx.JmxConnectorRegistry;
 import org.keycloak.testsuite.arquillian.undertow.KeycloakOnUndertow;
 import org.keycloak.testsuite.crossdc.DC;
@@ -81,7 +86,8 @@ public class CacheStatisticsControllerEnricher implements TestEnricher {
     }
 
     private InfinispanStatistics getInfinispanCacheStatistics(JmxInfinispanCacheStatistics annotation) throws MalformedObjectNameException, IOException, MalformedURLException {
-        ObjectName mbeanName = new ObjectName(String.format(
+        List<ObjectName> mbeanNameTemplates = new LinkedList<>();
+        mbeanNameTemplates.add(new ObjectName(String.format(
           "%s:type=%s,name=\"%s(%s)\",manager=\"%s\",component=%s",
           annotation.domain().isEmpty() ? getDefaultDomain(annotation.dc().getDcIndex(), annotation.dcNodeIndex()) : InfinispanConnectionProvider.JMX_DOMAIN,
           annotation.type(),
@@ -89,9 +95,17 @@ public class CacheStatisticsControllerEnricher implements TestEnricher {
           annotation.cacheMode(),
           annotation.cacheManagerName(),
           annotation.component()
-        ));
+        )));
 
-        InfinispanStatistics value = new InfinispanCacheStatisticsImpl(getJmxServerConnection(annotation), mbeanName);
+        // For the Keycloak on Wildfly 20 and bigger, the typical objectName for the cache statistics looks similar to: jboss.as:subsystem=infinispan,cache-container=keycloak,cache=actionTokens
+        if (annotation.dc().getDcIndex() != -1 && annotation.dcNodeIndex() != -1) {
+            mbeanNameTemplates.add(new ObjectName(String.format(
+                    "jboss.as:subsystem=infinispan,cache-container=keycloak,cache=%s",
+                    annotation.cacheName()
+            )));
+        }
+
+        InfinispanStatistics value = new InfinispanCacheStatisticsImpl(getJmxServerConnection(annotation), mbeanNameTemplates);
 
         if (annotation.domain().isEmpty()) {
             try {
@@ -101,7 +115,7 @@ public class CacheStatisticsControllerEnricher implements TestEnricher {
             } catch (RuntimeException ex) {
                 if (annotation.dc() != DC.UNDEFINED && annotation.dcNodeIndex() != -1
                    && suiteContext.get().getAuthServerBackendsInfo(annotation.dc().getDcIndex()).get(annotation.dcNodeIndex()).isStarted()) {
-                    LOG.warn("Could not reset statistics for " + mbeanName + ". The reason is: \"" + ex.getMessage() + "\"");
+                    LOG.warn("Could not reset statistics for any of the mbean name templates " + mbeanNameTemplates + ". The reason is: \"" + ex.getMessage() + "\"");
                 }
             }
         }
@@ -111,8 +125,9 @@ public class CacheStatisticsControllerEnricher implements TestEnricher {
 
     private InfinispanStatistics getJGroupsChannelStatistics(JmxInfinispanChannelStatistics annotation) throws MalformedObjectNameException, IOException, MalformedURLException {
         ObjectName mbeanName = new ObjectName(String.format(
-          "%s:type=%s,cluster=\"%s\"",
+          "%s:%stype=%s,cluster=\"%s\"",
           annotation.domain().isEmpty() ? getDefaultDomain(annotation.dc().getDcIndex(), annotation.dcNodeIndex()) : InfinispanConnectionProvider.JMX_DOMAIN,
+          isLegacyInfinispan() ? "" : "manager=\"default\",",
           annotation.type(),
           annotation.cluster()
         ));
@@ -170,9 +185,13 @@ public class CacheStatisticsControllerEnricher implements TestEnricher {
         }
         
         //cache-server
-        return InfinispanConnectionProvider.JMX_DOMAIN;
+        return isLegacyInfinispan() ? "jboss.datagrid-infinispan" : "org.infinispan"; 
     }
-
+    
+    private boolean isLegacyInfinispan() { // infinispan 9 or lower
+        return Boolean.parseBoolean(System.getProperty("cache.server.legacy", "false"));
+    }
+    
     private Supplier<MBeanServerConnection> getJmxServerConnection(JmxInfinispanCacheStatistics annotation) throws MalformedURLException {
         final String host;
         final int port;
@@ -188,6 +207,19 @@ public class CacheStatisticsControllerEnricher implements TestEnricher {
               ? Integer.valueOf(container.getContainerConfiguration().getContainerProperties().get("managementPort"))
               : 9990;
         } else {
+            Container container = suiteContext.get().getCacheServersInfo().get(0).getArquillianContainer();
+            if (container.getDeployableContainer() instanceof InfinispanServerDeployableContainer) {
+                // jmx connection to infinispan server
+                return () -> {
+                    try {
+                        return jmxConnectorRegistry.get().getConnection(
+                                ((InfinispanServerDeployableContainer) container.getDeployableContainer()).getJMXServiceURL()
+                        ).getMBeanServerConnection();
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                };
+            }
             host = annotation.host().isEmpty()
               ? System.getProperty((annotation.hostProperty().isEmpty()
                 ? "keycloak.connectionsInfinispan.remoteStoreServer"
@@ -227,6 +259,19 @@ public class CacheStatisticsControllerEnricher implements TestEnricher {
               ? Integer.valueOf(container.getContainerConfiguration().getContainerProperties().get("managementPort"))
               : 9990;
         } else {
+            Container container = suiteContext.get().getCacheServersInfo().get(0).getArquillianContainer();
+            if (container.getDeployableContainer() instanceof InfinispanServerDeployableContainer) {
+                // jmx connection to infinispan server
+                return () -> {
+                    try {
+                        return jmxConnectorRegistry.get().getConnection(
+                                ((InfinispanServerDeployableContainer) container.getDeployableContainer()).getJMXServiceURL()
+                        ).getMBeanServerConnection();
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                };
+            }
             host = annotation.host().isEmpty()
               ? System.getProperty((annotation.hostProperty().isEmpty()
                 ? "keycloak.connectionsInfinispan.remoteStoreServer"
@@ -253,12 +298,16 @@ public class CacheStatisticsControllerEnricher implements TestEnricher {
     private static abstract class CacheStatisticsImpl implements InfinispanStatistics {
 
         private final Supplier<MBeanServerConnection> mbscCreateor;
-        private final ObjectName mbeanNameTemplate;
+        private final List<ObjectName> mbeanNameTemplates;
         private ObjectName mbeanName;
 
         public CacheStatisticsImpl(Supplier<MBeanServerConnection> mbscCreateor, ObjectName mbeanNameTemplate) {
+            this(mbscCreateor, Collections.singletonList(mbeanNameTemplate));
+        }
+
+        public CacheStatisticsImpl(Supplier<MBeanServerConnection> mbscCreateor, List<ObjectName> mbeanNameTemplates) {
             this.mbscCreateor = mbscCreateor;
-            this.mbeanNameTemplate = mbeanNameTemplate;
+            this.mbeanNameTemplates = mbeanNameTemplates;
         }
 
         protected MBeanServerConnection getConnection() {
@@ -295,11 +344,18 @@ public class CacheStatisticsControllerEnricher implements TestEnricher {
 
         protected ObjectName getMbeanName() throws IOException, RuntimeException {
             if (this.mbeanName == null) {
-                Set<ObjectName> queryNames = getConnection().queryNames(mbeanNameTemplate, null);
-                if (queryNames.isEmpty()) {
-                    throw new RuntimeException("No MBean of template " + mbeanNameTemplate + " found at JMX server");
+                // Try all the mbeanName templates
+                for (ObjectName mbeanNameTemplate : this.mbeanNameTemplates) {
+                    Set<ObjectName> queryNames = getConnection().queryNames(mbeanNameTemplate, null);
+                    if (queryNames.isEmpty()) {
+                        LOG.infof("No MBean available for the template %s .", mbeanNameTemplate);
+                        continue;
+                    }
+                    this.mbeanName = queryNames.iterator().next();
+                    return this.mbeanName;
                 }
-                this.mbeanName = queryNames.iterator().next();
+
+                throw new RuntimeException("No MBean for any of the templates " + this.mbeanNameTemplates + " found at JMX server");
             }
 
             return this.mbeanName;
@@ -322,7 +378,7 @@ public class CacheStatisticsControllerEnricher implements TestEnricher {
                     getMbeanName();
                     if (! isAvailable()) throw new RuntimeException("Not available");
                 } catch (IOException | RuntimeException ex) {
-                    throw new RuntimeException("Timed out while waiting for " + mbeanNameTemplate + " to become available", ex);
+                    throw new RuntimeException("Timed out while waiting for any of the mbean name templates " + this.mbeanNameTemplates + " to become available", ex);
                 }
             }, 1 + (int) timeInMillis / 100, 100);
         }
@@ -332,8 +388,8 @@ public class CacheStatisticsControllerEnricher implements TestEnricher {
 
     private static class InfinispanCacheStatisticsImpl extends CacheStatisticsImpl {
 
-        public InfinispanCacheStatisticsImpl(Supplier<MBeanServerConnection> mbscCreator, ObjectName mbeanName) {
-            super(mbscCreator, mbeanName);
+        public InfinispanCacheStatisticsImpl(Supplier<MBeanServerConnection> mbscCreator, List<ObjectName> mbeanNames) {
+            super(mbscCreator, mbeanNames);
         }
 
         @Override
@@ -347,7 +403,7 @@ public class CacheStatisticsControllerEnricher implements TestEnricher {
 
         @Override
         protected boolean isAvailable() {
-            return getSingleStatistics(Constants.STAT_CACHE_ELAPSED_TIME) != null;
+            return getSingleStatistics(Constants.STAT_CACHE_HITS) != null;
         }
     }
 
@@ -361,7 +417,7 @@ public class CacheStatisticsControllerEnricher implements TestEnricher {
         public void reset() {
             try {
                 getConnection().invoke(getMbeanName(), "resetStats", new Object[] {}, new String[] {});
-            } catch (NotSerializableException ex) {
+            } catch (NotSerializableException | UnmarshalException ex) {
                 // Ignore return value not serializable, the invocation has already done its job
             } catch (IOException | InstanceNotFoundException | MBeanException | ReflectionException ex) {
                 throw new RuntimeException(ex);

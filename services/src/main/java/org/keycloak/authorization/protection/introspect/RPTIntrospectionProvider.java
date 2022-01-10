@@ -102,8 +102,8 @@ public class RPTIntrospectionProvider extends AccessTokenIntrospectionProvider {
 
     //todo: we need to avoid creating this class when processing responses. The only reason for that is that
     // UMA defines "resource_id" and "resource_scopes" claims but we use "rsid" and "scopes".
-    // To avoid breaking backward compatiblity we are just responding with all these claims.
-    public class UmaPermissionRepresentation extends Permission {
+    // To avoid breaking backward compatibility we are just responding with all these claims.
+    public static class UmaPermissionRepresentation extends Permission {
 
         public UmaPermissionRepresentation(Permission permission) {
             setResourceId(permission.getResourceId());

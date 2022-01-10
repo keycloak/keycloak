@@ -45,6 +45,9 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
     @FindBy(className = "alert-error")
     private WebElement loginErrorMessage;
 
+    @FindBy(id = "input-error-otp-code")
+    private WebElement totpInputCodeError;
+
     public void login(String totp) {
         otpInput.clear();
         if (totp != null) otpInput.sendKeys(totp);
@@ -52,8 +55,20 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
         submitButton.click();
     }
 
-    public String getError() {
-        return loginErrorMessage != null ? loginErrorMessage.getText() : null;
+    public String getAlertError() {
+        try {
+            return UIUtils.getTextFromElement(loginErrorMessage);
+        } catch (NoSuchElementException e) {
+            return null;
+        }
+    }
+
+    public String getInputError(){
+        try {
+            return UIUtils.getTextFromElement(totpInputCodeError);
+        } catch (NoSuchElementException e) {
+            return null;
+        }
     }
 
     public boolean isCurrent() {
@@ -74,7 +89,7 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
     // If false, we don't expect that credentials combobox is available. If true, we expect that it is available on the page
     public void assertOtpCredentialSelectorAvailability(boolean expectedAvailability) {
         try {
-            driver.findElement(By.className("card-pf-view-single-select"));
+            driver.findElement(By.className("pf-c-tile"));
             Assert.assertTrue(expectedAvailability);
         } catch (NoSuchElementException nse) {
             Assert.assertFalse(expectedAvailability);
@@ -90,7 +105,7 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
 
     public String getSelectedOtpCredential() {
         try {
-            WebElement selected = driver.findElement(getXPathForLookupActiveCard());
+            WebElement selected = driver.findElement(getCssSelectorForLookupActiveCard());
             return selected.getText();
         } catch (NoSuchElementException nse) {
             // No selected element found
@@ -99,20 +114,20 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
     }
 
     private By getXPathForLookupAllCards() {
-        return By.xpath("//div[contains(@class, 'card-pf-view-single-select')]//h2");
+        return By.xpath("//span[contains(@class, 'pf-c-tile__title')]");
     }
 
-    private By getXPathForLookupActiveCard() {
-        return By.xpath("//div[contains(@class, 'card-pf-view-single-select active')]//h2");
+    private By getCssSelectorForLookupActiveCard() {
+        return By.cssSelector(".pf-c-tile__input:checked + .pf-c-tile .pf-c-tile__title");
     }
 
     private By getXPathForLookupCardWithName(String credentialName) {
-        return By.xpath("//div[contains(@class, 'card-pf-view-single-select')]//h2[normalize-space() = '"+ credentialName +"']");
+        return By.xpath("//label[contains(@class, 'pf-c-tile')][normalize-space() = '"+ credentialName +"']");
     }
 
 
     public void selectOtpCredential(String credentialName) {
-        waitForElement(getXPathForLookupActiveCard());
+        waitForElement(getCssSelectorForLookupActiveCard());
 
         WebElement webElement = driver.findElement(
                 getXPathForLookupCardWithName(credentialName));

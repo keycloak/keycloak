@@ -32,7 +32,6 @@ import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -40,6 +39,7 @@ import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.HawtioPage;
 import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.arquillian.containers.SelfManagedAppContainerLifecycle;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
@@ -47,7 +47,6 @@ import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.WaitUtils;
 
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -79,6 +78,8 @@ public class EAP6Fuse6HawtioAdapterTest extends AbstractExampleAdapterTest imple
     @BeforeClass
     public static void enabled() {
         Assume.assumeFalse(System.getProperty("os.name").startsWith("Windows"));
+        ContainerAssume.assumeNotAppServerSSL();
+        ContainerAssume.assumeAuthServerSSL();
     }
 
     @Before

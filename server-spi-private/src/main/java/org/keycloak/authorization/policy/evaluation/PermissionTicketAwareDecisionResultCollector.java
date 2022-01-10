@@ -16,7 +16,7 @@
  */
 package org.keycloak.authorization.policy.evaluation;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -110,16 +110,16 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionPermis
                     }
 
                     if (scopes.isEmpty()) {
-                        Map<String, String> filters = new HashMap<>();
+                        Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
 
-                        filters.put(PermissionTicket.RESOURCE, resource.getId());
-                        filters.put(PermissionTicket.REQUESTER, identity.getId());
-                        filters.put(PermissionTicket.SCOPE_IS_NULL, Boolean.TRUE.toString());
+                        filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
+                        filters.put(PermissionTicket.FilterOption.REQUESTER, identity.getId());
+                        filters.put(PermissionTicket.FilterOption.SCOPE_IS_NULL, Boolean.TRUE.toString());
 
-                        List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(filters, resource.getResourceServer().getId(), -1, -1);
+                        List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(filters, resource.getResourceServer(), -1, -1);
 
                         if (tickets.isEmpty()) {
-                            authorization.getStoreFactory().getPermissionTicketStore().create(resource.getId(), null, identity.getId(), resource.getResourceServer());
+                            authorization.getStoreFactory().getPermissionTicketStore().create(resource.getId(), null, identity.getId(), resourceServer);
                         }
                     } else {
                         ScopeStore scopeStore = authorization.getStoreFactory().getScopeStore();
@@ -131,16 +131,16 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionPermis
                                 scope = scopeStore.findById(scopeId, resourceServer.getId());
                             }
 
-                            Map<String, String> filters = new HashMap<>();
+                            Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
 
-                            filters.put(PermissionTicket.RESOURCE, resource.getId());
-                            filters.put(PermissionTicket.REQUESTER, identity.getId());
-                            filters.put(PermissionTicket.SCOPE, scope.getId());
+                            filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
+                            filters.put(PermissionTicket.FilterOption.REQUESTER, identity.getId());
+                            filters.put(PermissionTicket.FilterOption.SCOPE_ID, scope.getId());
 
-                            List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(filters, resource.getResourceServer().getId(), -1, -1);
+                            List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(filters, resource.getResourceServer(), -1, -1);
 
                             if (tickets.isEmpty()) {
-                                authorization.getStoreFactory().getPermissionTicketStore().create(resource.getId(), scope.getId(), identity.getId(), resource.getResourceServer());
+                                authorization.getStoreFactory().getPermissionTicketStore().create(resource.getId(), scope.getId(), identity.getId(), resourceServer);
                             }
                         }
                     }

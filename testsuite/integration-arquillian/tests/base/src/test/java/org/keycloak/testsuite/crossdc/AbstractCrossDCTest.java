@@ -37,6 +37,8 @@ import org.keycloak.testsuite.arquillian.CrossDCTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.arquillian.annotation.InitialDcState;
 
+import static org.keycloak.testsuite.arquillian.CrossDCTestEnricher.forAllBackendNodesStream;
+
 
 /**
  * Abstract cross-data-centre test that defines primitives for handling cross-DC setup.
@@ -65,7 +67,7 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
 
     @After
     @Override
-    public void afterAbstractKeycloakTest() {
+    public void afterAbstractKeycloakTest() throws Exception {
         log.debug("--DC: after AbstractCrossDCTest");
         CrossDCTestEnricher.startAuthServerBackendNode(DC.FIRST, 0);    // make sure first node is started
         enableOnlyFirstNodeInFirstDc();
@@ -220,5 +222,27 @@ public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest 
     public void resetTimeOffset() {
         super.resetTimeOffset();
         setTimeOffsetOnAllStartedContainers(0);
+    }
+
+    protected void setInfinispanTestTimeServiceOnAllStartedAuthServers() {
+        forAllBackendNodesStream()
+                .filter(ContainerInfo::isStarted)
+                .forEach(this::setInfinispanTestTimeServiceonAuthServer);
+    }
+
+    private void setInfinispanTestTimeServiceonAuthServer(ContainerInfo backendAuthServer) {
+        log.infof("Set Infinispan Test Time Service for backend server %s", backendAuthServer.getQualifier());
+        getTestingClientFor(backendAuthServer).testing().setTestingInfinispanTimeService();
+    }
+
+    protected void revertInfinispanTestTimeServiceOnAllStartedAuthServers() {
+        forAllBackendNodesStream()
+                .filter(ContainerInfo::isStarted)
+                .forEach(this::revertInfinispanTestTimeServiceonAuthServer);
+    }
+
+    private void revertInfinispanTestTimeServiceonAuthServer(ContainerInfo backendAuthServer) {
+        log.infof("Revert Infinispan Test Time Service for backend server %s", backendAuthServer.getQualifier());
+        getTestingClientFor(backendAuthServer).testing().revertTestingInfinispanTimeService();
     }
 }

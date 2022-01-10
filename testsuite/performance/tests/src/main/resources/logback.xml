@@ -27,6 +27,10 @@
     <!-- Uncomment for logging ONLY FAILED HTTP request and responses -->
     <logger name="io.gatling" level="WARN" /> 
 
+    <logger name="org.keycloak" level="WARN" additivity="false">
+        <appender-ref ref="CONSOLE_MSG_ONLY" />
+    </logger>
+
     <logger name="org.keycloak.performance" level="INFO" additivity="false">
         <appender-ref ref="CONSOLE_MSG_ONLY" />
     </logger>

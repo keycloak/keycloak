@@ -24,28 +24,59 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.jboss.logging.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.keycloak.adapters.saml.SamlDeployment;
+import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.KeyUtils;
+import org.keycloak.dom.saml.v2.SAML2Object;
+import org.keycloak.dom.saml.v2.protocol.ArtifactResponseType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.dom.saml.v2.protocol.RequestAbstractType;
+import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.protocol.saml.SamlProtocolUtils;
+import org.keycloak.protocol.saml.profile.util.Soap;
+import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.SAMLRequestParser;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
+import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.saml.processing.core.util.JAXPValidationUtil;
+import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
+import org.keycloak.testsuite.util.saml.StepWithCheckers;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.xml.soap.MessageFactory;
+import javax.xml.soap.SOAPBody;
+import javax.xml.soap.SOAPEnvelope;
+import javax.xml.soap.SOAPException;
+import javax.xml.soap.SOAPHeader;
+import javax.xml.soap.SOAPHeaderElement;
+import javax.xml.soap.SOAPMessage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -53,23 +84,20 @@ import java.security.Key;
 import java.security.KeyManagementException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
+import java.util.concurrent.TimeUnit;
 
-import org.jboss.logging.Logger;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import org.keycloak.common.VerificationException;
-import org.keycloak.protocol.saml.SamlProtocolUtils;
-import org.keycloak.rotation.KeyLocator;
 import static org.keycloak.saml.common.constants.GeneralConstants.RELAY_STATE;
-import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
+import static org.keycloak.testsuite.util.SamlUtils.getSamlDeploymentForClient;
 
 /**
  * @author hmlnarik
@@ -123,16 +151,21 @@ public class SamlClient {
 
             @Override
             public HttpPost createSamlUnsignedRequest(URI samlEndpoint, String relayState, Document samlRequest) {
-                return createSamlPostMessage(samlEndpoint, relayState, samlRequest, GeneralConstants.SAML_REQUEST_KEY, null, null);
+                return createSamlPostMessage(samlEndpoint, relayState, samlRequest, GeneralConstants.SAML_REQUEST_KEY, null, null, null);
             }
 
             @Override
             public HttpPost createSamlUnsignedResponse(URI samlEndpoint, String relayState, Document samlRequest) {
-                return createSamlPostMessage(samlEndpoint, relayState, samlRequest, GeneralConstants.SAML_RESPONSE_KEY, null, null);
+                return createSamlPostMessage(samlEndpoint, relayState, samlRequest, GeneralConstants.SAML_RESPONSE_KEY, null, null, null);
             }
 
             @Override
             public HttpUriRequest createSamlSignedResponse(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey) {
+                return createSamlSignedResponse(samlEndpoint, relayState, samlRequest, realmPrivateKey, realmPublicKey, null);
+            }
+
+            @Override
+            public HttpUriRequest createSamlSignedResponse(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey, String certificateStr) {
                 return null;
             }
 
@@ -146,10 +179,15 @@ public class SamlClient {
 
             @Override
             public HttpPost createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey) {
-                return createSamlPostMessage(samlEndpoint, relayState, samlRequest, GeneralConstants.SAML_REQUEST_KEY, realmPrivateKey, realmPublicKey);
+                return createSamlSignedRequest(samlEndpoint, relayState, samlRequest, realmPrivateKey, realmPublicKey, null);
             }
 
-            private HttpPost createSamlPostMessage(URI samlEndpoint, String relayState, Document samlRequest, String messageType, String privateKeyStr, String publicKeyStr) {
+            @Override
+            public HttpPost createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey, String certificateStr) {
+                return createSamlPostMessage(samlEndpoint, relayState, samlRequest, GeneralConstants.SAML_REQUEST_KEY, realmPrivateKey, realmPublicKey, certificateStr);
+            }
+
+            private HttpPost createSamlPostMessage(URI samlEndpoint, String relayState, Document samlRequest, String messageType, String privateKeyStr, String publicKeyStr, String certificateStr) {
                 HttpPost post = new HttpPost(samlEndpoint);
 
                 List<NameValuePair> parameters = new LinkedList<>();
@@ -161,9 +199,10 @@ public class SamlClient {
                     if (privateKeyStr != null && publicKeyStr != null) {
                         PrivateKey privateKey = org.keycloak.testsuite.util.KeyUtils.privateKeyFromString(privateKeyStr);
                         PublicKey publicKey = org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(publicKeyStr);
+                        X509Certificate cert = org.keycloak.common.util.PemUtils.decodeCertificate(certificateStr);
                         binding
                                 .signatureAlgorithm(SignatureAlgorithm.RSA_SHA256)
-                                .signWith(KeyUtils.createKeyId(privateKey), privateKey, publicKey)
+                                .signWith(KeyUtils.createKeyId(privateKey), privateKey, publicKey, cert)
                                 .signDocument();
                     }
 
@@ -242,6 +281,11 @@ public class SamlClient {
 
             @Override
             public HttpUriRequest createSamlSignedResponse(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey) {
+                return createSamlSignedResponse(samlEndpoint, relayState, samlRequest, realmPrivateKey, realmPublicKey, null);
+            }
+
+            @Override
+            public HttpUriRequest createSamlSignedResponse(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey, String certificateStr) {
 
                 try {
                     BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder();
@@ -249,9 +293,10 @@ public class SamlClient {
                     if (realmPrivateKey != null && realmPublicKey != null) {
                         PrivateKey privateKey = org.keycloak.testsuite.util.KeyUtils.privateKeyFromString(realmPrivateKey);
                         PublicKey publicKey = org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(realmPublicKey);
+                        X509Certificate cert = org.keycloak.common.util.PemUtils.decodeCertificate(certificateStr);
                         binding
                                 .signatureAlgorithm(SignatureAlgorithm.RSA_SHA256)
-                                .signWith(KeyUtils.createKeyId(privateKey), privateKey, publicKey)
+                                .signWith(KeyUtils.createKeyId(privateKey), privateKey, publicKey, cert)
                                 .signDocument();
                     }
 
@@ -273,19 +318,265 @@ public class SamlClient {
 
             @Override
             public HttpUriRequest createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String privateKeyStr, String publicKeyStr) {
+                return createSamlSignedRequest(samlEndpoint, relayState, samlRequest, privateKeyStr, publicKeyStr, null);
+            }
+
+            @Override
+            public HttpUriRequest createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String privateKeyStr, String publicKeyStr, String certificateStr) {
                 try {
                     BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder().relayState(relayState);
                     if (privateKeyStr != null && publicKeyStr != null) {
                         PrivateKey privateKey = org.keycloak.testsuite.util.KeyUtils.privateKeyFromString(privateKeyStr);
                         PublicKey publicKey = org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(publicKeyStr);
+                        X509Certificate cert = org.keycloak.common.util.PemUtils.decodeCertificate(certificateStr);
                         binding.signatureAlgorithm(SignatureAlgorithm.RSA_SHA256)
-                                .signWith(KeyUtils.createKeyId(privateKey), privateKey, publicKey)
+                                .signWith(KeyUtils.createKeyId(privateKey), privateKey, publicKey, cert)
                                 .signDocument();
                     }
                     return new HttpGet(binding.redirectBinding(samlRequest).requestURI(samlEndpoint.toString()));
                 } catch (IOException | ConfigurationException | ProcessingException ex) {
                     throw new RuntimeException(ex);
                 }
+            }
+        },
+        /**
+         * SOAP binding is currently usable only with http://localhost:8280/ecp-sp/ client, see to-do comment within
+         * {@link #createSamlSignedRequest} for more details. After resolving that to-do it should be usable with any
+         * client.
+         */
+        SOAP {
+            @Override
+            public SAMLDocumentHolder extractResponse(CloseableHttpResponse response, String realmPublicKey) throws IOException {
+
+                assertThat(response, statusCodeIsHC(200));
+
+                MessageFactory messageFactory = null;
+                try {
+                    messageFactory = MessageFactory.newInstance();
+                    SOAPMessage soapMessage = messageFactory.createMessage(null, response.getEntity().getContent());
+                    SOAPBody soapBody = soapMessage.getSOAPBody();
+                    Node authnRequestNode = soapBody.getFirstChild();
+                    Document document = DocumentUtil.createDocument();
+                    document.appendChild(document.importNode(authnRequestNode, true));
+
+                    SAMLParser samlParser = SAMLParser.getInstance();
+                    JAXPValidationUtil.checkSchemaValidation(document);
+
+                    SAML2Object responseType = (SAML2Object) samlParser.parse(document);
+
+                    return new SAMLDocumentHolder(responseType, document);
+                } catch (SOAPException | ConfigurationException | ProcessingException | ParsingException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            private static final String NS_PREFIX_PROFILE_ECP = "ecp";
+            private static final String NS_PREFIX_SAML_PROTOCOL = "samlp";
+            private static final String NS_PREFIX_SAML_ASSERTION = "saml";
+            private static final String NS_PREFIX_PAOS_BINDING = "paos";
+
+            private void createEcpRequestHeader(SOAPEnvelope envelope, SamlDeployment deployment) throws SOAPException {
+                SOAPHeader headers = envelope.getHeader();
+                SOAPHeaderElement ecpRequestHeader = headers.addHeaderElement(envelope.createQName(JBossSAMLConstants.REQUEST.get(), NS_PREFIX_PROFILE_ECP));
+
+                ecpRequestHeader.setMustUnderstand(true);
+                ecpRequestHeader.setActor("http://schemas.xmlsoap.org/soap/actor/next");
+                ecpRequestHeader.addAttribute(envelope.createName("ProviderName"), deployment.getEntityID());
+                ecpRequestHeader.addAttribute(envelope.createName("IsPassive"), "0");
+                ecpRequestHeader.addChildElement(envelope.createQName("Issuer", "saml")).setValue(deployment.getEntityID());
+                ecpRequestHeader.addChildElement(envelope.createQName("IDPList", "samlp"))
+                        .addChildElement(envelope.createQName("IDPEntry", "samlp"))
+                        .addAttribute(envelope.createName("ProviderID"), deployment.getIDP().getEntityID())
+                        .addAttribute(envelope.createName("Name"), deployment.getIDP().getEntityID())
+                        .addAttribute(envelope.createName("Loc"), deployment.getIDP().getSingleSignOnService().getRequestBindingUrl());
+            }
+
+            private void createPaosRequestHeader(SOAPEnvelope envelope, SamlDeployment deployment) throws SOAPException {
+                SOAPHeader headers = envelope.getHeader();
+                SOAPHeaderElement paosRequestHeader = headers.addHeaderElement(envelope.createQName(JBossSAMLConstants.REQUEST.get(), NS_PREFIX_PAOS_BINDING));
+
+                paosRequestHeader.setMustUnderstand(true);
+                paosRequestHeader.setActor("http://schemas.xmlsoap.org/soap/actor/next");
+                paosRequestHeader.addAttribute(envelope.createName("service"), JBossSAMLURIConstants.ECP_PROFILE.get());
+                paosRequestHeader.addAttribute(envelope.createName("responseConsumerURL"), getResponseConsumerUrl(deployment));
+            }
+
+            private String getResponseConsumerUrl(SamlDeployment deployment) {
+                return (deployment.getIDP() == null
+                        || deployment.getIDP().getSingleSignOnService() == null
+                        || deployment.getIDP().getSingleSignOnService().getAssertionConsumerServiceUrl() == null
+                ) ? null
+                        : deployment.getIDP().getSingleSignOnService().getAssertionConsumerServiceUrl().toString();
+            }
+
+            @Override
+            public HttpUriRequest createSamlUnsignedRequest(URI samlEndpoint, String relayState, Document samlRequest) {
+                return createSamlSignedRequest(samlEndpoint, relayState, samlRequest, null, null, null);
+            }
+
+            @Override
+            public HttpUriRequest createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey) {
+                return createSamlSignedRequest(samlEndpoint, relayState, samlRequest, realmPrivateKey, realmPublicKey, null);
+            }
+
+            @Override
+            public HttpUriRequest createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey, String certificateStr) {
+                BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder();
+
+                if (realmPrivateKey != null && realmPublicKey != null) {
+                    PrivateKey privateKey = org.keycloak.testsuite.util.KeyUtils.privateKeyFromString(realmPrivateKey);
+                    PublicKey publicKey = org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(realmPublicKey);
+                    X509Certificate cert = org.keycloak.common.util.PemUtils.decodeCertificate(certificateStr);
+                    binding
+                            .signatureAlgorithm(SignatureAlgorithm.RSA_SHA256)
+                            .signWith(KeyUtils.createKeyId(privateKey), privateKey, publicKey, cert)
+                            .signDocument();
+
+                    try {
+                        samlRequest = binding.postBinding(samlRequest).getDocument();
+                    } catch (ProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+                MessageFactory messageFactory = null;
+                try {
+
+                    messageFactory = MessageFactory.newInstance();
+
+                    SOAPMessage message = messageFactory.createMessage();
+
+                    SOAPEnvelope envelope = message.getSOAPPart().getEnvelope();
+
+                    envelope.addNamespaceDeclaration(NS_PREFIX_SAML_ASSERTION, JBossSAMLURIConstants.ASSERTION_NSURI.get());
+                    envelope.addNamespaceDeclaration(NS_PREFIX_SAML_PROTOCOL, JBossSAMLURIConstants.PROTOCOL_NSURI.get());
+                    envelope.addNamespaceDeclaration(NS_PREFIX_PAOS_BINDING, JBossSAMLURIConstants.PAOS_BINDING.get());
+                    envelope.addNamespaceDeclaration(NS_PREFIX_PROFILE_ECP, JBossSAMLURIConstants.ECP_PROFILE.get());
+
+                    SamlDeployment deployment = getSamlDeploymentForClient("ecp-sp"); // TODO: Make more general for any client, currently SOAP is usable only with http://localhost:8280/ecp-sp/ client
+
+                    createPaosRequestHeader(envelope, deployment);
+                    createEcpRequestHeader(envelope, deployment);
+
+                    SOAPBody body = envelope.getBody();
+
+                    body.addDocument(samlRequest);
+
+                    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                    message.writeTo(outputStream);
+
+                    HttpPost post = new HttpPost(samlEndpoint);
+                    post.setEntity(new ByteArrayEntity(outputStream.toByteArray(), ContentType.TEXT_XML));
+                    return post;
+                } catch (SOAPException | IOException | ParsingException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            @Override
+            public URI getBindingUri() {
+                return null;
+            }
+
+            @Override
+            public HttpUriRequest createSamlUnsignedResponse(URI samlEndpoint, String relayState, Document samlRequest) {
+                return null;
+            }
+
+            @Override
+            public HttpUriRequest createSamlSignedResponse(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey) {
+                return null;
+            }
+
+            @Override
+            public HttpUriRequest createSamlSignedResponse(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey, String certificateStr) {
+                return null;
+            }
+
+            @Override
+            public String extractRelayState(CloseableHttpResponse response) throws IOException {
+                return null;
+            }
+        },
+        ARTIFACT_RESPONSE {
+            private Document extractSoapMessage(CloseableHttpResponse response) throws IOException {
+                ByteArrayInputStream bais = new ByteArrayInputStream(EntityUtils.toByteArray(response.getEntity()));
+                Document soapBody = Soap.extractSoapMessage(bais);
+                response.close();
+                return soapBody;
+            }
+
+            @Override
+            public SAMLDocumentHolder extractResponse(CloseableHttpResponse response, String realmPublicKey) throws IOException {
+                assertThat(response, statusCodeIsHC(Response.Status.OK));
+                Document soapBodyContents = extractSoapMessage(response);
+
+                SAMLDocumentHolder samlDoc = null;
+                try {
+                    samlDoc = SAML2Request.getSAML2ObjectFromDocument(soapBodyContents);
+                } catch (ProcessingException | ParsingException e) {
+                    throw new RuntimeException("Unable to get documentHolder from soapBodyResponse: " + DocumentUtil.asString(soapBodyContents));
+                }
+                if (!(samlDoc.getSamlObject() instanceof ArtifactResponseType)) {
+                    throw new RuntimeException("Message received from ArtifactResolveService is not an ArtifactResponseMessage");
+                }
+
+                ArtifactResponseType art = (ArtifactResponseType) samlDoc.getSamlObject();
+
+                try {
+                    Object artifactResponseContent = art.getAny();
+                    if (artifactResponseContent instanceof ResponseType) {
+                        Document doc = SAML2Request.convert((ResponseType) artifactResponseContent);
+                        return new SAMLDocumentHolder((ResponseType) artifactResponseContent, doc);
+                    } else if (artifactResponseContent instanceof RequestAbstractType) {
+                        Document doc = SAML2Request.convert((RequestAbstractType) art.getAny());
+                        return new SAMLDocumentHolder((RequestAbstractType) artifactResponseContent, doc);
+                    } else {
+                        throw new RuntimeException("Can not recognise message contained in ArtifactResponse");
+                    }
+                } catch (ParsingException | ConfigurationException | ProcessingException e) {
+                    throw new RuntimeException("Can not obtain document from artifact response: " + DocumentUtil.asString(soapBodyContents));
+                }
+            }
+
+            @Override
+            public HttpUriRequest createSamlUnsignedRequest(URI samlEndpoint, String relayState, Document samlRequest) {
+                return null;
+            }
+
+            @Override
+            public HttpUriRequest createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey) {
+                return null;
+            }
+
+            @Override
+            public HttpUriRequest createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey, String certificateStr) {
+                return null;
+            }
+
+            @Override
+            public URI getBindingUri() {
+                return JBossSAMLURIConstants.SAML_HTTP_ARTIFACT_BINDING.getUri();
+            }
+
+            @Override
+            public HttpUriRequest createSamlUnsignedResponse(URI samlEndpoint, String relayState, Document samlRequest) {
+                return null;
+            }
+
+            @Override
+            public HttpUriRequest createSamlSignedResponse(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey) {
+                return null;
+            }
+
+            @Override
+            public HttpUriRequest createSamlSignedResponse(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey, String certificateStr) {
+                return null;
+            }
+
+            @Override
+            public String extractRelayState(CloseableHttpResponse response) throws IOException {
+                return null;
             }
         };
 
@@ -299,11 +590,15 @@ public class SamlClient {
 
         public abstract HttpUriRequest createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey);
 
+        public abstract HttpUriRequest createSamlSignedRequest(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey, String certificateStr);
+
         public abstract URI getBindingUri();
 
         public abstract HttpUriRequest createSamlUnsignedResponse(URI samlEndpoint, String relayState, Document samlRequest);
 
         public abstract HttpUriRequest createSamlSignedResponse(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey);
+
+        public abstract HttpUriRequest createSamlSignedResponse(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey, String certificateStr);
 
         public abstract String extractRelayState(CloseableHttpResponse response) throws IOException;
     }
@@ -480,7 +775,18 @@ public class SamlClient {
                 }
 
                 LOG.infof("Executing HTTP request to %s", request.getURI());
+                
+                if (s instanceof StepWithCheckers) {
+                    Runnable beforeChecker = ((StepWithCheckers) s).getBeforeStepChecker();
+                    if (beforeChecker != null) beforeChecker.run();
+                }
+
                 currentResponse = client.execute(request, context);
+
+                if (s instanceof StepWithCheckers) {
+                    Runnable afterChecker = ((StepWithCheckers) s).getAfterStepChecker();
+                    if (afterChecker != null) afterChecker.run();
+                }
 
                 currentUri = request.getURI();
                 List<URI> locations = context.getRedirectLocations();
@@ -508,6 +814,8 @@ public class SamlClient {
     }
 
     protected HttpClientBuilder createHttpClientBuilderInstance() {
-        return HttpClientBuilder.create();
+        return HttpClientBuilder
+                .create()
+                .evictIdleConnections(100, TimeUnit.MILLISECONDS);
     }
 }

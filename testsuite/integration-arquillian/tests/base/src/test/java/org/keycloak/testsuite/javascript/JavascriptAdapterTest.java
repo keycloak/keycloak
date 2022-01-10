@@ -7,6 +7,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -17,6 +18,10 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.SuiteContext;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
@@ -25,6 +30,7 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.javascript.JSObjectBuilder;
+import org.keycloak.testsuite.util.javascript.JavascriptStateValidator;
 import org.keycloak.testsuite.util.javascript.JavascriptTestExecutor;
 import org.keycloak.testsuite.util.javascript.XMLHttpRequest;
 import org.openqa.selenium.TimeoutException;
@@ -46,16 +52,11 @@ import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-
-import static org.junit.Assume.assumeFalse;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
-import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
 
 /**
  * @author mhajas
@@ -64,6 +65,7 @@ import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
 public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
     private String testAppUrl;
+    private String testAppWithInitInHeadUrl;
     protected JavascriptTestExecutor testExecutor;
     private static int TIME_SKEW_TOLERANCE = 3;
 
@@ -89,7 +91,9 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
     @Before
     public void setDefaultEnvironment() {
-        testAppUrl = authServerContextRootPage.toString().replace(AUTH_SERVER_HOST, JS_APP_HOST) + JAVASCRIPT_URL + "/index.html";
+        String testAppRootUrl = authServerContextRootPage.toString().replace(AUTH_SERVER_HOST, JS_APP_HOST) + JAVASCRIPT_URL;
+        testAppUrl = testAppRootUrl + "/index.html";
+        testAppWithInitInHeadUrl = testAppRootUrl + "/init-in-head.html";
 
         jsDriverTestRealmLoginPage.setAuthRealm(REALM_NAME);
         oAuthGrantPage.setAuthRealm(REALM_NAME);
@@ -100,10 +104,8 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
         events.poll();
         jsDriver.manage().deleteAllCookies();
 
-        jsDriver.navigate().to(testAppUrl);
+        navigateToTestApp(testAppUrl);
 
-        waitUntilElement(outputArea).is().present();
-        assertCurrentUrlStartsWith(testAppUrl, jsDriver);
         testExecutor = JavascriptTestExecutor.create(jsDriver, jsDriverTestRealmLoginPage);
 
         jsDriver.manage().deleteAllCookies();
@@ -120,6 +122,14 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     }
 
     private void assertOnTestAppUrl(WebDriver jsDriver, Object output, WebElement events) {
+        assertOnTestAppUrl(jsDriver, output, events, testAppUrl);
+    }
+
+    private void assertOnTestAppWithInitInHeadUrl(WebDriver jsDriver, Object output, WebElement events) {
+        assertOnTestAppUrl(jsDriver, output, events, testAppWithInitInHeadUrl);
+    }
+
+    private void assertOnTestAppUrl(WebDriver jsDriver, Object output, WebElement events, String testAppUrl) {
         waitForPageToLoad();
         assertCurrentUrlStartsWith(testAppUrl, jsDriver);
     }
@@ -156,13 +166,13 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
         // when 3rd party cookies are disabled, the adapter has to do a full redirect to KC to check whether the user
         // is logged in or not – it can't rely on silent check-sso iframe
-        testExecutor.init(checkSSO, this::assertInitNotAuth, suiteContext.hasBrowserStrictCookies())
+        testExecutor.init(checkSSO, this::assertInitNotAuth, SuiteContext.BROWSER_STRICT_COOKIES)
                 .login(this::assertOnLoginPage)
                 .loginForm(testUser, this::assertOnTestAppUrl)
                 .init(checkSSO, this::assertInitAuth, false)
                 .refresh()
                 .init(checkSSO
-                        , this::assertInitAuth, suiteContext.hasBrowserStrictCookies());
+                        , this::assertInitAuth, SuiteContext.BROWSER_STRICT_COOKIES);
     }
 
     @Test
@@ -170,14 +180,14 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
         JSObjectBuilder checkSSO = defaultArguments().checkSSOOnLoad()
                 .add("silentCheckSsoRedirectUri", authServerContextRootPage.toString().replace(AUTH_SERVER_HOST, JS_APP_HOST) + JAVASCRIPT_URL + "/silent-check-sso.html");
 
-        testExecutor.init(checkSSO, this::assertInitNotAuth, suiteContext.hasBrowserStrictCookies())
+        testExecutor.init(checkSSO, this::assertInitNotAuth, SuiteContext.BROWSER_STRICT_COOKIES)
                 .login(this::assertOnLoginPage)
                 .loginForm(testUser, this::assertOnTestAppUrl)
                 .init(checkSSO, this::assertInitAuth, false)
                 .refresh()
                 .init(checkSSO
                         .disableCheckLoginIframe()
-                        , this::assertInitAuth, suiteContext.hasBrowserStrictCookies());
+                        , this::assertInitAuth, SuiteContext.BROWSER_STRICT_COOKIES);
     }
 
     @Test
@@ -192,7 +202,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .refresh()
                 .init(checkSSO
                         // with the fall back disabled, the adapter won't do full redirect to KC
-                        , suiteContext.hasBrowserStrictCookies() ? this::assertInitNotAuth : this::assertInitAuth);
+                        , SuiteContext.BROWSER_STRICT_COOKIES ? this::assertInitNotAuth : this::assertInitAuth);
     }
 
     @Test
@@ -201,7 +211,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
         // when 3rd party cookies are disabled, the adapter has to do a full redirect to KC to check whether the user
         // is logged in or not – it can't rely on the login iframe
-        testExecutor.init(checkSSO, this::assertInitNotAuth, suiteContext.hasBrowserStrictCookies())
+        testExecutor.init(checkSSO, this::assertInitNotAuth, SuiteContext.BROWSER_STRICT_COOKIES)
                 .login(this::assertOnLoginPage)
                 .loginForm(testUser, this::assertOnTestAppUrl)
                 .init(checkSSO, this::assertInitAuth, false)
@@ -216,7 +226,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .add("silentCheckSsoRedirectUri", authServerContextRootPage.toString().replace(AUTH_SERVER_HOST, JS_APP_HOST) + JAVASCRIPT_URL + "/silent-check-sso.html");
 
         testExecutor.init(checkSSO
-                , this::assertInitNotAuth, suiteContext.hasBrowserStrictCookies());
+                , this::assertInitNotAuth, SuiteContext.BROWSER_STRICT_COOKIES);
     }
 
     @Test
@@ -230,7 +240,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .wait(2000, (driver1, output, events) -> { // iframe is initialized after ~1 second, 2 seconds is just to be sure
                     assertAdapterIsLoggedIn(driver1, output, events);
                     final String logMsg = "3rd party cookies aren't supported by this browser.";
-                    if (suiteContext.hasBrowserStrictCookies()) {
+                    if (SuiteContext.BROWSER_STRICT_COOKIES) {
                         // this is here not really to test the log but also to make sure the browser is configured properly
                         // and cookies were blocked
                         assertEventsWebElementContains(logMsg, driver1, output, events);
@@ -273,6 +283,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     }
 
     @Test
+    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void grantBrowserBasedApp() {
         Assume.assumeTrue("This test doesn't work with phantomjs", !"phantomjs".equals(System.getProperty("js.browser")));
 
@@ -440,6 +451,53 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .init(defaultArguments(), this::assertInitAuth);
     }
 
+    /**
+     * Test for scope handling via {@code initOptions}: <pre>{@code
+     * Keycloak keycloak = new Keycloak(); keycloak.init({.... scope: "profile email phone"})
+     * }</pre>
+     * See KEYCLOAK-14412
+     */
+    @Test
+    public void testScopeInInitOptionsShouldBeConsideredByLoginUrl() {
+
+        JSObjectBuilder initOptions = defaultArguments()
+                .loginRequiredOnLoad()
+                // phone is optional client scope
+                .add("scope", "openid profile email phone");
+
+        try {
+            testExecutor.init(initOptions);
+            // This throws exception because when JavascriptExecutor waits for AsyncScript to finish
+            // it is redirected to login page and executor gets no response
+
+            throw new RuntimeException("Probably the login-required OnLoad mode doesn't work, because testExecutor should fail with error that page was redirected.");
+        } catch (WebDriverException ex) {
+            // should happen
+        }
+
+        testExecutor.loginForm(testUser, this::assertOnTestAppUrl)
+                    .init(initOptions, this::assertAdapterIsLoggedIn)
+                    .executeScript("return window.keycloak.tokenParsed.scope", assertOutputContains("phone"));
+    }
+
+    /**
+     * Test for scope handling via {@code loginOptions}: <pre>{@code
+     * Keycloak keycloak = new Keycloak(); keycloak.login({.... scope: "profile email phone"})
+     * }</pre>
+     * See KEYCLOAK-14412
+     */
+    @Test
+    public void testScopeInLoginOptionsShouldBeConsideredByLoginUrl() {
+
+        testExecutor.configure().init(defaultArguments());
+
+        JSObjectBuilder loginOptions = JSObjectBuilder.create().add("scope", "profile email phone");
+
+        testExecutor.login(loginOptions, (JavascriptStateValidator) (driver, output, events) -> {
+            assertThat(driver.getCurrentUrl(), containsString("&scope=openid%20profile%20email%20phone"));
+        });
+    }
+
     @Test
     public void testUpdateToken() {
         XMLHttpRequest request = XMLHttpRequest.create()
@@ -584,7 +642,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                     .add("refreshToken", refreshToken)
                 , (driver1, output, events) -> {
                     assertInitAuth(driver1, output, events);
-                    if (suiteContext.hasBrowserStrictCookies()) {
+                    if (SuiteContext.BROWSER_STRICT_COOKIES) {
                         // iframe is unsupported so a token refresh had to be performed
                         assertEventsContains("Auth Refresh Success").validate(driver1, output, events);
                     }
@@ -747,7 +805,66 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
         });
     }
 
+    @Test
+    // KEYCLOAK-15158
+    public void testInitInHead() {
+        navigateToTestApp(testAppWithInitInHeadUrl);
+
+        testExecutor.validateOutputField(this::assertInitNotAuth)
+                .login(this::assertOnLoginPage)
+                .loginForm(testUser, this::assertOnTestAppWithInitInHeadUrl)
+                .validateOutputField(this::assertInitAuth);
+    }
+
+    @Test
+    public void check3pCookiesMessageCallbackTest() {
+        testExecutor.attachCheck3pCookiesIframeMutationObserver()
+                .init(defaultArguments(), this::assertInitNotAuth);
+    }
+
+    // In case of incorrect/unavailable realm provided in KeycloakConfig,
+    // JavaScript Adapter init() should fail-fast and reject Promise with KeycloakError.
+    @Test
+    public void checkInitWithInvalidRealm() {
+
+        JSObjectBuilder keycloakConfig = JSObjectBuilder.create()
+                .add("url", authServerContextRootPage + "/auth")
+                .add("realm", "invalid-realm-name")
+                .add("clientId", CLIENT_ID);
+
+        JSObjectBuilder initOptions = defaultArguments().add("messageReceiveTimeout", 5000);
+
+        testExecutor
+                .configure(keycloakConfig)
+                .init(initOptions, assertErrorResponse("Timeout when waiting for 3rd party check iframe message."));
+
+    }
+
+    // In case of unavailable Authorization Server due to network or other kind of problems,
+    // JavaScript Adapter init() should fail-fast and reject Promise with KeycloakError.
+    @Test
+    public void checkInitWithUnavailableAuthServer() {
+
+        JSObjectBuilder keycloakConfig = JSObjectBuilder.create()
+                .add("url", "https://localhost:12345/auth")
+                .add("realm", REALM_NAME)
+                .add("clientId", CLIENT_ID);
+
+        JSObjectBuilder initOptions = defaultArguments().add("messageReceiveTimeout", 5000);
+
+        testExecutor
+                .configure(keycloakConfig)
+                .init(initOptions, assertErrorResponse("Timeout when waiting for 3rd party check iframe message."));
+
+    }
+
     protected void assertAdapterIsLoggedIn(WebDriver driver1, Object output, WebElement events) {
         assertTrue(testExecutor.isLoggedIn());
+    }
+
+    protected void navigateToTestApp(final String testAppUrl) {
+        jsDriver.navigate().to(testAppUrl);
+        waitUntilElement(outputArea).is().present();
+        assertCurrentUrlStartsWith(testAppUrl, jsDriver);
     }
 }

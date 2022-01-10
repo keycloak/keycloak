@@ -5,7 +5,24 @@ Ensure you have JDK 8 (or newer), Maven 3.5.4 (or newer) and Git installed
     java -version
     mvn -version
     git --version
-    
+
+**NOTE**
+
+If you use Maven 3.8.1 or newer, please add the following mirror to your local
+`~/.m2/settings.xml` to avoid build errors:
+```
+<mirrors>
+  <mirror>
+    <id>jboss-public-repository-group-https</id>
+    <mirrorOf>jboss-public-repository-group</mirrorOf>
+    <name>Jboss public https</name>
+    <url>https://repository.jboss.org/nexus/content/groups/public/</url>
+  </mirror>
+</mirrors>
+```
+See [KEYCLOAK-17812](https://issues.redhat.com/browse/KEYCLOAK-17812) for more details.
+
+---    
 First clone the Keycloak repository:
     
     git clone https://github.com/keycloak/keycloak.git
@@ -13,13 +30,13 @@ First clone the Keycloak repository:
     
 To build Keycloak run:
 
-    mvn install
+    mvn clean install
     
 This will build all modules and run the testsuite. 
 
 To build the ZIP distribution run:
 
-    mvn install -Pdistribution
+    mvn clean install -Pdistribution
     
 Once completed you will find distribution archives in `distribution`.
 
@@ -27,6 +44,16 @@ To build only the server run:
 
     mvn -Pdistribution -pl distribution/server-dist -am -Dmaven.test.skip clean install
 
+---
+**NOTE**
+
+Classes from `org.keycloak.testsuite.*` packages aren't suitable to be used in production.
+
+---
+
+### Building Quarkus Distribution
+
+Please, take a look at this [documentation](../quarkus/README.md).
 
 ## Starting Keycloak
 
@@ -48,7 +75,7 @@ To stop the server press `Ctrl + C`.
 ## Working with the codebase
 
 We don't currently enforce a code style in Keycloak, but a good reference is the code style used by WildFly. This can be 
-retrieved from [Wildfly ide-configs](https://github.com/wildfly/wildfly-core/tree/master/ide-configs).To import formatting 
+retrieved from [Wildfly ide-configs](https://github.com/wildfly/wildfly-core/tree/main/ide-configs).To import formatting 
 rules, see following [instructions](http://community.jboss.org/wiki/ImportFormattingRules).
 
 If your changes require updates to the database read [Updating Database Schema](updating-database-schema.md).

@@ -36,19 +36,16 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.TopologyInfo;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
+import org.keycloak.connections.infinispan.InfinispanUtil;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -139,9 +136,10 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
             try {
                 V result;
                 if (taskTimeoutInSeconds > 0) {
-                    result = (V) crossDCAwareCacheFactory.getCache().putIfAbsent(key, value);
+                    long lifespanMs = InfinispanUtil.toHotrodTimeMs(crossDCAwareCacheFactory.getCache(), Time.toMillis(taskTimeoutInSeconds));
+                    result = (V) crossDCAwareCacheFactory.getCache().putIfAbsent(key, value, lifespanMs, TimeUnit.MILLISECONDS);
                 } else {
-                    result = (V) crossDCAwareCacheFactory.getCache().putIfAbsent(key, value, taskTimeoutInSeconds, TimeUnit.SECONDS);
+                    result = (V) crossDCAwareCacheFactory.getCache().putIfAbsent(key, value);
                 }
                 resultRef.set(result);
 
@@ -184,57 +182,28 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
 
         @ViewChanged
         public void viewChanged(ViewChangedEvent event) {
-            EmbeddedCacheManager cacheManager = event.getCacheManager();
-            Transport transport = cacheManager.getTransport();
+            final Set<String> removedNodesAddresses = convertAddresses(event.getOldMembers());
+            final Set<String> newAddresses = convertAddresses(event.getNewMembers());
 
-            // Coordinator makes sure that entries for outdated nodes are cleaned up
-            if (transport != null && transport.isCoordinator()) {
+            // Use separate thread to avoid potential deadlock
+            localExecutor.execute(() -> {
+                EmbeddedCacheManager cacheManager = workCache.getCacheManager();
+                Transport transport = cacheManager.getTransport();
 
-                Set<String> newAddresses = convertAddresses(event.getNewMembers());
-                Set<String> removedNodesAddresses = convertAddresses(event.getOldMembers());
-                removedNodesAddresses.removeAll(newAddresses);
+                // Coordinator makes sure that entries for outdated nodes are cleaned up
+                if (transport != null && transport.isCoordinator()) {
 
-                if (removedNodesAddresses.isEmpty()) {
-                    return;
+                    removedNodesAddresses.removeAll(newAddresses);
+
+                    if (removedNodesAddresses.isEmpty()) {
+                        return;
+                    }
+
+                    logger.debugf("Nodes %s removed from cluster. Removing tasks locked by this nodes", removedNodesAddresses.toString());
+
+                    workCache.entrySet().removeIf(new LockEntryPredicate(removedNodesAddresses));
                 }
-
-                logger.debugf("Nodes %s removed from cluster. Removing tasks locked by this nodes", removedNodesAddresses.toString());
-
-                Cache<String, Serializable> cache = cacheManager.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
-
-                Iterator<String> toRemove = cache.entrySet().stream().filter(new Predicate<Map.Entry<String, Serializable>>() {
-
-                    @Override
-                    public boolean test(Map.Entry<String, Serializable> entry) {
-                        if (!(entry.getValue() instanceof LockEntry)) {
-                            return false;
-                        }
-
-                        LockEntry lock = (LockEntry) entry.getValue();
-                        return removedNodesAddresses.contains(lock.getNode());
-                    }
-
-                }).map(new Function<Map.Entry<String, Serializable>, String>() {
-
-                    @Override
-                    public String apply(Map.Entry<String, Serializable> entry) {
-                        return entry.getKey();
-                    }
-
-                }).iterator();
-
-                while (toRemove.hasNext()) {
-                    String rem = toRemove.next();
-                    if (logger.isTraceEnabled()) {
-                        logger.tracef("Removing task %s due it's node left cluster", rem);
-                    }
-
-                    // If we have task in progress, it needs to be notified
-                    notificationsManager.taskFinished(rem, false);
-
-                    cache.remove(rem);
-                }
-            }
+            });
         }
 
         private Set<String> convertAddresses(Collection<Address> addresses) {

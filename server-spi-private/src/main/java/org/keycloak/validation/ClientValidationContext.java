@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Red Hat, Inc. and/or its affiliates
+ * Copyright 2020 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,26 +14,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.keycloak.validation;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
 
-public interface ClientValidationContext {
-
-    enum Event {
-        CREATE,
-        UPDATE
+/**
+ * @author Vaclav Muzikar <vmuzikar@redhat.com>
+ */
+public class ClientValidationContext extends DefaultValidationContext<ClientModel> {
+    public ClientValidationContext(Event event, KeycloakSession session, ClientModel objectToValidate) {
+        super(event, session, objectToValidate);
     }
 
-    Event getEvent();
+    public static class OIDCContext extends ClientValidationContext {
+        private final OIDCClientRepresentation oidcClient;
 
-    KeycloakSession getSession();
+        public OIDCContext(Event event, KeycloakSession session, ClientModel objectToValidate, OIDCClientRepresentation oidcClient) {
+            super(event, session, objectToValidate);
+            this.oidcClient = oidcClient;
+        }
 
-    ClientModel getClient();
-
-    String getError();
-
-    ClientValidationContext invalid(String error);
-
+        public OIDCClientRepresentation getOIDCClient() {
+            return oidcClient;
+        }
+    }
 }

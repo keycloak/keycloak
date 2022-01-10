@@ -1,0 +1,90 @@
+//
+// Tables
+// --------------------------------------------------
+
+.table {
+  > thead,
+  > tbody,
+  > tfoot {
+    > tr {
+      > th,
+      > td {
+        padding: @table-cell-padding-top @table-cell-padding @table-cell-padding-bottom;
+        > a:hover {
+          text-decoration: none;
+        }
+      }
+      > th {
+        font-family: "Open Sans";
+        font-style: normal;
+        font-weight: 600;
+      }
+    }
+  }
+  > thead {
+    background-clip: padding-box;
+    background-color: @color-pf-black-150;
+    #gradient > .vertical(@start-color: @color-pf-black-100; @end-color: @color-pf-black-200; @start-percent: 0%; @end-percent: 100%);
+  }
+}
+
+.table-bordered {
+  border: 1px solid @table-border-color;
+  > thead,
+  > tbody,
+  > tfoot {
+    > tr {
+      > th,
+      > td {
+        border: 1px solid @table-border-color;
+      }
+    }
+  }
+  > thead > tr {
+    > th,
+    > td {
+      border-bottom-width: 1px;
+    }
+  }
+}
+
+.table-striped {
+  > tbody > tr {
+    &:nth-of-type(even) {
+      background-color: @table-bg-accent;
+    }
+    &:nth-of-type(odd) {
+      background-color: transparent;
+    }
+  }
+}
+
+.table-hover {
+  > tbody > tr:hover {
+    > td,
+    > th {
+      background-color: @table-bg-hover;
+      border-bottom-color: @table-border-hover;
+    }
+  }
+}
+
+.table-treegrid {
+  span.indent {
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+  span.icon {
+    display: inline-block;
+    font-size: 13px;
+    margin-right: 5px;
+    min-width: 10px;
+    text-align: center;
+  }
+  span.expand-icon, span.collapse-icon {
+    cursor: pointer;
+  }
+  > tbody > tr.odd {
+    background-color: @table-bg-accent;
+  }
+}

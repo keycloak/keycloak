@@ -47,7 +47,10 @@ public class SAMLAttributeConsumingServiceParser extends AbstractStaxSamlMetadat
                 break;
 
             case SERVICE_DESCRIPTION:
-                target.addServiceDescription(new LocalizedNameType(StaxParserUtil.getAttributeValue(elementDetail, ATTR_LANG)));
+                LocalizedNameType serviceDescription = new LocalizedNameType(StaxParserUtil.getAttributeValue(elementDetail, ATTR_LANG));
+                StaxParserUtil.advance(xmlEventReader);
+                serviceDescription.setValue(StaxParserUtil.getElementText(xmlEventReader));
+                target.addServiceDescription(serviceDescription);
                 break;
 
             case REQUESTED_ATTRIBUTE:

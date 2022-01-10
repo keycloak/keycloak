@@ -36,6 +36,11 @@ import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
+import org.keycloak.services.clientpolicy.context.DynamicClientUnregisterContext;
+import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
+import org.keycloak.services.clientpolicy.context.DynamicClientViewContext;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyException;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyManager;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
@@ -149,8 +154,9 @@ public class ClientRegistrationAuth {
         }
 
         try {
+            session.clientPolicy().triggerOnEvent(new DynamicClientRegisterContext(context, jwt, realm));
             ClientRegistrationPolicyManager.triggerBeforeRegister(context, registrationAuth);
-        } catch (ClientRegistrationPolicyException crpe) {
+        } catch (ClientRegistrationPolicyException | ClientPolicyException crpe) {
             throw forbidden(crpe.getMessage());
         }
 
@@ -158,6 +164,10 @@ public class ClientRegistrationAuth {
     }
 
     public void requireView(ClientModel client) {
+        requireView(client, false);
+    }
+
+    public void requireView(ClientModel client, boolean allowPublicClient) {
         RegistrationAuth authType = null;
         boolean authenticated = false;
 
@@ -178,22 +188,22 @@ public class ClientRegistrationAuth {
             }
         } else if (isRegistrationAccessToken()) {
             if (client != null && client.getRegistrationToken() != null && client.getRegistrationToken().equals(jwt.getId())) {
+                checkClientProtocol(client);
                 authenticated = true;
                 authType = getRegistrationAuth();
             }
         } else if (isInitialAccessToken()) {
             throw unauthorized("Not initial access token allowed");
-        } else {
-            if (authenticateClient(client)) {
-                authenticated = true;
-                authType = RegistrationAuth.AUTHENTICATED;
-            }
+        } else if (allowPublicClient && authenticatePublicClient(client)) {
+            authenticated = true;
+            authType = RegistrationAuth.AUTHENTICATED;
         }
 
         if (authenticated) {
             try {
+                session.clientPolicy().triggerOnEvent(new DynamicClientViewContext(session, client, jwt, realm));
                 ClientRegistrationPolicyManager.triggerBeforeView(session, provider, authType, client);
-            } catch (ClientRegistrationPolicyException crpe) {
+            } catch (ClientRegistrationPolicyException | ClientPolicyException crpe) {
                 throw forbidden(crpe.getMessage());
             }
         } else {
@@ -210,8 +220,9 @@ public class ClientRegistrationAuth {
         RegistrationAuth regAuth = requireUpdateAuth(client);
 
         try {
+            session.clientPolicy().triggerOnEvent(new DynamicClientUpdateContext(context, client, jwt, realm));
             ClientRegistrationPolicyManager.triggerBeforeUpdate(context, regAuth, client);
-        } catch (ClientRegistrationPolicyException crpe) {
+        } catch (ClientRegistrationPolicyException | ClientPolicyException crpe) {
             throw forbidden(crpe.getMessage());
         }
 
@@ -222,8 +233,9 @@ public class ClientRegistrationAuth {
         RegistrationAuth chainType = requireUpdateAuth(client);
 
         try {
+            session.clientPolicy().triggerOnEvent(new DynamicClientUnregisterContext(session, client, jwt, realm));
             ClientRegistrationPolicyManager.triggerBeforeRemove(session, provider, chainType, client);
-        } catch (ClientRegistrationPolicyException crpe) {
+        } catch (ClientRegistrationPolicyException | ClientPolicyException crpe) {
             throw forbidden(crpe.getMessage());
         }
     }
@@ -286,7 +298,7 @@ public class ClientRegistrationAuth {
 
     private boolean hasRoleInModel(String[] roles) {
         ClientModel roleNamespace;
-        UserModel user = session.users().getUserById(jwt.getSubject(), realm);
+        UserModel user = session.users().getUserById(realm, jwt.getSubject());
         if (user == null) {
             return false;
         }
@@ -336,7 +348,7 @@ public class ClientRegistrationAuth {
         return false;
     }
 
-    private boolean authenticateClient(ClientModel client) {
+    private boolean authenticatePublicClient(ClientModel client) {
         if (client == null) {
             return false;
         }

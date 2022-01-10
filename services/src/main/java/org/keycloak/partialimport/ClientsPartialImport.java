@@ -117,7 +117,7 @@ public class ClientsPartialImport extends AbstractPartialImport<ClientRepresenta
             }
         }
 
-        ClientModel client = RepresentationToModel.createClient(session, realm, clientRep, true);
+        ClientModel client = RepresentationToModel.createClient(session, realm, clientRep);
         RepresentationToModel.importAuthorizationSettings(clientRep, client, session);
     }
 

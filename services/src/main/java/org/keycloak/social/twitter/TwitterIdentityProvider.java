@@ -47,6 +47,7 @@ import twitter4j.Twitter;
 import twitter4j.TwitterFactory;
 import twitter4j.auth.AccessToken;
 import twitter4j.auth.RequestToken;
+import twitter4j.conf.ConfigurationBuilder;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.QueryParam;
@@ -122,7 +123,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
     }
 
     protected Response exchangeStoredToken(UriInfo uriInfo, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
-        FederatedIdentityModel model = session.users().getFederatedIdentity(tokenSubject, getConfig().getAlias(), authorizedClient.getRealm());
+        FederatedIdentityModel model = session.users().getFederatedIdentity(authorizedClient.getRealm(), tokenSubject, getConfig().getAlias());
         if (model == null || model.getToken() == null) {
             return exchangeNotLinked(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
         }
@@ -184,27 +185,25 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
         public Response authResponse(@QueryParam("state") String state,
                                      @QueryParam("denied") String denied,
                                      @QueryParam("oauth_verifier") String verifier) {
-            if (denied != null) {
-                return callback.cancelled(state);
+            IdentityBrokerState idpState = IdentityBrokerState.encoded(state);
+            String clientId = idpState.getClientId();
+            String tabId = idpState.getTabId();
+            if (clientId == null || tabId == null) {
+                logger.errorf("Invalid state parameter: %s", state);
+                sendErrorEvent();
+                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
 
-            AuthenticationSessionModel authSession = null;
+            ClientModel client = realm.getClientByClientId(clientId);
+            AuthenticationSessionModel authSession = ClientSessionCode.getClientSession(state, tabId, session, realm, client, event, AuthenticationSessionModel.class);
+
+            if (denied != null) {
+                return callback.cancelled();
+            }
+
             try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
-                Twitter twitter = new TwitterFactory().getInstance();
-
+                Twitter twitter = new TwitterFactory(new ConfigurationBuilder().setIncludeEmailEnabled(true).build()).getInstance();
                 twitter.setOAuthConsumer(getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()));
-
-                IdentityBrokerState idpState = IdentityBrokerState.encoded(state);
-                String clientId = idpState.getClientId();
-                String tabId = idpState.getTabId();
-                if (clientId == null || tabId == null) {
-                    logger.errorf("Invalid state parameter: %s", state);
-                    sendErrorEvent();
-                    return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
-                }
-
-                ClientModel client = realm.getClientByClientId(clientId);
-                authSession = ClientSessionCode.getClientSession(state, tabId, session, realm, client, event, AuthenticationSessionModel.class);
 
                 String twitterToken = authSession.getAuthNote(TWITTER_TOKEN);
                 String twitterSecret = authSession.getAuthNote(TWITTER_TOKENSECRET);
@@ -218,6 +217,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
                 identity.setIdp(TwitterIdentityProvider.this);
 
                 identity.setUsername(twitterUser.getScreenName());
+                identity.setEmail(twitterUser.getEmail());
                 identity.setName(twitterUser.getName());
 
 
@@ -236,7 +236,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
                 identity.getContextData().put(IdentityProvider.FEDERATED_ACCESS_TOKEN, token);
 
                 identity.setIdpConfig(getConfig());
-                identity.setCode(state);
+                identity.setAuthenticationSession(authSession);
 
                 return callback.authenticated(identity);
             } catch (WebApplicationException e) {

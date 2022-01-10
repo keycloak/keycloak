@@ -315,7 +315,7 @@ public class SimpleUndertowLoadBalancer {
     private static final AttachmentKey<Integer> REMAINING_RETRY_ATTEMPTS = AttachmentKey.create(Integer.class);
 
 
-    private class ProxyCallbackDelegate implements ProxyCallback<ProxyConnection> {
+    private static class ProxyCallbackDelegate implements ProxyCallback<ProxyConnection> {
 
         private final ProxyClient proxyClient;
         private final ProxyCallback<ProxyConnection> delegate;

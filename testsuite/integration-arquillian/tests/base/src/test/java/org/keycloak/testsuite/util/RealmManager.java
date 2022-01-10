@@ -1,14 +1,28 @@
 package org.keycloak.testsuite.util;
 
+import org.keycloak.admin.client.resource.ComponentResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.CertificateUtils;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.keys.Attributes;
+import org.keycloak.keys.ImportedRsaKeyProviderFactory;
+import org.keycloak.keys.KeyProvider;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import javax.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:bruno@abstractj.org">Bruno Oliveira</a>.
@@ -90,6 +104,48 @@ public class RealmManager {
         rep.setPrivateKey(privateKey);
         rep.setPublicKey(publicKey);
         realm.update(rep);
+    }
+
+    public String generateNewRsaKey(KeyPair keyPair, String name) {
+        RealmRepresentation rep = realm.toRepresentation();
+
+        Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, "test");
+        String certificatePem = PemUtils.encodeCertificate(certificate);
+
+        ComponentRepresentation keyProviderRepresentation = new ComponentRepresentation();
+        keyProviderRepresentation.setName(name);
+        keyProviderRepresentation.setParentId(rep.getId());
+        keyProviderRepresentation.setProviderId(ImportedRsaKeyProviderFactory.ID);
+        keyProviderRepresentation.setProviderType(KeyProvider.class.getName());
+
+        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+        config.putSingle(Attributes.PRIVATE_KEY_KEY, PemUtils.encodeKey(keyPair.getPrivate()));
+        config.putSingle(Attributes.CERTIFICATE_KEY, certificatePem);
+        config.putSingle(Attributes.PRIORITY_KEY, "100");
+        keyProviderRepresentation.setConfig(config);
+
+        Response response = realm.components().add(keyProviderRepresentation);
+        String providerId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        deactivateOtherRsaKeys(providerId);
+
+        return providerId;
+    }
+
+    private void deactivateOtherRsaKeys(String providerId) {
+        List<String> otherRsaKeyProviderIds = realm.keys()
+                .getKeyMetadata().getKeys().stream()
+                .filter(key -> KeyType.RSA.equals(key.getType()) && !providerId.equals(key.getProviderId()))
+                .map(key -> key.getProviderId())
+                .collect(Collectors.toList());
+
+        for (String otherRsaKeyProviderId : otherRsaKeyProviderIds) {
+            ComponentResource componentResource = realm.components().component(otherRsaKeyProviderId);
+            ComponentRepresentation componentRepresentation = componentResource.toRepresentation();
+            componentRepresentation.getConfig().putSingle(Attributes.ACTIVE_KEY, "false");
+            componentResource.update(componentRepresentation);
+        }
     }
 
     public void ssoSessionMaxLifespan(int ssoSessionMaxLifespan) {

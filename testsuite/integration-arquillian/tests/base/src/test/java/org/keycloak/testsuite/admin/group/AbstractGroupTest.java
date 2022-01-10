@@ -55,7 +55,7 @@ public abstract class AbstractGroupTest extends AbstractKeycloakTest {
         String accessToken = tokenResponse.getAccessToken();
         String refreshToken = tokenResponse.getRefreshToken();
 
-        PublicKey publicKey = PemUtils.decodePublicKey(ApiUtil.findActiveKey(adminClient.realm("test")).getPublicKey());
+        PublicKey publicKey = PemUtils.decodePublicKey(ApiUtil.findActiveSigningKey(adminClient.realm("test")).getPublicKey());
 
         AccessToken accessTokenRepresentation = RSATokenVerifier.verifyToken(accessToken, publicKey, getAuthServerContextRoot() + "/auth/realms/test");
 

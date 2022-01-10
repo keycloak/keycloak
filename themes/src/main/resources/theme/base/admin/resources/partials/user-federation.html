@@ -51,7 +51,7 @@
             </tr>
         </thead>
         <tbody>
-            <tr ng-repeat="instance in instances">
+            <tr ng-repeat="instance in instances | orderBy:[getInstancePriority, getInstanceName]">
                 <td><a href="#{{getInstanceLink(instance)}}">{{getInstanceName(instance)}}</a></td>
                 <td>{{isProviderEnabled(instance)}}</td>
                 <td>{{getInstanceProvider(instance) | capitalize}}</td>

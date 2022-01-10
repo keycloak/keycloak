@@ -17,6 +17,7 @@
 
 package org.keycloak.models.cache.infinispan.authorization.events;
 
+import java.util.Objects;
 import java.util.Set;
 
 import org.keycloak.models.cache.infinispan.authorization.StoreFactoryCacheManager;
@@ -57,6 +58,20 @@ public class PolicyRemovedEvent extends InvalidationEvent implements Authorizati
     @Override
     public String getId() {
         return id;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        PolicyRemovedEvent that = (PolicyRemovedEvent) o;
+        return Objects.equals(id, that.id) && Objects.equals(name, that.name) && Objects.equals(serverId, that.serverId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), id, name, serverId);
     }
 
     @Override

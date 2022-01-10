@@ -25,7 +25,11 @@ import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 
 import java.net.URL;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
+
 import org.apache.http.client.methods.HttpGet;
 import org.jboss.arquillian.container.test.api.*;
 import org.jboss.arquillian.test.api.ArquillianResource;
@@ -35,10 +39,12 @@ import org.keycloak.representations.idm.*;
 import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.adapter.page.EmployeeServletDistributable;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
+import org.keycloak.testsuite.util.ServerURLs;
 
 /**
  *
@@ -49,6 +55,29 @@ public abstract class AbstractSAMLAdapterClusteredTest extends AbstractAdapterCl
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(loadRealm("/adapter-test/keycloak-saml/testsaml-behind-lb.json"));
+
+        if (!"localhost".equals(ServerURLs.APP_SERVER_HOST)) {
+            for (RealmRepresentation realm : testRealms) {
+                Optional<ClientRepresentation> clientRepresentation = realm.getClients().stream()
+                        .filter(c -> c.getClientId().equals("http://localhost:8580/employee-distributable/"))
+                        .findFirst();
+
+                clientRepresentation.ifPresent(cr -> {
+                    cr.setBaseUrl(cr.getBaseUrl().replace("localhost", ServerURLs.APP_SERVER_HOST));
+                    cr.setRedirectUris(cr.getRedirectUris()
+                            .stream()
+                            .map(url -> url.replace("localhost", ServerURLs.APP_SERVER_HOST))
+                            .collect(Collectors.toList())
+                    );
+                    cr.setAttributes(cr.getAttributes().entrySet().stream()
+                            .collect(Collectors.toMap(Map.Entry::getKey,
+                                    entry -> entry.getValue().replace("localhost", ServerURLs.APP_SERVER_HOST))
+                            )
+                    );
+
+                });
+            }
+        }
     }
 
     @Override
@@ -162,5 +191,44 @@ public abstract class AbstractSAMLAdapterClusteredTest extends AbstractAdapterCl
               .processSamlResponse(Binding.POST).build()    // logout response
             ;
         });
+    }
+
+    @Test
+    public void testNodeRestartResiliency(@ArquillianResource
+      @OperateOnDeployment(value = EmployeeServletDistributable.DEPLOYMENT_NAME) URL employeeUrl) throws Exception {
+        ContainerInfo containerInfo = testContext.getAppServerBackendsInfo().get(0);
+
+        setPasswordFor(bburkeUser, CredentialRepresentation.PASSWORD);
+
+        String employeeUrlString = getProxiedUrl(employeeUrl);
+        SamlClient samlClient = new SamlClientBuilder()
+          // Go to employee URL at reverse proxy which is set to forward to first node
+          .navigateTo(employeeUrlString)
+
+          // process redirection to login page
+          .processSamlResponse(Binding.POST).build()
+          .login().user(bburkeUser).build()
+          .processSamlResponse(Binding.POST).build()
+
+          // Returned to the page
+          .assertResponse(Matchers.bodyHC(containsString("principal=bburke")))
+
+          .execute();
+
+        controller.stop(containerInfo.getQualifier());
+        updateProxy(NODE_2_NAME, NODE_2_URI, NODE_1_URI);   // Update the proxy to forward to the second node.
+        samlClient.execute(new SamlClientBuilder()
+          .navigateTo(employeeUrlString)
+          .doNotFollowRedirects()
+          .assertResponse(Matchers.bodyHC(containsString("principal=bburke")))
+          .getSteps());
+
+        controller.start(containerInfo.getQualifier());
+        updateProxy(NODE_1_NAME, NODE_1_URI, NODE_2_URI);   // Update the proxy to forward to the first node.
+        samlClient.execute(new SamlClientBuilder()
+          .navigateTo(employeeUrlString)
+          .doNotFollowRedirects()
+          .assertResponse(Matchers.bodyHC(containsString("principal=bburke")))
+          .getSteps());
     }
 }

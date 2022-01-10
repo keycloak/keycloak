@@ -2093,6 +2093,127 @@ module.controller('ResourceServerPolicyAggregateDetailCtrl', function($scope, $r
     }, realm, client, $scope);
 });
 
+module.controller('ResourceServerPolicyClientScopeDetailCtrl', function($scope, $route, realm, client, ClientScope, PolicyController) {
+    PolicyController.onInit({
+        getPolicyType : function() {
+            return "client-scope";
+        },
+
+        onInit : function() {
+            ClientScope.query({realm: $route.current.params.realm}, function(data) {
+                $scope.clientScopes = data;
+            });
+
+            $scope.selectedClientScopes = [];
+
+            $scope.selectClientScope = function(clientScope) {
+                if (!clientScope || !clientScope.id) {
+                    return;
+                }
+
+                $scope.selectedClientScope = null;
+
+                for (i = 0; i < $scope.selectedClientScopes.length; i++) {
+                    if ($scope.selectedClientScopes[i].id == clientScope.id) {
+                        return;
+                    }
+                }
+
+                $scope.selectedClientScopes.push(clientScope);
+            }
+
+            $scope.removeFromList = function(clientScope) {
+                var index = $scope.selectedClientScopes.indexOf(clientScope);
+                if (index != -1) {
+                    $scope.selectedClientScopes.splice(index, 1);
+                }
+            }
+        },
+
+        onInitUpdate : function(policy) {
+            var selectedClientScopes = [];
+
+            if (policy.clientScopes) {
+                var clientScopes = policy.clientScopes;
+
+                for (i = 0; i < clientScopes.length; i++) {
+                    ClientScope.get({realm: $route.current.params.realm, clientScope: clientScopes[i].id}, function(data) {
+                        for (i = 0; i < clientScopes.length; i++) {
+                            if (clientScopes[i].id == data.id) {
+                                data.required = clientScopes[i].required ? true : false;
+                            }
+                        }
+                        selectedClientScopes.push(data);
+                        $scope.selectedClientScopes = angular.copy(selectedClientScopes);
+                    });
+                }
+            }
+
+            $scope.$watch('selectedClientScopes', function() {
+                if (!angular.equals($scope.selectedClientScopes, selectedClientScopes)) {
+                    $scope.changed = true;
+                } else {
+                    $scope.changed = false;
+                }
+            }, true);
+        },
+
+        onUpdate : function() {
+            var clientScopes = [];
+
+            for (i = 0; i < $scope.selectedClientScopes.length; i++) {
+                var clientScope = {};
+                clientScope.id = $scope.selectedClientScopes[i].id;
+                if ($scope.selectedClientScopes[i].required) {
+                    clientScope.required = $scope.selectedClientScopes[i].required;
+                }
+                clientScopes.push(clientScope);
+            }
+
+            $scope.policy.clientScopes = clientScopes;
+            delete $scope.policy.config;
+        },
+
+        onCreate : function() {
+            var clientScopes = [];
+
+            for (i = 0; i < $scope.selectedClientScopes.length; i++) {
+                var clientScope = {};
+                clientScope.id = $scope.selectedClientScopes[i].id;
+                if ($scope.selectedClientScopes[i].required) {
+                    clientScope.required = $scope.selectedClientScopes[i].required;
+                }
+                clientScopes.push(clientScope);
+            }
+
+            $scope.policy.clientScopes = clientScopes;
+            delete $scope.policy.config;
+        }
+    }, realm, client, $scope);
+});
+
+module.controller('ResourceServerPolicyRegexDetailCtrl', function($scope, realm, client, PolicyController) {
+    PolicyController.onInit({
+        getPolicyType : function() {
+            return "regex";
+        },
+
+        onInit : function() {
+        },
+
+        onInitUpdate : function(policy) {
+        },
+
+        onUpdate : function() {
+            delete $scope.policy.config;
+        },
+
+        onCreate : function() {
+            delete $scope.policy.config;
+        }
+    }, realm, client, $scope);
+});
+
 module.service("PolicyController", function($http, $route, $location, ResourceServer, ResourceServerPolicy, ResourceServerPermission, AuthzDialog, Notifications, policyViewState, PolicyProvider, viewState) {
 
     var PolicyController = {};

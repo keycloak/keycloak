@@ -1,0 +1,46 @@
+<?xml version="1.0" ?>
+<layer-spec xmlns="urn:jboss:galleon:layer-spec:1.0" name="keycloak-client-oidc">
+    <dependencies>
+        <layer name="ee"/>
+        <layer name="elytron"/>
+        <layer name="undertow"/>
+    </dependencies>
+    <feature spec="subsystem.keycloak"/>
+    <feature spec="subsystem.elytron.custom-realm">
+        <param name="custom-realm" value="KeycloakOIDCRealm"/>
+        <param name="class-name" value="org.keycloak.adapters.elytron.KeycloakSecurityRealm"/>
+        <param name="module" value="org.keycloak.keycloak-wildfly-elytron-oidc-adapter"/>
+    </feature>
+    <feature spec="subsystem.elytron.security-domain">
+        <param name="security-domain" value="KeycloakDomain"/>
+        <param name="default-realm" value="KeycloakOIDCRealm"/>
+        <param name="permission-mapper" value="default-permission-mapper"/>
+        <param name="security-event-listener" value="local-audit"/>
+        <param name="realms" value="[{realm=KeycloakOIDCRealm}]"/>
+    </feature>
+    <feature spec="subsystem.elytron.constant-realm-mapper">
+        <param name="constant-realm-mapper" value="keycloak-oidc-realm-mapper"/>
+        <param name="realm-name" value="KeycloakOIDCRealm"/>
+    </feature>
+    <feature spec="subsystem.elytron.service-loader-http-server-mechanism-factory">
+        <param name="service-loader-http-server-mechanism-factory" value="keycloak-oidc-http-server-mechanism-factory"/>
+        <param name="module" value="org.keycloak.keycloak-wildfly-elytron-oidc-adapter"/>
+    </feature>
+    <feature spec="subsystem.elytron.aggregate-http-server-mechanism-factory">
+        <param name="aggregate-http-server-mechanism-factory" value="keycloak-http-server-mechanism-factory"/>
+        <param name="http-server-mechanism-factories" value="[keycloak-oidc-http-server-mechanism-factory, global]"/>
+    </feature>
+    <feature spec="subsystem.elytron.http-authentication-factory">
+        <param name="http-authentication-factory" value="keycloak-http-authentication"/>
+        <param name="http-server-mechanism-factory" value="keycloak-http-server-mechanism-factory"/>
+        <param name="security-domain" value="KeycloakDomain"/>
+        <param name="mechanism-configurations" value="[{mechanism-name=KEYCLOAK,mechanism-realm-configurations=[{realm-name=KeycloakOIDCRealm,realm-mapper=keycloak-oidc-realm-mapper}]}]"/>
+    </feature>
+    <feature spec="subsystem.undertow">
+        <feature spec="subsystem.undertow.application-security-domain">
+            <param name="application-security-domain" value="other" />
+            <unset param="security-domain"/>
+            <param name="http-authentication-factory" value="keycloak-http-authentication"/>
+        </feature>
+    </feature>
+</layer-spec>

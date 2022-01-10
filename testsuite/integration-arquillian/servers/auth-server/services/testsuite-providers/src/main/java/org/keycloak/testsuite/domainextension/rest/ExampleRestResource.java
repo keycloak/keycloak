@@ -32,7 +32,7 @@ public class ExampleRestResource {
 	
 	public ExampleRestResource(KeycloakSession session) {
 		this.session = session;
-        this.auth = new AppAuthManager().authenticateBearerToken(session, session.getContext().getRealm());
+        this.auth = new AppAuthManager.BearerTokenAuthenticator(session).authenticate();
 	}
 	
     @Path("companies")

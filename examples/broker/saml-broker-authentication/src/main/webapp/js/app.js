@@ -20,7 +20,7 @@ var module = angular.module('app', []);
 angular.element(document).ready(function ($http) {
     var keycloakAuth = new Keycloak('keycloak.json');
 
-    keycloakAuth.init({ onLoad: 'login-required' }).success(function () {
+    keycloakAuth.init({ onLoad: 'login-required' }).then(function () {
         module.factory('Auth', function() {
             var Auth = {};
 
@@ -53,8 +53,8 @@ angular.element(document).ready(function ($http) {
                     deferred.resolve(config);
 
                     if (keycloakAuth.token) {
-                        keycloakAuth.updateToken(5).success(function() {
-                        }).error(function() {
+                        keycloakAuth.updateToken(5).then(function() {
+                        }).catch(function() {
                             deferred.reject('Failed to refresh token');
                         });
                     }
@@ -81,7 +81,7 @@ angular.element(document).ready(function ($http) {
         });
 
         angular.bootstrap(document, ["app"]);
-    }).error(function () {
+    }).catch(function () {
         window.location = keycloakAuth.createLoginUrl({
             idpHint: 'saml-identity-provider'
         })

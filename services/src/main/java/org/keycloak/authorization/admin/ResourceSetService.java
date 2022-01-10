@@ -23,6 +23,7 @@ import static org.keycloak.models.utils.RepresentationToModel.toModel;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -128,7 +129,7 @@ public class ResourceSetService {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Resource with name [" + resource.getName() + "] already exists.", Status.CONFLICT);
         }
 
-        return toRepresentation(toModel(resource, this.resourceServer, authorization), resourceServer, authorization);
+        return toRepresentation(toModel(resource, this.resourceServer, authorization), resourceServer.getId(), authorization);
     }
 
     @Path("{id}")
@@ -166,7 +167,7 @@ public class ResourceSetService {
 
         storeFactory.getResourceStore().delete(id);
 
-        audit(toRepresentation(resource, resourceServer, authorization), OperationType.DELETE);
+        audit(toRepresentation(resource, resourceServer.getId(), authorization), OperationType.DELETE);
 
         return Response.noContent().build();
     }
@@ -176,7 +177,7 @@ public class ResourceSetService {
     @NoCache
     @Produces("application/json")
     public Response findById(@PathParam("id") String id) {
-        return findById(id, resource -> toRepresentation(resource, resourceServer, authorization, true));
+        return findById(id, resource -> toRepresentation(resource, resourceServer.getId(), authorization, true));
     }
 
     public Response findById(String id, Function<Resource, ? extends ResourceRepresentation> toRepresentation) {
@@ -256,10 +257,10 @@ public class ResourceSetService {
         if (model.getType() != null) {
             policies.addAll(policyStore.findByResourceType(model.getType(), resourceServer.getId()));
 
-            HashMap<String, String[]> resourceFilter = new HashMap<>();
+            Map<Resource.FilterOption, String[]> resourceFilter = new EnumMap<>(Resource.FilterOption.class);
 
-            resourceFilter.put("owner", new String[]{resourceServer.getId()});
-            resourceFilter.put("type", new String[]{model.getType()});
+            resourceFilter.put(Resource.FilterOption.OWNER, new String[]{resourceServer.getId()});
+            resourceFilter.put(Resource.FilterOption.TYPE, new String[]{model.getType()});
 
             for (Resource resourceType : resourceStore.findByResourceServer(resourceFilter, resourceServer.getId(), -1, -1)) {
                 policies.addAll(policyStore.findByResource(resourceType.getId(), resourceServer.getId()));
@@ -322,7 +323,7 @@ public class ResourceSetService {
             return Response.status(Status.NO_CONTENT).build();
         }
 
-        return Response.ok(toRepresentation(model, this.resourceServer, authorization)).build();
+        return Response.ok(toRepresentation(model, this.resourceServer.getId(), authorization)).build();
     }
 
     @GET
@@ -339,7 +340,7 @@ public class ResourceSetService {
                          @QueryParam("deep") Boolean deep,
                          @QueryParam("first") Integer firstResult,
                          @QueryParam("max") Integer maxResult) {
-        return find(id, name, uri, owner, type, scope, matchingUri, exactName, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toRepresentation(resource, resourceServer, authorization, deep1));
+        return find(id, name, uri, owner, type, scope, matchingUri, exactName, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toRepresentation(resource, resourceServer.getId(), authorization, deep1));
     }
 
     public Response find(@QueryParam("_id") String id,
@@ -362,22 +363,18 @@ public class ResourceSetService {
             deep = true;
         }
 
-        Map<String, String[]> search = new HashMap<>();
+        Map<Resource.FilterOption, String[]> search = new EnumMap<>(Resource.FilterOption.class);
 
         if (id != null && !"".equals(id.trim())) {
-            search.put("id", new String[] {id});
+            search.put(Resource.FilterOption.ID, new String[] {id});
         }
 
         if (name != null && !"".equals(name.trim())) {
-            search.put("name", new String[] {name});
-            
-            if (exactName != null && exactName) {
-                search.put(Resource.EXACT_NAME, new String[] {Boolean.TRUE.toString()});
-            }
+            search.put(exactName != null && exactName ? Resource.FilterOption.EXACT_NAME : Resource.FilterOption.NAME, new String[] {name});
         }
 
         if (uri != null && !"".equals(uri.trim())) {
-            search.put("uri", new String[] {uri});
+            search.put(Resource.FilterOption.URI, new String[] {uri});
         }
 
         if (owner != null && !"".equals(owner.trim())) {
@@ -387,24 +384,24 @@ public class ResourceSetService {
             if (clientModel != null) {
                 owner = clientModel.getId();
             } else {
-                UserModel user = authorization.getKeycloakSession().users().getUserByUsername(owner, realm);
+                UserModel user = authorization.getKeycloakSession().users().getUserByUsername(realm, owner);
 
                 if (user != null) {
                     owner = user.getId();
                 }
             }
 
-            search.put("owner", new String[] {owner});
+            search.put(Resource.FilterOption.OWNER, new String[] {owner});
         }
 
         if (type != null && !"".equals(type.trim())) {
-            search.put("type", new String[] {type});
+            search.put(Resource.FilterOption.TYPE, new String[] {type});
         }
 
         if (scope != null && !"".equals(scope.trim())) {
-            HashMap<String, String[]> scopeFilter = new HashMap<>();
+            Map<Scope.FilterOption, String[]> scopeFilter = new EnumMap<>(Scope.FilterOption.class);
 
-            scopeFilter.put("name", new String[] {scope});
+            scopeFilter.put(Scope.FilterOption.NAME, new String[] {scope});
 
             List<Scope> scopes = authorization.getStoreFactory().getScopeStore().findByResourceServer(scopeFilter, resourceServer.getId(), -1, -1);
 
@@ -412,16 +409,16 @@ public class ResourceSetService {
                 return Response.ok(Collections.emptyList()).build();
             }
 
-            search.put("scope", scopes.stream().map(Scope::getId).toArray(String[]::new));
+            search.put(Resource.FilterOption.SCOPE_ID, scopes.stream().map(Scope::getId).toArray(String[]::new));
         }
 
         List<Resource> resources = storeFactory.getResourceStore().findByResourceServer(search, this.resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS);
 
         if (matchingUri != null && matchingUri && resources.isEmpty()) {
-            HashMap<String, String[]> attributes = new HashMap<>();
+            Map<Resource.FilterOption, String[]> attributes = new EnumMap<>(Resource.FilterOption.class);
 
-            attributes.put("uri_not_null", new String[] {"true"});
-            attributes.put("owner", new String[] {resourceServer.getId()});
+            attributes.put(Resource.FilterOption.URI_NOT_NULL, new String[] {"true"});
+            attributes.put(Resource.FilterOption.OWNER, new String[] {resourceServer.getId()});
 
             List<Resource> serverResources = storeFactory.getResourceStore().findByResourceServer(attributes, this.resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : -1);
 

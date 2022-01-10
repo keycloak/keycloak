@@ -19,6 +19,7 @@ package org.keycloak.authentication.authenticators.client;
 
 
 import java.security.PublicKey;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,11 +29,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.common.util.Time;
@@ -45,6 +48,8 @@ import org.keycloak.models.SingleUseTokenStoreProvider;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
+import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ServicesLogger;
@@ -70,6 +75,14 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
 
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
+
+        //KEYCLOAK-19461: Needed for quarkus resteasy implementation throws exception when called with mediaType authentication/json in OpenShiftTokenReviewEndpoint
+        if(!isFormDataRequest(context.getHttpRequest())) {
+            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Parameter client_assertion_type is missing");
+            context.challenge(challengeResponse);
+            return;
+        }
+
         MultivaluedMap<String, String> params = context.getHttpRequest().getDecodedFormParameters();
 
         String clientAssertionType = params.getFirst(OAuth2Constants.CLIENT_ASSERTION_TYPE);
@@ -101,7 +114,11 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
             RealmModel realm = context.getRealm();
             String clientId = token.getSubject();
             if (clientId == null) {
-                throw new RuntimeException("Can't identify client. Issuer missing on JWT token");
+                throw new RuntimeException("Can't identify client. Subject missing on JWT token");
+            }
+
+            if (!clientId.equals(token.getIssuer())) {
+                throw new RuntimeException("Issuer mismatch. The issuer should match the subject");
             }
 
             context.getEvent().client(clientId);
@@ -152,10 +169,11 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
             }
 
             // Allow both "issuer" or "token-endpoint" as audience
-            String issuerUrl = Urls.realmIssuer(context.getUriInfo().getBaseUri(), realm.getName());
-            String tokenUrl = OIDCLoginProtocolService.tokenUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
-            if (!token.hasAudience(issuerUrl) && !token.hasAudience(tokenUrl)) {
-                throw new RuntimeException("Token audience doesn't match domain. Realm issuer is '" + issuerUrl + "' but audience from token is '" + Arrays.asList(token.getAudience()).toString() + "'");
+            List<String> expectedAudiences = getExpectedAudiences(context, realm);
+
+            if (!token.hasAnyAudience(expectedAudiences)) {
+                throw new RuntimeException("Token audience doesn't match domain. Expected audiences are any of " + expectedAudiences
+                        + " but audience from token is '" + Arrays.asList(token.getAudience()) + "'");
             }
 
             if (!token.isActive()) {
@@ -185,7 +203,7 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
             context.success();
         } catch (Exception e) {
             ServicesLogger.LOGGER.errorValidatingAssertion(e);
-            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Client authentication with signed JWT failed: " + e.getMessage());
+            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), OAuthErrorException.INVALID_CLIENT, "Client authentication with signed JWT failed: " + e.getMessage());
             context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
         }
     }
@@ -193,7 +211,7 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
     protected PublicKey getSignatureValidationKey(ClientModel client, ClientAuthenticationFlowContext context, JWSInput jws) {
         PublicKey publicKey = PublicKeyStorageManager.getClientPublicKey(context.getSession(), client, jws);
         if (publicKey == null) {
-            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Unable to load public key");
+            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), OAuthErrorException.INVALID_CLIENT, "Unable to load public key");
             context.failure(AuthenticationFlowError.CLIENT_CREDENTIALS_SETUP_REQUIRED, challengeResponse);
             return null;
         } else {
@@ -261,5 +279,16 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
         } else {
             return Collections.emptySet();
         }
+    }
+
+    private List<String> getExpectedAudiences(ClientAuthenticationFlowContext context, RealmModel realm) {
+        String issuerUrl = Urls.realmIssuer(context.getUriInfo().getBaseUri(), realm.getName());
+        String tokenUrl = OIDCLoginProtocolService.tokenUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
+        String parEndpointUrl = ParEndpoint.parUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
+        List<String> expectedAudiences = new ArrayList<>(Arrays.asList(issuerUrl, tokenUrl, parEndpointUrl));
+        String backchannelAuthenticationUrl = CibaGrantType.authorizationUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
+        expectedAudiences.add(backchannelAuthenticationUrl);
+
+        return expectedAudiences;
     }
 }

@@ -10,6 +10,7 @@ import org.keycloak.common.util.Resteasy;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.managers.RealmManager;
@@ -37,7 +38,6 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Provider
 public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
     private static final Logger logger = Logger.getLogger(KeycloakErrorHandler.class);
@@ -45,6 +45,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
     private static final Pattern realmNamePattern = Pattern.compile(".*/realms/([^/]+).*");
 
     public static final String UNCAUGHT_SERVER_ERROR_TEXT = "Uncaught server error";
+    public static final String ERROR_RESPONSE_TEXT = "Error response {0}";
 
     @Context
     private HttpHeaders headers;
@@ -62,6 +63,9 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
         if (statusCode >= 500 && statusCode <= 599) {
             logger.error(UNCAUGHT_SERVER_ERROR_TEXT, throwable);
+        }
+        else {
+            logger.debugv(throwable, ERROR_RESPONSE_TEXT, statusCode);
         }
 
         if (!MediaTypeMatcher.isHtmlRequest(headers)) {
@@ -108,6 +112,11 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         if (throwable instanceof JsonParseException) {
             status = Response.Status.BAD_REQUEST.getStatusCode();
         }
+        
+        if (throwable instanceof ModelDuplicateException) {
+            status = Response.Status.CONFLICT.getStatusCode();
+        }
+        
         return status;
     }
 

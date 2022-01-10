@@ -74,38 +74,6 @@
         }
     }
 
-    function toKeycloakPromise(promise) {
-        promise.__proto__ = KeycloakPromise.prototype;
-        return promise;
-    }
-
-    function KeycloakPromise(executor) {
-        return toKeycloakPromise(new Promise(executor));
-    }
-
-    KeycloakPromise.prototype = Object.create(Promise.prototype);
-    KeycloakPromise.prototype.constructor = KeycloakPromise;
-
-    KeycloakPromise.prototype.success = function(callback) {
-        logPromiseDeprecation();
-
-        var promise = this.then(function handleSuccess(value) {
-            callback(value);
-        });
-
-        return toKeycloakPromise(promise);
-    };
-
-    KeycloakPromise.prototype.error = function(callback) {
-        logPromiseDeprecation();
-
-        var promise = this.catch(function handleError(error) {
-            callback(error);
-        });
-
-        return toKeycloakPromise(promise);
-    };
-
     function Keycloak (config) {
         if (!(this instanceof Keycloak)) {
             return new Keycloak(config);
@@ -223,6 +191,16 @@
                 } else {
                     kc.enableLogging = false;
                 }
+
+                if (typeof initOptions.scope === 'string') {
+                    kc.scope = initOptions.scope;
+                }
+
+                if (typeof initOptions.messageReceiveTimeout === 'number' && initOptions.messageReceiveTimeout > 0) {
+                    kc.messageReceiveTimeout = initOptions.messageReceiveTimeout;
+                } else {
+                    kc.messageReceiveTimeout = 10000;
+                }
             }
 
             if (!kc.responseMode) {
@@ -239,8 +217,8 @@
             initPromise.promise.then(function() {
                 kc.onReady && kc.onReady(kc.authenticated);
                 promise.setSuccess(kc.authenticated);
-            }).catch(function(errorData) {
-                promise.setError(errorData);
+            }).catch(function(error) {
+                promise.setError(error);
             });
 
             var configPromise = loadConfig(config);
@@ -253,8 +231,8 @@
 
                     kc.login(options).then(function () {
                         initPromise.setSuccess();
-                    }).catch(function () {
-                        initPromise.setError();
+                    }).catch(function (error) {
+                        initPromise.setError(error);
                     });
                 }
 
@@ -292,8 +270,8 @@
                                     } else {
                                         initPromise.setSuccess();
                                     }
-                                }).catch(function () {
-                                    initPromise.setError();
+                                }).catch(function (error) {
+                                    initPromise.setError(error);
                                 });
                             });
                         } else {
@@ -318,8 +296,8 @@
                 if (callback && callback.valid) {
                     return setupCheckLoginIframe().then(function() {
                         processCallback(callback, initPromise);
-                    }).catch(function (e) {
-                        initPromise.setError();
+                    }).catch(function (error) {
+                        initPromise.setError(error);
                     });
                 } else if (initOptions) {
                     if (initOptions.token && initOptions.refreshToken) {
@@ -335,20 +313,20 @@
                                     } else {
                                         initPromise.setSuccess();
                                     }
-                                }).catch(function () {
-                                    initPromise.setError();
+                                }).catch(function (error) {
+                                    initPromise.setError(error);
                                 });
                             });
                         } else {
                             kc.updateToken(-1).then(function() {
                                 kc.onAuthSuccess && kc.onAuthSuccess();
                                 initPromise.setSuccess();
-                            }).catch(function() {
+                            }).catch(function(error) {
                                 kc.onAuthError && kc.onAuthError();
                                 if (initOptions.onLoad) {
                                     onLoad();
                                 } else {
-                                    initPromise.setError();
+                                    initPromise.setError(error);
                                 }
                             });
                         }
@@ -362,14 +340,32 @@
                 }
             }
 
+            function domReady() {
+                var promise = createPromise();
+
+                var checkReadyState = function () {
+                    if (document.readyState === 'interactive' || document.readyState === 'complete') {
+                        document.removeEventListener('readystatechange', checkReadyState);
+                        promise.setSuccess();
+                    }
+                }
+                document.addEventListener('readystatechange', checkReadyState);
+
+                checkReadyState(); // just in case the event was already fired and we missed it (in case the init is done later than at the load time, i.e. it's done from code)
+
+                return promise.promise;
+            }
+
             configPromise.then(function () {
-                check3pCookiesSupported().then(processInit)
-                .catch(function() {
-                    promise.setError();
-                });
+                domReady()
+                    .then(check3pCookiesSupported)
+                    .then(processInit)
+                    .catch(function (error) {
+                        promise.setError(error);
+                    });
             });
-            configPromise.catch(function() {
-                promise.setError();
+            configPromise.catch(function (error) {
+                promise.setError(error);
             });
 
             return promise.promise;
@@ -449,15 +445,13 @@
                 baseUrl = kc.endpoints.authorize();
             }
 
-            var scope;
-            if (options && options.scope) {
-                if (options.scope.indexOf("openid") != -1) {
-                    scope = options.scope;
-                } else {
-                    scope = "openid " + options.scope;
-                }
-            } else {
+            var scope = options && options.scope || kc.scope;
+            if (!scope) {
+                // if scope is not set, default to "openid"
                 scope = "openid";
+            } else if (scope.indexOf("openid") === -1) {
+                // if openid scope is missing, prefix the given scopes with it
+                scope = "openid " + scope;
             }
 
             var url = baseUrl
@@ -708,8 +702,8 @@
                 var iframePromise = checkLoginIframe();
                 iframePromise.then(function() {
                     exec();
-                }).catch(function() {
-                    promise.setError();
+                }).catch(function(error) {
+                    promise.setError(error);
                 });
             } else {
                 exec();
@@ -1053,8 +1047,8 @@
         function decodeToken(str) {
             str = str.split('.')[1];
 
-            str = str.replace('/-/g', '+');
-            str = str.replace('/_/g', '/');
+            str = str.replace(/-/g, '+');
+            str = str.replace(/_/g, '/');
             switch (str.length % 4) {
                 case 0:
                     break;
@@ -1113,7 +1107,7 @@
                     supportedParams = ['access_token', 'token_type', 'id_token', 'state', 'session_state', 'expires_in', 'kc_action_status'];
                     break;
                 case 'hybrid':
-                    supportedParams = ['access_token', 'id_token', 'code', 'state', 'session_state', 'kc_action_status'];
+                    supportedParams = ['access_token', 'token_type', 'id_token', 'code', 'state', 'session_state', 'expires_in', 'kc_action_status'];
                     break;
             }
 
@@ -1192,13 +1186,47 @@
                     p.reject(result);
                 }
             };
-            p.promise = new KeycloakPromise(function(resolve, reject) {
+            p.promise = new Promise(function(resolve, reject) {
                 p.resolve = resolve;
                 p.reject = reject;
             });
+
+            p.promise.success = function(callback) {
+                logPromiseDeprecation();
+
+                this.then(function handleSuccess(value) {
+                    callback(value);
+                });
+
+                return this;
+            }
+
+            p.promise.error = function(callback) {
+                logPromiseDeprecation();
+
+                this.catch(function handleError(error) {
+                    callback(error);
+                });
+
+                return this;
+            }
+
             return p;
         }
 
+        // Function to extend existing native Promise with timeout
+        function applyTimeoutToPromise(promise, timeout, errorMessage) {
+            var timeoutHandle = null;
+            var timeoutPromise = new Promise(function (resolve, reject) {
+                timeoutHandle = setTimeout(function () {
+                    reject({ "error": errorMessage || "Promise is not settled within timeout of " + timeout + "ms" });
+                }, timeout);
+            });
+
+            return Promise.race([promise, timeoutPromise]).finally(function () {
+                clearTimeout(timeoutHandle);
+            });
+        }
 
         function setupCheckLoginIframe() {
             var promise = createPromise();
@@ -1310,7 +1338,7 @@
                     }
 
                     if (event.data !== "supported" && event.data !== "unsupported") {
-                        promise.setError();
+                        return;
                     } else if (event.data === "unsupported") {
                         loginIframe.enable = false;
                         if (kc.silentCheckSsoFallback) {
@@ -1330,7 +1358,7 @@
                 promise.setSuccess();
             }
 
-            return promise.promise;
+            return applyTimeoutToPromise(promise.promise, kc.messageReceiveTimeout, "Timeout when waiting for 3rd party check iframe message.");
         }
 
         function loadAdapter(type) {
@@ -1468,7 +1496,7 @@
                         var promise = createPromise();
 
                         var logoutUrl = kc.createLogoutUrl(options);
-                        var ref = cordovaOpenWindowWrapper(logoutUrl, '_blank', 'location=no,hidden=yes');
+                        var ref = cordovaOpenWindowWrapper(logoutUrl, '_blank', 'location=no,hidden=yes,clearcache=yes');
 
                         var error;
 

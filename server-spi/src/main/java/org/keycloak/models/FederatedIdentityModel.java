@@ -38,6 +38,13 @@ public class FederatedIdentityModel {
         this.token = token;
     }
 
+    public FederatedIdentityModel(FederatedIdentityModel originalIdentity, String userId) {
+        identityProvider = originalIdentity.getIdentityProvider();
+        this.userId = userId;
+        userName = originalIdentity.getUserName();
+        token = originalIdentity.getToken();
+    }
+
     public String getUserId() {
         return userId;
     }

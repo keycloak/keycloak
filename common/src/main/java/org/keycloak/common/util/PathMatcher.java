@@ -42,7 +42,7 @@ public abstract class PathMatcher<P> {
 
             String matchingUri = null;
 
-            if (exactMatch(expectedUri, targetUri, expectedUri)) {
+            if (exactMatch(expectedUri, targetUri)) {
                 matchingUri = expectedUri;
             }
 
@@ -53,7 +53,7 @@ public abstract class PathMatcher<P> {
                     int length = expectedUri.split("\\/").length;
                     int bracketsLength = expectedUri.split("\\{").length;
 
-                    if (exactMatch(expectedUri, targetUri, templateUri) && (patternCount == 0 || length > patternCount || bracketsLength < bracketsPatternCount)) {
+                    if (exactMatch(templateUri, targetUri) && (patternCount == 0 || length > patternCount || bracketsLength < bracketsPatternCount)) {
                         matchingUri = templateUri;
                         P resolved = resolvePathConfig(entry, targetUri);
 
@@ -96,8 +96,14 @@ public abstract class PathMatcher<P> {
                 }
 
                 if (WILDCARD == expectedUri.charAt(expectedUri.length() - 1)) {
-                    if (matchingAnyPath == null || getPath(matchingAnyPath).length() < matchingUri.length()) {
+                    if (matchingAnyPath == null) {
                         matchingAnyPath = entry;
+                    } else {
+                        String resourcePath = getPath(matchingAnyPath);
+
+                        if (resourcePath.split("/").length < matchingUri.split("/").length) {
+                            matchingAnyPath = entry;
+                        }
                     }
                 } else {
                     int suffixIndex = expectedUri.indexOf(WILDCARD + ".");
@@ -128,13 +134,19 @@ public abstract class PathMatcher<P> {
 
     protected abstract Collection<P> getPaths();
 
-    private boolean exactMatch(String expectedUri, String targetUri, String value) {
-        if (targetUri.equals(value)) {
-            return value.equals(targetUri);
+    private boolean exactMatch(String expectedUri, String targetUri) {
+        if (targetUri.equals(expectedUri)) {
+            return true;
         }
 
         if (endsWithWildcard(expectedUri)) {
-            return targetUri.startsWith(expectedUri.substring(0, expectedUri.length() - 2));
+            String rootPath = expectedUri.substring(0, expectedUri.length() - 1);
+
+            if (targetUri.startsWith(rootPath)) {
+                return true;
+            }
+
+            return targetUri.equals(rootPath.substring(0, rootPath.length() - 1));
         }
 
         String suffix = "/*.";
@@ -148,7 +160,8 @@ public abstract class PathMatcher<P> {
     }
 
     protected String buildUriFromTemplate(String template, String targetUri, boolean onlyFirstParam) {
-        String expectedUri = template;
+        StringBuilder uri = new StringBuilder(template);
+        String expectedUri = uri.toString();
         int patternStartIndex = expectedUri.indexOf("{");
 
         if (expectedUri.endsWith("/*")) {
@@ -171,6 +184,7 @@ public abstract class PathMatcher<P> {
         if (Arrays.equals(matchingUri, Arrays.copyOf(targetUri.toCharArray(), matchingUri.length))) {
             matchingUri = Arrays.copyOf(matchingUri, targetUri.length());
             int paramIndex = 0;
+            int lastPattern = 0;
 
             for (int i = patternStartIndex; i < expectedUriChars.length; i++) {
                 if (matchingUriLastIndex >= matchingUri.length) {
@@ -192,9 +206,21 @@ public abstract class PathMatcher<P> {
                         if (matchingUriLastIndex + paramLength > matchingUri.length) {
                             return null;
                         }
+                        
+                        StringBuilder value = new StringBuilder();
 
                         for (int j = 0; j < paramLength; j++) {
-                            matchingUri[matchingUriLastIndex++] = params[k].charAt(j);
+                            char valueChar = params[k].charAt(j);
+                            value.append(valueChar);
+                            matchingUri[matchingUriLastIndex++] = valueChar;
+                        }
+
+                        if (c == '{') {
+                            uri.replace(uri.indexOf("{", lastPattern), uri.indexOf("}", lastPattern) + 1, value.toString());
+                        }
+
+                        if (value.charAt(value.length() - 1) == '}') {
+                            lastPattern = uri.indexOf(value.toString()) + value.length();
                         }
 
                         if (c == '*' && matchingUriLastIndex < matchingUri.length) {
@@ -202,7 +228,9 @@ public abstract class PathMatcher<P> {
                         }
                     }
 
-                    i = expectedUri.indexOf('}', i);
+                    if (c == '{') {
+                        i = expectedUri.indexOf('}', i);
+                    }
 
                     if (i == expectedUri.lastIndexOf('}') && onlyFirstParam) {
                         return String.valueOf(matchingUri).substring(0, matchingUriLastIndex);
@@ -215,18 +243,7 @@ public abstract class PathMatcher<P> {
                 }
             }
 
-            if (matchingUri[matchingUri.length - 1] == '\u0000') {
-                if (template.endsWith("*")) {
-                    StringBuilder firstParam = new StringBuilder(String.valueOf(matchingUri).substring(0, matchingUriLastIndex));
-
-                    firstParam.append(targetUri.substring(firstParam.length()));
-
-                    return firstParam.toString();
-                }
-                return null;
-            }
-
-            return String.valueOf(matchingUri);
+            return uri.toString();
         }
 
         return null;

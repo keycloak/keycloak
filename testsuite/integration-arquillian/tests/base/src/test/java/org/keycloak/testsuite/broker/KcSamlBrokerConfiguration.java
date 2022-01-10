@@ -23,6 +23,7 @@ import org.keycloak.testsuite.util.ClientBuilder;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -36,6 +37,16 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
     public static final KcSamlBrokerConfiguration INSTANCE = new KcSamlBrokerConfiguration();
     public static final String ATTRIBUTE_TO_MAP_FRIENDLY_NAME = "user-attribute-friendly";
+
+    private final boolean loginHint;
+
+    public KcSamlBrokerConfiguration() {
+        this(false);
+    }
+
+    public KcSamlBrokerConfiguration(boolean loginHint) {
+        this.loginHint = loginHint;
+    }
 
     @Override
     public RealmRepresentation createProviderRealm() {
@@ -54,6 +65,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         realm.setEnabled(true);
         realm.setRealm(REALM_CONS_NAME);
         realm.setResetPasswordAllowed(true);
+        realm.setEventsListeners(Arrays.asList("jboss-logging", "event-queue"));
 
         return realm;
     }
@@ -61,7 +73,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
     @Override
     public List<ClientRepresentation> createProviderClients() {
         String clientId = getIDPClientIdInProviderRealm();
-        return Arrays.asList(createProviderClient(clientId));
+        return new LinkedList<>(Collections.singleton(createProviderClient(clientId)));
     }
 
     private ClientRepresentation createProviderClient(String clientId) {
@@ -87,6 +99,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         attributes.put(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "false");
         attributes.put(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, "false");
         attributes.put(SamlConfigAttributes.SAML_ENCRYPT, "false");
+        attributes.put(IdentityProviderModel.LOGIN_HINT, String.valueOf(loginHint));
 
         client.setAttributes(attributes);
 
@@ -185,7 +198,6 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
             .attribute(SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, getConsumerRoot() + "/sales-post/saml")
             .build(),
           ClientBuilder.create()
-            .id("broker-app")
             .clientId("broker-app")
             .name("broker-app")
             .secret("broker-app-secret")
@@ -212,6 +224,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         config.put(SINGLE_LOGOUT_SERVICE_URL, getProviderRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/saml");
         config.put(NAME_ID_POLICY_FORMAT, "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress");
         config.put(FORCE_AUTHN, "false");
+        config.put(IdentityProviderModel.LOGIN_HINT, String.valueOf(loginHint));
         config.put(POST_BINDING_RESPONSE, "true");
         config.put(POST_BINDING_AUTHN_REQUEST, "true");
         config.put(VALIDATE_SIGNATURE, "false");

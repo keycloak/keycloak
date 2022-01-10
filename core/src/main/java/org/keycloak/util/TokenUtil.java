@@ -48,6 +48,11 @@ public class TokenUtil {
 
     public static final String TOKEN_TYPE_OFFLINE = "Offline";
 
+    public static final String TOKEN_TYPE_LOGOUT = "Logout";
+
+    public static final String TOKEN_BACKCHANNEL_LOGOUT_EVENT = "http://schemas.openid.net/event/backchannel-logout";
+    
+    public static final String TOKEN_BACKCHANNEL_LOGOUT_EVENT_REVOKE_OFFLINE_TOKENS = "revoke_offline_access";
 
     public static String attachOIDCScope(String scopeParam) {
         if (scopeParam == null || scopeParam.isEmpty()) {
@@ -130,31 +135,9 @@ public class TokenUtil {
 
 
     public static String jweDirectEncode(Key aesKey, Key hmacKey, JsonWebToken jwt) throws JWEException {
-        int keyLength = aesKey.getEncoded().length;
-        String encAlgorithm;
-        switch (keyLength) {
-            case 16: encAlgorithm = JWEConstants.A128CBC_HS256;
-                break;
-            case 24: encAlgorithm = JWEConstants.A192CBC_HS384;
-                break;
-            case 32: encAlgorithm = JWEConstants.A256CBC_HS512;
-                break;
-            default: throw new IllegalArgumentException("Bad size for Encryption key: " + aesKey + ". Valid sizes are 16, 24, 32.");
-        }
-
         try {
             byte[] contentBytes = JsonSerialization.writeValueAsBytes(jwt);
-
-            JWEHeader jweHeader = new JWEHeader(JWEConstants.DIR, encAlgorithm, null);
-            JWE jwe = new JWE()
-                    .header(jweHeader)
-                    .content(contentBytes);
-
-            jwe.getKeyStorage()
-                    .setCEKKey(aesKey, JWEKeyStorage.KeyUse.ENCRYPTION)
-                    .setCEKKey(hmacKey, JWEKeyStorage.KeyUse.SIGNATURE);
-
-            return jwe.encodeJwe();
+            return jweDirectEncode(aesKey, hmacKey, contentBytes);
         } catch (IOException ioe) {
             throw new JWEException(ioe);
         }
@@ -162,22 +145,16 @@ public class TokenUtil {
 
 
     public static <T extends JsonWebToken> T jweDirectVerifyAndDecode(Key aesKey, Key hmacKey, String jweStr, Class<T> expectedClass) throws JWEException {
-        JWE jwe = new JWE();
-        jwe.getKeyStorage()
-                .setCEKKey(aesKey, JWEKeyStorage.KeyUse.ENCRYPTION)
-                .setCEKKey(hmacKey, JWEKeyStorage.KeyUse.SIGNATURE);
-
-        jwe.verifyAndDecodeJwe(jweStr);
-
+        byte[] contentBytes = jweDirectVerifyAndDecode(aesKey, hmacKey, jweStr);
         try {
-            return JsonSerialization.readValue(jwe.getContent(), expectedClass);
+            return JsonSerialization.readValue(contentBytes, expectedClass);
         } catch (IOException ioe) {
             throw new JWEException(ioe);
         }
     }
 
     public static String jweKeyEncryptionEncode(Key encryptionKEK, byte[] contentBytes, String algAlgorithm, String encAlgorithm, String kid, JWEAlgorithmProvider jweAlgorithmProvider, JWEEncryptionProvider jweEncryptionProvider) throws JWEException {
-        JWEHeader jweHeader = new JWEHeader(algAlgorithm, encAlgorithm, null, kid);
+        JWEHeader jweHeader = new JWEHeader(algAlgorithm, encAlgorithm, null, kid, "JWT");
         return jweKeyEncryptionEncode(encryptionKEK, contentBytes, jweHeader, jweAlgorithmProvider, jweEncryptionProvider);
     }
 
@@ -205,5 +182,43 @@ public class TokenUtil {
             .setDecryptionKey(decryptionKEK);
         jwe.verifyAndDecodeJwe(encodedContent, algorithmProvider, encryptionProvider);
         return jwe.getContent();
+    }
+
+    public static String jweDirectEncode(Key aesKey, Key hmacKey, byte[] contentBytes) throws JWEException {
+        int keyLength = aesKey.getEncoded().length;
+        String encAlgorithm;
+        switch (keyLength) {
+            case 16: encAlgorithm = JWEConstants.A128CBC_HS256;
+                break;
+            case 24: encAlgorithm = JWEConstants.A192CBC_HS384;
+                break;
+            case 32: encAlgorithm = JWEConstants.A256CBC_HS512;
+                break;
+            default: throw new IllegalArgumentException("Bad size for Encryption key: " + aesKey + ". Valid sizes are 16, 24, 32.");
+        }
+
+        JWEHeader jweHeader = new JWEHeader(JWEConstants.DIR, encAlgorithm, null);
+        JWE jwe = new JWE()
+                .header(jweHeader)
+                .content(contentBytes);
+
+        jwe.getKeyStorage()
+                .setCEKKey(aesKey, JWEKeyStorage.KeyUse.ENCRYPTION)
+                .setCEKKey(hmacKey, JWEKeyStorage.KeyUse.SIGNATURE);
+
+        return jwe.encodeJwe();
+
+    }
+
+    public static byte[] jweDirectVerifyAndDecode(Key aesKey, Key hmacKey, String jweStr) throws JWEException {
+        JWE jwe = new JWE();
+        jwe.getKeyStorage()
+                .setCEKKey(aesKey, JWEKeyStorage.KeyUse.ENCRYPTION)
+                .setCEKKey(hmacKey, JWEKeyStorage.KeyUse.SIGNATURE);
+
+        jwe.verifyAndDecodeJwe(jweStr);
+
+        return jwe.getContent();
+
     }
 }

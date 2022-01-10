@@ -29,6 +29,7 @@ import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
+import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
@@ -82,8 +83,13 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
         this.session = session;
         this.authz = authz;
         this.root = root;
-        policyStore = authz.getStoreFactory().getPolicyStore();
-        resourceStore = authz.getStoreFactory().getResourceStore();
+        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
+            policyStore = authz.getStoreFactory().getPolicyStore();
+            resourceStore = authz.getStoreFactory().getResourceStore();
+        } else {
+            policyStore = null;
+            resourceStore = null;
+        }
     }
 
 
@@ -546,10 +552,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
 
     private boolean evaluateHierarchy(UserModel user, Predicate<GroupModel> eval) {
         Set<GroupModel> visited = new HashSet<>();
-        for (GroupModel group : user.getGroups()) {
-            if (evaluateHierarchy(eval, group, visited)) return true;
-        }
-        return false;
+        return user.getGroupsStream().anyMatch(group -> evaluateHierarchy(eval, group, visited));
     }
 
     private boolean evaluateHierarchy(Predicate<GroupModel> eval, GroupModel group, Set<GroupModel> visited) {

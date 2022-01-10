@@ -112,7 +112,7 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
 
                 @Override
                 public String toString() {
-                    return String.format("CacheTaskWithValue: Operation 'put' for key %s, lifespan %d TimeUnit %s", key, lifespan, lifespanUnit.toString());
+                    return String.format("CacheTaskWithValue: Operation 'put' for key %s, lifespan %d TimeUnit %s", key, lifespan, lifespanUnit);
                 }
             });
         }
@@ -142,7 +142,7 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         }
     }
 
-    public <K, V> void replace(Cache<K, V> cache, K key, V value) {
+    public <K, V> void replace(Cache<K, V> cache, K key, V value, long lifespan, TimeUnit lifespanUnit) {
         log.tracev("Adding cache operation: {0} on {1}", CacheOperation.REPLACE, key);
 
         Object taskKey = getTaskKey(cache, key);
@@ -155,12 +155,12 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
             tasks.put(taskKey, new CacheTaskWithValue<V>(value) {
                 @Override
                 public void execute() {
-                    decorateCache(cache).replace(key, value);
+                    decorateCache(cache).replace(key, value, lifespan, lifespanUnit);
                 }
 
                 @Override
                 public String toString() {
-                    return String.format("CacheTaskWithValue: Operation 'replace' for key %s", key);
+                    return String.format("CacheTaskWithValue: Operation 'replace' for key %s, lifespan %d TimeUnit %s", key, lifespan, lifespanUnit);
                 }
 
             });
@@ -208,7 +208,6 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
             if (current instanceof CacheTaskWithValue) {
                 return ((CacheTaskWithValue<V>) current).getValue();
             }
-            return null;
         }
 
         // Should we have per-transaction cache for lookups?

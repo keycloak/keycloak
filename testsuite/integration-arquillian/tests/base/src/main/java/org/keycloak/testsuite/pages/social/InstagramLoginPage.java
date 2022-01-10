@@ -18,8 +18,11 @@
 package org.keycloak.testsuite.pages.social;
 
 import org.openqa.selenium.Keys;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -31,11 +34,42 @@ public class InstagramLoginPage extends AbstractSocialLoginPage {
     @FindBy(name = "password")
     private WebElement passwordInput;
 
+    @FindBy(xpath = "//button[text()='Save Info']")
+    private WebElement saveInfoBtn;
+
+    @FindBy(xpath = "//button[text()='Authorize']")
+    private WebElement authorizeBtn;
+
+    @FindBy(xpath = "//button[text()='Continue']")
+    private WebElement continueBtn;
+
     @Override
     public void login(String user, String password) {
-        usernameInput.clear();
-        usernameInput.sendKeys(user);
-        passwordInput.sendKeys(password);
-        passwordInput.sendKeys(Keys.RETURN);
+        try {
+            usernameInput.clear();
+            usernameInput.sendKeys(user);
+            passwordInput.sendKeys(password);
+            passwordInput.sendKeys(Keys.RETURN);
+            pause(2000); // wait for the login screen a bit
+
+            try {
+                saveInfoBtn.click();
+            }
+            catch (NoSuchElementException e) {
+                log.info("'Save Info' button not found, ignoring");
+                pause(2000); // wait for the login screen a bit
+            }
+        }
+        catch (NoSuchElementException e) {
+            log.info("Instagram is already logged in, just confirmation is expected");
+        }
+
+        try {
+            continueBtn.click();
+        }
+        catch (NoSuchElementException e) {
+            log.info("'Continue' button not found, trying 'Authorize'...");
+            authorizeBtn.click();
+        }
     }
 }

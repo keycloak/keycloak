@@ -28,6 +28,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 
 import java.util.Collections;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -46,11 +47,9 @@ public class MigrateTo8_0_0  implements Migration {
     @Override
     public void migrate(KeycloakSession session) {
         // Perform basic realm migration first (non multi-factor authentication)
-        session.realms().getRealms().stream().forEach(realm -> migrateRealmCommon(realm));
+        session.realms().getRealmsStream().forEach(this::migrateRealmCommon);
         // Moreover, for multi-factor authentication migrate optional execution of realm flows to subflows
-        session.realms().getRealms().stream().forEach(r -> {
-            migrateRealmMFA(session, r, false);
-        });
+        session.realms().getRealmsStream().forEach(realm -> migrateRealmMFA(realm));
     }
 
     @Override
@@ -79,15 +78,13 @@ public class MigrateTo8_0_0  implements Migration {
         }
     }
 
-    protected void migrateRealmMFA(KeycloakSession session, RealmModel realm, boolean jsn) {
-        for (AuthenticationFlowModel authFlow : realm.getAuthenticationFlows()) {
-            for (AuthenticationExecutionModel authExecution : realm.getAuthenticationExecutions(authFlow.getId())) {
-                // Those were OPTIONAL executions in previous version
-                if (authExecution.getRequirement() == AuthenticationExecutionModel.Requirement.CONDITIONAL) {
-                    migrateOptionalAuthenticationExecution(realm, authFlow, authExecution, true);
-                }
-            }
-        }
+    protected void migrateRealmMFA(RealmModel realm) {
+        realm.getAuthenticationFlowsStream().collect(Collectors.toList())
+                .forEach(authFlow ->
+                        realm.getAuthenticationExecutionsStream(authFlow.getId())
+                            .filter(exe -> exe.getRequirement() == AuthenticationExecutionModel.Requirement.CONDITIONAL)
+                            .collect(Collectors.toList())
+                            .forEach(exe -> migrateOptionalAuthenticationExecution(realm, authFlow, exe, true)));
     }
 
     public static void migrateOptionalAuthenticationExecution(RealmModel realm, AuthenticationFlowModel parentFlow, AuthenticationExecutionModel optionalExecution, boolean updateOptionalExecution) {

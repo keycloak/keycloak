@@ -20,8 +20,8 @@
 
     <feature name="keycloak-adapter-core" version="${project.version}" resolver="(obr)">
         <details>The keycloak adapter core stuff</details>
-        <bundle dependency="true">mvn:org.apache.httpcomponents/httpclient-osgi/${apache.httpcomponents.version}</bundle>
-        <bundle dependency="true">mvn:org.apache.httpcomponents/httpcore-osgi/${apache.httpcomponents.httpcore.version}</bundle>
+        <bundle dependency="true">mvn:org.apache.httpcomponents/httpclient-osgi/${apache.httpcomponents.fuse.version}</bundle>
+        <bundle dependency="true">mvn:org.apache.httpcomponents/httpcore-osgi/${apache.httpcomponents.httpcore.fuse.version}</bundle>
         <bundle dependency="true">mvn:org.bouncycastle/bcprov-jdk15on/${bouncycastle.version}</bundle>
         <bundle dependency="true">mvn:org.bouncycastle/bcpkix-jdk15on/${bouncycastle.version}</bundle>
         <bundle dependency="true">mvn:com.fasterxml.jackson.core/jackson-core/${jackson.version}</bundle>

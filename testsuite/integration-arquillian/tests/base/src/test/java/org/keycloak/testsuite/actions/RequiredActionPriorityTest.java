@@ -26,6 +26,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
@@ -35,11 +36,17 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
+import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
 import org.keycloak.testsuite.pages.TermsAndConditionsPage;
 import org.keycloak.testsuite.util.UserBuilder;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 /**
  * @author <a href="mailto:wadahiro@gmail.com">Hiroyuki Wada</a>
@@ -68,6 +75,9 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected TermsAndConditionsPage termsPage;
+
+    @Page
+    protected LoginConfigTotpPage totpPage;
 
     @Before
     public void setupRequiredActions() {
@@ -107,11 +117,13 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         // Finally, update profile
         updateProfilePage.assertCurrent();
         updateProfilePage.update("New first", "New last", "new@email.com", "test-user@localhost");
-        events.expectRequiredAction(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
-                .detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_PROFILE).assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.UPDATED_FIRST_NAME, "New first")
+                .detail(Details.UPDATED_LAST_NAME, "New last")
+                .detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
+                .detail(Details.UPDATED_EMAIL, "new@email.com")
+                .assertEvent();
 
-        // Logined
+        // Logged in
         appPage.assertCurrent();
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         events.expectLogin().assertEvent();
@@ -139,9 +151,11 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         // Second, update profile
         updateProfilePage.assertCurrent();
         updateProfilePage.update("New first", "New last", "new@email.com", "test-user@localhost");
-        events.expectRequiredAction(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
-                .detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_PROFILE).assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.UPDATED_FIRST_NAME, "New first")
+                .detail(Details.UPDATED_LAST_NAME, "New last")
+                .detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
+                .detail(Details.UPDATED_EMAIL, "new@email.com")
+                .assertEvent();
 
         // Finally, accept terms
         termsPage.assertCurrent();
@@ -153,5 +167,46 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         appPage.assertCurrent();
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         events.expectLogin().assertEvent();
+    }
+
+    @Test
+    public void setupTotpAfterUpdatePassword() {
+        String testUserId = ApiUtil.findUserByUsername(testRealm(), "test-user@localhost").getId();
+
+        setRequiredActionEnabled("test", testUserId, RequiredAction.CONFIGURE_TOTP.name(), true);
+        setRequiredActionEnabled("test", testUserId, RequiredAction.UPDATE_PASSWORD.name(), true);
+        setRequiredActionEnabled("test", testUserId, TermsAndConditions.PROVIDER_ID, false);
+        setRequiredActionEnabled("test", testUserId, RequiredAction.UPDATE_PROFILE.name(), false);
+
+        // make UPDATE_PASSWORD on top
+        testRealm().flows().raiseRequiredActionPriority(UserModel.RequiredAction.UPDATE_PASSWORD.name());
+        testRealm().flows().raiseRequiredActionPriority(UserModel.RequiredAction.UPDATE_PASSWORD.name());
+
+        // Login
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        // change password
+        changePasswordPage.assertCurrent();
+        changePasswordPage.changePassword("new-password", "new-password");
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
+
+        // CONFIGURE_TOTP
+        totpPage.assertCurrent();
+
+        totpPage.clickManual();
+        String pageSource = driver.getPageSource();
+        assertThat(pageSource, not(containsString("Unable to scan?")));
+        assertThat(pageSource, containsString("Scan barcode?"));
+
+        TimeBasedOTP totp = new TimeBasedOTP();
+        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "userLabel");
+        events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent();
+
+        // Logined
+        appPage.assertCurrent();
+        assertThat(appPage.getRequestType(), is(RequestType.AUTH_RESPONSE));
+        events.expectLogin().assertEvent();
+
     }
 }

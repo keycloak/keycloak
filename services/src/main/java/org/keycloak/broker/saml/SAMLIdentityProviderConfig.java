@@ -19,11 +19,12 @@ package org.keycloak.broker.saml;
 import static org.keycloak.common.util.UriUtils.checkUrl;
 
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.dom.saml.v2.protocol.AuthnContextComparisonType;
 import org.keycloak.models.IdentityProviderModel;
-
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.saml.SamlPrincipalType;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
 
 /**
@@ -33,6 +34,7 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
 
     public static final XmlKeyInfoKeyNameTransformer DEFAULT_XML_KEY_INFO_KEY_NAME_TRANSFORMER = XmlKeyInfoKeyNameTransformer.NONE;
 
+    public static final String ENTITY_ID = "entityId";
     public static final String ADD_EXTENSIONS_ELEMENT_WITH_KEY_INFO = "addExtensionsElementWithKeyInfo";
     public static final String BACKCHANNEL_SUPPORTED = "backchannelSupported";
     public static final String ENCRYPTION_PUBLIC_KEY = "encryptionPublicKey";
@@ -52,12 +54,28 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public static final String WANT_ASSERTIONS_SIGNED = "wantAssertionsSigned";
     public static final String WANT_AUTHN_REQUESTS_SIGNED = "wantAuthnRequestsSigned";
     public static final String XML_SIG_KEY_INFO_KEY_NAME_TRANSFORMER = "xmlSigKeyInfoKeyNameTransformer";
+    public static final String ENABLED_FROM_METADATA  = "enabledFromMetadata";
+    public static final String AUTHN_CONTEXT_COMPARISON_TYPE = "authnContextComparisonType";
+    public static final String AUTHN_CONTEXT_CLASS_REFS = "authnContextClassRefs";
+    public static final String AUTHN_CONTEXT_DECL_REFS = "authnContextDeclRefs";
+    public static final String SIGN_SP_METADATA = "signSpMetadata";
+    public static final String ALLOW_CREATE = "allowCreate";
+    public static final String ATTRIBUTE_CONSUMING_SERVICE_INDEX = "attributeConsumingServiceIndex";
+    public static final String ATTRIBUTE_CONSUMING_SERVICE_NAME = "attributeConsumingServiceName";
 
     public SAMLIdentityProviderConfig() {
     }
 
     public SAMLIdentityProviderConfig(IdentityProviderModel identityProviderModel) {
         super(identityProviderModel);
+    }
+
+    public String getEntityId() {
+        return getConfig().get(ENTITY_ID);
+    }
+
+    public void setEntityId(String entityId) {
+        getConfig().put(ENTITY_ID, entityId);
     }
 
     public String getSingleSignOnServiceUrl() {
@@ -281,11 +299,95 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
         getConfig().put(PRINCIPAL_ATTRIBUTE, principalAttribute);
     }
 
+    public boolean isEnabledFromMetadata() {
+        return Boolean.valueOf(getConfig().get(ENABLED_FROM_METADATA ));
+    }
+
+    public void setEnabledFromMetadata(boolean enabled) {
+        getConfig().put(ENABLED_FROM_METADATA , String.valueOf(enabled));
+    }
+
+    public AuthnContextComparisonType getAuthnContextComparisonType() {
+        return AuthnContextComparisonType.fromValue(getConfig().getOrDefault(AUTHN_CONTEXT_COMPARISON_TYPE, AuthnContextComparisonType.EXACT.value()));
+    }
+
+    public void setAuthnContextComparisonType(AuthnContextComparisonType authnContextComparisonType) {
+        getConfig().put(AUTHN_CONTEXT_COMPARISON_TYPE, authnContextComparisonType.value());
+    }
+
+    public String getAuthnContextClassRefs() {
+        return getConfig().get(AUTHN_CONTEXT_CLASS_REFS);
+    }
+
+    public void setAuthnContextClassRefs(String authnContextClassRefs) {
+        getConfig().put(AUTHN_CONTEXT_CLASS_REFS, authnContextClassRefs);
+    }
+
+    public String getAuthnContextDeclRefs() {
+        return getConfig().get(AUTHN_CONTEXT_DECL_REFS);
+    }
+
+    public void setAuthnContextDeclRefs(String authnContextDeclRefs) {
+        getConfig().put(AUTHN_CONTEXT_DECL_REFS, authnContextDeclRefs);
+    }
+
+    public boolean isSignSpMetadata() {
+        return Boolean.valueOf(getConfig().get(SIGN_SP_METADATA));
+    }
+
+    public void setSignSpMetadata(boolean signSpMetadata) {
+        getConfig().put(SIGN_SP_METADATA, String.valueOf(signSpMetadata));
+    }
+    
+    public boolean isAllowCreate() {
+        return Boolean.valueOf(getConfig().get(ALLOW_CREATE));
+    }
+
+    public void setAllowCreated(boolean allowCreate) {
+        getConfig().put(ALLOW_CREATE, String.valueOf(allowCreate));
+    }
+
+    public Integer getAttributeConsumingServiceIndex() {
+        Integer result = null;
+        String strAttributeConsumingServiceIndex = getConfig().get(ATTRIBUTE_CONSUMING_SERVICE_INDEX);
+        if (strAttributeConsumingServiceIndex != null && !strAttributeConsumingServiceIndex.isEmpty()) {
+            try {
+                result = Integer.parseInt(strAttributeConsumingServiceIndex);
+                if (result < 0) {
+                    result = null;
+                }
+            } catch (NumberFormatException e) {
+                // ignore it and use null
+            }
+        }
+        return result;
+    }
+
+    public void setAttributeConsumingServiceIndex(Integer attributeConsumingServiceIndex) {
+        if (attributeConsumingServiceIndex == null || attributeConsumingServiceIndex < 0) {
+            getConfig().remove(ATTRIBUTE_CONSUMING_SERVICE_INDEX);
+        } else {
+            getConfig().put(ATTRIBUTE_CONSUMING_SERVICE_INDEX, String.valueOf(attributeConsumingServiceIndex));
+        }
+    }
+
+    public void setAttributeConsumingServiceName(String attributeConsumingServiceName) {
+        getConfig().put(ATTRIBUTE_CONSUMING_SERVICE_NAME, attributeConsumingServiceName);
+    }
+
+    public String getAttributeConsumingServiceName() {
+        return getConfig().get(ATTRIBUTE_CONSUMING_SERVICE_NAME);
+    }
+
     @Override
     public void validate(RealmModel realm) {
         SslRequired sslRequired = realm.getSslRequired();
 
         checkUrl(sslRequired, getSingleLogoutServiceUrl(), SINGLE_LOGOUT_SERVICE_URL);
         checkUrl(sslRequired, getSingleSignOnServiceUrl(), SINGLE_SIGN_ON_SERVICE_URL);
+        //transient name id format is not accepted together with principaltype SubjectnameId
+        if (JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get().equals(getNameIDPolicyFormat()) && SamlPrincipalType.SUBJECT == getPrincipalType())
+            throw new IllegalArgumentException("Can not have Transient NameID Policy Format together with SUBJECT Principal Type");
+        
     }
 }

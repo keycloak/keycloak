@@ -47,7 +47,7 @@ public class MigrateTo9_0_0 implements Migration {
 
     @Override
     public void migrate(KeycloakSession session) {
-        session.realms().getRealms().stream().forEach(realm -> migrateRealmCommon(realm));
+        session.realms().getRealmsStream().forEach(this::migrateRealmCommon);
     }
 
     @Override
@@ -79,11 +79,10 @@ public class MigrateTo9_0_0 implements Migration {
 
     protected void addAccountConsoleClient(RealmModel realm) {
         if (realm.getClientByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID) == null) {
-            ClientModel client = KeycloakModelUtils.createClient(realm, Constants.ACCOUNT_CONSOLE_CLIENT_ID);
+            ClientModel client = KeycloakModelUtils.createPublicClient(realm, Constants.ACCOUNT_CONSOLE_CLIENT_ID);
             client.setName("${client_" + Constants.ACCOUNT_CONSOLE_CLIENT_ID + "}");
             client.setEnabled(true);
             client.setFullScopeAllowed(false);
-            client.setPublicClient(true);
             client.setDirectAccessGrantsEnabled(false);
 
             client.setRootUrl(Constants.AUTH_BASE_URL_PROP);

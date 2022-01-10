@@ -31,6 +31,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -47,7 +48,7 @@ public abstract class MultipleStepsExportProvider implements ExportProvider {
 
             @Override
             public void run(KeycloakSession session) {
-                List<RealmModel> realms = session.realms().getRealms();
+                List<RealmModel> realms = session.realms().getRealmsStream().collect(Collectors.toList());
                 holder.realms = realms;
             }
 
@@ -107,7 +108,9 @@ public abstract class MultipleStepsExportProvider implements ExportProvider {
                     @Override
                     protected void runExportImportTask(KeycloakSession session) throws IOException {
                         RealmModel realm = session.realms().getRealmByName(realmName);
-                        usersHolder.users = session.users().getUsers(realm, usersHolder.currentPageStart, usersHolder.currentPageEnd - usersHolder.currentPageStart, true);
+                        usersHolder.users = session.users()
+                                .getUsersStream(realm, usersHolder.currentPageStart, usersHolder.currentPageEnd - usersHolder.currentPageStart, true)
+                                .collect(Collectors.toList());
 
                         writeUsers(realmName + "-users-" + (usersHolder.currentPageStart / countPerPage) + ".json", session, realm, usersHolder.users);
 
@@ -138,7 +141,9 @@ public abstract class MultipleStepsExportProvider implements ExportProvider {
                     @Override
                     protected void runExportImportTask(KeycloakSession session) throws IOException {
                         RealmModel realm = session.realms().getRealmByName(realmName);
-                        federatedUsersHolder.users = session.userFederatedStorage().getStoredUsers(realm, federatedUsersHolder.currentPageStart, federatedUsersHolder.currentPageEnd - federatedUsersHolder.currentPageStart);
+                        federatedUsersHolder.users = session.userFederatedStorage()
+                                .getStoredUsersStream(realm, federatedUsersHolder.currentPageStart, federatedUsersHolder.currentPageEnd - federatedUsersHolder.currentPageStart)
+                                .collect(Collectors.toList());
 
                         writeFederatedUsers(realmName + "-federated-users-" + (federatedUsersHolder.currentPageStart / countPerPage) + ".json", session, realm, federatedUsersHolder.users);
 

@@ -5,7 +5,7 @@
     <parent>
         <artifactId>keycloak-quarkus-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>11.0.0-SNAPSHOT</version>
+        <version>17.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -15,64 +15,76 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-quarkus-server</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-core-deployment</artifactId>
-            <version>${quarkus.version}</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-arc-deployment</artifactId>
-            <version>${quarkus.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-quarkus-server</artifactId>
-            <version>${project.version}</version>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-reactive-routes-deployment</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-resteasy-deployment</artifactId>
-            <version>${quarkus.version}</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-resteasy-jackson-deployment</artifactId>
-            <version>${quarkus.version}</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-hibernate-orm-deployment</artifactId>
-            <version>${quarkus.version}</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-jdbc-h2-deployment</artifactId>
-            <version>${quarkus.version}</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-jdbc-postgresql-deployment</artifactId>
-            <version>${quarkus.version}</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-jdbc-mariadb-deployment</artifactId>
-            <version>${quarkus.version}</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-vertx-web-deployment</artifactId>
-            <version>${quarkus.version}</version>
+            <artifactId>quarkus-jdbc-mysql-deployment</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-jdbc-mssql-deployment</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-jdbc-oracle-deployment</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-bootstrap-core</artifactId>
-            <version>${quarkus.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-smallrye-health-deployment</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-smallrye-metrics-deployment</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-vault-deployment</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-junit5-internal</artifactId>
-            <version>${quarkus.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -103,73 +115,11 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>extract-liquibase-for-indexing</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>unpack-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <includeGroupIds>org.liquibase</includeGroupIds>
-                            <outputDirectory>${project.build.directory}/liquibase-extracted</outputDirectory>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.jboss.jandex</groupId>
-                <artifactId>jandex-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>make-index</id>
-                        <goals>
-                            <goal>jandex</goal>
-                        </goals>
-                        <phase>process-sources</phase>
-                        <configuration>
-                            <indexName>liquibase.idx</indexName>
-                            <processDefaultFileSet>false</processDefaultFileSet>
-                            <fileSets>
-                                <fileSet>
-                                    <directory>${project.build.directory}/liquibase-extracted</directory>
-                                </fileSet>
-                            </fileSets>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy-liquibase-index</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/classes/</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>${project.build.directory}/liquibase-extracted</directory>
-                                    <includes>
-                                        <include>META-INF/liquibase.idx</include>
-                                    </includes>
-                                    <filtering>false</filtering>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <skip>true</skip>
+                    <systemPropertyVariables>
+                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
         </plugins>

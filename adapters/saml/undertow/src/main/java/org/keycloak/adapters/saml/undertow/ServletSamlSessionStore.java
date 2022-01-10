@@ -159,7 +159,7 @@ public class ServletSamlSessionStore implements SamlSessionStore {
             return false;
         }
 
-        if (! idMapper.hasSession(session.getId())) {
+        if (! idMapper.hasSession(session.getId()) && ! idMapperUpdater.refreshMapping(idMapper, session.getId())) {
             log.debugf("Session %s has expired on some other node", session.getId());
             session.removeAttribute(SamlSession.class.getName());
             return false;
@@ -230,7 +230,7 @@ public class ServletSamlSessionStore implements SamlSessionStore {
         KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(exchange.getRequestURI())
                 .replaceQuery(exchange.getQueryString());
         if (!exchange.isHostIncludedInRequestURI()) uriBuilder.scheme(exchange.getRequestScheme()).host(exchange.getHostAndPort());
-        String uri = uriBuilder.build().toString();
+        String uri = uriBuilder.buildAsString();
 
         session.setAttribute(SAML_REDIRECT_URI, uri);
 

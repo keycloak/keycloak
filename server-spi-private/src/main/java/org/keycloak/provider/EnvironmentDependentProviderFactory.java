@@ -17,6 +17,8 @@
 
 package org.keycloak.provider;
 
+import org.keycloak.Config;
+
 /**
  * Providers that are only supported in some environments can implement this interface to be able to determine if they
  * should be available or not.
@@ -27,7 +29,18 @@ public interface EnvironmentDependentProviderFactory {
 
     /**
      * @return <code>true</code> if the provider is supported and should be available, <code>false</code> otherwise
+     * @deprecated Prefer overriding/using the {@link #isSupported(Config.Scope)} method.
      */
     boolean isSupported();
 
+    /**
+     * An alternative to {@link #isSupported()} method to check if the provider is supported based on the
+     * provider configuration.
+     *
+     * @param config the provider configuration
+     * @return {@code true} if the provider is supported. Otherwise, {@code false}.
+     */
+    default boolean isSupported(Config.Scope config) {
+        return isSupported();
+    }
 }

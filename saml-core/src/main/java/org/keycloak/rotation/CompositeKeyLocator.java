@@ -110,7 +110,7 @@ public class CompositeKeyLocator implements KeyLocator, Iterable<Key> {
         return Collections.unmodifiableCollection(res);
     }
 
-    private class JointKeyIterator implements Iterable<Key> {
+    private static class JointKeyIterator implements Iterable<Key> {
 
         // based on http://stackoverflow.com/a/34126154/6930869
         private final Iterator<Iterable<Key>> iterablesIterator;

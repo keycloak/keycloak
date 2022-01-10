@@ -21,7 +21,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
-import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -32,13 +31,19 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.services.resources.AttributeFormDataProcessor;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.ValidationException;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileProvider;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -86,52 +91,96 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
             updateProfileFirstLogin = authenticatorConfig.getConfig().get(IdpReviewProfileAuthenticatorFactory.UPDATE_PROFILE_ON_FIRST_LOGIN);
         }
 
-        RealmModel realm = context.getRealm();
-        return IdentityProviderRepresentation.UPFLM_ON.equals(updateProfileFirstLogin)
-                || (IdentityProviderRepresentation.UPFLM_MISSING.equals(updateProfileFirstLogin) && !Validation.validateUserMandatoryFields(realm, userCtx));
+        if(IdentityProviderRepresentation.UPFLM_MISSING.equals(updateProfileFirstLogin)) {
+            try {
+                UserProfileProvider profileProvider = context.getSession().getProvider(UserProfileProvider.class);
+                profileProvider.create(UserProfileContext.IDP_REVIEW, userCtx.getAttributes()).validate();
+                return false;
+            } catch (ValidationException pve) {
+                return true;
+            }
+        } else {
+            return IdentityProviderRepresentation.UPFLM_ON.equals(updateProfileFirstLogin);
+        }
     }
 
     @Override
     protected void actionImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext userCtx, BrokeredIdentityContext brokerContext) {
         EventBuilder event = context.getEvent();
-        event.event(EventType.UPDATE_PROFILE);
+        //velias: looks like UPDATE_PROFILE event is not fired. IMHO it should not be fired here as user record in keycloak is not changed, user doesn't exist yet 
+        event.event(EventType.UPDATE_PROFILE).detail(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name());
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
+        UserModelDelegate updatedProfile = new UserModelDelegate(null) {
 
-        RealmModel realm = context.getRealm();
+            @Override
+            public String getId() {
+                return userCtx.getId();
+            }
 
-        List<FormMessage> errors = Validation.validateUpdateProfileForm(realm, formData, userCtx.isEditUsernameAllowed());
-        if (errors != null && !errors.isEmpty()) {
+            @Override
+            public Map<String, List<String>> getAttributes() {
+                return userCtx.getAttributes();
+            }
+
+            @Override
+            public Stream<String> getAttributeStream(String name) {
+                return userCtx.getAttribute(name).stream();
+            }
+
+            @Override
+            public void setAttribute(String name, List<String> values) {
+                userCtx.setAttribute(name, values);
+            }
+
+            @Override
+            public void removeAttribute(String name) {
+                userCtx.getAttributes().remove(name);
+            }
+
+            @Override
+            public String getFirstAttribute(String name) {
+                return userCtx.getFirstAttribute(name);
+            }
+
+            @Override
+            public String getUsername() {
+                return userCtx.getUsername();
+            }
+        };
+
+        UserProfileProvider profileProvider = context.getSession().getProvider(UserProfileProvider.class);
+        UserProfile profile = profileProvider.create(UserProfileContext.IDP_REVIEW, formData, updatedProfile);
+
+        try {
+            String oldEmail = userCtx.getEmail();
+
+            profile.update((attributeName, userModel, oldValue) -> {
+                if (attributeName.equals(UserModel.EMAIL)) {
+                    context.getAuthenticationSession().setAuthNote(UPDATE_PROFILE_EMAIL_CHANGED, "true");
+                    event.clone().event(EventType.UPDATE_EMAIL).detail(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name()).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, profile.getAttributes().getFirstValue(UserModel.EMAIL)).success();
+                }
+            });
+        } catch (ValidationException pve) {
+            List<FormMessage> errors = Validation.getFormErrorsFromValidation(pve.getErrors());
+
             Response challenge = context.form()
                     .setErrors(errors)
                     .setAttribute(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR, userCtx)
                     .setFormData(formData)
                     .createUpdateProfilePage();
+
             context.challenge(challenge);
+
             return;
         }
-
-        String username = realm.isRegistrationEmailAsUsername() ? formData.getFirst(UserModel.EMAIL) : formData.getFirst(UserModel.USERNAME);
-        userCtx.setUsername(username);
-        userCtx.setFirstName(formData.getFirst(UserModel.FIRST_NAME));
-        userCtx.setLastName(formData.getFirst(UserModel.LAST_NAME));
-
-        String email = formData.getFirst(UserModel.EMAIL);
-        if (!ObjectUtil.isEqualOrBothNull(email, userCtx.getEmail())) {
-            if (logger.isTraceEnabled()) {
-                logger.tracef("Email updated on updateProfile page to '%s' ", email);
-            }
-
-            userCtx.setEmail(email);
-            context.getAuthenticationSession().setAuthNote(UPDATE_PROFILE_EMAIL_CHANGED, "true");
-        }
-
-        AttributeFormDataProcessor.process(formData, realm, userCtx);
 
         userCtx.saveToAuthenticationSession(context.getAuthenticationSession(), BROKERED_CONTEXT_NOTE);
 
         logger.debugf("Profile updated successfully after first authentication with identity provider '%s' for broker user '%s'.", brokerContext.getIdpConfig().getAlias(), userCtx.getUsername());
 
-        event.detail(Details.UPDATED_EMAIL, email);
+        String newEmail = profile.getAttributes().getFirstValue(UserModel.EMAIL);
+
+        event.detail(Details.UPDATED_EMAIL, newEmail);
 
         // Ensure page is always shown when user later returns to it - for example with form "back" button
         context.getAuthenticationSession().setAuthNote(ENFORCE_UPDATE_PROFILE, "true");

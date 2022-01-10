@@ -149,7 +149,7 @@ public abstract class AbstractSamlAuthenticator extends LoginAuthenticator {
 
     }
 
-    private class DummyLoginService implements LoginService {
+    private static class DummyLoginService implements LoginService {
         @Override
         public String getName() {
             return null;

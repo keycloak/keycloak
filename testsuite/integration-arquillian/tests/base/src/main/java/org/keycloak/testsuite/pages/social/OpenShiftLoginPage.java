@@ -17,9 +17,13 @@
 
 package org.keycloak.testsuite.pages.social;
 
+import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -31,10 +35,33 @@ public class OpenShiftLoginPage extends AbstractSocialLoginPage {
     @FindBy(name = "password")
     private WebElement passwordInput;
 
+    private String userLoginLinkTitle;
+
+    private WebElement userLoginLink;
+
     @Override
     public void login(String user, String password) {
+        if(userLoginLinkTitle != null) {
+            setUserLoginLink(this.userLoginLinkTitle);
+            if(this.userLoginLink != null) {
+                clickLink(this.userLoginLink);
+            }
+        }
+
         usernameInput.sendKeys(user);
         passwordInput.sendKeys(password);
         passwordInput.sendKeys(Keys.RETURN);
+    }
+
+    public void setUserLoginLinkTitle(String title) {
+        this.userLoginLinkTitle = title;
+    }
+
+    private void setUserLoginLink(String linkAttrTitle) {
+        try {
+            this.userLoginLink = driver.findElement(By.xpath("//a[contains(@title,'"+linkAttrTitle+"')]"));
+        } catch (NoSuchElementException ex) {
+            log.error("No link with title: '" + linkAttrTitle + "' found on page. If you use the OPENSHIFT4_KUBE_ADMIN provider, set property loginBtnTitle in properties file to an existing title on the page to fix this error.");
+        }
     }
 }

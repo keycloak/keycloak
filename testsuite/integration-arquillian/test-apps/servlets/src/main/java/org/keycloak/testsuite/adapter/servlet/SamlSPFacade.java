@@ -99,7 +99,7 @@ public class SamlSPFacade extends HttpServlet {
         try {
             BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder();
             SAML2Request samlReq = new SAML2Request();
-            String appServerUrl = ServletTestUtils.getUrlBase(req) + "/employee/";
+            String appServerUrl = ServletTestUtils.getUrlBase() + "/employee/";
             String authServerUrl = ServletTestUtils.getAuthServerUrlBase() + "/auth/realms/demo/protocol/saml";
             AuthnRequestType loginReq;
             loginReq = samlReq.createAuthnRequestType(UUID.randomUUID().toString(), appServerUrl, authServerUrl, "http://localhost:8280/employee/");

@@ -36,12 +36,14 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
 * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -57,7 +59,7 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
     public FormAuthenticationFlow(AuthenticationProcessor processor, AuthenticationExecutionModel execution) {
         this.processor = processor;
         this.formExecution = execution;
-        formActionExecutions = processor.getRealm().getAuthenticationExecutions(execution.getFlowId());
+        formActionExecutions = processor.getRealm().getAuthenticationExecutionsStream(execution.getFlowId()).collect(Collectors.toList());
         formAuthenticator = processor.getSession().getProvider(FormAuthenticator.class, execution.getAuthenticator());
     }
 
@@ -275,7 +277,12 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
 
     @Override
     public Response processFlow() {
-        return renderForm(null, null);
+
+        // KEYCLOAK-16143: Propagate forwarded error messages if present
+        FormMessage forwardedErrorMessage = processor.getAndRemoveForwardedErrorMessage();
+        List<FormMessage> errors = forwardedErrorMessage != null ? Collections.singletonList(forwardedErrorMessage) : null;
+
+        return renderForm(null, errors);
     }
 
     public Response renderForm(MultivaluedMap<String, String> formData, List<FormMessage> errors) {

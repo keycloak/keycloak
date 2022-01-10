@@ -24,6 +24,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.Urls;
 import org.keycloak.services.util.ResolveRelative;
 
@@ -31,6 +32,7 @@ import java.net.URI;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -70,16 +72,15 @@ public class RedirectUtils {
     }
 
     private static Set<String> getValidateRedirectUris(KeycloakSession session) {
-        Set<String> redirects = new HashSet<>();
-        for (ClientModel client : session.getContext().getRealm().getClients()) {
-            if (client.isEnabled()) {
-                redirects.addAll(resolveValidRedirects(session, client.getRootUrl(), client.getRedirectUris()));
-            }
-        }
-        return redirects;
+        RealmModel realm = session.getContext().getRealm();
+        return session.clientStorageManager().getAllRedirectUrisOfEnabledClients(realm).entrySet().stream()
+          .filter(me -> me.getKey().isEnabled() && OIDCLoginProtocol.LOGIN_PROTOCOL.equals(me.getKey().getProtocol()) && !me.getKey().isBearerOnly() && (me.getKey().isStandardFlowEnabled() || me.getKey().isImplicitFlowEnabled()))
+          .map(me -> resolveValidRedirects(session, me.getKey().getRootUrl(), me.getValue()))
+          .flatMap(Collection::stream)
+          .collect(Collectors.toSet());
     }
 
-    private static String verifyRedirectUri(KeycloakSession session, String rootUrl, String redirectUri, Set<String> validRedirects, boolean requireRedirectUri) {
+    public static String verifyRedirectUri(KeycloakSession session, String rootUrl, String redirectUri, Set<String> validRedirects, boolean requireRedirectUri) {
         KeycloakUriInfo uriInfo = session.getContext().getUri();
         RealmModel realm = session.getContext().getRealm();
 
@@ -116,7 +117,7 @@ public class RedirectUtils {
 
             boolean valid = matchesRedirects(resolveValidRedirects, r);
 
-            if (!valid && r.startsWith(Constants.INSTALLED_APP_URL) && r.indexOf(':', Constants.INSTALLED_APP_URL.length()) >= 0) {
+            if (!valid && (r.startsWith(Constants.INSTALLED_APP_URL) || r.startsWith(Constants.INSTALLED_APP_LOOPBACK)) && r.indexOf(':', Constants.INSTALLED_APP_URL.length()) >= 0) {
                 int i = r.indexOf(':', Constants.INSTALLED_APP_URL.length());
 
                 StringBuilder sb = new StringBuilder();

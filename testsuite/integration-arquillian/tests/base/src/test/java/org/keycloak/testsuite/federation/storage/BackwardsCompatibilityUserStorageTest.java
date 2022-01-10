@@ -30,6 +30,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.RealmModel;
@@ -44,6 +45,7 @@ import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.federation.BackwardsCompatibilityUserStorageFactory;
 import org.keycloak.testsuite.pages.AccountTotpPage;
 import org.keycloak.testsuite.pages.AppPage;
@@ -60,6 +62,7 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class BackwardsCompatibilityUserStorageTest extends AbstractAuthTest {
 
     private String backwardsCompProviderId;
@@ -175,7 +178,7 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractAuthTest {
         loginTotpPage.assertCurrent();
         loginTotpPage.login("7123456");
         assertCurrentUrlDoesntStartWith(testRealmAccountPage);
-        Assert.assertNotNull(loginTotpPage.getError());
+        Assert.assertNotNull(loginTotpPage.getInputError());
 
         // Authenticate as the user with correct OTP
         loginTotpPage.login(totp.generateTOTP(totpSecret));
@@ -288,9 +291,9 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractAuthTest {
     private void assertUserDontHaveDBCredentials() {
         testingClient.server().run(session -> {
             RealmModel realm1 = session.realms().getRealmByName("test");
-            UserModel user1 = session.users().getUserByUsername("otp1", realm1);
-            List<CredentialModel> keycloakDBCredentials = session.userCredentialManager().getStoredCredentials(realm1, user1);
-            Assert.assertTrue(keycloakDBCredentials.isEmpty());
+            UserModel user1 = session.users().getUserByUsername(realm1, "otp1");
+            Assert.assertEquals(0, session.userCredentialManager()
+                    .getStoredCredentialsStream(realm1, user1).count());
         });
     }
 

@@ -56,13 +56,7 @@ public class CustomerServletNoConf extends HttpServlet {
 
         //try {
         StringBuilder result = new StringBuilder();
-        String urlBase;
-
-        if (System.getProperty("app.server.ssl.required", "false").equals("true")) {
-            urlBase = System.getProperty("app.server.ssl.base.url", "https://localhost:8643");
-        } else {
-            urlBase = System.getProperty("app.server.base.url", "http://localhost:8280");
-        }
+        String urlBase = ServletTestUtils.getUrlBase();
 
         URL url = new URL(urlBase + "/customer-db/");
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();

@@ -19,7 +19,12 @@ package org.keycloak.authentication.requiredactions;
 
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.authentication.*;
+import org.keycloak.authentication.CredentialRegistrator;
+import org.keycloak.authentication.DisplayTypeRequiredActionFactory;
+import org.keycloak.authentication.InitiatedActionSupport;
+import org.keycloak.authentication.RequiredActionContext;
+import org.keycloak.authentication.RequiredActionFactory;
+import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.OTPCredentialProvider;
@@ -28,19 +33,17 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.OTPPolicy;
-import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.CredentialValidation;
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.utils.CredentialHelper;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-
-import java.util.Collections;
-import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -79,26 +82,26 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
         if (Validation.isBlank(challengeResponse)) {
             Response challenge = context.form()
                     .setAttribute("mode", mode)
-                    .setError(Messages.MISSING_TOTP)
+                    .addError(new FormMessage(Validation.FIELD_OTP_CODE, Messages.MISSING_TOTP))
                     .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
             context.challenge(challenge);
             return;
         } else if (!validateOTPCredential(context, challengeResponse, credentialModel, policy)) {
             Response challenge = context.form()
                     .setAttribute("mode", mode)
-                    .setError(Messages.INVALID_TOTP)
+                    .addError(new FormMessage(Validation.FIELD_OTP_CODE, Messages.INVALID_TOTP))
                     .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
             context.challenge(challenge);
             return;
         }
         OTPCredentialProvider otpCredentialProvider = (OTPCredentialProvider) context.getSession().getProvider(CredentialProvider.class, "keycloak-otp");
-        final List<CredentialModel> otpCredentials = (otpCredentialProvider.isConfiguredFor(context.getRealm(), context.getUser()))
-            ? context.getSession().userCredentialManager().getStoredCredentialsByType(context.getRealm(), context.getUser(), OTPCredentialModel.TYPE)
-            : Collections.EMPTY_LIST;
-        if (otpCredentials.size() >= 1 && Validation.isBlank(userLabel)) {
+        final Stream<CredentialModel> otpCredentials  = (otpCredentialProvider.isConfiguredFor(context.getRealm(), context.getUser()))
+            ? context.getSession().userCredentialManager().getStoredCredentialsByTypeStream(context.getRealm(), context.getUser(), OTPCredentialModel.TYPE)
+            : Stream.empty();
+        if (otpCredentials.count() >= 1 && Validation.isBlank(userLabel)) {
             Response challenge = context.form()
                     .setAttribute("mode", mode)
-                    .setError(Messages.MISSING_TOTP_DEVICE_NAME)
+                    .addError(new FormMessage(Validation.FIELD_OTP_LABEL, Messages.MISSING_TOTP_DEVICE_NAME))
                     .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
             context.challenge(challenge);
             return;
@@ -107,7 +110,7 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
         if (!CredentialHelper.createOTPCredential(context.getSession(), context.getRealm(), context.getUser(), challengeResponse, credentialModel)) {
             Response challenge = context.form()
                     .setAttribute("mode", mode)
-                    .setError(Messages.INVALID_TOTP)
+                    .addError(new FormMessage(Validation.FIELD_OTP_CODE, Messages.INVALID_TOTP))
                     .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
             context.challenge(challenge);
             return;

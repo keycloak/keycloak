@@ -242,21 +242,21 @@ public class DBusConnection extends AbstractConnection {
                         if (null == display) throw new DBusException(getString("cannotResolveSessionBusAddress"));
                         File uuidfile = new File("/var/lib/dbus/machine-id");
                         if (!uuidfile.exists()) throw new DBusException(getString("cannotResolveSessionBusAddress"));
-                        try {
-                            BufferedReader r = new BufferedReader(new FileReader(uuidfile));
+                        try (BufferedReader r = new BufferedReader(new FileReader(uuidfile))) {
                             String uuid = r.readLine();
                             String homedir = System.getProperty("user.home");
                             File addressfile = new File(homedir + "/.dbus/session-bus",
                                     uuid + "-" + display.replaceAll(":([0-9]*)\\..*", "$1"));
                             if (!addressfile.exists())
                                 throw new DBusException(getString("cannotResolveSessionBusAddress"));
-                            r = new BufferedReader(new FileReader(addressfile));
-                            String l;
-                            while (null != (l = r.readLine())) {
-                                if (Debug.debug) Debug.print(Debug.VERBOSE, "Reading D-Bus session data: " + l);
-                                if (l.matches("DBUS_SESSION_BUS_ADDRESS.*")) {
-                                    s = l.replaceAll("^[^=]*=", "");
-                                    if (Debug.debug) Debug.print(Debug.VERBOSE, "Parsing " + l + " to " + s);
+                            try (BufferedReader r2 = new BufferedReader(new FileReader(addressfile))) {
+                                String l;
+                                while (null != (l = r2.readLine())) {
+                                    if (Debug.debug) Debug.print(Debug.VERBOSE, "Reading D-Bus session data: " + l);
+                                    if (l.matches("DBUS_SESSION_BUS_ADDRESS.*")) {
+                                        s = l.replaceAll("^[^=]*=", "");
+                                        if (Debug.debug) Debug.print(Debug.VERBOSE, "Parsing " + l + " to " + s);
+                                    }
                                 }
                             }
                             if (null == s || "".equals(s))

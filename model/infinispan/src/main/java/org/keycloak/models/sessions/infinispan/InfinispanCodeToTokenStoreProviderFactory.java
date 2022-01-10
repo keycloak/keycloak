@@ -20,19 +20,15 @@ package org.keycloak.models.sessions.infinispan;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import org.infinispan.Cache;
-import org.infinispan.client.hotrod.Flag;
-import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.commons.api.BasicCache;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.CodeToTokenStoreProvider;
 import org.keycloak.models.CodeToTokenStoreProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenValueEntity;
-import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
+import static org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory.PROVIDER_PRIORITY;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -54,23 +50,7 @@ public class InfinispanCodeToTokenStoreProviderFactory implements CodeToTokenSto
         if (codeCache == null) {
             synchronized (this) {
                 if (codeCache == null) {
-                    InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
-                    Cache cache = connections.getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE);
-
-                    RemoteCache remoteCache = InfinispanUtil.getRemoteCache(cache);
-
-                    if (remoteCache != null) {
-                        LOG.debugf("Having remote stores. Using remote cache '%s' for single-use cache of code", remoteCache.getName());
-                        this.codeCache = () -> {
-                            // Doing this way as flag is per invocation
-                            return remoteCache.withFlags(Flag.FORCE_RETURN_VALUE);
-                        };
-                    } else {
-                        LOG.debugf("Not having remote stores. Using normal cache '%s' for single-use cache of code", cache.getName());
-                        this.codeCache = () -> {
-                            return cache;
-                        };
-                    }
+                    this.codeCache = InfinispanSingleUseTokenStoreProviderFactory.getActionTokenCache(session);
                 }
             }
         }
@@ -94,5 +74,10 @@ public class InfinispanCodeToTokenStoreProviderFactory implements CodeToTokenSto
     @Override
     public String getId() {
         return "infinispan";
+    }
+
+    @Override
+    public int order() {
+        return PROVIDER_PRIORITY;
     }
 }

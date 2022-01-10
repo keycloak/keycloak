@@ -28,7 +28,8 @@ import org.keycloak.models.UserSessionModel;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * Persistence of userSessions is disabled . Useful just if you never need survive of userSessions/clientSessions
@@ -110,13 +111,38 @@ public class DisabledUserSessionPersisterProvider implements UserSessionPersiste
 
     }
 
+    public UserSessionModel loadUserSession(RealmModel realm, String userSessionId, boolean offline) {
+        return null;
+    }
+
     @Override
-    public List<UserSessionModel> loadUserSessions(int firstResult, int maxResults, boolean offline, int lastCreatedOn, String lastUserSessionId) {
-        return Collections.emptyList();
+    public Stream<UserSessionModel> loadUserSessionsStream(RealmModel realm, ClientModel client, boolean offline, Integer firstResult, Integer maxResults) {
+        return Stream.empty();
+    }
+
+    @Override
+    public Stream<UserSessionModel> loadUserSessionsStream(RealmModel realm, UserModel user, boolean offline, Integer firstResult, Integer maxResults) {
+        return Stream.empty();
+    }
+
+    @Override
+    public Stream<UserSessionModel> loadUserSessionsStream(Integer firstResult, Integer maxResults, boolean offline,
+                                                           String lastUserSessionId) {
+        return Stream.empty();
     }
 
     @Override
     public int getUserSessionsCount(boolean offline) {
         return 0;
+    }
+
+    @Override
+    public int getUserSessionsCount(RealmModel realm, ClientModel clientModel, boolean offline) {
+        return 0;
+    }
+
+    @Override
+    public Map<String, Long> getUserSessionsCountsByClients(RealmModel realm, boolean offline) {
+        return Collections.emptyMap();
     }
 }

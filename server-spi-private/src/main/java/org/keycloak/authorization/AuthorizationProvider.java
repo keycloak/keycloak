@@ -18,12 +18,12 @@
 
 package org.keycloak.authorization;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
@@ -126,11 +126,11 @@ public final class AuthorizationProvider implements Provider {
     /**
      * Returns the registered {@link PolicyProviderFactory}.
      *
-     * @return a {@link List} containing all registered {@link PolicyProviderFactory}
+     * @return a {@link Stream} containing all registered {@link PolicyProviderFactory}
      */
-    public Collection<PolicyProviderFactory> getProviderFactories() {
-        return keycloakSession.getKeycloakSessionFactory().getProviderFactories(PolicyProvider.class).stream().map(
-                PolicyProviderFactory.class::cast).collect(Collectors.toList());
+    public Stream<PolicyProviderFactory> getProviderFactoriesStream() {
+        return keycloakSession.getKeycloakSessionFactory().getProviderFactoriesStream(PolicyProvider.class)
+                .map(PolicyProviderFactory.class::cast);
     }
 
     /**
@@ -280,7 +280,7 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
-            public List<Scope> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+            public List<Scope> findByResourceServer(Map<Scope.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
                 return delegate.findByResourceServer(attributes, resourceServerId, firstResult, maxResult);
             }
         };
@@ -358,6 +358,17 @@ public final class AuthorizationProvider implements Provider {
                 if (policy != null) {
                     ResourceServer resourceServer = policy.getResourceServer();
 
+                    // if uma policy (owned by a user) also remove associated policies
+                    if (policy.getOwner() != null) {
+                        for (Policy associatedPolicy : policy.getAssociatedPolicies()) {
+                            // only remove associated policies created from the policy being deleted
+                            if (associatedPolicy.getOwner() != null) {
+                                policy.removeAssociatedPolicy(associatedPolicy);
+                                policyStore.delete(associatedPolicy.getId());
+                            }
+                        }
+                    }
+
                     findDependentPolicies(policy.getId(), resourceServer.getId()).forEach(dependentPolicy -> {
                         dependentPolicy.removeAssociatedPolicy(policy);
                         if (dependentPolicy.getAssociatedPolicies().isEmpty()) {
@@ -385,7 +396,7 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
-            public List<Policy> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+            public List<Policy> findByResourceServer(Map<Policy.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
                 return policyStore.findByResourceServer(attributes, resourceServerId, firstResult, maxResult);
             }
 
@@ -455,14 +466,14 @@ public final class AuthorizationProvider implements Provider {
                 Resource resource = findById(id, null);
                 StoreFactory storeFactory = AuthorizationProvider.this.getStoreFactory();
                 PermissionTicketStore ticketStore = storeFactory.getPermissionTicketStore();
-                List<PermissionTicket> permissions = ticketStore.findByResource(id, resource.getResourceServer().getId());
+                List<PermissionTicket> permissions = ticketStore.findByResource(id, resource.getResourceServer());
 
                 for (PermissionTicket permission : permissions) {
                     ticketStore.delete(permission.getId());
                 }
 
                 PolicyStore policyStore = storeFactory.getPolicyStore();
-                List<Policy> policies = policyStore.findByResource(id, resource.getResourceServer().getId());
+                List<Policy> policies = policyStore.findByResource(id, resource.getResourceServer());
 
                 for (Policy policyModel : policies) {
                     if (policyModel.getResources().size() == 1) {
@@ -506,7 +517,7 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
-            public List<Resource> findByResourceServer(Map<String, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+            public List<Resource> findByResourceServer(Map<Resource.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
                 return delegate.findByResourceServer(attributes, resourceServerId, firstResult, maxResult);
             }
 

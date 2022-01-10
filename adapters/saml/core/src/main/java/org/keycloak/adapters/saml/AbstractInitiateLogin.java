@@ -101,7 +101,9 @@ public abstract class AbstractInitiateLogin implements AuthChallenge {
                 .destination(sso.getRequestBindingUrl())
                 .issuer(issuerURL)
                 .forceAuthn(deployment.isForceAuthentication()).isPassive(deployment.isIsPassive())
-                .nameIdPolicy(SAML2NameIDPolicyBuilder.format(nameIDPolicyFormat));
+                .nameIdPolicy(SAML2NameIDPolicyBuilder
+                    .format(nameIDPolicyFormat)
+                    .setAllowCreate(Boolean.TRUE));
         if (sso.getResponseBinding() != null) {
             String protocolBinding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get();
             if (sso.getResponseBinding() == SamlDeployment.Binding.POST) {

@@ -17,10 +17,12 @@
 
 package org.keycloak.testsuite.oauth;
 
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.common.Profile;
@@ -31,10 +33,12 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
@@ -43,6 +47,8 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -51,7 +57,6 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.util.BasicAuthHelper;
 
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
@@ -62,9 +67,12 @@ import java.util.Map;
 
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
@@ -76,6 +84,11 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
+
+    @BeforeClass
+    public static void enabled() {
+        ProfileAssume.assumeFeatureEnabled(AUTHORIZATION);
+    }
 
     @Test
     @UncaughtServerErrorExpected
@@ -171,12 +184,23 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         directNoSecret.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         directNoSecret.setFullScopeAllowed(false);
 
+        ClientModel noRefreshToken = realm.addClient("no-refresh-token");
+        noRefreshToken.setClientId("no-refresh-token");
+        noRefreshToken.setPublicClient(false);
+        noRefreshToken.setDirectAccessGrantsEnabled(true);
+        noRefreshToken.setEnabled(true);
+        noRefreshToken.setSecret("secret");
+        noRefreshToken.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        noRefreshToken.setFullScopeAllowed(false);
+        noRefreshToken.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "false");
+
         // permission for client to client exchange to "target" client
         ClientPolicyRepresentation clientRep = new ClientPolicyRepresentation();
         clientRep.setName("to");
         clientRep.addClient(clientExchanger.getId());
         clientRep.addClient(legal.getId());
         clientRep.addClient(directLegal.getId());
+        clientRep.addClient(noRefreshToken.getId());
 
         ResourceServer server = management.realmResourceServer();
         Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(clientRep, server);
@@ -261,7 +285,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         oauth.realm(TEST);
         oauth.clientId("client-exchanger");
 
-        Client httpClient = ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
 
         WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
                 .path("/realms")
@@ -343,7 +367,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         oauth.realm(TEST);
         oauth.clientId("client-exchanger");
 
-        Client httpClient = ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
 
         WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
                 .path("/realms")
@@ -381,7 +405,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
     @UncaughtServerErrorExpected
     public void testDirectImpersonation() throws Exception {
         testingClient.server().run(ClientTokenExchangeTest::setupRealm);
-        Client httpClient = ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
 
         WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
                 .path("/realms")
@@ -467,6 +491,41 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         }
     }
 
+    @Test
+    @UncaughtServerErrorExpected
+    public void testExchangeNoRefreshToken() throws Exception {
+        testingClient.server().run(ClientTokenExchangeTest::setupRealm);
+
+        oauth.realm(TEST);
+        oauth.clientId("client-exchanger");
+
+        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm(TEST), "no-refresh-token");
+        ClientRepresentation clientRepresentation = client.toRepresentation();
+        clientRepresentation.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "false");
+        client.update(clientRepresentation);
+
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        String accessToken = response.getAccessToken();
+
+        {
+            response = oauth.doTokenExchange(TEST, accessToken, "target", "client-exchanger", "secret");
+            String exchangedTokenString = response.getAccessToken();
+            String refreshTokenString = response.getRefreshToken();
+            assertNotNull(exchangedTokenString);
+            assertNotNull(refreshTokenString);
+        }
+
+        {
+            response = oauth.doTokenExchange(TEST, accessToken, "target", "no-refresh-token", "secret");
+            String exchangedTokenString = response.getAccessToken();
+            String refreshTokenString = response.getRefreshToken();
+            assertNotNull(exchangedTokenString);
+            assertNull(refreshTokenString);
+        }
+        clientRepresentation.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "true");
+        client.update(clientRepresentation);
+    }
+
     private static void addDirectExchanger(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName(TEST);
         RoleModel exampleRole = realm.addRole("example");
@@ -516,11 +575,11 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         realm.removeClient(realm.getClientByClientId("direct-exchanger").getId());
         realm.removeClient(realm.getClientByClientId("target").getId());
         realm.removeRole(realm.getRole("example"));
-        session.users().removeUser(realm, session.users().getUserByUsername("impersonated-user", realm));
+        session.users().removeUser(realm, session.users().getUserByUsername(realm, "impersonated-user"));
     }
 
     private Response checkTokenExchange() {
-        Client httpClient = ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
         WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
                 .path("/realms")
                 .path(TEST)

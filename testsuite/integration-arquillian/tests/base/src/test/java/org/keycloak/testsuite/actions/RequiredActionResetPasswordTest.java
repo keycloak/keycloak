@@ -16,25 +16,34 @@
  */
 package org.keycloak.testsuite.actions;
 
+import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.SecondBrowser;
+import org.openqa.selenium.WebDriver;
 
+import java.util.LinkedList;
+
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -44,8 +53,11 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         testRealm.setResetPasswordAllowed(Boolean.TRUE);
-        ActionUtil.addRequiredActionForUser(testRealm, "test-user@localhost", RequiredAction.UPDATE_PASSWORD.name());
     }
+
+    @Drone
+    @SecondBrowser
+    private WebDriver driver2;
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -62,9 +74,14 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
     @Page
     protected LoginPasswordUpdatePage changePasswordPage;
 
+    @After
+    public void after() {
+        ApiUtil.resetUserPassword(testRealm().users().get(findUser("test-user@localhost").getId()), "password", false);
+    }
 
     @Test
     public void tempPassword() throws Exception {
+        requireUpdatePassword();
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
@@ -87,6 +104,39 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
         loginPage.login("test-user@localhost", "new-password");
 
         events.expectLogin().assertEvent();
+    }
+
+    @Test
+    public void logoutSessionsCheckboxNotPresent() {
+        OAuthClient oauth2 = new OAuthClient();
+        oauth2.init(driver2);
+
+        UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
+
+        oauth2.doLogin("test-user@localhost", "password");
+        events.expectLogin().assertEvent();
+        assertEquals(1, testUser.getUserSessions().size());
+
+        requireUpdatePassword();
+
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        changePasswordPage.assertCurrent();
+        assertFalse(changePasswordPage.isLogoutSessionDisplayed());
+        changePasswordPage.changePassword("All Right Then, Keep Your Secrets", "All Right Then, Keep Your Secrets");
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
+        events.expectLogin().assertEvent();
+
+        assertEquals("All sessions are still active", 2, testUser.getUserSessions().size());
+    }
+
+    private void requireUpdatePassword() {
+        UserRepresentation userRep = findUser("test-user@localhost");
+        if (userRep.getRequiredActions() == null) {
+            userRep.setRequiredActions(new LinkedList<>());
+        }
+        userRep.getRequiredActions().add(RequiredAction.UPDATE_PASSWORD.name());
+        testRealm().users().get(userRep.getId()).update(userRep);
     }
 
 }

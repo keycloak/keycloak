@@ -51,7 +51,7 @@ public class AdapterInstallationClientRegistrationProvider implements ClientRegi
         event.event(EventType.CLIENT_INFO);
 
         ClientModel client = session.getContext().getRealm().getClientByClientId(clientId);
-        auth.requireView(client);
+        auth.requireView(client, true);
 
         ClientManager clientManager = new ClientManager(new RealmManager(session));
         Object rep = clientManager.toInstallationRepresentation(session.getContext().getRealm(), client, session.getContext().getUri().getBaseUri());

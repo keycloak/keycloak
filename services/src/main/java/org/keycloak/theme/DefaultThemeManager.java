@@ -37,6 +37,7 @@ import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import org.keycloak.common.Profile;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -48,7 +49,7 @@ public class DefaultThemeManager implements ThemeManager {
     private final DefaultThemeManagerFactory factory;
     private final KeycloakSession session;
     private List<ThemeProvider> providers;
-    private String defaultTheme;
+    private final String defaultTheme;
 
     public DefaultThemeManager(DefaultThemeManagerFactory factory, KeycloakSession session) {
         this.factory = factory;
@@ -62,6 +63,16 @@ public class DefaultThemeManager implements ThemeManager {
         return getTheme(name, type);
     }
 
+    private String typeBasedDefault(Theme.Type type) {
+        boolean isProduct = Profile.isProduct();
+
+        if ((type == Theme.Type.ACCOUNT) && isAccount2Enabled()) {
+            return isProduct ? "rh-sso.v2" : "keycloak.v2";
+        }
+
+        return isProduct ? "rh-sso" : "keycloak";
+    }
+    
     @Override
     public Theme getTheme(String name, Theme.Type type) {
         if (name == null) {
@@ -72,7 +83,7 @@ public class DefaultThemeManager implements ThemeManager {
         if (theme == null) {
             theme = loadTheme(name, type);
             if (theme == null) {
-                theme = loadTheme("keycloak", type);
+                theme = loadTheme(typeBasedDefault(type), type);
                 if (theme == null) {
                     theme = loadTheme("base", type);
                 }
@@ -81,9 +92,18 @@ public class DefaultThemeManager implements ThemeManager {
                 theme = factory.addCachedTheme(name, type, theme);
             }
         }
+        
+        if (!isAccount2Enabled() && theme.getName().equals("keycloak.v2")) {
+            theme = loadTheme("keycloak", type);
+        }
+
+        if (!isAccount2Enabled() && theme.getName().equals("rh-sso.v2")) {
+            theme = loadTheme("rh-sso", type);
+        }
+        
         return theme;
     }
-
+    
     @Override
     public Set<String> nameSet(Theme.Type type) {
         Set<String> themes = new HashSet<String>();
@@ -94,12 +114,21 @@ public class DefaultThemeManager implements ThemeManager {
     }
 
     @Override
+    public boolean isCacheEnabled() {
+        return factory.isCacheEnabled();
+    }
+
+    @Override
     public void clearCache() {
         factory.clearCache();
     }
 
     private Theme loadTheme(String name, Theme.Type type) {
         Theme theme = findTheme(name, type);
+        if (theme == null) {
+            return null;
+        }
+
         List<Theme> themes = new LinkedList<>();
         themes.add(theme);
 
@@ -298,6 +327,10 @@ public class DefaultThemeManager implements ThemeManager {
         }
 
         return providers;
+    }
+
+    private static boolean isAccount2Enabled() {
+        return Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2);
     }
 
 }

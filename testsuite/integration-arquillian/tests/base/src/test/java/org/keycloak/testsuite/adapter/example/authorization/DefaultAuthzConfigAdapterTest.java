@@ -20,6 +20,7 @@ import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -27,8 +28,10 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
 import java.io.File;
@@ -39,6 +42,7 @@ import java.net.URL;
 import java.util.List;
 
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 
 /**
@@ -60,6 +64,11 @@ public class DefaultAuthzConfigAdapterTest extends AbstractExampleAdapterTest {
 
     @ArquillianResource
     private Deployer deployer;
+
+    @BeforeClass
+    public static void enabled() {
+        ProfileAssume.assumeFeatureEnabled(AUTHORIZATION);
+    }
 
     @Override
     public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
@@ -108,7 +117,7 @@ public class DefaultAuthzConfigAdapterTest extends AbstractExampleAdapterTest {
     }
 
     private URL getResourceServerUrl() throws MalformedURLException {
-        return this.appServerContextRootPage.getUriBuilder().path(RESOURCE_SERVER_ID).build().toURL();
+        return new URL(ServerURLs.getAppServerContextRoot() + "/" + RESOURCE_SERVER_ID);
     }
 
     private void configureAuthorizationServices() {

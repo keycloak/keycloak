@@ -22,8 +22,10 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * <p>Represents all identity information obtained from an {@link org.keycloak.broker.provider.IdentityProvider} after a
@@ -34,6 +36,7 @@ import java.util.Map;
 public class BrokeredIdentityContext {
 
     private String id;
+    private String legacyId;
     private String username;
     private String modelUsername;
     private String email;
@@ -41,7 +44,6 @@ public class BrokeredIdentityContext {
     private String lastName;
     private String brokerSessionId;
     private String brokerUserId;
-    private String code;
     private String token;
     private IdentityProviderModel idpConfig;
     private IdentityProvider idp;
@@ -62,6 +64,19 @@ public class BrokeredIdentityContext {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    /**
+     * ID from older API version. For API migrations.
+     *
+     * @return legacy ID
+     */
+    public String getLegacyId() {
+        return legacyId;
+    }
+
+    public void setLegacyId(String legacyId) {
+        this.legacyId = legacyId;
     }
 
     /**
@@ -120,14 +135,6 @@ public class BrokeredIdentityContext {
 
     public void setToken(String token) {
         this.token = token;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
     }
 
     public IdentityProviderModel getIdpConfig() {
@@ -201,6 +208,73 @@ public class BrokeredIdentityContext {
 
     public void setAuthenticationSession(AuthenticationSessionModel authenticationSession) {
         this.authenticationSession = authenticationSession;
+    }
+
+    /**
+     * Obtains the set of roles that were granted by mappers.
+     *
+     * @return a {@link Set} containing the roles.
+     */
+    private Set<String> getMapperGrantedRoles() {
+        Set<String> roles = (Set<String>) this.contextData.get(Constants.MAPPER_GRANTED_ROLES);
+        if (roles == null) {
+            roles = new HashSet<>();
+            this.contextData.put(Constants.MAPPER_GRANTED_ROLES, roles);
+        }
+        return roles;
+    }
+
+    /**
+     * Obtains the set of groups that were assigned by mappers.
+     *
+     * @return a {@link Set} containing the groups.
+     */
+    @SuppressWarnings("unchecked")
+    private Set<String> getMapperAssignedGroups() {
+        Set<String> groups = (Set<String>) this.contextData.get(Constants.MAPPER_GRANTED_GROUPS);
+        if (groups == null) {
+            groups = new HashSet<>();
+            this.contextData.put(Constants.MAPPER_GRANTED_GROUPS, groups);
+        }
+        return groups;
+    }
+
+    /**
+     * Verifies if a mapper has already granted the specified role.
+     *
+     * @param roleName the name of the role.
+     * @return {@code true} if a mapper has already granted the role; {@code false} otherwise.
+     */
+    public boolean hasMapperGrantedRole(final String roleName) {
+        return this.getMapperGrantedRoles().contains(roleName);
+    }
+
+    /**
+     * Verifies if a mapper has already assigned the specified group.
+     *
+     * @param groupId the id of the group.
+     * @return {@code true} if a mapper has already assigned the group; {@code false} otherwise.
+     */
+    public boolean hasMapperAssignedGroup(final String groupId) {
+        return this.getMapperAssignedGroups().contains(groupId);
+    }
+
+    /**
+     * Adds the specified role to the set of roles granted by mappers.
+     *
+     * @param roleName the name of the role.
+     */
+    public void addMapperGrantedRole(final String roleName) {
+        this.getMapperGrantedRoles().add(roleName);
+    }
+
+    /**
+     * Adds the specified group to the set of groups assigned by mappers.
+     *
+     * @param groupId the id of the group.
+     */
+    public void addMapperAssignedGroup(final String groupId) {
+        this.getMapperAssignedGroups().add(groupId);
     }
 
     /**

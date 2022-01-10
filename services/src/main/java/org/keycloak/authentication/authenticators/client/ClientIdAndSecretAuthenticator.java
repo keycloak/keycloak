@@ -101,7 +101,7 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
 
         context.getEvent().client(client_id);
 
-        ClientModel client = context.getRealm().getClientByClientId(client_id);
+        ClientModel client = context.getSession().clients().getClientByClientId(context.getRealm(), client_id);
         if (client == null) {
             context.failure(AuthenticationFlowError.CLIENT_NOT_FOUND, null);
             return;

@@ -31,6 +31,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.*;
+import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.services.Urls;
 import org.keycloak.services.validation.Validation;
 
@@ -71,6 +72,7 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
 
         LoginFormsProvider loginFormsProvider = context.form();
         Response challenge;
+        authSession.setClientNote(AuthorizationEndpointBase.APP_INITIATED_FLOW, null);
 
         // Do not allow resending e-mail by simple page refresh, i.e. when e-mail sent, it should be resent properly via email-verification endpoint
         if (! Objects.equals(authSession.getAuthNote(Constants.VERIFY_EMAIL_KEY), email)) {

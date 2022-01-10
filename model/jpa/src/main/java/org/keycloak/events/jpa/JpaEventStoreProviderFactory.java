@@ -35,7 +35,7 @@ public class JpaEventStoreProviderFactory implements EventStoreProviderFactory {
     @Override
     public EventStoreProvider create(KeycloakSession session) {
         JpaConnectionProvider connection = session.getProvider(JpaConnectionProvider.class);
-        return new JpaEventStoreProvider(connection.getEntityManager(), maxDetailLength);
+        return new JpaEventStoreProvider(session, connection.getEntityManager(), maxDetailLength);
     }
 
     @Override

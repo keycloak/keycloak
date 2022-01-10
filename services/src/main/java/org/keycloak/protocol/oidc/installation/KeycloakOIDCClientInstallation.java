@@ -21,12 +21,11 @@ import org.keycloak.Config;
 import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.authorization.admin.AuthorizationService;
+import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.protocol.ClientInstallationProvider;
@@ -40,8 +39,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -58,7 +58,7 @@ public class KeycloakOIDCClientInstallation implements ClientInstallationProvide
 
         if (client.isPublicClient() && !client.isBearerOnly()) rep.setPublicClient(true);
         if (client.isBearerOnly()) rep.setBearerOnly(true);
-        if (client.getRoles().size() > 0) rep.setUseResourceRoleMappings(true);
+        if (client.getRolesStream().count() > 0) rep.setUseResourceRoleMappings(true);
 
         rep.setResource(client.getClientId());
 
@@ -104,22 +104,18 @@ public class KeycloakOIDCClientInstallation implements ClientInstallationProvide
 
     static boolean showVerifyTokenAudience(ClientModel client) {
         // We want to verify-token-audience if service client has any client roles
-        if (client.getRoles().size() > 0) {
+        if (client.getRolesStream().count() > 0) {
             return true;
         }
 
         // Check if there is client scope with audience protocol mapper created for particular client. If yes, admin wants verifying token audience
         String clientId = client.getClientId();
 
-        for (ClientScopeModel clientScope : client.getRealm().getClientScopes()) {
-            for (ProtocolMapperModel protocolMapper : clientScope.getProtocolMappers()) {
-                if (AudienceProtocolMapper.PROVIDER_ID.equals(protocolMapper.getProtocolMapper()) && (clientId.equals(protocolMapper.getConfig().get(AudienceProtocolMapper.INCLUDED_CLIENT_AUDIENCE)))) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return client.getRealm().getClientScopesStream().anyMatch(clientScope ->
+            clientScope.getProtocolMappersStream().anyMatch(protocolMapper ->
+                    Objects.equals(protocolMapper.getProtocolMapper(), AudienceProtocolMapper.PROVIDER_ID) &&
+                    Objects.equals(clientId, protocolMapper.getConfig().get(AudienceProtocolMapper.INCLUDED_CLIENT_AUDIENCE)))
+        );
     }
 
 
@@ -179,7 +175,7 @@ public class KeycloakOIDCClientInstallation implements ClientInstallationProvide
     }
 
     private void configureAuthorizationSettings(KeycloakSession session, ClientModel client, ClientManager.InstallationAdapterConfig rep) {
-        if (new AuthorizationService(session, client, null, null).isEnabled()) {
+        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION) && new AuthorizationService(session, client, null, null).isEnabled()) {
             PolicyEnforcerConfig enforcerConfig = new PolicyEnforcerConfig();
 
             enforcerConfig.setEnforcementMode(null);
@@ -187,13 +183,21 @@ public class KeycloakOIDCClientInstallation implements ClientInstallationProvide
 
             rep.setEnforcerConfig(enforcerConfig);
 
-            Set<RoleModel> clientRoles = client.getRoles();
+            Iterator<RoleModel> it = client.getRolesStream().iterator();
 
-            if (clientRoles.size() == 1) {
-                if (clientRoles.iterator().next().getName().equals(Constants.AUTHZ_UMA_PROTECTION)) {
-                    rep.setUseResourceRoleMappings(null);
-                }
+            RoleModel role = hasOnlyOne(it);
+            if (role != null && role.getName().equals(Constants.AUTHZ_UMA_PROTECTION)) {
+                rep.setUseResourceRoleMappings(null);
             }
+        }
+    }
+
+    private RoleModel hasOnlyOne(Iterator<RoleModel> it) {
+        if (!it.hasNext()) return null;
+        else {
+            RoleModel role = it.next();
+            if (it.hasNext()) return null;
+            else return role;
         }
     }
 }

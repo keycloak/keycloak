@@ -1,0 +1,62 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/clients">{{:: 'clients' | translate}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></li>
+        <li><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/oidc/keys">{{:: 'keys' | translate}}</a></li>
+        <li class="active">{{:: 'client-certificate-import' | translate}}</li>
+    </ol>
+
+    <h1>{{:: 'import-client-certificate' | translate}}</h1>
+
+    <form class="form-horizontal" name="keyForm" novalidate kc-read-only="!client.access.configure">
+        <fieldset>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="uploadKeyFormat">{{:: 'archive-format' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="uploadKeyFormat"
+                                ng-model="uploadKeyFormat"
+                                ng-options="f for f in keyFormats">
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'archive-format.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-hide="hideKeystoreSettings()">
+                <label class="col-md-2 control-label" for="uploadKeyAlias">{{:: 'key-alias' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" type="text" id="uploadKeyAlias" name="uploadKeyAlias" data-ng-model="uploadKeyAlias" autofocus required>
+                </div>
+                <kc-tooltip>{{:: 'jwt-import.key-alias.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-hide="hideKeystoreSettings()">
+                <label class="col-md-2 control-label" for="uploadStorePas">{{:: 'store-password' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" kc-password id="uploadStorePas" name="uploadStorePas" data-ng-model="uploadStorePassword" autofocus required>
+                </div>
+                <kc-tooltip>{{:: 'store-password.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label">{{:: 'import-file' | translate}} </label>
+                <div class="col-md-6">
+                    <div class="controls kc-button-input-file" data-ng-show="!files || files.length == 0">
+                        <label for="import-file" class="btn btn-default">{{:: 'select-file' | translate}} <i class="pficon pficon-import"></i></label>
+                        <input id="import-file" type="file" class="hidden" ng-file-select="onFileSelect($files)">
+                    </div>
+                    <span class="kc-uploaded-file" data-ng-show="files.length > 0">
+                        {{files[0].name}}
+                    </span>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-10 col-md-offset-2">
+                    <button type="submit" data-ng-click="uploadFile()" data-ng-disabled="files.length == 0" class="btn btn-primary">{{:: 'import' | translate}}</button>
+                    <button type="submit" data-ng-click="cancel()" class="btn btn-default">{{:: 'cancel' | translate}}</button>
+                </div>
+            </div>
+        </fieldset>
+    </form>
+</div>
+
+<kc-menu></kc-menu>

@@ -65,6 +65,10 @@ public enum JBossSAMLURIConstants {
     HOLDER_OF_KEY("urn:oasis:names:tc:SAML:2.0:cm:holder-of-key"),
 
     METADATA_NSURI("urn:oasis:names:tc:SAML:2.0:metadata"),
+    // http://docs.oasis-open.org/security/saml/Post2.0/sstc-metadata-attr-cd-01.pdf
+    METADATA_ENTITY_ATTRIBUTES_NSURI("urn:oasis:names:tc:SAML:metadata:attribute"),
+    //http://docs.oasis-open.org/security/saml/Post2.0/sstc-saml-metadata-ui/v1.0/os/sstc-saml-metadata-ui-v1.0-os.pdf
+    METADATA_UI("urn:oasis:names:tc:SAML:metadata:ui"),
 
     NAMEID_FORMAT_TRANSIENT("urn:oasis:names:tc:SAML:2.0:nameid-format:transient"),
     NAMEID_FORMAT_PERSISTENT("urn:oasis:names:tc:SAML:2.0:nameid-format:persistent"),
@@ -86,6 +90,7 @@ public enum JBossSAMLURIConstants {
     SAML_HTTP_REDIRECT_BINDING("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"),
     SAML_SOAP_BINDING("urn:oasis:names:tc:SAML:2.0:bindings:SOAP"),
     SAML_PAOS_BINDING("urn:oasis:names:tc:SAML:2.0:bindings:PAOS"),
+    SAML_HTTP_ARTIFACT_BINDING("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact"),
 
     SAML_11_NS("urn:oasis:names:tc:SAML:1.0:assertion"),
 

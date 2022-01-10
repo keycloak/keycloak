@@ -19,9 +19,10 @@ package org.keycloak.services.resources.admin;
 
 import static org.keycloak.protocol.ProtocolMapperUtils.isEnabled;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.BiFunction;
+import java.util.stream.Stream;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
@@ -36,12 +37,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperContainerModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
@@ -50,6 +49,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.IDToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
@@ -116,43 +116,85 @@ public class ClientScopeEvaluateResource {
     @Path("protocol-mappers")
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<ProtocolMapperEvaluationRepresentation> getGrantedProtocolMappers(@QueryParam("scope") String scopeParam) {
+    public Stream<ProtocolMapperEvaluationRepresentation> getGrantedProtocolMappers(@QueryParam("scope") String scopeParam) {
         auth.clients().requireView(client);
 
-        List<ProtocolMapperEvaluationRepresentation> protocolMappers = new LinkedList<>();
-
-        Set<ClientScopeModel> clientScopes = TokenManager.getRequestedClientScopes(scopeParam, client);
-
-        for (ClientScopeModel mapperContainer : clientScopes) {
-            Set<ProtocolMapperModel> currentMappers = mapperContainer.getProtocolMappers();
-            for (ProtocolMapperModel current : currentMappers) {
-                if (isEnabled(session, current) && current.getProtocol().equals(client.getProtocol())) {
-                    ProtocolMapperEvaluationRepresentation rep = new ProtocolMapperEvaluationRepresentation();
-                    rep.setMapperId(current.getId());
-                    rep.setMapperName(current.getName());
-                    rep.setProtocolMapper(current.getProtocolMapper());
-
-                    if (mapperContainer.getId().equals(client.getId())) {
-                        // Must be this client
-                        rep.setContainerId(client.getId());
-                        rep.setContainerName("");
-                        rep.setContainerType("client");
-                    } else {
-                        ClientScopeModel clientScope = (ClientScopeModel) mapperContainer;
-                        rep.setContainerId(clientScope.getId());
-                        rep.setContainerName(clientScope.getName());
-                        rep.setContainerType("client-scope");
-                    }
-
-                    protocolMappers.add(rep);
-                }
-            }
-        }
-
-        return protocolMappers;
+        return TokenManager.getRequestedClientScopes(scopeParam, client)
+                .flatMap(mapperContainer -> mapperContainer.getProtocolMappersStream()
+                    .filter(current -> isEnabled(session, current) && Objects.equals(current.getProtocol(), client.getProtocol()))
+                    .map(current -> toProtocolMapperEvaluationRepresentation(current, mapperContainer)));
     }
 
 
+    private ProtocolMapperEvaluationRepresentation toProtocolMapperEvaluationRepresentation(ProtocolMapperModel mapper,
+                                                                                            ClientScopeModel mapperContainer) {
+        ProtocolMapperEvaluationRepresentation rep = new ProtocolMapperEvaluationRepresentation();
+        rep.setMapperId(mapper.getId());
+        rep.setMapperName(mapper.getName());
+        rep.setProtocolMapper(mapper.getProtocolMapper());
+
+        if (mapperContainer.getId().equals(client.getId())) {
+            // Must be this client
+            rep.setContainerId(client.getId());
+            rep.setContainerName("");
+            rep.setContainerType("client");
+        } else {
+            ClientScopeModel clientScope = mapperContainer;
+            rep.setContainerId(clientScope.getId());
+            rep.setContainerName(clientScope.getName());
+            rep.setContainerType("client-scope");
+        }
+        return rep;
+    }
+
+    /**
+     * Create JSON with payload of example user info
+     *
+     * @return
+     */
+    @GET
+    @Path("generate-example-userinfo")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, Object> generateExampleUserinfo(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId) {
+        auth.clients().requireView(client);
+
+        UserModel user = getUserModel(userId);
+
+        logger.debugf("generateExampleUserinfo invoked. User: %s", user.getUsername());
+
+        return sessionAware(user, scopeParam, (userSession, clientSessionCtx) -> {
+            AccessToken userInfo = new AccessToken();
+            TokenManager tokenManager = new TokenManager();
+
+            tokenManager.transformUserInfoAccessToken(session, userInfo, userSession, clientSessionCtx);
+            return tokenManager.generateUserInfoClaims(userInfo, user);
+        });
+    }
+
+    /**
+     * Create JSON with payload of example id token
+     *
+     * @return
+     */
+    @GET
+    @Path("generate-example-id-token")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public IDToken generateExampleIdToken(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId) {
+        auth.clients().requireView(client);
+
+        UserModel user = getUserModel(userId);
+
+        logger.debugf("generateExampleIdToken invoked. User: %s, Scope param: %s", user.getUsername(), scopeParam);
+
+        return sessionAware(user, scopeParam, (userSession, clientSessionCtx) ->
+        {
+            TokenManager tokenManager = new TokenManager();
+            return tokenManager.responseBuilder(realm, client, null, session, userSession, clientSessionCtx)
+                    .generateAccessToken().generateIDToken().getIdToken();
+        });
+    }
 
     /**
      * Create JSON with payload of example access token
@@ -166,25 +208,20 @@ public class ClientScopeEvaluateResource {
     public AccessToken generateExampleAccessToken(@QueryParam("scope") String scopeParam, @QueryParam("userId") String userId) {
         auth.clients().requireView(client);
 
-        if (userId == null) {
-            throw new NotFoundException("No userId provided");
-        }
-
-        UserModel user = session.users().getUserById(userId, realm);
-        if (user == null) {
-            throw new NotFoundException("No user found");
-        }
+        UserModel user = getUserModel(userId);
 
         logger.debugf("generateExampleAccessToken invoked. User: %s, Scope param: %s", user.getUsername(), scopeParam);
 
-        AccessToken token = generateToken(user, scopeParam);
-        return token;
+        return sessionAware(user, scopeParam, (userSession, clientSessionCtx) ->
+        {
+            TokenManager tokenManager = new TokenManager();
+            return tokenManager.responseBuilder(realm, client, null, session, userSession, clientSessionCtx)
+                    .generateAccessToken().getAccessToken();
+        });
     }
 
-
-    private AccessToken generateToken(UserModel user, String scopeParam) {
+    private<R> R sessionAware(UserModel user, String scopeParam, BiFunction<UserSessionModel, ClientSessionContext,R> function) {
         AuthenticationSessionModel authSession = null;
-        UserSessionModel userSession = null;
         AuthenticationSessionManager authSessionManager = new AuthenticationSessionManager(session);
 
         try {
@@ -196,29 +233,32 @@ public class ClientScopeEvaluateResource {
             authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
             authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scopeParam);
 
-            userSession = session.sessions().createUserSession(authSession.getParentSession().getId(), realm, user, user.getUsername(),
-                    clientConnection.getRemoteAddr(), "example-auth", false, null, null);
+            UserSessionModel userSession = session.sessions().createUserSession(authSession.getParentSession().getId(), realm, user, user.getUsername(),
+                    clientConnection.getRemoteAddr(), "example-auth", false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
 
             AuthenticationManager.setClientScopesInSession(authSession);
             ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(session, userSession, authSession);
 
-            TokenManager tokenManager = new TokenManager();
-
-            TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, null, session, userSession, clientSessionCtx)
-                    .generateAccessToken();
-
-            return responseBuilder.getAccessToken();
+            return function.apply(userSession, clientSessionCtx);
 
         } finally {
             if (authSession != null) {
                 authSessionManager.removeAuthenticationSession(realm, authSession, false);
             }
-            if (userSession != null) {
-                session.sessions().removeUserSession(realm, userSession);
-            }
         }
     }
 
+    private UserModel getUserModel(String userId) {
+        if (userId == null) {
+            throw new NotFoundException("No userId provided");
+        }
+
+        UserModel user = session.users().getUserById(realm, userId);
+        if (user == null) {
+            throw new NotFoundException("No user found");
+        }
+        return user;
+    }
 
     public static class ProtocolMapperEvaluationRepresentation {
 

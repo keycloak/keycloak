@@ -177,7 +177,17 @@ public class SAML2Request {
             throw logger.nullArgumentError("InputStream");
 
         Document samlDocument = DocumentUtil.getDocument(is);
+        return getSAML2ObjectFromDocument(samlDocument);
+    }
 
+    /**
+     * Get the Underlying SAML2Object from a document
+     * @param samlDocument a Document containing a SAML2Object
+     * @return a SAMLDocumentHolder
+     * @throws ProcessingException
+     * @throws ParsingException
+     */
+    public static SAMLDocumentHolder getSAML2ObjectFromDocument(Document samlDocument) throws ProcessingException, ParsingException {
         SAMLParser samlParser = SAMLParser.getInstance();
         JAXPValidationUtil.checkSchemaValidation(samlDocument);
         SAML2Object requestType = (SAML2Object) samlParser.parse(samlDocument);
@@ -257,14 +267,10 @@ public class SAML2Request {
      *
      * @throws ConfigurationException
      */
-    public static LogoutRequestType createLogoutRequest(String issuer) throws ConfigurationException {
+    public static LogoutRequestType createLogoutRequest(NameIDType issuer) throws ConfigurationException {
         LogoutRequestType lrt = new LogoutRequestType(IDGenerator.create("ID_"), XMLTimeUtil.getIssueInstant());
 
-        // Create an issuer
-        NameIDType issuerNameID = new NameIDType();
-        issuerNameID.setValue(issuer);
-
-        lrt.setIssuer(issuerNameID);
+        lrt.setIssuer(issuer);
 
         return lrt;
     }

@@ -16,6 +16,13 @@
  */
 package org.keycloak.testsuite.arquillian.containers;
 
+import org.wildfly.extras.creaper.core.CommandFailedException;
+import org.wildfly.extras.creaper.core.online.CliException;
+import org.wildfly.extras.creaper.core.online.operations.OperationException;
+
+import java.io.IOException;
+import java.util.concurrent.TimeoutException;
+
 /**
  * The test implementing the interface is expected to maintain container lifecycle 
  * itself. No app server container will be started.
@@ -27,7 +34,7 @@ public interface SelfManagedAppContainerLifecycle {
     /**
      * Should be called @Before
      */
-    void startServer();
+    void startServer() throws InterruptedException, IOException, OperationException, TimeoutException, CommandFailedException, CliException;
 
     /**
      * Should be called @After

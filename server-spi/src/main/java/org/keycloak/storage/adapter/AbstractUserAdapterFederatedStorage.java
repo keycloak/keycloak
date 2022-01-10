@@ -22,11 +22,9 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModelDefaultMethods;
-import org.keycloak.models.utils.DefaultRoles;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
@@ -36,6 +34,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Assumes everything is managed by federated storage except for username.  getId() returns a default value
@@ -129,7 +129,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
     @Override
     public Set<GroupModel> getGroups() {
         Set<GroupModel> set = new HashSet<>(getFederatedStorage().getGroups(realm, this.getId()));
-        if (appendDefaultGroups()) set.addAll(realm.getDefaultGroups());
+        if (appendDefaultGroups()) set.addAll(realm.getDefaultGroupsStream().collect(Collectors.toSet()));
         set.addAll(getGroupsInternal());
         return set;
     }
@@ -148,8 +148,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
 
     @Override
     public boolean isMemberOf(GroupModel group) {
-        Set<GroupModel> roles = getGroups();
-        return RoleUtils.isMember(roles, group);
+        return RoleUtils.isMember(getGroups().stream(), group);
     }
 
     /**
@@ -162,16 +161,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
      */
     @Override
     public Set<RoleModel> getRealmRoleMappings() {
-        Set<RoleModel> roleMappings = getRoleMappings();
-
-        Set<RoleModel> realmRoles = new HashSet<>();
-        for (RoleModel role : roleMappings) {
-            RoleContainerModel container = role.getContainer();
-            if (container instanceof RealmModel) {
-                realmRoles.add(role);
-            }
-        }
-        return realmRoles;
+        return this.getRoleMappings().stream().filter(RoleUtils::isRealmRole).collect(Collectors.toSet());
     }
 
     /**
@@ -184,26 +174,13 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
      */
     @Override
     public Set<RoleModel> getClientRoleMappings(ClientModel app) {
-        Set<RoleModel> roleMappings = getRoleMappings();
-
-        Set<RoleModel> roles = new HashSet<>();
-        for (RoleModel role : roleMappings) {
-            RoleContainerModel container = role.getContainer();
-            if (container instanceof ClientModel) {
-                ClientModel appModel = (ClientModel) container;
-                if (appModel.getId().equals(app.getId())) {
-                    roles.add(role);
-                }
-            }
-        }
-        return roles;
+        return getRoleMappings().stream().filter(r -> RoleUtils.isClientRole(r, app)).collect(Collectors.toSet());
     }
 
     @Override
     public boolean hasRole(RoleModel role) {
-        Set<RoleModel> roles = getRoleMappings();
-        return RoleUtils.hasRole(roles, role)
-          || RoleUtils.hasRoleFromGroup(getGroups(), role, true);
+        return RoleUtils.hasRole(getRoleMappings().stream(), role)
+          || RoleUtils.hasRoleFromGroup(getGroups().stream(), role, true);
     }
 
     @Override
@@ -237,7 +214,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
     @Override
     public Set<RoleModel> getRoleMappings() {
         Set<RoleModel> set = new HashSet<>(getFederatedRoleMappings());
-        if (appendDefaultRolesToRoleMappings()) set.addAll(DefaultRoles.getDefaultRoles(realm));
+        if (appendDefaultRolesToRoleMappings()) set.addAll(realm.getDefaultRole().getCompositesStream().collect(Collectors.toSet()));
         set.addAll(getRoleMappingsInternal());
         return set;
     }
@@ -340,9 +317,9 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
     public void setSingleAttribute(String name, String value) {
         if (UserModel.USERNAME.equals(name)) {
             setUsername(value);
+        } else {
+            getFederatedStorage().setSingleAttribute(realm, this.getId(), mapAttribute(name), value);
         }
-        getFederatedStorage().setSingleAttribute(realm, this.getId(), mapAttribute(name), value);
-
     }
 
     @Override
@@ -354,10 +331,10 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
     @Override
     public void setAttribute(String name, List<String> values) {
         if (UserModel.USERNAME.equals(name)) {
-            setUsername(values.get(0));
+            setUsername((values != null && values.size() > 0) ? values.get(0) : null);
+        } else {
+            getFederatedStorage().setAttribute(realm, this.getId(), mapAttribute(name), values);
         }
-        getFederatedStorage().setAttribute(realm, this.getId(), mapAttribute(name), values);
-
     }
 
     @Override
@@ -393,7 +370,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
         return (result == null) ? Collections.emptyList() : result;
     }
 
-    private String mapAttribute(String attributeName) {
+    protected String mapAttribute(String attributeName) {
         if (UserModel.FIRST_NAME.equals(attributeName)) {
             return FIRST_NAME_ATTRIBUTE;
         } else if (UserModel.LAST_NAME.equals(attributeName)) {
@@ -437,4 +414,101 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
         return getId().hashCode();
     }
 
+    /**
+     * The {@link AbstractUserAdapterFederatedStorage.Streams} class extends the {@link AbstractUserAdapterFederatedStorage}
+     * abstract class and implements the {@link UserModel.Streams} interface, allowing subclasses to focus on the implementation
+     * of the {@link Stream}-based query methods and providing default implementations for the collections-based variants
+     * that delegate to their {@link Stream} counterparts.
+     */
+    public abstract static class Streams extends AbstractUserAdapterFederatedStorage implements UserModel.Streams {
+
+        public Streams(final KeycloakSession session, final RealmModel realm, final ComponentModel storageProviderModel) {
+            super(session, realm, storageProviderModel);
+        }
+
+        // user-related methods.
+
+        @Override
+        public Set<String> getRequiredActions() {
+            return this.getRequiredActionsStream().collect(Collectors.toSet());
+        }
+
+        @Override
+        public Stream<String> getRequiredActionsStream() {
+            return super.getFederatedStorage().getRequiredActionsStream(super.realm, super.getId());
+        }
+
+        @Override
+        public List<String> getAttribute(String name) {
+            return this.getAttributeStream(name).collect(Collectors.toList());
+        }
+
+        @Override
+        public Stream<String> getAttributeStream(String name) {
+            if (UserModel.USERNAME.equals(name)) {
+                return Stream.of(getUsername());
+            }
+            List<String> result = super.getFederatedStorage().getAttributes(realm, this.getId()).get(super.mapAttribute(name));
+            return (result == null) ? Stream.empty() : result.stream();
+        }
+
+        // group-related methods.
+
+        @Override
+        public Set<GroupModel> getGroups() {
+            return this.getGroupsStream().collect(Collectors.toSet());
+        }
+
+        @Override
+        public Stream<GroupModel> getGroupsStream() {
+            Stream<GroupModel> groups = getFederatedStorage().getGroupsStream(realm, this.getId());
+            if (appendDefaultGroups()) groups = Stream.concat(groups, realm.getDefaultGroupsStream());
+            return Stream.concat(groups, getGroupsInternal().stream());
+        }
+
+        @Override
+        public boolean isMemberOf(GroupModel group) {
+            return RoleUtils.isMember(this.getGroupsStream(), group);
+        }
+
+        // role-related methods.
+
+        @Override
+        public Set<RoleModel> getRealmRoleMappings() {
+            return this.getRealmRoleMappingsStream().collect(Collectors.toSet());
+        }
+
+        @Override
+        public Stream<RoleModel> getRealmRoleMappingsStream() {
+            return getRoleMappingsStream().filter(RoleUtils::isRealmRole);
+        }
+
+        @Override
+        public Set<RoleModel> getClientRoleMappings(ClientModel app) {
+            return this.getClientRoleMappingsStream(app).collect(Collectors.toSet());
+        }
+
+        @Override
+        public Stream<RoleModel> getClientRoleMappingsStream(ClientModel app) {
+            return getRoleMappingsStream().filter(r -> RoleUtils.isClientRole(r, app));
+        }
+
+        @Override
+        public Set<RoleModel> getRoleMappings() {
+            return this.getRoleMappingsStream().collect(Collectors.toSet());
+        }
+
+        @Override
+        public Stream<RoleModel> getRoleMappingsStream() {
+            Stream<RoleModel> roleMappings = getFederatedRoleMappings().stream();
+            if (appendDefaultRolesToRoleMappings()) roleMappings = Stream.concat(roleMappings, realm.getDefaultRole().getCompositesStream());
+            return Stream.concat(roleMappings, getRoleMappingsInternal().stream());
+        }
+
+        @Override
+        public boolean hasRole(RoleModel role) {
+            return RoleUtils.hasRole(this.getRoleMappingsStream(), role)
+                    || RoleUtils.hasRoleFromGroup(this.getGroupsStream(), role, true);
+        }
+    }
 }

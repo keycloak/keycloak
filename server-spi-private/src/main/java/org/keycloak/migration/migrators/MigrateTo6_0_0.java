@@ -20,7 +20,6 @@ package org.keycloak.migration.migrators;
 import org.jboss.logging.Logger;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.ModelVersion;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -44,9 +43,7 @@ public class MigrateTo6_0_0 implements Migration {
 
     @Override
     public void migrate(KeycloakSession session) {
-        session.realms().getRealms().stream().forEach(r -> {
-            migrateRealm(session, r, false);
-        });
+        session.realms().getRealmsStream().forEach(realm -> migrateRealm(session, realm, false));
     }
 
     @Override
@@ -63,11 +60,9 @@ public class MigrateTo6_0_0 implements Migration {
         LOG.debugf("Added '%s' optional client scope", mpJWTScope.getName());
 
         // assign 'microprofile-jwt' optional client scope to all the OIDC clients.
-        for (ClientModel client : realm.getClients()) {
-            if ((client.getProtocol() == null || "openid-connect".equals(client.getProtocol())) && (!client.isBearerOnly())) {
-                client.addClientScope(mpJWTScope, false);
-            }
-        }
+        realm.getClientsStream()
+                .filter(MigrationUtils::isOIDCNonBearerOnlyClient)
+                .forEach(c -> c.addClientScope(mpJWTScope, false));
 
         LOG.debugf("Client scope '%s' assigned to all the clients", mpJWTScope.getName());
     }

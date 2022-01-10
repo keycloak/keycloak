@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
+import javax.ws.rs.core.Response;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -28,6 +30,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
@@ -37,8 +40,12 @@ import org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapper
 import org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.membership.group.GroupMapperConfig;
 import org.keycloak.storage.user.SynchronizationResult;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
+
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LDAPGroupMapperSyncWithGroupsPathTest extends AbstractLDAPTest {
@@ -88,9 +95,11 @@ public class LDAPGroupMapperSyncWithGroupsPathTest extends AbstractLDAPTest {
             RealmModel realm = ctx.getRealm();
 
             GroupModel groupsPathGroup = KeycloakModelUtils.findGroupByPath(realm, LDAP_GROUPS_PATH);
-            for (GroupModel kcGroup : groupsPathGroup.getSubGroups()) {
-                realm.removeGroup(kcGroup);
-            }
+            
+            // Subgroup stream needs to be collected, because otherwise we can end up with finding group with id that is
+            // already removed
+            groupsPathGroup.getSubGroupsStream().collect(Collectors.toSet())
+                    .forEach(realm::removeGroup);
         });
     }
 
@@ -122,7 +131,7 @@ public class LDAPGroupMapperSyncWithGroupsPathTest extends AbstractLDAPTest {
             GroupModel kcGroup11 = KeycloakModelUtils.findGroupByPath(realm, LDAP_GROUPS_PATH + "/group1/group11");
             GroupModel kcGroup12 = KeycloakModelUtils.findGroupByPath(realm, LDAP_GROUPS_PATH + "/group1/group12");
 
-            Assert.assertEquals(2, kcGroup1.getSubGroups().size());
+            Assert.assertEquals(2, kcGroup1.getSubGroupsStream().count());
 
             Assert.assertEquals("group1 - description", kcGroup1.getFirstAttribute(descriptionAttrName));
             Assert.assertNull(kcGroup11.getFirstAttribute(descriptionAttrName));
@@ -171,7 +180,7 @@ public class LDAPGroupMapperSyncWithGroupsPathTest extends AbstractLDAPTest {
             Assert.assertNotNull(KeycloakModelUtils.findGroupByPath(realm, LDAP_GROUPS_PATH + "/group1/group11"));
             Assert.assertNotNull(KeycloakModelUtils.findGroupByPath(realm, LDAP_GROUPS_PATH + "/group1/group12"));
 
-            Assert.assertEquals(2, kcGroup1.getSubGroups().size());
+            Assert.assertEquals(2, kcGroup1.getSubGroupsStream().count());
 
             // Create some new groups in keycloak
             GroupModel groupsPathGroup = KeycloakModelUtils.findGroupByPath(realm, LDAP_GROUPS_PATH);
@@ -205,5 +214,31 @@ public class LDAPGroupMapperSyncWithGroupsPathTest extends AbstractLDAPTest {
             Assert.assertNull(KeycloakModelUtils.findGroupByPath(realm, LDAP_GROUPS_PATH + "/group1/model2"));
             Assert.assertNotNull(KeycloakModelUtils.findGroupByPath(realm, "/outside"));
         });
+    }
+
+    // KEYCLOAK-14892
+    @Test
+    public void test03_createConfigurationWithoutGroupPath() throws Exception {
+        ComponentRepresentation groupMapperRep = findMapperRepByName("groupsMapper");
+
+        groupMapperRep.setId(null);
+        groupMapperRep.setName("different");
+        groupMapperRep.getConfig().remove(GroupMapperConfig.LDAP_GROUPS_PATH);
+        groupMapperRep.getConfig().remove(GroupMapperConfig.LDAP_GROUPS_PATH);
+
+        // Test that attempt to create configuration without LDAP_GROUPS_PATH configured should be still allowed due the backwards compatibility
+        Response response = adminClient.realm("test").components().add(groupMapperRep);
+        String newMapperId = ApiUtil.getCreatedId(response);
+
+        try {
+            response.close();
+
+            // Load the mapper and assert default group path set
+            ComponentRepresentation newMapper = adminClient.realm("test").components().component(newMapperId).toRepresentation();
+            Assert.assertEquals(GroupMapperConfig.DEFAULT_LDAP_GROUPS_PATH, newMapper.getConfig().getFirst(GroupMapperConfig.LDAP_GROUPS_PATH));
+        } finally {
+            // revert new mapper
+            adminClient.realm("test").components().component(newMapperId).remove();
+        }
     }
 }

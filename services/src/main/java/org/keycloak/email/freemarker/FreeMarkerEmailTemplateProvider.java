@@ -28,7 +28,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
-import org.jboss.logging.Logger;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.email.EmailException;
@@ -146,7 +145,12 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
         BrokeredIdentityContext brokerContext = (BrokeredIdentityContext) this.attributes.get(IDENTITY_PROVIDER_BROKER_CONTEXT);
         String idpAlias = brokerContext.getIdpConfig().getAlias();
+        String idpDisplayName = brokerContext.getIdpConfig().getDisplayName();
         idpAlias = ObjectUtil.capitalize(idpAlias);
+
+        if (idpDisplayName != null) {
+            idpAlias = ObjectUtil.capitalize(idpDisplayName);
+        }
 
         attributes.put("identityProviderContext", brokerContext);
         attributes.put("identityProviderAlias", idpAlias);
@@ -208,7 +212,9 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
             Theme theme = getTheme();
             Locale locale = session.getContext().resolveLocale(user);
             attributes.put("locale", locale);
-            Properties rb = theme.getMessages(locale);
+            Properties rb = new Properties();
+            rb.putAll(theme.getMessages(locale));
+            rb.putAll(realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag()));
             attributes.put("msg", new MessageFormatterMethod(locale, rb));
             attributes.put("properties", theme.getProperties());
             String subject = new MessageFormat(rb.getProperty(subjectKey, subjectKey), locale).format(subjectAttributes.toArray());
@@ -270,7 +276,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         return sb.toString();
     }
 
-    protected class EmailTemplate {
+    protected static class EmailTemplate {
 
         private String subject;
         private String textBody;

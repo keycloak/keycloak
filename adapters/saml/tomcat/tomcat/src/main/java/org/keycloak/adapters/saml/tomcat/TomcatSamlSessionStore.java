@@ -26,14 +26,14 @@ import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.SessionIdMapper;
 import org.keycloak.adapters.spi.SessionIdMapperUpdater;
 import org.keycloak.adapters.tomcat.CatalinaUserSessionManagement;
-import org.keycloak.adapters.tomcat.GenericPrincipalFactory;
+import org.keycloak.adapters.tomcat.PrincipalFactory;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class TomcatSamlSessionStore extends CatalinaSamlSessionStore {
-    public TomcatSamlSessionStore(CatalinaUserSessionManagement sessionManagement, GenericPrincipalFactory principalFactory, SessionIdMapper idMapper, Request request, AbstractSamlAuthenticatorValve valve, HttpFacade facade, SamlDeployment deployment) {
+    public TomcatSamlSessionStore(CatalinaUserSessionManagement sessionManagement, PrincipalFactory principalFactory, SessionIdMapper idMapper, Request request, AbstractSamlAuthenticatorValve valve, HttpFacade facade, SamlDeployment deployment) {
         super(sessionManagement, principalFactory, idMapper, SessionIdMapperUpdater.DIRECT, request, valve, facade, deployment);
     }
 

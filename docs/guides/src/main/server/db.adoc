@@ -1,0 +1,23 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+
+<@tmpl.guide
+    title="Relational database setup"
+    summary="Understand how to configure different relational databases for Keycloak"
+    includedOptions="db db.* hostname">
+
+First step is to decide which database vendor you are going to use. Keycloak has support for a number of different vendors.
+
+Selecting the database vendor is done at build-time rather than at runtime. To select the database vendor run:
+
+<@kc.build parameters="--db <vendor>"/>
+
+Valid options for database vendors include:
+
+<@opts.expectedValues option="db"/>
+
+Once configured you can easily connect to the database with:
+
+<@kc.start parameters="--db-host <hostname> --db-schema <schema> --db-user <username> --db-password <password>"/>
+</@tmpl.guide>

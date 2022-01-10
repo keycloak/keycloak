@@ -30,7 +30,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.security.SecureRandom;
 import java.util.Deque;
 import java.util.Locale;
 import java.util.Map;
@@ -57,7 +56,7 @@ import org.keycloak.adapters.rotation.AdapterTokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.common.util.RandomString;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
@@ -85,6 +84,16 @@ public class KeycloakInstalled {
         LOGGED_MANUAL, LOGGED_DESKTOP
     }
 
+    /**
+     * local port to listen for callbacks. The value {@code 0} will choose a random port.
+     */
+    private int listenPort = 0;
+
+    /**
+     * local hostname to listen for callbacks.
+     */
+    private String listenHostname = "localhost";
+
     private AccessTokenResponse tokenResponse;
     private String tokenString;
     private String idTokenString;
@@ -97,6 +106,8 @@ public class KeycloakInstalled {
     Pattern callbackPattern = Pattern.compile("callback\\s*=\\s*\"([^\"]+)\"");
     Pattern paramPattern = Pattern.compile("param=\"([^\"]+)\"\\s+label=\"([^\"]+)\"\\s+mask=(\\S+)");
     Pattern codePattern = Pattern.compile("code=([^&]+)");
+    private CallbackListener callback;
+    private DesktopProvider desktopProvider = new DesktopProvider();
 
 
     public KeycloakInstalled() {
@@ -122,6 +133,33 @@ public class KeycloakInstalled {
 
     public void setLocale(Locale locale) {
         this.locale = locale;
+    }
+
+    public int getListenPort() {
+        return listenPort;
+    }
+
+    /**
+     * Configures the local port to listen for callbacks. The value {@code 0} will choose a random port. Defaults to {@code 0}.
+     * @param listenPort a valid port number
+     */
+    public void setListenPort(int listenPort) {
+        if (listenPort < 0 || listenPort > 65535) {
+            throw new IllegalArgumentException("localPort");
+        }
+        this.listenPort = listenPort;
+    }
+
+    public String getListenHostname() {
+        return listenHostname;
+    }
+
+    /**
+     * Configures the local hostname to listen for callbacks. The value {@code 0} will choose a random port
+     * @param listenHostname a valid local hostname
+     */
+    public void setListenHostname(String listenHostname) {
+        this.listenHostname = listenHostname;
     }
 
     public void login() throws IOException, ServerRequest.HttpFailure, VerificationException, InterruptedException, OAuthErrorException, URISyntaxException {
@@ -157,16 +195,16 @@ public class KeycloakInstalled {
     }
 
     public void loginDesktop() throws IOException, VerificationException, OAuthErrorException, URISyntaxException, ServerRequest.HttpFailure, InterruptedException {
-        CallbackListener callback = new CallbackListener();
+        callback = new CallbackListener();
         callback.start();
 
-        String redirectUri = "http://localhost:" + callback.getLocalPort();
+        String redirectUri = getRedirectUri(callback);
         String state = UUID.randomUUID().toString();
         Pkce pkce = deployment.isPkce() ? generatePkce() : null;
 
         String authUrl = createAuthUrl(redirectUri, state, pkce);
 
-        Desktop.getDesktop().browse(new URI(authUrl));
+        desktopProvider.browse(new URI(authUrl));
 
         try {
             callback.await();
@@ -186,6 +224,12 @@ public class KeycloakInstalled {
         processCode(callback.code, redirectUri, pkce);
 
         status = Status.LOGGED_DESKTOP;
+    }
+
+    public void close() {
+        if (callback != null) {
+            callback.stop();
+        }
     }
 
     protected String createAuthUrl(String redirectUri, String state, Pkce pkce) {
@@ -220,13 +264,15 @@ public class KeycloakInstalled {
         CallbackListener callback = new CallbackListener();
         callback.start();
 
-        String redirectUri = "http://localhost:" + callback.getLocalPort();
+        String redirectUri = getRedirectUri(callback);
 
-        String logoutUrl = deployment.getLogoutUrl()
+        // pass the id_token_hint so that sessions is invalidated for this particular session
+        String logoutUrl = deployment.getLogoutUrl().clone()
                 .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
+                .queryParam("id_token_hint", idTokenString)
                 .build().toString();
 
-        Desktop.getDesktop().browse(new URI(logoutUrl));
+        desktopProvider.browse(new URI(logoutUrl));
 
         try {
             callback.await();
@@ -234,6 +280,10 @@ public class KeycloakInstalled {
             callback.stop();
             throw e;
         }
+    }
+
+    private String getRedirectUri(CallbackListener callback) {
+        return String.format("http://%s:%s", getListenHostname(), callback.getLocalPort());
     }
 
     public void loginManual() throws IOException, ServerRequest.HttpFailure, VerificationException {
@@ -580,8 +630,12 @@ public class KeycloakInstalled {
         return tokenResponse;
     }
 
+    public void setDesktopProvider(DesktopProvider desktopProvider) {
+        this.desktopProvider = desktopProvider;
+    }
+
     public boolean isDesktopSupported() {
-        return Desktop.isDesktopSupported();
+        return desktopProvider.isDesktopSupported();
     }
 
     public KeycloakDeployment getDeployment() {
@@ -629,7 +683,7 @@ public class KeycloakInstalled {
             server = Undertow.builder()
                     .setIoThreads(1)
                     .setWorkerThreads(1)
-                    .addHttpListener(0, "localhost")
+                    .addHttpListener(getListenPort(), getListenHostname())
                     .setHandler(gracefulShutdownHandler)
                     .build();
 
@@ -642,6 +696,7 @@ public class KeycloakInstalled {
             } catch (Exception ignore) {
                 // it is OK to happen if thread is modified while stopping the server, specially when a security manager is enabled
             }
+            shutdownSignal.countDown();
         }
 
         public int getLocalPort() {
@@ -714,7 +769,7 @@ public class KeycloakInstalled {
 
         public static Pkce generatePkce() {
             try {
-                String codeVerifier = new RandomString(PKCE_CODE_VERIFIER_MAX_LENGTH, new SecureRandom()).nextString();
+                String codeVerifier = SecretGenerator.getInstance().randomString(PKCE_CODE_VERIFIER_MAX_LENGTH);
                 String codeChallenge = generateS256CodeChallenge(codeVerifier);
                 return new Pkce(codeVerifier, codeChallenge);
             } catch (Exception ex){
@@ -727,6 +782,16 @@ public class KeycloakInstalled {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             md.update(codeVerifier.getBytes(StandardCharsets.ISO_8859_1));
             return Base64Url.encode(md.digest());
+        }
+    }
+
+    public static class DesktopProvider {
+        public boolean isDesktopSupported() {
+            return Desktop.isDesktopSupported();
+        }
+
+        public void browse(URI uri) throws IOException {
+            Desktop.getDesktop().browse(uri);
         }
     }
 }

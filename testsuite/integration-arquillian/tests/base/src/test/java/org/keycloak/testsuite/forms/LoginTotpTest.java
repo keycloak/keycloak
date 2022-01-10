@@ -33,13 +33,13 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
@@ -96,7 +96,7 @@ public class LoginTotpTest extends AbstractTestRealmKeycloakTest {
 
         loginTotpPage.login("123456");
         loginTotpPage.assertCurrent();
-        Assert.assertEquals("Invalid authenticator code.", loginPage.getError());
+        Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
 
         //loginPage.assertCurrent();  // Invalid authenticator code.
         //Assert.assertEquals("Invalid username or password.", loginPage.getError());
@@ -115,7 +115,7 @@ public class LoginTotpTest extends AbstractTestRealmKeycloakTest {
 
         loginTotpPage.login(null);
         loginTotpPage.assertCurrent();
-        Assert.assertEquals("Invalid authenticator code.", loginPage.getError());
+        Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
 
         //loginPage.assertCurrent();  // Invalid authenticator code.
         //Assert.assertEquals("Invalid username or password.", loginPage.getError());
@@ -166,7 +166,7 @@ public class LoginTotpTest extends AbstractTestRealmKeycloakTest {
 
         Assert.assertTrue(loginPage.isCurrent());
 
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
 
         events.expectLogin().error("invalid_user_credentials").session((String) null)
                 .removeDetail(Details.CONSENT)
@@ -198,7 +198,7 @@ public class LoginTotpTest extends AbstractTestRealmKeycloakTest {
     //KEYCLOAK-12908
     @Test
     public void loginWithTotp_getToken_checkCompatibilityCLI() throws IOException {
-        Client httpClient = ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
         try {
             WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
                     .path("/realms")

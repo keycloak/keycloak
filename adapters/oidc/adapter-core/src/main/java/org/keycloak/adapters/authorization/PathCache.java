@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
 import org.keycloak.common.util.Time;
+import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
 
 /**
@@ -42,14 +43,16 @@ public class PathCache {
 
     private final long maxAge;
     private final boolean enabled;
+    private final Map<String, PathConfig> paths;
 
     /**
      * Creates a new instance.
-     *
-     * @param maxEntries the maximum number of entries to keep in the cache
+     *  @param maxEntries the maximum number of entries to keep in the cache
      * @param maxAge the time in milliseconds that an entry can stay in the cache. If {@code -1}, entries never expire
+     * @param paths the pre-configured paths
      */
-    public PathCache(final int maxEntries, long maxAge) {
+    public PathCache(final int maxEntries, long maxAge,
+            Map<String, PathConfig> paths) {
         cache = new LinkedHashMap<String, CacheEntry>(16, DEFAULT_LOAD_FACTOR, true) {
             @Override
             protected boolean removeEldestEntry(Map.Entry eldest) {
@@ -57,11 +60,16 @@ public class PathCache {
             }
         };
         this.maxAge = maxAge;
-        this.enabled = maxAge > 0;
+        this.enabled = ! (maxAge < -1 || (maxAge > -1 && maxAge <= 0));
+        this.paths = paths;
     }
 
     public void put(String uri, PathConfig newValue) {
         if (!enabled) {
+            if (newValue != null) {
+                // if disabled we also remove from the pre-defined paths map
+                markForInvalidation(newValue);
+            }
             return;
         }
 
@@ -77,6 +85,15 @@ public class PathCache {
             }
         } finally {
             writing.lazySet(false);
+        }
+    }
+
+    private void markForInvalidation(PathConfig newValue) {
+        PathConfig pathConfig = paths.get(newValue.getPath());
+        
+        if (pathConfig != null && !pathConfig.isStatic()) {
+            // invalidate the configuration so that the path config is reload based on latest changes on the server
+            pathConfig.invalidate();       
         }
     }
 
@@ -115,12 +132,19 @@ public class PathCache {
             return null;
         }
 
+        PathConfig config = cached.value();
+
         if (cached.isExpired()) {
             remove(cached.key());
+            
+            if (config != null && config.getPath() != null) {
+                // also remove from pre-defined paths map so that changes on the server are properly reflected
+                markForInvalidation(config);
+            }
             return null;
         }
 
-        return cached.value();
+        return config;
     }
 
     private boolean parkForWriteAndCheckInterrupt() {

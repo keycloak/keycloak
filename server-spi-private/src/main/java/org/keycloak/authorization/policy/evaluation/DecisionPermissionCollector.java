@@ -31,6 +31,7 @@ import org.keycloak.representations.idm.authorization.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,7 +45,7 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
     private final AuthorizationProvider authorizationProvider;
     private final ResourceServer resourceServer;
     private final AuthorizationRequest request;
-    private final List<Permission> permissions = new ArrayList<>();
+    private final Set<Permission> permissions = new LinkedHashSet<>();
 
     public DecisionPermissionCollector(AuthorizationProvider authorizationProvider, ResourceServer resourceServer, AuthorizationRequest request) {
         this.authorizationProvider = authorizationProvider;
@@ -56,10 +57,13 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
     public void onComplete(Result result) {
         ResourcePermission permission = result.getPermission();
         Resource resource = permission.getResource();
-        List<Scope> requestedScopes = permission.getScopes();
+        Collection<Scope> requestedScopes = permission.getScopes();
 
         if (Effect.PERMIT.equals(result.getEffect())) {
-            grantPermission(authorizationProvider, permissions, permission, resource != null ? resource.getScopes() : requestedScopes, resourceServer, request, result);
+            if (permission.getScopes().isEmpty() && !resource.getScopes().isEmpty()) {
+                return;
+            }
+            grantPermission(authorizationProvider, permissions, permission, requestedScopes, resourceServer, request, result);
         } else {
             Set<Scope> grantedScopes = new HashSet<>();
             Set<Scope> deniedScopes = new HashSet<>();
@@ -178,7 +182,7 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
         throw new RuntimeException("Failed to evaluate permissions", cause);
     }
 
-    protected void grantPermission(AuthorizationProvider authorizationProvider, List<Permission> permissions, ResourcePermission permission, Collection<Scope> grantedScopes, ResourceServer resourceServer, AuthorizationRequest request, Result result) {
+    protected void grantPermission(AuthorizationProvider authorizationProvider, Set<Permission> permissions, ResourcePermission permission, Collection<Scope> grantedScopes, ResourceServer resourceServer, AuthorizationRequest request, Result result) {
         Set<String> scopeNames = grantedScopes.stream().map(Scope::getName).collect(Collectors.toSet());
         Resource resource = permission.getResource();
 
@@ -189,9 +193,7 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
 
             resourceStore.findByScope(grantedScopes.stream().map(Scope::getId).collect(Collectors.toList()), resourceServer.getId(), resource1 -> permissions.add(createPermission(resource, scopeNames, permission.getClaims(), request)));
 
-            if (permissions.isEmpty()) {
-                permissions.add(createPermission(null, scopeNames, permission.getClaims(), request));
-            }
+            permissions.add(createPermission(null, scopeNames, permission.getClaims(), request));
         }
     }
 

@@ -24,6 +24,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.Profile;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -46,6 +47,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.drone.Different;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
@@ -68,23 +70,32 @@ import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.userprofile.UserProfileContext;
+
 import java.util.Collections;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.hamcrest.Matchers;
 import org.junit.Assume;
+
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
@@ -96,6 +107,7 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.A
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true)
 public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
 
     public static final String ROOT_URL_CLIENT = "root-url-client";
@@ -196,7 +208,12 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
 
     @Before
     public void before() {
-        userId = findUser("test-user@localhost").getId();
+        UserRepresentation user = findUser("test-user@localhost");
+
+        user.setEmail("test-user@localhost");
+        updateUser(user);
+
+        userId = user.getId();
 
         // Revert any password policy and user password changes
         setPasswordPolicy("");
@@ -273,7 +290,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
 
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
 
         events.expectLogin().session((String) null).error(Errors.INVALID_USER_CREDENTIALS)
                 .removeDetail(Details.CONSENT)
@@ -413,6 +430,24 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
     }
 
+    // KEYCLOAK-12729
+    @Test
+    public void changePasswordWithNotEmailPolicy() {
+        setPasswordPolicy("notEmail(1)");
+
+        changePasswordPage.open();
+        loginPage.login("test-user@localhost", "password");
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, getAccountRedirectUrl() + "?path=password").assertEvent();
+
+        changePasswordPage.changePassword("password", "test-user@localhost", "test-user@localhost");
+        Assert.assertEquals("Invalid password: must not be equal to the email.", profilePage.getError());
+        events.expectAccount(EventType.UPDATE_PASSWORD_ERROR).error(Errors.PASSWORD_REJECTED).assertEvent();
+
+        changePasswordPage.changePassword("password", "newPassword", "newPassword");
+        Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
+        events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
+    }
+
     @Test
     public void changePasswordWithRegexPatternsPolicy() {
         setPasswordPolicy("regexPattern(^[A-Z]+#[a-z]{8}$)");
@@ -450,9 +485,10 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         final String uId = userId;  // Needed for run-on-server
         testingClient.server("test").run(session -> {
             RealmModel realm = session.getContext().getRealm();
-            UserModel user = session.users().getUserById(uId, realm);
+            UserModel user = session.users().getUserById(realm, uId);
             assertThat(user, Matchers.notNullValue());
-            List<CredentialModel> storedCredentials = session.userCredentialManager().getStoredCredentials(realm, user);
+            List<CredentialModel> storedCredentials = session.userCredentialManager()
+                    .getStoredCredentialsStream(realm, user).collect(Collectors.toList());
             assertThat(storedCredentials, Matchers.hasSize(expectedNumberOfStoredCredentials));
         });
     }
@@ -679,8 +715,95 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("New last", profilePage.getLastName());
         Assert.assertEquals("new@email.com", profilePage.getEmail());
 
-        events.expectAccount(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
-        events.expectAccount(EventType.UPDATE_PROFILE).assertEvent();
+        events.expectAccount(EventType.UPDATE_PROFILE)
+                .detail(Details.CONTEXT, UserProfileContext.ACCOUNT_OLD.name())
+                .detail(Details.PREVIOUS_FIRST_NAME, "Tom").detail(Details.UPDATED_FIRST_NAME, "New first")
+                .detail(Details.PREVIOUS_LAST_NAME, "Brady").detail(Details.UPDATED_LAST_NAME, "New last")
+                .detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com")
+                .assertEvent();
+
+        // reset user for other tests
+        profilePage.updateProfile("Tom", "Brady", "test-user@localhost");
+        events.clear();
+
+        // Revert
+        setEditUsernameAllowed(true);
+    }
+
+    @Test
+    public void changeProfileWithoutRemoveCustomAttributes() throws Exception {
+        setEditUsernameAllowed(false);
+        setRegistrationEmailAsUsername(false);
+
+        UserResource userResource = testRealm().users().get(userId);
+        UserRepresentation user = userResource.toRepresentation();
+
+        user.setAttributes(new HashMap<>());
+        user.getAttributes().put("custom", Arrays.asList("custom-value"));
+
+        userResource.update(user);
+
+        profilePage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, getAccountRedirectUrl()).assertEvent();
+
+        Assert.assertEquals("test-user@localhost", profilePage.getUsername());
+        Assert.assertEquals("Tom", profilePage.getFirstName());
+        Assert.assertEquals("Brady", profilePage.getLastName());
+        Assert.assertEquals("test-user@localhost", profilePage.getEmail());
+
+        profilePage.updateProfile("New first", "New last", "new@email.com");
+
+        Assert.assertEquals("Your account has been updated.", profilePage.getSuccess());
+        Assert.assertEquals("test-user@localhost", profilePage.getUsername());
+        Assert.assertEquals("New first", profilePage.getFirstName());
+        Assert.assertEquals("New last", profilePage.getLastName());
+        Assert.assertEquals("new@email.com", profilePage.getEmail());
+
+        events.expectAccount(EventType.UPDATE_PROFILE).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
+
+        user = userResource.toRepresentation();
+        assertNotNull(user.getAttributes());
+        assertTrue(user.getAttributes().containsKey("custom"));
+
+        // reset user for other tests
+        profilePage.updateProfile("Tom", "Brady", "test-user@localhost");
+        events.clear();
+
+        // Revert
+        setEditUsernameAllowed(true);
+    }
+
+    @Test
+    public void changeProfileEmailChangeSetsEmailVerified() throws Exception {
+        setEditUsernameAllowed(false);
+        setRegistrationEmailAsUsername(false);
+
+        UserResource userResource = testRealm().users().get(userId);
+        UserRepresentation user = userResource.toRepresentation();
+        user.setEmailVerified(true);
+        userResource.update(user);
+
+        profilePage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, getAccountRedirectUrl()).assertEvent();
+
+        // email not changed so flag no reset
+        profilePage.updateProfile(profilePage.getFirstName(), "New last", profilePage.getEmail());
+        user = userResource.toRepresentation();
+        assertTrue(user.isEmailVerified());
+        
+        events.expectAccount(EventType.UPDATE_PROFILE).detail(Details.UPDATED_LAST_NAME, "New last").detail(Details.PREVIOUS_LAST_NAME, "Brady").assertEvent();
+        
+        //email changed, flag must be reeset
+        profilePage.updateProfile(profilePage.getFirstName(), profilePage.getLastName(), "new@email.com");
+        Assert.assertEquals("new@email.com", profilePage.getEmail());
+        user = userResource.toRepresentation();
+        assertFalse(user.isEmailVerified());
+
+        events.expectAccount(EventType.UPDATE_PROFILE).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
 
         // reset user for other tests
         profilePage.updateProfile("Tom", "Brady", "test-user@localhost");
@@ -838,7 +961,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         loginPage.login("change-username", "password");
 
         Assert.assertTrue(loginPage.isCurrent());
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
 
         loginPage.login("change-username-updated", "password");
     }
@@ -863,7 +986,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         loginPage.login("change-username@localhost", "password");
 
         Assert.assertTrue(loginPage.isCurrent());
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
 
         loginPage.login("change-username-updated@localhost", "password");
     }
@@ -1129,8 +1252,8 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         Assert.assertTrue(sessionsPage.isCurrent());
 
         List<List<String>> sessions = sessionsPage.getSessions();
-        Assert.assertEquals(1, sessions.size());
-        Assert.assertEquals("127.0.0.1", sessions.get(0).get(0));
+        assertThat(sessions, hasSize(1));
+        assertThat(sessions.get(0).get(0), anyOf(equalTo("127.0.0.1"), equalTo("0:0:0:0:0:0:0:1")));
 
         // Create second session
         try {
@@ -1180,7 +1303,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
 
             Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
             Assert.assertThat(apps.keySet(), containsInAnyOrder(
-              /* "root-url-client", */ "Account", "Account Console", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}", "direct-grant"));
+              /* "root-url-client", */ "Account", "Account Console", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}", "direct-grant", "custom-audience"));
 
             rsu.add(testRealm().roles().get("user").toRepresentation())
               .update();
@@ -1188,7 +1311,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
             driver.navigate().refresh();
             apps = applicationsPage.getApplications();
             Assert.assertThat(apps.keySet(), containsInAnyOrder(
-              "root-url-client", "Account", "Account Console", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}", "direct-grant"));
+              "root-url-client", "Account", "Account Console", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}", "direct-grant", "custom-audience"));
         }
     }
 
@@ -1207,7 +1330,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
 
             Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
             Assert.assertThat(apps.keySet(), containsInAnyOrder(
-              "root-url-client", "Account", "Account Console", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}", "direct-grant"));
+              "root-url-client", "Account", "Account Console", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}", "direct-grant", "custom-audience"));
         }
     }
 
@@ -1222,7 +1345,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         applicationsPage.assertCurrent();
 
         Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
-        Assert.assertThat(apps.keySet(), containsInAnyOrder("root-url-client", "Account", "Account Console", "Broker", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}", "direct-grant"));
+        Assert.assertThat(apps.keySet(), containsInAnyOrder("root-url-client", "Account", "Account Console", "test-app", "test-app-scope", "third-party", "test-app-authz", "My Named Test App", "Test App Named - ${client_account}", "direct-grant", "custom-audience"));
 
         AccountApplicationsPage.AppEntry accountEntry = apps.get("Account");
         Assert.assertThat(accountEntry.getRolesAvailable(), containsInAnyOrder(

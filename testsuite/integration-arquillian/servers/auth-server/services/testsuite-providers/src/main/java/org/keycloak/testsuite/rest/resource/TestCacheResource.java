@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.rest.resource;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -29,7 +30,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
@@ -39,7 +39,7 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
-import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
+import org.keycloak.connections.infinispan.InfinispanUtil;
 import org.keycloak.testsuite.rest.representation.JGroupsStats;
 import org.keycloak.utils.MediaType;
 import org.infinispan.stream.CacheCollectors;
@@ -77,7 +77,9 @@ public class TestCacheResource {
     @Path("/enumerate-keys")
     @Produces(MediaType.APPLICATION_JSON)
     public Set<String> enumerateKeys() {
-        return cache.keySet().stream()
+        // Wrap cache.keySet into another set to avoid infinispan ClassNotFoundExceptions
+        Set<Object> keySet = new HashSet<>(cache.keySet());
+        return keySet.stream()
           .map(Object::toString)
           .collect(CacheCollectors.serializableCollector(Collectors::toSet));    // See https://issues.jboss.org/browse/ISPN-7596
     }
@@ -102,6 +104,13 @@ public class TestCacheResource {
     @Produces(MediaType.APPLICATION_JSON)
     public void removeKey(@PathParam("id") String id) {
         cache.remove(id);
+    }
+
+    @POST
+    @Path("/process-expiration")
+    @Produces(MediaType.APPLICATION_JSON)
+    public void processExpiration() {
+        cache.getAdvancedCache().getExpirationManager().processExpiration();
     }
 
     @GET

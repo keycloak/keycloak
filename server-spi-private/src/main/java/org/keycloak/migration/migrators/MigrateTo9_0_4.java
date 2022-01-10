@@ -38,7 +38,7 @@ public class MigrateTo9_0_4 implements Migration {
 
     @Override
     public void migrate(KeycloakSession session) {
-        session.realms().getRealms().stream().forEach(this::checkAuthConfigNullAlias);
+        session.realms().getRealmsStream().forEach(this::checkAuthConfigNullAlias);
     }
 
     @Override
@@ -46,7 +46,7 @@ public class MigrateTo9_0_4 implements Migration {
     }
 
     protected void checkAuthConfigNullAlias(RealmModel realm) {
-        realm.getAuthenticatorConfigs().stream()
+        realm.getAuthenticatorConfigsStream()
                 .filter(this::hasNullAlias)
                 .forEach((config) -> this.setRandomAlias(realm, config));
     }

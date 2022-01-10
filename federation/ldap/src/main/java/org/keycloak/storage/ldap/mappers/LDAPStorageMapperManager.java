@@ -17,9 +17,6 @@
 
 package org.keycloak.storage.ldap.mappers;
 
-import java.util.Collection;
-import java.util.List;
-
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
@@ -45,15 +42,4 @@ public class LDAPStorageMapperManager {
 
         return ldapMapper;
     }
-
-
-    public List<ComponentModel> sortMappersAsc(Collection<ComponentModel> mappers) {
-        return LDAPMappersComparator.sortAsc(ldapProvider.getLdapIdentityStore().getConfig(), mappers);
-    }
-
-    public List<ComponentModel> sortMappersDesc(Collection<ComponentModel> mappers) {
-        return LDAPMappersComparator.sortDesc(ldapProvider.getLdapIdentityStore().getConfig(), mappers);
-    }
-
-
 }

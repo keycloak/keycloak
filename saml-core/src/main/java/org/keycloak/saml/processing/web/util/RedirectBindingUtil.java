@@ -16,8 +16,8 @@
  */
 package org.keycloak.saml.processing.web.util;
 
+import org.keycloak.common.util.Base64;
 import org.keycloak.saml.common.constants.GeneralConstants;
-import org.keycloak.saml.common.util.Base64;
 import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.saml.processing.api.util.DeflateUtil;
 
@@ -70,7 +70,7 @@ public class RedirectBindingUtil {
      * @throws IOException
      */
     public static String base64Encode(byte[] stringToEncode) throws IOException {
-        return Base64.encodeBytes(stringToEncode, Base64.DONT_BREAK_LINES);
+        return Base64.encodeBytes(stringToEncode);
     }
 
     /**
@@ -83,7 +83,7 @@ public class RedirectBindingUtil {
      * @throws IOException
      */
     public static String base64URLEncode(byte[] stringToEncode) throws IOException {
-        String base64Request = Base64.encodeBytes(stringToEncode, Base64.DONT_BREAK_LINES);
+        String base64Request = Base64.encodeBytes(stringToEncode);
         return urlEncode(base64Request);
     }
 
@@ -139,7 +139,7 @@ public class RedirectBindingUtil {
      */
     public static String deflateBase64Encode(byte[] stringToEncode) throws IOException {
         byte[] deflatedMsg = DeflateUtil.encode(stringToEncode);
-        return Base64.encodeBytes(deflatedMsg, Base64.DONT_BREAK_LINES);
+        return Base64.encodeBytes(deflatedMsg);
     }
 
     /**
@@ -162,8 +162,10 @@ public class RedirectBindingUtil {
      * @param encodedString
      *
      * @return
+     *
+     * @throws IOException
      */
-    public static InputStream base64DeflateDecode(String encodedString) {
+    public static InputStream base64DeflateDecode(String encodedString) throws IOException {
         byte[] base64decodedMsg = Base64.decode(encodedString);
         return DeflateUtil.decode(base64decodedMsg);
     }

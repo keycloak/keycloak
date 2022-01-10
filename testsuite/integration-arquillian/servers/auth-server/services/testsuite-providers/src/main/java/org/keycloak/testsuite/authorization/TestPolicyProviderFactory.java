@@ -89,7 +89,7 @@ public class TestPolicyProviderFactory implements PolicyProviderFactory {
         return "test";
     }
 
-    private class TestPolicyProvider implements PolicyProvider {
+    private static class TestPolicyProvider implements PolicyProvider {
 
         private final AuthorizationProvider authorization;
 

@@ -26,6 +26,11 @@ public class ServerURLs {
     public static final String AUTH_SERVER_HOST = System.getProperty("auth.server.host", "localhost");
     public static final String AUTH_SERVER_HOST2 = System.getProperty("auth.server.host2", AUTH_SERVER_HOST);
 
+    public static final boolean APP_SERVER_SSL_REQUIRED = Boolean.parseBoolean(System.getProperty("app.server.ssl.required", "false"));
+    public static final String APP_SERVER_PORT = APP_SERVER_SSL_REQUIRED ? System.getProperty("app.server.https.port", "8643") : System.getProperty("app.server.http.port", "8280");
+    public static final String APP_SERVER_SCHEME = APP_SERVER_SSL_REQUIRED ? "https" : "http";
+    public static final String APP_SERVER_HOST = System.getProperty("app.server.host", "localhost");
+
     public static String getAuthServerContextRoot() {
         return getAuthServerContextRoot(0);
     }
@@ -39,14 +44,7 @@ public class ServerURLs {
     }
 
     public static String getAppServerContextRoot(int clusterPortOffset) {
-        String host = System.getProperty("app.server.host", "localhost");
-
-        boolean sslRequired = Boolean.parseBoolean(System.getProperty("app.server.ssl.required"));
-
-        int port = sslRequired ? parsePort("app.server.https.port") : parsePort("app.server.http.port");
-        String scheme = sslRequired ? "https" : "http";
-
-        return String.format("%s://%s:%s", scheme, host, port + clusterPortOffset);
+        return removeDefaultPorts(String.format("%s://%s:%s", APP_SERVER_SCHEME, APP_SERVER_HOST, parseInt(APP_SERVER_PORT) + clusterPortOffset));
     }
 
     /**

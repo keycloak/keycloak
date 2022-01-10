@@ -34,6 +34,7 @@ import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
@@ -304,6 +305,18 @@ public class DocumentUtil {
         Result streamResult = new StreamResult(baos);
         // Write the DOM document to the stream
         Transformer transformer = TransformerUtil.getTransformer();
+
+        if (DOMSource.class.isInstance(source)) {
+            Node node = ((DOMSource) source).getNode();
+            if (Document.class.isInstance(node)) {
+                String xmlEncoding = ((Document) node).getXmlEncoding();
+                if (xmlEncoding != null) {
+                    transformer.setOutputProperty(OutputKeys.ENCODING, xmlEncoding);
+                    transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
+                }
+            }
+        }
+
         try {
             transformer.transform(source, streamResult);
         } catch (TransformerException e) {

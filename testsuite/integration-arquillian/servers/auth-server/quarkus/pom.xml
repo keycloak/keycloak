@@ -5,7 +5,7 @@
     <parent>
         <artifactId>integration-arquillian-servers-auth-server</artifactId>
         <groupId>org.keycloak.testsuite</groupId>
-        <version>11.0.0-SNAPSHOT</version>
+        <version>17.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -18,13 +18,15 @@
         <session.cache.owners>2</session.cache.owners>
         <offline.session.cache.owners>2</offline.session.cache.owners>
         <login.failure.cache.owners>2</login.failure.cache.owners>
-        <auth.server.quarkus.config>local</auth.server.quarkus.config>
+        <auth.server.quarkus.cluster.config>local</auth.server.quarkus.cluster.config>
+        <!-- Path to testsuite/test resources : Themes-->
+        <keycloak.base.test.resource>${project.parent.basedir}/../../tests/base/src/test/resources</keycloak.base.test.resource>
     </properties>
     
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-server-x</artifactId>
+            <artifactId>keycloak-server-x-dist</artifactId>
             <type>zip</type>
         </dependency>
     </dependencies>
@@ -98,16 +100,66 @@
                                         <include>keycloak.truststore</include>
                                         <include>client.jks</include>
                                         <include>client-ca.jks</include>
+                                        <include>test-user-cert-intermediary-ca.jks</include>
                                         <include>ca.crt</include>
                                         <include>client.crt</include>
                                         <include>client.key</include>
                                         <include>*.crl</include>
-                                        <!-- KEYCLOAK-6771 Certificate Bound Token -->
                                         <include>other_client.jks</include>
+                                        <include>test-user-obb.jks</include>
                                     </includes>
                                 </resource>
                             </resources>
                             <overwrite>true</overwrite>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-vault-secrets</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${auth.server.home}/secrets</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${common.resources}/vault</directory>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                            <overwrite>true</overwrite>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>add-extending-theme</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${auth.server.home}/themes</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${keycloak.base.test.resource}/theme</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>add-pw-blacklist-file</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${auth.server.home}/dependency/password-blacklists</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${keycloak.base.test.resource}/password-blacklists</directory>
+                                </resource>
+                            </resources>
                         </configuration>
                     </execution>
                 </executions>
@@ -125,7 +177,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-server-x</artifactId>
+                                    <artifactId>keycloak-server-x-dist</artifactId>
                                     <version>${project.version}</version>
                                     <type>zip</type>
                                     <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
@@ -172,6 +224,26 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>ant-generate-default</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <ant antfile="ant/configure.xml" target="config" >
+                                    <property name="auth.server.home">${auth.server.home}</property>
+                                </ant>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
     
@@ -179,7 +251,7 @@
         <profile>
             <id>auth-server-cluster-quarkus</id>
             <properties>
-                <auth.server.quarkus.config>ha</auth.server.quarkus.config>
+                <auth.server.quarkus.cluster.config>ha</auth.server.quarkus.cluster.config>
             </properties>
         </profile>
     </profiles>

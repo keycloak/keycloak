@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -61,13 +62,12 @@ public final class OpenshiftSAClientAdapter extends AbstractReadOnlyClientStorag
     private static final String ANNOTATION_OAUTH_REDIRECT_REFERENCE = "serviceaccounts.openshift.io/oauth-redirectreference";
     private static final Pattern ROLE_SCOPE_PATTERN = Pattern.compile("role:([^:]+):([^:!]+)(:[!])?");
     private static final Set<String> OPTIONAL_SCOPES = Stream.of("user:info", "user:check-access").collect(Collectors.toSet());
-    private static final Set<ProtocolMapperModel> DEFAULT_PROTOCOL_MAPPERS = createDefaultProtocolMappers();
 
     private static Set<ProtocolMapperModel> createDefaultProtocolMappers() {
         Set<ProtocolMapperModel> mappers = new HashSet<>();
 
-        ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper("username", "username", "preferred_username", "string", true, true, UserPropertyMapper.PROVIDER_ID);
-
+        ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper("username", "username",
+                "preferred_username", "string", true, true, UserPropertyMapper.PROVIDER_ID);
         mapper.setId(KeycloakModelUtils.generateId());
 
         mappers.add(mapper);
@@ -275,7 +275,7 @@ public final class OpenshiftSAClientAdapter extends AbstractReadOnlyClientStorag
     }
 
     @Override
-    public Map<String, ClientScopeModel> getClientScopes(boolean defaultScope, boolean filterByProtocol) {
+    public Map<String, ClientScopeModel> getClientScopes(boolean defaultScope) {
         if (defaultScope) {
             return Collections.emptyMap();
         }
@@ -314,44 +314,43 @@ public final class OpenshiftSAClientAdapter extends AbstractReadOnlyClientStorag
     }
 
     @Override
-    public Set<ProtocolMapperModel> getProtocolMappers() {
-        return getConfigOrDefault(() -> {
+    public Stream<ProtocolMapperModel> getProtocolMappersStream() {
             List<ProtocolMapperRepresentation> mappers = defaultConfig.getProtocolMappers();
 
             if (mappers == null) {
-                return null;
+                Set<ProtocolMapperModel> defaultProtocolMappers = createDefaultProtocolMappers();
+                defaultConfig.setProtocolMappers(defaultProtocolMappers.stream()
+                        .map(ModelToRepresentation::toRepresentation).collect(Collectors.toList()));
+                return defaultProtocolMappers.stream();
             }
 
-            Set<ProtocolMapperModel> model = new HashSet<>();
-
-            for (ProtocolMapperRepresentation mapper : mappers) {
-                model.add(RepresentationToModel.toModel(mapper));
-            }
-
-            return model;
-        }, (Consumer<Set<ProtocolMapperModel>>) mappers -> {
-            defaultConfig.setProtocolMappers(mappers.stream().map(ModelToRepresentation::toRepresentation).collect(Collectors.toList()));
-        }, (Supplier<Set<ProtocolMapperModel>>) () -> DEFAULT_PROTOCOL_MAPPERS);
+            return mappers.stream().map(RepresentationToModel::toModel);
     }
 
     @Override
     public ProtocolMapperModel getProtocolMapperById(String id) {
-        return getProtocolMappers().stream().filter(protocolMapperModel -> id.equals(protocolMapperModel.getId())).findAny().get();
+        return getProtocolMappersStream()
+                .filter(protocolMapperModel -> Objects.equals(id, protocolMapperModel.getId()))
+                .findAny()
+                .orElse(null);
     }
 
     @Override
     public ProtocolMapperModel getProtocolMapperByName(String protocol, String name) {
-        return getProtocolMappers().stream().filter(protocolMapperModel -> name.equals(protocolMapperModel.getName())).findAny().get();
+        return getProtocolMappersStream()
+                .filter(protocolMapperModel -> Objects.equals(name, protocolMapperModel.getName()))
+                .findAny()
+                .orElse(null);
     }
 
     @Override
-    public Set<RoleModel> getScopeMappings() {
-        return Collections.emptySet();
+    public Stream<RoleModel> getScopeMappingsStream() {
+        return Stream.empty();
     }
 
     @Override
-    public Set<RoleModel> getRealmScopeMappings() {
-        return Collections.emptySet();
+    public Stream<RoleModel> getRealmScopeMappingsStream() {
+        return Stream.empty();
     }
 
     @Override
@@ -389,8 +388,10 @@ public final class OpenshiftSAClientAdapter extends AbstractReadOnlyClientStorag
     }
 
     private ClientScopeModel createClientScope(String scope) {
-        ClientScopeModel managedScope = realm.getClientScopes().stream().filter(scopeModel -> scopeModel.getName().equals(scope))
-                .findAny().orElse(null);
+        ClientScopeModel managedScope = realm.getClientScopesStream()
+                .filter(scopeModel -> Objects.equals(scopeModel.getName(), scope))
+                .findAny()
+                .orElse(null);
 
         if (managedScope != null) {
             return managedScope;
@@ -449,8 +450,8 @@ public final class OpenshiftSAClientAdapter extends AbstractReadOnlyClientStorag
             }
 
             @Override
-            public Set<ProtocolMapperModel> getProtocolMappers() {
-                return DEFAULT_PROTOCOL_MAPPERS;
+            public Stream<ProtocolMapperModel> getProtocolMappersStream() {
+                return createDefaultProtocolMappers().stream();
             }
 
             @Override
@@ -464,13 +465,13 @@ public final class OpenshiftSAClientAdapter extends AbstractReadOnlyClientStorag
             }
 
             @Override
-            public Set<RoleModel> getScopeMappings() {
-                return Collections.emptySet();
+            public Stream<RoleModel> getScopeMappingsStream() {
+                return Stream.empty();
             }
 
             @Override
-            public Set<RoleModel> getRealmScopeMappings() {
-                return Collections.emptySet();
+            public Stream<RoleModel> getRealmScopeMappingsStream() {
+                return Stream.empty();
             }
 
             @Override

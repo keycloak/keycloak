@@ -60,33 +60,13 @@ public class CachedPolicy extends AbstractRevisioned implements InResourceServer
         this.description = policy.getDescription();
         this.resourceServerId = policy.getResourceServer().getId();
 
-        if (policy.isFetched("associatedPolicies")) {
-            Set<String> data = policy.getAssociatedPolicies().stream().map(Policy::getId).collect(Collectors.toSet());
-            this.associatedPoliciesIds = source -> data;
-        } else {
-            this.associatedPoliciesIds = new DefaultLazyLoader<>(source -> source.getAssociatedPolicies().stream().map(Policy::getId).collect(Collectors.toSet()), Collections::emptySet);
-        }
+        this.associatedPoliciesIds = new DefaultLazyLoader<>(source -> source.getAssociatedPolicies().stream().map(Policy::getId).collect(Collectors.toSet()), Collections::emptySet);
 
-        if (policy.isFetched("resources")) {
-            Set<String> data = policy.getResources().stream().map(Resource::getId).collect(Collectors.toSet());
-            this.resourcesIds = source -> data;
-        } else {
-            this.resourcesIds = new DefaultLazyLoader<>(source -> source.getResources().stream().map(Resource::getId).collect(Collectors.toSet()), Collections::emptySet);
-        }
+        this.resourcesIds = new DefaultLazyLoader<>(source -> source.getResources().stream().map(Resource::getId).collect(Collectors.toSet()), Collections::emptySet);
 
-        if (policy.isFetched("scopes")) {
-            Set<String> data = policy.getScopes().stream().map(Scope::getId).collect(Collectors.toSet());
-            this.scopesIds = source -> data;
-        } else {
-            this.scopesIds = new DefaultLazyLoader<>(source -> source.getScopes().stream().map(Scope::getId).collect(Collectors.toSet()), Collections::emptySet);
-        }
+        this.scopesIds = new DefaultLazyLoader<>(source -> source.getScopes().stream().map(Scope::getId).collect(Collectors.toSet()), Collections::emptySet);
 
-        if (policy.isFetched("config")) {
-            Map<String, String> data = new HashMap<>(policy.getConfig());
-            this.config = source -> data;
-        } else {
-            this.config = new DefaultLazyLoader<>(source -> new HashMap<>(source.getConfig()), Collections::emptyMap);
-        }
+        this.config = new DefaultLazyLoader<>(source -> new HashMap<>(source.getConfig()), Collections::emptyMap);
 
         this.owner = policy.getOwner();
     }

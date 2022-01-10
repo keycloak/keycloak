@@ -49,6 +49,8 @@ public final class SuiteContext {
     private ContainerInfo migratedAuthServerInfo;
     private final MigrationContext migrationContext = new MigrationContext();
 
+    private ContainerInfo hotRodStoreInfo;
+
     private boolean adminPasswordUpdated;
     private final Map<String, String> smtpServer = new HashMap<>();
 
@@ -62,7 +64,7 @@ public final class SuiteContext {
      */
     private static final boolean adapterCompatTesting = parseBoolean(System.getProperty("testsuite.adapter.compat.testing"));
 
-    private static final boolean browserStrictCookies = parseBoolean(System.getProperty("browser.strict.cookies"));
+    public static final boolean BROWSER_STRICT_COOKIES = parseBoolean(System.getProperty("browser.strict.cookies"));
 
     public SuiteContext(Set<ContainerInfo> arquillianContainers) {
         this.container = arquillianContainers;
@@ -174,6 +176,14 @@ public final class SuiteContext {
         this.migratedAuthServerInfo = migratedAuthServerInfo;
     }
 
+    public ContainerInfo getHotRodStoreInfo() {
+        return hotRodStoreInfo;
+    }
+
+    public void setHotRodStoreInfo(ContainerInfo hotRodStoreInfo) {
+        this.hotRodStoreInfo = hotRodStoreInfo;
+    }
+
     public boolean isAuthServerCluster() {
         return ! authServerBackendsInfo.isEmpty();
     }
@@ -192,10 +202,6 @@ public final class SuiteContext {
 
     public boolean isAdapterCompatTesting() {
         return adapterCompatTesting;
-    }
-
-    public boolean hasBrowserStrictCookies() {
-        return browserStrictCookies;
     }
 
     @Override

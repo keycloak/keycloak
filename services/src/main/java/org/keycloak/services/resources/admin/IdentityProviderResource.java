@@ -18,18 +18,16 @@ package org.keycloak.services.resources.admin;
 
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 
+import com.google.common.collect.Streams;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import javax.ws.rs.NotFoundException;
-import org.keycloak.authorization.model.Resource;
-import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -41,10 +39,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.StripSecretsUtils;
-import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -63,16 +58,14 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Map;
-import java.util.Set;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @resource Identity Providers
@@ -133,10 +126,8 @@ public class IdentityProviderResource {
         session.users().preRemove(realm, identityProviderModel);
         this.realm.removeIdentityProviderByAlias(alias);
 
-        Set<IdentityProviderMapperModel> mappers = this.realm.getIdentityProviderMappersByAlias(alias);
-        for (IdentityProviderMapperModel mapper : mappers) {
-            this.realm.removeIdentityProviderMapper(mapper);
-        }
+        realm.getIdentityProviderMappersByAliasStream(alias)
+                .collect(Collectors.toList()).forEach(realm::removeIdentityProviderMapper);
 
         adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
 
@@ -200,37 +191,32 @@ public class IdentityProviderResource {
             // Admin changed the ID (alias) of identity provider. We must update all clients and users
             logger.debug("Changing providerId in all clients and linked users. oldProviderId=" + oldProviderId + ", newProviderId=" + newProviderId);
 
-            updateUsersAfterProviderAliasChange(session.users().getUsers(realm, false), oldProviderId, newProviderId, realm, session);
+            updateUsersAfterProviderAliasChange(session.users().getUsersStream(realm, false),
+                    oldProviderId, newProviderId, realm, session);
         }
     }
 
     // return ID of IdentityProvider from realm based on internalId of this provider
     private static String getProviderIdByInternalId(RealmModel realm, String providerInternalId) {
-        List<IdentityProviderModel> providerModels = realm.getIdentityProviders();
-        for (IdentityProviderModel providerModel : providerModels) {
-            if (providerModel.getInternalId().equals(providerInternalId)) {
-                return providerModel.getAlias();
-            }
-        }
-
-        return null;
+        return realm.getIdentityProvidersStream().filter(p -> Objects.equals(p.getInternalId(), providerInternalId))
+                .map(IdentityProviderModel::getAlias)
+                .findFirst()
+                .orElse(null);
     }
 
     // sets internalId to IdentityProvider based on alias
     private static void lookUpProviderIdByAlias(RealmModel realm, IdentityProviderRepresentation providerRep) {
-        List<IdentityProviderModel> providerModels = realm.getIdentityProviders();
-        for (IdentityProviderModel providerModel : providerModels) {
-            if (providerModel.getAlias().equals(providerRep.getAlias())) {
-                providerRep.setInternalId(providerModel.getInternalId());
-                return;
-            }
-        }
-        throw new javax.ws.rs.NotFoundException();
+        IdentityProviderModel identityProviderModel = realm.getIdentityProvidersStream()
+                .filter(p -> Objects.equals(p.getAlias(), providerRep.getAlias()))
+                .findFirst()
+                .orElseThrow(NotFoundException::new);
+
+        providerRep.setInternalId(identityProviderModel.getInternalId());
     }
 
-    private static void updateUsersAfterProviderAliasChange(List<UserModel> users, String oldProviderId, String newProviderId, RealmModel realm, KeycloakSession session) {
-        for (UserModel user : users) {
-            FederatedIdentityModel federatedIdentity = session.users().getFederatedIdentity(user, oldProviderId, realm);
+    private static void updateUsersAfterProviderAliasChange(Stream<UserModel> users, String oldProviderId, String newProviderId, RealmModel realm, KeycloakSession session) {
+        users.forEach(user -> {
+            FederatedIdentityModel federatedIdentity = session.users().getFederatedIdentity(realm, user, oldProviderId);
             if (federatedIdentity != null) {
                 // Remove old link first
                 session.users().removeFederatedIdentity(realm, user, oldProviderId);
@@ -240,21 +226,17 @@ public class IdentityProviderResource {
                         federatedIdentity.getToken());
                 session.users().addFederatedIdentity(realm, user, newFederatedIdentity);
             }
-        }
+        });
     }
 
 
     private IdentityProviderFactory getIdentityProviderFactory() {
-        List<ProviderFactory> allProviders = new ArrayList<ProviderFactory>();
-
-        allProviders.addAll(this.session.getKeycloakSessionFactory().getProviderFactories(IdentityProvider.class));
-        allProviders.addAll(this.session.getKeycloakSessionFactory().getProviderFactories(SocialIdentityProvider.class));
-
-        for (ProviderFactory providerFactory : allProviders) {
-            if (providerFactory.getId().equals(identityProviderModel.getProviderId())) return (IdentityProviderFactory)providerFactory;
-        }
-
-        return null;
+        return Streams.concat(session.getKeycloakSessionFactory().getProviderFactoriesStream(IdentityProvider.class),
+                session.getKeycloakSessionFactory().getProviderFactoriesStream(SocialIdentityProvider.class))
+                .filter(providerFactory -> Objects.equals(providerFactory.getId(), identityProviderModel.getProviderId()))
+                .map(IdentityProviderFactory.class::cast)
+                .findFirst()
+                .orElse(null);
     }
 
     /**
@@ -295,28 +277,26 @@ public class IdentityProviderResource {
         }
 
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-        Map<String, IdentityProviderMapperTypeRepresentation> types = new HashMap<>();
-        List<ProviderFactory> factories = sessionFactory.getProviderFactories(IdentityProviderMapper.class);
-        for (ProviderFactory factory : factories) {
-            IdentityProviderMapper mapper = (IdentityProviderMapper)factory;
-            for (String type : mapper.getCompatibleProviders()) {
-                if (IdentityProviderMapper.ANY_PROVIDER.equals(type) || type.equals(identityProviderModel.getProviderId())) {
-                    IdentityProviderMapperTypeRepresentation rep = new IdentityProviderMapperTypeRepresentation();
-                    rep.setId(mapper.getId());
-                    rep.setCategory(mapper.getDisplayCategory());
-                    rep.setName(mapper.getDisplayType());
-                    rep.setHelpText(mapper.getHelpText());
-                    List<ProviderConfigProperty> configProperties = mapper.getConfigProperties();
-                    for (ProviderConfigProperty prop : configProperties) {
-                        ConfigPropertyRepresentation propRep = ModelToRepresentation.toRepresentation(prop);
-                        rep.getProperties().add(propRep);
-                    }
-                    types.put(rep.getId(), rep);
-                    break;
-                }
-            }
-        }
-        return types;
+        return sessionFactory.getProviderFactoriesStream(IdentityProviderMapper.class)
+                .map(IdentityProviderMapper.class::cast)
+                .map(mapper -> Arrays.stream(mapper.getCompatibleProviders())
+                        .filter(type -> Objects.equals(IdentityProviderMapper.ANY_PROVIDER, type) ||
+                                Objects.equals(identityProviderModel.getProviderId(), type))
+                        .map(type -> {
+                            IdentityProviderMapperTypeRepresentation rep = new IdentityProviderMapperTypeRepresentation();
+                            rep.setId(mapper.getId());
+                            rep.setCategory(mapper.getDisplayCategory());
+                            rep.setName(mapper.getDisplayType());
+                            rep.setHelpText(mapper.getHelpText());
+                            rep.setProperties(mapper.getConfigProperties().stream()
+                                    .map(ModelToRepresentation::toRepresentation)
+                                    .collect(Collectors.toList()));
+                            return rep;
+                        })
+                        .findFirst()
+                        .orElse(null))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(IdentityProviderMapperTypeRepresentation::getId, Function.identity()));
     }
 
     /**
@@ -326,18 +306,15 @@ public class IdentityProviderResource {
     @Path("mappers")
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<IdentityProviderMapperRepresentation> getMappers() {
+    public Stream<IdentityProviderMapperRepresentation> getMappers() {
         this.auth.realm().requireViewIdentityProviders();
 
         if (identityProviderModel == null) {
             throw new javax.ws.rs.NotFoundException();
         }
 
-        List<IdentityProviderMapperRepresentation> mappers = new LinkedList<>();
-        for (IdentityProviderMapperModel model : realm.getIdentityProviderMappersByAlias(identityProviderModel.getAlias())) {
-            mappers.add(ModelToRepresentation.toRepresentation(model));
-        }
-        return mappers;
+        return realm.getIdentityProviderMappersByAliasStream(identityProviderModel.getAlias())
+                .map(ModelToRepresentation::toRepresentation);
     }
 
     /**
@@ -488,9 +465,4 @@ public class IdentityProviderResource {
             return new ManagementPermissionReference();
         }
     }
-
-
-
-
-
 }

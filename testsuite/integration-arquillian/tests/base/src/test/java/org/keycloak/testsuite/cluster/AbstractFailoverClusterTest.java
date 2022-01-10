@@ -18,21 +18,29 @@
 package org.keycloak.testsuite.cluster;
 
 
-import java.util.List;
-
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.Test;
+import org.junit.BeforeClass;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.page.AbstractPage;
-import org.keycloak.testsuite.page.PageWithLogOutAction;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.URLUtils;
+import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.Cookie;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 public abstract class AbstractFailoverClusterTest extends AbstractClusterTest {
@@ -45,8 +53,51 @@ public abstract class AbstractFailoverClusterTest extends AbstractClusterTest {
 
     public static final Integer REBALANCE_WAIT = Integer.parseInt(System.getProperty("rebalance.wait", "5000"));
 
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
+    @Page
+    protected LoginPage loginPage;
+
+    @Page
+    protected AppPage appPage;
+
+    @BeforeClass
+    public static void modifyAppRoot() {
+        // the test app needs to run in the test realm to be able to fetch cookies later
+        OAuthClient.updateAppRootRealm("test");
+    }
+
+    @AfterClass
+    public static void restoreAppRoot() {
+        OAuthClient.resetAppRootRealm();
+    }
+
+    @Before
+    public void setup() {
+        try {
+            adminClient.realm("test").remove();
+        } catch (Exception ignore) {
+        }
+
+        RealmRepresentation testRealm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
+        adminClient.realms().create(testRealm);
+
+        UserRepresentation user = UserBuilder.create()
+                .username("login-test")
+                .email("login@test.com")
+                .enabled(true)
+                .requiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString())
+                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.toString())
+                .password("password")
+                .build();
+
+        String userId = ApiUtil.createUserWithAdminClient(adminClient.realm("test"), user);
+        getCleanup().addUserId(userId);
+
+        oauth.clientId("test-app");
+    }
+
+    @After
+    public void after() {
+        adminClient.realm("test").remove();
     }
 
 
@@ -67,45 +118,40 @@ public abstract class AbstractFailoverClusterTest extends AbstractClusterTest {
         assertFalse(controller.isStarted(getCurrentFailNode().getQualifier()));
     }
 
-    protected Cookie login(AbstractPage targetPage) {
-        targetPage.navigateTo();
-        assertCurrentUrlStartsWith(loginPage);
-        loginPage.form().login(ADMIN, ADMIN);
-        assertCurrentUrlStartsWith(targetPage);
+    protected Cookie login() {
+        oauth.openLoginForm();
+        assertTrue(loginPage.isCurrent());
+        loginPage.login("test-user@localhost", "password");
+        assertTrue(appPage.isCurrent());
         Cookie sessionCookie = driver.manage().getCookieNamed(KEYCLOAK_SESSION_COOKIE);
         assertNotNull(sessionCookie);
         return sessionCookie;
     }
 
-    protected void logout(AbstractPage targetPage) {
-        if (!(targetPage instanceof PageWithLogOutAction)) {
-            throw new IllegalArgumentException(targetPage.getClass().getSimpleName() + " must implement PageWithLogOutAction interface");
-        }
-        targetPage.navigateTo();
-        assertCurrentUrlStartsWith(targetPage);
-        ((PageWithLogOutAction) targetPage).logOut();
+    protected void logout() {
+        appPage.logout();
     }
 
-    protected Cookie verifyLoggedIn(AbstractPage targetPage, Cookie sessionCookieForVerification) {
+    protected Cookie verifyLoggedIn(Cookie sessionCookieForVerification) {
         // verify on realm path
-        masterRealmPage.navigateTo();
+        URLUtils.navigateToUri(AUTH_SERVER_ROOT + "/realms/test");
         Cookie sessionCookieOnRealmPath = driver.manage().getCookieNamed(KEYCLOAK_SESSION_COOKIE);
         assertNotNull(sessionCookieOnRealmPath);
         assertEquals(sessionCookieOnRealmPath.getValue(), sessionCookieForVerification.getValue());
         // verify on target page
-        targetPage.navigateTo();
-        assertCurrentUrlStartsWith(targetPage);
+        appPage.open();
+        assertTrue(appPage.isCurrent());
         Cookie sessionCookie = driver.manage().getCookieNamed(KEYCLOAK_SESSION_COOKIE);
         assertNotNull(sessionCookie);
         assertEquals(sessionCookie.getValue(), sessionCookieForVerification.getValue());
         return sessionCookie;
     }
 
-    protected void verifyLoggedOut(AbstractPage targetPage) {
+    protected void verifyLoggedOut() {
         // verify on target page
-        targetPage.navigateTo();
+        oauth.openLoginForm();
         driver.navigate().refresh();
-        assertCurrentUrlStartsWith(loginPage);
+        assertTrue(loginPage.isCurrent());
         Cookie sessionCookie = driver.manage().getCookieNamed(KEYCLOAK_SESSION_COOKIE);
         assertNull(sessionCookie);
     }

@@ -73,10 +73,10 @@ public class ClientScopesClientRegistrationPolicy implements ClientRegistrationP
 
         // Allow scopes, which were already presented before
         if (requestedDefaultScopeNames != null) {
-            requestedDefaultScopeNames.removeAll(clientModel.getClientScopes(true, false).keySet());
+            requestedDefaultScopeNames.removeAll(clientModel.getClientScopes(true).keySet());
         }
         if (requestedOptionalScopeNames != null) {
-            requestedOptionalScopeNames.removeAll(clientModel.getClientScopes(false, false).keySet());
+            requestedOptionalScopeNames.removeAll(clientModel.getClientScopes(false).keySet());
         }
 
         List<String> allowedDefaultScopeNames = getAllowedScopeNames(realm, true);
@@ -124,13 +124,7 @@ public class ClientScopesClientRegistrationPolicy implements ClientRegistrationP
         // If allowDefaultScopes, then realm default scopes are allowed as default scopes (+ optional scopes are allowed as optional scopes)
         boolean allowDefaultScopes = componentModel.get(ClientScopesClientRegistrationPolicyFactory.ALLOW_DEFAULT_SCOPES, true);
         if (allowDefaultScopes) {
-            List<String> scopeNames = realm.getDefaultClientScopes(defaultScopes).stream().map((ClientScopeModel clientScope) -> {
-
-                return clientScope.getName();
-
-            }).collect(Collectors.toList());
-
-            allAllowed.addAll(scopeNames);
+            allAllowed.addAll(realm.getDefaultClientScopesStream(defaultScopes).map(ClientScopeModel::getName).collect(Collectors.toList()));
         }
 
         return allAllowed;

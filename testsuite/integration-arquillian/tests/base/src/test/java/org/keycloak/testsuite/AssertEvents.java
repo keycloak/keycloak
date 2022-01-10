@@ -134,6 +134,34 @@ public class AssertEvents implements TestRule {
                 .session(sessionId);
     }
 
+    public ExpectedEvent expectDeviceVerifyUserCode(String clientId) {
+        return expect(EventType.OAUTH2_DEVICE_VERIFY_USER_CODE)
+                .user((String) null)
+                .client(clientId)
+                .detail(Details.CODE_ID, isUUID());
+    }
+
+    public ExpectedEvent expectDeviceLogin(String clientId, String codeId, String userId) {
+        return expect(EventType.LOGIN)
+                .user(userId)
+                .client(clientId)
+                .detail(Details.CODE_ID, codeId)
+                .session(codeId);
+//                .session((String) null);
+    }
+
+    public ExpectedEvent expectDeviceCodeToToken(String clientId, String codeId, String userId) {
+        return expect(EventType.OAUTH2_DEVICE_CODE_TO_TOKEN)
+                .client(clientId)
+                .user(userId)
+                .detail(Details.CODE_ID, codeId)
+                .detail(Details.TOKEN_ID, isUUID())
+                .detail(Details.REFRESH_TOKEN_ID, isUUID())
+                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
+                .session(codeId);
+    }
+
     public ExpectedEvent expectRefresh(String refreshTokenId, String sessionId) {
         return expect(EventType.REFRESH_TOKEN)
                 .detail(Details.TOKEN_ID, isUUID())
@@ -158,9 +186,14 @@ public class AssertEvents implements TestRule {
     }
 
     public ExpectedEvent expectRegister(String username, String email) {
+        return expectRegister(username, email, DEFAULT_CLIENT_ID);
+    }
+    
+    public ExpectedEvent expectRegister(String username, String email, String clientId) {
         UserRepresentation user = username != null ? getUser(username) : null;
         return expect(EventType.REGISTER)
                 .user(user != null ? user.getId() : null)
+                .client(clientId)
                 .detail(Details.USERNAME, username)
                 .detail(Details.EMAIL, email)
                 .detail(Details.REGISTER_METHOD, "form")
@@ -171,6 +204,16 @@ public class AssertEvents implements TestRule {
         return expect(event).client("account");
     }
 
+    public ExpectedEvent expectAuthReqIdToToken(String codeId, String sessionId) {
+        return expect(EventType.AUTHREQID_TO_TOKEN)
+                .detail(Details.CODE_ID, codeId)
+                .detail(Details.TOKEN_ID, isUUID())
+                .detail(Details.REFRESH_TOKEN_ID, isUUID())
+                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
+                .session(isUUID());
+    }
+
     public ExpectedEvent expect(EventType event) {
         return new ExpectedEvent()
                 .realm(defaultRealmId())
@@ -178,7 +221,7 @@ public class AssertEvents implements TestRule {
                 .user(defaultUserId())
                 .ipAddress(
                         System.getProperty("auth.server.host", "localhost").contains("localhost")
-                        ? CoreMatchers.anyOf(is(DEFAULT_IP_ADDRESS), is(DEFAULT_IP_ADDRESS_V6), is(DEFAULT_IP_ADDRESS_V6_SHORT))
+                        ? Matchers.anyOf(is(DEFAULT_IP_ADDRESS), is(DEFAULT_IP_ADDRESS_V6), is(DEFAULT_IP_ADDRESS_V6_SHORT))
                         : Matchers.any(String.class))
                 .session((String) null)
                 .event(event);

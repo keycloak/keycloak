@@ -38,6 +38,7 @@ import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 import static org.hamcrest.Matchers.equalToIgnoringCase;
 
@@ -110,13 +111,10 @@ public class LDAPNoMSADTest extends AbstractLDAPTest {
             Assert.assertEquals("sn=Doe2", john2.getDn().getFirstRdn().toString());
 
             // Remove "sn" mapper
-            List<ComponentModel> components = appRealm.getComponents(ctx.getLdapModel().getId(), LDAPStorageMapper.class.getName());
-            for (ComponentModel mapper : components) {
-                if (mapper.getName().equals("last name")) {
-                    snMapper = mapper;
-                    break;
-                }
-            }
+            snMapper = appRealm.getComponentsStream(ctx.getLdapModel().getId(), LDAPStorageMapper.class.getName())
+                    .filter(mapper -> Objects.equals(mapper.getName(), "last name"))
+                    .findFirst()
+                    .orElse(null);
 
             Assert.assertNotNull(snMapper);
             appRealm.removeComponent(snMapper);
@@ -128,7 +126,7 @@ public class LDAPNoMSADTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            UserModel johnkeycloak2 = session.users().getUserByUsername("johnkeycloak2", appRealm);
+            UserModel johnkeycloak2 = session.users().getUserByUsername(appRealm, "johnkeycloak2");
             Assert.assertNotNull(johnkeycloak2);
 
             johnkeycloak2.setFirstName("foo2");

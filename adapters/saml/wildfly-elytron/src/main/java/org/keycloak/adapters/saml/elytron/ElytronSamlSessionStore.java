@@ -148,7 +148,7 @@ public class ElytronSamlSessionStore implements SamlSessionStore, ElytronTokeSto
             return false;
         }
 
-        if (! idMapper.hasSession(session.getID())) {
+        if (! idMapper.hasSession(session.getID()) && ! idMapperUpdater.refreshMapping(idMapper, session.getID())) {
             log.debugf("Session %s has expired on some other node", session.getID());
             session.setAttachment(SamlSession.class.getName(), null);
             return false;
@@ -212,11 +212,7 @@ public class ElytronSamlSessionStore implements SamlSessionStore, ElytronTokeSto
         if (!scope.exists()) {
             scope.create();
         }
-
-        KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(exchange.getURI()).replaceQuery(exchange.getURI().getQuery());
-        String uri = uriBuilder.build().toString();
-
-        scope.setAttachment(SAML_REDIRECT_URI, uri);
+        scope.setAttachment(SAML_REDIRECT_URI, exchange.getRequest().getURI());
     }
 
     @Override

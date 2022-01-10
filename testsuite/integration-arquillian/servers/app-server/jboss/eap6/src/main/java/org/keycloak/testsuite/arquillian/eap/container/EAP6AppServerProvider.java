@@ -133,13 +133,14 @@ public class EAP6AppServerProvider implements AppServerContainerProvider {
         createChild("serverConfig", "standalone-ha.xml");
         createChild("jbossArguments", 
                 "-Djboss.server.base.dir=" + appServerHome + "/standalone-ha-node-" + number + " " +
+                "-Djboss.server.config.dir=" + appServerHome + "/standalone-ha-node-" + number + "/configuration " +
                 "-Djboss.socket.binding.port-offset=" + portOffset + " " +
                 "-Djboss.node.name=ha-node-" + number + " " +
-                System.getProperty("adapter.test.props", " ") +
+                System.getProperty("adapter.test.props", " ") + " " +
                 System.getProperty("kie.maven.settings", " ")
         );
-        createChild("javaVmArguments", 
-                "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=790" + number + " " +
+        createChild("javaVmArguments",
+                System.getProperty("app.server." + number + ".jboss.jvm.debug.args") + " " +
                 System.getProperty("app.server.memory.settings", "") + " " +
                 "-Djava.net.preferIPv4Stack=true"
         );

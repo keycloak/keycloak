@@ -19,9 +19,15 @@ package org.keycloak;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.adapters.config.AdapterConfig;
+import org.keycloak.representations.idm.ClientPoliciesRepresentation;
+import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
+import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
+import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.util.JsonSerialization;
@@ -30,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -95,6 +102,9 @@ public class JsonParserTest {
         System.setProperty("my.host", "foo");
         System.setProperty("con.pool.size", "200");
         System.setProperty("allow.any.hostname", "true");
+        System.setProperty("socket.timeout.millis", "6000");
+        System.setProperty("connection.timeout.millis", "7000");
+        System.setProperty("connection.ttl.millis", "500");
 
         InputStream is = getClass().getClassLoader().getResourceAsStream("keycloak.json");
 
@@ -106,6 +116,9 @@ public class JsonParserTest {
         Assert.assertTrue(config.isAllowAnyHostname());
         Assert.assertEquals(100, config.getCorsMaxAge());
         Assert.assertEquals(200, config.getConnectionPoolSize());
+        Assert.assertEquals(6000L, config.getSocketTimeout());
+        Assert.assertEquals(7000L, config.getConnectionTimeout());
+        Assert.assertEquals(500L, config.getConnectionTTL());
     }
 
     static Pattern substitution = Pattern.compile("\\$\\{([^}]+)\\}");
@@ -185,5 +198,69 @@ public class JsonParserTest {
         return JsonSerialization.readValue(repp, Map.class);
     }
 
+    @Test
+    public void testReadClientPolicy() throws Exception {
+        InputStream is = getClass().getClassLoader().getResourceAsStream("sample-client-policy.json");
+        ClientPoliciesRepresentation clientPolicies = JsonSerialization.readValue(is, ClientPoliciesRepresentation.class);
+
+        Assert.assertEquals(clientPolicies.getPolicies().size(), 1);
+        ClientPolicyRepresentation clientPolicy = clientPolicies.getPolicies().get(0);
+        Assert.assertEquals("some-policy", clientPolicy.getName());
+        List<ClientPolicyConditionRepresentation> conditions = clientPolicy.getConditions();
+        Assert.assertEquals(conditions.size(), 1);
+        ClientPolicyConditionRepresentation condition = conditions.get(0);
+        Assert.assertEquals("some-condition", condition.getConditionProviderId());
+
+        ClientPolicyConditionConfigurationRepresentation configRep = JsonSerialization.mapper.convertValue(condition.getConfiguration(), ClientPolicyConditionConfigurationRepresentation.class);
+        Assert.assertEquals(true, configRep.isNegativeLogic());
+        Assert.assertEquals("val1", configRep.getConfigAsMap().get("string-option"));
+        Assert.assertEquals(14, configRep.getConfigAsMap().get("int-option"));
+        Assert.assertEquals(true, configRep.getConfigAsMap().get("bool-option"));
+        Assert.assertNull(configRep.getConfigAsMap().get("not-existing-option"));
+    }
+
+    @Test
+    public void testReadClaimsParameter() throws Exception {
+        InputStream is = getClass().getClassLoader().getResourceAsStream("sample-claims.json");
+        ClaimsRepresentation claimsRep = JsonSerialization.readValue(is, ClaimsRepresentation.class);
+
+        Assert.assertTrue(claimsRep.isPresent("auth_time", ClaimsRepresentation.ClaimContext.ID_TOKEN));
+        Assert.assertFalse(claimsRep.isPresent("auth_time", ClaimsRepresentation.ClaimContext.USERINFO));
+
+        Assert.assertFalse(claimsRep.isPresentAsNullClaim("auth_time", ClaimsRepresentation.ClaimContext.ID_TOKEN));
+        Assert.assertTrue(claimsRep.isPresentAsNullClaim("nickname", ClaimsRepresentation.ClaimContext.USERINFO));
+        Assert.assertNull(claimsRep.getClaimValue("nickname", ClaimsRepresentation.ClaimContext.USERINFO, String.class));
+
+        ClaimsRepresentation.ClaimValue<String> email = claimsRep.getClaimValue("email", ClaimsRepresentation.ClaimContext.USERINFO, String.class);
+        assertClaimValue(email, true, null);
+
+        ClaimsRepresentation.ClaimValue<Boolean> emailVerified = claimsRep.getClaimValue("email_verified", ClaimsRepresentation.ClaimContext.USERINFO, Boolean.class);
+        assertClaimValue(emailVerified, true, null);
+        Assert.assertTrue(emailVerified.isEssential());
+
+        emailVerified = claimsRep.getClaimValue("email_verified", ClaimsRepresentation.ClaimContext.ID_TOKEN, Boolean.class);
+        assertClaimValue(emailVerified, false, true);
+        Assert.assertFalse(emailVerified.isEssential());
+
+        ClaimsRepresentation.ClaimValue<String> sub = claimsRep.getClaimValue("sub", ClaimsRepresentation.ClaimContext.ID_TOKEN, String.class);
+        assertClaimValue(sub, null, "248289761001");
+        Assert.assertFalse(sub.isEssential());
+
+        ClaimsRepresentation.ClaimValue<String> acr = claimsRep.getClaimValue("acr", ClaimsRepresentation.ClaimContext.ID_TOKEN, String.class);
+        assertClaimValue(acr, null, null, "urn:mace:incommon:iap:silver", "urn:mace:incommon:iap:gold");
+    }
+
+    private <T> void assertClaimValue(ClaimsRepresentation.ClaimValue<T> claimVal, Boolean expectedEssential, T expectedValue, T... expectedValues) {
+        Assert.assertTrue(ObjectUtil.isEqualOrBothNull(expectedEssential, claimVal.getEssential()));
+        Assert.assertTrue(ObjectUtil.isEqualOrBothNull(expectedValue, claimVal.getValue()));
+
+        if (expectedValues == null) {
+            Assert.assertNull(claimVal.getValues());
+        } else {
+            for (int i = 0; i<expectedValues.length ; i++) {
+                Assert.assertEquals(expectedValues[i], claimVal.getValues().get(i));
+            }
+        }
+    }
 
 }

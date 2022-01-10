@@ -22,6 +22,14 @@
         <script type="text/javascript">
 
             function registerSecurityKey() {
+
+                // Check if WebAuthn is supported by this browser
+                if (!window.PublicKeyCredential) {
+                    $("#error").val("${msg("webauthn-unsupported-browser-text")?no_esc}");
+                    $("#register").submit();
+                    return;
+                }
+
                 // mandatory parameters
                 let challenge = "${challenge}";
                 let userid = "${userid}";
@@ -78,7 +86,7 @@
                 if (isAuthenticatorSelectionSpecified) publicKey.authenticatorSelection = authenticatorSelection;
 
                 let createTimeout = ${createTimeout};
-                if (createTimeout != 0) publicKey.timeout = createTimeout * 1000;
+                if (createTimeout !== 0) publicKey.timeout = createTimeout * 1000;
 
                 let excludeCredentialIds = "${excludeCredentialIds}";
                 let excludeCredentials = getExcludeCredentials(excludeCredentialIds);
@@ -144,22 +152,18 @@
             }
         </script>
 
+        <input type="submit"
+               class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
+               id="registerWebAuthn" value="${msg("doRegister")}" onclick="registerSecurityKey()"/>
+
         <#if !isSetRetry?has_content && isAppInitiatedAction?has_content>
-            <input type="submit"
-                   class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-                   id="registerWebAuthnAIA" value="${msg("doRegister")}" onclick="registerSecurityKey()"
-            />
             <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-webauthn-settings-form"
                   method="post">
                 <button type="submit"
                         class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-                        id="cancelWebAuthnAIA" name="cancel-aia" value="true"/>${msg("doCancel")}
+                        id="cancelWebAuthnAIA" name="cancel-aia" value="true">${msg("doCancel")}
                 </button>
             </form>
-        <#else>
-            <script>
-                registerSecurityKey();
-            </script>
         </#if>
 
     </#if>

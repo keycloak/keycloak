@@ -48,7 +48,7 @@ public class TokenRevocationCorsTest extends AbstractKeycloakTest {
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
         realm.getClients().add(ClientBuilder.create().redirectUris(VALID_CORS_URL + "/realms/master/app")
-            .addWebOrigin(VALID_CORS_URL).id("test-app2").clientId("test-app2").publicClient().directAccessGrants().build());
+            .addWebOrigin(VALID_CORS_URL).clientId("test-app2").publicClient().directAccessGrants().build());
         testRealms.add(realm);
     }
 

@@ -16,7 +16,7 @@
  */
 package org.keycloak.authentication.actiontoken.verifyemail;
 
-import org.keycloak.authentication.actiontoken.AbstractActionTokenHander;
+import org.keycloak.authentication.actiontoken.AbstractActionTokenHandler;
 import org.keycloak.TokenVerifier.Predicate;
 import org.keycloak.authentication.actiontoken.*;
 import org.keycloak.events.*;
@@ -41,7 +41,7 @@ import javax.ws.rs.core.UriInfo;
  * Action token handler for verification of e-mail address.
  * @author hmlnarik
  */
-public class VerifyEmailActionTokenHandler extends AbstractActionTokenHander<VerifyEmailActionToken> {
+public class VerifyEmailActionTokenHandler extends AbstractActionTokenHandler<VerifyEmailActionToken> {
 
     public VerifyEmailActionTokenHandler() {
         super(
@@ -111,7 +111,7 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHander<Ver
 
         tokenContext.setEvent(event.clone().removeDetail(Details.EMAIL).event(EventType.LOGIN));
 
-        String nextAction = AuthenticationManager.nextRequiredAction(session, authSession, tokenContext.getClientConnection(), tokenContext.getRequest(), uriInfo, event);
+        String nextAction = AuthenticationManager.nextRequiredAction(session, authSession, tokenContext.getRequest(), event);
         return AuthenticationManager.redirectToRequiredActions(session, realm, authSession, uriInfo, nextAction);
     }
 

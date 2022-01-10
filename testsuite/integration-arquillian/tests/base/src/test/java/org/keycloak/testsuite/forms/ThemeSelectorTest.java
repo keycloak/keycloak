@@ -28,14 +28,24 @@ public class ThemeSelectorTest extends AbstractTestRealmKeycloakTest {
         assertEquals("keycloak", detectTheme());
 
         ClientRepresentation rep = testRealm().clients().findByClientId("test-app").get(0);
-        rep.getAttributes().put("login_theme", "base");
-        testRealm().clients().get(rep.getId()).update(rep);
 
-        loginPage.open();
-        assertEquals("base", detectTheme());
+        try {
+            rep.getAttributes().put("login_theme", "base");
+            testRealm().clients().get(rep.getId()).update(rep);
 
-        rep.getAttributes().put("login_theme", "");
-        testRealm().clients().get(rep.getId()).update(rep);
+            loginPage.open();
+            assertEquals("base", detectTheme());
+
+            // assign a theme that does not exist, should use the default keycloak
+            rep.getAttributes().put("login_theme", "unavailable-theme");
+            testRealm().clients().get(rep.getId()).update(rep);
+
+            loginPage.open();
+            assertEquals("keycloak", detectTheme());
+        } finally {
+            rep.getAttributes().put("login_theme", "");
+            testRealm().clients().get(rep.getId()).update(rep);
+        }
     }
 
     private String detectTheme() {

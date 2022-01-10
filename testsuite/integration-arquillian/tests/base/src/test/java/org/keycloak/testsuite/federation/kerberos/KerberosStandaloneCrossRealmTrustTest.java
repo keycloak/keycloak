@@ -26,7 +26,7 @@ import org.keycloak.federation.kerberos.KerberosConfig;
 import org.keycloak.federation.kerberos.KerberosFederationProviderFactory;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.testsuite.util.KerberosRule;
-import org.keycloak.util.ldap.KerberosEmbeddedServer;
+import org.keycloak.testsuite.KerberosEmbeddedServer;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

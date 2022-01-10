@@ -35,11 +35,11 @@ import javax.persistence.UniqueConstraint;
  */
 @Entity
 @Table(name = "RESOURCE_SERVER_PERM_TICKET", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"OWNER", "RESOURCE_SERVER_ID", "RESOURCE_ID", "SCOPE_ID"})
+        @UniqueConstraint(columnNames = {"OWNER", "REQUESTER", "RESOURCE_SERVER_ID", "RESOURCE_ID", "SCOPE_ID"})
 })
 @NamedQueries(
     {
-        @NamedQuery(name="findPermissionIdByResource", query="select p.id from PermissionTicketEntity p inner join p.resource r where p.resourceServer.id = :serverId and (r.resourceServer.id = :serverId and r.id = :resourceId)"),
+        @NamedQuery(name="findPermissionIdByResource", query="select p.id from PermissionTicketEntity p inner join p.resource r where p.resourceServer.id = :serverId and (r.resourceServer = :serverId and r.id = :resourceId)"),
         @NamedQuery(name="findPermissionIdByScope", query="select p.id from PermissionTicketEntity p inner join p.scope s where p.resourceServer.id = :serverId and (s.resourceServer.id = :serverId and s.id = :scopeId)"),
         @NamedQuery(name="findPermissionTicketIdByServerId", query="select p.id from PermissionTicketEntity p where  p.resourceServer.id = :serverId "),
         @NamedQuery(name="findGrantedResources", query="select distinct(r.id) from ResourceEntity r inner join PermissionTicketEntity p on r.id = p.resource.id where p.grantedTimestamp is not null and p.requester = :requester order by r.id"),

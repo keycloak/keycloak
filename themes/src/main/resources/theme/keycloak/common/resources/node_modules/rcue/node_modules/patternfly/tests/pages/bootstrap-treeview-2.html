@@ -1,0 +1,98 @@
+---
+categories: [Layouts]
+css-extra: false
+layout: layout
+title: Tree View
+resource: true
+full-page: true
+url-js-extra: [
+  'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/js/bootstrap-select.min.js',
+  'https://rawgit.com/patternfly/patternfly-bootstrap-treeview/v2.1.3/dist/bootstrap-treeview.min.js'
+]
+weight: 2
+---
+{% include widgets/layouts/navbar-primary.html %}
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+          <ol class="breadcrumb">
+            <li><a href="#">Home</a></li>
+            <li>{{ page.title }}</li>
+          </ol>
+          <h1>{{ page.title }}</h1>
+{% include widgets/form.html %}
+        </div><!-- /col -->
+        <div class="col-sm-3 col-md-2 col-sm-pull-9 col-md-pull-10 sidebar-pf sidebar-pf-left">
+          <div id="treeview1"></div>
+        </div><!-- /col -->
+      </div><!-- /row -->
+    </div><!-- /container -->
+    <script>
+      // Intialize Boostrap-Treeview
+      $(function() {
+        var defaultData = [
+          {
+            text: 'Parent 1',
+            href: '#parent1',
+            tags: ['4'],
+            nodes: [
+              {
+                text: 'Child 1',
+                href: '#child1',
+                icon: 'fa fa-file-o',
+                tags: ['2'],
+                nodes: [
+                  {
+                    text: 'Grandchild 1',
+                    href: '#grandchild1',
+                    icon: 'fa fa-file-o',
+                    tags: ['0']
+                  },
+                  {
+                    text: 'Grandchild 2',
+                    href: '#grandchild2',
+                    icon: 'fa fa-file-o',
+                    tags: ['0']
+                  }
+                ]
+              },
+              {
+                text: 'Child 2',
+                href: '#child2',
+                icon: 'fa fa-file-o',
+                tags: ['0']
+              }
+            ]
+          },
+          {
+            text: 'Parent 2',
+            href: '#parent2',
+            tags: ['0']
+          },
+          {
+            text: 'Parent 3',
+            href: '#parent3',
+             tags: ['0']
+          },
+          {
+            text: 'Parent 4',
+            href: '#parent4',
+            tags: ['0']
+          },
+          {
+            text: 'Parent 5',
+            href: '#parent5'  ,
+            tags: ['0']
+          }
+        ];
+        $('#treeview1').treeview({
+          collapseIcon: "fa fa-angle-down",
+          data: defaultData,
+          expandIcon: "fa fa-angle-right",
+          nodeIcon: "fa fa-folder",
+          showBorder: false
+        });
+        // set selected menu item
+        $('.list-group-item[data-nodeid="3"]').addClass('node-selected');
+      });
+    </script>

@@ -57,18 +57,18 @@ import org.hibernate.annotations.FetchMode;
 })
 @NamedQueries(
         {
-                @NamedQuery(name="findResourceIdByOwner", query="select distinct(r.id) from ResourceEntity r left join r.scopes s where r.resourceServer.id = :serverId and r.owner = :owner"),
-                @NamedQuery(name="findResourceIdByOwnerOrdered", query="select distinct(r.id) from ResourceEntity r where r.resourceServer.id = :serverId and r.owner = :owner order by r.id"),
-                @NamedQuery(name="findAnyResourceIdByOwner", query="select distinct(r.id) from ResourceEntity r where r.owner = :owner"),
-                @NamedQuery(name="findAnyResourceIdByOwnerOrdered", query="select distinct(r.id) from ResourceEntity r where r.owner = :owner order by r.id"),
-                @NamedQuery(name="findResourceIdByUri", query="select r.id from ResourceEntity r where  r.resourceServer.id = :serverId  and :uri in elements(r.uris)"),
-                @NamedQuery(name="findResourceIdByName", query="select distinct(r) from ResourceEntity r left join fetch r.scopes s where  r.resourceServer.id = :serverId  and r.owner = :ownerId and r.name = :name"),
-                @NamedQuery(name="findResourceIdByType", query="select distinct(r) from ResourceEntity r left join fetch r.scopes s where  r.resourceServer.id = :serverId  and r.owner = :ownerId and r.type = :type"),
-                @NamedQuery(name="findResourceIdByTypeNoOwner", query="select distinct(r) from ResourceEntity r left join fetch r.scopes s where  r.resourceServer.id = :serverId  and r.type = :type"),
-                @NamedQuery(name="findResourceIdByTypeInstance", query="select distinct(r) from ResourceEntity r left join fetch r.scopes s where  r.resourceServer.id = :serverId and r.type = :type and r.owner <> :serverId"),
-                @NamedQuery(name="findResourceIdByServerId", query="select r.id from ResourceEntity r where  r.resourceServer.id = :serverId "),
-                @NamedQuery(name="findResourceIdByScope", query="select r from ResourceEntity r inner join r.scopes s where r.resourceServer.id = :serverId and (s.resourceServer.id = :serverId and s.id in (:scopeIds))"),
-                @NamedQuery(name="deleteResourceByResourceServer", query="delete from ResourceEntity r where r.resourceServer.id = :serverId")
+                @NamedQuery(name="findResourceIdByOwner", query="select r from ResourceEntity r  where r.resourceServer = :serverId and r.owner = :owner"),
+                @NamedQuery(name="findResourceIdByOwnerOrdered", query="select r from ResourceEntity r where r.resourceServer = :serverId and r.owner = :owner order by r.id"),
+                @NamedQuery(name="findAnyResourceIdByOwner", query="select r from ResourceEntity r where r.owner = :owner"),
+                @NamedQuery(name="findAnyResourceIdByOwnerOrdered", query="select r.id from ResourceEntity r where r.owner = :owner order by r.id"),
+                @NamedQuery(name="findResourceIdByUri", query="select r.id from ResourceEntity r where  r.resourceServer = :serverId  and :uri in elements(r.uris)"),
+                @NamedQuery(name="findResourceIdByName", query="select r from ResourceEntity r left join fetch r.scopes s where  r.resourceServer = :serverId  and r.owner = :ownerId and r.name = :name"),
+                @NamedQuery(name="findResourceIdByType", query="select r from ResourceEntity r left join fetch r.scopes s where  r.resourceServer = :serverId  and r.owner = :ownerId and r.type = :type"),
+                @NamedQuery(name="findResourceIdByTypeNoOwner", query="select r from ResourceEntity r left join fetch r.scopes s where  r.resourceServer = :serverId  and r.type = :type"),
+                @NamedQuery(name="findResourceIdByTypeInstance", query="select r from ResourceEntity r left join fetch r.scopes s where  r.resourceServer = :serverId and r.type = :type and r.owner <> :serverId"),
+                @NamedQuery(name="findResourceIdByServerId", query="select r.id from ResourceEntity r where  r.resourceServer = :serverId "),
+                @NamedQuery(name="findResourceIdByScope", query="select r from ResourceEntity r inner join r.scopes s where r.resourceServer = :serverId and (s.resourceServer = :serverId and s.id in (:scopeIds))"),
+                @NamedQuery(name="deleteResourceByResourceServer", query="delete from ResourceEntity r where r.resourceServer = :serverId")
         }
 )
 public class ResourceEntity {
@@ -101,12 +101,13 @@ public class ResourceEntity {
     @Column(name = "OWNER_MANAGED_ACCESS")
     private boolean ownerManagedAccess;
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "RESOURCE_SERVER_ID")
-    private ResourceServerEntity resourceServer;
+    @Column(name = "RESOURCE_SERVER_ID")
+    private String resourceServer;
 
     @OneToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "RESOURCE_SCOPE", joinColumns = @JoinColumn(name = "RESOURCE_ID"), inverseJoinColumns = @JoinColumn(name = "SCOPE_ID"))
+    @Fetch(FetchMode.SELECT)
+    @BatchSize(size = 20)
     private List<ScopeEntity> scopes;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = {})
@@ -176,11 +177,11 @@ public class ResourceEntity {
         this.iconUri = iconUri;
     }
 
-    public ResourceServerEntity getResourceServer() {
+    public String getResourceServer() {
         return resourceServer;
     }
 
-    public void setResourceServer(ResourceServerEntity resourceServer) {
+    public void setResourceServer(String resourceServer) {
         this.resourceServer = resourceServer;
     }
 

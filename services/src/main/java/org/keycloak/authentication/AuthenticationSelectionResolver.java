@@ -23,9 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
+import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
 import org.keycloak.credential.CredentialModel;
@@ -79,15 +77,17 @@ class AuthenticationSelectionResolver {
 
             //add credential authenticators in order
             if (processor.getAuthenticationSession().getAuthenticatedUser() != null) {
-                List<CredentialModel> credentials = processor.getSession().userCredentialManager()
-                        .getStoredCredentials(processor.getRealm(), processor.getAuthenticationSession().getAuthenticatedUser())
-                        .stream()
-                        .filter(credential -> typeAuthExecMap.containsKey(credential.getType()))
-                        .collect(Collectors.toList());
-
-                authenticationSelectionList = credentials.stream()
-                        .map(CredentialModel::getType)
+                authenticationSelectionList =
+                        Stream.concat(
+                            processor.getSession().userCredentialManager()
+                                .getStoredCredentialsStream(processor.getRealm(), processor.getAuthenticationSession().getAuthenticatedUser())
+                                .map(CredentialModel::getType),
+                            processor.getSession().userCredentialManager()
+                                .getConfiguredUserStorageCredentialTypesStream(
+                                    processor.getRealm(),
+                                    processor.getAuthenticationSession().getAuthenticatedUser()))
                         .distinct()
+                        .filter(typeAuthExecMap::containsKey)
                         .map(credentialType -> new AuthenticationSelectionOption(processor.getSession(), typeAuthExecMap.get(credentialType)))
                         .collect(Collectors.toList());
             }
@@ -135,7 +135,8 @@ class AuthenticationSelectionResolver {
                 }
 
                 // Find the corresponding execution. If it is 1st REQUIRED execution in the particular subflow, we need to consider parent flow as well
-                List<AuthenticationExecutionModel> executions = realm.getAuthenticationExecutions(execution.getParentFlow());
+                List<AuthenticationExecutionModel> executions = realm.getAuthenticationExecutionsStream(execution.getParentFlow())
+                        .collect(Collectors.toList());
                 int executionIndex = executions.indexOf(execution);
                 if (executionIndex != 0) {
                     return flowId;
@@ -187,11 +188,9 @@ class AuthenticationSelectionResolver {
 
         logger.debugf("Going through the flow '%s' for adding executions", flowModel.getAlias());
 
-        List<AuthenticationExecutionModel> executions = processor.getRealm().getAuthenticationExecutions(flowId);
-
         List<AuthenticationExecutionModel> requiredList = new ArrayList<>();
         List<AuthenticationExecutionModel> alternativeList = new ArrayList<>();
-        flow.fillListsOfExecutions(executions, requiredList, alternativeList);
+        flow.fillListsOfExecutions(processor.getRealm().getAuthenticationExecutionsStream(flowId), requiredList, alternativeList);
 
         // If requiredList is not empty, we're going to collect just very first execution from the flow
         if (!requiredList.isEmpty()) {
@@ -201,7 +200,7 @@ class AuthenticationSelectionResolver {
 
                 // For conditional execution, we must check if condition is true. Otherwise return false, which means trying next
                 // requiredExecution in the list
-                return !flow.isConditionalSubflowDisabled(ex);
+                return !flow.isConditionalSubflowDisabled(ex, false);
 
             }).findFirst().orElse(null);
 
@@ -213,8 +212,10 @@ class AuthenticationSelectionResolver {
                 return false;
             }
 
+            FormAuthenticatorFactory factory = (FormAuthenticatorFactory) processor.getSession().getKeycloakSessionFactory().getProviderFactory(FormAuthenticator.class, requiredExecution.getAuthenticator());
+
             // Recursively add credentials from required execution
-            if (requiredExecution.isAuthenticatorFlow()) {
+            if (requiredExecution.isAuthenticatorFlow() && factory == null) {
                 return addAllExecutionsFromSubflow(processor, requiredExecution.getFlowId(), typeAuthExecMap, nonCredentialExecutions);
             } else {
                 addSimpleAuthenticationExecution(processor, requiredExecution, typeAuthExecMap, nonCredentialExecutions);

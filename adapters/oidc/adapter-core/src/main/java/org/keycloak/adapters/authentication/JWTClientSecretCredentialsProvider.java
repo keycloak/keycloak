@@ -121,7 +121,7 @@ public class JWTClientSecretCredentialsProvider implements ClientCredentialsProv
         return signedRequestToken;
     }
 
-    private JsonWebToken createRequestToken(String clientId, String realmInfoUrl) {
+    protected JsonWebToken createRequestToken(String clientId, String realmInfoUrl) {
         // According to <a href="http://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication">OIDC's client authentication spec</a>,
         // JWT claims is the same as one by private_key_jwt
 

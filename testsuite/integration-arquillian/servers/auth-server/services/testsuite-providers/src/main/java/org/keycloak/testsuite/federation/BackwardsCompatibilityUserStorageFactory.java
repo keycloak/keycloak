@@ -18,12 +18,12 @@
 
 package org.keycloak.testsuite.federation;
 
-import java.util.Hashtable;
 import java.util.Map;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.storage.UserStorageProviderFactory;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -32,7 +32,7 @@ public class BackwardsCompatibilityUserStorageFactory implements UserStorageProv
 
     public static final String PROVIDER_ID = "backwards-compatibility-storage";
 
-    protected Map<String, BackwardsCompatibilityUserStorage.MyUser> userPasswords = new Hashtable<>();
+    private final Map<String, BackwardsCompatibilityUserStorage.MyUser> userPasswords = new ConcurrentHashMap<>();
 
     @Override
     public BackwardsCompatibilityUserStorage create(KeycloakSession session, ComponentModel model) {

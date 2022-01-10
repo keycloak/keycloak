@@ -34,11 +34,13 @@ import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.storage.StorageId;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -50,48 +52,11 @@ public class ApplicationsBean {
     public ApplicationsBean(KeycloakSession session, RealmModel realm, UserModel user) {
         Set<ClientModel> offlineClients = new UserSessionManager(session).findClientsWithOfflineToken(realm, user);
 
-        for (ClientModel client : getApplications(session, realm, user)) {
-            if (isAdminClient(client) && ! AdminPermissions.realms(session, realm, user).isAdmin()) {
-                continue;
-            }
-
-            // Construct scope parameter with all optional scopes to see all potentially available roles
-            Set<ClientScopeModel> allClientScopes = new HashSet<>(client.getClientScopes(true, true).values());
-            allClientScopes.addAll(client.getClientScopes(false, true).values());
-            allClientScopes.add(client);
-
-            Set<RoleModel> availableRoles = TokenManager.getAccess(user, client, allClientScopes);
-
-            // Don't show applications, which user doesn't have access into (any available roles)
-            // unless this is can be changed by approving/revoking consent
-            if (! isAdminClient(client) && availableRoles.isEmpty() && ! client.isConsentRequired()) {
-                continue;
-            }
-
-            List<RoleModel> realmRolesAvailable = new LinkedList<>();
-            MultivaluedHashMap<String, ClientRoleEntry> resourceRolesAvailable = new MultivaluedHashMap<>();
-            processRoles(availableRoles, realmRolesAvailable, resourceRolesAvailable);
-
-            List<ClientScopeModel> orderedScopes = new LinkedList<>();
-            if (client.isConsentRequired()) {
-                UserConsentModel consent = session.users().getConsentByClient(realm, user.getId(), client.getId());
-
-                if (consent != null) {
-                    orderedScopes.addAll(consent.getGrantedClientScopes());
-                }
-            }
-            List<String> clientScopesGranted = orderedScopes.stream()
-                    .sorted(OrderedModel.OrderedModelComparator.getInstance())
-                    .map(ClientScopeModel::getConsentScreenText)
-                    .collect(Collectors.toList());
-
-            List<String> additionalGrants = new ArrayList<>();
-            if (offlineClients.contains(client)) {
-                additionalGrants.add("${offlineToken}");
-            }
-
-            applications.add(new ApplicationEntry(session, realmRolesAvailable, resourceRolesAvailable, client, clientScopesGranted, additionalGrants));
-        }
+        this.applications = this.getApplications(session, realm, user)
+                .filter(client -> !isAdminClient(client) || AdminPermissions.realms(session, realm, user).isAdmin())
+                .map(client -> toApplicationEntry(session, realm, user, client, offlineClients))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
     public static boolean isAdminClient(ClientModel client) {
@@ -99,28 +64,14 @@ public class ApplicationsBean {
           || client.getClientId().equals(Constants.ADMIN_CONSOLE_CLIENT_ID);
     }
 
-    private Set<ClientModel> getApplications(KeycloakSession session, RealmModel realm, UserModel user) {
-        Set<ClientModel> clients = new HashSet<>();
+    private Stream<ClientModel> getApplications(KeycloakSession session, RealmModel realm, UserModel user) {
+        Predicate<ClientModel> bearerOnly = ClientModel::isBearerOnly;
+        Stream<ClientModel> clients = realm.getClientsStream().filter(bearerOnly.negate());
 
-        for (ClientModel client : realm.getClients()) {
-            // Don't show bearerOnly clients
-            if (client.isBearerOnly()) {
-                continue;
-            }
-
-            clients.add(client);
-        }
-
-        List<UserConsentModel> consents = session.users().getConsents(realm, user.getId());
-
-        for (UserConsentModel consent : consents) {
-            ClientModel client = consent.getClient();
-
-            if (!new StorageId(client.getId()).isLocal()) {
-                clients.add(client);
-            }
-        }
-        return clients;
+        Predicate<ClientModel> isLocal = client -> new StorageId(client.getId()).isLocal();
+        return Stream.concat(clients, session.users().getConsentsStream(realm, user.getId())
+                    .map(UserConsentModel::getClient)
+                    .filter(isLocal.negate())).distinct();
     }
 
     private void processRoles(Set<RoleModel> inputRoles, List<RoleModel> realmRoles, MultivaluedHashMap<String, ClientRoleEntry> clientRoles) {
@@ -214,5 +165,57 @@ public class ApplicationsBean {
         public String getRoleDescription() {
             return roleDescription;
         }
+    }
+
+    /**
+     * Constructs a {@link ApplicationEntry} from the specified parameters.
+     *
+     * @param session a reference to the {@code Keycloak} session.
+     * @param realm a reference to the realm.
+     * @param user a reference to the user.
+     * @param client a reference to the client that contains the applications.
+     * @param offlineClients a {@link Set} containing the offline clients.
+     * @return the constructed {@link ApplicationEntry} instance or {@code null} if the user can't access the applications
+     * in the specified client.
+     */
+    private ApplicationEntry toApplicationEntry(final KeycloakSession session, final RealmModel realm, final UserModel user,
+                                                final ClientModel client, final Set<ClientModel> offlineClients) {
+
+        // Construct scope parameter with all optional scopes to see all potentially available roles
+        Stream<ClientScopeModel> allClientScopes = Stream.concat(
+                client.getClientScopes(true).values().stream(),
+                client.getClientScopes(false).values().stream());
+        allClientScopes = Stream.concat(allClientScopes, Stream.of(client)).distinct();
+
+        Set<RoleModel> availableRoles = TokenManager.getAccess(user, client, allClientScopes);
+
+        // Don't show applications, which user doesn't have access into (any available roles)
+        // unless this is can be changed by approving/revoking consent
+        if (! isAdminClient(client) && availableRoles.isEmpty() && ! client.isConsentRequired()) {
+            return null;
+        }
+
+        List<RoleModel> realmRolesAvailable = new LinkedList<>();
+        MultivaluedHashMap<String, ClientRoleEntry> resourceRolesAvailable = new MultivaluedHashMap<>();
+        processRoles(availableRoles, realmRolesAvailable, resourceRolesAvailable);
+
+        List<ClientScopeModel> orderedScopes = new LinkedList<>();
+        if (client.isConsentRequired()) {
+            UserConsentModel consent = session.users().getConsentByClient(realm, user.getId(), client.getId());
+
+            if (consent != null) {
+                orderedScopes.addAll(consent.getGrantedClientScopes());
+            }
+        }
+        List<String> clientScopesGranted = orderedScopes.stream()
+                .sorted(OrderedModel.OrderedModelComparator.getInstance())
+                .map(ClientScopeModel::getConsentScreenText)
+                .collect(Collectors.toList());
+
+        List<String> additionalGrants = new ArrayList<>();
+        if (offlineClients.contains(client)) {
+            additionalGrants.add("${offlineToken}");
+        }
+        return new ApplicationEntry(session, realmRolesAvailable, resourceRolesAvailable, client, clientScopesGranted, additionalGrants);
     }
 }

@@ -97,7 +97,7 @@ public class SessionNotOnOrAfterTest extends AbstractSamlTest {
                     .idpInitiatedLogin(getAuthServerSamlEndpoint(REALM_NAME), "sales-post").build()
                     .login().user(bburkeUser).build()
                     .processSamlResponse(SamlClient.Binding.POST)
-                        .transformObject(r -> { checkSessionNotOnOrAfter(r, SSO_MAX_LIFESPAN, ACCESS_CODE_LIFESPAN, ACCESS_TOKEN_LIFESPAN); })
+                        .transformObject(r -> { return checkSessionNotOnOrAfter(r, SSO_MAX_LIFESPAN, ACCESS_CODE_LIFESPAN, ACCESS_TOKEN_LIFESPAN); })
                         .build()
                     .execute();
         }
@@ -116,7 +116,7 @@ public class SessionNotOnOrAfterTest extends AbstractSamlTest {
                     .idpInitiatedLogin(getAuthServerSamlEndpoint(REALM_NAME), "sales-post").build()
                     .login().user(bburkeUser).build()
                     .processSamlResponse(SamlClient.Binding.POST)
-                    .transformObject(r -> { checkSessionNotOnOrAfter(r, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE); })
+                    .transformObject(r -> { return checkSessionNotOnOrAfter(r, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE); })
                     .build()
                     .execute();
         }
@@ -136,7 +136,7 @@ public class SessionNotOnOrAfterTest extends AbstractSamlTest {
                         .build()
                     .login().user(bburkeUser).build()
                     .processSamlResponse(SamlClient.Binding.POST)
-                        .transformObject(r -> { checkSessionNotOnOrAfter(r, SSO_MAX_LIFESPAN, ACCESS_CODE_LIFESPAN, ACCESS_TOKEN_LIFESPAN); })
+                        .transformObject(r -> { return checkSessionNotOnOrAfter(r, SSO_MAX_LIFESPAN, ACCESS_CODE_LIFESPAN, ACCESS_TOKEN_LIFESPAN); })
                         .build()
                     .execute();
         }
@@ -152,7 +152,7 @@ public class SessionNotOnOrAfterTest extends AbstractSamlTest {
                     .idpInitiatedLogin(getAuthServerSamlEndpoint(REALM_NAME), "sales-post").build()
                     .login().user(bburkeUser).build()
                     .processSamlResponse(SamlClient.Binding.POST)
-                        .transformObject(r -> { checkSessionNotOnOrAfter(r, ssoMaxLifespan, 2000, 2000); })
+                        .transformObject(r -> { return checkSessionNotOnOrAfter(r, ssoMaxLifespan, 2000, 2000); })
                         .build()
                     .execute();
         }
@@ -169,7 +169,7 @@ public class SessionNotOnOrAfterTest extends AbstractSamlTest {
                         .build()
                     .login().user(bburkeUser).build()
                     .processSamlResponse(SamlClient.Binding.POST)
-                        .transformObject(r -> { checkSessionNotOnOrAfter(r, ssoMaxLifespan, 1800, 1800); })
+                        .transformObject(r -> { return checkSessionNotOnOrAfter(r, ssoMaxLifespan, 1800, 1800); })
                         .build()
                     .execute();
         }

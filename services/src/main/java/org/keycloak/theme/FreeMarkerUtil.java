@@ -85,7 +85,7 @@ public class FreeMarkerUtil {
         return cfg.getTemplate(templateName, "UTF-8");
     }
 
-    class ThemeTemplateLoader extends URLTemplateLoader {
+    static class ThemeTemplateLoader extends URLTemplateLoader {
 
         private Theme theme;
 

@@ -271,18 +271,18 @@ public class TokenVerifier<T extends JsonWebToken> {
         checks.remove(check);
     }
 
-    private <P extends Predicate<? super T>> TokenVerifier<T> replaceCheck(Class<? extends Predicate<?>> checkClass, boolean active, P predicate) {
+    private <P extends Predicate<? super T>> TokenVerifier<T> replaceCheck(Class<? extends Predicate<?>> checkClass, boolean active, P... predicate) {
         removeCheck(checkClass);
         if (active) {
-            checks.add(predicate);
+            checks.addAll(Arrays.asList(predicate));
         }
         return this;
     }
 
-    private <P extends Predicate<? super T>> TokenVerifier<T> replaceCheck(Predicate<? super T> check, boolean active, P predicate) {
+    private <P extends Predicate<? super T>> TokenVerifier<T> replaceCheck(Predicate<? super T> check, boolean active, P... predicate) {
         removeCheck(check);
         if (active) {
-            checks.add(predicate);
+            checks.addAll(Arrays.asList(predicate));
         }
         return this;
     }
@@ -366,11 +366,18 @@ public class TokenVerifier<T extends JsonWebToken> {
     /**
      * Add check for verifying that token contains the expectedAudience
      *
-     * @param expectedAudience Audience, which needs to be in the target token. Can't be null
+     * @param expectedAudiences Audiences, which needs to be in the target token. Can be <code>null</code>.
      * @return This token verifier
      */
-    public TokenVerifier<T> audience(String expectedAudience) {
-        return this.replaceCheck(AudienceCheck.class, true, new AudienceCheck(expectedAudience));
+    public TokenVerifier<T> audience(String... expectedAudiences) {
+        if (expectedAudiences == null || expectedAudiences.length == 0) {
+            return this.replaceCheck(AudienceCheck.class, true, new AudienceCheck(null));
+        }
+        AudienceCheck[] audienceChecks = new AudienceCheck[expectedAudiences.length];
+        for (int i = 0; i < expectedAudiences.length; ++i) {
+            audienceChecks[i] = new AudienceCheck(expectedAudiences[i]);
+        }
+        return this.replaceCheck(AudienceCheck.class, true, audienceChecks);
     }
 
     /**

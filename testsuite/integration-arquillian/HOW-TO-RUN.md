@@ -11,6 +11,38 @@ It's recommended to build the workspace including distribution.
     cd distribution
     mvn clean install
 
+### Running tests in the development mode (Keycloak on embedded undertow)
+
+After build sources and distribution, it is possible to run the base testsuite
+
+    mvn -f testsuite/integration-arquillian/pom.xml clean install
+
+Running single test can be achieved for example like this
+
+    mvn -f testsuite/integration-arquillian/pom.xml clean install -Dtest=LoginTest
+
+By default, the development setup is used with the Keycloak server deployed on
+embedded undertow server. That setup doesn't even require to build the distribution or re-build
+the distribution after doing changes in the code.
+
+For example when you do some fix in some class in the `services` module, you can re-build just that module
+
+    mvn -f services/pom.xml clean install
+
+And then re-run the LoginTest (or any other test you wish) and the changes should be applied when running the tests.
+
+If you use Intellij Idea, you don't even need to re-build anything with the maven. After doing any
+change in the codebase, the change is immediately effective when running the test with Junit runner. 
+
+### Running tests in the production mode (Keycloak on Wildfly)
+
+For the "production" testing, it is possible to run the Keycloak server deployed on real Wildfly server.
+This can be achieved by add the `auth-server-wildfly` profile when running the testsuite.
+
+    mvn -f testsuite/integration-arquillian/pom.xml -Pauth-server-wildfly clean install
+
+Unlike the "development" setup described above, this requires re-build the whole distribution
+after doing any change in the code.
 
 ## Debugging - tips & tricks
 
@@ -106,6 +138,10 @@ unzip prepared server:
 
     unzip -q testsuite/integration-arquillian/servers/auth-server/jboss/wildfly/target/integration-arquillian-servers-auth-server-wildfly-*.zip
 
+create admin user:
+
+    sh auth-server-wildfly/bin/add-user-keycloak.sh -r master -u admin -p admin
+
 start the server:
 
     sh auth-server-wildfly/bin/standalone.sh \
@@ -130,6 +166,10 @@ unzip prepared servers:
 
     unzip -q keycloak/testsuite/integration-arquillian/servers/auth-server/jboss/wildfly/target/integration-arquillian-servers-auth-server-wildfly-*.zip
     unzip -q keycloak/testsuite/integration-arquillian/servers/app-server/jboss/wildfly/target/integration-arquillian-servers-app-server-wildfly-*.zip
+
+create admin user:
+
+    sh auth-server-wildfly/bin/add-user-keycloak.sh -r master -u admin -p admin
 
 start both servers:
 
@@ -422,6 +462,13 @@ The tests also use some constants placed in [test-constants.properties](tests/ba
 
 In case a custom `settings.xml` is used for Maven, you need to specify it also in `-Dkie.maven.settings.custom=path/to/settings.xml`.
 
+#### Execution example
+```
+mvn -f testsuite/integration-arquillian/tests/other/console/pom.xml \
+    clean test \
+    -Dbrowser=firefox \
+    -Dfirefox_binary=/opt/firefox-45.1.1esr/firefox
+```
 
 ## Spring Boot adapter tests
 
@@ -438,14 +485,6 @@ mvn -f testsuite/integration-arquillian/tests/other/springboot-tests/pom.xml \
 
 Note: Spring Boot 21 doesn't work with jetty92 and jetty93, only jetty94 is tested.
 
-#### Execution example
-```
-mvn -f testsuite/integration-arquillian/tests/other/console/pom.xml \
-    clean test \
-    -Dbrowser=firefox \
-    -Dfirefox_binary=/opt/firefox-45.1.1esr/firefox
-```
-
 ## Base UI tests
 Similarly to Admin Console tests, these tests are focused on UI, specifically on the parts of the server that are accessed by an end user (like Login page, or Account Console).
 They are designed to work with mobile browsers (alongside the standard desktop browsers). For details on the supported browsers and their configuration please refer to [Different Browsers chapter](#different-browsers).
@@ -456,36 +495,29 @@ mvn -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml \
     -Pandroid \
     -Dappium.avd=Nexus_5X_API_27
 ```
-**Note:** Some of the tests are covering WebAuthn functionality. Such tests are ignored by default, to ensure that all
-tests in the Base UI testsuite are executed please use `-DchromeArguments=--enable-web-authentication-testing-api` as
-specified in [WebAuthn tests](#webauthn-tests).
 
+## Disabling features
+Some features in Keycloak can be disabled. To run the testsuite with a specific feature disabled use the `auth.server.feature` system property. For example to run the tests with authorization disabled run:
+```
+mvn -f testsuite/integration-arquillian/tests/base/pom.xml clean test -Pauth-server-wildfly -Dauth.server.feature=-Dkeycloak.profile.feature.authorization=disabled
+```
 ## WebAuthN tests
-The WebAuthN tests, in Keycloak, can be only executed with Chrome browser, because the Chrome has feature _WebAuthenticationTestingApi_,
-which simulate hardware authentication device. For automated WebAuthN testing, this approach seems like the best choice so far.
-To enabling the feature you have to add flag to _chromeArguments_. In each WebAuthN test should be method with ``@Before`` annotation
-to verify the browser properties.
-
-#### Example of verifying the browser properties
-```
-@Before
-void verifyEnvironment(WebDriver driver) {
-    WebAuthnAssume.assumeChrome(driver);
-}
-```
+These tests cover feature W3C WebAuthn, which provides us a lot of possibilities how to include 2FA or MFA to our authentication flows. 
+For testing the feature, it's necessary to use various devices, which support WebAuthn. 
+However, we are not able to physically test those devices as in a real world, but we create a virtual authenticators, which should behave the same.
+The support for the Virtual Authenticators came from Selenium 4.
 
 #### Run all WebAuthN tests
 ```
-mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
-    clean test \
-    -Dtest=org.keycloak.testsuite.webauthn.**.*Test \
-    -Dbrowser=chrome \
-    -DchromeArguments=--enable-web-authentication-testing-api
+mvn -f testsuite/integration-arquillian/tests/other/pom.xml clean test \
+    -Dbrowser=chrome -Pwebauthn
 ```
+
+**Note:** You can also execute those tests with `chromeHeadless` browser in order to not open a new window.
 
 #### Troubleshooting
 
-If you try to run WebAuthn tests and you see error like:
+If you try to run WebAuthn tests with Chrome browser and you see error like:
 
 ```
 Caused by: java.lang.RuntimeException: Unable to instantiate Drone via org.openqa.selenium.chrome.ChromeDriver(Capabilities):
@@ -498,6 +530,11 @@ Then run the WebAuthn tests as above with the additional system property for spe
 ```
 -DchromeDriverVersion=77.0.3865.40
 ```
+
+**For Windows**: Probably, you encounter issues with execution those tests on the Windows platform due to Chrome Driver is not available.
+In this case, please define the path to the local Chrome Driver by adding this property `-Dwebdriver.chrome.driver=C:/path/to/chromedriver.exe`.
+
+**Warning:** Please, be aware the WebAuthn tests are still in a development phase and there is a high chance those tests will not be stable.
 
 ## Social Login
 The social login tests require setup of all social networks including an example social user. These details can't be
@@ -652,12 +689,24 @@ After you build the distribution, you run this command to setup servers and run 
     
 ### Cluster tests with Keycloak on Quarkus
 
+Make sure the `testsuite/integration-arquillian/servers/auth-server/quarkus` module was built as follows:
+
+    mvn -f testsuite/integration-arquillian/servers/auth-server/quarkus/pom.xml clean install \
+         -Pauth-server-cluster-quarkus
+
 Run tests using the `auth-server-cluster-quarkus` profile:
 
      mvn -f testsuite/integration-arquillian/tests/base/pom.xml clean install \
      -Pauth-server-cluster-quarkus \
      -Dsession.cache.owners=2  \
      -Dtest=AuthenticationSessionFailoverClusterTest
+     
+Alternatively, you can perform both steps using the following command:
+
+    mvn -f testsuite/integration-arquillian/pom.xml clean install \
+    -Pauth-server-cluster-quarkus \
+    -Dsession.cache.owners=2 \
+    -Dtest=AuthenticationSessionFailoverClusterTest
      
 ---
 **NOTE**
@@ -742,17 +791,41 @@ land by adjusting load balancer configuration (e.g. to direct the traffic to onl
 
 For an example of a test, see [org.keycloak.testsuite.crossdc.ActionTokenCrossDCTest](tests/base/src/test/java/org/keycloak/testsuite/crossdc/ActionTokenCrossDCTest.java).
 
-The cross DC requires setting a profile specifying used cache server by specifying
-`cache-server-infinispan` or `cache-server-jdg` profile in maven.
+The cross DC requires setting a profile specifying the used cache server.
+Use `cache-server-infinispan` Maven profile for Infinispan 10 or higher, or `cache-server-legacy-infinispan` profile for Infinispan 9 and lower.
+Use `cache-server-datagrid` Maven profile for Datagrid 8 or higher, or `cache-server-legacy-datagrid` profile for Datagrid 7 and lower.
 
-Since JDG does not distribute `infinispan-server` zip artifact anymore, for `cache-server-jdg` profile it is
-necessary to download the artifact and install it to local Maven repository. For JDG 7.3.0, the command is the following:
+To specify a custom Java platform to run the cache server it is possible to set parameter: `-Dcache.server.java.home=<PATH_TO_JDK>`.
+
+### Cache Authentication
+
+With WildFLy/EAP based auth server option it is possible to enable authentication for the HotRod protocol by enabling profile `cache-auth`.
+
+It is possible to specify additional parameters:
+- `-Dhotrod.sasl.mechanism`: SASL mechanism used by the hotrod protocol. Default value is `DIGEST-MD5`.
+- `-Dkeycloak.connectionsInfinispan.hotrodProtocolVersion`: Version of the hotrod protocol.
+
+Example: `-Pauth-server-wildfly,cache-server-infinispan,cache-auth -Dhotrod.sasl.mechanism=SCRAM-SHA-512`
+
+Note: The cache authentication is not implemented for `SAMLAdapterCrossDCTest`.
+
+Note: The `cache-auth` profile currently doesn't work with the legacy Infinispan/Datagrid modules. See: [KEYCLOAK-18336](https://issues.redhat.com/browse/KEYCLOAK-18336).
+
+### Data Grid
+
+Since Datagrid does not distribute `infinispan-server` zip artifact, for `cache-server-datagrid` profile it is
+necessary to download the artifact and install it to local Maven repository. For Red Hat Data Grid 8 and above, the command is the following:
 
     mvn install:install-file \
-    -DgroupId=org.infinispan.server -DartifactId=infinispan-server -Dpackaging=zip -Dclassifier=bin -DgeneratePom=true \
-    -Dversion=9.4.6.Final-redhat-00002 -Dfile=jboss-datagrid-7.3.0-server.zip
+    -DgroupId=com.redhat -DartifactId=datagrid -Dpackaging=zip -Dclassifier=bin -DgeneratePom=true \
+    -Dversion=${DATAGRID_VERSION} -Dfile=redhat-datagrid-${DATAGRID_VERSION}-server.zip
 
-#### Run Cross-DC Tests from Maven
+For Data Grid 7 and older use: `-Dfile=jboss-datagrid-${DATAGRID_VERSION}-server.zip`.
+
+### Run Cross-DC Tests from Maven
+
+Note: Profile `auth-servers-crossdc-undertow` currently doesn't work (see [KEYCLOAK-18335](https://issues.redhat.com/browse/KEYCLOAK-18335)).
+Use `-Pauth-servers-crossdc-jboss,auth-server-wildfly` instead.
 
 a) Prepare the environment. Compile the infinispan server and eventually Keycloak on JBoss server.
 
@@ -761,14 +834,14 @@ Infinispan/JDG test server via the following command:
 
   `mvn -Pcache-server-infinispan,auth-servers-crossdc-undertow -f testsuite/integration-arquillian -DskipTests clean install`
 
-*note: 'cache-server-infinispan' can be replaced by 'cache-server-jdg'*
+*note: 'cache-server-infinispan' can be replaced by 'cache-server-datagrid'*
 
 a2) If you want to use **JBoss-based** Keycloak backend containers instead of containers on Embedded Undertow,
  you need to prepare both the Infinispan/JDG test server and the Keycloak server on Wildfly/EAP. Run following command:
 
   `mvn -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly -f testsuite/integration-arquillian -DskipTests clean install`
 
-*note: 'cache-server-infinispan' can be replaced by 'cache-server-jdg'*
+*note: 'cache-server-infinispan' can be replaced by 'cache-server-datagrid'*
 
 *note: 'auth-server-wildfly' can be replaced by 'auth-server-eap'*
 
@@ -778,9 +851,9 @@ By default JBoss-based containers use TCP-based h2 database. It can be configure
 
 b1) For **Undertow** Keycloak backend containers, you can run the tests using the following command (adjust the test specification according to your needs):
 
-  `mvn -Pcache-server-infinispan,auth-servers-crossdc-undertow -Dtest=*.crossdc.* -pl testsuite/integration-arquillian/tests/base clean install`
+  `mvn -Pcache-server-infinispan,auth-servers-crossdc-undertow -Dtest=org.keycloak.testsuite.crossdc.**.*Test -pl testsuite/integration-arquillian/tests/base clean install`
 
-*note: 'cache-server-infinispan' can be replaced by 'cache-server-jdg'*
+*note: 'cache-server-infinispan' can be replaced by 'cache-server-datagrid'*
 
 *note: It can be useful to add additional system property to enable logging:*
 
@@ -788,19 +861,21 @@ b1) For **Undertow** Keycloak backend containers, you can run the tests using th
 
 b2) For **JBoss-based** Keycloak backend containers, you can run the tests like this:
 
-  `mvn -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly -Dtest=*.crossdc.* -pl testsuite/integration-arquillian/tests/base clean install`
+  `mvn -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly -Dtest=org.keycloak.testsuite.crossdc.**.*Test -pl testsuite/integration-arquillian/tests/base clean install`
 
-*note: 'cache-server-infinispan' can be replaced by 'cache-server-jdg'*
+*note: 'cache-server-infinispan' can be replaced by 'cache-server-datagrid'*
 
 *note: 'auth-server-wildfly can be replaced by auth-server-eap'*
 
 **note**:
 For **JBoss-based** Keycloak backend containers on real DB, the previous commands from (a2) and (b2) can be "squashed" into one. E.g.:
 
-  `mvn -f testsuite/integration-arquillian -Dtest=*.crossdc.* -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,jpa,db-mariadb clean install`
+  `mvn -f testsuite/integration-arquillian -Dtest=org.keycloak.testsuite.crossdc.**.*Test -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,jpa,db-mariadb clean install`
 
 
-#### Run Cross-DC Tests from Intellij IDEA
+### Run Cross-DC Tests from Intellij IDEA
+
+Note: Profile `auth-servers-crossdc-undertow` which is required in step (3) currently doesn't work (see [KEYCLOAK-18335](https://issues.redhat.com/browse/KEYCLOAK-18335)).
 
 First we will manually download, configure and run infinispan servers. Then we can run the tests from IDE against the servers.
 It's more effective during development as there is no need to restart infinispan server(s) among test runs.
@@ -967,7 +1042,7 @@ Make sure you build the project using the `quarkus` profile as follows:
     
 Run tests using the `auth-server-quarkus` profile:
 
-    mvn -f testsuite/integration-arquillian/tests/base/pom.xml clean install -Pauth-server-quarkus
+    mvn -f testsuite/integration-arquillian/pom.xml clean install -Pauth-server-quarkus
     
 ### Debug the Server
     
@@ -1000,3 +1075,27 @@ because this is not UI testing). For debugging purposes you can override the hea
                       -Pfirefox-strict-cookies \
                       -Dtest=**.javascript.** \
                       -Dauth.server.host=[some_host] -Dauth.server.host2=[some_other_host]
+                      
+**General adapter tests**
+
+    mvn clean install -f testsuite/integration-arquillian/tests/base \
+                       -Pfirefox-strict-cookies \
+                       -Dtest=**.adapter.** \
+                       -Dauth.server.host=[some_host] -Dauth.server.host2=[some_other_host]
+
+## Hostname Tests 
+For changing the hostname in the hostname tests (e.g. [DefaultHostnameTest](https://github.com/keycloak/keycloak/blob/main/testsuite/integration-arquillian/tests/base/src/test/java/org/keycloak/testsuite/url/DefaultHostnameTest.java)),
+we rely on [nip.io](https://nip.io) for DNS switching, so tests will work everywhere without fiddling with `etc/hosts` locally. 
+
+### Tips & Tricks:
+Although it _should_ work in general, you may experience an exception like this:
+```
+java.lang.RuntimeException: java.net.UnknownHostException: keycloak.127.0.0.1.nip.io: nodename nor servname provided, 
+or not known at org.keycloak.testsuite.util.OAuthClient.doWellKnownRequest(OAuthClient.java:1032)
+at org.keycloak.testsuite.url.DefaultHostnameTest.assertBackendForcedToFrontendWithMatchingHostname(
+DefaultHostnameTest.java:226)
+...
+```
+when running these tests on your local machine. This happens when something on your machine or network is blocking DNS queries to [nip.io](https://nip.io)
+One possible workaround is to add a commonly used public dns server (e.g. 8.8.8.8 for google dns server) to your local 
+networks dns configuration and run the tests. 

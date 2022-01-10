@@ -26,18 +26,14 @@ import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.Sort;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPContextManager;
+import org.keycloak.storage.ldap.mappers.LDAPMappersComparator;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 
 import javax.naming.NamingException;
 import javax.naming.directory.SearchControls;
 import javax.naming.ldap.LdapContext;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static java.util.Collections.unmodifiableSet;
 
@@ -162,8 +158,10 @@ public class LDAPQuery implements AutoCloseable {
     public List<LDAPObject> getResultList() {
 
         // Apply mappers now
-        List<ComponentModel> sortedMappers = ldapFedProvider.getMapperManager().sortMappersAsc(mappers);
-        for (ComponentModel mapperModel : sortedMappers) {
+        LDAPMappersComparator ldapMappersComparator = new LDAPMappersComparator(ldapFedProvider.getLdapIdentityStore().getConfig());
+        Collections.sort(mappers, ldapMappersComparator.sortAsc());
+
+        for (ComponentModel mapperModel : mappers) {
             LDAPStorageMapper fedMapper = ldapFedProvider.getMapperManager().getMapper(mapperModel);
             fedMapper.beforeLDAPQuery(this);
         }

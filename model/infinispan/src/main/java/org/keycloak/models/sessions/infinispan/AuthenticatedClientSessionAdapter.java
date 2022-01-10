@@ -26,6 +26,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.ClientSessionUpdateTask;
@@ -46,14 +47,12 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
     private final InfinispanUserSessionProvider provider;
     private AuthenticatedClientSessionEntity entity;
     private final ClientModel client;
-    private final InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx;
     private final InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx;
     private UserSessionModel userSession;
     private boolean offline;
 
     public AuthenticatedClientSessionAdapter(KeycloakSession kcSession, InfinispanUserSessionProvider provider,
                                              AuthenticatedClientSessionEntity entity, ClientModel client, UserSessionModel userSession,
-                                             InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx,
                                              InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx, boolean offline) {
         if (userSession == null) {
             throw new NullPointerException("userSession must not be null");
@@ -64,13 +63,8 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
         this.entity = entity;
         this.userSession = userSession;
         this.client = client;
-        this.userSessionUpdateTx = userSessionUpdateTx;
         this.clientSessionUpdateTx = clientSessionUpdateTx;
         this.offline = offline;
-    }
-
-    private void update(UserSessionUpdateTask task) {
-        userSessionUpdateTx.addTask(userSession.getId(), task);
     }
 
     private void update(ClientSessionUpdateTask task) {
@@ -85,6 +79,9 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
      */
     @Override
     public void detachFromUserSession() {
+        if (this.userSession.isOffline()) {
+            kcSession.getProvider(UserSessionPersisterProvider.class).removeClientSession(userSession.getId(), client.getId(), true);
+        }
         // Intentionally do not remove the clientUUID from the user session, invalid session is handled
         // as nonexistent in org.keycloak.models.sessions.infinispan.UserSessionAdapter.getAuthenticatedClientSessions()
         this.userSession = null;
@@ -120,7 +117,7 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
 
     @Override
     public String getId() {
-        return null;
+        return entity.getId().toString();
     }
 
     @Override

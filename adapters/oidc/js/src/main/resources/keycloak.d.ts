@@ -178,11 +178,20 @@ declare namespace Keycloak {
 		 * @default false
 		 */
 		enableLogging?: boolean
+
+		/**
+		 * Configures how long will Keycloak adapter wait for receiving messages from server in ms. This is used,
+		 * for example, when waiting for response of 3rd party cookies check.
+		 *
+		 * @default 10000
+		 */
+		messageReceiveTimeout?: number
 	}
 
 	interface KeycloakLoginOptions {
 		/**
-		 * @private Undocumented.
+		 * Specifies the scope parameter for the login url
+		 * The scope 'openid' will be added to the scope if it is missing or undefined.
 		 */
 		scope?: string;
 
@@ -247,6 +256,13 @@ declare namespace Keycloak {
 	}
 
 	interface KeycloakRegisterOptions extends Omit<KeycloakLoginOptions, 'action'> { }
+	
+	interface KeycloakAccountOptions {
+		/**
+		 * Specifies the uri to redirect to when redirecting back to the application.
+		 */
+		redirectUri?: string;	
+	}
 
 	type KeycloakPromiseCallback<T> = (result: T) => void;
 
@@ -292,13 +308,20 @@ declare namespace Keycloak {
 	}
 
 	interface KeycloakTokenParsed {
+		iss?: string;
+		sub?: string;
+		aud?: string;
 		exp?: number;
 		iat?: number;
+		auth_time?: number;
 		nonce?: string;
-		sub?: string;
+		acr?: string;
+		amr?: string;
+		azp?: string;
 		session_state?: string;
 		realm_access?: KeycloakRoles;
 		resource_access?: KeycloakResourceAccess;
+		[key: string]: any; // Add other attributes here.
 	}
 
 	interface KeycloakResourceAccess {
@@ -528,8 +551,9 @@ declare namespace Keycloak {
 
 		/**
 		 * Returns the URL to the Account Management Console.
+		 * @param options The options used for creating the account URL.
 		 */
-		createAccountUrl(): string;
+		createAccountUrl(options?: KeycloakAccountOptions): string;
 
 		/**
 		 * Returns true if the token has less than `minValidity` seconds left before
@@ -546,13 +570,13 @@ declare namespace Keycloak {
 		 *          still valid, or if the token is no longer valid.
 		 * @example
 		 * ```js
-		 * keycloak.updateToken(5).success(function(refreshed) {
+		 * keycloak.updateToken(5).then(function(refreshed) {
 		 *   if (refreshed) {
 		 *     alert('Token was successfully refreshed');
 		 *   } else {
 		 *     alert('Token is still valid');
 		 *   }
-		 * }).error(function() {
+		 * }).catch(function() {
 		 *   alert('Failed to refresh the token, or the session has expired');
 		 * });
 		 */

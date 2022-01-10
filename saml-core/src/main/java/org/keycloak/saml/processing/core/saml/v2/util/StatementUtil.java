@@ -64,7 +64,7 @@ public class StatementUtil {
         AuthnContextType authnContext = new AuthnContextType();
         AuthnContextClassRefType authnContextClassRef = new AuthnContextClassRefType(URI.create(authnContextClassRefValue));
 
-        AuthnContextType.AuthnContextTypeSequence sequence = (authnContext).new AuthnContextTypeSequence();
+        AuthnContextType.AuthnContextTypeSequence sequence = new AuthnContextType.AuthnContextTypeSequence();
         sequence.setClassRef(authnContextClassRef);
         authnContext.setSequence(sequence);
 

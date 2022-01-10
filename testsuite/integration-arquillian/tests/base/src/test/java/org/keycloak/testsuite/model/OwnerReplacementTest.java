@@ -35,6 +35,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.RoleProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
@@ -84,12 +85,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
     public void componentsTest(KeycloakSession session1) {
         doTest(session1,
             // Get ID of some component from realm1
-            ((session, realm1) -> {
-
-                List<ComponentModel> components = realm1.getComponents();
-                return components.get(0).getId();
-
-            }),
+            ((session, realm1) -> realm1.getComponentsStream().findFirst().get().getId()),
             // Test lookup realm1 component in realm2 should not work
             ((session, realm2, realm1ComponentId) -> {
 
@@ -134,12 +130,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
     public void requiredActionProvidersTest(KeycloakSession session1) {
         doTest(session1,
                 // Get ID of some object from realm1
-                ((session, realm1) -> {
-
-                    List<RequiredActionProviderModel> reqActions = realm1.getRequiredActionProviders();
-                    return reqActions.get(0).getId();
-
-                }),
+                ((session, realm1) -> realm1.getRequiredActionProvidersStream().findFirst().get().getId()),
                 // Test lookup realm1 object in realm2 should not work
                 ((session, realm2, realm1ReqActionId) -> {
 
@@ -239,8 +230,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 ((session, realm1) -> {
 
                     AuthenticationFlowModel flow = realm1.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
-                    List<AuthenticationExecutionModel> executions = realm1.getAuthenticationExecutions(flow.getId());
-                    return executions.get(0).getId();
+                    return realm1.getAuthenticationExecutionsStream(flow.getId()).findFirst().get().getId();
 
                 }),
                 // Test lookup realm1 object in realm2 should not work
@@ -288,12 +278,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
     public void authenticationConfigsTest(KeycloakSession session1) {
         doTest(session1,
                 // Get ID of some object from realm1
-                ((session, realm1) -> {
-
-                    List<AuthenticatorConfigModel> configs = realm1.getAuthenticatorConfigs();
-                    return configs.get(0).getId();
-
-                }),
+                ((session, realm1) -> realm1.getAuthenticatorConfigsStream().findFirst().get().getId()),
                 // Test lookup realm1 object in realm2 should not work
                 ((session, realm2, realm1AuthConfigId) -> {
 
@@ -387,15 +372,14 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 // Get ID of some object from realm1
                 ((session, realm1) -> {
 
-                    RoleModel role = session.getProvider(RealmProvider.class).addRealmRole(realm1, "foo");
-                    realm1.addDefaultRole("foo");
+                    RoleModel role = session.getProvider(RoleProvider.class).addRealmRole(realm1, "foo");
                     return role.getId();
 
                 }),
                 // Test lookup realm1 object in realm2 should not work
                 ((session, realm2, realm1RoleId) -> {
 
-                    RoleModel role = session.getProvider(RealmProvider.class).getRoleById(realm1RoleId, realm2);
+                    RoleModel role = session.getProvider(RoleProvider.class).getRoleById(realm2, realm1RoleId);
                     Assert.assertNull(role);
 
                 }),
@@ -414,16 +398,13 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 // Try remove object from realm1 in the context of realm2
                 ((session, realm1, realm2, realm1RoleId) -> {
 
-                    RoleModel role = session.getProvider(RealmProvider.class).getRoleById(realm1RoleId, realm1);
-                    session.getProvider(RealmProvider.class).removeRole(realm2, role);
+                    // not possible to remove object from realm1 in the context of realm2 any more
 
                 }),
                 // Test remove from above was not successful
                 ((session, realm1, realm1RoleId) -> {
 
-                    RoleModel role = session.getProvider(RealmProvider.class).getRoleById(realm1RoleId, realm1);
-                    Assert.assertNotNull(role);
-                    Assert.assertTrue(realm1.getDefaultRoles().contains("foo"));
+                    // nothing to test
 
                 })
         );
@@ -436,7 +417,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 // Get ID of some object from realm1
                 ((session, realm1) -> {
 
-                    UserModel user = session.users().getUserByUsername("test-user@localhost", realm1);
+                    UserModel user = session.users().getUserByUsername(realm1, "test-user@localhost");
                     UserSessionModel userSession = session.sessions().createUserSession(realm1, user, user.getUsername(), "1.2.3.4", "bar", false, null, null);
                     return userSession.getId();
 

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature-group-spec name="infinispan-local-web" xmlns="urn:jboss:galleon:feature-group:1.0">
+    <feature spec="subsystem.infinispan">
+
+        <feature spec="subsystem.infinispan.cache-container">
+            <param name="cache-container" value="web"/>
+            <param name="modules" value="[org.wildfly.clustering.web.infinispan]"/>
+            <param name="marshaller" value="PROTOSTREAM"/>
+            <param name="default-cache" value="passivation"/>
+            <feature spec="subsystem.infinispan.cache-container.local-cache">
+                <param name="local-cache" value="passivation"/>
+                <feature spec="subsystem.infinispan.cache-container.local-cache.component.locking">
+                    <param name="isolation" value="REPEATABLE_READ"/>
+                </feature>
+                <feature spec="subsystem.infinispan.cache-container.local-cache.component.transaction">
+                    <param name="mode" value="BATCH"/>
+                </feature>
+                <feature spec="subsystem.infinispan.cache-container.local-cache.store.file">
+                    <param name="passivation" value="true"/>
+                    <param name="purge" value="false"/>
+                    <unset param="relative-to"/>
+                </feature>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.local-cache">
+                <param name="local-cache" value="sso"/>
+                <feature spec="subsystem.infinispan.cache-container.local-cache.component.locking">
+                    <param name="isolation" value="REPEATABLE_READ"/>
+                </feature>
+                <feature spec="subsystem.infinispan.cache-container.local-cache.component.transaction">
+                    <param name="mode" value="BATCH"/>
+                </feature>
+            </feature>
+            <feature spec="subsystem.infinispan.cache-container.local-cache">
+                <param name="local-cache" value="routing"/>
+            </feature>
+        </feature>
+    </feature>
+</feature-group-spec>

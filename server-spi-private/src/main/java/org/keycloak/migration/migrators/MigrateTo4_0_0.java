@@ -18,10 +18,10 @@
 package org.keycloak.migration.migrators;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -48,11 +48,7 @@ public class MigrateTo4_0_0 implements Migration {
 
     @Override
     public void migrate(KeycloakSession session) {
-        session.realms().getRealms().stream().forEach(
-                r -> {
-                    migrateRealm(session, r, false);
-                }
-        );
+        session.realms().getRealmsStream().forEach(realm -> migrateRealm(session, realm, false));
     }
 
     @Override
@@ -63,13 +59,14 @@ public class MigrateTo4_0_0 implements Migration {
 
     protected void migrateRealm(KeycloakSession session, RealmModel realm, boolean json) {
         // Upgrade names of clientScopes to not contain space
-        for (ClientScopeModel clientScope : realm.getClientScopes()) {
-            if (clientScope.getName().contains(" ")) {
-                LOG.debugf("Replacing spaces with underscores in the name of client scope '%s' of realm '%s'", clientScope.getName(), realm.getName());
-                String replacedName = clientScope.getName().replaceAll(" ", "_");
-                clientScope.setName(replacedName);
-            }
-        }
+        realm.getClientScopesStream()
+                .filter(clientScope -> clientScope.getName().contains(" "))
+                .forEach(clientScope -> {
+                    LOG.debugf("Replacing spaces with underscores in the name of client scope '%s' of realm '%s'",
+                            clientScope.getName(), realm.getName());
+                    String replacedName = clientScope.getName().replaceAll(" ", "_");
+                    clientScope.setName(replacedName);
+                });
 
         if (!json) {
             // Add default client scopes. But don't add them to existing clients. For JSON, they were already added
@@ -78,23 +75,23 @@ public class MigrateTo4_0_0 implements Migration {
         }
 
         // Upgrade configuration of "allowed-client-templates" client registration policy
-        for (ComponentModel component : realm.getComponents(realm.getId(), "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy")) {
-            if ("allowed-client-templates".equals(component.getProviderId())) {
-                List<String> configVal = component.getConfig().remove("allowed-client-templates");
-                if (configVal != null) {
-                    component.getConfig().put("allowed-client-scopes", configVal);
-                }
-                component.put("allow-default-scopes", true);
+        realm.getComponentsStream(realm.getId(), "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy")
+                .filter(component -> Objects.equals(component.getProviderId(), "allowed-client-templates"))
+                .forEach(component -> {
+                    List<String> configVal = component.getConfig().remove("allowed-client-templates");
+                    if (configVal != null) {
+                        component.getConfig().put("allowed-client-scopes", configVal);
+                    }
+                    component.put("allow-default-scopes", true);
 
-                realm.updateComponent(component);
-            }
-        }
+                    realm.updateComponent(component);
+                });
 
 
         // If client has scope for offline_access role (either directly or through fullScopeAllowed), then add offline_access client
         // scope as optional scope to the client. If it's indirectly (no fullScopeAllowed), then remove role from the scoped roles
         RoleModel offlineAccessRole = realm.getRole(OAuth2Constants.OFFLINE_ACCESS);
-        ClientScopeModel offlineAccessScope = null;
+        ClientScopeModel offlineAccessScope;
         if (offlineAccessRole == null) {
             LOG.infof("Role 'offline_access' not available in realm '%s'. Skip migration of offline_access client scope.", realm.getName());
         } else {
@@ -102,32 +99,32 @@ public class MigrateTo4_0_0 implements Migration {
             if (offlineAccessScope == null) {
                 LOG.infof("Client scope 'offline_access' not available in realm '%s'. Skip migration of offline_access client scope.", realm.getName());
             } else {
-                for (ClientModel client : realm.getClients()) {
-                    if ("openid-connect".equals(client.getProtocol())
-                            && !client.isBearerOnly()
-                            && client.hasScope(offlineAccessRole)
-                            && !client.getClientScopes(false, true).containsKey(OAuth2Constants.OFFLINE_ACCESS)) {
-                        LOG.debugf("Adding client scope 'offline_access' as optional scope to client '%s' in realm '%s'.", client.getClientId(), realm.getName());
-                        client.addClientScope(offlineAccessScope, false);
-
-                        if (!client.isFullScopeAllowed()) {
-                            LOG.debugf("Removing role scope mapping for role 'offline_access' from client '%s' in realm '%s'.", client.getClientId(), realm.getName());
-                            client.deleteScopeMapping(offlineAccessRole);
-                        }
-                    }
-                }
+                realm.getClientsStream()
+                        .filter(MigrationUtils::isOIDCNonBearerOnlyClient)
+                        .filter(c -> c.hasScope(offlineAccessRole))
+                        .filter(c -> !c.getClientScopes(false).containsKey(OAuth2Constants.OFFLINE_ACCESS))
+                        .peek(c -> {
+                            LOG.debugf("Adding client scope 'offline_access' as optional scope to client '%s' in realm '%s'.", c.getClientId(), realm.getName());
+                            c.addClientScope(offlineAccessScope, false);
+                        })
+                        .filter(c -> !c.isFullScopeAllowed())
+                        .forEach(c -> {
+                            LOG.debugf("Removing role scope mapping for role 'offline_access' from client '%s' in realm '%s'.", c.getClientId(), realm.getName());
+                            c.deleteScopeMapping(offlineAccessRole);
+                        });
             }
         }
 
 
         // Clients with consentRequired, which don't have any client scopes will be added itself to require consent, so that consent screen is shown when users authenticate
-        for (ClientModel client : realm.getClients()) {
-            if (client.isConsentRequired() && client.getClientScopes(true, true).isEmpty()) {
-                LOG.debugf("Adding client '%s' of realm '%s' to display itself on consent screen", client.getClientId(), realm.getName());
-                client.setDisplayOnConsentScreen(true);
-                String consentText = client.getName()==null ? client.getClientId() : client.getName();
-                client.setConsentScreenText(consentText);
-            }
-        }
+        realm.getClientsStream()
+                .filter(ClientModel::isConsentRequired)
+                .filter(c -> c.getClientScopes(true).isEmpty())
+                .forEach(c -> {
+                    LOG.debugf("Adding client '%s' of realm '%s' to display itself on consent screen", c.getClientId(), realm.getName());
+                    c.setDisplayOnConsentScreen(true);
+                    String consentText = c.getName() == null ? c.getClientId() : c.getName();
+                    c.setConsentScreenText(consentText);
+                });
     }
 }

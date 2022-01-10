@@ -367,9 +367,16 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             origins.add(origin);
             newClient.setWebOrigins(origins);
         }
+        // if no client type provided, default to public client
         if (rep.isBearerOnly() == null
                 && rep.isPublicClient() == null) {
             newClient.setPublicClient(true);
+            newClient.setSecret(null);
+        } else if (!(Boolean.TRUE.equals(rep.isBearerOnly()) || Boolean.TRUE.equals(rep.isPublicClient()))) {
+            // if client is confidential, generate a secret if none is defined
+            if (newClient.getSecret() == null) {
+                KeycloakModelUtils.generateSecret(newClient);
+            }
         }
         if (rep.isBearerOnly() == null) newClient.setBearerOnly(false);
         if (rep.getAdminUrl() == null && rep.getRootUrl() != null) {
@@ -391,6 +398,11 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         if (rep.isImplicitFlowEnabled() == null) newClient.setImplicitFlowEnabled(false);
         if (rep.isPublicClient() == null) newClient.setPublicClient(true);
         if (rep.isFrontchannelLogout() == null) newClient.setFrontchannelLogout(false);
+        if (OIDCAdvancedConfigWrapper.fromClientRepresentation(rep).getBackchannelLogoutUrl() == null){
+            OIDCAdvancedConfigWrapper oidcAdvancedConfigWrapper = OIDCAdvancedConfigWrapper.fromClientModel(newClient);
+            oidcAdvancedConfigWrapper.setBackchannelLogoutSessionRequired(true);
+            oidcAdvancedConfigWrapper.setBackchannelLogoutRevokeOfflineTokens(false);
+        }
     }
 
 }

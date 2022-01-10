@@ -24,6 +24,8 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyStatus;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -131,7 +133,7 @@ public class ApiUtil {
 
     public static UserRepresentation findUserByUsername(RealmResource realm, String username) {
         UserRepresentation user = null;
-        List<UserRepresentation> ur = realm.users().search(username, null, null, null, 0, Integer.MAX_VALUE);
+        List<UserRepresentation> ur = realm.users().search(username, null, null, null, 0, -1);
         if (ur.size() == 1) {
             user = ur.get(0);
         }
@@ -268,11 +270,10 @@ public class ApiUtil {
         return null;
     }
 
-    public static KeysMetadataRepresentation.KeyMetadataRepresentation findActiveKey(RealmResource realm) {
+    public static KeysMetadataRepresentation.KeyMetadataRepresentation findActiveSigningKey(RealmResource realm) {
         KeysMetadataRepresentation keyMetadata = realm.keys().getKeyMetadata();
-        String activeKid = keyMetadata.getActive().get(Algorithm.RS256);
         for (KeysMetadataRepresentation.KeyMetadataRepresentation rep : keyMetadata.getKeys()) {
-            if (rep.getKid().equals(activeKid)) {
+            if (rep.getPublicKey() != null && KeyStatus.valueOf(rep.getStatus()).isActive() && KeyUse.SIG.equals(rep.getUse())) {
                 return rep;
             }
         }

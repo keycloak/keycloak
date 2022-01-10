@@ -16,11 +16,13 @@
  */
 package org.keycloak.testsuite.crossdc;
 
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.Profile;
+import org.keycloak.common.util.Retry;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.page.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -35,6 +37,7 @@ import javax.mail.internet.MimeMessage;
 import javax.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
@@ -89,10 +92,17 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
       @JmxInfinispanCacheStatistics(dc=DC.SECOND, dcNodeIndex=0, cacheName=InfinispanConnectionProvider.ACTION_TOKEN_CACHE) InfinispanStatistics cacheDc1Node0Statistics,
       @JmxInfinispanChannelStatistics() InfinispanStatistics channelStatisticsCrossDc) throws Exception {
         log.debug("--DC: START sendResetPasswordEmailSuccessWorksInCrossDc");
-        
+
+        // KEYCLOAK-17584: Temporarily disable the test for 'community' profile till KEYCLOAK-17628 isn't fixed. In other words till:
+        // * The test is either rewritten to start using the new Wildfly subsystem for base metrics introduced in Wildfly 22,
+        // * Or Keycloak is able to load the Eclipse MicroProfile Metrics subsystem from the microprofile Galleon feature-pack
+        Assume.assumeTrue("Ignoring test as product profile is not enabled", Profile.getName().equals("product"));
+
         cacheDc0Node1Statistics.waitToBecomeAvailable(10, TimeUnit.SECONDS);
 
         Comparable originalNumberOfEntries = cacheDc0Node0Statistics.getSingleStatistics(Constants.STAT_CACHE_NUMBER_OF_ENTRIES_IN_MEMORY);
+
+        log.infof("Before creating user. %s", dumpNumberOfEntriesInMemory(cacheDc0Node0Statistics, cacheDc0Node1Statistics, cacheDc1Node0Statistics));
 
         UserRepresentation userRep = new UserRepresentation();
         userRep.setEnabled(true);
@@ -108,6 +118,8 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
 
         Assert.assertEquals(1, greenMail.getReceivedMessages().length);
 
+        log.infof("After sending email. %s", dumpNumberOfEntriesInMemory(cacheDc0Node0Statistics, cacheDc0Node1Statistics, cacheDc1Node0Statistics));
+
         MimeMessage message = greenMail.getReceivedMessages()[0];
 
         String link = MailUtils.getPasswordResetEmailLink(message);
@@ -117,9 +129,13 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
           Matchers::is
         );
 
+        log.infof("After click to the link from email. %s", dumpNumberOfEntriesInMemory(cacheDc0Node0Statistics, cacheDc0Node1Statistics, cacheDc1Node0Statistics));
+
         proceedPage.assertCurrent();
         proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
+
+        log.infof("After open password update page. %s", dumpNumberOfEntriesInMemory(cacheDc0Node0Statistics, cacheDc0Node1Statistics, cacheDc1Node0Statistics));
 
         // Verify that there was at least one message sent via the channel - Even if we did the change on DC0, the message may be sent either from DC0 or DC1. Seems it depends on the actionTokens key ownership.
         // In case that it was sent from DC1, we will receive it in DC0.
@@ -140,6 +156,8 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
 
         assertThat(PageUtils.getPageTitle(driver), containsString("Your account has been updated."));
 
+        log.infof("After update password. %s", dumpNumberOfEntriesInMemory(cacheDc0Node0Statistics, cacheDc0Node1Statistics, cacheDc1Node0Statistics));
+
         // Verify that there was an action token added in the node which was targetted by the link
         assertThat(cacheDc0Node0Statistics.getSingleStatistics(Constants.STAT_CACHE_NUMBER_OF_ENTRIES_IN_MEMORY), greaterThan(originalNumberOfEntries));
 
@@ -154,8 +172,20 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
           Matchers::greaterThan
         );
 
+        log.infof("After another click to the invalid link. %s", dumpNumberOfEntriesInMemory(cacheDc0Node0Statistics, cacheDc0Node1Statistics, cacheDc1Node0Statistics));
+
         errorPage.assertCurrent();
         log.debug("--DC: END sendResetPasswordEmailSuccessWorksInCrossDc");
+    }
+
+    private String dumpNumberOfEntriesInMemory(InfinispanStatistics cacheDc0Node0Statistics, InfinispanStatistics cacheDc0Node1Statistics, InfinispanStatistics cacheDc1Node0Statistics) {
+        return new StringBuilder("dc0node0 - numberOfEntriesInMemory: ")
+                .append(cacheDc0Node0Statistics.getSingleStatistics(Constants.STAT_CACHE_NUMBER_OF_ENTRIES_IN_MEMORY))
+                .append(", dc0node1 - numberOfEntriesInMemory: ")
+                .append(cacheDc0Node1Statistics.getSingleStatistics(Constants.STAT_CACHE_NUMBER_OF_ENTRIES_IN_MEMORY))
+                .append(", dc1node0 - numberOfEntriesInMemory: ")
+                .append(cacheDc1Node0Statistics.getSingleStatistics(Constants.STAT_CACHE_NUMBER_OF_ENTRIES_IN_MEMORY))
+                .toString();
     }
 
     @Test

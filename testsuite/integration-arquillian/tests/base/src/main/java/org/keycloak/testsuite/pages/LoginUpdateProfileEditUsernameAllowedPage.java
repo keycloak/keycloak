@@ -16,6 +16,8 @@
  */
 package org.keycloak.testsuite.pages;
 
+import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -30,12 +32,26 @@ public class LoginUpdateProfileEditUsernameAllowedPage extends LoginUpdateProfil
         update(firstName, lastName, email);
     }
 
+    public void updateWithDepartment(String firstName, String lastName, String department, String email, String username) {
+        usernameInput.clear();
+        usernameInput.sendKeys(username);
+        super.updateWithDepartment(firstName, lastName, department, email);
+    }
+
     public String getUsername() {
         return usernameInput.getAttribute("value");
     }
 
     public boolean isCurrent() {
         return PageUtils.getPageTitle(driver).equals("Update Account Information");
+    }
+    
+    public boolean isUsernamePresent() {
+        try {
+            return driver.findElement(By.id("username")).isDisplayed();
+        } catch (NoSuchElementException nse) {
+            return false;
+        }
     }
 
     @Override

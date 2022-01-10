@@ -10,9 +10,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertThat;
 
 /**
  * Updater for client attributes. See {@link ServerResourceUpdater} for further details.
@@ -78,6 +80,11 @@ public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttribut
         this.rep.setRedirectUris(values);
         return this;
     }
+    
+    public ClientAttributeUpdater filterRedirectUris(Predicate<String> filter) {
+        this.rep.setRedirectUris(this.rep.getRedirectUris().stream().filter(filter).collect(Collectors.toList()));
+        return this;
+    }
 
     public ClientAttributeUpdater removeAttribute(String name) {
         this.rep.getAttributes().remove(name);
@@ -128,6 +135,11 @@ public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttribut
 
     public ClientAttributeUpdater addDefaultClientScope(String clientScope) {
         rep.getDefaultClientScopes().add(clientScope);
+        return this;
+    }
+
+    public ClientAttributeUpdater setDirectAccessGrantsEnabled(Boolean directAccessGranted) {
+        rep.setDirectAccessGrantsEnabled(directAccessGranted);
         return this;
     }
 }

@@ -17,13 +17,17 @@
 
 package org.keycloak.models.utils;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -39,18 +43,41 @@ public class RoleUtils {
      * @param groups
      * @param targetGroup
      * @return true if targetGroup is in groups (directly or indirectly via parent child relationship)
+     * @deprecated Use {@link #isMember(Stream, GroupModel)} isMember(Stream, GroupModel)} instead.
      */
     public static boolean isMember(Set<GroupModel> groups, GroupModel targetGroup) {
+        // collecting to set to keep "Breadth First Search" like functionality
         if (groups.contains(targetGroup)) return true;
 
         for (GroupModel mapping : groups) {
             GroupModel child = mapping;
-            while(child.getParent() != null) {
+            while (child.getParent() != null) {
                 if (child.getParent().equals(targetGroup)) return true;
                 child = child.getParent();
             }
         }
         return false;
+    }
+
+    /**
+     *
+     * @param groups
+     * @param targetGroup
+     * @return true if targetGroup is in groups (directly or indirectly via parent child relationship)
+     */
+    public static boolean isMember(Stream<GroupModel> groups, GroupModel targetGroup) {
+        // collecting to set to keep "Breadth First Search" like functionality
+        Set<GroupModel> groupsSet = groups.collect(Collectors.toSet());
+        if (groupsSet.contains(targetGroup)) return true;
+
+        return groupsSet.stream().anyMatch(mapping -> {
+            GroupModel child = mapping;
+            while (child.getParent() != null) {
+                if (child.getParent().equals(targetGroup)) return true;
+                child = child.getParent();
+            }
+            return false;
+        });
     }
 
     /**
@@ -65,6 +92,15 @@ public class RoleUtils {
             if (mapping.hasRole(targetRole)) return true;
         }
         return false;
+    }
+
+    /**
+     * @param roles
+     * @param targetRole
+     * @return true if targetRole is in roles (directly or indirectly via composite role)
+     */
+    public static boolean hasRole(Stream<RoleModel> roles, RoleModel targetRole) {
+        return roles.anyMatch(role -> Objects.equals(role, targetRole) || role.hasRole(targetRole));
     }
 
     /**
@@ -94,6 +130,7 @@ public class RoleUtils {
      * @param targetRole
      * @param checkParentGroup When {@code true}, also parent group is recursively checked for role
      * @return true if targetRole is in roles (directly or indirectly via composite role)
+     * @deprecated Use {@link #hasRoleFromGroup(Stream, RoleModel, boolean)} hasRoleFromGroup(Stream, RoleModel, boolean)} instead.
      */
     public static boolean hasRoleFromGroup(Iterable<GroupModel> groups, RoleModel targetRole, boolean checkParentGroup) {
         if (groups == null) {
@@ -105,11 +142,27 @@ public class RoleUtils {
     }
 
     /**
+     * Checks whether the {@code targetRole} is contained in any of the {@code groups} or their parents
+     * (if requested)
+     * @param groups
+     * @param targetRole
+     * @param checkParentGroup When {@code true}, also parent group is recursively checked for role
+     * @return true if targetRole is in roles (directly or indirectly via composite role)
+     */
+    public static boolean hasRoleFromGroup(Stream<GroupModel> groups, RoleModel targetRole, boolean checkParentGroup) {
+        if (groups == null) {
+            return false;
+        }
+
+        return groups.anyMatch(group -> hasRoleFromGroup(group, targetRole, checkParentGroup));
+    }
+
+    /**
      * Recursively expands composite roles into their composite.
      * @param role
      * @param visited Track roles, which were already visited. Those will be ignored and won't be added to the stream. Besides that,
      *                the "visited" set itself will be updated as a result of this method call and all the tracked roles will be added to it
-     * @return Stream of containing all of the composite roles and their components.
+     * @return Stream of containing all of the composite roles and their components. Never returns {@code null}.
      */
     private static Stream<RoleModel> expandCompositeRolesStream(RoleModel role, Set<RoleModel> visited) {
         Stream.Builder<RoleModel> sb = Stream.builder();
@@ -123,7 +176,7 @@ public class RoleUtils {
                 sb.add(current);
 
                 if (current.isComposite()) {
-                    current.getComposites().stream()
+                    current.getCompositesStream()
                             .filter(r -> !visited.contains(r))
                             .forEach(r -> {
                                 visited.add(r);
@@ -149,25 +202,54 @@ public class RoleUtils {
                 .collect(Collectors.toSet());
     }
 
+    /**
+     * @param roles
+     * @return stream with composite roles expanded
+     */
+    public static Stream<RoleModel> expandCompositeRolesStream(Stream<RoleModel> roles) {
+        Set<RoleModel> visited = new HashSet<>();
+
+        return roles.flatMap(roleModel -> RoleUtils.expandCompositeRolesStream(roleModel, visited));
+    }
+
 
     /**
      * @param user
      * @return all user role mappings including all groups of user. Composite roles will be expanded
      */
     public static Set<RoleModel> getDeepUserRoleMappings(UserModel user) {
-        Set<RoleModel> roleMappings = new HashSet<>(user.getRoleMappings());
-        for (GroupModel group : user.getGroups()) {
-            addGroupRoles(group, roleMappings);
-        }
-
+        Set<RoleModel> roleMappings = user.getRoleMappingsStream().collect(Collectors.toSet());
+        user.getGroupsStream().forEach(group -> addGroupRoles(group, roleMappings));
         return expandCompositeRoles(roleMappings);
     }
 
 
     private static void addGroupRoles(GroupModel group, Set<RoleModel> roleMappings) {
-        roleMappings.addAll(group.getRoleMappings());
+        roleMappings.addAll(group.getRoleMappingsStream().collect(Collectors.toSet()));
         if (group.getParentId() == null) return;
         addGroupRoles(group.getParent(), roleMappings);
     }
 
+    public static boolean isRealmRole(RoleModel r) {
+        return r.getContainer() instanceof RealmModel;
+    }
+
+    public static boolean isRealmRole(RoleModel r, RealmModel realm) {
+        if (isRealmRole(r)) {
+            if (Objects.equals(r.getContainer().getId(), realm.getId()))
+                return true;
+        }
+        return false;
+    }
+
+    public static boolean isClientRole(RoleModel r, ClientModel c) {
+        RoleContainerModel container = r.getContainer();
+        if (container instanceof ClientModel) {
+            ClientModel appModel = (ClientModel) container;
+            if (Objects.equals(appModel.getId(), c.getId())) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

@@ -9,17 +9,16 @@ This repository contains the source code for the Keycloak Server, Java adapters 
 
 * [Documentation](https://www.keycloak.org/documentation.html)
 * [User Mailing List](https://groups.google.com/d/forum/keycloak-user) - Mailing list for help and general questions about Keycloak
-* [JIRA](https://issues.jboss.org/projects/KEYCLOAK) - Issue tracker for bugs and feature requests
 
 
 ## Reporting Security Vulnerabilities
 
-If you've found a security vulnerability, please look at the [instructions on how to properly report it](SECURITY.md)
+If you've found a security vulnerability, please look at the [instructions on how to properly report it](https://github.com/keycloak/keycloak/security/policy)
 
 
 ## Reporting an issue
 
-If you believe you have discovered a defect in Keycloak please open an issue in our [Issue Tracker](https://issues.jboss.org/projects/KEYCLOAK).
+If you believe you have discovered a defect in Keycloak please open [an issue](https://github.com/keycloak/keycloak/issues).
 Please remember to provide a good summary, description as well as steps to reproduce the issue.
 
 
@@ -62,7 +61,6 @@ Before contributing to Keycloak please read our [contributing guidelines](CONTRI
 * [Keycloak Documentation](https://github.com/keycloak/keycloak-documentation) - Documentation for Keycloak
 * [Keycloak QuickStarts](https://github.com/keycloak/keycloak-quickstarts) - QuickStarts for getting started with Keycloak
 * [Keycloak Containers](https://github.com/keycloak/keycloak-containers) - Container images for Keycloak
-* [Keycloak Gatekeeper](https://github.com/keycloak/keycloak-gatekeeper) - Proxy service to secure apps and services with Keycloak
 * [Keycloak Node.js Connect](https://github.com/keycloak/keycloak-nodejs-connect) - Node.js adapter for Keycloak
 * [Keycloak Node.js Admin Client](https://github.com/keycloak/keycloak-nodejs-admin-client) - Node.js library for Keycloak Admin REST API
 

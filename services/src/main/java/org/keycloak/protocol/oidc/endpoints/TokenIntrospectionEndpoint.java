@@ -29,6 +29,8 @@ import org.keycloak.protocol.oidc.AccessTokenIntrospectionProviderFactory;
 import org.keycloak.protocol.oidc.TokenIntrospectionProvider;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.TokenIntrospectContext;
 
 import javax.ws.rs.POST;
 import javax.ws.rs.core.Context;
@@ -76,6 +78,9 @@ public class TokenIntrospectionEndpoint {
         authorizeClient();
 
         MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
+
+        checkParameterDuplicated(formParams);
+
         String tokenTypeHint = formParams.getFirst(PARAM_TOKEN_TYPE_HINT);
 
         if (tokenTypeHint == null) {
@@ -95,6 +100,12 @@ public class TokenIntrospectionEndpoint {
         }
 
         try {
+            session.clientPolicy().triggerOnEvent(new TokenIntrospectContext(formParams));
+        } catch (ClientPolicyException cpe) {
+            throw throwErrorResponseException(Errors.INVALID_REQUEST, cpe.getErrorDetail(), Status.BAD_REQUEST);
+        }
+
+        try {
 
             Response response = provider.introspect(token);
 
@@ -110,7 +121,7 @@ public class TokenIntrospectionEndpoint {
 
     private void authorizeClient() {
         try {
-            ClientModel client = AuthorizeClientUtil.authorizeClient(session, event).getClient();
+            ClientModel client = AuthorizeClientUtil.authorizeClient(session, event, null).getClient();
 
             this.event.client(client);
 
@@ -134,6 +145,15 @@ public class TokenIntrospectionEndpoint {
     private void checkRealm() {
         if (!realm.isEnabled()) {
             throw new ErrorResponseException("access_denied", "Realm not enabled", Status.FORBIDDEN);
+        }
+    }
+
+
+    private void checkParameterDuplicated(MultivaluedMap<String, String> formParams) {
+        for (String key : formParams.keySet()) {
+            if (formParams.get(key).size() != 1) {
+                throw throwErrorResponseException(Errors.INVALID_REQUEST, "duplicated parameter", Status.BAD_REQUEST);
+            }
         }
     }
 

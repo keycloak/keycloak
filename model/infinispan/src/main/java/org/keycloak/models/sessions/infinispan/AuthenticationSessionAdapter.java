@@ -282,13 +282,27 @@ public class AuthenticationSessionAdapter implements AuthenticationSessionModel 
 
     @Override
     public UserModel getAuthenticatedUser() {
-        return entity.getAuthUserId() == null ? null : session.users().getUserById(entity.getAuthUserId(), getRealm());    }
+        return entity.getAuthUserId() == null ? null : session.users().getUserById(getRealm(), entity.getAuthUserId());    }
 
     @Override
     public void setAuthenticatedUser(UserModel user) {
         if (user == null) entity.setAuthUserId(null);
         else entity.setAuthUserId(user.getId());
         update();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || !(o instanceof AuthenticationSessionModel)) return false;
+
+        AuthenticationSessionModel that = (AuthenticationSessionModel) o;
+        return that.getTabId().equals(getTabId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getTabId().hashCode();
     }
 
 }

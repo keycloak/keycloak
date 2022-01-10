@@ -119,6 +119,31 @@ public class OIDCClientRepresentation {
 
     private String registration_access_token;
 
+    private String backchannel_logout_uri;
+
+    private Boolean backchannel_logout_session_required;
+    
+    private Boolean backchannel_logout_revoke_offline_tokens;
+
+    // OIDC CIBA
+    private String backchannel_token_delivery_mode;
+
+    private String backchannel_client_notification_endpoint;
+
+    private String backchannel_authentication_request_signing_alg;
+
+    // FAPI JARM
+    private String authorization_signed_response_alg;
+
+    private String authorization_encrypted_response_alg;
+
+    private String authorization_encrypted_response_enc;
+
+    // PAR request
+    private Boolean require_pushed_authorization_requests;
+
+    private String frontchannel_logout_uri;
+
     public List<String> getRedirectUris() {
         return redirect_uris;
     }
@@ -449,6 +474,30 @@ public class OIDCClientRepresentation {
         this.tls_client_certificate_bound_access_tokens = tls_client_certificate_bound_access_tokens;
     }
 
+    public String getBackchannelLogoutUri() {
+        return backchannel_logout_uri;
+    }
+
+    public void setBackchannelLogoutUri(String backchannel_logout_uri) {
+        this.backchannel_logout_uri = backchannel_logout_uri;
+    }
+
+    public Boolean getBackchannelLogoutSessionRequired() {
+        return backchannel_logout_session_required;
+    }
+
+    public void setBackchannelLogoutSessionRequired(Boolean backchannel_logout_session_required) {
+        this.backchannel_logout_session_required = backchannel_logout_session_required;
+    }
+
+    public Boolean getBackchannelLogoutRevokeOfflineTokens() {
+        return backchannel_logout_revoke_offline_tokens;
+    }
+
+    public void setBackchannelLogoutRevokeOfflineTokens(Boolean backchannel_logout_revoke_offline_tokens) {
+        this.backchannel_logout_revoke_offline_tokens = backchannel_logout_revoke_offline_tokens;
+    }
+
     public String getTlsClientAuthSubjectDn() {
             return tls_client_auth_subject_dn;
         }
@@ -457,4 +506,67 @@ public class OIDCClientRepresentation {
         this.tls_client_auth_subject_dn = tls_client_auth_subject_dn;
     }
 
+    public String getBackchannelTokenDeliveryMode() {
+        return backchannel_token_delivery_mode;
+    }
+
+    public void setBackchannelTokenDeliveryMode(String backchannel_token_delivery_mode) {
+        this.backchannel_token_delivery_mode = backchannel_token_delivery_mode;
+    }
+
+    public String getBackchannelClientNotificationEndpoint() {
+        return backchannel_client_notification_endpoint;
+    }
+
+    public void setBackchannelClientNotificationEndpoint(String backchannel_client_notification_endpoint) {
+        this.backchannel_client_notification_endpoint = backchannel_client_notification_endpoint;
+    }
+
+    public String getBackchannelAuthenticationRequestSigningAlg() {
+        return backchannel_authentication_request_signing_alg;
+    }
+
+    public void setBackchannelAuthenticationRequestSigningAlg(String backchannel_authentication_request_signing_alg) {
+        this.backchannel_authentication_request_signing_alg = backchannel_authentication_request_signing_alg;
+    }
+
+    public String getAuthorizationSignedResponseAlg() {
+        return authorization_signed_response_alg;
+    }
+
+    public void setAuthorizationSignedResponseAlg(String authorization_signed_response_alg) {
+        this.authorization_signed_response_alg = authorization_signed_response_alg;
+    }
+
+    public String getAuthorizationEncryptedResponseAlg() {
+        return authorization_encrypted_response_alg;
+    }
+
+    public void setAuthorizationEncryptedResponseAlg(String authorization_encrypted_response_alg) {
+        this.authorization_encrypted_response_alg = authorization_encrypted_response_alg;
+    }
+
+    public String getAuthorizationEncryptedResponseEnc() {
+        return authorization_encrypted_response_enc;
+    }
+
+    public void setAuthorizationEncryptedResponseEnc(String authorization_encrypted_response_enc) {
+        this.authorization_encrypted_response_enc = authorization_encrypted_response_enc;
+    }
+
+    public Boolean getRequirePushedAuthorizationRequests() {
+        return require_pushed_authorization_requests;
+    }
+
+    public void setRequirePushedAuthorizationRequests(Boolean require_pushed_authorization_requests) {
+        this.require_pushed_authorization_requests = require_pushed_authorization_requests;
+    }
+
+    public String getFrontChannelLogoutUri() {
+        return frontchannel_logout_uri;
+    }
+
+    public void setFrontChannelLogoutUri(String frontchannel_logout_uri) {
+        this.frontchannel_logout_uri = frontchannel_logout_uri;
+    }
 }

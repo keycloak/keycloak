@@ -28,7 +28,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -41,19 +40,20 @@ import java.util.Set;
 public class ResourcePermission {
 
     private final Resource resource;
-    private final List<Scope> scopes;
+    private final Collection<Scope> scopes;
     private ResourceServer resourceServer;
     private Map<String, Set<String>> claims;
+    private boolean granted;
 
-    public ResourcePermission(Resource resource, List<Scope> scopes, ResourceServer resourceServer) {
+    public ResourcePermission(Resource resource, Collection<Scope> scopes, ResourceServer resourceServer) {
         this(resource, scopes, resourceServer, null);
     }
 
     public ResourcePermission(Resource resource, ResourceServer resourceServer, Map<String, ? extends Collection<String>> claims) {
-        this(resource, new ArrayList<>(resource.getScopes()), resourceServer, claims);
+        this(resource, new LinkedHashSet<>(), resourceServer, claims);
     }
 
-    public ResourcePermission(Resource resource, List<Scope> scopes, ResourceServer resourceServer, Map<String, ? extends Collection<String>> claims) {
+    public ResourcePermission(Resource resource, Collection<Scope> scopes, ResourceServer resourceServer, Map<String, ? extends Collection<String>> claims) {
         this.resource = resource;
         this.scopes = scopes;
         this.resourceServer = resourceServer;
@@ -79,7 +79,7 @@ public class ResourcePermission {
      *
      * @return a lit of permitted scopes
      */
-    public List<Scope> getScopes() {
+    public Collection<Scope> getScopes() {
         return this.scopes;
     }
 
@@ -148,5 +148,13 @@ public class ResourcePermission {
             this.claims = new HashMap<>();
         }
         this.claims.putAll(claims);
+    }
+
+    public void setGranted(boolean granted) {
+        this.granted = granted;
+    }
+
+    public boolean isGranted() {
+        return granted;
     }
 }

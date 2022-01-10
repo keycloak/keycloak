@@ -42,6 +42,15 @@ public abstract class AbstractIdentityProviderMapperTest extends AbstractBaseBro
         return idp;
     }
 
+    protected IdentityProviderRepresentation setupIdentityProviderDisableUserInfo() {
+        log.debug("adding identity provider to realm " + bc.consumerRealmName());
+
+        final IdentityProviderRepresentation idp = bc.setUpIdentityProvider();
+        idp.getConfig().put("disableUserInfo", "true");
+        realm.identityProviders().create(idp).close();
+        return idp;
+    }
+
     protected void createUserInProviderRealm(Map<String, List<String>> attributes) {
         log.debug("Creating user in realm " + bc.providerRealmName());
 
@@ -72,9 +81,11 @@ public abstract class AbstractIdentityProviderMapperTest extends AbstractBaseBro
         user.setRealmRoles(realmRoles);
 
         Map<String, List<String>> clientRoles = new HashMap<>();
-        roles.getClientMappings().forEach((key, value) -> clientRoles.put(key, value.getMappings().stream()
+        if (roles.getClientMappings() != null) {
+            roles.getClientMappings().forEach((key, value) -> clientRoles.put(key, value.getMappings().stream()
                 .map(RoleRepresentation::getName)
                 .collect(Collectors.toList())));
+        }
         user.setClientRoles(clientRoles);
 
         return user;

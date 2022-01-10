@@ -28,7 +28,7 @@ import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.KerberosRule;
-import org.keycloak.util.ldap.KerberosEmbeddedServer;
+import org.keycloak.testsuite.KerberosEmbeddedServer;
 
 import javax.ws.rs.core.Response;
 

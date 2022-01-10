@@ -90,7 +90,7 @@ public class SyncDummyUserFederationProviderFactory extends DummyUserFederationP
                 // KEYCLOAK-2412 : Just remove and add some users for testing purposes
                 for (int i = 0; i < 10; i++) {
                     String username = "dummyuser-" + i;
-                    UserModel user = session.userLocalStorage().getUserByUsername(username, realm);
+                    UserModel user = session.userLocalStorage().getUserByUsername(realm, username);
 
                     if (user != null) {
                         session.userLocalStorage().removeUser(realm, user);

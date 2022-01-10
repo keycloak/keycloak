@@ -17,9 +17,6 @@
 
 package org.keycloak.migration.migrators;
 
-import java.util.LinkedList;
-import java.util.List;
-
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -29,7 +26,6 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperContainerModel;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
@@ -71,17 +67,10 @@ public class MigrationUtils {
     }
     
     public static void updateProtocolMappers(ProtocolMapperContainerModel client) {
-        List<ProtocolMapperModel> toUpdate = new LinkedList<>();
-        for (ProtocolMapperModel mapper : client.getProtocolMappers()) {
-            if (!mapper.getConfig().containsKey("userinfo.token.claim") && mapper.getConfig().containsKey("id.token.claim")) {
-                mapper.getConfig().put("userinfo.token.claim", mapper.getConfig().get("id.token.claim"));
-                toUpdate.add(mapper);
-            }
-        }
-
-        for (ProtocolMapperModel mapper : toUpdate) {
-            client.updateProtocolMapper(mapper);
-        }
+        client.getProtocolMappersStream()
+                .filter(mapper -> !mapper.getConfig().containsKey("userinfo.token.claim") && mapper.getConfig().containsKey("id.token.claim"))
+                .peek(mapper -> mapper.getConfig().put("userinfo.token.claim", mapper.getConfig().get("id.token.claim")))
+                .forEach(client::updateProtocolMapper);
     }
 
 
@@ -107,4 +96,11 @@ public class MigrationUtils {
         }
     }
 
+    public static void setDefaultClientAuthenticatorType(ClientModel s) {
+        s.setClientAuthenticatorType(KeycloakModelUtils.getDefaultClientAuthenticatorType());
+    }
+
+    public static boolean isOIDCNonBearerOnlyClient(ClientModel c) {
+        return (c.getProtocol() == null || "openid-connect".equals(c.getProtocol())) && !c.isBearerOnly();
+    }
 }

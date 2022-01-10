@@ -27,6 +27,8 @@ import org.keycloak.storage.user.SynchronizationResult;
 
 import javax.naming.AuthenticationException;
 import java.util.List;
+import org.keycloak.models.RoleModel;
+import org.keycloak.storage.ldap.LDAPStorageProvider;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -52,6 +54,16 @@ public interface LDAPStorageMapper extends Provider {
      * Return empty list if doesn't support storing of groups
      */
     List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults);
+
+    /**
+     * Return empty list if doesn't support storing of roles
+     * @param realm
+     * @param role
+     * @param firstResult
+     * @param maxResults
+     * @return
+     */
+    List<UserModel> getRoleMembers(RealmModel realm, RoleModel role, int firstResult, int maxResults);
 
     /**
      * Called when importing user from LDAP to local keycloak DB.
@@ -101,4 +113,11 @@ public interface LDAPStorageMapper extends Provider {
      * @return true if mapper processed the AuthenticationException and did some actions based on that. In that case, AuthenticationException won't be rethrown!
      */
     boolean onAuthenticationFailure(LDAPObject ldapUser, UserModel user, AuthenticationException ldapException, RealmModel realm);
+
+    /**
+     * Gets the ldap provider associated to the mapper.
+     *
+     * @return
+     */
+    public LDAPStorageProvider getLdapProvider();
 }

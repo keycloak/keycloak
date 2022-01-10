@@ -1,0 +1,45 @@
+{% unless include.leaf %}
+  <div class="list-view-pf-expand">
+    <span class="fa fa-angle-right"></span>
+  </div>
+{% endunless %}
+<div class="list-view-pf-checkbox">
+  <input type="checkbox" autocomplete="off">
+</div>
+<div class="list-view-pf-actions">
+  <button class="btn btn-default">Action</button>
+  {% include widgets/kebab.html dropmenuType="dropdown" dropmenuPosition="pull-right" dropdownPosition="dropdown-menu-right" dropmenuVariation="dropdown-kebab-pf" %}
+</div>
+<div class="list-view-pf-main-info">
+  <div class="list-view-pf-left">
+    <span class="fa fa-plane list-view-pf-icon-sm"></span>
+  </div>
+  <div class="list-view-pf-body">
+    <div class="list-view-pf-description">
+      <div class="list-group-item-heading">
+        Event {{ include.title }}
+      </div>
+      <div class="list-group-item-text">
+        The following snippet of text is <a href="#">rendered as link text</a>.
+      </div>
+    </div>
+    <div class="list-view-pf-additional-info">
+      <div class="list-view-pf-additional-info-item">
+        <span class="pficon pficon-screen"></span>
+        <strong>8</strong> Hosts
+      </div>
+      <div class="list-view-pf-additional-info-item">
+        <span class="pficon pficon-cluster"></span>
+        <strong>6</strong> Clusters
+      </div>
+      <div class="list-view-pf-additional-info-item">
+        <span class="pficon pficon-container-node"></span>
+        <strong>10</strong> Nodes
+      </div>
+      <div class="list-view-pf-additional-info-item">
+        <span class="pficon pficon-image"></span>
+        <strong>8</strong> Images
+      </div>
+    </div>
+  </div>
+</div>

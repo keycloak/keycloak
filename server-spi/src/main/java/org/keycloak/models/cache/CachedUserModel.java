@@ -17,6 +17,7 @@
 package org.keycloak.models.cache;
 
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 
 import java.util.concurrent.ConcurrentMap;
 
@@ -56,4 +57,12 @@ public interface CachedUserModel extends UserModel {
      * @return
      */
     ConcurrentMap getCachedWith();
+
+    /**
+     * The {@link CachedUserModel.Streams} interface differs from {@link CachedUserModel} in that it extends the
+     * {@link UserModel.Streams} interface, allowing implementations of {@link CachedUserModel} to focus on the
+     * {@link java.util.stream.Stream}-based methods in the {@link UserModel} interface.
+     */
+    interface Streams extends CachedUserModel, UserModel.Streams {
+    }
 }

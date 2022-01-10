@@ -90,7 +90,7 @@ public class SAMLMetadataWriter extends BaseWriter {
         }
         ExtensionsType extensions = entities.getExtensions();
         if (extensions != null) {
-            StaxUtil.writeDOMElement(writer, extensions.getElement());
+            write(extensions);
         }
 
         List<Object> entityDescriptors = entities.getEntityDescriptor();
@@ -126,7 +126,7 @@ public class SAMLMetadataWriter extends BaseWriter {
         }
         ExtensionsType extensions = entityDescriptor.getExtensions();
         if (extensions != null) {
-            StaxUtil.writeDOMElement(writer, extensions.getElement());
+            write(extensions);
         }
 
         List<EntityDescriptorType.EDTChoiceType> choiceTypes = entityDescriptor.getChoiceType();
@@ -297,7 +297,7 @@ public class SAMLMetadataWriter extends BaseWriter {
         }
         ExtensionsType extensions = attributeAuthority.getExtensions();
         if (extensions != null) {
-            StaxUtil.writeDOMElement(writer, extensions.getElement());
+            write(extensions);
         }
 
         List<KeyDescriptorType> keyDescriptorList = attributeAuthority.getKeyDescriptor();
@@ -351,7 +351,9 @@ public class SAMLMetadataWriter extends BaseWriter {
         StaxUtil.writeStartElement(writer, METADATA_PREFIX, JBossSAMLConstants.ATTRIBUTE_CONSUMING_SERVICE.get(),
                 JBossSAMLURIConstants.METADATA_NSURI.get());
 
-        StaxUtil.writeAttribute(writer, JBossSAMLConstants.ISDEFAULT.get(), "" + attributeConsumer.isIsDefault());
+        if (attributeConsumer.isIsDefault() != null)
+           StaxUtil.writeAttribute(writer, JBossSAMLConstants.ISDEFAULT.get(), "" + attributeConsumer.isIsDefault());
+
         StaxUtil.writeAttribute(writer, JBossSAMLConstants.INDEX.get(), "" + attributeConsumer.getIndex());
 
         // Service Name
@@ -390,7 +392,7 @@ public class SAMLMetadataWriter extends BaseWriter {
 
         ExtensionsType extensions = org.getExtensions();
         if (extensions != null) {
-            StaxUtil.writeDOMElement(writer, extensions.getElement());
+            write(extensions);
         }
 
         // Write the name
@@ -432,12 +434,13 @@ public class SAMLMetadataWriter extends BaseWriter {
     public void write(ContactType contact) throws ProcessingException {
         StaxUtil.writeStartElement(writer, METADATA_PREFIX, JBossSAMLConstants.CONTACT_PERSON.get(), JBossSAMLURIConstants.METADATA_NSURI.get());
 
-        ExtensionsType extensions = contact.getExtensions();
-        if (extensions != null) {
-            StaxUtil.writeDOMElement(writer, extensions.getElement());
-        }
         ContactTypeType attribs = contact.getContactType();
         StaxUtil.writeAttribute(writer, JBossSAMLConstants.CONTACT_TYPE.get(), attribs.value());
+
+        ExtensionsType extensions = contact.getExtensions();
+        if (extensions != null) {
+            write(extensions);
+        }
 
         // Write the name
         String company = contact.getCompany();
@@ -476,6 +479,15 @@ public class SAMLMetadataWriter extends BaseWriter {
 
         StaxUtil.writeEndElement(writer);
         StaxUtil.flush(writer);
+    }
+
+    public void write(ExtensionsType extensions) throws ProcessingException {
+        StaxUtil.writeStartElement(writer, METADATA_PREFIX, JBossSAMLConstants.EXTENSIONS__METADATA.get(), JBossSAMLURIConstants.METADATA_NSURI.get());
+
+        for (Element extension : extensions.getDomElements())
+            StaxUtil.writeDOMElement(writer, extension);
+
+        StaxUtil.writeEndElement(writer);
     }
 
     public void writeKeyDescriptor(KeyDescriptorType keyDescriptor) throws ProcessingException {

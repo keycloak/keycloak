@@ -90,7 +90,7 @@ public abstract class AbstractPairwiseSubMapper extends AbstractOIDCProtocolMapp
     }
 
     protected void setUserInfoTokenSubject(IDToken token, String pairwiseSub) {
-        token.setSubject(pairwiseSub);
+        token.getOtherClaims().put("sub", pairwiseSub);
     }
 
     @Override

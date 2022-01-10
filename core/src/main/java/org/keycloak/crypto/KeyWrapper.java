@@ -16,11 +16,24 @@
  */
 package org.keycloak.crypto;
 
+import java.util.HashMap;
+import java.util.List;
 import javax.crypto.SecretKey;
 import java.security.Key;
 import java.security.cert.X509Certificate;
+import java.util.Map;
 
 public class KeyWrapper {
+
+    /**
+     * A repository for the default algorithms by key type.
+     */
+    private static final Map<String, String> DEFAULT_ALGORITHM_BY_TYPE = new HashMap<>();
+
+    static {
+        //backwards compatibility: RSA keys without "alg" field set are considered RS256
+        DEFAULT_ALGORITHM_BY_TYPE.put(KeyType.RSA, Algorithm.RS256);
+    }
 
     private String providerId;
     private long providerPriority;
@@ -33,6 +46,7 @@ public class KeyWrapper {
     private Key publicKey;
     private Key privateKey;
     private X509Certificate certificate;
+    private List<X509Certificate> certificateChain;
 
     public String getProviderId() {
         return providerId;
@@ -58,7 +72,29 @@ public class KeyWrapper {
         this.kid = kid;
     }
 
+    /**
+     * <p>Returns the value of the optional {@code alg} claim.
+     *
+     * @return the algorithm value
+     */
     public String getAlgorithm() {
+        return algorithm;
+    }
+
+    /**
+     * <p>Returns the value of the optional {@code alg} claim. If not defined, a default is returned depending on the
+     * key type as per {@code kty} claim.
+     *
+     * <p>For keys of type {@link KeyType#RSA}, the default algorithm is {@link Algorithm#RS256} as this is the default
+     * algorithm recommended by OIDC specs.
+     *
+     *
+     * @return the algorithm set or a default based on the key type.
+     */
+    public String getAlgorithmOrDefault() {
+        if (algorithm == null) {
+            return DEFAULT_ALGORITHM_BY_TYPE.get(type);
+        }
         return algorithm;
     }
 
@@ -120,6 +156,14 @@ public class KeyWrapper {
 
     public void setCertificate(X509Certificate certificate) {
         this.certificate = certificate;
+    }
+
+    public List<X509Certificate> getCertificateChain() {
+        return certificateChain;
+    }
+
+    public void setCertificateChain(List<X509Certificate> certificateChain) {
+        this.certificateChain = certificateChain;
     }
 
 }

@@ -38,7 +38,7 @@ import org.infinispan.manager.EmbeddedCacheManager;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.util.reflections.Reflections;
-import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
+
 import java.util.stream.Collectors;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 
@@ -94,6 +94,10 @@ public class RemoteCacheProvider {
 
     protected synchronized RemoteCache loadRemoteCache(String cacheName) {
         RemoteCache remoteCache = InfinispanUtil.getRemoteCache(cacheManager.getCache(cacheName));
+
+        if (remoteCache != null) {
+            logger.infof("Hotrod version for remoteCache %s: %s", remoteCache.getName(), remoteCache.getRemoteCacheManager().getConfiguration().version());
+        }
 
         Boolean remoteStoreSecurity = config.getBoolean("remoteStoreSecurityEnabled");
         if (remoteStoreSecurity == null) {

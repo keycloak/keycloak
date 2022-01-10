@@ -18,6 +18,7 @@
 package org.keycloak.models.sessions.infinispan.remotestore;
 
 import java.io.Serializable;
+import java.net.SocketAddress;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -74,21 +75,28 @@ public class RemoteCacheSessionsLoader implements SessionLoader<RemoteCacheSessi
 
     protected int getIspnSegmentsCount(RemoteCache remoteCache) {
         OperationsFactory operationsFactory = ((RemoteCacheImpl) remoteCache).getOperationsFactory();
+        Map<SocketAddress, Set<Integer>> segmentsByAddress = operationsFactory.getPrimarySegmentsByAddress();
 
-        // Same like RemoteCloseableIterator.startInternal
-        IterationStartOperation iterationStartOperation = operationsFactory.newIterationStartOperation(null, null, null, sessionsPerSegment, false, null);
-        IterationStartResponse startResponse = await(iterationStartOperation.execute());
+        for (Map.Entry<SocketAddress, Set<Integer>> entry : segmentsByAddress.entrySet()) {
+            SocketAddress targetAddress = entry.getKey();
 
-        try {
-            // Could happen for non-clustered caches
-            if (startResponse.getSegmentConsistentHash() == null) {
-                return -1;
-            } else {
-                return startResponse.getSegmentConsistentHash().getNumSegments();
+            // Same like RemoteCloseableIterator.startInternal
+            IterationStartOperation iterationStartOperation = operationsFactory.newIterationStartOperation(null, null, null, sessionsPerSegment, false, null, targetAddress);
+            IterationStartResponse startResponse = await(iterationStartOperation.execute());
+
+            try {
+                // Could happen for non-clustered caches
+                if (startResponse.getSegmentConsistentHash() == null) {
+                    return -1;
+                } else {
+                    return startResponse.getSegmentConsistentHash().getNumSegments();
+                }
+            } finally {
+                startResponse.getChannel().close();
             }
-        } finally {
-            startResponse.getChannel().close();
         }
+        // Handle the case when primary segments owned by the address are not known
+        return -1;
     }
 
 

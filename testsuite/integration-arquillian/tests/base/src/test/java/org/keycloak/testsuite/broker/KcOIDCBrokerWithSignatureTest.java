@@ -137,7 +137,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         cfg.setValidateSignature(true);
         cfg.setUseJwksUrl(false);
 
-        KeysMetadataRepresentation.KeyMetadataRepresentation key = ApiUtil.findActiveKey(providerRealm());
+        KeysMetadataRepresentation.KeyMetadataRepresentation key = ApiUtil.findActiveSigningKey(providerRealm());
         cfg.setPublicKeySignatureVerifier(key.getPublicKey());
         updateIdentityProvider(idpRep);
 
@@ -171,7 +171,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         cfg.setValidateSignature(true);
         cfg.setUseJwksUrl(false);
 
-        KeysMetadataRepresentation.KeyMetadataRepresentation key = ApiUtil.findActiveKey(providerRealm());
+        KeysMetadataRepresentation.KeyMetadataRepresentation key = ApiUtil.findActiveSigningKey(providerRealm());
         String pemData = key.getPublicKey();
         cfg.setPublicKeySignatureVerifier(pemData);
         String expectedKeyId = KeyUtils.createKeyId(PemUtils.decodePublicKey(pemData));

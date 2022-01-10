@@ -19,13 +19,13 @@ package org.keycloak.services.resources.admin;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import javax.ws.rs.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
@@ -46,12 +46,12 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * @resource Groups
@@ -101,10 +101,16 @@ public class GroupResource {
     public Response updateGroup(GroupRepresentation rep) {
         this.auth.groups().requireManage(group);
 
-        for (GroupModel sibling: siblings()) {
-            if (Objects.equals(sibling.getId(), group.getId())) continue;
-            if (sibling.getName().equals(rep.getName())) {
-                return ErrorResponse.exists("Sibling group named '" + rep.getName() + "' already exists.");
+        String groupName = rep.getName();
+        if (ObjectUtil.isBlank(groupName)) {
+            return ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
+        }
+
+        if (!Objects.equals(groupName, group.getName())) {
+            boolean exists = siblings().filter(s -> !Objects.equals(s.getId(), group.getId()))
+                    .anyMatch(s -> Objects.equals(s.getName(), groupName));
+            if (exists) {
+                return ErrorResponse.exists("Sibling group named '" + groupName + "' already exists.");
             }
         }
         
@@ -114,11 +120,11 @@ public class GroupResource {
         return Response.noContent().build();
     }
     
-    private List<GroupModel> siblings() {
+    private Stream<GroupModel> siblings() {
         if (group.getParentId() == null) {
-            return realm.getTopLevelGroups();
+            return realm.getTopLevelGroupsStream();
         } else {
-            return new ArrayList(group.getParent().getSubGroups());
+            return group.getParent().getSubGroupsStream();
         }
     }
 
@@ -145,10 +151,9 @@ public class GroupResource {
     public Response addChild(GroupRepresentation rep) {
         this.auth.groups().requireManage(group);
 
-        for (GroupModel group : group.getSubGroups()) {
-            if (group.getName().equals(rep.getName())) {
-                return ErrorResponse.exists("Parent already contains subgroup named '" + rep.getName() + "'");
-            }
+        String groupName = rep.getName();
+        if (ObjectUtil.isBlank(groupName)) {
+            return ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
         }
 
         Response.ResponseBuilder builder = Response.status(204);
@@ -161,7 +166,7 @@ public class GroupResource {
             realm.moveGroup(child, group);
             adminEvent.operation(OperationType.UPDATE);
         } else {
-            child = realm.createGroup(rep.getName(), group);
+            child = realm.createGroup(groupName, group);
             updateGroup(rep, child);
             URI uri = session.getContext().getUri().getBaseUriBuilder()
                                            .path(session.getContext().getUri().getMatchedURIs().get(2))
@@ -206,20 +211,20 @@ public class GroupResource {
     /**
      * Get users
      *
-     * Returns a list of users, filtered according to query parameters
+     * Returns a stream of users, filtered according to query parameters
      *
      * @param firstResult Pagination offset
      * @param maxResults Maximum results size (defaults to 100)
      * @param briefRepresentation Only return basic information (only guaranteed to return id, username, created, first and last name,
      *  email, enabled state, email verification state, federation link, and access.
      *  Note that it means that namely user attributes, required actions, and not before are not returned.)
-     * @return
+     * @return a non-null {@code Stream} of users
      */
     @GET
     @NoCache
     @Path("members")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<UserRepresentation> getMembers(@QueryParam("first") Integer firstResult,
+    public Stream<UserRepresentation> getMembers(@QueryParam("first") Integer firstResult,
                                                @QueryParam("max") Integer maxResults,
                                                @QueryParam("briefRepresentation") Boolean briefRepresentation) {
         this.auth.groups().requireViewMembers(group);
@@ -228,17 +233,10 @@ public class GroupResource {
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
         boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
 
-        List<UserRepresentation> results = new ArrayList<UserRepresentation>();
-        List<UserModel> userModels = session.users().getGroupMembers(realm, group, firstResult, maxResults);
-
-        for (UserModel user : userModels) {
-            UserRepresentation userRep = briefRepresentationB
-                    ? ModelToRepresentation.toBriefRepresentation(user)
-                    : ModelToRepresentation.toRepresentation(session, realm, user);
-
-            results.add(userRep);
-        }
-        return results;
+        return session.users().getGroupMembersStream(realm, group, firstResult, maxResults)
+                .map(user -> briefRepresentationB
+                        ? ModelToRepresentation.toBriefRepresentation(user)
+                        : ModelToRepresentation.toRepresentation(session, realm, user));
     }
 
     /**

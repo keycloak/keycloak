@@ -21,6 +21,8 @@ import org.keycloak.cluster.ClusterEvent;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.Objects;
+
 import org.infinispan.commons.marshall.Externalizer;
 import org.infinispan.commons.marshall.MarshallUtil;
 import org.infinispan.commons.marshall.SerializeWith;
@@ -84,6 +86,19 @@ public class WrapperClusterEvent implements ClusterEvent {
 
     public void setDelegateEvent(ClusterEvent delegateEvent) {
         this.delegateEvent = delegateEvent;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        WrapperClusterEvent that = (WrapperClusterEvent) o;
+        return ignoreSender == that.ignoreSender && ignoreSenderSite == that.ignoreSenderSite && Objects.equals(eventKey, that.eventKey) && Objects.equals(sender, that.sender) && Objects.equals(senderSite, that.senderSite) && Objects.equals(delegateEvent, that.delegateEvent);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(eventKey, sender, senderSite, ignoreSender, ignoreSenderSite, delegateEvent);
     }
 
     @Override

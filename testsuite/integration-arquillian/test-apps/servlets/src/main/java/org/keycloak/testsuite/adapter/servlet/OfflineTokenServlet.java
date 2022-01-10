@@ -13,22 +13,18 @@ import java.io.IOException;
  */
 public class OfflineTokenServlet extends AbstractShowTokensServlet {
 
-    private static final String ADAPTER_ROOT_URL = (System.getProperty("auth.server.ssl.required", "false").equals("true")) ?
-            System.getProperty("auth.server.ssl.base.url", "https://localhost:8543") :
-            System.getProperty("auth.server.base.url", "http://localhost:8180");
-
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
         if (req.getRequestURI().endsWith("logout")) {
 
-            UriBuilder redirectUriBuilder = UriBuilder.fromUri(ServletTestUtils.getUrlBase(req) + "/offline-client");
+            UriBuilder redirectUriBuilder = UriBuilder.fromUri(ServletTestUtils.getUrlBase() + "/offline-client");
             if (req.getParameter(OAuth2Constants.SCOPE) != null) {
                 redirectUriBuilder.queryParam(OAuth2Constants.SCOPE, req.getParameter(OAuth2Constants.SCOPE));
             }
             String redirectUri = redirectUriBuilder.build().toString();
 
-            String serverLogoutRedirect = UriBuilder.fromUri(ADAPTER_ROOT_URL + "/auth/realms/test/protocol/openid-connect/logout")
+            String serverLogoutRedirect = UriBuilder.fromUri(ServletTestUtils.getAuthServerUrlBase() + "/auth/realms/test/protocol/openid-connect/logout")
                     .queryParam("redirect_uri", redirectUri)
                     .build().toString();
 

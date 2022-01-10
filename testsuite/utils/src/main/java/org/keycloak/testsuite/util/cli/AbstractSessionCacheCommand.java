@@ -335,7 +335,7 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
             BatchTaskRunner.runInBatches(0, count, batchCount, session.getKeycloakSessionFactory(), (KeycloakSession batchSession, int firstInIteration, int countInIteration) -> {
                 RealmModel realm = batchSession.realms().getRealmByName(realmName);
                 ClientModel client = realm.getClientByClientId(clientId);
-                UserModel user = batchSession.users().getUserByUsername(username, realm);
+                UserModel user = batchSession.users().getUserByUsername(realm, username);
 
                 for (int i=0 ; i<countInIteration ; i++) {
                     UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, "127.0.0.1", "form", false, null, null);

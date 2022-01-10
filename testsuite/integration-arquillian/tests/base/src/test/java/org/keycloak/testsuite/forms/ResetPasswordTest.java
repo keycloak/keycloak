@@ -21,10 +21,12 @@ import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionToken;
 import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
@@ -36,6 +38,8 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
+import org.keycloak.testsuite.federation.kerberos.AbstractKerberosTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -143,6 +147,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     private int expectedMessagesCount;
 
     @Test
+    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void resetPasswordLink() throws IOException, MessagingException {
         String username = "login-test";
         String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials";
@@ -210,7 +215,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         String changePasswordUrl = resetPassword("login-test");
         events.clear();
 
-        assertSecondPasswordResetFails(changePasswordUrl, oauth.getClientId()); // KC_RESTART doesn't exists, it was deleted after first successful reset-password flow was finished
+        assertSecondPasswordResetFails(changePasswordUrl, oauth.getClientId()); // KC_RESTART doesn't exist, it was deleted after first successful reset-password flow was finished
     }
 
     @Test
@@ -381,7 +386,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         resetPasswordPage.assertCurrent();
 
-        assertEquals("Please specify username.", resetPasswordPage.getErrorMessage());
+        assertEquals("Please specify username.", resetPasswordPage.getUsernameError());
 
         assertEquals(0, greenMail.getReceivedMessages().length);
 
@@ -1065,6 +1070,22 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         assertThat(driver2.getPageSource(), Matchers.containsString("Your account has been updated."));
     }
 
+
+    // KEYCLOAK-15239
+    @Test
+    public void resetPasswordWithSpnegoEnabled() throws IOException, MessagingException {
+        // Just switch SPNEGO authenticator requirement to alternative. No real usage of SPNEGO needed for this test
+        AuthenticationExecutionModel.Requirement origRequirement = AbstractKerberosTest.updateKerberosAuthExecutionRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE, testRealm());
+
+        try {
+            resetPassword("login-test");
+        } finally {
+            // Revert
+            AbstractKerberosTest.updateKerberosAuthExecutionRequirement(origRequirement, testRealm());
+        }
+    }
+
+
     @Test
     public void failResetPasswordServiceAccount() {
         String username = ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "client-user";
@@ -1091,45 +1112,113 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void resetPasswordLinkNewTabAndProperRedirectAccount() throws IOException {
         final String REQUIRED_URI = OAuthClient.AUTH_SERVER_ROOT + "/realms/test/account/applications";
         final String REDIRECT_URI = getAccountRedirectUrl() + "?path=applications";
         final String CLIENT_ID = "account";
+        final String ACCOUNT_MANAGEMENT_TITLE = getProjectName() + " Account Management";
 
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));
 
             driver.navigate().to(REQUIRED_URI);
             resetPasswordTwiceInNewTab(defaultUser, CLIENT_ID, false, REDIRECT_URI, REQUIRED_URI);
-            assertThat(driver.getTitle(), Matchers.equalTo("Keycloak Account Management"));
+            assertThat(driver.getTitle(), Matchers.equalTo(ACCOUNT_MANAGEMENT_TITLE));
 
             oauth.openLogout();
 
             driver.navigate().to(REQUIRED_URI);
             resetPasswordTwiceInNewTab(defaultUser, CLIENT_ID, true, REDIRECT_URI, REQUIRED_URI);
-            assertThat(driver.getTitle(), Matchers.equalTo("Keycloak Account Management"));
+            assertThat(driver.getTitle(), Matchers.equalTo(ACCOUNT_MANAGEMENT_TITLE));
         }
     }
 
     @Test
     public void resetPasswordLinkNewTabAndProperRedirectClient() throws IOException {
-        final String REDIRECT_URI = OAuthClient.AUTH_SERVER_ROOT + "/realms/master/app/auth";
+        final String REDIRECT_URI = getAuthServerRoot() + "realms/master/app/auth";
         final String CLIENT_ID = "test-app";
 
-        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver);
+             ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(getAdminClient(), TEST_REALM_NAME, CLIENT_ID)
+                     .filterRedirectUris(uri -> uri.contains(REDIRECT_URI))
+                     .update()) {
+
             assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));
 
             loginPage.open();
             resetPasswordTwiceInNewTab(defaultUser, CLIENT_ID, false, REDIRECT_URI);
             assertThat(driver.getCurrentUrl(), Matchers.containsString(REDIRECT_URI));
-
             oauth.openLogout();
 
             loginPage.open();
             resetPasswordTwiceInNewTab(defaultUser, CLIENT_ID, true, REDIRECT_URI);
             assertThat(driver.getCurrentUrl(), Matchers.containsString(REDIRECT_URI));
-
         }
+    }
+
+    @Test
+    public void resetPasswordInfoMessageWithDuplicateEmailsAllowed() throws IOException {
+        RealmRepresentation realmRep = testRealm().toRepresentation();
+        Boolean originalLoginWithEmailAllowed = realmRep.isLoginWithEmailAllowed();
+        Boolean originalDuplicateEmailsAllowed = realmRep.isDuplicateEmailsAllowed();
+
+        try {
+            loginPage.open();
+            loginPage.resetPassword();
+
+            resetPasswordPage.assertCurrent();
+
+            assertEquals("Enter your username or email address and we will send you instructions on how to create a new password.", resetPasswordPage.getInfoMessage());
+
+            realmRep.setLoginWithEmailAllowed(false);
+            realmRep.setDuplicateEmailsAllowed(true);
+            testRealm().update(realmRep);
+
+            loginPage.open();
+            loginPage.resetPassword();
+
+            resetPasswordPage.assertCurrent();
+
+            assertEquals("Enter your username and we will send you instructions on how to create a new password.", resetPasswordPage.getInfoMessage());
+        } finally {
+            realmRep.setLoginWithEmailAllowed(originalLoginWithEmailAllowed);
+            realmRep.setDuplicateEmailsAllowed(originalDuplicateEmailsAllowed);
+            testRealm().update(realmRep);
+        }
+
+    }
+
+    // KEYCLOAK-15170
+    @Test
+    public void changeEmailAddressAfterSendingEmail() throws IOException {
+        initiateResetPasswordFromResetPasswordPage(defaultUser.getUsername());
+
+        assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+        String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
+
+        UserResource user = testRealm().users().get(defaultUser.getId());
+        UserRepresentation userRep = user.toRepresentation();
+        userRep.setEmail("vmuzikar@redhat.com");
+        user.update(userRep);
+
+        driver.navigate().to(changePasswordUrl.trim());
+        errorPage.assertCurrent();
+        assertEquals("Invalid email address.", errorPage.getError());
+    }
+
+    @Test
+    public void resetPasswordWithLoginHint() throws IOException {
+        // Redirect directly to KC "forgot password" endpoint instead of "authenticate" endpoint
+        String loginUrl = oauth.getLoginFormUrl();
+        String forgotPasswordUrl = loginUrl.replace("/auth?", "/forgot-credentials?"); // Workaround, but works
+
+        driver.navigate().to(forgotPasswordUrl + "&login_hint=test");
+        resetPasswordPage.assertCurrent();
+
+        assertEquals("test", resetPasswordPage.getUsername());
     }
 
     private void changePasswordOnUpdatePage(WebDriver driver) {
@@ -1174,8 +1263,6 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
                     .orElse(null);
 
             assertThat(client, Matchers.notNullValue());
-            System.out.println("HEE");
-            System.out.println(client.getRootUrl());
             updateForgottenPassword(user, clientId, getValidRedirectUriWithRootUrl(client.getRootUrl(), client.getRedirectUris()));
         } else {
             doForgotPassword(user.getUsername());

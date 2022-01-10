@@ -160,7 +160,7 @@ public class AuthnContextType implements Serializable {
      * ref="saml:AuthnContextDecl"/>
      * <element ref="saml:AuthnContextDeclRef"/> </choice> </sequence>
      */
-    public class AuthnContextTypeSequence implements Serializable {
+    public static class AuthnContextTypeSequence implements Serializable {
 
         private AuthnContextClassRefType classRef;
 

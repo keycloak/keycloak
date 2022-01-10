@@ -93,7 +93,8 @@ public class OpenShiftTokenReviewEndpoint implements OIDCExtProvider, Environmen
         AccessToken token = null;
         try {
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(reviewRequest.getSpec().getToken(), AccessToken.class)
-                    .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
+                    .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()))
+                    .audience(reviewRequest.getSpec().getAudiences());
 
             SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
             verifier.verifierContext(verifierContext);
@@ -104,7 +105,7 @@ public class OpenShiftTokenReviewEndpoint implements OIDCExtProvider, Environmen
             error(401, Errors.INVALID_TOKEN, "Token verification failure");
         }
 
-        if (!tokenManager.checkTokenValidForIntrospection(session, realm, token)) {
+        if (!tokenManager.checkTokenValidForIntrospection(session, realm, token, true)) {
             error(401, Errors.INVALID_TOKEN, "Token verification failure");
         }
 
@@ -145,7 +146,7 @@ public class OpenShiftTokenReviewEndpoint implements OIDCExtProvider, Environmen
 
     private void authorizeClient() {
         try {
-            ClientModel client = AuthorizeClientUtil.authorizeClient(session, event).getClient();
+            ClientModel client = AuthorizeClientUtil.authorizeClient(session, event, null).getClient();
             event.client(client);
 
             if (client == null || client.isPublicClient()) {

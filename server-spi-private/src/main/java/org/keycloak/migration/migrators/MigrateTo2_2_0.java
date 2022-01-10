@@ -35,9 +35,7 @@ public class MigrateTo2_2_0 implements Migration {
     }
 
     public void migrate(KeycloakSession session) {
-        for (RealmModel realm : session.realms().getRealms()) {
-            addIdentityProviderAuthenticator(realm);
-        }
+        session.realms().getRealmsStream().forEach(this::addIdentityProviderAuthenticator);
     }
 
     @Override
@@ -47,13 +45,12 @@ public class MigrateTo2_2_0 implements Migration {
     }
 
     private void addIdentityProviderAuthenticator(RealmModel realm) {
-        String defaultProvider = null;
-        for (IdentityProviderModel provider : realm.getIdentityProviders()) {
-            if (provider.isEnabled() && provider.isAuthenticateByDefault()) {
-                defaultProvider = provider.getAlias();
-                break;
-            }
-        }
+        String defaultProvider = realm.getIdentityProvidersStream()
+                .filter(IdentityProviderModel::isEnabled)
+                .filter(IdentityProviderModel::isAuthenticateByDefault)
+                .map(IdentityProviderModel::getAlias)
+                .findFirst()
+                .orElse(null);
 
         DefaultAuthenticationFlows.addIdentityProviderAuthenticator(realm, defaultProvider);
     }

@@ -38,7 +38,6 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.OAuthClient;
 
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
@@ -50,6 +49,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.util.AdminClientUtil;
 
 /**
  * Test that clients can override auth flows
@@ -84,7 +84,7 @@ public class ChallengeFlowTest extends AbstractTestRealmKeycloakTest {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
 
-            ClientModel client = session.realms().getClientByClientId("test-app-flow", realm);
+            ClientModel client = session.clients().getClientByClientId(realm, "test-app-flow");
             if (client != null) {
                 return;
             }
@@ -129,7 +129,7 @@ public class ChallengeFlowTest extends AbstractTestRealmKeycloakTest {
     public void testChallengeFlow() throws Exception {
         oauth.clientId(TEST_APP_FLOW);
         String loginFormUrl = oauth.getLoginFormUrl();
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
         WebTarget loginTarget = client.target(loginFormUrl);
         Response response = loginTarget.request().get();
         Assert.assertEquals(401, response.getStatus());
@@ -142,7 +142,7 @@ public class ChallengeFlowTest extends AbstractTestRealmKeycloakTest {
 
         // respin Client to make absolutely sure no cookie caching.  need to test that it works with null auth_session_id cookie.
         client.close();
-        client = ClientBuilder.newClient();
+        client = AdminClientUtil.createResteasyClient();
 
 
         authenticateHeader = authenticateHeader.trim();

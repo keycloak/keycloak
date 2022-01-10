@@ -252,6 +252,11 @@ public class JWETest {
     }
 
     @Test
+    public void testRSAOAEP256_A128GCM() throws Exception {
+        testKeyEncryption_ContentEncryptionAesGcm(JWEConstants.RSA_OAEP_256, JWEConstants.A128GCM);
+    }
+
+    @Test
     public void testRSA1_5_A128CBCHS256() throws Exception {
         testKeyEncryption_ContentEncryptionAesHmacSha(JWEConstants.RSA1_5, JWEConstants.A128CBC_HS256);
     }
@@ -259,6 +264,11 @@ public class JWETest {
     @Test
     public void testRSAOAEP_A128CBCHS256() throws Exception {
         testKeyEncryption_ContentEncryptionAesHmacSha(JWEConstants.RSA_OAEP, JWEConstants.A128CBC_HS256);
+    }
+
+    @Test
+    public void testRSAOAEP256_A128CBCHS256() throws Exception {
+        testKeyEncryption_ContentEncryptionAesHmacSha(JWEConstants.RSA_OAEP_256, JWEConstants.A128CBC_HS256);
     }
  
     private void testKeyEncryption_ContentEncryptionAesGcm(String jweAlgorithmName, String jweEncryptionName) throws Exception {
@@ -336,6 +346,8 @@ public class JWETest {
             jcaAlgorithmName = "RSA/ECB/PKCS1Padding";
         } else if (JWEConstants.RSA_OAEP.equals(jweAlgorithmName)) {
             jcaAlgorithmName = "RSA/ECB/OAEPWithSHA-1AndMGF1Padding";
+        } else if (JWEConstants.RSA_OAEP_256.equals(jweAlgorithmName)) {
+            jcaAlgorithmName = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
         }
         return jcaAlgorithmName;
     }

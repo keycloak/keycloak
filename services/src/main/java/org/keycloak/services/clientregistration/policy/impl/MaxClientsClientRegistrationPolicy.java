@@ -42,7 +42,7 @@ public class MaxClientsClientRegistrationPolicy implements ClientRegistrationPol
     @Override
     public void beforeRegister(ClientRegistrationContext context) throws ClientRegistrationPolicyException {
         RealmModel realm = session.getContext().getRealm();
-        int currentCount = realm.getClients().size();
+        long currentCount = realm.getClientsCount();
         int maxCount = componentModel.get(MaxClientsClientRegistrationPolicyFactory.MAX_CLIENTS, MaxClientsClientRegistrationPolicyFactory.DEFAULT_MAX_CLIENTS);
 
         if (currentCount >= maxCount) {

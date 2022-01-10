@@ -25,11 +25,6 @@
 
     <files>
         <file>
-            <source>src/main/resources/bower.json</source>
-            <outputDirectory>/</outputDirectory>
-            <filtered>true</filtered>
-        </file>
-        <file>
             <source>src/main/resources/package.json</source>
             <outputDirectory>/</outputDirectory>
             <filtered>true</filtered>

@@ -35,8 +35,9 @@ import org.keycloak.storage.user.ImportSynchronization;
 import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.timer.TimerProvider;
 
-import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Callable;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -58,16 +59,16 @@ public class UserStorageSyncManager {
 
             @Override
             public void run(KeycloakSession session) {
-                List<RealmModel> realms = session.realms().getRealmsWithProviderType(UserStorageProvider.class);
-                for (final RealmModel realm : realms) {
-                    List<UserStorageProviderModel> providers = realm.getUserStorageProviders();
-                    for (final UserStorageProviderModel provider : providers) {
+                Stream<RealmModel> realms = session.realms().getRealmsWithProviderTypeStream(UserStorageProvider.class);
+                realms.forEach(realm -> {
+                    Stream<UserStorageProviderModel> providers = realm.getUserStorageProvidersStream();
+                    providers.forEachOrdered(provider -> {
                         UserStorageProviderFactory factory = (UserStorageProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, provider.getProviderId());
                         if (factory instanceof ImportSynchronization && provider.isImportEnabled()) {
                             refreshPeriodicSyncForProvider(sessionFactory, timer, provider, realm.getId());
                         }
-                    }
-                }
+                    });
+                });
 
                 ClusterProvider clusterProvider = session.getProvider(ClusterProvider.class);
                 clusterProvider.registerListener(USER_STORAGE_TASK_KEY, new UserStorageClusterListener(sessionFactory));
@@ -75,7 +76,7 @@ public class UserStorageSyncManager {
         });
     }
 
-    private class Holder {
+    private static class Holder {
         ExecutionResult<SynchronizationResult> result;
     }
 
@@ -170,8 +171,11 @@ public class UserStorageSyncManager {
             return;
 
         }
-        UserStorageProviderClusterEvent event = UserStorageProviderClusterEvent.createEvent(removed, realm.getId(), provider);
-        session.getProvider(ClusterProvider.class).notify(USER_STORAGE_TASK_KEY, event, false, ClusterProvider.DCNotify.ALL_DCS);
+        final ClusterProvider cp = session.getProvider(ClusterProvider.class);
+        if (cp != null) {
+            UserStorageProviderClusterEvent event = UserStorageProviderClusterEvent.createEvent(removed, realm.getId(), provider);
+            cp.notify(USER_STORAGE_TASK_KEY, event, false, ClusterProvider.DCNotify.ALL_DCS);
+        }
     }
 
 
@@ -254,20 +258,18 @@ public class UserStorageSyncManager {
             @Override
             public void run(KeycloakSession session) {
                 RealmModel persistentRealm = session.realms().getRealm(realmId);
-                List<UserStorageProviderModel> persistentFedProviders = persistentRealm.getUserStorageProviders();
-                for (UserStorageProviderModel persistentFedProvider : persistentFedProviders) {
-                    if (provider.getId().equals(persistentFedProvider.getId())) {
-                        // Update persistent provider in DB
-                        int lastSync = Time.currentTime();
-                        persistentFedProvider.setLastSync(lastSync);
-                        persistentRealm.updateComponent(persistentFedProvider);
+                persistentRealm.getUserStorageProvidersStream()
+                        .filter(persistentFedProvider -> Objects.equals(provider.getId(), persistentFedProvider.getId()))
+                        .forEachOrdered(persistentFedProvider -> {
+                            // Update persistent provider in DB
+                            int lastSync = Time.currentTime();
+                            persistentFedProvider.setLastSync(lastSync);
+                            persistentRealm.updateComponent(persistentFedProvider);
 
-                        // Update "cached" reference
-                        provider.setLastSync(lastSync);
-                    }
-                }
+                            // Update "cached" reference
+                            provider.setLastSync(lastSync);
+                        });
             }
-
         });
     }
 
@@ -337,6 +339,19 @@ public class UserStorageSyncManager {
             notification.setRealmId(realmId);
             notification.setStorageProvider(provider);
             return notification;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            UserStorageProviderClusterEvent that = (UserStorageProviderClusterEvent) o;
+            return removed == that.removed && Objects.equals(realmId, that.realmId) && Objects.equals(storageProvider.getId(), that.storageProvider.getId());
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(removed, realmId, storageProvider.getId());
         }
     }
 

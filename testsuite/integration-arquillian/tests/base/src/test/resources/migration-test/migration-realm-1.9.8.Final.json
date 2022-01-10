@@ -324,7 +324,7 @@
     "clientRoles" : { },
     "subGroups" : [ ]
   } ],
-  "defaultRoles" : [ "offline_access" ],
+  "defaultRoles" : [ "offline_access", "master-test-realm-role" ],
   "requiredCredentials" : [ "password" ],
   "passwordPolicy" : "hashIterations(20000)",
   "otpPolicyType" : "totp",
@@ -1012,6 +1012,7 @@
     "enabled" : true,
     "clientAuthenticatorType" : "client-secret",
     "secret" : "83dadb00-0510-4cae-b0dc-1ce1a1969ae3",
+    "defaultRoles" : [ "master-test-client-role" ],
     "redirectUris" : [ ],
     "webOrigins" : [ ],
     "notBefore" : 0,
@@ -1727,7 +1728,7 @@
     "clientRoles" : { },
     "subGroups" : [ ]
   } ],
-  "defaultRoles" : [ "offline_access" ],
+  "defaultRoles" : [ "offline_access", "migration-test-realm-role" ],
   "requiredCredentials" : [ "password" ],
   "passwordPolicy" : "hashIterations(20000)",
   "otpPolicyType" : "totp",
@@ -2126,6 +2127,7 @@
     "enabled" : true,
     "clientAuthenticatorType" : "client-secret",
     "secret" : "secret",
+    "defaultRoles" : [ "migration-test-client-role" ],
     "redirectUris" : [ ],
     "webOrigins" : [ ],
     "notBefore" : 0,
@@ -2223,6 +2225,21 @@
     "useTemplateConfig" : false,
     "useTemplateScope" : false,
     "useTemplateMappers" : false
+  }, {
+    "clientId": "migration-saml-client",
+    "enabled": true,
+    "fullScopeAllowed": true,
+    "protocol": "saml",
+    "baseUrl": "http://localhost:8080/sales-post",
+    "redirectUris": [
+      "http://localhost:8080/sales-post/*"
+    ],
+    "attributes": {
+      "saml_assertion_consumer_url_post": "http://localhost:8080/sales-post/saml",
+      "saml_single_logout_service_url_post": "http://localhost:8080/sales-post/saml",
+      "saml.authnstatement": "true",
+      "saml_idp_initiated_sso_url_name": "sales-post"
+    }
   }, {
     "id" : "e6856a02-8f24-48d3-bb06-fae5dddae83e",
     "clientId" : "realm-management",
@@ -2813,6 +2830,12 @@
       "id" : "f274ef81-cc3d-4060-92a0-745368642579",
       "name" : "offline_access",
       "description" : "${role_offline-access}",
+      "scopeParamRequired" : true,
+      "composite" : false
+    }, {
+      "id" : "a495da40-f44c-4e28-8f82-75bb5677e597",
+      "name" : "default-roles-migration2",
+      "description" : "${role_default-roles}",
       "scopeParamRequired" : true,
       "composite" : false
     } ],

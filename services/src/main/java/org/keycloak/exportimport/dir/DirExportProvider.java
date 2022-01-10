@@ -22,6 +22,7 @@ import org.keycloak.exportimport.util.MultipleStepsExportProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.platform.Platform;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.util.JsonSerialization;
 
@@ -38,10 +39,8 @@ public class DirExportProvider extends MultipleStepsExportProvider {
     private final File rootDirectory;
 
     public DirExportProvider() {
-        // Determine system tmp directory
-        String tempDir = System.getProperty("java.io.tmpdir");
-
-        this.rootDirectory = new File(tempDir + "/keycloak-export");
+        // Determine platform tmp directory
+        this.rootDirectory = new File(Platform.getPlatform().getTmpDirectory(), "keycloak-export");
         this.rootDirectory.mkdirs();
 
         logger.infof("Exporting into directory %s", this.rootDirectory.getAbsolutePath());
@@ -74,8 +73,9 @@ public class DirExportProvider extends MultipleStepsExportProvider {
     @Override
     public void writeRealm(String fileName, RealmRepresentation rep) throws IOException {
         File file = new File(this.rootDirectory, fileName);
-        FileOutputStream stream = new FileOutputStream(file);
-        JsonSerialization.prettyMapper.writeValue(stream, rep);
+        try (FileOutputStream is = new FileOutputStream(file)) {
+            JsonSerialization.prettyMapper.writeValue(is, rep);
+        }
     }
 
     @Override

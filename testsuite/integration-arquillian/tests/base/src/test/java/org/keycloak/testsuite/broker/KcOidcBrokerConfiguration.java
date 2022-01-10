@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.broker;
 
+import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.protocol.ProtocolMapperUtils;
@@ -40,6 +41,8 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         RealmRepresentation realm = new RealmRepresentation();
         realm.setRealm(REALM_PROV_NAME);
         realm.setEnabled(true);
+        realm.setEventsListeners(Arrays.asList("jboss-logging", "event-queue"));
+        realm.setEventsEnabled(true);
 
         return realm;
     }
@@ -50,6 +53,8 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         realm.setRealm(REALM_CONS_NAME);
         realm.setEnabled(true);
         realm.setResetPasswordAllowed(true);
+        realm.setEventsListeners(Arrays.asList("jboss-logging", "event-queue"));
+        realm.setEventsEnabled(true);
 
         return realm;
     }
@@ -57,11 +62,9 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
     @Override
     public List<ClientRepresentation> createProviderClients() {
         ClientRepresentation client = new ClientRepresentation();
-        client.setId(CLIENT_ID);
         client.setClientId(getIDPClientIdInProviderRealm());
         client.setName(CLIENT_ID);
         client.setSecret(CLIENT_SECRET);
-        client.setEnabled(true);
 
         client.setRedirectUris(Collections.singletonList(getConsumerRoot() +
                 "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_OIDC_ALIAS + "/endpoint/*"));
@@ -155,7 +158,6 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
     @Override
     public List<ClientRepresentation> createConsumerClients() {
         ClientRepresentation client = new ClientRepresentation();
-        client.setId("broker-app");
         client.setClientId("broker-app");
         client.setName("broker-app");
         client.setSecret("broker-app-secret");
@@ -192,6 +194,10 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         config.put("userInfoUrl", getProviderRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/userinfo");
         config.put("defaultScope", "email profile");
         config.put("backchannelSupported", "true");
+        config.put(OIDCIdentityProviderConfig.JWKS_URL,
+                getProviderRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/certs");
+        config.put(OIDCIdentityProviderConfig.USE_JWKS_URL, "true");
+        config.put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "true");
     }
 
     @Override

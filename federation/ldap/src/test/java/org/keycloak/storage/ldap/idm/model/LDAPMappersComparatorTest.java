@@ -32,6 +32,7 @@ import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapperFactory;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -46,26 +47,30 @@ public class LDAPMappersComparatorTest {
     public void testCompareWithCNUsername() {
         MultivaluedHashMap<String, String> cfg = new MultivaluedHashMap<>();
         cfg.add(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, LDAPConstants.CN);
-        LDAPConfig config = new LDAPConfig(cfg);
+        LDAPMappersComparator ldapMappersComparator = new LDAPMappersComparator(new LDAPConfig(cfg));
 
-        List<ComponentModel> sorted = LDAPMappersComparator.sortAsc(config, getMappers());
-        assertOrder(sorted, "username-cn", "sAMAccountName", "first name", "full name");
+        List<ComponentModel> mappers = getMappers();
 
-        sorted = LDAPMappersComparator.sortDesc(config, getMappers());
-        assertOrder(sorted, "full name", "first name", "sAMAccountName", "username-cn");
+        Collections.sort(mappers, ldapMappersComparator.sortAsc());
+        assertOrder(mappers, "username-cn", "sAMAccountName", "first name", "full name");
+
+        Collections.sort(mappers, ldapMappersComparator.sortDesc());
+        assertOrder(mappers, "full name", "first name", "sAMAccountName", "username-cn");
     }
 
     @Test
     public void testCompareWithSAMAccountNameUsername() {
         MultivaluedHashMap<String, String> cfg = new MultivaluedHashMap<>();
         cfg.add(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, LDAPConstants.SAM_ACCOUNT_NAME);
-        LDAPConfig config = new LDAPConfig(cfg);
+        LDAPMappersComparator ldapMappersComparator = new LDAPMappersComparator(new LDAPConfig(cfg));
 
-        List<ComponentModel> sorted = LDAPMappersComparator.sortAsc(config, getMappers());
-        assertOrder(sorted, "sAMAccountName", "username-cn", "first name", "full name");
+        List<ComponentModel> mappers = getMappers();
 
-        sorted = LDAPMappersComparator.sortDesc(config, getMappers());
-        assertOrder(sorted, "full name", "first name", "username-cn", "sAMAccountName");
+        Collections.sort(mappers, ldapMappersComparator.sortAsc());
+        assertOrder(mappers, "sAMAccountName", "username-cn", "first name", "full name");
+
+        Collections.sort(mappers, ldapMappersComparator.sortDesc());
+        assertOrder(mappers, "full name", "first name", "username-cn", "sAMAccountName");
     }
 
     private void assertOrder(List<ComponentModel> result, String... names) {
