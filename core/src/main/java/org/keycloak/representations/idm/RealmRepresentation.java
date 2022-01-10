@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.util.JsonSerialization;
+import io.fabric8.crd.generator.annotation.SchemaFrom;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -186,6 +187,7 @@ public class RealmRepresentation {
     private List<IdentityProviderRepresentation> identityProviders;
     private List<IdentityProviderMapperRepresentation> identityProviderMappers;
     private List<ProtocolMapperRepresentation> protocolMappers;
+    @SchemaFrom(type = org.keycloak.representations.overrides.ComponentExportRepresentationMap.class)
     private MultivaluedHashMap<String, ComponentExportRepresentation> components;
     protected Boolean internationalizationEnabled;
     protected Set<String> supportedLocales;

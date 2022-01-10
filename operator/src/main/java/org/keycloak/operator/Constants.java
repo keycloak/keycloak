@@ -27,6 +27,10 @@ public final class Constants {
     public static final String MANAGED_BY_LABEL = "app.kubernetes.io/managed-by";
     public static final String MANAGED_BY_VALUE = "keycloak-operator";
 
+    public static final String REALM_SHORT_NAME = "realm";
+    public static final String REALM_NAME = "realm";
+    public static final String REALM_PLURAL_NAME = "realms";
+
     public static final Map<String, String> DEFAULT_LABELS = Map.of(
             "app", NAME
     );

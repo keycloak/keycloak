@@ -18,6 +18,7 @@
 package org.keycloak.representations.idm;
 
 import org.keycloak.common.util.MultivaluedHashMap;
+import io.fabric8.crd.generator.annotation.SchemaFrom;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -61,6 +62,7 @@ public class CredentialRepresentation {
     @Deprecated
     private Integer period;
     @Deprecated
+    @SchemaFrom(type = org.keycloak.representations.overrides.MultivaluedStringStringHashMap.class)
     private MultivaluedHashMap<String, String> config;
 
     public String getId() {
