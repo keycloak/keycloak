@@ -37,7 +37,7 @@ public class WebAuthnAuthenticatorsBean {
                 .map(webAuthnCredential -> {
                     String credentialId = Base64Url.encodeBase64ToBase64Url(webAuthnCredential.getWebAuthnCredentialData().getCredentialId());
                     String label = (webAuthnCredential.getUserLabel() == null || webAuthnCredential.getUserLabel().isEmpty()) ? "label missing" : webAuthnCredential.getUserLabel();
-                    String createdAt = DateTimeFormatterUtil.getDateTimeFromMillis(webAuthnCredential.getCreatedDate(), realm.getDefaultLocale());
+                    String createdAt = DateTimeFormatterUtil.getDateTimeFromMillis(webAuthnCredential.getCreatedDate(), session.getContext().resolveLocale(user));
                     return new WebAuthnAuthenticatorBean(credentialId, label, createdAt);
                 }).collect(Collectors.toList());
     }

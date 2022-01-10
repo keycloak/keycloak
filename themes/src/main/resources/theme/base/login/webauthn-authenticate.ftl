@@ -40,7 +40,9 @@
                                             ${msg('${authenticator.label}')}
                                         </div>
                                         <div class="${properties.kcSelectAuthListItemDescriptionClass!}">
-                                            ${msg('webauthn-createdAt-label')}
+                                            <span id="kc-webauthn-authenticator-created-label">
+                                                ${msg('webauthn-createdAt-label')}
+                                            </span>
                                             <span id="kc-webauthn-authenticator-created">
                                                 ${authenticator.createdAt}
                                             </span>

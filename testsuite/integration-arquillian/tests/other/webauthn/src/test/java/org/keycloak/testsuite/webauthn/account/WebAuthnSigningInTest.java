@@ -24,20 +24,23 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.testsuite.ui.account2.page.SigningInPage;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.webauthn.authenticators.UseVirtualAuthenticators;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnAuthenticatorsList;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnLoginPage;
 import org.keycloak.theme.DateTimeFormatterUtil;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
@@ -219,7 +222,7 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest implement
     }
 
     @Test
-    public void checkAuthenticatorTimeLocale() throws ParseException {
+    public void checkAuthenticatorTimeLocale() throws ParseException, IOException {
         addWebAuthnCredential("authenticator#1");
 
         final int webAuthnCount = webAuthnCredentialType.getUserCredentialsCount();
@@ -253,54 +256,85 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest implement
 
         logout();
 
-        RealmRepresentation realm = testRealmResource().toRepresentation();
-        assertThat(realm, notNullValue());
-        realm.setInternationalizationEnabled(true);
-        realm.setDefaultLocale(Locale.CHINA.getLanguage());
-        testRealmResource().update(realm);
+        try (Closeable c = setLocalesUpdater(Locale.CHINA.getLanguage()).update()) {
+            signingInPage.navigateTo();
+            loginToAccount();
 
-        signingInPage.navigateTo();
-        loginToAccount();
+            webAuthnLoginPage.assertCurrent();
 
-        webAuthnLoginPage.assertCurrent();
+            authenticators = webAuthnLoginPage.getAuthenticators();
+            assertThat(authenticators.getCount(), is(1));
+            item = webAuthnLoginPage.getAuthenticators().getItems().get(0);
 
-        authenticators = webAuthnLoginPage.getAuthenticators();
-        assertThat(authenticators.getCount(), is(1));
-        item = webAuthnLoginPage.getAuthenticators().getItems().get(0);
+            final String dateChineseString = item.getCreatedDate();
+            assertThat(dateChineseString, notNullValue());
 
-        final String dateChineseString = item.getCreatedDate();
-        assertThat(dateChineseString, notNullValue());
+            format = DateTimeFormatterUtil.getDefaultDateFormat(Locale.CHINA);
+            final Date dateChinese = format.parse(dateChineseString);
+            assertThat(dateChinese, notNullValue());
 
-        format = DateTimeFormatterUtil.getDefaultDateFormat(Locale.CHINA);
-        final Date dateChinese = format.parse(dateChineseString);
-        assertThat(dateChinese, notNullValue());
+            assertThat(dateEnglishString, is(not(dateChineseString)));
+            assertThat(dateEnglish, is(dateChinese));
 
-        assertThat(dateEnglishString, is(not(dateChineseString)));
-        assertThat(dateEnglish, is(dateChinese));
+            webAuthnLoginPage.clickAuthenticate();
+            signingInPage.assertCurrent();
 
-        webAuthnLoginPage.clickAuthenticate();
-        signingInPage.assertCurrent();
+            logout();
+        }
 
-        logout();
+        try (Closeable c = setLocalesUpdater("xx", Locale.ENGLISH.getLanguage()).update()) {
+            signingInPage.navigateTo();
+            loginToAccount();
 
-        realm = testRealmResource().toRepresentation();
-        assertThat(realm, notNullValue());
-        realm.setDefaultLocale("xx");
-        testRealmResource().update(realm);
+            webAuthnLoginPage.assertCurrent();
 
-        signingInPage.navigateTo();
-        loginToAccount();
+            authenticators = webAuthnLoginPage.getAuthenticators();
+            assertThat(authenticators.getCount(), is(1));
+            item = webAuthnLoginPage.getAuthenticators().getItems().get(0);
 
-        webAuthnLoginPage.assertCurrent();
+            final String dateInvalidString = item.getCreatedDate();
+            assertThat(dateInvalidString, notNullValue());
 
-        authenticators = webAuthnLoginPage.getAuthenticators();
-        assertThat(authenticators.getCount(), is(1));
-        item = webAuthnLoginPage.getAuthenticators().getItems().get(0);
+            assertThat(dateInvalidString, is(dateEnglishString));
+        }
+    }
 
-        final String dateInvalidString = item.getCreatedDate();
-        assertThat(dateInvalidString, notNullValue());
+    @Test
+    public void userAuthenticatorTimeLocale() throws IOException {
+        Consumer<String> checkCreatedAtLabels = (requiredLabel) ->
+                webAuthnLoginPage.getAuthenticators()
+                        .getItems()
+                        .stream()
+                        .map(WebAuthnAuthenticatorsList.WebAuthnAuthenticatorItem::getCreatedLabel)
+                        .forEach(f -> assertThat(f, is(requiredLabel)));
 
-        assertThat(dateInvalidString, is(dateEnglishString));
+        try (Closeable c = setLocalesUpdater(Locale.ENGLISH.getLanguage(), "cs").update()) {
+            addWebAuthnCredential("authenticator#1");
+            addWebAuthnCredential("authenticator#2");
+
+            final int webAuthnCount = webAuthnCredentialType.getUserCredentialsCount();
+            assertThat(webAuthnCount, is(2));
+
+            setUpWebAuthnFlow("webAuthnFlow");
+            logout();
+
+            signingInPage.navigateTo();
+            loginToAccount();
+
+            webAuthnLoginPage.assertCurrent();
+
+            WebAuthnAuthenticatorsList authenticators = webAuthnLoginPage.getAuthenticators();
+            assertThat(authenticators.getCount(), is(2));
+            assertThat(authenticators.getLabels(), Matchers.contains("authenticator#1", "authenticator#2"));
+
+            checkCreatedAtLabels.accept("Created");
+
+            webAuthnLoginPage.openLanguage("Čeština");
+            checkCreatedAtLabels.accept("Vytvořeno");
+
+            webAuthnLoginPage.clickAuthenticate();
+            signingInPage.assertCurrent();
+        }
     }
 
     @Test
@@ -374,5 +408,17 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest implement
         assertThat(credentialType.getUserCredentialsCount(), is(2));
 
         testRemoveCredential(webAuthn1);
+    }
+
+    private RealmAttributeUpdater setLocalesUpdater(String defaultLocale, String... supportedLocales) {
+        RealmAttributeUpdater updater = new RealmAttributeUpdater(testRealmResource())
+                .setDefaultLocale(defaultLocale)
+                .setInternationalizationEnabled(true)
+                .addSupportedLocale(defaultLocale);
+
+        for (String locale : supportedLocales) {
+            updater.addSupportedLocale(locale);
+        }
+        return updater;
     }
 }

@@ -21,11 +21,9 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -48,7 +46,8 @@ public class WebAuthnAuthenticatorsList {
             for (WebElement auth : authenticators) {
                 String name = getTextFromElement(auth.findElement(By.id("kc-webauthn-authenticator-label")));
                 String createdAt = getTextFromElement(auth.findElement(By.id("kc-webauthn-authenticator-created")));
-                items.add(new WebAuthnAuthenticatorItem(name, createdAt));
+                String createdAtLabel = getTextFromElement(auth.findElement(By.id("kc-webauthn-authenticator-created-label")));
+                items.add(new WebAuthnAuthenticatorItem(name, createdAt, createdAtLabel));
             }
             return items;
         } catch (NoSuchElementException e) {
@@ -78,10 +77,12 @@ public class WebAuthnAuthenticatorsList {
     public static class WebAuthnAuthenticatorItem {
         private final String name;
         private final String createdAt;
+        private final String createdAtLabel;
 
-        public WebAuthnAuthenticatorItem(String name, String createdAt) {
+        public WebAuthnAuthenticatorItem(String name, String createdAt, String createdAtLabel) {
             this.name = name;
             this.createdAt = createdAt;
+            this.createdAtLabel = createdAtLabel;
         }
 
         public String getName() {
@@ -90,6 +91,10 @@ public class WebAuthnAuthenticatorsList {
 
         public String getCreatedDate() {
             return createdAt;
+        }
+
+        public String getCreatedLabel() {
+            return createdAtLabel;
         }
     }
 }
