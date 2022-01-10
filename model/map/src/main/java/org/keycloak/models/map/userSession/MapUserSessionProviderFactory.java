@@ -35,6 +35,7 @@ import org.keycloak.models.map.storage.MapStorageSpi;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
+
 import static org.keycloak.models.utils.KeycloakModelUtils.getComponentFactory;
 
 /**
@@ -101,10 +102,11 @@ public class MapUserSessionProviderFactory<UK, CK> implements AmphibianProviderF
     @Override
     public void onEvent(ProviderEvent event) {
         if (event instanceof UserModel.UserRemovedEvent) {
-            UserModel.UserRemovedEvent userRemovedEvent = (UserModel.UserRemovedEvent) event;
-
-            MapUserSessionProvider provider = MapUserSessionProviderFactory.this.create(userRemovedEvent.getKeycloakSession());
-            provider.removeUserSessions(userRemovedEvent.getRealm(), userRemovedEvent.getUser());
+            UserSessionProvider provider = ((UserModel.UserRemovedEvent) event).getKeycloakSession().getProvider(UserSessionProvider.class);
+            if (provider  instanceof MapUserSessionProvider) {
+                UserModel.UserRemovedEvent userRemovedEvent = (UserModel.UserRemovedEvent) event;
+                provider.removeUserSessions(userRemovedEvent.getRealm(), userRemovedEvent.getUser());
+            }
         }
     }
 

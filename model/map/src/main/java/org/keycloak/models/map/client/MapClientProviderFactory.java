@@ -71,17 +71,20 @@ public class MapClientProviderFactory extends AbstractMapProviderFactory<ClientP
     public void onEvent(ProviderEvent event) {
         if (event instanceof RoleContainerModel.RoleRemovedEvent) {
             RoleRemovedEvent e = (RoleContainerModel.RoleRemovedEvent) event;
-            RoleModel role = e.getRole();
-            RoleContainerModel container = role.getContainer();
-            RealmModel realm;
-            if (container instanceof RealmModel) {
-                realm = (RealmModel) container;
-            } else if (container instanceof ClientModel) {
-                realm = ((ClientModel) container).getRealm();
-            } else {
-                return;
+            ClientProvider clientProvider = e.getKeycloakSession().getProvider(ClientProvider.class);
+            if (clientProvider instanceof MapClientProvider) {
+                RoleModel role = e.getRole();
+                RoleContainerModel container = role.getContainer();
+                RealmModel realm;
+                if (container instanceof RealmModel) {
+                    realm = (RealmModel) container;
+                } else if (container instanceof ClientModel) {
+                    realm = ((ClientModel) container).getRealm();
+                } else {
+                    return;
+                }
+                ((MapClientProvider) clientProvider).preRemove(realm, role);
             }
-            ((MapClientProvider) e.getKeycloakSession().getProvider(ClientProvider.class)).preRemove(realm, role);
         }
     }
 }

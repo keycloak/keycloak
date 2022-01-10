@@ -66,14 +66,16 @@ public class MapUserLoginFailureProviderFactory extends AbstractMapProviderFacto
     public void onEvent(ProviderEvent event) {
         if (event instanceof UserModel.UserRemovedEvent) {
             UserModel.UserRemovedEvent userRemovedEvent = (UserModel.UserRemovedEvent) event;
-
-            MapUserLoginFailureProvider provider = MapUserLoginFailureProviderFactory.this.create(userRemovedEvent.getKeycloakSession());
-            provider.removeUserLoginFailure(userRemovedEvent.getRealm(), userRemovedEvent.getUser().getId());
+            UserLoginFailureProvider provider = userRemovedEvent.getKeycloakSession().getProvider(UserLoginFailureProvider.class);
+            if (provider instanceof MapUserLoginFailureProvider) {
+                provider.removeUserLoginFailure(userRemovedEvent.getRealm(), userRemovedEvent.getUser().getId());
+            }
         } else if (event instanceof RealmModel.RealmRemovedEvent) {
             RealmModel.RealmRemovedEvent realmRemovedEvent = (RealmModel.RealmRemovedEvent) event;
-
-            MapUserLoginFailureProvider provider = MapUserLoginFailureProviderFactory.this.create(realmRemovedEvent.getKeycloakSession());
-            provider.removeAllUserLoginFailures(realmRemovedEvent.getRealm());
+            UserLoginFailureProvider provider = realmRemovedEvent.getKeycloakSession().getProvider(UserLoginFailureProvider.class);
+            if (provider instanceof MapUserLoginFailureProvider) {
+                provider.removeAllUserLoginFailures(realmRemovedEvent.getRealm());
+            }
         }
     }
 

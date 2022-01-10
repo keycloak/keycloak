@@ -69,17 +69,20 @@ public class MapGroupProviderFactory extends AbstractMapProviderFactory<GroupPro
     public void onEvent(ProviderEvent event) {
         if (event instanceof RoleContainerModel.RoleRemovedEvent) {
             RoleRemovedEvent e = (RoleContainerModel.RoleRemovedEvent) event;
-            RoleModel role = e.getRole();
-            RoleContainerModel container = role.getContainer();
-            RealmModel realm;
-            if (container instanceof RealmModel) {
-                realm = (RealmModel) container;
-            } else if (container instanceof ClientModel) {
-                realm = ((ClientModel) container).getRealm();
-            } else {
-                return;
+            GroupProvider groupProvider = e.getKeycloakSession().getProvider(GroupProvider.class);
+            if (groupProvider instanceof MapGroupProvider) {
+                RoleModel role = e.getRole();
+                RoleContainerModel container = role.getContainer();
+                RealmModel realm;
+                if (container instanceof RealmModel) {
+                    realm = (RealmModel) container;
+                } else if (container instanceof ClientModel) {
+                    realm = ((ClientModel) container).getRealm();
+                } else {
+                    return;
+                }
+                ((MapGroupProvider) groupProvider).preRemove(realm, role);
             }
-            ((MapGroupProvider) e.getKeycloakSession().getProvider(GroupProvider.class)).preRemove(realm, role);
         }
     }
 }
