@@ -30,6 +30,7 @@ public class GitHubIdentityProviderTest {
 
     /**
      * Test constructor with empty config (i.e. to use default values).
+     * This also tests GitHubIdentityProvider.getProfileEndpointForValidation(null).
      */
     @Test
     public void testGitHubIdentityProvider() {
@@ -61,13 +62,6 @@ public class GitHubIdentityProviderTest {
         assertEquals(apiUrl + GitHubIdentityProvider.EMAIL_FRAGMENT, config.getConfig().get(GitHubIdentityProvider.EMAIL_URL_KEY));
         assertEquals(apiUrl + GitHubIdentityProvider.PROFILE_FRAGMENT, config.getUserInfoUrl());
         assertEquals(apiUrl + GitHubIdentityProvider.PROFILE_FRAGMENT, idp.getProfileEndpointForValidation(null));
-    }
-
-    /**
-     * Tested in {@link #testGitHubIdentityProvider()}.
-     */
-    @Test
-    public void testGetProfileEndpointForValidation() {
     }
 
 }
