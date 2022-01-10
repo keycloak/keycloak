@@ -97,10 +97,6 @@
             <source>target/keycloak-quarkus-server/cache-ispn.xml</source>
             <outputDirectory>conf</outputDirectory>
         </file>
-        <file>
-            <source>../../quarkus/runtime/src/main/resources/META-INF/keycloak.properties</source>
-            <outputDirectory>conf</outputDirectory>
-        </file>
     </files>
 
 </assembly>

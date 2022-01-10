@@ -62,8 +62,7 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
     }
 
     protected ConfigArgsConfigSource() {
-        // higher priority over default Quarkus config sources
-        super(parseArgument(), "CliConfigSource", 500);
+        super(parseArgument(), "CliConfigSource", 600);
     }
 
     public static void setCliArgs(String[] args) {

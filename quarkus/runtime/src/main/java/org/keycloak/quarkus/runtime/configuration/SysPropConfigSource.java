@@ -60,6 +60,6 @@ public class SysPropConfigSource implements ConfigSource {
 
     @Override
     public int getOrdinal() {
-        return 400;
+        return 550;
     }
 }

@@ -32,7 +32,6 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
     public static final String NS_KEYCLOAK = "kc";
     public static final String NS_KEYCLOAK_PREFIX = NS_KEYCLOAK + ".";
     public static final String NS_QUARKUS = "quarkus";
-    public static final String NS_QUARKUS_PREFIX = NS_QUARKUS + ".";
 
     private final org.eclipse.microprofile.config.Config config;
 
