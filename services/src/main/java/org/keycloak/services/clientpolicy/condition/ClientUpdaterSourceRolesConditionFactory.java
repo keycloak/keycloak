@@ -20,15 +20,13 @@ package org.keycloak.services.clientpolicy.condition;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.keycloak.Config.Scope;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ClientUpdaterSourceRolesConditionFactory implements ClientPolicyConditionProviderFactory {
+public class ClientUpdaterSourceRolesConditionFactory extends AbstractClientPolicyConditionProviderFactory {
 
     public static final String PROVIDER_ID = "client-updater-source-roles";
 
@@ -37,6 +35,8 @@ public class ClientUpdaterSourceRolesConditionFactory implements ClientPolicyCon
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
     static {
+        addCommonConfigProperties(configProperties);
+
         ProviderConfigProperty property;
         property = new ProviderConfigProperty(ROLES, PROVIDER_ID + ".label", PROVIDER_ID + ".tooltip", ProviderConfigProperty.MULTIVALUED_STRING_TYPE, "admin");
         configProperties.add(property);
@@ -48,18 +48,6 @@ public class ClientUpdaterSourceRolesConditionFactory implements ClientPolicyCon
     }
 
     @Override
-    public void init(Scope config) {
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-    }
-
-    @Override
-    public void close() {
-    }
-
-    @Override
     public String getId() {
         return PROVIDER_ID;
     }
@@ -67,12 +55,10 @@ public class ClientUpdaterSourceRolesConditionFactory implements ClientPolicyCon
     @Override
     public String getHelpText() {
         return "The condition checks the role of the entity who tries to create/update the client to determine whether the policy is applied.";
-
     }
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
         return configProperties;
     }
-
 }
