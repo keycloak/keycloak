@@ -44,7 +44,7 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
     private static final PersistedConfigSource INSTANCE = new PersistedConfigSource();
 
     private PersistedConfigSource() {
-        super(readProperties(), "", 300);
+        super(readProperties(), "", 200);
     }
 
     public static PersistedConfigSource getInstance() {

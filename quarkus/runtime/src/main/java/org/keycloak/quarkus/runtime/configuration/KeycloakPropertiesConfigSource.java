@@ -68,7 +68,7 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
 
         @Override
         public List<ConfigSource> getConfigSources(final ClassLoader classLoader) {
-            return loadConfigSources("META-INF/keycloak.properties", 240, classLoader);
+            return loadConfigSources("META-INF/keycloak.properties", 150, classLoader);
         }
 
         @Override
@@ -104,7 +104,7 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
                 return Collections.emptyList();
             }
 
-            return loadConfigSources(configFile.toUri().toString(), 250, classLoader);
+            return loadConfigSources(configFile.toUri().toString(), 450, classLoader);
         }
 
         @Override
