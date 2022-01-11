@@ -1,10 +1,10 @@
 Installing Custom Providers
 ===========================
 
-You should add to this directory your custom provider JAR files.
+Add your custom provider JAR files in this directory.
 
-Once you have your providers in this directory you should run the following command to complete the installation:
+Once you have your providers in this directory, run the following command to complete the installation:
 
 ```
-${kc.home.dir}/bin/kc.sh config
+${kc.home.dir}/bin/kc.sh build
 ```
