@@ -62,6 +62,15 @@ public class RealmImporterController implements Reconciler<RealmImporter>, Error
                 realm.getMetadata().getNamespace()
         );
 
+        if (kc == null) {
+            var status = new RealmImporterStatus();
+            status.setError(true);
+            status.setState(RealmImporterStatus.State.ERROR);
+            status.setMessage("Keycloak Deployment doesn't exists");
+            realm.setStatus(status);
+            return UpdateControl.updateStatus(realm);
+        }
+
         // Write the realm representation secret
         String content = "";
         try {
