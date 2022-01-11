@@ -16,46 +16,33 @@
  */
 package org.keycloak.operator.v2alpha1.crds;
 
+import java.util.List;
+import java.util.Objects;
+
+/**
+ * @author Vaclav Muzikar <vmuzikar@redhat.com>
+ */
 public class KeycloakStatus {
-    public enum State {
-        READY,
-        ERROR,
-        UNKNOWN
+    private List<KeycloakStatusCondition> conditions;
+
+    public List<KeycloakStatusCondition> getConditions() {
+        return conditions;
     }
 
-    private State state = State.UNKNOWN;
-    private boolean error;
-    private String message;
-
-    public State getState() {
-        return state;
+    public void setConditions(List<KeycloakStatusCondition> conditions) {
+        this.conditions = conditions;
     }
 
-    public void setState(State state) {
-        this.state = state;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        KeycloakStatus status = (KeycloakStatus) o;
+        return Objects.equals(getConditions(), status.getConditions());
     }
 
-    public boolean isError() {
-        return error;
-    }
-
-    public void setError(boolean error) {
-        this.error = error;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public KeycloakStatus clone() {
-        var status = new KeycloakStatus();
-        status.setMessage(this.message);
-        status.setState(this.state);
-        status.setError(this.error);
-        return status;
+    @Override
+    public int hashCode() {
+        return Objects.hash(getConditions());
     }
 }
