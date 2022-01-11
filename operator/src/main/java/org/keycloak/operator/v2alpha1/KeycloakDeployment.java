@@ -84,10 +84,10 @@ public class KeycloakDeployment {
 
         var commandArgs = new ArrayList<String>();
         commandArgs.add("start-dev");
-        commandArgs.add("-Dkc.db=postgres");
-        commandArgs.add("-Dkc.db.username='" + spec.getDbUser() + "'");
-        commandArgs.add("-Dkc.db.password='" + spec.getDbPassword() + "'");
-        commandArgs.add("-Dkc.db.url='" + spec.getJdbcUri() + "'");
+        commandArgs.add("--db=postgres");
+        commandArgs.add("--db-username='" + spec.getDbUser() + "'");
+        commandArgs.add("--db-password='" + spec.getDbPassword() + "'");
+        commandArgs.add("--db-url='" + spec.getJdbcUri() + "'");
 
         deployment
                 .getSpec()

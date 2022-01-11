@@ -20,29 +20,28 @@ import javax.inject.Inject;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import org.jboss.logging.Logger;
-import org.keycloak.operator.v2alpha1.crds.Keycloak;
 import org.keycloak.operator.v2alpha1.crds.realm.*;
-import org.keycloak.representations.idm.RealmRepresentation;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.keycloak.operator.Constants.MANAGED_BY_LABEL;
+import static org.keycloak.operator.Constants.MANAGED_BY_VALUE;
+
 @ControllerConfiguration(namespaces = Constants.WATCH_CURRENT_NAMESPACE, finalizerName = Constants.NO_FINALIZER)
-public class RealmImporterController implements Reconciler<RealmImporter>, ErrorStatusHandler<RealmImporter> {
+public class RealmImporterController implements Reconciler<RealmImporter>, ErrorStatusHandler<RealmImporter>, EventSourceInitializer<RealmImporter> {
 
     @Inject
     Logger logger;
@@ -56,11 +55,12 @@ public class RealmImporterController implements Reconciler<RealmImporter>, Error
     @Override
     public UpdateControl<RealmImporter> reconcile(RealmImporter realm, Context context) {
         logger.trace("Realm Importer - Reconcile loop started");
-
         var kcDeployment = new KeycloakDeployment(client);
-        var keycloakRef = realm.getSpec().getKeycloakCRName();
 
-        var kc = kcDeployment.getKeycloakDeployment(realm.getSpec().getKeycloakCRName(), realm.getMetadata().getNamespace());
+        var kc = kcDeployment.getKeycloakDeployment(
+                realm.getSpec().getKeycloakCRName(),
+                realm.getMetadata().getNamespace()
+        );
 
         // Write the realm representation secret
         String content = "";
@@ -71,19 +71,24 @@ public class RealmImporterController implements Reconciler<RealmImporter>, Error
         }
 
         var realmName = realm.getSpec().getRealm().getRealm();
-        updateRealmSecret(kc, realmName, content);
+        handleRealmSecret(kc, realmName, content);
 
-        // run the import job
-        spawnImportJob(kc, realmName);
+        // Run the import job and get the result
+        var newStatus = handleImportJob(kc, realmName, realm.getMetadata().getName());
 
-        return UpdateControl.noUpdate();
+        if (realm.getStatus() != newStatus) {
+            realm.setStatus(newStatus);
+            return UpdateControl.updateStatus(realm);
+        } else {
+            return UpdateControl.noUpdate();
+        }
     }
 
     private String getSecretName(Deployment deployment) {
         return deployment.getMetadata().getName() + "-realms";
     }
 
-    private void updateRealmSecret(Deployment deployment, String realmName, String content) {
+    private void handleRealmSecret(Deployment deployment, String realmName, String content) {
         var secretName = getSecretName(deployment);
         var namespace = deployment.getMetadata().getNamespace();
         var fileName = realmName + "-realm.json";
@@ -98,11 +103,20 @@ public class RealmImporterController implements Reconciler<RealmImporter>, Error
         if (secret != null) {
             logger.info("Updating Secret " + secretName);
             var updatedData = secret.getStringData();
-            updatedData.put(fileName, content);
-
-            secret.setStringData(updatedData);
-
-            secretSelector.patch(secret);
+            if (updatedData != null) {
+                if (updatedData.containsKey(fileName) && updatedData.get(fileName).equals(content)) {
+                    logger.info("Secret was already updated");
+                } else {
+                    updatedData.put(fileName, content);
+                    secret.setStringData(updatedData);
+                    secretSelector.patch(secret);
+                }
+            } else {
+                updatedData = new HashMap<String, String>();
+                updatedData.put(fileName, content);
+                secret.setStringData(updatedData);
+                secretSelector.patch(secret);
+            }
         } else {
             logger.info("Creating Secret " + secretName);
             secretSelector.create(
@@ -110,6 +124,7 @@ public class RealmImporterController implements Reconciler<RealmImporter>, Error
                             .withNewMetadata()
                             .withName(secretName)
                             .withNamespace(namespace)
+                            .addToLabels(MANAGED_BY_LABEL, MANAGED_BY_VALUE)
                             .withOwnerReferences(deployment.getMetadata().getOwnerReferences())
                             .endMetadata()
                             .addToStringData(fileName, content)
@@ -118,32 +133,39 @@ public class RealmImporterController implements Reconciler<RealmImporter>, Error
         }
     }
 
-    private void spawnImportJob(Deployment deployment, String realmName) {
+    private RealmImporterStatus handleImportJob(Deployment deployment, String realmName, String realmCRName) {
         var name = "realm-" + realmName + "-importer";
+        var namespace = deployment.getMetadata().getNamespace();
+        var secretName = getSecretName(deployment);
+        var volumeName = secretName + "-volume";
         var keycloakTemplate = deployment.getSpec().getTemplate();
         var keycloakContainer = keycloakTemplate.getSpec().getContainers().get(0);
 
         var importMntPath = "/mnt/realm-import/";
 
-        var javaProperties = keycloakContainer
+        var dbOptions = keycloakContainer
                 .getArgs()
                 .stream()
-                .filter((p) -> p.startsWith("-D"))
+                .filter((p) -> p.startsWith("--db"))
                 .collect(Collectors.toList());
 
+        var command = new ArrayList<String>();
+        command.add("/bin/bash");
+
         var commandArgs = new ArrayList<String>();
-        commandArgs.add("import");
-        commandArgs.add("--file='" + importMntPath + realmName + "-realm.json");
-        commandArgs.add("--override=true");
+        var dbOptsString = dbOptions.stream().reduce("", (o, n) -> o + " " + n);
+        commandArgs.add("-c");
+        commandArgs.add("/opt/keycloak/bin/kc.sh build" + dbOptsString + " && " +
+                "/opt/keycloak/bin/kc.sh import --file='" + importMntPath + realmName + "-realm.json' --override=true");
 
-        commandArgs.addAll(javaProperties);
-
+        keycloakContainer
+                .setCommand(command);
         keycloakContainer
                 .setArgs(commandArgs);
         var volumeMounts = new ArrayList<VolumeMount>();
         volumeMounts.add(
                 new VolumeMountBuilder()
-                .withName("realm-import")
+                .withName(volumeName)
                 .withReadOnly(true)
                 .withMountPath(importMntPath)
                 .build()
@@ -151,26 +173,67 @@ public class RealmImporterController implements Reconciler<RealmImporter>, Error
         keycloakContainer.setVolumeMounts(volumeMounts);
 
         var secretVolume = new VolumeBuilder()
+                .withName(volumeName)
                 .withSecret(new SecretVolumeSourceBuilder()
-                        .withSecretName(getSecretName(deployment))
+                        .withSecretName(secretName)
                         .build())
                 .build();
 
-        // TODO: add selector labels and use the informer on Jobs
-        new JobBuilder()
+        var job = new JobBuilder()
                 .withNewMetadata()
                 .withName(name)
-                .withNamespace(deployment.getMetadata().getNamespace())
+                .withNamespace(namespace)
+                .addToLabels("app.kubernetes.io/part-of", realmCRName)
+                .addToLabels(MANAGED_BY_LABEL, MANAGED_BY_VALUE)
                 .endMetadata()
                 .withNewSpec()
                 .withNewTemplate()
                 .withNewSpec()
                 .withContainers(keycloakContainer)
                 .addToVolumes(secretVolume)
+                .withRestartPolicy("Never")
                 .endSpec()
                 .endTemplate()
                 .endSpec()
                 .build();
+
+        var prevJob = client
+                .batch()
+                .v1()
+                .jobs()
+                .inNamespace(namespace)
+                .withName(name)
+                .get();
+
+        if (prevJob != null) {
+            logger.info("Job already executed - not recreating");
+            var oldStatus = prevJob.getStatus();
+            var newStatus = new RealmImporterStatus();
+
+            if (oldStatus != null) {
+                if (oldStatus.getSucceeded() != null && oldStatus.getSucceeded() >= 0) {
+                    newStatus.setState(RealmImporterStatus.State.DONE);
+                } else if (oldStatus.getFailed() != null && oldStatus.getFailed() >= 0) {
+                    newStatus.setError(true);
+                    newStatus.setState(RealmImporterStatus.State.ERROR);
+                } else {
+                    newStatus.setState(RealmImporterStatus.State.STARTED);
+                }
+            } else {
+                newStatus.setState(RealmImporterStatus.State.UNKNOWN);
+            }
+            return newStatus;
+        } else {
+            client
+                    .batch()
+                    .v1()
+                    .jobs()
+                    .create(job);
+
+            var status = new RealmImporterStatus();
+            status.setState(RealmImporterStatus.State.STARTED);
+            return status;
+        }
     }
 
     @Override
@@ -181,7 +244,33 @@ public class RealmImporterController implements Reconciler<RealmImporter>, Error
 
     @Override
     public Optional<RealmImporter> updateErrorStatus(RealmImporter realmImporter, RetryInfo retryInfo, RuntimeException e) {
-        realmImporter.getStatus().setMessage("Error: " + e.getMessage());
+        var status = realmImporter.getStatus();
+        if (status == null) {
+            status = new RealmImporterStatus();
+        }
+        status.setState(RealmImporterStatus.State.ERROR);
+        status.setError(true);
+        status.setMessage("Error: " + e.getMessage());
         return Optional.of(realmImporter);
+    }
+
+    // TODO: this logic has not been checked / tested
+    @Override
+    public List<EventSource> prepareEventSources(EventSourceContext<RealmImporter> context) {
+        return List.of(new InformerEventSource<>(
+                client, Job.class, job -> {
+                    if (job.getMetadata().getLabels() != null &&
+                            job.getMetadata().getLabels().containsKey("app.kubernetes.io/part-of")) {
+                        return context.getPrimaryCache()
+                                .list(kc -> kc.getMetadata().getName().equals(job.getMetadata().getLabels().get("app.kubernetes.io/part-of")))
+                                .map(ResourceID::fromResource)
+                                .collect(Collectors.toSet());
+                    } else {
+                        return Set.of();
+                    }
+        },
+                (RealmImporter realm) -> new ResourceID(realm.getCRDName(),
+                        realm.getMetadata().getNamespace()),
+                true));
     }
 }

@@ -20,6 +20,7 @@ public class RealmImporterStatus {
     public enum State {
         DONE,
         ERROR,
+        STARTED,
         UNKNOWN
     }
 
