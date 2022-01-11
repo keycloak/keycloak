@@ -24,6 +24,7 @@ public final class Constants {
     public static final String SHORT_NAME = "kc";
     public static final String NAME = "keycloak";
     public static final String PLURAL_NAME = "keycloaks";
+    public static final String PART_OF_LABEL = "app.kubernetes.io/part-of";
     public static final String MANAGED_BY_LABEL = "app.kubernetes.io/managed-by";
     public static final String MANAGED_BY_VALUE = "keycloak-operator";
 

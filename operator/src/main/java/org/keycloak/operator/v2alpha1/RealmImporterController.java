@@ -37,8 +37,7 @@ import org.keycloak.operator.v2alpha1.crds.realm.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.keycloak.operator.Constants.MANAGED_BY_LABEL;
-import static org.keycloak.operator.Constants.MANAGED_BY_VALUE;
+import static org.keycloak.operator.Constants.*;
 
 @ControllerConfiguration(namespaces = Constants.WATCH_CURRENT_NAMESPACE, finalizerName = Constants.NO_FINALIZER)
 public class RealmImporterController implements Reconciler<RealmImporter>, ErrorStatusHandler<RealmImporter>, EventSourceInitializer<RealmImporter> {
@@ -192,7 +191,7 @@ public class RealmImporterController implements Reconciler<RealmImporter>, Error
                 .withNewMetadata()
                 .withName(name)
                 .withNamespace(namespace)
-                .addToLabels("app.kubernetes.io/part-of", realmCRName)
+                .addToLabels(PART_OF_LABEL, realmCRName)
                 .addToLabels(MANAGED_BY_LABEL, MANAGED_BY_VALUE)
                 .endMetadata()
                 .withNewSpec()
@@ -268,9 +267,9 @@ public class RealmImporterController implements Reconciler<RealmImporter>, Error
         return List.of(new InformerEventSource<>(
                 client, Job.class, job -> {
                     if (job.getMetadata().getLabels() != null &&
-                            job.getMetadata().getLabels().containsKey("app.kubernetes.io/part-of")) {
+                            job.getMetadata().getLabels().containsKey(PART_OF_LABEL)) {
                         return context.getPrimaryCache()
-                                .list(kc -> kc.getMetadata().getName().equals(job.getMetadata().getLabels().get("app.kubernetes.io/part-of")))
+                                .list(kc -> kc.getMetadata().getName().equals(job.getMetadata().getLabels().get(PART_OF_LABEL)))
                                 .map(ResourceID::fromResource)
                                 .collect(Collectors.toSet());
                     } else {
