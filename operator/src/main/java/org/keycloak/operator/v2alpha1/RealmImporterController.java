@@ -254,7 +254,6 @@ public class RealmImporterController implements Reconciler<RealmImporter>, Error
         return Optional.of(realmImporter);
     }
 
-    // TODO: this logic has not been checked / tested
     @Override
     public List<EventSource> prepareEventSources(EventSourceContext<RealmImporter> context) {
         return List.of(new InformerEventSource<>(
