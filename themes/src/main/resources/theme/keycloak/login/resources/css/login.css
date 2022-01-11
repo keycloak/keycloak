@@ -262,6 +262,18 @@ div.kc-logo-text span {
     padding-top: 8px;
 }
 
+#kc-form-webauthn .select-auth-box-parent {
+    pointer-events: none;
+}
+
+#kc-form-webauthn .select-auth-box-desc {
+    color: var(--pf-global--palette--black-600);
+}
+
+#kc-form-webauthn .select-auth-box-headline {
+    color: var(--pf-global--Color--300);
+}
+
 #kc-content-wrapper {
     margin-top: 20px;
 }
@@ -618,6 +630,12 @@ ul#kc-totp-supported-apps {
 
 .select-auth-box-desc {
     font-size: var(--pf-global--FontSize--sm);
+}
+
+.select-auth-box-paragraph {
+    text-align: center;
+    font-size: var(--pf-global--FontSize--md);
+    margin-bottom: 5px;
 }
 
 .card-pf {
