@@ -78,7 +78,7 @@ final class DatabasePropertyMappers {
                         .isMasked(true)
                         .build(),
                 builder().from("db.schema")
-                        .to("quarkus.datasource.schema")
+                        .to("quarkus.hibernate-orm.database.default-schema")
                         .description("The database schema to be used.")
                         .paramLabel("schema")
                         .build(),

@@ -65,6 +65,7 @@ import org.keycloak.models.dblock.DBLockManager;
 import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ServicesLogger;
@@ -175,7 +176,7 @@ public final class QuarkusJpaConnectionProviderFactory implements JpaConnectionP
 
     @Override
     public String getSchema() {
-        return config.get("schema");
+        return Configuration.getRawValue("kc.db.schema");
     }
 
     @Override
