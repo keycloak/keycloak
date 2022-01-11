@@ -71,6 +71,11 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>javax.validation</groupId>
+            <artifactId>validation-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>crd-generator-api</artifactId>
             <scope>provided</scope>

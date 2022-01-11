@@ -209,6 +209,7 @@
 
         <!-- Operator -->
         <kubernetes-client.version>5.12-SNAPSHOT</kubernetes-client.version>
+        <validation-api.version>2.0.1.Final</validation-api.version>
 
         <!-- Properties that drive the names of various directories produced by and used in the build -->
         <server.output.dir.prefix>keycloak</server.output.dir.prefix>
@@ -1753,6 +1754,11 @@
                 <groupId>io.fabric8</groupId>
                 <artifactId>crd-generator-apt</artifactId>
                 <version>${kubernetes-client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.validation</groupId>
+                <artifactId>validation-api</artifactId>
+                <version>${validation-api.version}</version>
             </dependency>
 
         </dependencies>

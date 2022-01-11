@@ -25,6 +25,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.util.JsonSerialization;
 import io.fabric8.crd.generator.annotation.SchemaFrom;
 
+import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -43,6 +44,7 @@ public class RealmRepresentation {
     private static final Logger logger = Logger.getLogger(RealmRepresentation.class);
 
     protected String id;
+    @NotNull
     protected String realm;
     protected String displayName;
     protected String displayNameHtml;

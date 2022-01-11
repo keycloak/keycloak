@@ -27,4 +27,35 @@ public class KeycloakSpec {
     public void setInstances(int instances) {
         this.instances = instances;
     }
+
+    private String jdbcUri = null;
+
+    public String getJdbcUri() {
+        return jdbcUri;
+    }
+
+    public void setJdbcUri(String jdbcUri) {
+        this.jdbcUri = jdbcUri;
+    }
+
+    public String getDbUser() {
+        return dbUser;
+    }
+
+    public void setDbUser(String dbUser) {
+        this.dbUser = dbUser;
+    }
+
+    public String getDbPassword() {
+        return dbPassword;
+    }
+
+    public void setDbPassword(String dbPassword) {
+        this.dbPassword = dbPassword;
+    }
+
+    private String dbUser = null;
+
+    private String dbPassword = null;
+
 }

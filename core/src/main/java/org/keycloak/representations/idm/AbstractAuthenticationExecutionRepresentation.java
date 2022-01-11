@@ -62,6 +62,9 @@ public class AbstractAuthenticationExecutionRepresentation implements Serializab
         this.priority = priority;
     }
 
+    // TODO: we can add this line or remove the following getter / setters
+    @Deprecated
+    private boolean autheticatorFlow;
     /**
      * Is the referenced authenticator a flow?
      *

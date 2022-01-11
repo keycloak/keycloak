@@ -18,7 +18,7 @@ package org.keycloak.operator.v2alpha1.crds.realm;
 
 public class RealmImporterStatus {
     public enum State {
-        READY,
+        DONE,
         ERROR,
         UNKNOWN
     }

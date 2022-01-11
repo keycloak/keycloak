@@ -18,9 +18,28 @@ package org.keycloak.operator.v2alpha1.crds.realm;
 
 import org.keycloak.representations.idm.RealmRepresentation;
 
+import javax.validation.constraints.NotNull;
+
 public class RealmImporterSpec {
 
+    @NotNull
     private String keycloakCRName;
+    @NotNull
     private RealmRepresentation realm;
 
+    public String getKeycloakCRName() {
+        return keycloakCRName;
+    }
+
+    public void setKeycloakCRName(String keycloakCRName) {
+        this.keycloakCRName = keycloakCRName;
+    }
+
+    public RealmRepresentation getRealm() {
+        return realm;
+    }
+
+    public void setRealm(RealmRepresentation realm) {
+        this.realm = realm;
+    }
 }

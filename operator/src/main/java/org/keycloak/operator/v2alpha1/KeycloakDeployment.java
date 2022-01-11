@@ -24,6 +24,7 @@ import org.keycloak.operator.v2alpha1.crds.KeycloakSpec;
 import org.keycloak.operator.v2alpha1.crds.KeycloakStatus;
 
 import java.net.URL;
+import java.util.ArrayList;
 
 import static org.keycloak.operator.v2alpha1.crds.KeycloakStatus.State.*;
 
@@ -38,16 +39,20 @@ public class KeycloakDeployment {
     private Deployment baseDeployment;
 
     public Deployment getKeycloakDeployment(Keycloak keycloak) {
+        return getKeycloakDeployment(keycloak.getMetadata().getName(), keycloak.getMetadata().getNamespace());
+    }
+
+    public Deployment getKeycloakDeployment(String name, String namespace) {
         // TODO this should be done through an informer to leverage caches
         // WORKAROUND for: https://github.com/java-operator-sdk/java-operator-sdk/issues/781
         return client
                 .apps()
                 .deployments()
-                .inNamespace(keycloak.getMetadata().getNamespace())
+                .inNamespace(namespace)
                 .list()
                 .getItems()
                 .stream()
-                .filter((d) -> d.getMetadata().getName().equals(org.keycloak.operator.Constants.NAME))
+                .filter((d) -> d.getMetadata().getName().equals(name))
                 .findFirst()
                 .orElse(null);
 //                .withName(Constants.NAME)
@@ -69,10 +74,28 @@ public class KeycloakDeployment {
         }
 
         var deployment = baseDeployment;
+        var spec = keycloak.getSpec();
+
+        deployment.getMetadata().setName(keycloak.getMetadata().getName());
 
         deployment
                 .getSpec()
-                .setReplicas(keycloak.getSpec().getInstances());
+                .setReplicas(spec.getInstances());
+
+        var commandArgs = new ArrayList<String>();
+        commandArgs.add("start-dev");
+        commandArgs.add("-Dkc.db=postgres");
+        commandArgs.add("-Dkc.db.username='" + spec.getDbUser() + "'");
+        commandArgs.add("-Dkc.db.password='" + spec.getDbPassword() + "'");
+        commandArgs.add("-Dkc.db.url='" + spec.getJdbcUri() + "'");
+
+        deployment
+                .getSpec()
+                .getTemplate()
+                .getSpec()
+                .getContainers()
+                .get(0)
+                .setArgs(commandArgs);
 
         return new DeploymentBuilder(deployment).build();
     }

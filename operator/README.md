@@ -38,3 +38,12 @@ Install the CRD definition and the operator in the cluster:
 ```bash
 kubectl apply -k .
 ```
+
+### Run the operator locally
+
+You can use the quarkus dev mode to run the operator from your command line, after having configured `kubectl`
+to point out to the correct configuration start the operator with: 
+
+```bash
+mvn quarkus:dev -Doperator
+```
