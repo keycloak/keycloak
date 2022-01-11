@@ -373,6 +373,13 @@ public class ConfigurationTest {
         assertEquals("enabled", config.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
     }
 
+    @Test
+    public void testOptionValueWithEqualSign() {
+        System.setProperty(CLI_ARGS, "--db-password=my_secret=");
+        SmallRyeConfig config = createConfig();
+        assertEquals("my_secret=", config.getConfigValue("kc.db.password").getValue());
+    }
+
     private Config.Scope initConfig(String... scope) {
         Config.init(new MicroProfileConfigProvider(createConfig()));
         return Config.scope(scope);
