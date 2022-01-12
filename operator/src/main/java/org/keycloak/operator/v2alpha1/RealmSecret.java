@@ -10,6 +10,8 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import org.jboss.logging.Logger;
 import org.keycloak.operator.v2alpha1.crds.realm.Realm;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 
@@ -23,6 +25,8 @@ public class RealmSecret {
 
     private KubernetesClient client;
     private ObjectMapper jsonMapper;
+    private Base64.Decoder base64Decoder = Base64.getDecoder();
+    private Base64.Encoder base64Encoder = Base64.getEncoder();
 
     public RealmSecret(KubernetesClient client, ObjectMapper jsonMapper) {
         this.client = client;
@@ -72,20 +76,21 @@ public class RealmSecret {
                     buildSecret(secretName, namespace, fileName, content, ownerReferences));
         } else {
             logger.info("Trying to update Secret " + secretName);
-            var updatedData = secret.getStringData();
+            var updatedData = secret.getData();
             if (updatedData != null) {
-                if (updatedData.containsKey(fileName) && updatedData.get(fileName).equals(content)) {
-                    logger.info("Secret was already updated");
+                if (updatedData.containsKey(fileName) &&
+                        new String(base64Decoder.decode(updatedData.get(fileName)), StandardCharsets.UTF_8).equals(content)) {
+                    logger.info("Secret is already updated");
                     return;
                 } else {
-                    logger.info("Secret content changed, updating");
+                    logger.info("Secret content changed, updating " + updatedData.containsKey(fileName));
                 }
             } else {
                 logger.info("Secret content not available, adding");
-                updatedData = new HashMap<String, String>();
+                updatedData = new HashMap<>();
             }
-            updatedData.put(fileName, content);
-            secret.setStringData(updatedData);
+            updatedData.put(fileName, base64Encoder.encodeToString(content.getBytes(StandardCharsets.UTF_8)));
+            secret.setData(updatedData);
             secretSelector.patch(secret);
         }
     }

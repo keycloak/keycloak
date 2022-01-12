@@ -1,0 +1,27 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: realmcontroller-jobs-cluster-role
+rules:
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: realmcontroller-jobs-role-binding
+roleRef:
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+  name: realmcontroller-jobs-cluster-role
+subjects:
+  - kind: ServiceAccount
+    name: keycloak-operator
+    # TODO: no clear way how to get this value OOB with kustomize, do we need Helm?
+    namespace: default
