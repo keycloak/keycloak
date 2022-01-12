@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -32,11 +33,11 @@ import org.jboss.logging.Logger;
 import org.keycloak.operator.v2alpha1.crds.realm.*;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.keycloak.operator.Constants.*;
 
-@ControllerConfiguration(namespaces = Constants.WATCH_CURRENT_NAMESPACE, finalizerName = Constants.NO_FINALIZER)
+// namespaces = Constants.WATCH_CURRENT_NAMESPACE,
+@ControllerConfiguration(finalizerName = Constants.NO_FINALIZER)
 public class RealmController implements Reconciler<Realm>, ErrorStatusHandler<Realm>, EventSourceInitializer<Realm> {
 
     @Inject
@@ -157,20 +158,25 @@ public class RealmController implements Reconciler<Realm>, ErrorStatusHandler<Re
 
     @Override
     public List<EventSource> prepareEventSources(EventSourceContext<Realm> context) {
+        SharedIndexInformer<Job> jobsInformer =
+                client
+                        .batch()
+                        .v1()
+                        .jobs()
+                        .inAnyNamespace()
+                        .withLabel(MANAGED_BY_LABEL, MANAGED_BY_VALUE)
+                        .runnableInformer(0);
+
         return List.of(new InformerEventSource<>(
-                client, Job.class, job -> {
-                    if (job.getMetadata().getLabels() != null &&
-                            job.getMetadata().getLabels().containsKey(PART_OF_LABEL)) {
-                        return context.getPrimaryCache()
-                                .list(realm -> realm.getMetadata().getName().equals(job.getMetadata().getLabels().get(PART_OF_LABEL)))
-                                .map(ResourceID::fromResource)
-                                .collect(Collectors.toSet());
-                    } else {
-                        return Set.of();
-                    }
-        },
-                (Realm realm) -> new ResourceID(realm.getCRDName(),
-                        realm.getMetadata().getNamespace()),
-                true));
+                jobsInformer, job -> {
+            var ownerReferences = job.getMetadata().getOwnerReferences();
+            if (!ownerReferences.isEmpty()) {
+                return Set.of(new ResourceID(ownerReferences.get(0).getName(),
+                        job.getMetadata().getNamespace()));
+            } else {
+                return Set.of();
+            }
+        }));
     }
+
 }

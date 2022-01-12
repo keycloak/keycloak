@@ -24,4 +24,6 @@ subjects:
   - kind: ServiceAccount
     name: keycloak-operator
     # TODO: no clear way how to get this value OOB with kustomize, do we need Helm?
+    # reference issue:
+    # https://github.com/quarkiverse/quarkus-operator-sdk/issues/187
     namespace: default
