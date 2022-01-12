@@ -83,7 +83,7 @@ HTTP/TLS:
                        detected based on the file name.
 --https-port <port>  The used HTTPS port. Default: 8443.
 --https-protocols <protocols>
-                     The list of protocols to explicitly enable.
+                     The list of protocols to explicitly enable. Default: TLSv1.3.
 --https-trust-store-file <file>
                      The trust store which holds the certificate information of the certificates to
                        trust.

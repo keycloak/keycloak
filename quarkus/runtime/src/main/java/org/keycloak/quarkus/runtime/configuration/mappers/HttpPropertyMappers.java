@@ -68,6 +68,7 @@ final class HttpPropertyMappers {
                         .to("quarkus.http.ssl.protocols")
                         .description("The list of protocols to explicitly enable.")
                         .paramLabel("protocols")
+                        .defaultValue("TLSv1.3")
                         .build(),
                 builder().from("https.certificate.file")
                         .to("quarkus.http.ssl.certificate.file")
