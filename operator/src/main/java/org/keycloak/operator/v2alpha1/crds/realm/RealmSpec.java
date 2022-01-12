@@ -16,40 +16,30 @@
  */
 package org.keycloak.operator.v2alpha1.crds.realm;
 
-public class RealmImporterStatus {
-    public enum State {
-        DONE,
-        ERROR,
-        STARTED,
-        UNKNOWN
+import org.keycloak.representations.idm.RealmRepresentation;
+
+import javax.validation.constraints.NotNull;
+
+public class RealmSpec {
+
+    @NotNull
+    private String keycloakCRName;
+    @NotNull
+    private RealmRepresentation realm;
+
+    public String getKeycloakCRName() {
+        return keycloakCRName;
     }
 
-    private State state = State.UNKNOWN;
-    private boolean error;
-    private String message;
-
-    public State getState() {
-        return state;
+    public void setKeycloakCRName(String keycloakCRName) {
+        this.keycloakCRName = keycloakCRName;
     }
 
-    public void setState(State state) {
-        this.state = state;
+    public RealmRepresentation getRealm() {
+        return realm;
     }
 
-    public boolean isError() {
-        return error;
+    public void setRealm(RealmRepresentation realm) {
+        this.realm = realm;
     }
-
-    public void setError(boolean error) {
-        this.error = error;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
 }

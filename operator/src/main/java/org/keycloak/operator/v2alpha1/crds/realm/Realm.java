@@ -16,30 +16,18 @@
  */
 package org.keycloak.operator.v2alpha1.crds.realm;
 
-import org.keycloak.representations.idm.RealmRepresentation;
+import io.fabric8.kubernetes.api.model.Namespaced;
+import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.model.annotation.Group;
+import io.fabric8.kubernetes.model.annotation.Plural;
+import io.fabric8.kubernetes.model.annotation.ShortNames;
+import io.fabric8.kubernetes.model.annotation.Version;
+import org.keycloak.operator.Constants;
 
-import javax.validation.constraints.NotNull;
+@Group(Constants.CRDS_GROUP)
+@Version(Constants.CRDS_VERSION)
+@ShortNames(Constants.REALM_SHORT_NAME)
+@Plural(Constants.REALM_PLURAL_NAME)
+public class Realm extends CustomResource<RealmSpec, RealmStatus> implements Namespaced {
 
-public class RealmImporterSpec {
-
-    @NotNull
-    private String keycloakCRName;
-    @NotNull
-    private RealmRepresentation realm;
-
-    public String getKeycloakCRName() {
-        return keycloakCRName;
-    }
-
-    public void setKeycloakCRName(String keycloakCRName) {
-        this.keycloakCRName = keycloakCRName;
-    }
-
-    public RealmRepresentation getRealm() {
-        return realm;
-    }
-
-    public void setRealm(RealmRepresentation realm) {
-        this.realm = realm;
-    }
 }
