@@ -750,6 +750,13 @@
                 </div>
                 <kc-tooltip>{{:: 'use-refresh-token-for-client-credentials-grant.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="useLowerCaseBearerTypeInTokenResponse">{{:: 'use-lower-case-bearer-in-token-responses' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="useLowerCaseBearerTypeInTokenResponse" ng-click="switchChange()" name="useLowerCaseBearerTypeInTokenResponse" id="useLowerCaseBearerTypeInTokenResponse" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'use-lower-case-bearer-in-token-responses.tooltip' | translate}}</kc-tooltip>
+            </div>
         </fieldset>
 
         <fieldset>
