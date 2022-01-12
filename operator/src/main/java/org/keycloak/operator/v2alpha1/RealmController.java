@@ -36,8 +36,7 @@ import java.util.*;
 
 import static org.keycloak.operator.Constants.*;
 
-// namespaces = Constants.WATCH_CURRENT_NAMESPACE,
-@ControllerConfiguration(finalizerName = Constants.NO_FINALIZER)
+@ControllerConfiguration(namespaces = Constants.WATCH_CURRENT_NAMESPACE, finalizerName = Constants.NO_FINALIZER)
 public class RealmController implements Reconciler<Realm>, ErrorStatusHandler<Realm>, EventSourceInitializer<Realm> {
 
     @Inject
