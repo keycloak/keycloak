@@ -18,12 +18,9 @@ package org.keycloak.operator.v2alpha1;
 
 import javax.inject.Inject;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.*;
-import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
-import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.api.reconciler.Constants;
@@ -51,8 +48,21 @@ public class RealmController implements Reconciler<Realm>, ErrorStatusHandler<Re
     @Inject
     ObjectMapper jsonMapper;
 
+    private RealmSecret realmSecret = null;
+    private RealmJob realmJob = null;
+
+    private void initialize() {
+        if (realmSecret == null) {
+            realmSecret = new RealmSecret(client, jsonMapper);
+        }
+        if (realmJob == null) {
+            realmJob = new RealmJob(client);
+        }
+    }
+
     @Override
     public UpdateControl<Realm> reconcile(Realm realm, Context context) {
+        initialize();
         logger.trace("Realm Importer - Reconcile loop started");
         var kcDeployment = new KeycloakDeployment(client);
 
@@ -75,11 +85,9 @@ public class RealmController implements Reconciler<Realm>, ErrorStatusHandler<Re
         var secretName = RealmSecret.getSecretName(kc, realm);
 
         // Create or update the relevant Secret
-        var realmSecret = new RealmSecret(client, jsonMapper);
         realmSecret.handleRealmSecret(secretName, realm, ownerReferences);
 
         // Run the import job and get the result
-        var realmJob = new RealmJob(client);
         var nextStatus = realmJob
                 .handleImportJob(
                         secretName,
