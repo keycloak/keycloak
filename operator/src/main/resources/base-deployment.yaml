@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: keycloak-operator
+  name: keycloak
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+      - args:
+        - start-dev
+        image: quay.io/keycloak/keycloak-x:latest
+        imagePullPolicy: Always
+        name: keycloak
+        ports:
+        - containerPort: 8443
+          protocol: TCP
+        - containerPort: 8080
+          protocol: TCP
+      dnsPolicy: ClusterFirst
+      initContainers:
+      - image: quay.io/keycloak/keycloak-init-container:latest
+        imagePullPolicy: Always
+        name: init-container
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
