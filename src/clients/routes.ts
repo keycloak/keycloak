@@ -9,6 +9,8 @@ import { NewResourceRoute } from "./routes/NewResource";
 import { ResourceDetailsRoute } from "./routes/Resource";
 import { NewScopeRoute } from "./routes/NewScope";
 import { ScopeDetailsRoute } from "./routes/Scope";
+import { NewPermissionRoute } from "./routes/NewPermission";
+import { PermissionDetailsRoute } from "./routes/PermissionDetails";
 
 const routes: RouteDef[] = [
   AddClientRoute,
@@ -21,6 +23,8 @@ const routes: RouteDef[] = [
   ResourceDetailsRoute,
   NewScopeRoute,
   ScopeDetailsRoute,
+  NewPermissionRoute,
+  PermissionDetailsRoute,
 ];
 
 export default routes;

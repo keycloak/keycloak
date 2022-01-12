@@ -180,5 +180,16 @@ export default {
       "A unique name for this scope. The name can be used to uniquely identify a scope, useful when querying for a specific scope.",
     scopeDisplayName:
       "A unique name for this scope. The name can be used to uniquely identify a scope, useful when querying for a specific scope.",
+
+    permissionName: "The name of this permission.",
+    permissionDescription: "A description for this permission.",
+    applyToResourceTypeFlag:
+      "Specifies if this permission should be applied to all resources with a given type. In this case, this permission will be evaluated for all instances of a given resource type.",
+    permissionResources:
+      "Specifies that this permission must be applied to a specific resource instance.",
+    permissionType:
+      "Specifies that this permission must be applied to all resources instances of a given type.",
+    permissionDecisionStrategy:
+      "The decision strategy dictates how the policies associated with a given permission are evaluated and how a final decision is obtained. 'Affirmative' means that at least one policy must evaluate to a positive decision in order for the final decision to be also positive. 'Unanimous' means that all policies must evaluate to a positive decision in order for the final decision to be also positive. 'Consensus' means that the number of positive decisions must be greater than the number of negative decisions. If the number of positive and negative is the same, the final decision will be negative.",
   },
 };

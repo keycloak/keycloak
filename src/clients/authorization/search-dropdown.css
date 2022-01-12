@@ -1,0 +1,9 @@
+.keycloak__client_authentication__searchdropdown {
+  --pf-c-dropdown__toggle--MinWidth: 21rem;
+}
+
+.keycloak__client_authentication__searchdropdown_form {
+  --pf-c-form--m-horizontal__group-label--md--GridColumnWidth: 5rem;
+  --pf-c-form--m-horizontal__group-control--md--GridColumnWidth: 24rem;
+  margin: 0 var(--pf-global--spacer--lg) var(--pf-global--spacer--lg) var(--pf-global--spacer--lg);
+}

@@ -4,9 +4,6 @@ import { useTranslation } from "react-i18next";
 import {
   Button,
   DescriptionList,
-  DescriptionListDescription,
-  DescriptionListGroup,
-  DescriptionListTerm,
   PageSection,
   ToolbarItem,
 } from "@patternfly/react-core";
@@ -33,6 +30,7 @@ import { toNewScope } from "../routes/NewScope";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import useToggle from "../../utils/useToggle";
 import { DeleteScopeDialog } from "./DeleteScopeDialog";
+import { DetailDescription } from "./DetailDescription";
 
 type ScopesProps = {
   clientId: string;
@@ -225,39 +223,16 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
                           isHorizontal
                           className="keycloak_resource_details"
                         >
-                          <DescriptionListGroup>
-                            <DescriptionListTerm>
-                              {t("resources")}
-                            </DescriptionListTerm>
-                            <DescriptionListDescription>
-                              {scope.resources?.map((resource) => (
-                                <span key={resource._id} className="pf-u-pr-sm">
-                                  {resource.name}
-                                </span>
-                              ))}
-                              {scope.resources?.length === 0 && (
-                                <i>{t("common:none")}</i>
-                              )}
-                            </DescriptionListDescription>
-                          </DescriptionListGroup>
-                          <DescriptionListGroup>
-                            <DescriptionListTerm>
-                              {t("associatedPermissions")}
-                            </DescriptionListTerm>
-                            <DescriptionListDescription>
-                              {scope.permissions?.map((permission) => (
-                                <span
-                                  key={permission.id}
-                                  className="pf-u-pr-sm"
-                                >
-                                  {permission.name}
-                                </span>
-                              ))}
-                              {scope.permissions?.length === 0 && (
-                                <i>{t("common:none")}</i>
-                              )}
-                            </DescriptionListDescription>
-                          </DescriptionListGroup>
+                          <DetailDescription
+                            name="resources"
+                            array={scope.resources}
+                            convert={(r) => r.name!}
+                          />
+                          <DetailDescription
+                            name="associatedPermissions"
+                            array={scope.permissions}
+                            convert={(p) => p.name!}
+                          />
                         </DescriptionList>
                       )}
                     </ExpandableRowContent>

@@ -60,6 +60,7 @@ export default {
     decisionStrategies: {
       UNANIMOUS: "Unanimous",
       AFFIRMATIVE: "Affirmative",
+      CONSENSUS: "Consensus",
     },
     importResources: "The following settings and data will be imported:",
     importWarning:
@@ -67,7 +68,15 @@ export default {
     importResourceSuccess: "The resource was successfully imported",
     importResourceError: "Could not import the resource due to {{error}}",
     createResource: "Create resource",
+    emptyPermissions: "No permissions",
+    emptyPermissionInstructions:
+      "If you want to create a permission, please click the button below to create a resource-based or scope-based permission.",
+    noScopeCreateHint:
+      "There is no authorization scope you can't create scope-based permission",
+    noResourceCreateHint:
+      "There are no resources you can't create resource-based permission",
     createResourceBasedPermission: "Create resource-based permission",
+    createScopeBasedPermission: "Create scope-based permission",
     displayName: "Display name",
     type: "Type",
     addUri: "Add URI",
@@ -86,6 +95,7 @@ export default {
     scopes: "Scopes",
     policies: "Policies",
     createPermission: "Create permission",
+    permissionDetails: "Permission details",
     deleteResource: "Permanently delete resource?",
     deleteResourceConfirm:
       "If you delete this resource, some permissions will be affected.",
@@ -93,6 +103,8 @@ export default {
       "The permissions below will be removed when they are no longer used by other resources:",
     resourceDeletedSuccess: "The resource successfully deleted",
     resourceDeletedError: "Could not remove the resource {{error}}",
+    permissions: "Permissions",
+    searchForPermission: "Search for permission",
     deleteScope: "Permanently delete authorization scope?",
     deleteScopeConfirm:
       "If you delete this authorization scope, some permissions will be affected.",
@@ -101,8 +113,18 @@ export default {
     resourceScopeSuccess: "The authorization scope successfully deleted",
     resourceScopeError:
       "Could not remove the authorization scope due to {{error}}",
+    associatedPolicy: "Associated policy",
+    deletePermission: "Permanently delete permission?",
+    deletePermissionConfirm:
+      "Are you sure you want to delete the permission {{permission}}",
+    permissionDeletedSuccess: "Successfully deleted permission",
+    permissionDeletedError: "Could not delete permission due to {{error}}",
+    applyToResourceTypeFlag: "Apply to resource type",
+    resourceType: "Resource type",
+    createPermissionSuccess: "Successfully created the permission",
+    updatePermissionSuccess: "Successfully updated the permission",
+    permissionSaveError: "Could not update the permission due to {{error}}",
     createAuthorizationScope: "Create authorization scope",
-    permissions: "Permissions",
     emptyAuthorizationScopes: "No authorization scopes",
     emptyAuthorizationInstructions:
       "If you want to create authorization scopes, please click the button below to create the authorization scope",

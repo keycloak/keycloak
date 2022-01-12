@@ -1,10 +1,19 @@
+import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
+import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
 
-export default class AuthenticationTab {
+type PermissionType = "resource" | "scope";
+
+export default class AuthorizationTab {
   private tabName = "#pf-tab-authorization-authorization";
   private resourcesTabName = "#pf-tab-41-resources";
+  private scopeTabName = "#pf-tab-42-scopes";
+  private permissionsTabName = "#pf-tab-43-permissions";
   private nameColumnPrefix = "name-column-";
   private createResourceButton = "createResource";
+  private createScopeButton = "no-authorization-scopes-empty-action";
+  private createPermissionDropdown = "permissionCreateDropdown";
+  private permissionResourceDropdown = "#resources";
 
   goToAuthenticationTab() {
     cy.get(this.tabName).click();
@@ -16,8 +25,29 @@ export default class AuthenticationTab {
     return this;
   }
 
+  goToScopeSubTab() {
+    cy.get(this.scopeTabName).click();
+    return this;
+  }
+
+  goToPermissionsSubTab() {
+    cy.get(this.permissionsTabName).click();
+    return this;
+  }
+
   goToCreateResource() {
-    cy.findAllByTestId(this.createResourceButton).click();
+    cy.findByTestId(this.createResourceButton).click();
+    return this;
+  }
+
+  goToCreateScope() {
+    cy.findByTestId(this.createScopeButton).click();
+    return this;
+  }
+
+  goToCreatePermission(type: PermissionType) {
+    cy.findByTestId(this.createPermissionDropdown).click();
+    cy.findByTestId(`create-${type}`).click();
     return this;
   }
 
@@ -33,6 +63,28 @@ export default class AuthenticationTab {
         cy.get(`#${key}`).type(value);
       }
     });
+    return this;
+  }
+
+  fillScopeForm(scope: ScopeRepresentation) {
+    Object.entries(scope).map(([key, value]) => cy.get(`#${key}`).type(value));
+    return this;
+  }
+
+  fillPermissionForm(permission: PolicyRepresentation) {
+    Object.entries(permission).map(([key, value]) =>
+      cy.get(`#${key}`).type(value)
+    );
+    return this;
+  }
+
+  selectResource(name: string) {
+    cy.get(this.permissionResourceDropdown)
+      .click()
+      .parent()
+      .parent()
+      .findByText(name)
+      .click();
     return this;
   }
 
@@ -52,7 +104,7 @@ export default class AuthenticationTab {
   }
 
   pressCancel() {
-    cy.findAllByTestId("cancel").click();
+    cy.findByTestId("cancel").click();
     return this;
   }
 

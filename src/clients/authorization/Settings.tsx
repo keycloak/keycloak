@@ -114,7 +114,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
           <Controller
             name="policyEnforcementMode"
             data-testid="policyEnforcementMode"
-            defaultValue={DECISION_STRATEGY[0]}
+            defaultValue={POLICY_ENFORCEMENT_MODES[0]}
             control={control}
             render={({ onChange, value }) => (
               <>

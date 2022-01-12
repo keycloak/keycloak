@@ -1,15 +1,10 @@
 import React, { useState } from "react";
-import { useTranslation } from "react-i18next";
-import {
-  DescriptionList,
-  DescriptionListGroup,
-  DescriptionListTerm,
-  DescriptionListDescription,
-} from "@patternfly/react-core";
+import { DescriptionList } from "@patternfly/react-core";
 
 import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { DetailDescription } from "./DetailDescription";
 
 import "./detail-cell.css";
 
@@ -22,7 +17,6 @@ type DetailCellProps = {
 };
 
 export const DetailCell = ({ id, clientId, uris }: DetailCellProps) => {
-  const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
   const [scope, setScope] = useState<Scope>();
   const [permissions, setPermissions] =
@@ -53,39 +47,13 @@ export const DetailCell = ({ id, clientId, uris }: DetailCellProps) => {
 
   return (
     <DescriptionList isHorizontal className="keycloak_resource_details">
-      <DescriptionListGroup>
-        <DescriptionListTerm>{t("uris")}</DescriptionListTerm>
-        <DescriptionListDescription>
-          {uris?.map((uri) => (
-            <span key={uri} className="pf-u-pr-sm">
-              {uri}
-            </span>
-          ))}
-          {uris?.length === 0 && <i>{t("common:none")}</i>}
-        </DescriptionListDescription>
-      </DescriptionListGroup>
-      <DescriptionListGroup>
-        <DescriptionListTerm>{t("scopes")}</DescriptionListTerm>
-        <DescriptionListDescription>
-          {scope.map((scope) => (
-            <span key={scope.id} className="pf-u-pr-sm">
-              {scope.name}
-            </span>
-          ))}
-          {scope.length === 0 && <i>{t("common:none")}</i>}
-        </DescriptionListDescription>
-      </DescriptionListGroup>
-      <DescriptionListGroup>
-        <DescriptionListTerm>{t("associatedPermissions")}</DescriptionListTerm>
-        <DescriptionListDescription>
-          {permissions.map((permission) => (
-            <span key={permission.id} className="pf-u-pr-sm">
-              {permission.name}
-            </span>
-          ))}
-          {permissions.length === 0 && <i>{t("common:none")}</i>}
-        </DescriptionListDescription>
-      </DescriptionListGroup>
+      <DetailDescription name="uris" array={uris} />
+      <DetailDescription name="scopes" array={scope} convert={(s) => s.name} />
+      <DetailDescription
+        name="associatedPermissions"
+        array={permissions}
+        convert={(p) => p.name!}
+      />
     </DescriptionList>
   );
 };

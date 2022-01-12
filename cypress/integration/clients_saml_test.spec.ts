@@ -5,7 +5,6 @@ import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import ModalUtils from "../support/util/ModalUtils";
 import AdminClient from "../support/util/AdminClient";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
-import AuthenticationTab from "../support/pages/admin_console/manage/clients/AuthenticationTab";
 
 const loginPage = new LoginPage();
 const masthead = new Masthead();
@@ -108,57 +107,6 @@ describe("Clients SAML tests", () => {
 
       modalUtils.confirmModal();
       cy.findAllByTestId("certificate").should("have.length", 1);
-    });
-  });
-
-  describe("Authentication tab", () => {
-    const clientName = "authenticationTabClient";
-    const authenticationTab = new AuthenticationTab();
-    beforeEach(() => {
-      keycloakBefore();
-      loginPage.logIn();
-      sidebarPage.goToClients();
-    });
-
-    before(async () => {
-      await new AdminClient().createClient({
-        protocol: "openid-connect",
-        clientId: clientName,
-        publicClient: false,
-        authorizationServicesEnabled: true,
-        serviceAccountsEnabled: true,
-        standardFlowEnabled: true,
-      });
-    });
-
-    after(() => {
-      new AdminClient().deleteClient(clientName);
-    });
-
-    it("Should update the resource server settings", () => {
-      listingPage.searchItem(clientName).goToItemDetails(clientName);
-      authenticationTab.goToAuthenticationTab();
-      authenticationTab.setPolicy("DISABLED").saveSettings();
-
-      masthead.checkNotificationMessage("Resource successfully updated");
-    });
-
-    it("Should create a resource", () => {
-      listingPage.searchItem(clientName).goToItemDetails(clientName);
-      authenticationTab.goToAuthenticationTab().goToResourceSubTab();
-      authenticationTab.assertDefaultResource();
-
-      authenticationTab
-        .goToCreateResource()
-        .fillResourceForm({
-          name: "Resource",
-          displayName: "The display name",
-          type: "type",
-          uris: ["one", "two"],
-        })
-        .save();
-
-      masthead.checkNotificationMessage("Resource created successfully");
     });
   });
 });
