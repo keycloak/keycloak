@@ -454,7 +454,7 @@ public class UsersResource {
                             ? ModelToRepresentation.toBriefRepresentation(user)
                             : ModelToRepresentation.toRepresentation(session, realm, user);
                     userRep.setAccess(usersEvaluator.getAccess(user));
-                    if (session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user)) {
+                    if (realm.isBruteForceProtected() && session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user)) {
                         userRep.setEnabled(false);
                     }
                     return userRep;
