@@ -70,21 +70,26 @@ public class RealmImporterController implements Reconciler<RealmImporter>, Error
             return UpdateControl.updateStatus(realm);
         }
 
-        // Write the realm representation secret
-        String content = "";
-        try {
-            content = jsonMapper.writeValueAsString(realm.getSpec().getRealm());
-        } catch (JsonProcessingException cause) {
-            throw new RuntimeException("Failed to read the Realm Representation", cause);
-        }
+        var ownerReferences = getOwnerReferences(realm);
 
-        var realmName = realm.getSpec().getRealm().getRealm();
-        handleRealmSecret(kc, realmName, content);
+        handleRealmSecret(kc, realm, ownerReferences);
 
         // Run the import job and get the result
-        var newStatus = handleImportJob(kc, realmName, realm.getMetadata().getName());
+        var newStatus = handleImportJob(kc, realm, ownerReferences);
 
         if (realm.getStatus() != newStatus) {
+
+            // Transition to DONE
+            if (newStatus.getState() == RealmImporterStatus.State.DONE) {
+                client
+                    .apps()
+                    .deployments()
+                    .inNamespace(kc.getMetadata().getNamespace())
+                    .withName(kc.getMetadata().getName())
+                    .rolling()
+                    .restart();
+            }
+
             realm.setStatus(newStatus);
             return UpdateControl.updateStatus(realm);
         } else {
@@ -92,11 +97,32 @@ public class RealmImporterController implements Reconciler<RealmImporter>, Error
         }
     }
 
+    private List<OwnerReference> getOwnerReferences(RealmImporter realm) {
+        return List.of(
+            new OwnerReferenceBuilder()
+                .withController(true)
+                .withBlockOwnerDeletion(true)
+                .withApiVersion(realm.getApiVersion())
+                .withKind(realm.getKind())
+                .withName(realm.getMetadata().getName())
+                .withUid(realm.getMetadata().getUid())
+                .build());
+    }
+
     private String getSecretName(Deployment deployment) {
         return deployment.getMetadata().getName() + "-realms";
     }
 
-    private void handleRealmSecret(Deployment deployment, String realmName, String content) {
+    private void handleRealmSecret(Deployment deployment, RealmImporter realm, List<OwnerReference> ownerReferences) {
+        // Write the realm representation secret
+        var content = "";
+        try {
+            content = jsonMapper.writeValueAsString(realm.getSpec().getRealm());
+        } catch (JsonProcessingException cause) {
+            throw new RuntimeException("Failed to read the Realm Representation", cause);
+        }
+        var realmName = realm.getSpec().getRealm().getRealm();
+
         var secretName = getSecretName(deployment);
         var namespace = deployment.getMetadata().getNamespace();
         var fileName = realmName + "-realm.json";
@@ -127,13 +153,14 @@ public class RealmImporterController implements Reconciler<RealmImporter>, Error
             }
         } else {
             logger.info("Creating Secret " + secretName);
+
             secretSelector.create(
                     new SecretBuilder()
                             .withNewMetadata()
                             .withName(secretName)
                             .withNamespace(namespace)
                             .addToLabels(MANAGED_BY_LABEL, MANAGED_BY_VALUE)
-                            .withOwnerReferences(deployment.getMetadata().getOwnerReferences())
+                            .withOwnerReferences(ownerReferences)
                             .endMetadata()
                             .addToStringData(fileName, content)
                             .build()
@@ -141,7 +168,9 @@ public class RealmImporterController implements Reconciler<RealmImporter>, Error
         }
     }
 
-    private RealmImporterStatus handleImportJob(Deployment deployment, String realmName, String realmCRName) {
+    private RealmImporterStatus handleImportJob(Deployment deployment, RealmImporter realm, List<OwnerReference> ownerReferences) {
+        var realmName = realm.getSpec().getRealm().getRealm();
+
         var name = "realm-" + realmName + "-importer";
         var namespace = deployment.getMetadata().getNamespace();
         var secretName = getSecretName(deployment);
@@ -191,8 +220,9 @@ public class RealmImporterController implements Reconciler<RealmImporter>, Error
                 .withNewMetadata()
                 .withName(name)
                 .withNamespace(namespace)
-                .addToLabels(PART_OF_LABEL, realmCRName)
+                .addToLabels(PART_OF_LABEL, realm.getMetadata().getName())
                 .addToLabels(MANAGED_BY_LABEL, MANAGED_BY_VALUE)
+                .withOwnerReferences(ownerReferences)
                 .endMetadata()
                 .withNewSpec()
                 .withNewTemplate()
@@ -269,7 +299,7 @@ public class RealmImporterController implements Reconciler<RealmImporter>, Error
                     if (job.getMetadata().getLabels() != null &&
                             job.getMetadata().getLabels().containsKey(PART_OF_LABEL)) {
                         return context.getPrimaryCache()
-                                .list(kc -> kc.getMetadata().getName().equals(job.getMetadata().getLabels().get(PART_OF_LABEL)))
+                                .list(realm -> realm.getMetadata().getName().equals(job.getMetadata().getLabels().get(PART_OF_LABEL)))
                                 .map(ResourceID::fromResource)
                                 .collect(Collectors.toSet());
                     } else {
