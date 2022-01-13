@@ -1,0 +1,78 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+
+<@tmpl.guide
+title="Enabling and disabling features"
+summary="Understand how to configure Keycloak to use optional features">
+
+Keycloak has packed some functionality in features, some of them not enabled by default. These features include features that are in tech preview or deprecated features. In addition there are some features that are enabled by default, but can be disabled if you don't need them for your specific usage scenario.
+
+== Enabling features
+
+Some supported features, and all preview features, are not enabled by default. To enable a feature use:
+
+<@kc.build parameters="--features=<name>[,<name>]"/>
+
+For example to enable `docker` and `token-exchange` use:
+
+<@kc.build parameters="--features=docker,token-exchange"/>
+
+All preview features can be enabled with the special name `preview`:
+
+<@kc.build parameters="--features=preview"/>
+
+== Disabling features
+
+To disable a feature that is enabled by default use:
+
+<@kc.build parameters="--features-disabled=<name>[,<name>]"/>
+
+For example to disable `impersonation` use:
+
+<@kc.build parameters="--features-disabled=impersonation"/>
+
+It is also possible to disable all default features with:
+
+<@kc.build parameters="--features-disabled=default"/>
+
+This can be used in combination with `features` to explicitly set what features should be available. If a feature is
+added both to the `features-disabled` list and the `features` list it will be enabled.
+
+== Supported features
+
+The following list contains supported features that are enabled by default, and can be disabled if not needed.
+
+<@showFeatures ctx.features.supported/>
+
+=== Disabled by default
+
+The following list contains supported features that are not enabled by default, and can be enabled if needed.
+
+<@showFeatures ctx.features.supportedDisabledByDefault/>
+
+== Preview features
+
+Preview features are not enabled by default, and are not recommended for use in production. These features may change, or
+even be removed, in a future release.
+
+<@showFeatures ctx.features.preview/>
+
+== Deprecated features
+
+The following list contains deprecated features that will be removed in a future release. These features are not enabled by default.
+
+<@showFeatures ctx.features.deprecated/>
+
+</@tmpl.guide>
+
+<#macro showFeatures features>
+[cols="1,3",role="features"]
+|===
+<#list features as feature>
+
+|[.features-name]#${feature.name}#
+|[.features-description]#${feature.description}#
+</#list>
+|===
+</#macro>
