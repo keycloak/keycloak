@@ -36,6 +36,7 @@ import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.persistence.Version;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
 import org.hibernate.annotations.TypeDefs;
@@ -53,6 +54,11 @@ public class JpaClientEntity extends AbstractClientEntity implements Serializabl
     @Id
     @Column
     private UUID id;
+
+    //used for implicit optimistic locking
+    @Version
+    @Column
+    private int version;
 
     @Type(type = "jsonb")
     @Column(columnDefinition = "jsonb")
@@ -129,6 +135,10 @@ public class JpaClientEntity extends AbstractClientEntity implements Serializabl
 
     public void setEntityVersion(Integer entityVersion) {
         metadata.setEntityVersion(entityVersion);
+    }
+
+    public int getVersion() {
+        return version;
     }
 
     @Override
