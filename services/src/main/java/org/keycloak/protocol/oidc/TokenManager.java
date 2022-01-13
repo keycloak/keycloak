@@ -1178,7 +1178,7 @@ public class TokenManager {
             if (accessToken != null) {
                 String encodedToken = session.tokens().encode(accessToken);
                 res.setToken(encodedToken);
-                res.setTokenType(TokenUtil.TOKEN_TYPE_BEARER);
+                res.setTokenType(formatTokenType(client));
                 res.setSessionState(accessToken.getSessionState());
                 if (accessToken.getExpiration() != 0) {
                     res.setExpiresIn(accessToken.getExpiration() - Time.currentTime());
@@ -1237,6 +1237,13 @@ public class TokenManager {
             return HashUtils.encodeHashToOIDC(hash);
         }
 
+    }
+
+    private String formatTokenType(ClientModel client) {
+        if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseLowerCaseInTokenResponse()) {
+            return TokenUtil.TOKEN_TYPE_BEARER.toLowerCase();
+        }
+        return TokenUtil.TOKEN_TYPE_BEARER;
     }
 
     public static class RefreshResult {

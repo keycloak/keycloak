@@ -1439,6 +1439,13 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             $scope.useRefreshTokenForClientCredentialsGrant = false;
         }
 
+        var useLowerCaseBearerTypeInTokenResponse = $scope.client.attributes["token.response.type.bearer.lower-case"];
+        if (useLowerCaseBearerTypeInTokenResponse === "true") {
+            $scope.useLowerCaseBearerTypeInTokenResponse = true;
+        } else {
+            $scope.useLowerCaseBearerTypeInTokenResponse = false;
+        }
+
         if ($scope.client.attributes["display.on.consent.screen"]) {
             if ($scope.client.attributes["display.on.consent.screen"] == "true") {
                 $scope.displayOnConsentScreen = true;
@@ -1953,6 +1960,12 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             $scope.clientEdit.attributes["client_credentials.use_refresh_token"] = "true";
         } else {
             $scope.clientEdit.attributes["client_credentials.use_refresh_token"] = "false";
+        }
+
+        if ($scope.useLowerCaseBearerTypeInTokenResponse === true) {
+            $scope.clientEdit.attributes["token.response.type.bearer.lower-case"] = "true";
+        } else {
+            $scope.clientEdit.attributes["token.response.type.bearer.lower-case"] = "false";
         }
 
         if ($scope.displayOnConsentScreen == true) {
