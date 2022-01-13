@@ -1,0 +1,105 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+
+<@tmpl.guide
+title="Enabling and disabling features"
+summary="Understand how to configure Keycloak to use optional features"
+includedOptions="features features.*">
+
+Keycloak has packed some functionality in features, some of them not enabled by default. These features include features that are in tech preview or deprecated features. In addition there are some features that are enabled by default, but can be disabled if you don't need them for your specific usage scenario.
+
+== List of optional features
+
+[cols="4*", options="header"]
+|===
+|Name
+|Description
+|Enabled by default
+|Support level
+
+|account2
+|New Account Management Console
+|Yes
+|Supported
+
+|account_api
+|Account Management REST API
+|Yes
+|Supported
+
+|admin_fine_grained_authz
+|Fine-Grained Admin Permissions
+|No
+|Preview
+
+|ciba
+|OpenID Connect Client Initiated Backchannel Authentication (CIBA)
+|Yes
+|Supported
+
+|client_policies
+|Add client configuration policies
+|Yes
+|Supported
+
+|par
+|OAuth 2.0 Pushed Authorization Requests (PAR)
+|Yes
+|Supported
+
+|declarative_user_profile
+|Configure user profiles using a declarative style
+|No
+|Preview
+
+|docker
+|Docker Registry protocol
+|No
+|Supported
+
+|impersonation
+|Ability for admins to impersonate users
+|Yes
+|Supported
+
+|openshift_integration
+|Extension to enable securing OpenShift
+|No
+|Preview
+
+|scripts
+|Write custom authenticators using JavaScript
+|No
+|Preview
+
+|token_exchange
+|Token Exchange Service
+|No
+|Preview
+
+|upload_scripts
+|Upload scripts
+|No
+|Deprecated
+
+|web_authn
+|W3C Web Authentication (WebAuthn)
+|Yes
+|Preview
+|===
+
+=== Enabling/Disabling features
+
+Features need to be enabled/disabled using the `build` command.
+To enabe a specific feature, for example to enable the ability to use the `token_exchange` functionality, run:
+
+<@kc.build parameters="--features-token_exchange=enabled"/>
+
+To disable it, respectively, run:
+<@kc.build parameters="--features-token_exchange=disabled"/>
+
+If you want to have all preview features enabled at once, you can build the server using
+<@kc.build parameters="--features=preview"/>
+
+</@tmpl.guide>

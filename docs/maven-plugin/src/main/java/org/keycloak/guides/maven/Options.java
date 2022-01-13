@@ -1,9 +1,12 @@
 package org.keycloak.guides.maven;
 
+import org.keycloak.common.Profile;
 import org.keycloak.quarkus.runtime.configuration.mappers.ConfigCategory;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -18,6 +21,21 @@ public class Options {
                 .filter(m -> !m.isHidden())
                 .map(m -> new Option(m.getFrom(), m.getCategory(), m.isBuildTime(), m.getDescription(), m.getDefaultValue(), m.getExpectedValues()))
                 .collect(Collectors.toMap(Option::getKey, o -> o, (o1, o2) -> o1)); // Need to ignore duplicate keys??
+
+        addFeatureOptions(options);
+    }
+
+    private void addFeatureOptions(Map<String, Option> options) {
+
+        options.put(
+                "features",
+                new Option("kc.features", ConfigCategory.FEATURE, true, "Enables all tech preview features.", null, Collections.singleton("preview")));
+
+        for (Profile.Feature feature : Profile.Feature.values()) {
+            options.put("features." + feature.name().toLowerCase(),
+                    new Option("kc.features." + feature.name().toLowerCase(), ConfigCategory.FEATURE, true, "Enables the " + feature.name() + " feature.", null, Arrays.asList("enabled", "disabled")));
+        }
+
     }
 
     public ConfigCategory[] getCategories() {

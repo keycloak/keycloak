@@ -81,6 +81,11 @@
             <groupId>org.freemarker</groupId>
             <artifactId>freemarker</artifactId>
         </dependency>
+        <!-- only to have org.keycloak.common.Profile available. Should be removable again when GH Issue #9549 is solved. -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-common</artifactId>
+        </dependency>
     </dependencies>
 
 </project>
