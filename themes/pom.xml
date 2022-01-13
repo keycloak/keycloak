@@ -71,7 +71,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <nodeVersion>v16.13.0</nodeVersion>
+                    <nodeVersion>${node.version}</nodeVersion>
                     <installDirectory>${project.basedir}</installDirectory>
                 </configuration>
             </plugin>
