@@ -5,6 +5,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import org.jboss.logging.Logger;
 import org.keycloak.operator.v2alpha1.crds.realm.RealmStatus;
 
@@ -15,11 +16,10 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.keycloak.operator.Constants.*;
-import static org.keycloak.operator.v2alpha1.NameUtils.getValidDNSSubdomainName;
 
-public class RealmJob {
+public class RealmJobProvider {
 
-    private final static Logger logger = Logger.getLogger(RealmJob.class);
+    private final static Logger logger = Logger.getLogger(RealmJobProvider.class);
 
     private KubernetesClient client;
 
@@ -33,7 +33,7 @@ public class RealmJob {
     };
 
 
-    public RealmJob(KubernetesClient client) {
+    public RealmJobProvider(KubernetesClient client) {
         this.client = client;
     }
 
@@ -142,9 +142,9 @@ public class RealmJob {
     }
 
     public RealmStatus handleImportJob(String secretName, String realmName, String realmCRName, Deployment deployment, List<OwnerReference> ownerReferences) {
-        var name = getValidDNSSubdomainName("realm-" + realmName + "-importer");
+        var name = KubernetesResourceUtil.sanitizeName("realm-" + realmName + "-importer");
         var namespace = deployment.getMetadata().getNamespace();
-        var volumeName = getValidDNSSubdomainName(secretName + "-volume");
+        var volumeName = KubernetesResourceUtil.sanitizeName(secretName + "-volume");
         var keycloakTemplate = deployment.getSpec().getTemplate();
 
         var keycloakContainer =

@@ -48,15 +48,15 @@ public class RealmController implements Reconciler<Realm>, ErrorStatusHandler<Re
     @Inject
     ObjectMapper jsonMapper;
 
-    private RealmSecret realmSecret = null;
-    private RealmJob realmJob = null;
+    private RealmSecretProvider realmSecretProvider = null;
+    private RealmJobProvider realmJobProvider = null;
 
     private void initialize() {
-        if (realmSecret == null) {
-            realmSecret = new RealmSecret(client, jsonMapper);
+        if (realmSecretProvider == null) {
+            realmSecretProvider = new RealmSecretProvider(client, jsonMapper);
         }
-        if (realmJob == null) {
-            realmJob = new RealmJob(client);
+        if (realmJobProvider == null) {
+            realmJobProvider = new RealmJobProvider(client);
         }
     }
 
@@ -82,13 +82,13 @@ public class RealmController implements Reconciler<Realm>, ErrorStatusHandler<Re
         var ownerReferences = getOwnerReferences(realm);
 
         // Fixed Secret Name
-        var secretName = RealmSecret.getSecretName(kc, realm);
+        var secretName = RealmSecretProvider.getSecretName(kc, realm);
 
         // Create or update the relevant Secret
-        realmSecret.handleRealmSecret(secretName, realm, ownerReferences);
+        realmSecretProvider.handleRealmSecret(secretName, realm, ownerReferences);
 
         // Run the import job and get the result
-        var nextStatus = realmJob
+        var nextStatus = realmJobProvider
                 .handleImportJob(
                         secretName,
                         realm.getSpec().getRealm().getRealm(),

@@ -7,6 +7,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import org.jboss.logging.Logger;
 import org.keycloak.operator.v2alpha1.crds.realm.Realm;
 
@@ -17,24 +18,23 @@ import java.util.List;
 
 import static org.keycloak.operator.Constants.MANAGED_BY_LABEL;
 import static org.keycloak.operator.Constants.MANAGED_BY_VALUE;
-import static org.keycloak.operator.v2alpha1.NameUtils.getValidDNSSubdomainName;
 
-public class RealmSecret {
+public class RealmSecretProvider {
 
-    private final static Logger logger = Logger.getLogger(RealmSecret.class);
+    private final static Logger logger = Logger.getLogger(RealmSecretProvider.class);
 
     private KubernetesClient client;
     private ObjectMapper jsonMapper;
     private Base64.Decoder base64Decoder = Base64.getDecoder();
     private Base64.Encoder base64Encoder = Base64.getEncoder();
 
-    public RealmSecret(KubernetesClient client, ObjectMapper jsonMapper) {
+    public RealmSecretProvider(KubernetesClient client, ObjectMapper jsonMapper) {
         this.client = client;
         this.jsonMapper = jsonMapper;
     }
 
     public static String getSecretName(Deployment deployment, Realm realm) {
-        return getValidDNSSubdomainName(deployment.getMetadata().getName() + "-" + realm.getSpec().getRealm().getRealm() + "-realm");
+        return KubernetesResourceUtil.sanitizeName(deployment.getMetadata().getName() + "-" + realm.getSpec().getRealm().getRealm() + "-realm");
     }
 
     private Secret buildSecret(String name, String namespace, String fileName, String content, List<OwnerReference> ownerReferences) {
