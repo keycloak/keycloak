@@ -123,16 +123,37 @@
         </pluginManagement>
         <plugins>
             <plugin>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-maven-plugin</artifactId>
-            <version>${quarkus.version}</version>
-            <executions>
-                <execution>
-                <goals>
-                    <goal>build</goal>
-                </goals>
-                </execution>
-            </executions>
+                <groupId>io.quarkus</groupId>
+                <artifactId>quarkus-maven-plugin</artifactId>
+                <version>${quarkus.version}</version>
+                <executions>
+                    <execution>
+                    <goals>
+                        <goal>build</goal>
+                    </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                    <id>copy-resources</id>
+                    <phase>validate</phase>
+                    <goals>
+                        <goal>copy-resources</goal>
+                    </goals>
+                    <configuration>
+                        <outputDirectory>${basedir}/target</outputDirectory>
+                        <resources>          
+                        <resource>
+                            <directory>src/main/kubernetes</directory>
+                            <filtering>true</filtering>
+                        </resource>
+                        </resources>              
+                    </configuration>            
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
