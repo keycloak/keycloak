@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -35,10 +36,10 @@ import java.util.stream.Stream;
  * <p/>
  * For example,
  * <p/>
- * for operator {@link ModelCriteriaBuilder.Operator.EQ} we concatenate left operand and right operand with equal sign:
+ * for operator {@link ModelCriteriaBuilder.Operator#EQ} we concatenate left operand and right operand with equal sign:
  * {@code fieldName = :parameterName}
  * <p/>
- * however, for operator {@link ModelCriteriaBuilder.Operator.EXISTS} we add following:
+ * however, for operator {@link ModelCriteriaBuilder.Operator#EXISTS} we add following:
  * <p/>
  * {@code fieldName IS NOT NULL AND fieldName IS NOT EMPTY"}.
  *
@@ -46,7 +47,7 @@ import java.util.stream.Stream;
  * corresponding value is then saved into {@code Map<String, Object>} that is passed to each {@link ExpressionCombinator}.
  */
 public class IckleQueryOperators {
-    private static final String UNWANTED_CHARACTERS_REGEX = "[^a-zA-Z\\d]";
+    private static final Pattern UNWANTED_CHARACTERS_REGEX = Pattern.compile("[^a-zA-Z\\d]");
     public static final String C = "c";
     private static final Map<ModelCriteriaBuilder.Operator, String> OPERATOR_TO_STRING = new HashMap<>();
     private static final Map<ModelCriteriaBuilder.Operator, ExpressionCombinator> OPERATOR_TO_EXPRESSION_COMBINATORS = new HashMap<>();
@@ -123,14 +124,18 @@ public class IckleQueryOperators {
     }
 
     private static String removeForbiddenCharactersFromNamedParameter(String name) {
-        return name.replaceAll(UNWANTED_CHARACTERS_REGEX, "");
+        return UNWANTED_CHARACTERS_REGEX.matcher(name).replaceAll( "");
     }
 
     /**
      * Maps {@code namePrefix} to next available parameter name. For example, if {@code namePrefix == "id"}
      * and {@code existingNames} set already contains {@code id0} and {@code id1} it returns {@code id2}.
+     * Any character that is not an alphanumeric will be stripped, so that it works for prefixes like
+     * {@code "attributes.name"} as well.
      *
-     * This method is used for computing available names for name query parameters
+     * This method is used for computing available names for name query parameters.
+     * Instead of creating generic named parameters that would be hard to debug and read by humans, it creates readable
+     * named parameters from the prefix.
      *
      * @param existingNames set of parameter names that are already used in this Ickle query
      * @param namePrefix name of the parameter

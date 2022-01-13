@@ -304,6 +304,11 @@ public class ConfigurationTest {
         assertEquals("jdbc:postgresql://localhost/keycloak?test=test&test1=test1", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
         assertEquals(QuarkusPostgreSQL10Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
         assertEquals(PGXADataSource.class.getName(), config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
+
+        System.setProperty(CLI_ARGS, "--db-schema=test-schema");
+        config = createConfig();
+        assertEquals("test-schema", config.getConfigValue("kc.db.schema").getValue());
+        assertEquals("test-schema", config.getConfigValue("quarkus.hibernate-orm.database.default-schema").getValue());
     }
 
     // KEYCLOAK-15632
@@ -371,6 +376,13 @@ public class ConfigurationTest {
         assertEquals("mssql", config.getConfigValue("quarkus.datasource.db-kind").getValue());
         assertEquals("com.microsoft.sqlserver.jdbc.SQLServerDriver", config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
         assertEquals("enabled", config.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
+    }
+
+    @Test
+    public void testOptionValueWithEqualSign() {
+        System.setProperty(CLI_ARGS, "--db-password=my_secret=");
+        SmallRyeConfig config = createConfig();
+        assertEquals("my_secret=", config.getConfigValue("kc.db.password").getValue());
     }
 
     private Config.Scope initConfig(String... scope) {

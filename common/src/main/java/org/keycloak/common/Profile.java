@@ -64,7 +64,8 @@ public class Profile {
         CIBA(Type.DEFAULT),
         MAP_STORAGE(Type.EXPERIMENTAL),
         PAR(Type.DEFAULT),
-        DECLARATIVE_USER_PROFILE(Type.PREVIEW);
+        DECLARATIVE_USER_PROFILE(Type.PREVIEW),
+        DYNAMIC_SCOPES(Type.EXPERIMENTAL);
 
         private final Type typeProject;
         private final Type typeProduct;

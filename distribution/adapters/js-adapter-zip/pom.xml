@@ -53,7 +53,7 @@
                             <includeGroupIds>org.keycloak</includeGroupIds>
                             <includeArtifactIds>keycloak-js-adapter</includeArtifactIds>
                             <outputDirectory>${project.build.directory}/unpacked/js-adapter</outputDirectory>
-                            <includes>*.js,*.map,*.d.ts</includes>
+                            <includes>*.js,*.mjs,*.map,*.d.ts</includes>
                             <excludes>**/welcome-content/*</excludes>
                         </configuration>
                     </execution>

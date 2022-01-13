@@ -18,6 +18,7 @@
 package org.keycloak.quarkus.runtime;
 
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuildTimeProperty;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfig;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -107,6 +108,13 @@ public final class Environment {
             System.setProperty("mp.config.profile", profile);
             System.setProperty(ProfileManager.QUARKUS_TEST_PROFILE_PROP, profile);
         }
+    }
+    public static String getCurrentOrPersistedProfile() {
+        String profile = getProfile();
+        if(profile == null) {
+            profile = getConfig().getRawValue(PROFILE);
+        }
+        return profile;
     }
 
     public static String getProfileOrDefault(String defaultProfile) {

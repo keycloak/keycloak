@@ -27,6 +27,10 @@ import io.smallrye.config.EnvConfigSource;
 
 public class KcEnvConfigSource extends EnvConfigSource {
 
+    public KcEnvConfigSource() {
+        super(buildProperties(), 500);
+    }
+
     private static Map<String, String> buildProperties() {
         Map<String, String> properties = new HashMap<>();
 
@@ -40,10 +44,7 @@ public class KcEnvConfigSource extends EnvConfigSource {
         return properties;
     }
 
-    public KcEnvConfigSource() {
-        super(buildProperties(), 350);
-    }
-
+    @Override
     public String getName() {
         return "KcEnvVarConfigSource";
     }

@@ -1439,6 +1439,13 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             $scope.useRefreshTokenForClientCredentialsGrant = false;
         }
 
+        var useLowerCaseBearerTypeInTokenResponse = $scope.client.attributes["token.response.type.bearer.lower-case"];
+        if (useLowerCaseBearerTypeInTokenResponse === "true") {
+            $scope.useLowerCaseBearerTypeInTokenResponse = true;
+        } else {
+            $scope.useLowerCaseBearerTypeInTokenResponse = false;
+        }
+
         if ($scope.client.attributes["display.on.consent.screen"]) {
             if ($scope.client.attributes["display.on.consent.screen"] == "true") {
                 $scope.displayOnConsentScreen = true;
@@ -1953,6 +1960,12 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             $scope.clientEdit.attributes["client_credentials.use_refresh_token"] = "true";
         } else {
             $scope.clientEdit.attributes["client_credentials.use_refresh_token"] = "false";
+        }
+
+        if ($scope.useLowerCaseBearerTypeInTokenResponse === true) {
+            $scope.clientEdit.attributes["token.response.type.bearer.lower-case"] = "true";
+        } else {
+            $scope.clientEdit.attributes["token.response.type.bearer.lower-case"] = "false";
         }
 
         if ($scope.displayOnConsentScreen == true) {
@@ -3262,6 +3275,20 @@ module.controller('ClientScopeDetailCtrl', function($scope, realm, clientScope, 
             $scope.displayOnConsentScreen = true;
         }
 
+        if(serverInfo.featureEnabled("DYNAMIC_SCOPES")) {
+            if ($scope.clientScope.attributes["is.dynamic.scope"]) {
+                if ($scope.clientScope.attributes["is.dynamic.scope"] === "true") {
+                    $scope.isDynamicScope = true;
+                } else {
+                    $scope.isDynamicScope = false;
+                }
+            } else {
+                $scope.isDynamicScope = false;
+            }
+
+            $scope.clientScope.attributes["dynamic.scope.regexp"] = $scope.clientScope.name + ":*";
+        }
+
         if ($scope.clientScope.attributes["include.in.token.scope"]) {
             if ($scope.clientScope.attributes["include.in.token.scope"] == "true") {
                 $scope.includeInTokenScope = true;
@@ -3318,6 +3345,14 @@ module.controller('ClientScopeDetailCtrl', function($scope, realm, clientScope, 
             $scope.clientScope.attributes["display.on.consent.screen"] = "true";
         } else {
             $scope.clientScope.attributes["display.on.consent.screen"] = "false";
+        }
+
+        if(serverInfo.featureEnabled("DYNAMIC_SCOPES")) {
+            if ($scope.isDynamicScope === true) {
+                $scope.clientScope.attributes["is.dynamic.scope"] = "true";
+            } else {
+                $scope.clientScope.attributes["is.dynamic.scope"] = "false";
+            }
         }
 
         if ($scope.includeInTokenScope == true) {

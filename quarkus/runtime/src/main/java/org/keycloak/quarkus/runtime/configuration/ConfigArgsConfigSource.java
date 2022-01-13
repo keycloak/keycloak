@@ -62,8 +62,7 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
     }
 
     protected ConfigArgsConfigSource() {
-        // higher priority over default Quarkus config sources
-        super(parseArgument(), "CliConfigSource", 500);
+        super(parseArgument(), "CliConfigSource", 600);
     }
 
     public static void setCliArgs(String[] args) {
@@ -172,7 +171,7 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
                 continue;
             }
 
-            String[] keyValue = ARG_KEY_VALUE_SPLIT.split(arg);
+            String[] keyValue = ARG_KEY_VALUE_SPLIT.split(arg, 2);
             String key = keyValue[0];
 
             if ("".equals(key.trim())) {

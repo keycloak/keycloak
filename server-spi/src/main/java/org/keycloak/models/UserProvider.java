@@ -202,6 +202,8 @@ public interface UserProvider extends Provider,
      * @param userId id of the user
      * @param clientInternalId id of the client
      * @return {@code true} if the consent was removed, {@code false} otherwise
+     *
+     * TODO: Make this method return Boolean so that store can return "I don't know" answer, this can be used for example in async stores
      */
     boolean revokeConsentForClient(RealmModel realm, String userId, String clientInternalId);
 
@@ -224,6 +226,8 @@ public interface UserProvider extends Provider,
      * @param user the user model
      * @param socialProvider alias of the identity provider, see {@link IdentityProviderModel#getAlias()}
      * @return {@code true} if the association was removed, {@code false} otherwise
+     *
+     * TODO: Make this method return Boolean so that store can return "I don't know" answer, this can be used for example in async stores
      */
     boolean removeFederatedIdentity(RealmModel realm, UserModel user, String socialProvider);
 

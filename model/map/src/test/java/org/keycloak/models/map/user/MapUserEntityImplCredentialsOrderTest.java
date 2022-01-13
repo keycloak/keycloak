@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,30 +20,38 @@ package org.keycloak.models.map.user;
 import org.junit.Before;
 import org.junit.Test;
 import org.hamcrest.Matchers;
-import static org.junit.Assert.assertThat;
-import org.keycloak.credential.CredentialModel;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+import org.keycloak.models.map.common.DeepCloner;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class AbstractUserEntityCredentialsOrderTest {
+public class MapUserEntityImplCredentialsOrderTest {
 
     private MapUserEntity user;
+    private final static DeepCloner CLONER = new DeepCloner.Builder()
+            .constructor(MapUserCredentialEntityImpl.class, MapUserCredentialEntityImpl::new)
+            .build();
     
     @Before
     public void init() {
-        user = new MapUserEntity("1", "realmId");
+        user = new MapUserEntityImpl(CLONER);
         
         for (int i = 1; i <= 5; i++) {
-            UserCredentialEntity credentialModel = new UserCredentialEntity();
+            MapUserCredentialEntity credentialModel = new MapUserCredentialEntityImpl();
             credentialModel.setId(Integer.toString(i));
 
             user.addCredential(credentialModel);
         }
+
+        user.clearUpdatedFlag();
     }
 
     private void assertOrder(Integer... ids) {
-        List<Integer> currentList = user.getCredentials().map(entity -> Integer.valueOf(entity.getId())).collect(Collectors.toList());
+        List<Integer> currentList = user.getCredentials().stream().map(entity -> Integer.valueOf(entity.getId())).collect(Collectors.toList());
         assertThat(currentList, Matchers.contains(ids));
     }
 
@@ -54,32 +62,36 @@ public class AbstractUserEntityCredentialsOrderTest {
 
     @Test
     public void testMoveToZero() {
-        user.moveCredential(2, 0);
+        user.moveCredential("3", null);
         assertOrder(3, 1, 2, 4, 5);
+        assertThat(user.isUpdated(), is(true));
     }
 
     @Test
     public void testMoveBack() {
-        user.moveCredential(3, 1);
+        user.moveCredential("4", "1");
         assertOrder(1, 4, 2, 3, 5);
+        assertThat(user.isUpdated(), is(true));
     }
 
     @Test
     public void testMoveForward() {
-        user.moveCredential(1, 3);
+        user.moveCredential("2", "4");
         assertOrder(1, 3, 4, 2, 5);
+        assertThat(user.isUpdated(), is(true));
     }
 
     @Test
     public void testSamePosition() {
-        user.moveCredential(1, 1);
+        user.moveCredential("2", "1");
         assertOrder(1, 2, 3, 4, 5);
+        assertThat(user.isUpdated(), is(false));
     }
 
     @Test
     public void testSamePositionZero() {
-        user.moveCredential(0, 0);
+        user.moveCredential("1", null);
         assertOrder(1, 2, 3, 4, 5);
+        assertThat(user.isUpdated(), is(false));
     }
-
 }

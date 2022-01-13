@@ -1,13 +1,13 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,363 +17,239 @@
 
 package org.keycloak.models.map.user;
 
-import org.keycloak.models.ModelDuplicateException;
+import org.jboss.logging.Logger;
+import org.keycloak.models.map.annotations.GenerateEntityImplementations;
+import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.EntityWithAttributes;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-/**
- *
- * @author mhajas
- */
-public class MapUserEntity extends UpdatableEntity.Impl implements AbstractEntity, EntityWithAttributes {
+@GenerateEntityImplementations(
+        inherits = "org.keycloak.models.map.user.MapUserEntity.AbstractUserEntity"
+)
+@DeepCloner.Root
+public interface MapUserEntity extends UpdatableEntity, AbstractEntity, EntityWithAttributes {
 
-    private String id;
-    private String realmId;
+    public abstract class AbstractUserEntity extends UpdatableEntity.Impl implements MapUserEntity {
 
-    private String username;
-    private String firstName;
-    private Long createdTimestamp;
-    private String lastName;
-    private String email;
-    private boolean enabled;
-    private boolean emailVerified;
-    // This is necessary to be able to dynamically switch unique email constraints on and off in the realm settings
-    private String emailConstraint = KeycloakModelUtils.generateId();
-    private Map<String, List<String>> attributes = new HashMap<>();
-    private Set<String> requiredActions = new HashSet<>();
-    private final Map<String, UserCredentialEntity> credentials = new HashMap<>();
-    private final List<String> credentialsOrder = new LinkedList<>();
-    private final Map<String, UserFederatedIdentityEntity> federatedIdentities = new HashMap<>();
-    private final Map<String, UserConsentEntity> userConsents = new HashMap<>();
-    private Set<String> groupsMembership = new HashSet<>();
-    private Set<String> rolesMembership = new HashSet<>();
-    private String federationLink;
-    private String serviceAccountClientLink;
-    private int notBefore;
+        private static final Logger LOG = Logger.getLogger(MapUserProvider.class);
+        private String id;
 
-    /**
-     * Flag signalizing that any of the setters has been meaningfully used.
-     */
-
-    public MapUserEntity() {}
-
-    public MapUserEntity(String id, String realmId) {
-        this.id = id;
-        this.realmId = realmId;
-    }
-
-    @Override
-    public String getId() {
-        return this.id;
-    }
-
-    @Override
-    public void setId(String id) {
-        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
-        this.id = id;
-        this.updated |= id != null;
-    }
-
-    @Override
-    public boolean isUpdated() {
-        return this.updated
-                || userConsents.values().stream().anyMatch(UserConsentEntity::isUpdated)
-                || credentials.values().stream().anyMatch(UserCredentialEntity::isUpdated)
-                || federatedIdentities.values().stream().anyMatch(UserFederatedIdentityEntity::isUpdated);
-    }
-
-    public String getRealmId() {
-        return realmId;
-    }
-
-    public void setRealmId(String realmId) {
-        this.updated |= !Objects.equals(this.realmId, realmId);
-        this.realmId = realmId;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.updated |= !Objects.equals(this.username, username);
-        this.username = username;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.updated |= !Objects.equals(this.firstName, firstName);
-        this.firstName = firstName;
-    }
-
-    public Long getCreatedTimestamp() {
-        return createdTimestamp;
-    }
-
-    public void setCreatedTimestamp(Long createdTimestamp) {
-        this.updated |= !Objects.equals(this.createdTimestamp, createdTimestamp);
-        this.createdTimestamp = createdTimestamp;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.updated |= !Objects.equals(this.lastName, lastName);
-        this.lastName = lastName;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email, boolean duplicateEmailsAllowed) {
-        this.updated |= !Objects.equals(this.email, email);
-        this.email = email;
-        this.emailConstraint = email == null || duplicateEmailsAllowed ? KeycloakModelUtils.generateId() : email;
-    }
-
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-        this.updated |= !Objects.equals(this.enabled, enabled);
-        this.enabled = enabled;
-    }
-
-    public boolean isEmailVerified() {
-        return emailVerified;
-    }
-
-    public void setEmailVerified(boolean emailVerified) {
-        this.updated |= !Objects.equals(this.emailVerified, emailVerified);
-        this.emailVerified = emailVerified;
-    }
-
-    public String getEmailConstraint() {
-        return emailConstraint;
-    }
-
-    public void setEmailConstraint(String emailConstraint) {
-        this.updated |= !Objects.equals(this.emailConstraint, emailConstraint);
-        this.emailConstraint = emailConstraint;
-    }
-
-    public Map<String, List<String>> getAttributes() {
-        return attributes;
-    }
-
-    @Override
-    public List<String> getAttribute(String name) {
-        return attributes.getOrDefault(name, Collections.emptyList());
-    }
-
-    @Override
-    public void setAttributes(Map<String, List<String>> attributes) {
-        this.updated |= !Objects.equals(this.attributes, attributes);
-        this.attributes = attributes;
-    }
-
-    @Override
-    public void setAttribute(String name, List<String> value) {
-        this.updated |= !Objects.equals(this.attributes.put(name, value), value);
-    }
-
-    @Override
-    public void removeAttribute(String name) {
-        this.updated |= this.attributes.remove(name) != null;
-    }
-
-    public Set<String> getRequiredActions() {
-        return requiredActions;
-    }
-
-    public void setRequiredActions(Set<String> requiredActions) {
-        this.updated |= !Objects.equals(this.requiredActions, requiredActions);
-        this.requiredActions = requiredActions;
-    }
-
-    public void addRequiredAction(String requiredAction) {
-        this.updated |= this.requiredActions.add(requiredAction);
-    }
-
-    public void removeRequiredAction(String requiredAction) {
-        this.updated |= this.requiredActions.remove(requiredAction);
-    }
-
-    public void updateCredential(UserCredentialEntity credentialEntity) {
-        this.updated |= credentials.replace(credentialEntity.getId(), credentialEntity) != null;
-    }
-
-    public void addCredential(UserCredentialEntity credentialEntity) {
-        if (credentials.containsKey(credentialEntity.getId())) {
-            throw new ModelDuplicateException("A CredentialModel with given id already exists");
+        @Override
+        public boolean isUpdated() {
+            return this.updated
+                    || Optional.ofNullable(getUserConsents()).orElseGet(Collections::emptySet).stream().anyMatch(MapUserConsentEntity::isUpdated)
+                    || Optional.ofNullable(getCredentials()).orElseGet(Collections::emptyList).stream().anyMatch(MapUserCredentialEntity::isUpdated)
+                    || Optional.ofNullable(getFederatedIdentities()).orElseGet(Collections::emptySet).stream().anyMatch(MapUserFederatedIdentityEntity::isUpdated);
         }
 
-        this.updated = true;
-        credentials.put(credentialEntity.getId(), credentialEntity);
-        credentialsOrder.add(credentialEntity.getId());
-    }
-    
-    public boolean removeCredential(String credentialId) {
-        if (!credentials.containsKey(credentialId)) {
-            return false;
+        @Override
+        public void clearUpdatedFlag() {
+            this.updated = false;
+            Optional.ofNullable(getUserConsents()).orElseGet(Collections::emptySet).forEach(UpdatableEntity::clearUpdatedFlag);
+            Optional.ofNullable(getCredentials()).orElseGet(Collections::emptyList).forEach(UpdatableEntity::clearUpdatedFlag);
+            Optional.ofNullable(getFederatedIdentities()).orElseGet(Collections::emptySet).forEach(UpdatableEntity::clearUpdatedFlag);
+
         }
 
-        this.updated = true;
-        this.credentials.remove(credentialId);
-        this.credentialsOrder.remove(credentialId);
+        @Override
+        public String getId() {
+            return this.id;
+        }
 
-        return true;
-    }
-    
-    public UserCredentialEntity getCredential(String id) {
-        return credentials.get(id);
-    }
-    
-    public Stream<UserCredentialEntity> getCredentials() {
-        return credentialsOrder.stream()
-                .map(credentials::get);
-    }
-    
-    public int getCredentialIndex(String credentialId) {
-        return credentialsOrder.indexOf(credentialId);
-    }
-    
-    public void moveCredential(int currentPosition, int newPosition) {
-        this.updated |= currentPosition != newPosition;
-        credentialsOrder.add(newPosition, credentialsOrder.remove(currentPosition));
-    }
+        @Override
+        public void setId(String id) {
+            if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+            this.id = id;
+            this.updated |= id != null;
+        }
 
-    public Stream<UserFederatedIdentityEntity> getFederatedIdentities() {
-        return federatedIdentities.values().stream();
-    }
+        @Override
+        public void setEmail(String email, boolean duplicateEmailsAllowed) {
+            this.setEmail(email);
+            this.setEmailConstraint(email == null || duplicateEmailsAllowed ? KeycloakModelUtils.generateId() : email);
+        }
 
-    public void setFederatedIdentities(Collection<UserFederatedIdentityEntity> federatedIdentities) {
-        this.updated = true;
-        this.federatedIdentities.clear();
-        this.federatedIdentities.putAll(federatedIdentities.stream()
-                .collect(Collectors.toMap(UserFederatedIdentityEntity::getIdentityProvider, Function.identity())));
-    }
-    
-    public void addFederatedIdentity(UserFederatedIdentityEntity federatedIdentity) {
-        String idpId = federatedIdentity.getIdentityProvider();
-        this.updated |= !Objects.equals(this.federatedIdentities.put(idpId, federatedIdentity), federatedIdentity);
-    }
+        @Override
+        public Optional<MapUserConsentEntity> getUserConsent(String clientId) {
+            Set<MapUserConsentEntity> ucs = getUserConsents();
+            if (ucs == null || ucs.isEmpty()) return Optional.empty();
 
-    public UserFederatedIdentityEntity getFederatedIdentity(String federatedIdentity) {
-        return this.federatedIdentities.get(federatedIdentity);
-    }
-    
-    public boolean removeFederatedIdentity(String providerId) {
-        boolean removed = federatedIdentities.remove(providerId) != null;
-        this.updated |= removed;
-        return removed;
-    }
+            return ucs.stream().filter(uc -> Objects.equals(uc.getClientId(), clientId)).findFirst();
+        }
 
-    public void updateFederatedIdentity(UserFederatedIdentityEntity federatedIdentityModel) {
-        this.updated |= federatedIdentities.replace(federatedIdentityModel.getIdentityProvider(), federatedIdentityModel) != null;
-    }
+        @Override
+        public Boolean removeUserConsent(String clientId) {
+            Set<MapUserConsentEntity> consents = getUserConsents();
+            boolean removed = consents != null && consents.removeIf(uc -> Objects.equals(uc.getClientId(), clientId));
+            this.updated |= removed;
+            return removed;
+        }
 
-    public Stream<UserConsentEntity> getUserConsents() {
-        return userConsents.values().stream();
-    }
+        @Override
+        public Optional<MapUserCredentialEntity> getCredential(String id) {
+            List<MapUserCredentialEntity> uce = getCredentials();
+            if (uce == null || uce.isEmpty()) return Optional.empty();
 
-    public UserConsentEntity getUserConsent(String clientId) {
-        return this.userConsents.get(clientId);
-    }
+            return uce.stream().filter(uc -> Objects.equals(uc.getId(), id)).findFirst();
+        }
 
-    
-    public void addUserConsent(UserConsentEntity userConsentEntity) {
-        String clientId = userConsentEntity.getClientId();
-        this.updated |= !Objects.equals(this.userConsents.put(clientId, userConsentEntity), userConsentEntity);
-    }
+        @Override
+        public Boolean removeCredential(String id) {
+            List<MapUserCredentialEntity> credentials = getCredentials();
+            boolean removed = credentials != null && credentials.removeIf(c -> Objects.equals(c.getId(), id));
+            this.updated |= removed;
+            return removed;
+        }
 
-    public boolean removeUserConsent(String clientId) {
-        boolean removed = userConsents.remove(clientId) != null;
-        this.updated |= removed;
-        return removed;
-    }
+        @Override
+        public Boolean moveCredential(String credentialId, String newPreviousCredentialId) {
+            // 1 - Get all credentials from the entity.
+            List<MapUserCredentialEntity> credentialsList = getCredentials();
 
-    public Set<String> getGroupsMembership() {
-        return groupsMembership;
-    }
+            // 2 - Find indexes of our and newPrevious credential
+            int ourCredentialIndex = -1;
+            int newPreviousCredentialIndex = -1;
+            MapUserCredentialEntity ourCredential = null;
+            int i = 0;
+            for (MapUserCredentialEntity credential : credentialsList) {
+                if (credentialId.equals(credential.getId())) {
+                    ourCredentialIndex = i;
+                    ourCredential = credential;
+                } else if(newPreviousCredentialId != null && newPreviousCredentialId.equals(credential.getId())) {
+                    newPreviousCredentialIndex = i;
+                }
+                i++;
+            }
 
-    public void setGroupsMembership(Set<String> groupsMembership) {
-        this.updated |= Objects.equals(groupsMembership, this.groupsMembership);
-        this.groupsMembership = groupsMembership;
-    }
-    
-    public void addGroupsMembership(String groupId) {
-        this.updated |= this.groupsMembership.add(groupId);
-    }
+            if (ourCredentialIndex == -1) {
+                LOG.warnf("Not found credential with id [%s] of user [%s]", credentialId, getUsername());
+                return false;
+            }
 
-    public void removeGroupsMembership(String groupId) {
-        this.updated |= this.groupsMembership.remove(groupId);
-    }
+            if (newPreviousCredentialId != null && newPreviousCredentialIndex == -1) {
+                LOG.warnf("Can't move up credential with id [%s] of user [%s]", credentialId, getUsername());
+                return false;
+            }
 
-    public Set<String> getRolesMembership() {
-        return rolesMembership;
-    }
+            // 3 - Compute index where we move our credential
+            int toMoveIndex = newPreviousCredentialId==null ? 0 : newPreviousCredentialIndex + 1;
 
-    public void setRolesMembership(Set<String> rolesMembership) {
-        this.updated |= Objects.equals(rolesMembership, this.rolesMembership);
-        this.rolesMembership = rolesMembership;
-    }
+            // 4 - Insert our credential to new position, remove it from the old position
+            if (toMoveIndex == ourCredentialIndex) return true;
+            credentialsList.add(toMoveIndex, ourCredential);
+            int indexToRemove = toMoveIndex < ourCredentialIndex ? ourCredentialIndex + 1 : ourCredentialIndex;
+            credentialsList.remove(indexToRemove);
 
-    public void addRolesMembership(String roleId) {
-        this.updated |= this.rolesMembership.add(roleId);
-    }
+            this.updated = true;
+            return true;
+        }
 
-    public void removeRolesMembership(String roleId) {
-        this.updated |= this.rolesMembership.remove(roleId);
-    }
+        @Override
+        public Optional<MapUserFederatedIdentityEntity> getFederatedIdentity(String identityProviderId) {
+            Set<MapUserFederatedIdentityEntity> fes = getFederatedIdentities();
+            if (fes == null || fes.isEmpty()) return Optional.empty();
 
-    public String getFederationLink() {
-        return federationLink;
+            return fes.stream().filter(fi -> Objects.equals(fi.getIdentityProvider(), identityProviderId)).findFirst();
+        }
+
+        @Override
+        public Boolean removeFederatedIdentity(String identityProviderId) {
+            Set<MapUserFederatedIdentityEntity> federatedIdentities = getFederatedIdentities();
+            boolean removed = federatedIdentities != null && federatedIdentities.removeIf(fi -> Objects.equals(fi.getIdentityProvider(), identityProviderId));
+            this.updated |= removed;
+            return removed;
+        }
     }
 
-    public void setFederationLink(String federationLink) {
-        this.updated |= !Objects.equals(this.federationLink, federationLink);
-        this.federationLink = federationLink;
-    }
+    String getRealmId();
+    void setRealmId(String realmId);
 
-    public String getServiceAccountClientLink() {
-        return serviceAccountClientLink;
-    }
+    String getUsername();
+    void setUsername(String username);
 
-    public void setServiceAccountClientLink(String serviceAccountClientLink) {
-        this.updated |= !Objects.equals(this.serviceAccountClientLink, serviceAccountClientLink);
-        this.serviceAccountClientLink = serviceAccountClientLink;
-    }
+    String getFirstName();
+    void setFirstName(String firstName);
 
-    public int getNotBefore() {
-        return notBefore;
-    }
+    Long getCreatedTimestamp();
+    void setCreatedTimestamp(Long createdTimestamp);
 
-    public void setNotBefore(int notBefore) {
-        this.updated |= !Objects.equals(this.notBefore, notBefore);
-        this.notBefore = notBefore;
-    }
+    String getLastName();
+    void setLastName(String lastName);
 
+    String getEmail();
+    void setEmail(String email);
+    @IgnoreForEntityImplementationGenerator
+    void setEmail(String email, boolean duplicateEmailsAllowed);
+
+    Boolean isEnabled();
+    void setEnabled(Boolean enabled);
+
+    Boolean isEmailVerified();
+    void setEmailVerified(Boolean emailVerified);
+
+    String getEmailConstraint();
+    void setEmailConstraint(String emailConstraint);
+
+    Map<String, List<String>> getAttributes();
+    List<String> getAttribute(String name);
+    void setAttributes(Map<String, List<String>> attributes);
+    void setAttribute(String name, List<String> value);
+    void removeAttribute(String name);
+
+    Set<String> getRequiredActions();
+    void setRequiredActions(Set<String> requiredActions);
+    void addRequiredAction(String requiredAction);
+    void removeRequiredAction(String requiredAction);
+
+    List<MapUserCredentialEntity> getCredentials();
+    Optional<MapUserCredentialEntity> getCredential(String id);
+    void setCredentials(List<MapUserCredentialEntity> credentials);
+    void addCredential(MapUserCredentialEntity credentialEntity);
+    Boolean removeCredential(MapUserCredentialEntity credentialEntity);
+    Boolean removeCredential(String id);
+    @IgnoreForEntityImplementationGenerator
+    Boolean moveCredential(String credentialId, String newPreviousCredentialId);
+
+    Set<MapUserFederatedIdentityEntity> getFederatedIdentities();
+    Optional<MapUserFederatedIdentityEntity> getFederatedIdentity(String identityProviderId);
+    void setFederatedIdentities(Set<MapUserFederatedIdentityEntity> federatedIdentities);
+    void addFederatedIdentity(MapUserFederatedIdentityEntity federatedIdentity);
+    Boolean removeFederatedIdentity(MapUserFederatedIdentityEntity providerId);
+    Boolean removeFederatedIdentity(String identityProviderId);
+
+    Set<MapUserConsentEntity> getUserConsents();
+    Optional<MapUserConsentEntity> getUserConsent(String clientId);
+    void setUserConsents(Set<MapUserConsentEntity> userConsentEntity);
+    void addUserConsent(MapUserConsentEntity userConsentEntity);
+    Boolean removeUserConsent(MapUserConsentEntity userConsentEntity);
+    Boolean removeUserConsent(String clientId);
+
+    Set<String> getGroupsMembership();
+    void setGroupsMembership(Set<String> groupsMembership);
+    void addGroupsMembership(String groupId);
+    void removeGroupsMembership(String groupId);
+
+    Set<String> getRolesMembership();
+    void setRolesMembership(Set<String> rolesMembership);
+    void addRolesMembership(String roleId);
+    void removeRolesMembership(String roleId);
+
+    String getFederationLink();
+    void setFederationLink(String federationLink);
+
+    String getServiceAccountClientLink();
+    void setServiceAccountClientLink(String serviceAccountClientLink);
+
+    Integer getNotBefore();
+    void setNotBefore(Integer notBefore);
 }

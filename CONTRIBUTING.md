@@ -20,7 +20,7 @@ Here's a quick checklist for a good PR, more details below:
 3. One feature/change per PR
 4. One commit per PR
 5. PR rebased on main (`git rebase`, not `git pull`) 
-5. Commit message includes link to issue ([linking a pull request to an issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue))
+5. [Good descriptive commit message, with link to issue](#commit-messages-and-issue-linking)
 6. No changes to code not directly related to your PR
 7. Includes functional/integration test
 8. Includes documentation
@@ -92,4 +92,43 @@ for more details.
 The above helps us review your PR and also makes it easier for us to maintain the repository. It is also required by
 our automatic merging process. 
 
+Please, also provide a good description [commit message, with a link to the issue](#commit-messages-and-issue-linking).
 We also require that the commit message includes a link to the issue ([linking a pull request to an issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue)).
+
+### Commit messages and issue linking
+
+The format for a commit message should look like:
+
+```
+A brief descriptive summary
+
+Optionally, more details around how it was implemented
+
+Closes #1234
+``` 
+
+The very last part of the commit message should be a link to the GitHub issue, when done correctly GitHub will automatically link the issue with the PR. There are 3 alternatives provided by GitHub here:
+
+* Closes: Issues in the same repository
+* Fixes: Issues in a different repository (this shouldn't be used, as issues should be created in the correct repository instead)
+* Resolves: When multiple issues are resolved (this should be avoided)
+
+Although, GitHub allows alternatives (close, closed, fix, fixed), please only use the above formats.
+
+Creating multi line commit messages with `git` can be done with:
+
+```
+git commit -m "Summary" -m "Optional description" -m "Closes #1234"
+```
+
+Alternatively, `shift + enter` can be used to add line breaks:
+
+```
+$ git commit -m "Summary
+> 
+> Optional description
+> 
+> Closes #1234"
+```
+
+For more information linking PRs to issues refer to the [GitHub Documentation](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue).

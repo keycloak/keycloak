@@ -187,6 +187,10 @@ module.controller('RealmDropdownCtrl', function($scope, Realm, Current, Auth, $l
 //    Current.realms = Realm.get();
     $scope.current = Current;
 
+    $scope.isCreateEndpoint = function(endpoint) {
+        return $scope.path.length > 1 && $scope.path[0] === 'create' && $scope.path[1] === endpoint;
+    }
+
     $scope.changeRealm = function(selectedRealm) {
         $location.url("/realms/" + selectedRealm);
     }

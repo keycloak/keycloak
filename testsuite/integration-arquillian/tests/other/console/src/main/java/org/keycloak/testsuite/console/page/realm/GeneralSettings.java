@@ -18,58 +18,56 @@
 
 package org.keycloak.testsuite.console.page.realm;
 
+import org.keycloak.testsuite.page.Form;
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.Select;
 
 /**
- *
  * @author Petr Mensik
  */
 
-public class GeneralSettings extends RealmSettings {
+public class GeneralSettings extends Form {
 
     @FindBy(id = "name")
     private WebElement realmName;
-    
+
     @FindBy(id = "enabled")
     private WebElement realmEnabled;
-    
+
     @FindBy(id = "updateProfileOnInitialSocialLogin")
     private WebElement updateProfileOnInitialSocialLogin;
 
     @FindBy(id = "loginTheme")
     private Select loginThemeSelect;
-    
+
     @FindBy(id = "accountTheme")
     private Select accountThemeSelect;
-    
+
     @FindBy(id = "adminTheme")
     private Select adminThemeSelect;
-    
+
     @FindBy(id = "emailTheme")
     private Select emailThemeSelect;
-    
-    @FindBy(className = "btn btn-primary btn-lg")
-    private WebElement saveButton;
-    
-    public void saveSettings() {
-        saveButton.click();
-    }
-    
+
     public void selectLoginTheme(String theme) {
         loginThemeSelect.selectByVisibleText(theme);
     }
-    
-    public void selecAccountTheme(String theme) {
+
+    public void selectAccountTheme(String theme) {
         accountThemeSelect.selectByVisibleText(theme);
     }
-    
+
     public void selectAdminTheme(String theme) {
         adminThemeSelect.selectByVisibleText(theme);
     }
-    
+
     public void selectEmailTheme(String theme) {
         emailThemeSelect.selectByVisibleText(theme);
+    }
+
+    public void setRealmName(String name) {
+        UIUtils.setTextInputValue(realmName, name);
     }
 }
