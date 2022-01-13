@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: keycloak
+# namespace: default
+
+resources:
+  - kubernetes/keycloaks.keycloak.org-v1.yml
+  - kubernetes/realms.keycloak.org-v1.yml
+  - kubernetes/kubernetes.yml
+
+patches:
+  - kubernetes/minikube.yml
+
+replacements:
+- source:
+      name: realmcontroller-jobs-role-binding
+      kind: ClusterRoleBinding
+      fieldPath: metadata.namespace
+  targets:
+  - select:
+      name: realmcontroller-jobs-role-binding
+      kind: ClusterRoleBinding
+    fieldPaths:
+    - subjects.[name=keycloak-operator].namespace

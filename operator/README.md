@@ -33,10 +33,22 @@ Compile the project and generate the Docker image with JIB:
 mvn clean package -Doperator -Dquarkus.container-image.build=true -Dquarkus.kubernetes.deployment-target=minikube
 ```
 
-Install the CRD definition and the operator in the cluster:
+Install the CRD definition and the operator in the cluster in the `keycloak` namespace:
 
 ```bash
-kubectl apply -k .
+kubectl apply -k target
+```
+
+to install in the `default` namespace:
+
+```bash
+kubectl apply -k overlays/default-namespace
+```
+
+Remove the created resources with:
+
+```bash
+kubectl delete -k <previously-used-folder>
 ```
 
 ### Run the operator locally

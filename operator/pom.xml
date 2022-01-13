@@ -138,6 +138,29 @@
                 </execution>
             </executions>
             </plugin>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                    <id>copy-resources</id>
+                    <!-- here the phase you need -->
+                    <phase>validate</phase>
+                    <goals>
+                        <goal>copy-resources</goal>
+                    </goals>
+                    <configuration>
+                        <outputDirectory>${basedir}/target</outputDirectory>
+                        <resources>          
+                        <resource>
+                            <directory>src/main/kubernetes</directory>
+                            <filtering>true</filtering>
+                        </resource>
+                        </resources>              
+                    </configuration>            
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
     
