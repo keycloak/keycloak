@@ -224,7 +224,7 @@ public class TokenVerifier<T extends JsonWebToken> {
      * @return
      */
     public static <T extends JsonWebToken> TokenVerifier<T> create(String tokenString, Class<T> clazz) {
-        return new TokenVerifier(tokenString, clazz);
+        return new TokenVerifier<>(tokenString, clazz);
     }
 
     /**
@@ -237,7 +237,7 @@ public class TokenVerifier<T extends JsonWebToken> {
      * @return
      */
     public static <T extends JsonWebToken> TokenVerifier<T> createWithoutSignature(T token) {
-        return new TokenVerifier(token);
+        return new TokenVerifier<>(token);
     }
 
     /**
@@ -271,6 +271,7 @@ public class TokenVerifier<T extends JsonWebToken> {
         checks.remove(check);
     }
 
+    @SuppressWarnings("unchecked")
     private <P extends Predicate<? super T>> TokenVerifier<T> replaceCheck(Class<? extends Predicate<?>> checkClass, boolean active, P... predicate) {
         removeCheck(checkClass);
         if (active) {
@@ -279,6 +280,7 @@ public class TokenVerifier<T extends JsonWebToken> {
         return this;
     }
 
+    @SuppressWarnings("unchecked")
     private <P extends Predicate<? super T>> TokenVerifier<T> replaceCheck(Predicate<? super T> check, boolean active, P... predicate) {
         removeCheck(check);
         if (active) {
@@ -292,7 +294,8 @@ public class TokenVerifier<T extends JsonWebToken> {
      * @param checks
      * @return
      */
-    public TokenVerifier<T> withChecks(Predicate<? super T>... checks) {
+    @SafeVarargs
+    public final TokenVerifier<T> withChecks(Predicate<? super T>... checks) {
         if (checks != null) {
             this.checks.addAll(Arrays.asList(checks));
         }
@@ -509,6 +512,7 @@ public class TokenVerifier<T extends JsonWebToken> {
      * @param predicates
      * @return
      */
+    @SafeVarargs
     public static <T extends JsonWebToken> Predicate<T> alternative(final Predicate<? super T>... predicates) {
         return new Predicate<T>() {
             @Override
