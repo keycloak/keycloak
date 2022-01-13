@@ -29,6 +29,9 @@ limitations under the License.
             <column name="id" type="UUID">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
+            <column name="version" type="INTEGER" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
             <column name="metadata" type="json"/>
         </createTable>
         <ext:addGeneratedColumn tableName="client">
