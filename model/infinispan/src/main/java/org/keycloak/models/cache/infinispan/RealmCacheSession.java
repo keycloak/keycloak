@@ -594,12 +594,10 @@ public class RealmCacheSession implements CacheRealmProvider {
             roleRemovalInvalidations(role.getId(), role.getName(), client.getId());
         });
         
-        if (client.isServiceAccountsEnabled()) {
-            UserModel serviceAccount = session.users().getServiceAccount(client);
+        UserModel serviceAccount = session.users().getServiceAccount(client);
 
-            if (serviceAccount != null) {
-                session.users().removeUser(realm, serviceAccount);
-            }
+        if (serviceAccount != null) {
+            session.users().removeUser(realm, serviceAccount);
         }
 
         return getClientDelegate().removeClient(realm, id);
