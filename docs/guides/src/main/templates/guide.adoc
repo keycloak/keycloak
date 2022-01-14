@@ -1,11 +1,13 @@
-<#macro guide title summary includedOptions="">
-:title: ${title}
-:summary: ${summary}
+<#macro guide title summary priority=999 includedOptions="">
+:guide-id: ${id}
+:guide-title: ${title}
+:guide-summary: ${summary}
+:guide-priority: ${priority}
 
-[[${ctx.getAnchor(title)}]]
-= {title}
+[[${id}]]
+= ${title}
 
-{summary}
+${summary}
 
 <#nested>
 
@@ -14,6 +16,7 @@
 
 |===
 |Key|CLI|ENV|Description|Default|Values
+
 <#list ctx.options.getOptions(includedOptions) as option>
 |${option.key}
 |${option.keyCli}

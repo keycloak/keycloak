@@ -10,6 +10,7 @@ summary="All the configuration you will ever need and want">
 == ${category.heading}
 |===
 |Key|CLI|ENV|Description|Default|Values
+
 <#list categoryOptions as option>
 |${option.key}
 |${option.keyCli}

@@ -5,6 +5,7 @@
 <@tmpl.guide
 title="Configuring Keycloak to run behind a reverse proxy"
 summary="Understand how to configure Keycloak when using a reverse proxy"
+priority=20
 includedOptions="proxy proxy.*">
 
 It is pretty common nowadays to use a reverse proxy in distributed environments. If you want to use Keycloak together with such a proxy, you can use different proxy modes depending on the proxy and TLS termination in your specific environment:
