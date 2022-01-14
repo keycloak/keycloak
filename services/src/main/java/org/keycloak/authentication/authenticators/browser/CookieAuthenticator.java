@@ -26,6 +26,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
@@ -55,6 +56,7 @@ public class CookieAuthenticator implements Authenticator {
             if (protocol.requireReauthentication(authResult.getSession(), authSession)) {
                 // Full re-authentication, so we start with no loa
                 authSession.setAuthNote(Constants.LEVEL_OF_AUTHENTICATION, String.valueOf(Constants.NO_LOA));
+                context.setForwardedInfoMessage(Messages.REAUTHENTICATE);
                 context.attempted();
             } else if (!AuthenticatorUtil.isLevelOfAuthenticationSatisfied(authSession)) {
                 // Step-up authentication, we keep the loa from the existing user session.

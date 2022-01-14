@@ -461,7 +461,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
             waitForPage(driver, "account already exists", false);
         } catch (Exception e) {
             // this is a workaround to make this test work for both oidc and saml. when doing oidc the browser is redirected to the login page to finish the linking
-            loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+            loginPage.login(bc.getUserPassword());
         }
 
         waitForPage(driver, "account already exists", false);
