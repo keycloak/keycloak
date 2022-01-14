@@ -90,6 +90,8 @@ export default function RealmRoleTabs() {
         throw new Error(t("common:notFound"));
       }
 
+      setRealm(realm);
+
       if (role) {
         const convertedRole = convert(role);
         setRole(convertedRole);
@@ -97,10 +99,8 @@ export default function RealmRoleTabs() {
           setValue(entry[0], entry[1]);
         });
       }
-
-      setRealm(realm);
     },
-    [key]
+    [key, url]
   );
 
   const save = async () => {
