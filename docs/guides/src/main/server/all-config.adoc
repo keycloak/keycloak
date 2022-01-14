@@ -1,6 +1,6 @@
-<#import "/templates/guide.adoc" as template>
+<#import "/templates/guide.adoc" as tmpl>
 
-<@template.guide
+<@tmpl.guide
 title="All configuration"
 summary="All the configuration you will ever need and want">
 
@@ -25,4 +25,4 @@ summary="All the configuration you will ever need and want">
 |===
 </#if>
 </#list>
-</@template.guide>
+</@tmpl.guide>
