@@ -197,7 +197,7 @@ describe("Realm settings events tab tests", () => {
 
   it("Realm header settings", () => {
     sidebarPage.goToRealmSettings();
-    cy.get("#pf-tab-securityDefences-securityDefences").click();
+    cy.findByTestId("rs-security-defenses-tab").click();
     cy.findByTestId("headers-form-tab-save").should("be.disabled");
     cy.get("#xFrameOptions").clear().type("DENY");
     cy.findByTestId("headers-form-tab-save").should("be.enabled").click();
@@ -207,7 +207,7 @@ describe("Realm settings events tab tests", () => {
 
   it("Brute force detection", () => {
     sidebarPage.goToRealmSettings();
-    cy.get("#pf-tab-securityDefences-securityDefences").click();
+    cy.findAllByTestId("rs-security-defenses-tab").click();
     cy.get("#pf-tab-20-bruteForce").click();
 
     cy.findByTestId("brute-force-tab-save").should("be.disabled");

@@ -17,7 +17,10 @@ import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/r
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
+import {
+  routableTab,
+  RoutableTabs,
+} from "../components/routable-tabs/RoutableTabs";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useRealms } from "../context/RealmsContext";
 import { ViewHeader } from "../components/view-header/ViewHeader";
@@ -247,12 +250,14 @@ export const RealmSettingsTabs = ({
       />
       <PageSection variant="light" className="pf-u-p-0">
         <FormProvider {...form}>
-          <KeycloakTabs isBox mountOnEnter>
+          <RoutableTabs isBox mountOnEnter>
             <Tab
-              eventKey="general"
               title={<TabTitleText>{t("general")}</TabTitleText>}
               data-testid="rs-general-tab"
-              aria-label="general-tab"
+              {...routableTab({
+                to: toRealmSettings({ realm: realmName }),
+                history,
+              })}
             >
               <RealmSettingsGeneralTab
                 save={save}
@@ -260,10 +265,12 @@ export const RealmSettingsTabs = ({
               />
             </Tab>
             <Tab
-              eventKey="login"
               title={<TabTitleText>{t("login")}</TabTitleText>}
               data-testid="rs-login-tab"
-              aria-label="login-tab"
+              {...routableTab({
+                to: toRealmSettings({ realm: realmName, tab: "login" }),
+                history,
+              })}
             >
               <RealmSettingsLoginTab
                 refresh={refresh}
@@ -272,18 +279,22 @@ export const RealmSettingsTabs = ({
               />
             </Tab>
             <Tab
-              eventKey="email"
               title={<TabTitleText>{t("email")}</TabTitleText>}
               data-testid="rs-email-tab"
-              aria-label="email-tab"
+              {...routableTab({
+                to: toRealmSettings({ realm: realmName, tab: "email" }),
+                history,
+              })}
             >
               <RealmSettingsEmailTab realm={realm} />
             </Tab>
             <Tab
-              eventKey="themes"
               title={<TabTitleText>{t("themes")}</TabTitleText>}
               data-testid="rs-themes-tab"
-              aria-label="themes-tab"
+              {...routableTab({
+                to: toRealmSettings({ realm: realmName, tab: "themes" }),
+                history,
+              })}
             >
               <RealmSettingsThemesTab
                 save={save}
@@ -291,10 +302,12 @@ export const RealmSettingsTabs = ({
               />
             </Tab>
             <Tab
-              eventKey="keys"
               title={<TabTitleText>{t("realm-settings:keys")}</TabTitleText>}
               data-testid="rs-keys-tab"
-              aria-label="keys-tab"
+              {...routableTab({
+                to: toRealmSettings({ realm: realmName, tab: "keys" }),
+                history,
+              })}
             >
               <Tabs
                 activeKey={activeTab}
@@ -325,18 +338,22 @@ export const RealmSettingsTabs = ({
               </Tabs>
             </Tab>
             <Tab
-              eventKey="events"
               title={<TabTitleText>{t("events")}</TabTitleText>}
               data-testid="rs-realm-events-tab"
-              aria-label="realm-events-tab"
+              {...routableTab({
+                to: toRealmSettings({ realm: realmName, tab: "events" }),
+                history,
+              })}
             >
               <EventsTab />
             </Tab>
             <Tab
-              id="localization"
-              eventKey="localization"
-              data-testid="rs-localization-tab"
               title={<TabTitleText>{t("localization")}</TabTitleText>}
+              data-testid="rs-localization-tab"
+              {...routableTab({
+                to: toRealmSettings({ realm: realmName, tab: "localization" }),
+                history,
+              })}
             >
               <LocalizationTab
                 key={key}
@@ -347,29 +364,43 @@ export const RealmSettingsTabs = ({
               />
             </Tab>
             <Tab
-              id="securityDefences"
-              eventKey="securityDefences"
               title={<TabTitleText>{t("securityDefences")}</TabTitleText>}
+              data-testid="rs-security-defenses-tab"
+              {...routableTab({
+                to: toRealmSettings({
+                  realm: realmName,
+                  tab: "securityDefences",
+                }),
+                history,
+              })}
             >
               <SecurityDefences save={save} reset={() => resetForm(realm)} />
             </Tab>
             <Tab
-              id="sessions"
-              eventKey="sessions"
-              data-testid="rs-sessions-tab"
-              aria-label="sessions-tab"
               title={
                 <TabTitleText>{t("realm-settings:sessions")}</TabTitleText>
               }
+              data-testid="rs-sessions-tab"
+              {...routableTab({
+                to: toRealmSettings({
+                  realm: realmName,
+                  tab: "sessions",
+                }),
+                history,
+              })}
             >
               <RealmSettingsSessionsTab key={key} realm={realm} save={save} />
             </Tab>
             <Tab
-              id="tokens"
-              eventKey="tokens"
-              data-testid="rs-tokens-tab"
-              aria-label="tokens-tab"
               title={<TabTitleText>{t("realm-settings:tokens")}</TabTitleText>}
+              data-testid="rs-tokens-tab"
+              {...routableTab({
+                to: toRealmSettings({
+                  realm: realmName,
+                  tab: "tokens",
+                }),
+                history,
+              })}
             >
               <RealmSettingsTokensTab
                 save={save}
@@ -378,14 +409,19 @@ export const RealmSettingsTabs = ({
               />
             </Tab>
             <Tab
-              eventKey="clientPolicies"
               title={
                 <TabTitleText>
                   {t("realm-settings:clientPolicies")}
                 </TabTitleText>
               }
               data-testid="rs-clientPolicies-tab"
-              aria-label={t("clientPoliciesTab")}
+              {...routableTab({
+                to: toRealmSettings({
+                  realm: realmName,
+                  tab: "clientPolicies",
+                }),
+                history,
+              })}
             >
               <Tabs
                 activeKey={activeTab}
@@ -434,26 +470,37 @@ export const RealmSettingsTabs = ({
             {isFeatureEnabled(Feature.DeclarativeUserProfile) &&
               userProfileEnabled === "true" && (
                 <Tab
-                  eventKey="userProfile"
-                  data-testid="rs-user-profile-tab"
                   title={
                     <TabTitleText>
                       {t("realm-settings:userProfile")}
                     </TabTitleText>
                   }
+                  data-testid="rs-user-profile-tab"
+                  {...routableTab({
+                    to: toRealmSettings({
+                      realm: realmName,
+                      tab: "userProfile",
+                    }),
+                    history,
+                  })}
                 >
                   <UserProfileTab />
                 </Tab>
               )}
             <Tab
-              eventKey="userRegistration"
               title={<TabTitleText>{t("userRegistration")}</TabTitleText>}
               data-testid="rs-userRegistration-tab"
-              aria-label={t("userRegistrationTab")}
+              {...routableTab({
+                to: toRealmSettings({
+                  realm: realmName,
+                  tab: "userRegistration",
+                }),
+                history,
+              })}
             >
               <UserRegistration />
             </Tab>
-          </KeycloakTabs>
+          </RoutableTabs>
         </FormProvider>
       </PageSection>
     </>
