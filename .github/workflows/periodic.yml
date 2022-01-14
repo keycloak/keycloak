@@ -1,0 +1,61 @@
+name: Keycloak Periodic Build
+
+# Purpose of this workflow is to test the build instructions as documented for new developers, as provided on
+# https://github.com/keycloak/keycloak/blob/main/docs/building.md
+# To verify that these instructions work for new developers, this workflow does _not_ make use of caches (mimicking defaults:
+# 'clean' development environment).
+
+on:
+  # This build takes a lot of time. The added value of this being performed on every pull request does not outweigh the
+  # drawback of the lengthy execution time. Therefore, execute it periodically, rather than on every pull request.
+  schedule:
+    - cron: '0 0 * * 0'
+
+jobs:
+  build_keycloak:
+    name: Build Keycloak
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [8, 11]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v1
+        with:
+          java-version: ${{ matrix.java }}
+      - name: Update maven settings
+        run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
+      - name: Build Keycloak
+        run: mvn clean install
+
+  build_zip_distribution:
+    name: Build ZIP distribution
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [8, 11]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v1
+        with:
+          java-version: ${{ matrix.java }}
+      - name: Update maven settings
+        run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
+      - name: Build Keycloak
+        run: mvn clean install -Pdistribution
+
+  build_only_server:
+    name: Build only the server
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [8, 11]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v1
+        with:
+          java-version: ${{ matrix.java }}
+      - name: Update maven settings
+        run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
+      - name: Build Keycloak
+        run: mvn -Pdistribution -pl distribution/server-dist -am -Dmaven.test.skip clean install
