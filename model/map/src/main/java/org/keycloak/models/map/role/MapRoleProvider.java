@@ -70,6 +70,7 @@ public class MapRoleProvider implements RoleProvider {
         entity.setId(id);
         entity.setRealmId(realm.getId());
         entity.setName(name);
+        entity.setClientRole(false);
         if (tx.read(entity.getId()) != null) {
             throw new ModelDuplicateException("Role exists: " + id);
         }
@@ -200,7 +201,8 @@ public class MapRoleProvider implements RoleProvider {
 
         DefaultModelCriteria<RoleModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.NAME, Operator.EQ, name);
+                 .compare(SearchableFields.IS_CLIENT_ROLE, Operator.NE, true)
+                 .compare(SearchableFields.NAME, Operator.EQ, name);
 
         String roleId = tx.read(withCriteria(mcb))
                 .map(entityToAdapterFunc(realm))
@@ -254,6 +256,7 @@ public class MapRoleProvider implements RoleProvider {
         }
         DefaultModelCriteria<RoleModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+                .compare(SearchableFields.IS_CLIENT_ROLE, Operator.NE, true)
                 .or(
                         mcb.compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%"),
                         mcb.compare(SearchableFields.DESCRIPTION, Operator.ILIKE, "%" + search + "%")
