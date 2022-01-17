@@ -4,3 +4,8 @@
 
 {project_name} now supports a glob-like syntax for the user search when listing users in the Admin Console,
 which allows for three different types of searches: prefix (`foo*` which became the default search), infix (`\*foo*`), and exact `"foo"`)
+
+== Offline sessions lazy loaded
+
+The offline sessions are now lazily fetched from the database by default instead of preloading during the server startup.
+To change the default behavior, see link:{adminguide_link}#offline-sessions-preloading[{adminguide_name}].
