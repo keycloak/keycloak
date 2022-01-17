@@ -57,7 +57,7 @@
     "@testing-library/react": "^12.1.1",
     "@testing-library/react-hooks": "^7.0.2",
     "@types/dagre": "^0.7.47",
-    "@types/file-saver": "^2.0.4",
+    "@types/file-saver": "^2.0.5",
     "@types/flat": "^5.0.2",
     "@types/lodash": "^4.14.178",
     "@types/node": "^17.0.8",
