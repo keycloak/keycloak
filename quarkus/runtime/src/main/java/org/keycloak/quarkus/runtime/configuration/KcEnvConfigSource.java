@@ -33,10 +33,12 @@ public class KcEnvConfigSource extends EnvConfigSource {
 
     private static Map<String, String> buildProperties() {
         Map<String, String> properties = new HashMap<>();
+        String kcPrefix = replaceNonAlphanumericByUnderscores(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.toUpperCase());
 
         for (Map.Entry<String, String> entry : System.getenv().entrySet()) {
             String key = entry.getKey();
-            if (key.startsWith(replaceNonAlphanumericByUnderscores(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.toUpperCase()))) {
+
+            if (key.startsWith(kcPrefix)) {
                 properties.put(getMappedPropertyName(key), entry.getValue());
             }
         }

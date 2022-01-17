@@ -107,7 +107,7 @@ public final class Main {
 
     @Option(names = { CONFIG_FILE_SHORT_NAME, CONFIG_FILE_LONG_NAME },
             arity = "1",
-            description = "Set the path to a configuration file. By default, configuration properties are read from the \"keycloak.properties\" file in the \"conf\" directory.",
+            description = "Set the path to a configuration file. By default, configuration properties are read from the \"keycloak.conf\" file in the \"conf\" directory.",
             paramLabel = "file")
     public void setConfigFile(String path) {
         System.setProperty(KeycloakPropertiesConfigSource.KEYCLOAK_CONFIG_FILE_PROP, path);

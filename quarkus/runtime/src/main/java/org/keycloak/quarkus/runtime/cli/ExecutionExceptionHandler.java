@@ -99,7 +99,7 @@ public final class ExecutionExceptionHandler implements CommandLine.IExecutionEx
     private void printErrorHints(PrintWriter errorWriter, Throwable cause) {
         if (cause instanceof FileSystemException) {
             FileSystemException fse = (FileSystemException) cause;
-            ConfigValue httpsCertFile = getConfig().getConfigValue("kc.https.certificate.file");
+            ConfigValue httpsCertFile = getConfig().getConfigValue("kc.https-certificate-file");
 
             if (fse.getFile().equals(Optional.ofNullable(httpsCertFile.getValue()).orElse(null))) {
                 logError(errorWriter, Messages.httpsConfigurationNotSet().getMessage());

@@ -45,7 +45,7 @@ public class CLusteringBuildSteps {
     @Record(ExecutionTime.RUNTIME_INIT)
     @BuildStep
     void configureInfinispan(KeycloakRecorder recorder, BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItems, ShutdownContextBuildItem shutdownContext) {
-        String configFile = getConfigValue("kc.spi.connections-infinispan.quarkus.config-file").getValue();
+        String configFile = getConfigValue("kc.spi-connections-infinispan-quarkus-config-file").getValue();
 
         if (configFile != null) {
             Path configPath = Paths.get(configFile);

@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -45,30 +46,30 @@ import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvi
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS;
 
 /**
- * A configuration source for {@code keycloak.properties}.
+ * A configuration source for {@code keycloak.conf}.
  */
 public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSourceLoader {
 
     private static final Pattern DOT_SPLIT = Pattern.compile("\\.");
     private static final String KEYCLOAK_CONFIG_FILE_ENV = "KC_CONFIG_FILE";
-    private static final String KEYCLOAK_PROPERTIES = "keycloak.properties";
+    private static final String KEYCLOAK_CONF_FILE = "keycloak.conf";
     public static final String KEYCLOAK_CONFIG_FILE_PROP = NS_KEYCLOAK_PREFIX + "config.file";
 
     @Override
     protected String[] getFileExtensions() {
-        return new String[] { "properties" };
+        return new String[] { "conf" };
     }
 
     @Override
     protected ConfigSource loadConfigSource(URL url, int ordinal) throws IOException {
-        return new PropertiesConfigSource(transform(ConfigSourceUtil.urlToMap(url)), KEYCLOAK_PROPERTIES, ordinal);
+        return new PropertiesConfigSource(transform(ConfigSourceUtil.urlToMap(url)), KEYCLOAK_CONF_FILE, ordinal);
     }
 
     public static class InClassPath extends KeycloakPropertiesConfigSource implements ConfigSourceProvider {
 
         @Override
         public List<ConfigSource> getConfigSources(final ClassLoader classLoader) {
-            return loadConfigSources("META-INF/keycloak.properties", 150, classLoader);
+            return loadConfigSources("META-INF/" + KEYCLOAK_CONF_FILE, 150, classLoader);
         }
 
         @Override
@@ -122,7 +123,7 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
                 String homeDir = Environment.getHomeDir();
 
                 if (homeDir != null) {
-                    File file = Paths.get(homeDir, "conf", KeycloakPropertiesConfigSource.KEYCLOAK_PROPERTIES).toFile();
+                    File file = Paths.get(homeDir, "conf", KeycloakPropertiesConfigSource.KEYCLOAK_CONF_FILE).toFile();
 
                     if (file.exists()) {
                         filePath = file.getAbsolutePath();

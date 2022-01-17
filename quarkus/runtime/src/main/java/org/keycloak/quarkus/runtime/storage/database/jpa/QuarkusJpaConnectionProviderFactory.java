@@ -176,7 +176,7 @@ public final class QuarkusJpaConnectionProviderFactory implements JpaConnectionP
 
     @Override
     public String getSchema() {
-        return Configuration.getRawValue("kc.db.schema");
+        return Configuration.getRawValue("kc.db-schema");
     }
 
     @Override
