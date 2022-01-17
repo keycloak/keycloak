@@ -21,3 +21,11 @@
     var(--pf-global--spacer--2xl) - var(--pf-global--spacer--sm)
   );
 }
+
+.pf-c-select.kc-attribute-key-selectable {
+  width: 500px;
+}
+
+.pf-c-select.kc-attribute-value-selectable {
+  width: 350px;
+}

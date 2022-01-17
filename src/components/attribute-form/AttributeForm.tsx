@@ -14,11 +14,19 @@ export type AttributeForm = Omit<RoleRepresentation, "attributes"> & {
 
 export type AttributesFormProps = {
   form: UseFormMethods<AttributeForm>;
+  isKeySelectable?: boolean;
+  selectableValues?: string[];
   save?: (model: AttributeForm) => void;
   reset?: () => void;
 };
 
-export const AttributesForm = ({ form, reset, save }: AttributesFormProps) => {
+export const AttributesForm = ({
+  form,
+  reset,
+  save,
+  isKeySelectable,
+  selectableValues,
+}: AttributesFormProps) => {
   const { t } = useTranslation("roles");
   const noSaveCancelButtons = !save && !reset;
   const {
@@ -32,7 +40,11 @@ export const AttributesForm = ({ form, reset, save }: AttributesFormProps) => {
       onSubmit={save ? handleSubmit(save) : undefined}
     >
       <FormProvider {...form}>
-        <AttributeInput name="attributes" />
+        <AttributeInput
+          isKeySelectable={isKeySelectable}
+          selectableValues={selectableValues}
+          name="attributes"
+        />
       </FormProvider>
       {!noSaveCancelButtons && (
         <ActionGroup className="kc-attributes__action-group">

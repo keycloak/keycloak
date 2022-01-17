@@ -37,6 +37,31 @@ export default {
     searchByName: "Search by name",
     setup: "Setup",
     evaluate: "Evaluate",
+    selectOrTypeAKey: "Select or type a key",
+    custom: "Custom Attribute...",
+    kc: {
+      identity: {
+        authc: {
+          method: "Authentication Method",
+        },
+      },
+      realm: {
+        name: "Realm",
+      },
+      time: {
+        date_time: "Date/Time (MM/dd/yyyy hh:mm:ss)",
+      },
+      client: {
+        network: {
+          ip_address: "Client IPv4 Address",
+          host: "Client Host",
+        },
+        user_agent: "Client/User Agent",
+      },
+    },
+    password: "Password",
+    oneTimePassword: "One-Time Password",
+    kerberos: "Kerberos",
     assignRole: "Assign role",
     unAssignRole: "Unassign",
     removeMappingTitle: "Remove mapping?",

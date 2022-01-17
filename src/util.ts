@@ -140,6 +140,8 @@ export const getBaseUrl = (adminClient: KeycloakAdminClient) => {
   );
 };
 
+export const alphaRegexPattern = /[^A-Za-z]/g;
+
 export const emailRegexPattern =
   /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
