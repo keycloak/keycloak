@@ -154,7 +154,7 @@ describe("User Fed LDAP mapper tests", () => {
     listingPage.itemExist(lastNameMapper, false);
 
     listingPage.itemExist(modifyDateMapper).deleteItem(modifyDateMapper);
-    modalUtils.checkModalTitle(mapperDeleteTitle).confirmModal();
+    modalUtils.checkModalTitle(mapperDeleteTitle).confirmModal(true);
     masthead.checkNotificationMessage(mapperDeletedSuccess, true);
     listingPage.itemExist(modifyDateMapper, false);
   });

@@ -6,8 +6,8 @@ export default class ModalUtils {
   private cancelModalBtn = "#modal-cancel";
   private closeModalBtn = ".pf-c-modal-box .pf-m-plain";
 
-  confirmModal() {
-    cy.get(this.confirmModalBtn).click();
+  confirmModal(force = false) {
+    cy.get(this.confirmModalBtn).click({ force });
 
     return this;
   }
