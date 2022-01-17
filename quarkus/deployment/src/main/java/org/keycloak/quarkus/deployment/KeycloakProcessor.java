@@ -414,7 +414,7 @@ class KeycloakProcessor {
 
     @BuildStep(onlyIf = IsDevelopment.class)
     void configureDevMode(BuildProducer<HotDeploymentWatchedFileBuildItem> hotFiles) {
-        hotFiles.produce(new HotDeploymentWatchedFileBuildItem("META-INF/keycloak.properties"));
+        hotFiles.produce(new HotDeploymentWatchedFileBuildItem("META-INF/keycloak.conf"));
     }
 
     private Map<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> loadFactories(
@@ -591,6 +591,6 @@ class KeycloakProcessor {
     }
 
     private boolean isMetricsEnabled() {
-        return Configuration.getOptionalBooleanValue(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.concat("metrics.enabled")).orElse(false);
+        return Configuration.getOptionalBooleanValue(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.concat("metrics-enabled")).orElse(false);
     }
 }

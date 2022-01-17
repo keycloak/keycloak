@@ -21,6 +21,8 @@ import static java.util.Arrays.asList;
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_SHORT_PREFIX;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_SHORT;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR_CHAR;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getMappedPropertyName;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
@@ -97,7 +99,7 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
             return value;
         }
 
-        return properties.get(propertyName.replace('-', '.'));
+        return properties.get(propertyName.replace(OPTION_PART_SEPARATOR_CHAR, '.'));
     }
 
     private static Map<String, String> parseArgument() {
@@ -127,9 +129,6 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
                 if (mapper != null) {
                     properties.put(mapper.getFrom(), value);
                 }
-
-                // to make lookup easier, we normalize the key
-                properties.put(Picocli.normalizeKey(key), value);
             }
         });
 

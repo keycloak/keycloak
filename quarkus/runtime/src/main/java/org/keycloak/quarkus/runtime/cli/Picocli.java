@@ -17,12 +17,12 @@
 
 package org.keycloak.quarkus.runtime.cli;
 
-import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 import static java.util.Arrays.asList;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_SHORT;
 import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.hasOptionValue;
 import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.parseConfigArgs;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuildTimeProperty;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfig;
 import static org.keycloak.quarkus.runtime.Environment.isDevMode;
@@ -35,7 +35,6 @@ import static picocli.CommandLine.Model.UsageMessageSpec.SECTION_KEY_COMMAND_LIS
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -71,7 +70,6 @@ public final class Picocli {
     public static final String ARG_PREFIX = "--";
     private static final String ARG_KEY_VALUE_SEPARATOR = "=";
     public static final String ARG_SHORT_PREFIX = "-";
-    public static final String ARG_PART_SEPARATOR = "-";
     public static final String NO_PARAM_LABEL = "none";
 
     private Picocli() {
@@ -348,10 +346,10 @@ public final class Picocli {
                     .validate(false);
 
             for(PropertyMapper mapper: mappersInCategory) {
-                String name = ARG_PREFIX + PropertyMappers.toCLIFormat(mapper.getFrom()).substring(3);
+                String name = mapper.getCliFormat();
                 String description = mapper.getDescription();
 
-                if (description == null || cSpec.optionsMap().containsKey(name) || name.endsWith(ARG_PART_SEPARATOR)) {
+                if (description == null || cSpec.optionsMap().containsKey(name) || name.endsWith(OPTION_PART_SEPARATOR)) {
                     //when key is already added or has no description, don't add.
                     continue;
                 }
@@ -376,10 +374,6 @@ public final class Picocli {
 
     public static void println(CommandLine cmd, String message) {
         cmd.getOut().println(message);
-    }
-
-    public static String normalizeKey(String key) {
-        return replaceNonAlphanumericByUnderscores(key).replace('_', '.');
     }
 
     public static List<String> parseArgs(String[] rawArgs) {

@@ -42,7 +42,6 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider {
         }
 
         CONFIG_SOURCES.add(new ConfigArgsConfigSource());
-        CONFIG_SOURCES.add(new SysPropConfigSource());
         CONFIG_SOURCES.add(new KcEnvConfigSource());
         CONFIG_SOURCES.add(PersistedConfigSource.getInstance());
 
