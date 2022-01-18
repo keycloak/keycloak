@@ -1,0 +1,57 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+
+<@tmpl.guide
+title="Configure TLS"
+summary="Learn how to configure Keycloak's https certificates for in- and outgoing requests as well as mTLS."
+includedOptions="https.* http.enabled">
+
+Transport Layer Security (short: TLS) is crucial to exchange data over a secured channel. For production environments, you should never expose Keycloak endpoints through HTTP, as sensitive data is at the core of what Keycloak exchanges with other applications. In this guide you will learn how to configure Keycloak to use HTTPS/TLS.
+
+== Configure TLS in Keycloak
+Keycloak can be configured to load the needed certificate infrastructure using files in PEM format or from a Java KeyStore. When both alternatives are set up, the PEM files takes precedence over the Java KeyStores.
+
+=== Providing certificates in PEM format
+When you use a pair of matching certificate / private key files in PEM format, configure Keycloak to use them by running:
+
+<@kc.start parameters="--https-certificate-file=/path/to/certfile.pem --https-certificate-key-file=/path/to/keyfile.pem"/>
+
+Keycloak creates a keystore out of these files in memory and uses this keystore afterwards.
+
+=== Providing a Java KeyStore
+When no keystore file is configured explicitly, but `http.enabled` is set to false, Keycloak looks for a `conf/server.keystore` file by default.
+
+As an alternative, you can use an existing keystore by running:
+<@kc.start parameters="--https-key-store-file=/path/to/existing-keystore-file"/>
+
+==== Setting the KeyStore password
+You can set a secure password for your keystore using the `https.key-store.password` option:
+<@kc.start parameters="--https-key-store-password=<value>"/>
+If no password is set, the default password `password` is used.
+
+== Configure TLS protocols
+By default, Keycloak does not enable deprecated TLS protocols. In situations where clients only support deprecated protocols, first consider upgrading the client, but as a temporary work-around you can enable deprecated protocols with:
+
+<@kc.start parameters="--https-protocols=<protocol>[,<protocol>]"/>
+
+To also allow TLSv1.2, use for example `kc.sh start --http-protocols=TLSv1.3,TLSv1.2`.
+
+== Switch the HTTPS port
+Keycloak listens for HTTPS traffic on port `8443` by default. To change this port, use:
+<@kc.start parameters="--https-port=<port>"/>
+
+== Using a truststore
+Keycloak uses a truststore to store certificates to verify clients that are communicating with Keycloak, e.g. to use mutualTLS, certificate-bound tokens or X.509 authentication. This truststore is used for outgoing https requests as well as mTLS requests.
+
+You can configure the location of this truststore by running:
+<@kc.start parameters="--https-trust-store-file=/path/to/file"/>
+
+=== Setting the truststore password
+You can set a secure password for your truststore using the `https.trust-store.password` option:
+<@kc.start parameters="--https.trust-store.password=<value>"/>
+If no password is set, the default password `password` is used.
+
+== Securing credentials
+We recommend to not set any password in plaintext via the CLI or in `conf/keycloak.properties`, but instead using good practices such as using a vault / mounted secret. Please refer to the Vault Guide / Production deployment guide for more advice.
+
+</@tmpl.guide>
