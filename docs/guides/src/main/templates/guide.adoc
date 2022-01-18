@@ -7,8 +7,6 @@
 [[${id}]]
 = ${title}
 
-${summary}
-
 <#nested>
 
 <#if includedOptions?has_content>
