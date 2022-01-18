@@ -115,13 +115,18 @@ export const LocalizationTab = ({
 
   useFetch(
     async () => {
-      let result = await adminClient.realms.getRealmLocalizationTexts({
-        first,
-        max,
-        realm: realm.realm!,
-        selectedLocale:
-          selectMenuLocale || getValues("defaultLocale") || whoAmI.getLocale(),
-      });
+      let result = await adminClient.realms
+        .getRealmLocalizationTexts({
+          first,
+          max,
+          realm: realm.realm!,
+          selectedLocale:
+            selectMenuLocale ||
+            getValues("defaultLocale") ||
+            whoAmI.getLocale(),
+        })
+        // prevents server error in dev mode due to snowpack
+        .catch(() => []);
 
       const searchInBundles = (idx: number) => {
         return Object.entries(result).filter((i) => i[idx].includes(filter));
@@ -405,17 +410,20 @@ export const LocalizationTab = ({
                       isOpen={supportedLocalesOpen}
                       placeholderText={t("selectLocales")}
                     >
-                      {themeTypes.login![0].locales.map(
-                        (locale: string, idx: number) => (
-                          <SelectOption
-                            selected={value.includes(locale)}
-                            key={`locale-${idx}`}
-                            value={locale}
-                          >
-                            {t(`allSupportedLocales.${locale}`)}
-                          </SelectOption>
+                      {
+                        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                        themeTypes.login![0].locales?.map(
+                          (locale: string, idx: number) => (
+                            <SelectOption
+                              selected={value.includes(locale)}
+                              key={`locale-${idx}`}
+                              value={locale}
+                            >
+                              {t(`allSupportedLocales.${locale}`)}
+                            </SelectOption>
+                          )
                         )
-                      )}
+                      }
                     </Select>
                   )}
                 />
