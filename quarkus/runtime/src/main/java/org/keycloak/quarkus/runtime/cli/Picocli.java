@@ -300,7 +300,7 @@ public final class Picocli {
 
     private static void addFeatureOptions(CommandSpec commandSpec) {
         ArgGroupSpec.Builder featureGroupBuilder = ArgGroupSpec.builder()
-                .heading(ConfigCategory.FEATURE.getHeading())
+                .heading(ConfigCategory.FEATURE.getHeading() + ":")
                 .order(ConfigCategory.FEATURE.getOrder())
                 .validate(false);
 
@@ -341,7 +341,7 @@ public final class Picocli {
             }
 
             ArgGroupSpec.Builder argGroupBuilder = ArgGroupSpec.builder()
-                    .heading(category.getHeading())
+                    .heading(category.getHeading() + ":")
                     .order(category.getOrder())
                     .validate(false);
 

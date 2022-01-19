@@ -41,7 +41,7 @@ public class Options {
         return this.options.values().stream().filter(o -> o.getKey().matches(r)).collect(Collectors.toList());
     }
 
-    public static class Option {
+    public class Option {
 
         private String key;
         private ConfigCategory category;
@@ -76,7 +76,22 @@ public class Options {
         }
 
         public String getDescription() {
-            return description;
+            int i = description.indexOf('.');
+            if (i == -1) {
+                return description;
+            } else {
+                return description.substring(0, i + 1).trim();
+            }
+        }
+
+        public String getDescriptionExtended() {
+            int i = description.indexOf('.');
+            if (i == -1) {
+                return null;
+            } else {
+                String extended = description.substring(i + 1).trim();
+                return extended.length() > 0 ? extended : null;
+            }
         }
 
         public String getDefaultValue() {
