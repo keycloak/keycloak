@@ -159,8 +159,9 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     @Override
     public String getScopeString() {
-        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+        if(Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
             String scopeParam = buildScopesStringFromAuthorizationRequest();
+            logger.tracef("Generated scope param with Dynamic Scopes enabled: %1s", scopeParam);
             String scopeSent = clientSession.getNote(OAuth2Constants.SCOPE);
             if (TokenUtil.isOIDCRequest(scopeSent)) {
                 scopeParam = TokenUtil.attachOIDCScope(scopeParam);
@@ -214,18 +215,22 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     @Override
     public AuthorizationRequestContext getAuthorizationRequestContext() {
-        if (!Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+        return DefaultClientSessionContext.getAuthorizationRequestContext(this.session, clientSession.getNote(OAuth2Constants.SCOPE));
+    }
+
+    public static AuthorizationRequestContext getAuthorizationRequestContext(KeycloakSession keycloakSession, String scopes) {
+        if(!Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
             throw new RuntimeException("The Dynamic Scopes feature is not enabled and the AuthorizationRequestContext hasn't been generated");
         }
-        AuthorizationRequestParserProvider clientScopeParser = session.getProvider(AuthorizationRequestParserProvider.class,
+        AuthorizationRequestParserProvider clientScopeParser = keycloakSession.getProvider(AuthorizationRequestParserProvider.class,
                 ClientScopeAuthorizationRequestParserProviderFactory.CLIENT_SCOPE_PARSER_ID);
 
-        if (clientScopeParser == null) {
+        if(clientScopeParser == null) {
             throw new RuntimeException(String.format("No provider found for authorization requests parser %1s",
                     ClientScopeAuthorizationRequestParserProviderFactory.CLIENT_SCOPE_PARSER_ID));
         }
 
-        return clientScopeParser.parseScopes(clientSession.getNote(OAuth2Constants.SCOPE));
+        return clientScopeParser.parseScopes(scopes);
     }
 
     // Loading data

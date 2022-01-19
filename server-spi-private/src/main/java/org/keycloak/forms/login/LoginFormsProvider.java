@@ -18,10 +18,10 @@
 package org.keycloak.forms.login;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
-import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.provider.Provider;
+import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -104,7 +104,7 @@ public interface LoginFormsProvider extends Provider {
 
     LoginFormsProvider setClientSessionCode(String accessCode);
 
-    LoginFormsProvider setAccessRequest(List<ClientScopeModel> clientScopesRequested);
+    LoginFormsProvider setAccessRequest(List<AuthorizationDetails> clientScopesRequested);
 
     /**
      * Set one global error message.
