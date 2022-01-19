@@ -53,7 +53,10 @@ endif::[]
 * <<_saml_jboss_adapter,JBoss EAP>>
 ifeval::[{project_community}==true]
 * <<_saml_jboss_adapter,WildFly>>
-* <<_tomcat_adapter,Tomcat>>
+* <<_saml-tomcat-adapter,Tomcat>>
+endif::[]
+* <<_java-servlet-filter-adapter,Servlet filter>>
+ifeval::[{project_community}==true]
 * <<_jetty_saml_adapter,Jetty>>
 endif::[]
 
