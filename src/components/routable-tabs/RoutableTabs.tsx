@@ -13,17 +13,23 @@ import React, {
 } from "react";
 import { useLocation } from "react-router-dom";
 
+// TODO: Remove the custom 'children' props and type once the following issue has been resolved:
+// https://github.com/patternfly/patternfly-react/issues/6766
 type ChildElement = ReactElement<TabProps, JSXElementConstructor<TabProps>>;
 type Child = ChildElement | boolean | null | undefined;
 
 // TODO: Figure out why we need to omit 'ref' from the props.
-type RoutableTabsProps = { children: Child | Child[] } & Omit<
+type RoutableTabsProps = {
+  children: Child | Child[];
+  defaultLocation?: LocationDescriptorObject;
+} & Omit<
   TabsProps,
-  "ref" | "activeKey" | "component" | "children"
+  "ref" | "activeKey" | "defaultActiveKey" | "component" | "children"
 >;
 
 export const RoutableTabs = ({
   children,
+  defaultLocation,
   ...otherProps
 }: RoutableTabsProps) => {
   const { pathname } = useLocation();
@@ -44,7 +50,9 @@ export const RoutableTabs = ({
 
   return (
     <Tabs
-      activeKey={exactMatch ?? nearestMatch ?? pathname}
+      activeKey={
+        exactMatch ?? nearestMatch ?? defaultLocation?.pathname ?? pathname
+      }
       component={TabsComponent.nav}
       inset={{
         default: "insetNone",
