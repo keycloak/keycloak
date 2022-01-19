@@ -44,7 +44,7 @@ limitations under the License.
         <createIndex tableName="client" indexName="client_entityVersion">
             <column name="entityversion"/>
         </createIndex>
-        <createIndex tableName="client" indexName="client_realmId_clientId">
+        <createIndex tableName="client" indexName="client_realmId_clientId" unique="true">
             <column name="realmid"/>
             <column name="clientid"/>
         </createIndex>
