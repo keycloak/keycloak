@@ -188,7 +188,7 @@
                   <span class="pf-c-button__icon pf-m-start">
                       <i class="pf-icon pf-icon-arrow" aria-hidden="true"></i>
                   </span>
-                  ${msg("backTo",referrerName)}
+                  ${msg("backToAdminConsole")}
               </a>
             </div>
             </#if>
