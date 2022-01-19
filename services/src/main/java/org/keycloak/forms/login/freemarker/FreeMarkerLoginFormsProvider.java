@@ -46,7 +46,6 @@ import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.forms.login.freemarker.model.VerifyProfileBean;
 import org.keycloak.forms.login.freemarker.model.X509ConfirmBean;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -54,6 +53,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
@@ -100,7 +100,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     protected String accessCode;
     protected Response.Status status;
     protected javax.ws.rs.core.MediaType contentType;
-    protected List<ClientScopeModel> clientScopesRequested;
+    protected List<AuthorizationDetails> clientScopesRequested;
     protected Map<String, String> httpResponseHeaders = new HashMap<>();
     protected URI actionUri;
     protected String execution;
@@ -767,7 +767,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     @Override
-    public LoginFormsProvider setAccessRequest(List<ClientScopeModel> clientScopesRequested) {
+    public LoginFormsProvider setAccessRequest(List<AuthorizationDetails> clientScopesRequested) {
         this.clientScopesRequested = clientScopesRequested;
         return this;
     }

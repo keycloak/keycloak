@@ -659,6 +659,11 @@ public class TokenManager {
             requestedScopes.remove(OAuth2Constants.SCOPE_OPENID);
         }
 
+        if (logger.isTraceEnabled()) {
+            logger.tracef("Rar scopes to validate requested scopes against: %1s", String.join(" ", rarScopes));
+            logger.tracef("Requested scopes: %1s", String.join(" ", requestedScopes));
+        }
+
         for (String requestedScope : requestedScopes) {
             // We keep the check to the getDynamicClientScope for the OpenshiftSAClientAdapter
             if (!rarScopes.contains(requestedScope) && client.getDynamicClientScope(requestedScope) == null) {
@@ -667,7 +672,7 @@ public class TokenManager {
         }
         return true;
     }
-    
+
     public static boolean isValidScope(String scopes, ClientModel client) {
         if (scopes == null) {
             return true;

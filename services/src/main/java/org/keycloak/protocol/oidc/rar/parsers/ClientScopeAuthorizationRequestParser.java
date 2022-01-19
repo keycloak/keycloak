@@ -16,6 +16,7 @@
  */
 package org.keycloak.protocol.oidc.rar.parsers;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -45,6 +46,8 @@ import static org.keycloak.representations.AuthorizationDetailsJSONRepresentatio
  * @author <a href="mailto:dgozalob@redhat.com">Daniel Gozalo</a>
  */
 public class ClientScopeAuthorizationRequestParser implements AuthorizationRequestParserProvider {
+
+    protected static final Logger logger = Logger.getLogger(ClientScopeAuthorizationRequestParser.class);
 
     /**
      * This parser will be created on a per-request basis. When the adapter is created, the request's client is passed

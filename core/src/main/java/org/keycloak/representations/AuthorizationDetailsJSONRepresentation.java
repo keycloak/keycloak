@@ -137,6 +137,13 @@ public class AuthorizationDetailsJSONRepresentation implements Serializable {
         return null;
     }
 
+    public String getDynamicScopeParamFromCustomData() {
+        if(this.getType().equalsIgnoreCase(DYNAMIC_SCOPE_RAR_TYPE)) {
+            return (String) this.customData.get("scope_parameter");
+        }
+        return null;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
