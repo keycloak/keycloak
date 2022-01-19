@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   Alert,
@@ -30,6 +30,7 @@ import { toCreateResource } from "../routes/NewResource";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toResourceDetails } from "../routes/Resource";
 import { MoreLabel } from "./MoreLabel";
+import { toNewPermission } from "../routes/NewPermission";
 
 type ResourcesProps = {
   clientId: string;
@@ -41,6 +42,7 @@ type ExpandableResourceRepresentation = ResourceRepresentation & {
 
 export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
   const { t } = useTranslation("clients");
+  const history = useHistory();
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
@@ -221,6 +223,14 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
                         title: t("createPermission"),
                         className: "pf-m-link",
                         isOutsideDropdown: true,
+                        onClick: () =>
+                          history.push(
+                            toNewPermission({
+                              realm,
+                              id: clientId,
+                              permissionType: "resource",
+                            })
+                          ),
                       },
                     ],
                   }}

@@ -31,6 +31,7 @@ import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState
 import useToggle from "../../utils/useToggle";
 import { DeleteScopeDialog } from "./DeleteScopeDialog";
 import { DetailDescription } from "./DetailDescription";
+import { toNewPermission } from "../routes/NewPermission";
 
 type ScopesProps = {
   clientId: string;
@@ -210,6 +211,14 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
                           title: t("createPermission"),
                           className: "pf-m-link",
                           isOutsideDropdown: true,
+                          onClick: () =>
+                            history.push(
+                              toNewPermission({
+                                realm,
+                                id: clientId,
+                                permissionType: "resource",
+                              })
+                            ),
                         },
                       ],
                     }}
