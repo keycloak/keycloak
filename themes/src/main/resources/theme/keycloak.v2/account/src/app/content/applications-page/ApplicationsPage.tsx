@@ -140,7 +140,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
               <DataListItem id="applications-list-header" aria-labelledby="Columns names">
                 <DataListItemRow>
                   // invisible toggle allows headings to line up properly
-                  <span style={{ visibility: 'hidden' }}>
+                  <span style={{ visibility: 'hidden', height: 55 }}>
                     <DataListToggle
                       isExpanded={false}
                       id='applications-list-header-invisible-toggle'
@@ -149,13 +149,13 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                   </span>
                   <DataListItemCells
                     dataListCells={[
-                      <DataListCell key='applications-list-client-id-header' width={2}>
+                      <DataListCell key='applications-list-client-id-header' width={2} className="pf-u-pt-md">
                         <strong><Msg msgKey='applicationName' /></strong>
                       </DataListCell>,
-                      <DataListCell key='applications-list-app-type-header' width={2}>
+                      <DataListCell key='applications-list-app-type-header' width={2} className="pf-u-pt-md">
                         <strong><Msg msgKey='applicationType' /></strong>
                       </DataListCell>,
-                      <DataListCell key='applications-list-status' width={2}>
+                      <DataListCell key='applications-list-status' width={2} className="pf-u-pt-md">
                         <strong><Msg msgKey='status' /></strong>
                       </DataListCell>,
                     ]}
@@ -192,7 +192,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                   </DataListItemRow>
                   
                   <DataListContent
-                    className="pf-u-pl-4xl"
+                    className="pf-u-pl-35xl"
                     hasNoPadding={false}
                     aria-label={Msg.localize('applicationDetails')}
                     id={this.elementId("expandable", application)}

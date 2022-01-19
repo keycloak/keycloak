@@ -108,3 +108,17 @@
     --pf-c-description-list--GridTemplateColumns--count: 5;
   }
 }
+
+/* Signing in screen */
+.cred-title:first-letter{
+  text-transform: capitalize
+}
+
+/* Applications screen */
+#applications-list-header .pf-c-data-list__item-content {
+  --pf-c-data-list__item-content--md--PaddingBottom: 1rem;
+}
+
+.pf-u-pl-35xl {
+  padding-left: 4.5rem;
+}

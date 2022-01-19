@@ -184,7 +184,12 @@
         <div class="pf-c-page__header-tools">
             <#if referrer?has_content && referrer_uri?has_content>
             <div class="pf-c-page__header-tools-group pf-m-icons">
-              <a id="landingReferrerLink" href="${referrer_uri}" id="referrer" tabindex="0"><span class="pf-icon pf-icon-arrow"></span>${msg("backTo",referrerName)}</a>
+              <a id="landingReferrerLink" href="${referrer_uri}" class="pf-c-button pf-m-link" tabindex="0">
+                  <span class="pf-c-button__icon pf-m-start">
+                      <i class="pf-icon pf-icon-arrow" aria-hidden="true"></i>
+                  </span>
+                  ${msg("backTo",referrerName)}
+              </a>
             </div>
             </#if>
 
@@ -222,45 +227,51 @@
       </header>
 
       <main role="main" class="pf-c-page__main">
-        <section class="pf-c-page__main-section pf-m-light">
-          <div class="pf-c-content" id="landingWelcomeMessage">
-            <h1>${msg("accountManagementWelcomeMessage")}</h1>
-          </div>
-        </section>
-        <section class="pf-c-page__main-section">
-          <div class="pf-l-gallery pf-m-gutter">
-            <#assign content=theme.apply("content.json")?eval>
-            <#list content as item>
-              <div class="pf-l-gallery__item pf-c-card" id="landing-${item.id}">
-                <div>
-                  <div class="pf-c-card__header pf-c-content" style="flex-direction:column;align-items:flex-start">
-                      <h2 class="pf-u-display-flex pf-u-flex-direction-column" style="margin-bottom:1rem">
-                        <#if item.icon??>
-                          <i class="pf-icon ${item.icon}"></i>&nbsp;
-                        <#elseif item.iconSvg??>
-                          <img src="${item.iconSvg}" alt="icon"/>&nbsp;
-                        </#if>
-                        ${msg(item.label)}
-                      </h2>
-                      <#if item.descriptionLabel??>
-                        <p>${msg(item.descriptionLabel)}</p>
-                      </#if>
-                  </div>
-                  <div class="pf-c-card__body pf-c-content">
-                    <#if item.content??>
-                      <#list item.content as sub>
-                        <div id="landing-${sub.id}">
-                          <a onclick="toggleReact(); window.location.hash='${sub.path}'">${msg(sub.label)}</a>
-                        </div>
-                      </#list>
-                    <#else>
-                      <a id="landing-${item.id}" onclick="toggleReact(); window.location.hash = '${item.path}'">${msg(item.label)}</a>
-                    </#if>
-                  </div>
+        <section class="pf-c-page__main-section pf-m-limit-width pf-m-light pf-m-shadow-bottom">
+            <div class="pf-c-page__main-body">
+                <div class="pf-c-content" id="landingWelcomeMessage">
+                    <h1>${msg("accountManagementWelcomeMessage")}</h1>
                 </div>
-              </div>
-            </#list>
-          </div>
+            </div>
+        </section>
+        <section class="pf-c-page__main-section pf-m-limit-width pf-m-overflow-scroll">
+            <div class="pf-c-page__main-body">
+                <div class="pf-l-gallery pf-m-gutter">
+                    <#assign content=theme.apply("content.json")?eval>
+                    <#list content as item>
+                        <div class="pf-l-gallery__item" id="landing-${item.id}">
+                            <div class="pf-c-card pf-m-full-height">
+                                <div>
+                                    <div class="pf-c-card__title pf-c-content">
+                                        <h2 class="pf-u-display-flex pf-u-w-100 pf-u-flex-direction-column">
+                                            <#if item.icon??>
+                                                <i class="pf-icon ${item.icon}"></i>
+                                            <#elseif item.iconSvg??>
+                                                <img src="${item.iconSvg}" alt="icon"/>
+                                            </#if>
+                                            ${msg(item.label)}
+                                        </h2>
+                                    </div>
+                                    <div class="pf-c-card__body">
+                                        <#if item.descriptionLabel??>
+                                            <p class="pf-u-mb-md">${msg(item.descriptionLabel)}</p>
+                                        </#if>
+                                        <#if item.content??>
+                                            <#list item.content as sub>
+                                                <div id="landing-${sub.id}">
+                                                    <a onclick="toggleReact(); window.location.hash='${sub.path}'">${msg(sub.label)}</a>
+                                                </div>
+                                            </#list>
+                                        <#else>
+                                            <a id="landing-${item.id}" onclick="toggleReact(); window.location.hash = '${item.path}'">${msg(item.label)}</a>
+                                        </#if>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </#list>
+                </div>
+            </div>
         </section>
       </main>
     </div>

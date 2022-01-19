@@ -35,6 +35,7 @@ import {
     DropdownPosition,
     KebabToggle,
     PageSection,
+    PageSectionVariants
 } from "@patternfly/react-core";
 
 import { AIACommand } from "../../util/AIACommand";
@@ -166,7 +167,7 @@ class SigningInPage extends React.Component<
                 {" "}
                 {Array.from(this.state.credentialContainers.keys()).map(
                     (category) => (
-                        <PageSection key={category}>
+                        <PageSection key={category} variant={PageSectionVariants.light}>
                             {this.renderTypes(category!)}
                         </PageSection>
                     )
@@ -410,7 +411,7 @@ class SigningInPage extends React.Component<
                             size="md"
                             className="pf-u-mb-md"
                         >
-                            <span id={`${credContainer.type}-cred-title`}>
+                            <span className="cred-title pf-u-display-block" id={`${credContainer.type}-cred-title`}>
                                 <Msg msgKey={credContainer.displayName} />
                             </span>
                         </Title>
@@ -526,7 +527,7 @@ class CredentialAction extends React.Component<CredentialActionProps> {
                         )}`}
                         onClick={() => this.props.updateAction.execute()}
                     >
-                        <Msg msgKey="update" />
+                        <Msg msgKey="changePassword" />
                     </Button>
                 </DataListAction>
             );
