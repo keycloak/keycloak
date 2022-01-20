@@ -14,29 +14,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage.jpa;
+package org.keycloak.models.map.storage.jpa.clientscope.entity;
 
 import java.io.Serializable;
+import org.keycloak.models.map.clientscope.MapClientScopeEntityImpl;
+import org.keycloak.models.map.common.DeepCloner;
 
-import org.keycloak.models.map.common.AbstractEntity;
+public class JpaClientScopeMetadata extends MapClientScopeEntityImpl implements Serializable {
 
-/**
- * Interface for all root entities in the JPA storage.
- */
-public interface JpaRootEntity extends AbstractEntity, Serializable {
+    public JpaClientScopeMetadata(DeepCloner cloner) {
+        super(cloner);
+    }
 
-    /**
-     * Version of the JPA entity used for optimistic locking
-     */
-    int getVersion();
+    public JpaClientScopeMetadata() {
+        super();
+    }
 
-    /**
-     * @return current supported version of the JPA entity used for schema versioning.
-     */
-    Integer getEntityVersion();
+    private Integer entityVersion;
 
-    /**
-     * @param entityVersion sets current supported version to JPA entity.
-     */
-    void setEntityVersion(Integer entityVersion);
+    public Integer getEntityVersion() {
+        return entityVersion;
+    }
+
+    public void setEntityVersion(Integer entityVersion) {
+        this.entityVersion = entityVersion;
+    }
+
 }

@@ -39,6 +39,7 @@ import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.map.storage.jpa.client.entity.JpaClientEntity;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -51,6 +52,8 @@ import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
 import org.keycloak.models.map.storage.jpa.client.JpaClientMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.clientscope.JpaClientScopeMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.clientscope.entity.JpaClientScopeEntity;
 import org.keycloak.models.map.storage.jpa.role.JpaRoleMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity;
 import org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterProvider;
@@ -73,14 +76,17 @@ public class JpaMapStorageProviderFactory implements
             //client
             .constructor(JpaClientEntity.class,                 JpaClientEntity::new)
             .constructor(MapProtocolMapperEntity.class,         MapProtocolMapperEntityImpl::new)
+            //client-scope
+            .constructor(JpaClientScopeEntity.class,            JpaClientScopeEntity::new)
             //role
             .constructor(JpaRoleEntity.class,                   JpaRoleEntity::new)
             .build();
 
     private static final Map<Class<?>, Function<EntityManager, MapKeycloakTransaction>> MODEL_TO_TX = new HashMap<>();
     static {
-        MODEL_TO_TX.put(ClientModel.class,  JpaClientMapKeycloakTransaction::new);
-        MODEL_TO_TX.put(RoleModel.class,    JpaRoleMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(ClientScopeModel.class,     JpaClientScopeMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(ClientModel.class,          JpaClientMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(RoleModel.class,            JpaRoleMapKeycloakTransaction::new);
     }
 
     public MapKeycloakTransaction createTransaction(Class<?> modelType, EntityManager em) {

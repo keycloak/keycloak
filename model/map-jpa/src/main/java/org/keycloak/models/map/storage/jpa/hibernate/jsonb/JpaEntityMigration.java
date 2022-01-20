@@ -22,19 +22,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_CLIENT;
+import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_CLIENT_SCOPE;
+import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_ROLE;
 import org.keycloak.models.map.storage.jpa.client.entity.JpaClientMetadata;
+import org.keycloak.models.map.storage.jpa.clientscope.entity.JpaClientScopeMetadata;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.migration.JpaClientMigration;
-import static org.keycloak.models.map.storage.jpa.Constants.SUPPORTED_VERSION_CLIENT;
-import static org.keycloak.models.map.storage.jpa.Constants.SUPPORTED_VERSION_ROLE;
+import org.keycloak.models.map.storage.jpa.hibernate.jsonb.migration.JpaClientScopeMigration;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.migration.JpaRoleMigration;
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleMetadata;
+
+
 
 public class JpaEntityMigration {
 
     static final Map<Class<?>, BiFunction<ObjectNode, Integer, ObjectNode>> MIGRATIONS = new HashMap<>();
     static {
-        MIGRATIONS.put(JpaClientMetadata.class, (tree, entityVersion) -> migrateTreeTo(entityVersion, SUPPORTED_VERSION_CLIENT, tree, JpaClientMigration.MIGRATORS));
-        MIGRATIONS.put(JpaRoleMetadata.class,   (tree, entityVersion) -> migrateTreeTo(entityVersion, SUPPORTED_VERSION_ROLE,   tree, JpaRoleMigration.MIGRATORS));
+        MIGRATIONS.put(JpaClientMetadata.class,      (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_CLIENT,       tree, JpaClientMigration.MIGRATORS));
+        MIGRATIONS.put(JpaClientScopeMetadata.class, (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_CLIENT_SCOPE, tree, JpaClientScopeMigration.MIGRATORS));
+        MIGRATIONS.put(JpaRoleMetadata.class,        (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_ROLE,         tree, JpaRoleMigration.MIGRATORS));
     }
 
     private static ObjectNode migrateTreeTo(int entityVersion, Integer supportedVersion, ObjectNode node, List<Function<ObjectNode, ObjectNode>> migrators) {
