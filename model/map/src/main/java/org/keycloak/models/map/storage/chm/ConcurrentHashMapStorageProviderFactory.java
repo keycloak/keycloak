@@ -28,6 +28,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.client.MapClientEntityImpl;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntityImpl;
+import org.keycloak.models.map.clientscope.MapClientScopeEntityImpl;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.Serialization;
@@ -44,12 +45,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jboss.logging.Logger;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
-import org.keycloak.models.map.user.MapUserConsentEntity;
 import org.keycloak.models.map.user.MapUserConsentEntityImpl;
-import org.keycloak.models.map.user.MapUserCredentialEntity;
 import org.keycloak.models.map.user.MapUserCredentialEntityImpl;
 import org.keycloak.models.map.user.MapUserEntityImpl;
-import org.keycloak.models.map.user.MapUserFederatedIdentityEntity;
 import org.keycloak.models.map.user.MapUserFederatedIdentityEntityImpl;
 import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
@@ -95,6 +93,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
       .constructor(MapUserCredentialEntityImpl.class,               MapUserCredentialEntityImpl::new)
       .constructor(MapUserFederatedIdentityEntityImpl.class,        MapUserFederatedIdentityEntityImpl::new)
       .constructor(MapUserConsentEntityImpl.class,                  MapUserConsentEntityImpl::new)
+      .constructor(MapClientScopeEntityImpl.class,                  MapClientScopeEntityImpl::new)
       .build();
 
     private static final Map<String, StringKeyConvertor> KEY_CONVERTORS = new HashMap<>();

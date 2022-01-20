@@ -77,7 +77,6 @@ public class MapClientScopeProvider implements ClientScopeProvider {
 
     @Override
     public ClientScopeModel addClientScope(RealmModel realm, String id, String name) {
-        // Check Db constraint: @UniqueConstraint(columnNames = {"REALM_ID", "NAME"})
         DefaultModelCriteria<ClientScopeModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
             .compare(SearchableFields.NAME, Operator.EQ, name);
@@ -86,13 +85,17 @@ public class MapClientScopeProvider implements ClientScopeProvider {
             throw new ModelDuplicateException("Client scope with name '" + name + "' in realm " + realm.getName());
         }
 
-        LOG.tracef("addClientScope(%s, %s, %s)%s", realm, id, name, getShortStackTrace());
-
-        MapClientScopeEntity entity = new MapClientScopeEntity(id, realm.getId());
-        entity.setName(KeycloakModelUtils.convertClientScopeName(name));
         if (id != null && tx.read(id) != null) {
             throw new ModelDuplicateException("Client scope exists: " + id);
         }
+
+        LOG.tracef("addClientScope(%s, %s, %s)%s", realm, id, name, getShortStackTrace());
+
+        MapClientScopeEntity entity = new MapClientScopeEntityImpl();
+        entity.setId(id);
+        entity.setRealmId(realm.getId());
+        entity.setName(KeycloakModelUtils.convertClientScopeName(name));
+        
         entity = tx.create(entity);
         return entityToAdapterFunc(realm).apply(entity);
     }
