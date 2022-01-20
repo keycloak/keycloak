@@ -854,7 +854,7 @@ public class TokenManager {
     }
 
     private String getAcr(AuthenticatedClientSessionModel clientSession) {
-        int loa = Integer.parseInt(clientSession.getNote(Constants.LEVEL_OF_AUTHENTICATION));
+        int loa = AuthenticatorUtil.getCurrentLevelOfAuthentication(clientSession);
         if (loa < Constants.MINIMUM_LOA) {
             loa = AuthenticationManager.isSSOAuthentication(clientSession) ? 0 : 1;
         }

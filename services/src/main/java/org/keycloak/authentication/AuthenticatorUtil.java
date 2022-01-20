@@ -17,8 +17,10 @@
 
 package org.keycloak.authentication;
 
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.CommonClientSessionModel;
 
 public class AuthenticatorUtil {
 
@@ -39,5 +41,10 @@ public class AuthenticatorUtil {
     public static boolean isLevelOfAuthenticationSatisfied(AuthenticationSessionModel authSession) {
         return AuthenticatorUtil.getRequestedLevelOfAuthentication(authSession)
             <= AuthenticatorUtil.getCurrentLevelOfAuthentication(authSession);
+    }
+
+    public static int getCurrentLevelOfAuthentication(AuthenticatedClientSessionModel clientSession) {
+        String clientSessionLoaNote = clientSession.getNote(Constants.LEVEL_OF_AUTHENTICATION);
+        return clientSessionLoaNote == null ? Constants.NO_LOA : Integer.parseInt(clientSessionLoaNote);
     }
 }
