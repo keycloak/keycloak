@@ -532,8 +532,9 @@ public class LDAPOperationManager {
             throw ae;
         } catch(RuntimeException re){
             if (logger.isDebugEnabled()) {
-                logger.debug(re, "LDAP Connection TimeOut for DN [%s]", dn);
+                logger.debugf(re, "LDAP Connection TimeOut for DN [%s]", dn);
             }
+            
             throw re;
 
         } catch (Exception e) {
