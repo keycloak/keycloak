@@ -127,6 +127,7 @@ import org.keycloak.url.DefaultHostnameProviderFactory;
 import org.keycloak.url.FixedHostnameProviderFactory;
 import org.keycloak.url.RequestHostnameProviderFactory;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.vault.FilesPlainTextVaultProviderFactory;
 
 class KeycloakProcessor {
 
@@ -146,7 +147,8 @@ class KeycloakProcessor {
             LiquibaseJpaUpdaterProviderFactory.class,
             DefaultHostnameProviderFactory.class,
             FixedHostnameProviderFactory.class,
-            RequestHostnameProviderFactory.class);
+            RequestHostnameProviderFactory.class,
+            FilesPlainTextVaultProviderFactory.class);
 
     static {
         DEPLOYEABLE_SCRIPT_PROVIDERS.put(AUTHENTICATORS, KeycloakProcessor::registerScriptAuthenticator);

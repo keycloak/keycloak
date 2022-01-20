@@ -23,7 +23,6 @@ import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.
 
 import java.io.File;
 import java.lang.reflect.Field;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -45,7 +44,7 @@ import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import io.quarkus.runtime.configuration.ConfigUtils;
 import io.smallrye.config.SmallRyeConfigProviderResolver;
 import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.vault.FilesPlainTextVaultProviderFactory;
+import org.keycloak.quarkus.runtime.vault.FilesPlainTextVaultProviderFactory;
 import org.mariadb.jdbc.MySQLDataSource;
 import org.postgresql.xa.PGXADataSource;
 
@@ -124,11 +123,11 @@ public class ConfigurationTest {
 
     @Test
     public void testEnvVarAvailableFromPropertyNames() {
-        putEnvVar("KC_VAULT_FILE_PATH", "/foo/bar");
-        Config.Scope config = initConfig("vault", FilesPlainTextVaultProviderFactory.PROVIDER_ID);
+        putEnvVar("KC_VAULT_DIR", "/foo/bar");
+        Config.Scope config = initConfig("vault", FilesPlainTextVaultProviderFactory.ID);
         assertEquals("/foo/bar", config.get("dir"));
         assertTrue(config.getPropertyNames()
-                .contains("kc.spi-vault-".concat(FilesPlainTextVaultProviderFactory.PROVIDER_ID).concat("-dir")));
+                .contains("kc.spi-vault-".concat(FilesPlainTextVaultProviderFactory.ID).concat("-dir")));
     }
 
     @Test
@@ -197,8 +196,8 @@ public class ConfigurationTest {
         assertEquals(1, config.getPropertyNames().size());
         assertEquals("http://c.jwk.url", config.get("static-jwk-url"));
 
-        System.setProperty(CLI_ARGS, "--vault-file-path=secrets");
-        config = initConfig("vault", FilesPlainTextVaultProviderFactory.PROVIDER_ID);
+        System.setProperty(CLI_ARGS, "--vault-dir=secrets");
+        config = initConfig("vault", FilesPlainTextVaultProviderFactory.ID);
         assertEquals(1, config.getPropertyNames().size());
         assertEquals("secrets", config.get("dir"));
 

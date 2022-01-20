@@ -98,6 +98,11 @@ Proxy:
 --proxy <mode>       The proxy address forwarding mode if the server is behind a reverse proxy.
                        Possible values are: none,edge,reencrypt,passthrough Default: none.
 
+Vault:
+
+--vault-dir <dir>    If set, secrets can be obtained by reading the content of files within the
+                       given directory.
+
 You may use the "--auto-build" option when starting the server to avoid running
 the "build" command everytime you need to change a static property:
 
