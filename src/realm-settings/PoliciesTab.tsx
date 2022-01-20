@@ -79,7 +79,7 @@ export const PoliciesTab = () => {
       await adminClient.clientPolicies.updatePolicy({
         policies: updatedPolicies,
       });
-      history.push(toClientPolicies({ realm }));
+      history.push(toClientPolicies({ realm, tab: "policies" }));
       addAlert(
         t("realm-settings:updateClientPolicySuccess"),
         AlertVariant.success

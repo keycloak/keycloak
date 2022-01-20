@@ -176,7 +176,7 @@ export default function ClientProfileForm() {
             globalProfiles,
           });
           addAlert(t("deleteClientSuccess"), AlertVariant.success);
-          history.push(toClientPolicies({ realm }));
+          history.push(toClientPolicies({ realm, tab: "profiles" }));
         } catch (error) {
           addError(t("deleteClientError"), error);
         }

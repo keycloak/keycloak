@@ -57,6 +57,7 @@ import environment from "../environment";
 import helpUrls from "../help-urls";
 import { UserProfileTab } from "./user-profile/UserProfileTab";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
+import { toClientPolicies } from "./routes/ClientPolicies";
 
 type RealmSettingsHeaderProps = {
   onChange: (value: boolean) => void;
@@ -423,13 +424,14 @@ export const RealmSettingsTabs = ({
                 history,
               })}
             >
-              <Tabs
-                activeKey={activeTab}
-                onSelect={(_, key) => setActiveTab(Number(key))}
+              <RoutableTabs
+                mountOnEnter
+                defaultLocation={toClientPolicies({
+                  realm: realmName,
+                  tab: "profiles",
+                })}
               >
                 <Tab
-                  id="profiles"
-                  eventKey={0}
                   data-testid="rs-policies-clientProfiles-tab"
                   aria-label={t("clientProfilesSubTab")}
                   title={
@@ -443,6 +445,13 @@ export const RealmSettingsTabs = ({
                       </span>
                     </TabTitleText>
                   }
+                  {...routableTab({
+                    to: toClientPolicies({
+                      realm: realmName,
+                      tab: "profiles",
+                    }),
+                    history,
+                  })}
                 >
                   <ProfilesTab />
                 </Tab>
@@ -450,7 +459,13 @@ export const RealmSettingsTabs = ({
                   id="policies"
                   data-testid="rs-policies-clientPolicies-tab"
                   aria-label={t("clientPoliciesSubTab")}
-                  eventKey={1}
+                  {...routableTab({
+                    to: toClientPolicies({
+                      realm: realmName,
+                      tab: "policies",
+                    }),
+                    history,
+                  })}
                   title={
                     <TabTitleText>
                       {t("policies")}
@@ -465,7 +480,7 @@ export const RealmSettingsTabs = ({
                 >
                   <PoliciesTab />
                 </Tab>
-              </Tabs>
+              </RoutableTabs>
             </Tab>
             {isFeatureEnabled(Feature.DeclarativeUserProfile) &&
               userProfileEnabled === "true" && (

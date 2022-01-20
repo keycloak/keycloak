@@ -4,6 +4,7 @@ import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
 
 export type RealmSettingsTab =
+  | "general"
   | "login"
   | "email"
   | "themes"
@@ -20,10 +21,11 @@ export type RealmSettingsTab =
 export type RealmSettingsParams = {
   realm: string;
   tab?: RealmSettingsTab;
+  subTab?: string;
 };
 
 export const RealmSettingsRoute: RouteDef = {
-  path: "/:realm/realm-settings/:tab?",
+  path: "/:realm/realm-settings/:tab?/:subTab?",
   component: lazy(() => import("../RealmSettingsSection")),
   breadcrumb: (t) => t("realmSettings"),
   access: "view-realm",

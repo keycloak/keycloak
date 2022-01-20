@@ -202,7 +202,10 @@ export default function ProfilesTab() {
               <Button
                 id="createProfile"
                 component={(props) => (
-                  <Link {...props} to={toAddClientProfile({ realm })} />
+                  <Link
+                    {...props}
+                    to={toAddClientProfile({ realm, tab: "profiles" })}
+                  />
                 )}
                 data-testid="createProfile"
               >

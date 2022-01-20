@@ -5,10 +5,11 @@ import type { RouteDef } from "../../route-config";
 
 export type AddClientProfileParams = {
   realm: string;
+  tab: string;
 };
 
 export const AddClientProfileRoute: RouteDef = {
-  path: "/:realm/realm-settings/clientPolicies/add-profile",
+  path: "/:realm/realm-settings/clientPolicies/:tab/add-profile",
   component: lazy(() => import("../ClientProfileForm")),
   breadcrumb: (t) => t("realm-settings:newClientProfile"),
   access: "manage-realm",
