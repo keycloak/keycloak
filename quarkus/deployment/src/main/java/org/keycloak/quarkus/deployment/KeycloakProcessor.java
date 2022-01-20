@@ -421,7 +421,14 @@ class KeycloakProcessor {
             Map<String, ProviderFactory> preConfiguredProviders) {
         Config.init(new MicroProfileConfigProvider());
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        ProviderManager pm = new ProviderManager(KeycloakDeploymentInfo.create().services(), classLoader);
+
+        KeycloakDeploymentInfo keycloakDeploymentInfo = KeycloakDeploymentInfo.create()
+                .name("classpath")
+                .services()
+                // .themes() // handling of .jar based themes is already supported by Keycloak.x
+                .themeResources();
+
+        ProviderManager pm = new ProviderManager(keycloakDeploymentInfo, classLoader);
         Map<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> factories = new HashMap<>();
 
         for (Spi spi : pm.loadSpis()) {
