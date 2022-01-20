@@ -41,7 +41,7 @@ export const RealmSelector = () => {
     })
     .concat(
       realms
-        .filter((r) => !recentUsed.used.includes(r.realm!))
+        .filter((r) => !recentUsed.used.includes(r.realm!) || r.realm === realm)
         .map((r) => {
           return { name: r.realm!, used: false };
         })
@@ -132,9 +132,11 @@ export const RealmSelector = () => {
           onSearchInputChange={(value) => setSearch(value)}
           className="keycloak__realm_selector__context_selector"
           footer={
-            <ContextSelectorItem key="add">
-              <AddRealm />
-            </ContextSelectorItem>
+            whoAmI.canCreateRealm() && (
+              <ContextSelectorItem key="add">
+                <AddRealm />
+              </ContextSelectorItem>
+            )
           }
         >
           {(filteredItems || all).map((item) => (

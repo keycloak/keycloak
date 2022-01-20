@@ -20,7 +20,7 @@ export default class CreateRealmPage {
   }
 
   fillRealmName(realmName: string) {
-    cy.get(this.realmNameInput).type(realmName);
+    cy.get(this.realmNameInput).clear().type(realmName);
 
     return this;
   }

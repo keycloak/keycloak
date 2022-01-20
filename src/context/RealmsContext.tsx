@@ -33,7 +33,7 @@ export const RealmsProvider: FunctionComponent = ({ children }) => {
   }
 
   useFetch(
-    () => adminClient.realms.find(),
+    () => adminClient.realms.find({ briefRepresentation: true }),
     (realms) => updateRealms(realms),
     []
   );
@@ -42,7 +42,7 @@ export const RealmsProvider: FunctionComponent = ({ children }) => {
     //this is needed otherwise the realm find function will not return
     //new or renamed realms because of the cached realms in the token (perhaps?)
     await adminClient.keycloak?.updateToken(Number.MAX_VALUE);
-    updateRealms(await adminClient.realms.find());
+    updateRealms(await adminClient.realms.find({ briefRepresentation: true }));
   }, []);
 
   const value = useMemo<RealmsContextProps>(
