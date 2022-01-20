@@ -14,29 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage.jpa;
+package org.keycloak.models.map.storage.jpa.hibernate.jsonb.migration;
 
-import java.io.Serializable;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Function;
 
-import org.keycloak.models.map.common.AbstractEntity;
+public class JpaClientScopeMigration {
 
-/**
- * Interface for all root entities in the JPA storage.
- */
-public interface JpaRootEntity extends AbstractEntity, Serializable {
-
-    /**
-     * Version of the JPA entity used for optimistic locking
-     */
-    int getVersion();
-
-    /**
-     * @return current supported version of the JPA entity used for schema versioning.
-     */
-    Integer getEntityVersion();
-
-    /**
-     * @param entityVersion sets current supported version to JPA entity.
-     */
-    void setEntityVersion(Integer entityVersion);
+    public static final List<Function<ObjectNode, ObjectNode>> MIGRATORS = Arrays.asList(
+        o -> o // no migration yet
+    );
 }

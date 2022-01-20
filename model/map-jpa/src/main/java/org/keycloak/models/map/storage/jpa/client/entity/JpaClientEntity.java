@@ -16,7 +16,6 @@
  */
 package org.keycloak.models.map.storage.jpa.client.entity;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,8 +43,7 @@ import org.hibernate.annotations.TypeDefs;
 import org.keycloak.models.map.client.MapClientEntity.AbstractClientEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.common.DeepCloner;
-import static org.keycloak.models.map.storage.jpa.Constants.SUPPORTED_VERSION_CLIENT;
-
+import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_CLIENT;
 import org.keycloak.models.map.storage.jpa.JpaRootEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
@@ -62,7 +60,7 @@ import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
             )
 })
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
-public class JpaClientEntity extends AbstractClientEntity implements Serializable, JpaRootEntity {
+public class JpaClientEntity extends AbstractClientEntity implements JpaRootEntity {
 
     @Id
     @Column
@@ -137,16 +135,18 @@ public class JpaClientEntity extends AbstractClientEntity implements Serializabl
      */
     private void checkEntityVersionForUpdate() {
         Integer ev = getEntityVersion();
-        if (ev != null && ev < SUPPORTED_VERSION_CLIENT) {
-            setEntityVersion(SUPPORTED_VERSION_CLIENT);
+        if (ev != null && ev < CURRENT_SCHEMA_VERSION_CLIENT) {
+            setEntityVersion(CURRENT_SCHEMA_VERSION_CLIENT);
         }
     }
 
+    @Override
     public Integer getEntityVersion() {
         if (isMetadataInitialized()) return metadata.getEntityVersion();
         return entityVersion;
     }
 
+    @Override
     public void setEntityVersion(Integer entityVersion) {
         metadata.setEntityVersion(entityVersion);
     }
