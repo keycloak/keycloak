@@ -15,8 +15,5 @@
   },
   "include": [
     "./app/**/*.ts?"
-  ],
-  "files": [
-    "../../../../../../../../adapters/oidc/js/src/main/resources/keycloak.d.ts"
   ]
 }
