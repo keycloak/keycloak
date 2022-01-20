@@ -110,7 +110,8 @@
 }
 
 /* Signing in screen */
-.cred-title:first-letter{
+.cred-title:first-letter,
+#otp-not-set-up .pf-c-empty-state__body:first-letter {
   text-transform: capitalize
 }
 
