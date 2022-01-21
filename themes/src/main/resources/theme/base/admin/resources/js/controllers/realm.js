@@ -560,8 +560,21 @@ module.controller('RealmLocalizationCtrl', function($scope, Current, $location, 
 
     $scope.updateRealmSpecificLocalizationTexts = function() {
         RealmSpecificLocalizationTexts.get({id: realm.realm, locale: $scope.selectedRealmSpecificLocales }, function (updated) {
-            $scope.localizationTexts = updated;
+            $scope.localizationTexts = getSortedArrayByKeyFromObject(updated);
         })
+    }
+
+    function getSortedArrayByKeyFromObject(object) {
+        const keys = Object.keys(object).sort(function (a, b) {
+            return a.localeCompare(b, locale);
+        });
+        return keys.reduce(function (result, key) {
+            const value = object[key];
+            if (typeof value !== 'string') {
+                return result;
+            }
+            return result.concat([[key, value]]);
+        }, []);
     }
 
     $scope.removeLocalizationText = function(key) {
