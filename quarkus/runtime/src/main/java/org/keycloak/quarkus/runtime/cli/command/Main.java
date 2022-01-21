@@ -76,11 +76,6 @@ public final class Main {
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
-    @Option(names = "-D<key>=<value>",
-            description = "Set a Java system property",
-            order = 0)
-    Boolean sysProps;
-
     @Option(names = { "-h", "--help" },
             description = "This help message.",
             usageHelp = true)
