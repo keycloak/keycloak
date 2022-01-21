@@ -17,38 +17,30 @@
 
 package org.keycloak.it.cli.dist;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.condition.DisabledIf;
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.RawDistOnly;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 
-@DistributionTest(reInstall = DistributionTest.ReInstall.NEVER)
-@RawDistOnly(reason = "Containers are immutable")
-@TestMethodOrder(OrderAnnotation.class)
-public class BuildAndStartDistTest {
+@DistributionTest
+class EnableFeatureDistTest {
 
     @Test
-    @Launch({ "build", "--cache=local" })
-    @Order(1)
-    void firstYouBuild(LaunchResult result) {
+    @Launch({ "build", "--features=preview" })
+    void testEnablePreviewFeatures(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertMessage("Preview feature enabled: admin_fine_grained_authz");
+        cliResult.assertMessage("Preview feature enabled: openshift_integration");
+        cliResult.assertMessage("Preview feature enabled: scripts");
+        cliResult.assertMessage("Preview feature enabled: token_exchange");
     }
 
     @Test
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
-    @Order(2)
-    void thenYouStart(LaunchResult result) {
+    @Launch({ "build", "--features-token_exchange=enabled" })
+    void testEnableSinglefeature(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertStarted();
+        cliResult.assertMessage("Preview feature enabled: token_exchange");
     }
 }

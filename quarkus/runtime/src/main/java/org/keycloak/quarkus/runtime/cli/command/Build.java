@@ -66,9 +66,6 @@ public final class Build extends AbstractCommand implements Runnable {
 
     public static final String NAME = "build";
 
-    @Mixin
-    HelpAllMixin helpAllMixin;
-
     @Override
     public void run() {
         exitWithErrorIfDevProfileIsSetAndNotStartDev();

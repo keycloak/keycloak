@@ -123,13 +123,6 @@ public final class Picocli {
             if(!isDevMode()) {
                 if (cmd != null) {
                     cmd.getOut().println("Changes detected in configuration. Updating the server image.");
-                    List<String> cliInput = getSanitizedCliInput();
-                    cmd.getOut()
-                            .printf("For an optional runtime and bypass this step, please run the '%s' command prior to starting the server:%n%n\t%s %s %s%n%n",
-                                    Build.NAME,
-                                    Environment.getCommand(),
-                                    Build.NAME,
-                                    String.join(" ", cliInput) + "\n");
                 }
             }
             return true;
@@ -144,12 +137,18 @@ public final class Picocli {
      * @return a list of potentially masked properties in CLI format, e.g. `--db-password=*******`
      * instead of the actual passwords value.
      */
-    private static List<String> getSanitizedCliInput() {
+    private static List<String> getSanitizedRuntimeCliOptions() {
         List<String> properties = new ArrayList<>();
 
         parseConfigArgs(new BiConsumer<String, String>() {
             @Override
             public void accept(String key, String value) {
+                PropertyMapper mapper = PropertyMappers.getMapper(key);
+
+                if (mapper != null && mapper.isBuildTime()) {
+                    return;
+                }
+
                 properties.add(key + "=" + formatValue(key, value));
             }
         });
@@ -176,7 +175,7 @@ public final class Picocli {
         cmd.execute(configArgsList.toArray(new String[0]));
 
         if(!isDevMode()) {
-            cmd.getOut().printf("Next time you run the server, just run:%n%n\t%s %s%n%n", Environment.getCommand(), Start.NAME);
+            cmd.getOut().printf("Next time you run the server, just run:%n%n\t%s %s %s%n%n", Environment.getCommand(), Start.NAME, String.join(" ", getSanitizedRuntimeCliOptions()));
         }
     }
 
@@ -271,9 +270,9 @@ public final class Picocli {
                     .build());
         }
 
-        addOption(spec, Start.NAME, hasAutoBuildOption(cliArgs));
-        addOption(spec, StartDev.NAME, true);
-        addOption(spec, Build.NAME, true);
+        addOption(spec, Start.NAME, hasAutoBuildOption(cliArgs), true);
+        addOption(spec, StartDev.NAME, true, true);
+        addOption(spec, Build.NAME, true, hasAutoBuildOption(cliArgs));
 
         CommandLine cmd = new CommandLine(spec);
 
@@ -286,9 +285,13 @@ public final class Picocli {
         return cmd;
     }
 
-    private static void addOption(CommandSpec spec, String command, boolean includeBuildTime) {
+    private static void addOption(CommandSpec spec, String command, boolean includeBuildTime, boolean includeRuntime) {
         CommandSpec commandSpec = spec.subcommands().get(command).getCommandSpec();
-        List<PropertyMapper> mappers = new ArrayList<>(PropertyMappers.getRuntimeMappers());
+        List<PropertyMapper> mappers = new ArrayList<>();
+
+        if (includeRuntime) {
+            mappers.addAll(PropertyMappers.getRuntimeMappers());
+        }
 
         if (includeBuildTime) {
             mappers.addAll(PropertyMappers.getBuildTimeMappers());

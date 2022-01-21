@@ -53,6 +53,7 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 public class ConfigArgsConfigSource extends PropertiesConfigSource {
 
     public static final String CLI_ARGS = "kc.config.args";
+    public static final String NAME = "CliConfigSource";
     private static final String ARG_SEPARATOR = ";;";
     private static final Pattern ARG_SPLIT = Pattern.compile(";;");
     private static final Pattern ARG_KEY_VALUE_SPLIT = Pattern.compile("=");
@@ -64,7 +65,7 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
     }
 
     protected ConfigArgsConfigSource() {
-        super(parseArgument(), "CliConfigSource", 600);
+        super(parseArgument(), NAME, 600);
     }
 
     public static void setCliArgs(String[] args) {
