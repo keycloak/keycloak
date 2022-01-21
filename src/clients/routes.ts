@@ -9,6 +9,8 @@ import { NewResourceRoute } from "./routes/NewResource";
 import { ResourceDetailsRoute } from "./routes/Resource";
 import { NewScopeRoute } from "./routes/NewScope";
 import { ScopeDetailsRoute } from "./routes/Scope";
+import { NewPolicyRoute } from "./routes/NewPolicy";
+import { PolicyDetailsRoute } from "./routes/PolicyDetails";
 import { NewPermissionRoute } from "./routes/NewPermission";
 import { PermissionDetailsRoute } from "./routes/PermissionDetails";
 
@@ -23,6 +25,8 @@ const routes: RouteDef[] = [
   ResourceDetailsRoute,
   NewScopeRoute,
   ScopeDetailsRoute,
+  NewPolicyRoute,
+  PolicyDetailsRoute,
   NewPermissionRoute,
   PermissionDetailsRoute,
 ];

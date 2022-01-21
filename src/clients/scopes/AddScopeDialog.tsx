@@ -291,7 +291,6 @@ export const AddScopeDialog = ({
           {
             name: "name",
           },
-          { name: "protocol", displayKey: "Protocol" },
           {
             name: "protocol",
             displayKey: "clients:protocol",

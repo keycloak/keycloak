@@ -8,6 +8,7 @@ import ListingPage from "../support/pages/admin_console/ListingPage";
 import Masthead from "../support/pages/admin_console/Masthead";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import AuthorizationTab from "../support/pages/admin_console/manage/clients/AuthorizationTab";
+import ModalUtils from "../support/util/ModalUtils";
 
 describe("Client authentication subtab", () => {
   const adminClient = new AdminClient();
@@ -30,6 +31,9 @@ describe("Client authentication subtab", () => {
     });
     keycloakBefore();
     loginPage.logIn();
+    sidebarPage.goToClients();
+    listingPage.searchItem(clientId).goToItemDetails(clientId);
+    authenticationTab.goToAuthenticationTab();
   });
 
   after(() => {
@@ -38,9 +42,6 @@ describe("Client authentication subtab", () => {
 
   beforeEach(() => {
     keycloakBeforeEach();
-    sidebarPage.goToClients();
-    listingPage.searchItem(clientId).goToItemDetails(clientId);
-    authenticationTab.goToAuthenticationTab();
   });
 
   it("Should update the resource server settings", () => {
@@ -63,6 +64,7 @@ describe("Client authentication subtab", () => {
       .save();
 
     masthead.checkNotificationMessage("Resource created successfully");
+    authenticationTab.cancel();
   });
 
   it("Should create a scope", () => {
@@ -81,6 +83,55 @@ describe("Client authentication subtab", () => {
     );
     authenticationTab.goToScopeSubTab();
     listingPage.itemExist("The scope");
+  });
+
+  it("Should create a policy", () => {
+    authenticationTab.goToPolicySubTab();
+    cy.intercept(
+      "GET",
+      "/auth/admin/realms/master/clients/*/authz/resource-server/policy/regex/*"
+    ).as("get");
+    authenticationTab
+      .goToCreatePolicy("regex")
+      .fillBasePolicyForm({
+        name: "Regex policy",
+        description: "Policy for regex",
+        targetClaim: "I don't know",
+        regexPattern: ".*?",
+      })
+      .save();
+
+    cy.wait(["@get"]);
+    masthead.checkNotificationMessage("Successfully created the policy");
+    authenticationTab.cancel();
+  });
+
+  it("Should delete a policy", () => {
+    authenticationTab.goToPolicySubTab();
+    listingPage.deleteItem("Regex policy");
+    new ModalUtils().confirmModal();
+
+    masthead.checkNotificationMessage("The Policy successfully deleted");
+  });
+
+  it("Should create a client policy", () => {
+    authenticationTab.goToPolicySubTab();
+    cy.intercept(
+      "GET",
+      "/auth/admin/realms/master/clients/*/authz/resource-server/policy/client/*"
+    ).as("get");
+    authenticationTab
+      .goToCreatePolicy("client")
+      .fillBasePolicyForm({
+        name: "Client policy",
+        description: "Extra client field",
+      })
+      .inputClient("master-realm")
+      .save();
+
+    cy.wait(["@get"]);
+    masthead.checkNotificationMessage("Successfully created the policy");
+    authenticationTab.cancel();
   });
 
   it("Should create a permission", () => {

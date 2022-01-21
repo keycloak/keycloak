@@ -8,8 +8,11 @@ export default class AuthorizationTab {
   private tabName = "#pf-tab-authorization-authorization";
   private resourcesTabName = "#pf-tab-41-resources";
   private scopeTabName = "#pf-tab-42-scopes";
-  private permissionsTabName = "#pf-tab-43-permissions";
+  private policyTabName = "#pf-tab-43-policies";
+  private permissionsTabName = "#pf-tab-44-permissions";
   private nameColumnPrefix = "name-column-";
+  private emptyPolicyCreateButton = "no-policies-empty-action";
+  private createPolicyButton = "createPolicy";
   private createResourceButton = "createResource";
   private createScopeButton = "no-authorization-scopes-empty-action";
   private createPermissionDropdown = "permissionCreateDropdown";
@@ -30,6 +33,11 @@ export default class AuthorizationTab {
     return this;
   }
 
+  goToPolicySubTab() {
+    cy.get(this.policyTabName).click();
+    return this;
+  }
+
   goToPermissionsSubTab() {
     cy.get(this.permissionsTabName).click();
     return this;
@@ -45,9 +53,32 @@ export default class AuthorizationTab {
     return this;
   }
 
+  goToCreatePolicy(type: string, first: boolean | undefined = false) {
+    if (first) {
+      cy.findByTestId(this.emptyPolicyCreateButton).click();
+    } else {
+      cy.findByTestId(this.createPolicyButton).click();
+    }
+    cy.findByTestId(type).click();
+    return this;
+  }
+
   goToCreatePermission(type: PermissionType) {
     cy.findByTestId(this.createPermissionDropdown).click();
     cy.findByTestId(`create-${type}`).click();
+    return this;
+  }
+
+  fillBasePolicyForm(policy: { [key: string]: string }) {
+    Object.entries(policy).map(([key, value]) =>
+      cy.findByTestId(key).type(value)
+    );
+    return this;
+  }
+
+  inputClient(clientName: string) {
+    cy.get("#clients").click();
+    cy.get("ul li").contains(clientName).click();
     return this;
   }
 
@@ -95,6 +126,11 @@ export default class AuthorizationTab {
 
   save() {
     cy.findByTestId("save").click();
+    return this;
+  }
+
+  cancel() {
+    cy.findByTestId("cancel").click();
     return this;
   }
 

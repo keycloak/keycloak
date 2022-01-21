@@ -20,13 +20,13 @@ import { SaveReset } from "../advanced/SaveReset";
 import { ImportDialog } from "./ImportDialog";
 import useToggle from "../../utils/useToggle";
 import { useAlerts } from "../../components/alert/Alerts";
+import { DecisionStrategySelect } from "./DecisionStragegySelect";
 
 const POLICY_ENFORCEMENT_MODES = [
   "ENFORCING",
   "PERMISSIVE",
   "DISABLED",
 ] as const;
-const DECISION_STRATEGY = ["UNANIMOUS", "AFFIRMATIVE"] as const;
 
 export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
   const { t } = useTranslation("clients");
@@ -134,40 +134,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
             )}
           />
         </FormGroup>
-        <FormGroup
-          label={t("decisionStrategy")}
-          labelIcon={
-            <HelpItem
-              helpText="clients-help:decisionStrategy"
-              fieldLabelId="clients:decisionStrategy"
-            />
-          }
-          fieldId="decisionStrategy"
-          hasNoPaddingTop
-        >
-          <Controller
-            name="decisionStrategy"
-            data-testid="decisionStrategy"
-            defaultValue={DECISION_STRATEGY[0]}
-            control={control}
-            render={({ onChange, value }) => (
-              <>
-                {DECISION_STRATEGY.map((strategy) => (
-                  <Radio
-                    id={strategy}
-                    key={strategy}
-                    data-testid={strategy}
-                    isChecked={value === strategy}
-                    name="decisionStrategy"
-                    onChange={() => onChange(strategy)}
-                    label={t(`decisionStrategies.${strategy}`)}
-                    className="pf-u-mb-md"
-                  />
-                ))}
-              </>
-            )}
-          />
-        </FormGroup>
+        <DecisionStrategySelect isLimited />
         <FormGroup
           hasNoPaddingTop
           label={t("allowRemoteResourceManagement")}
