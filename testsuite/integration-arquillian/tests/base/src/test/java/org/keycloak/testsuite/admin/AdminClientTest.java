@@ -20,11 +20,14 @@ package org.keycloak.testsuite.admin;
 
 import java.util.List;
 
+import javax.ws.rs.NotAuthorizedException;
+
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
@@ -88,7 +91,9 @@ public class AdminClientTest extends AbstractKeycloakTest {
 
         UserBuilder defaultUser = UserBuilder.create()
                 .id(KeycloakModelUtils.generateId())
-                .username("test-user@localhost");
+                .username("test-user@localhost")
+                .password("password")
+                .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
         realm.user(defaultUser);
 
         testRealms.add(realm.build());
@@ -103,9 +108,60 @@ public class AdminClientTest extends AbstractKeycloakTest {
 
             setTimeOffset(1000);
 
-            // Check still possible to load the realm after token expired
+            // Check still possible to load the realm after original token expired (admin client should automatically re-authenticate)
             realm = adminClient.realm("test").toRepresentation();
             Assert.assertEquals("test", realm.getRealm());
         }
+    }
+
+    @Test
+    public void clientCredentialsClientDisabled() throws Exception {
+        try (Keycloak adminClient = AdminClientUtil.createAdminClientWithClientCredentials("test", "service-account-cl", "secret1")) {
+            // Check possible to load the realm
+            RealmRepresentation realm = adminClient.realm("test").toRepresentation();
+            Assert.assertEquals("test", realm.getRealm());
+
+            // Disable client and check it should not be possible to load the realms anymore
+            setClientEnabled("service-account-cl", false);
+
+            // Check not possible to invoke anymore
+            try {
+                realm = adminClient.realm("test").toRepresentation();
+                Assert.fail("Not expected to successfully get realm");
+            } catch (NotAuthorizedException nae) {
+                // Expected
+            }
+        } finally {
+            setClientEnabled("service-account-cl", true);
+        }
+    }
+
+    @Test
+    public void adminAuthClientDisabled() throws Exception {
+        try (Keycloak adminClient = AdminClientUtil.createAdminClient(false, "test", "test-user@localhost", "password", Constants.ADMIN_CLI_CLIENT_ID, null)) {
+            // Check possible to load the realm
+            RealmRepresentation realm = adminClient.realm("test").toRepresentation();
+            Assert.assertEquals("test", realm.getRealm());
+
+            // Disable client and check it should not be possible to load the realms anymore
+            setClientEnabled(Constants.ADMIN_CLI_CLIENT_ID, false);
+
+            // Check not possible to invoke anymore
+            try {
+                realm = adminClient.realm("test").toRepresentation();
+                Assert.fail("Not expected to successfully get realm");
+            } catch (NotAuthorizedException nae) {
+                // Expected
+            }
+        } finally {
+            setClientEnabled(Constants.ADMIN_CLI_CLIENT_ID, true);
+        }
+    }
+
+    private void setClientEnabled(String clientId, boolean enabled) {
+        ClientResource client = ApiUtil.findClientByClientId(adminClient.realms().realm("test"), clientId);
+        ClientRepresentation clientRep = client.toRepresentation();
+        clientRep.setEnabled(enabled);
+        client.update(clientRep);
     }
 }
