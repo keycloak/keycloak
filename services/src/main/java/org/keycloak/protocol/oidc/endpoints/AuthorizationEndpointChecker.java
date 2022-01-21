@@ -244,7 +244,7 @@ public class AuthorizationEndpointChecker {
         // PKCE not adopted to OAuth2 Implicit Grant and OIDC Implicit Flow,
         // adopted to OAuth2 Authorization Code Grant and OIDC Authorization Code Flow, Hybrid Flow
         // Namely, flows using authorization code.
-        if (parsedResponseType.isImplicitFlow()) return;
+        if (parsedResponseType != null && parsedResponseType.isImplicitFlow()) return;
 
         String pkceCodeChallengeMethod = OIDCAdvancedConfigWrapper.fromClientModel(client).getPkceCodeChallengeMethod();
 

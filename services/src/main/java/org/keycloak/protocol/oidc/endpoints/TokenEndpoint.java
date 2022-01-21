@@ -114,8 +114,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
@@ -131,9 +129,6 @@ public class TokenEndpoint {
     private enum Action {
         AUTHORIZATION_CODE, REFRESH_TOKEN, PASSWORD, CLIENT_CREDENTIALS, TOKEN_EXCHANGE, PERMISSION, OAUTH2_DEVICE_CODE, CIBA
     }
-
-    // https://tools.ietf.org/html/rfc7636#section-4.2
-    private static final Pattern VALID_CODE_VERIFIER_PATTERN = Pattern.compile("^[0-9a-zA-Z\\-\\.~_]+$");
 
     @Context
     private KeycloakSession session;
@@ -404,10 +399,10 @@ public class TokenEndpoint {
         }
 
         if (codeChallengeMethod != null && !codeChallengeMethod.isEmpty()) {
-            checkParamsForPkceEnforcedClient(codeVerifier, codeChallenge, codeChallengeMethod, authUserId, authUsername);
+            PkceUtils.checkParamsForPkceEnforcedClient(codeVerifier, codeChallenge, codeChallengeMethod, authUserId, authUsername, event, cors);
         } else {
             // PKCE Activation is OFF, execute the codes implemented in KEYCLOAK-2604
-            checkParamsForPkceNotEnforcedClient(codeVerifier, codeChallenge, codeChallengeMethod, authUserId, authUsername);
+            PkceUtils.checkParamsForPkceNotEnforcedClient(codeVerifier, codeChallenge, codeChallengeMethod, authUserId, authUsername, event, cors);
         }
 
         try {
@@ -488,63 +483,6 @@ public class TokenEndpoint {
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
                         "Client Certification missing for MTLS HoK Token Binding", Response.Status.BAD_REQUEST);
             }
-        }
-    }
-
-    private void checkParamsForPkceEnforcedClient(String codeVerifier, String codeChallenge, String codeChallengeMethod, String authUserId, String authUsername) {
-        // check whether code verifier is specified
-        if (codeVerifier == null) {
-            logger.warnf("PKCE code verifier not specified, authUserId = %s, authUsername = %s", authUserId, authUsername);
-            event.error(Errors.CODE_VERIFIER_MISSING);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE code verifier not specified", Response.Status.BAD_REQUEST); 
-        }
-        verifyCodeVerifier(codeVerifier, codeChallenge, codeChallengeMethod, authUserId, authUsername);
-    }
-
-    private void checkParamsForPkceNotEnforcedClient(String codeVerifier, String codeChallenge, String codeChallengeMethod, String authUserId, String authUsername) {
-        if (codeChallenge != null && codeVerifier == null) {
-            logger.warnf("PKCE code verifier not specified, authUserId = %s, authUsername = %s", authUserId, authUsername);
-            event.error(Errors.CODE_VERIFIER_MISSING);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE code verifier not specified", Response.Status.BAD_REQUEST);
-        }
-
-        if (codeChallenge != null) {
-            verifyCodeVerifier(codeVerifier, codeChallenge, codeChallengeMethod, authUserId, authUsername);
-        }
-    }
-
-    private void verifyCodeVerifier(String codeVerifier, String codeChallenge, String codeChallengeMethod, String authUserId, String authUsername) {
-        // check whether code verifier is formatted along with the PKCE specification
-
-        if (!isValidPkceCodeVerifier(codeVerifier)) {
-            logger.infof("PKCE invalid code verifier");
-            event.error(Errors.INVALID_CODE_VERIFIER);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE invalid code verifier", Response.Status.BAD_REQUEST);
-        }
-
-        logger.debugf("PKCE supporting Client, codeVerifier = %s", codeVerifier);
-        String codeVerifierEncoded = codeVerifier;
-        try {
-            // https://tools.ietf.org/html/rfc7636#section-4.2
-            // plain or S256
-            if (codeChallengeMethod != null && codeChallengeMethod.equals(OAuth2Constants.PKCE_METHOD_S256)) {
-                logger.debugf("PKCE codeChallengeMethod = %s", codeChallengeMethod);
-                codeVerifierEncoded = PkceUtils.generateS256CodeChallenge(codeVerifier);
-            } else {
-                logger.debug("PKCE codeChallengeMethod is plain");
-                codeVerifierEncoded = codeVerifier;
-            }
-        } catch (Exception nae) {
-            logger.infof("PKCE code verification failed, not supported algorithm specified");
-            event.error(Errors.PKCE_VERIFICATION_FAILED);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE code verification failed, not supported algorithm specified", Response.Status.BAD_REQUEST);
-        }
-        if (!codeChallenge.equals(codeVerifierEncoded)) {
-            logger.warnf("PKCE verification failed. authUserId = %s, authUsername = %s", authUserId, authUsername);
-            event.error(Errors.PKCE_VERIFICATION_FAILED);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE verification failed", Response.Status.BAD_REQUEST);
-        } else {
-            logger.debugf("PKCE verification success. codeVerifierEncoded = %s, codeChallenge = %s", codeVerifierEncoded, codeChallenge);
         }
     }
 
@@ -1001,20 +939,6 @@ public class TokenEndpoint {
     public Response cibaGrant() {
         CibaGrantType grantType = new CibaGrantType(formParams, client, session, this, realm, event, cors);
         return grantType.cibaGrant();
-    }
-
-    // https://tools.ietf.org/html/rfc7636#section-4.1
-    private boolean isValidPkceCodeVerifier(String codeVerifier) {
-        if (codeVerifier.length() < OIDCLoginProtocol.PKCE_CODE_VERIFIER_MIN_LENGTH) {
-            logger.infof(" Error: PKCE codeVerifier length under lower limit , codeVerifier = %s", codeVerifier);
-            return false;
-        }
-        if (codeVerifier.length() > OIDCLoginProtocol.PKCE_CODE_VERIFIER_MAX_LENGTH) {
-            logger.infof(" Error: PKCE codeVerifier length over upper limit , codeVerifier = %s", codeVerifier);
-            return false;
-        }
-        Matcher m = VALID_CODE_VERIFIER_PATTERN.matcher(codeVerifier);
-        return m.matches();
     }
 
     public static class TokenExchangeSamlProtocol extends SamlProtocol {

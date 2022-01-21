@@ -139,7 +139,7 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
 
         OAuth2DeviceCodeModel deviceCode = OAuth2DeviceCodeModel.create(realm, client,
                 request.getId(), request.getScope(), null, expiresIn, poolingInterval, request.getClientNotificationToken(), authReqId,
-                Collections.emptyMap());
+                Collections.emptyMap(), null, null);
         String authResultId = request.getAuthResultId();
         OAuth2DeviceUserCodeModel userCode = new OAuth2DeviceUserCodeModel(realm, deviceCode.getDeviceCode(),
                 authResultId);

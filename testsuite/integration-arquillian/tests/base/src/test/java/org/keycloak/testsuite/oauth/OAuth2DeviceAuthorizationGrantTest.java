@@ -25,6 +25,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.ClientScopeModel;
@@ -41,6 +42,7 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.oidc.PkceGenerator;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.OAuth2DeviceVerificationPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
@@ -253,6 +255,81 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         Assert.assertEquals("device-login@localhost", userInfo.getEmail());
         Assert.assertEquals("211211211", userInfo.getPhoneNumber());
     }
+
+    @Test
+    public void testPublicClientWithPKCESuccess() throws Exception {
+        // Successful Device Authorization Request with PKCE from device
+        oauth.realm(REALM_NAME);
+        oauth.clientId(DEVICE_APP_PUBLIC);
+        PkceGenerator pkce = new PkceGenerator();
+        oauth.codeChallenge(pkce.getCodeChallenge());
+        oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
+        oauth.codeVerifier(pkce.getCodeVerifier());
+        OAuthClient.DeviceAuthorizationResponse response = oauth.doDeviceAuthorizationRequest(DEVICE_APP_PUBLIC, null);
+
+        Assert.assertEquals(200, response.getStatusCode());
+        assertNotNull(response.getDeviceCode());
+        assertNotNull(response.getUserCode());
+        assertNotNull(response.getVerificationUri());
+        assertNotNull(response.getVerificationUriComplete());
+        Assert.assertEquals(60, response.getExpiresIn());
+        Assert.assertEquals(5, response.getInterval());
+
+        openVerificationPage(response.getVerificationUriComplete());
+
+        // Do Login
+        oauth.fillLoginForm("device-login", "password");
+
+        // Consent
+        grantPage.accept();
+
+        // Token request from device
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doDeviceTokenRequest(DEVICE_APP_PUBLIC, null, response.getDeviceCode());
+
+        Assert.assertEquals(200, tokenResponse.getStatusCode());
+
+        String tokenString = tokenResponse.getAccessToken();
+        assertNotNull(tokenString);
+        AccessToken token = oauth.verifyToken(tokenString);
+
+        assertNotNull(token);
+    }
+
+    @Test
+    public void testPublicClientWithPKCEFail() throws Exception {
+        // Device Authorization Request with PKCE from device - device send false code_verifier
+        oauth.realm(REALM_NAME);
+        oauth.clientId(DEVICE_APP_PUBLIC);
+        PkceGenerator pkce = new PkceGenerator();
+        oauth.codeChallenge(pkce.getCodeChallenge());
+        oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
+        oauth.codeVerifier(pkce.getCodeVerifier()+"a");
+        OAuthClient.DeviceAuthorizationResponse response = oauth.doDeviceAuthorizationRequest(DEVICE_APP_PUBLIC, null);
+
+        Assert.assertEquals(200, response.getStatusCode());
+        assertNotNull(response.getDeviceCode());
+        assertNotNull(response.getUserCode());
+        assertNotNull(response.getVerificationUri());
+        assertNotNull(response.getVerificationUriComplete());
+        Assert.assertEquals(60, response.getExpiresIn());
+        Assert.assertEquals(5, response.getInterval());
+
+        openVerificationPage(response.getVerificationUriComplete());
+
+        // Do Login
+        oauth.fillLoginForm("device-login", "password");
+
+        // Consent
+        grantPage.accept();
+
+        // Token request from device
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doDeviceTokenRequest(DEVICE_APP_PUBLIC, null, response.getDeviceCode());
+
+        Assert.assertEquals(400, tokenResponse.getStatusCode());
+        Assert.assertEquals("invalid_grant", tokenResponse.getError());
+        Assert.assertEquals("PKCE verification failed", tokenResponse.getErrorDescription());
+    }
+
 
     @Test
     public void testPublicClientCustomConsent() throws Exception {
