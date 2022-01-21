@@ -1004,6 +1004,12 @@ public class OAuthClient {
             if (nonce != null) {
                 parameters.add(new BasicNameValuePair(OIDCLoginProtocol.NONCE_PARAM, scope));
             }
+            if (codeChallenge != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_CHALLENGE, codeChallenge));
+            }
+            if (codeChallengeMethod != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod));
+            }
 
             UrlEncodedFormEntity formEntity;
             try {
@@ -1033,6 +1039,10 @@ public class OAuthClient {
 
             if (origin != null) {
                 post.addHeader("Origin", origin);
+            }
+            // https://tools.ietf.org/html/rfc7636#section-4.5
+            if (codeVerifier != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, codeVerifier));
             }
 
             UrlEncodedFormEntity formEntity;
