@@ -87,17 +87,13 @@ public class KeycloakRecorder {
             @Override 
             public String resolve(String feature) {
                 if (feature.startsWith("keycloak.profile.feature")) {
-                    feature = feature.replaceAll("keycloak\\.profile\\.feature", "kc\\.features");    
+                    feature = feature.replaceFirst("keycloak\\.profile\\.feature.", "kc\\.features-");
                 } else {
                     feature = "kc.features";
                 }
 
                 Optional<String> value = getBuildTimeProperty(feature);
 
-                if (value.isEmpty()) {
-                    value = getBuildTimeProperty(feature.replaceAll("\\.features\\.", "\\.features-"));
-                }
-                
                 if (value.isPresent()) {
                     return value.get();
                 }

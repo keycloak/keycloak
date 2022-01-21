@@ -78,12 +78,4 @@ public class HelpCommandTest {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertHelp();
     }
-
-    @Test
-    @Launch({ Build.NAME, "--help-all" })
-    void testBuildHelpAll(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
-        cliResult.assertHelp();
-    }
-
 }
