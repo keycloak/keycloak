@@ -18,6 +18,7 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
     <changeSet author="sguilhen@redhat.com" id="4.8.0-KEYCLOAK-8835">
+        <validCheckSum>7:ab9a9762faaba4ddfa35514b212c4922</validCheckSum>
         <addNotNullConstraint tableName="REALM" columnName="SSO_MAX_LIFESPAN_REMEMBER_ME" columnDataType="INT" defaultNullValue="0"/>
         <addNotNullConstraint tableName="REALM" columnName="SSO_IDLE_TIMEOUT_REMEMBER_ME" columnDataType="INT" defaultNullValue="0"/>
     </changeSet>

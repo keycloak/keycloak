@@ -18,6 +18,7 @@
 
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
     <changeSet author="keycloak" id="1.2.0.Final">
+        <validCheckSum>7:a3377a2059aefbf3b90ebb4c4cc8e2ab</validCheckSum>
         <!-- KEYCLOAK-1277 -->
         <update tableName="CLIENT">
             <column name="DIRECT_GRANTS_ONLY" valueBoolean="false"/>

@@ -18,6 +18,7 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
     <changeSet author="psilva@redhat.com" id="4.6.0-KEYCLOAK-7950">
+        <validCheckSum>7:7d3182f65a34fcc61e8d23def037dc3f</validCheckSum>
         <update tableName="RESOURCE_SERVER_RESOURCE">
             <column name="TYPE" value="Group"/>
             <where>NAME LIKE 'group.resource.%'</where>
@@ -25,6 +26,7 @@
     </changeSet>
 
     <changeSet author="keycloak" id="4.6.0-KEYCLOAK-8377">
+        <validCheckSum>7:b30039e00a0b9715d430d1b0636728fa</validCheckSum>
         <createTable tableName="ROLE_ATTRIBUTE">
             <column name="ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
@@ -45,6 +47,7 @@
     </changeSet>
 
     <changeSet author="gideonray@gmail.com" id="4.6.0-KEYCLOAK-8555">
+        <validCheckSum>7:3797315ca61d531780f8e6f82f258159</validCheckSum>
         <createIndex tableName="COMPONENT" indexName="IDX_COMPONENT_PROVIDER_TYPE">
             <column name="PROVIDER_TYPE" type="VARCHAR(255)"/>
         </createIndex>

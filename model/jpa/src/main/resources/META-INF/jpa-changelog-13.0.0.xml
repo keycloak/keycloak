@@ -18,6 +18,7 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
     <changeSet author="keycloak" id="default-roles">
+        <validCheckSum>7:f1313bcc2994a5c4dc1062ed6d8282d3</validCheckSum>
         <addColumn tableName="REALM">
             <column name="DEFAULT_ROLE" type="VARCHAR(255)"/>
         </addColumn>
@@ -26,11 +27,13 @@
     </changeSet>
 
     <changeSet author="keycloak" id="default-roles-cleanup">
+        <validCheckSum>7:90d763b52eaffebefbcbde55f269508b</validCheckSum>
         <dropTable tableName="REALM_DEFAULT_ROLES" />
         <dropTable tableName="CLIENT_DEFAULT_ROLES" />
     </changeSet>
 
     <changeSet author="keycloak" id="13.0.0-KEYCLOAK-16844">
+        <validCheckSum>7:d554f0cb92b764470dccfa5e0014a7dd</validCheckSum>
         <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_PRELOAD">
             <column name="OFFLINE_FLAG" type="VARCHAR(4)"/>
             <column name="CREATED_ON" type="INT"/>
@@ -39,6 +42,7 @@
     </changeSet>
 
     <changeSet author="keycloak" id="map-remove-ri-13.0.0">
+        <validCheckSum>7:73193e3ab3c35cf0f37ccea3bf783764</validCheckSum>
         <dropForeignKeyConstraint baseTableName="DEFAULT_CLIENT_SCOPE" constraintName="FK_R_DEF_CLI_SCOPE_SCOPE"/>
         <dropForeignKeyConstraint baseTableName="CLIENT_SCOPE_CLIENT" constraintName="FK_C_CLI_SCOPE_SCOPE"/>
         <dropForeignKeyConstraint baseTableName="CLIENT_SCOPE_CLIENT" constraintName="FK_C_CLI_SCOPE_CLIENT"/>
@@ -48,6 +52,7 @@
     </changeSet>
 
     <changeSet author="keycloak" id="13.0.0-KEYCLOAK-17992-drop-constraints">
+        <validCheckSum>7:90a1e74f92e9cbaa0c5eab80b8a037f3</validCheckSum>
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <!-- sql server needs drop and re-create constraints before modifying data type -->
             <dbms type="mssql"/>
@@ -58,11 +63,13 @@
     </changeSet>
 
     <changeSet author="keycloak" id="13.0.0-increase-column-size-federated">
+        <validCheckSum>7:5b9248f29cd047c200083cc6d8388b16</validCheckSum>
         <modifyDataType newDataType="VARCHAR(255)" tableName="CLIENT_SCOPE_CLIENT" columnName="CLIENT_ID"/>
         <modifyDataType newDataType="VARCHAR(255)" tableName="CLIENT_SCOPE_CLIENT" columnName="SCOPE_ID"/>
     </changeSet>
 
     <changeSet author="keycloak" id="13.0.0-KEYCLOAK-17992-recreate-constraints">
+        <validCheckSum>7:64db59e44c374f13955489e8990d17a1</validCheckSum>
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <!-- sql server needs drop and re-create constraints before modifying data type -->
             <dbms type="mssql"/>
@@ -79,6 +86,7 @@
     </changeSet>
 
     <changeSet author="keycloak" id="json-string-accomodation-fixed">
+        <validCheckSum>7:329a578cdb43262fff975f0a7f6cda60</validCheckSum>
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <not>
                 <changeSetExecuted id="json-string-accomodation" author="keycloak" changeLogFile="META-INF/jpa-changelog-13.0.0.xml"/>
