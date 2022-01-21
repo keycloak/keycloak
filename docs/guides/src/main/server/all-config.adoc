@@ -3,8 +3,7 @@
 
 <@template.guide
 title="All configuration"
-summary="All the configuration you will ever need and want">
-
+summary="Complete list of all build options and configuration for Keycloak">
 
 <#list ctx.options.categories as category>
 <#assign categoryOptions=ctx.options.getValues(category)>
