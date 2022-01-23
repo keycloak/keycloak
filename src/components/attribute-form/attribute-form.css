@@ -27,5 +27,9 @@
 }
 
 .pf-c-select.kc-attribute-value-selectable {
+  width: 500px;
+}
+
+.pf-c-form-control.value-input {
   width: 350px;
 }
