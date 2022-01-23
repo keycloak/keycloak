@@ -9,7 +9,7 @@ final class MetricsPropertyMappers {
 
     public static PropertyMapper[] getMetricsPropertyMappers() {
         return new PropertyMapper[] {
-                builder().from("metrics.enabled")
+                builder().from("metrics-enabled")
                         .to("quarkus.datasource.metrics.enabled")
                         .isBuildTimeProperty(true)
                         .defaultValue(Boolean.FALSE.toString())

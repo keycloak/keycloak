@@ -35,8 +35,8 @@ public class JpaClientDelegateProvider implements DelegateProvider<MapClientEnti
     private JpaClientEntity delegate;
     private final EntityManager em;
 
-    public JpaClientDelegateProvider(JpaClientEntity deledate, EntityManager em) {
-        this.delegate = deledate;
+    public JpaClientDelegateProvider(JpaClientEntity delegate, EntityManager em) {
+        this.delegate = delegate;
         this.em = em;
     }
 

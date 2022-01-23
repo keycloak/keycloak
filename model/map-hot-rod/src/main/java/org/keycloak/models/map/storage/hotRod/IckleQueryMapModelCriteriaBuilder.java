@@ -19,6 +19,8 @@ package org.keycloak.models.map.storage.hotRod;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
 import org.keycloak.storage.SearchableModelField;
@@ -41,7 +43,11 @@ public class IckleQueryMapModelCriteriaBuilder<E extends AbstractHotRodEntity, M
     private final Class<E> hotRodEntityClass;
     private final StringBuilder whereClauseBuilder = new StringBuilder(INITIAL_BUILDER_CAPACITY);
     private final Map<String, Object> parameters;
+    private static final String NON_ANALYZED_FIELD_REGEX = "[%_\\\\]";
+    private static final String ANALYZED_FIELD_REGEX = "[+!^\"~*?:\\\\]";
     public static final Map<SearchableModelField<?>, String> INFINISPAN_NAME_OVERRIDES = new HashMap<>();
+    public static final Set<SearchableModelField<?>> ANALYZED_MODEL_FIELDS = new HashSet<>();
+
 
     static {
         INFINISPAN_NAME_OVERRIDES.put(ClientModel.SearchableFields.SCOPE_MAPPING_ROLE, "scopeMappings");
@@ -49,6 +55,14 @@ public class IckleQueryMapModelCriteriaBuilder<E extends AbstractHotRodEntity, M
 
         INFINISPAN_NAME_OVERRIDES.put(GroupModel.SearchableFields.PARENT_ID, "parentId");
         INFINISPAN_NAME_OVERRIDES.put(GroupModel.SearchableFields.ASSIGNED_ROLE, "grantedRoles");
+    }
+
+    static {
+        // the "filename" analyzer in Infinispan works correctly for case-insensitive search with whitespaces
+        ANALYZED_MODEL_FIELDS.add(RoleModel.SearchableFields.DESCRIPTION);
+        ANALYZED_MODEL_FIELDS.add(UserModel.SearchableFields.FIRST_NAME);
+        ANALYZED_MODEL_FIELDS.add(UserModel.SearchableFields.LAST_NAME);
+        ANALYZED_MODEL_FIELDS.add(UserModel.SearchableFields.EMAIL);
     }
 
     public IckleQueryMapModelCriteriaBuilder(Class<E> hotRodEntityClass, StringBuilder whereClauseBuilder, Map<String, Object> parameters) {
@@ -173,6 +187,43 @@ public class IckleQueryMapModelCriteriaBuilder<E extends AbstractHotRodEntity, M
 
     private StringBuilder getWhereClauseBuilder() {
         return whereClauseBuilder;
+    }
+
+    public static Object sanitize(Object value) {
+        if (value instanceof String) {
+            String sValue = (String) value;
+            boolean anyBeginning = sValue.startsWith("%");
+            boolean anyEnd = sValue.endsWith("%");
+
+            String sanitizedString = sValue.substring(anyBeginning ? 1 : 0, sValue.length() - (anyEnd ? 1 : 0))
+                    .replaceAll(NON_ANALYZED_FIELD_REGEX, "\\\\\\\\" + "$0");
+
+            return (anyBeginning ? "%" : "") + sanitizedString + (anyEnd ? "%" : "");
+        }
+
+        return value;
+    }
+
+    public static Object sanitizeAnalyzed(Object value) {
+        if (value instanceof String) {
+            String sValue = (String) value;
+            boolean anyBeginning = sValue.startsWith("%");
+            boolean anyEnd = sValue.endsWith("%");
+
+            String sanitizedString = sValue.substring(anyBeginning ? 1 : 0, sValue.length() - (anyEnd ? 1 : 0))
+                    .replaceAll("\\\\", "\\\\\\\\"); // escape "\" with extra "\"
+            //      .replaceAll(ANALYZED_FIELD_REGEX, "\\\\\\\\" + "$0"); skipped for now because Infinispan is not able to escape
+            //      special characters for analyzed fields
+            //      TODO reevaluate once https://github.com/keycloak/keycloak/issues/9295 is fixed
+
+            return (anyBeginning ? "*" : "") + sanitizedString + (anyEnd ? "*" : "");
+        }
+
+        return value;
+    }
+
+    public static boolean isAnalyzedModelField(SearchableModelField<?> modelField) {
+        return ANALYZED_MODEL_FIELDS.contains(modelField);
     }
 
     /**

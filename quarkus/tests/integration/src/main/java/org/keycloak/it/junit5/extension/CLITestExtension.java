@@ -204,7 +204,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             configureDevServices();
             setProperty("kc.db", database.alias());
             // databases like mssql are very strict about password policy
-            setProperty("kc.db.password", "Password1!");
+            setProperty("kc.db-password", "Password1!");
         }
     }
 

@@ -74,11 +74,11 @@ public class CacheManagerFactory {
 
     private boolean isStartEagerly() {
         // eagerly starts caches by default
-        return Boolean.parseBoolean(System.getProperty("kc.cache.ispn.start-eagerly", Boolean.TRUE.toString()));
+        return Boolean.parseBoolean(System.getProperty("kc.cache-ispn-start-eagerly", Boolean.TRUE.toString()));
     }
 
     private Integer getStartTimeout() {
-        return Integer.getInteger("kc.cache.ispn.start-timeout", 120);
+        return Integer.getInteger("kc.cache-ispn-start-timeout", 120);
     }
 
     private void shutdownThreadPool() {

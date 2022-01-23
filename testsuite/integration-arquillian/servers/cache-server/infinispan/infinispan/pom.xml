@@ -51,7 +51,7 @@
                             <goal>wget</goal>
                         </goals>
                         <configuration>
-                            <url>http://downloads.jboss.org/infinispan/${cache.server.infinispan.version}/infinispan-server-${cache.server.infinispan.version}.zip</url>
+                            <url>https://downloads.jboss.org/infinispan/${cache.server.infinispan.version}/infinispan-server-${cache.server.infinispan.version}.zip</url>
                             <unpack>true</unpack>
                             <outputDirectory>${containers.home}</outputDirectory>
                         </configuration>

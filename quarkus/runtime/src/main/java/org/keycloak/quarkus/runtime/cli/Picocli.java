@@ -17,12 +17,12 @@
 
 package org.keycloak.quarkus.runtime.cli;
 
-import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 import static java.util.Arrays.asList;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_SHORT;
 import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.hasOptionValue;
 import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.parseConfigArgs;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuildTimeProperty;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfig;
 import static org.keycloak.quarkus.runtime.Environment.isDevMode;
@@ -35,7 +35,6 @@ import static picocli.CommandLine.Model.UsageMessageSpec.SECTION_KEY_COMMAND_LIS
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -71,7 +70,6 @@ public final class Picocli {
     public static final String ARG_PREFIX = "--";
     private static final String ARG_KEY_VALUE_SEPARATOR = "=";
     public static final String ARG_SHORT_PREFIX = "-";
-    public static final String ARG_PART_SEPARATOR = "-";
     public static final String NO_PARAM_LABEL = "none";
 
     private Picocli() {
@@ -125,13 +123,6 @@ public final class Picocli {
             if(!isDevMode()) {
                 if (cmd != null) {
                     cmd.getOut().println("Changes detected in configuration. Updating the server image.");
-                    List<String> cliInput = getSanitizedCliInput();
-                    cmd.getOut()
-                            .printf("For an optional runtime and bypass this step, please run the '%s' command prior to starting the server:%n%n\t%s %s %s%n%n",
-                                    Build.NAME,
-                                    Environment.getCommand(),
-                                    Build.NAME,
-                                    String.join(" ", cliInput) + "\n");
                 }
             }
             return true;
@@ -146,12 +137,18 @@ public final class Picocli {
      * @return a list of potentially masked properties in CLI format, e.g. `--db-password=*******`
      * instead of the actual passwords value.
      */
-    private static List<String> getSanitizedCliInput() {
+    private static List<String> getSanitizedRuntimeCliOptions() {
         List<String> properties = new ArrayList<>();
 
         parseConfigArgs(new BiConsumer<String, String>() {
             @Override
             public void accept(String key, String value) {
+                PropertyMapper mapper = PropertyMappers.getMapper(key);
+
+                if (mapper != null && mapper.isBuildTime()) {
+                    return;
+                }
+
                 properties.add(key + "=" + formatValue(key, value));
             }
         });
@@ -178,7 +175,7 @@ public final class Picocli {
         cmd.execute(configArgsList.toArray(new String[0]));
 
         if(!isDevMode()) {
-            cmd.getOut().printf("Next time you run the server, just run:%n%n\t%s %s%n%n", Environment.getCommand(), Start.NAME);
+            cmd.getOut().printf("Next time you run the server, just run:%n%n\t%s %s %s%n%n", Environment.getCommand(), Start.NAME, String.join(" ", getSanitizedRuntimeCliOptions()));
         }
     }
 
@@ -273,9 +270,9 @@ public final class Picocli {
                     .build());
         }
 
-        addOption(spec, Start.NAME, hasAutoBuildOption(cliArgs));
-        addOption(spec, StartDev.NAME, true);
-        addOption(spec, Build.NAME, true);
+        addOption(spec, Start.NAME, hasAutoBuildOption(cliArgs), true);
+        addOption(spec, StartDev.NAME, true, true);
+        addOption(spec, Build.NAME, true, hasAutoBuildOption(cliArgs));
 
         CommandLine cmd = new CommandLine(spec);
 
@@ -288,9 +285,13 @@ public final class Picocli {
         return cmd;
     }
 
-    private static void addOption(CommandSpec spec, String command, boolean includeBuildTime) {
+    private static void addOption(CommandSpec spec, String command, boolean includeBuildTime, boolean includeRuntime) {
         CommandSpec commandSpec = spec.subcommands().get(command).getCommandSpec();
-        List<PropertyMapper> mappers = new ArrayList<>(PropertyMappers.getRuntimeMappers());
+        List<PropertyMapper> mappers = new ArrayList<>();
+
+        if (includeRuntime) {
+            mappers.addAll(PropertyMappers.getRuntimeMappers());
+        }
 
         if (includeBuildTime) {
             mappers.addAll(PropertyMappers.getBuildTimeMappers());
@@ -302,7 +303,7 @@ public final class Picocli {
 
     private static void addFeatureOptions(CommandSpec commandSpec) {
         ArgGroupSpec.Builder featureGroupBuilder = ArgGroupSpec.builder()
-                .heading(ConfigCategory.FEATURE.getHeading())
+                .heading(ConfigCategory.FEATURE.getHeading() + ":")
                 .order(ConfigCategory.FEATURE.getOrder())
                 .validate(false);
 
@@ -343,15 +344,15 @@ public final class Picocli {
             }
 
             ArgGroupSpec.Builder argGroupBuilder = ArgGroupSpec.builder()
-                    .heading(category.getHeading())
+                    .heading(category.getHeading() + ":")
                     .order(category.getOrder())
                     .validate(false);
 
             for(PropertyMapper mapper: mappersInCategory) {
-                String name = ARG_PREFIX + PropertyMappers.toCLIFormat(mapper.getFrom()).substring(3);
+                String name = mapper.getCliFormat();
                 String description = mapper.getDescription();
 
-                if (description == null || cSpec.optionsMap().containsKey(name) || name.endsWith(ARG_PART_SEPARATOR)) {
+                if (description == null || cSpec.optionsMap().containsKey(name) || name.endsWith(OPTION_PART_SEPARATOR)) {
                     //when key is already added or has no description, don't add.
                     continue;
                 }
@@ -376,10 +377,6 @@ public final class Picocli {
 
     public static void println(CommandLine cmd, String message) {
         cmd.getOut().println(message);
-    }
-
-    public static String normalizeKey(String key) {
-        return replaceNonAlphanumericByUnderscores(key).replace('_', '.');
     }
 
     public static List<String> parseArgs(String[] rawArgs) {

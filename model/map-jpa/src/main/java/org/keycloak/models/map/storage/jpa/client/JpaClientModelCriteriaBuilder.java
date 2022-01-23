@@ -16,12 +16,7 @@
  */
 package org.keycloak.models.map.storage.jpa.client;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.keycloak.models.map.storage.jpa.client.entity.JpaClientEntity;
-import org.keycloak.models.map.storage.jpa.client.entity.JpaClientAttributeEntity;
-import java.util.Arrays;
 import java.util.function.BiFunction;
-import java.util.stream.Stream;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Join;
 import javax.persistence.criteria.Predicate;
@@ -30,38 +25,19 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientModel.SearchableFields;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
+import org.keycloak.models.map.storage.jpa.client.entity.JpaClientEntity;
+import org.keycloak.models.map.storage.jpa.client.entity.JpaClientAttributeEntity;
+import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.storage.SearchableModelField;
 
-public class JpaClientModelCriteriaBuilder implements ModelCriteriaBuilder<ClientModel, JpaClientModelCriteriaBuilder> {
-
-    private BiFunction<CriteriaBuilder, Root<JpaClientEntity>, Predicate> predicateFunc = null;
+public class JpaClientModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaClientEntity, ClientModel, JpaClientModelCriteriaBuilder> {
 
     public JpaClientModelCriteriaBuilder() {
+        super(JpaClientModelCriteriaBuilder::new);
     }
 
     private JpaClientModelCriteriaBuilder(BiFunction<CriteriaBuilder, Root<JpaClientEntity>, Predicate> predicateFunc) {
-        this.predicateFunc = predicateFunc;
-    }
-
-    private void validateValue(Object[] value, SearchableModelField field, Operator op, Class<?>... expectedTypes) {
-        if (value == null || expectedTypes == null || value.length != expectedTypes.length) {
-            throw new CriterionNotSupportedException(field, op, "Invalid argument: " + Arrays.toString(value));
-        }
-        for (int i = 0; i < expectedTypes.length; i++) {
-            if (! expectedTypes[i].isInstance(value[i])) {
-                throw new CriterionNotSupportedException(field, op, "Expected types: " + Arrays.toString(expectedTypes) +
-                        " but got: " + Arrays.toString(value));
-            }
-        }
-    }
-
-    private String convertToJson(Object input) {
-        try {
-            return JsonbType.MAPPER.writeValueAsString(input);
-        } catch (JsonProcessingException ex) {
-            throw new RuntimeException("Unable to write value as String.", ex);
-        }
+        super(JpaClientModelCriteriaBuilder::new, predicateFunc);
     }
 
     @Override
@@ -125,30 +101,4 @@ public class JpaClientModelCriteriaBuilder implements ModelCriteriaBuilder<Clien
                 throw new CriterionNotSupportedException(modelField, op);
         }
     }
-
-    @Override
-    public JpaClientModelCriteriaBuilder and(JpaClientModelCriteriaBuilder... builders) {
-        return new JpaClientModelCriteriaBuilder(
-            (cb, root) -> cb.and(Stream.of(builders).map(b -> b.getPredicateFunc().apply(cb, root)).toArray(Predicate[]::new))
-        );
-    }
-
-    @Override
-    public JpaClientModelCriteriaBuilder or(JpaClientModelCriteriaBuilder... builders) {
-        return new JpaClientModelCriteriaBuilder(
-            (cb, root) -> cb.or(Stream.of(builders).map(b -> b.getPredicateFunc().apply(cb, root)).toArray(Predicate[]::new))
-        );
-    }
-
-    @Override
-    public JpaClientModelCriteriaBuilder not(JpaClientModelCriteriaBuilder builder) {
-        return new JpaClientModelCriteriaBuilder(
-            (cb, root) -> cb.not(builder.getPredicateFunc().apply(cb, root))
-        );
-    }
-
-    BiFunction<CriteriaBuilder, Root<JpaClientEntity>, Predicate> getPredicateFunc() {
-        return predicateFunc;
-    }
-
 }

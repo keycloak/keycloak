@@ -713,7 +713,7 @@ Alternatively, you can perform both steps using the following command:
 
 Right now, tests are using a H2 database.
 
-To run tests using a different database such as PostgreSQL, add the following properties into the `testsuite/integration-arquillian/servers/auth-server/quarkus/src/main/content/conf/keycloak.properties` configuration file:
+To run tests using a different database such as PostgreSQL, add the following properties into the `testsuite/integration-arquillian/servers/auth-server/quarkus/src/main/content/conf/keycloak.conf` configuration file:
 
 ```
 # HA using PostgreSQL

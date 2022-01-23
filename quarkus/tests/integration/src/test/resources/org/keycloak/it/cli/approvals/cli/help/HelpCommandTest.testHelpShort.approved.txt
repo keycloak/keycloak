@@ -14,9 +14,7 @@ Options:
 
 -cf, --config-file <file>
                      Set the path to a configuration file. By default, configuration properties are
-                       read from the "keycloak.properties" file in the "conf" directory.
--D<key>=<value> <sysProps>
-                     Set a Java system property
+                       read from the "keycloak.conf" file in the "conf" directory.
 -h, --help           This help message.
 -pf, --profile <profile>
                      Set the profile. Use 'dev' profile to enable development mode.

@@ -29,6 +29,9 @@ limitations under the License.
             <column name="id" type="UUID">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
+            <column name="version" type="INTEGER" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
             <column name="metadata" type="json"/>
         </createTable>
         <ext:addGeneratedColumn tableName="client">
@@ -41,13 +44,15 @@ limitations under the License.
         <createIndex tableName="client" indexName="client_entityVersion">
             <column name="entityversion"/>
         </createIndex>
-        <createIndex tableName="client" indexName="client_realmId_clientId">
+        <createIndex tableName="client" indexName="client_realmId_clientId" unique="true">
             <column name="realmid"/>
             <column name="clientid"/>
         </createIndex>
+        <!--
         <ext:createJsonIndex tableName="client" indexName="client_scopeMappings">
             <ext:column jsonColumn="metadata" jsonProperty="fScopeMappings"/>
         </ext:createJsonIndex>
+        -->
 
         <createTable tableName="client_attribute">
             <column name="id" type="UUID">

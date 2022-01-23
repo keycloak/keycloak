@@ -17,11 +17,9 @@
 
 package org.keycloak.quarkus.deployment;
 
-import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.CLI_ARGS;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
 import static org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX;
 import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.AUTHENTICATORS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.MAPPERS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.POLICIES;
@@ -70,6 +68,7 @@ import io.quarkus.runtime.LaunchMode;
 import io.quarkus.smallrye.health.runtime.SmallRyeHealthHandler;
 import io.quarkus.vertx.http.deployment.NonApplicationRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.RouteBuildItem;
+import io.smallrye.config.ConfigValue;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 import org.hibernate.cfg.AvailableSettings;
@@ -311,14 +310,16 @@ class KeycloakProcessor {
         Properties properties = new Properties();
 
         for (String name : getPropertyNames()) {
-            if (isNotPersistentProperty(name)) {
+            PropertyMapper mapper = PropertyMappers.getMapper(name);
+
+            if (mapper == null) {
                 continue;
             }
 
-            Optional<String> value = Configuration.getOptionalValue(name);
+            ConfigValue value = Configuration.getConfigValue(mapper.getFrom());
 
-            if (value.isPresent()) {
-                properties.put(name, value.get());
+            if (mapper.isBuildTime() && value != null && value.getValue() != null) {
+                properties.put(name, value.getValue());
             }
         }
 
@@ -332,11 +333,6 @@ class KeycloakProcessor {
         } catch (Exception cause) {
             throw new RuntimeException("Failed to persist configuration", cause);
         }
-    }
-
-    private boolean isNotPersistentProperty(String name) {
-        // these properties are ignored from the build time properties as they are runtime-specific
-        return !name.startsWith(NS_KEYCLOAK) || "kc.home.dir".equals(name) || CLI_ARGS.equals(name);
     }
 
     /**
@@ -414,14 +410,21 @@ class KeycloakProcessor {
 
     @BuildStep(onlyIf = IsDevelopment.class)
     void configureDevMode(BuildProducer<HotDeploymentWatchedFileBuildItem> hotFiles) {
-        hotFiles.produce(new HotDeploymentWatchedFileBuildItem("META-INF/keycloak.properties"));
+        hotFiles.produce(new HotDeploymentWatchedFileBuildItem("META-INF/keycloak.conf"));
     }
 
     private Map<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> loadFactories(
             Map<String, ProviderFactory> preConfiguredProviders) {
         Config.init(new MicroProfileConfigProvider());
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        ProviderManager pm = new ProviderManager(KeycloakDeploymentInfo.create().services(), classLoader);
+
+        KeycloakDeploymentInfo keycloakDeploymentInfo = KeycloakDeploymentInfo.create()
+                .name("classpath")
+                .services()
+                // .themes() // handling of .jar based themes is already supported by Keycloak.x
+                .themeResources();
+
+        ProviderManager pm = new ProviderManager(keycloakDeploymentInfo, classLoader);
         Map<Spi, Map<Class<? extends Provider>, Map<String, ProviderFactory>>> factories = new HashMap<>();
 
         for (Spi spi : pm.loadSpis()) {
@@ -591,6 +594,6 @@ class KeycloakProcessor {
     }
 
     private boolean isMetricsEnabled() {
-        return Configuration.getOptionalBooleanValue(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.concat("metrics.enabled")).orElse(false);
+        return Configuration.getOptionalBooleanValue(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.concat("metrics-enabled")).orElse(false);
     }
 }

@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
+import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 
 import io.quarkus.test.junit.main.Launch;
@@ -52,5 +53,12 @@ class BuildCommandDistTest {
         assertTrue(result.getErrorOutput().contains("For more details run the same command passing the '--verbose' option. Also you can use '--help' to see the details about the usage of the particular command."),
                 () -> "The Error Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
         assertEquals(4, result.getErrorStream().size());
+    }
+
+    @Test
+    @Launch({ "build", "--db=postgres", "--db-username=myuser", "--db-password=mypassword", "--http-enabled=true" })
+    void testFailRuntimeOptions(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertError("Unknown options: '--db-username=myuser', '--db-password=mypassword', '--http-enabled=true'");
     }
 }

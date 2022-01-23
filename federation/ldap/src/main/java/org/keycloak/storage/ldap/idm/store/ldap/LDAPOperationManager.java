@@ -530,6 +530,13 @@ public class LDAPOperationManager {
             }
 
             throw ae;
+        } catch(RuntimeException re){
+            if (logger.isDebugEnabled()) {
+                logger.debugf(re, "LDAP Connection TimeOut for DN [%s]", dn);
+            }
+            
+            throw re;
+
         } catch (Exception e) {
             logger.errorf(e, "Unexpected exception when validating password of DN [%s]", dn);
             throw new AuthenticationException("Unexpected exception when validating password of user");

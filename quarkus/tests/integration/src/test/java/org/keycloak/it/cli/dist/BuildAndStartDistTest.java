@@ -39,13 +39,13 @@ import io.quarkus.test.junit.main.LaunchResult;
 public class BuildAndStartDistTest {
 
     @Test
-    @Launch({ "build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "build", "--cache=local" })
     @Order(1)
     void firstYouBuild(LaunchResult result) {
     }
 
     @Test
-    @Launch({ "start" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
     @Order(2)
     void thenYouStart(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;

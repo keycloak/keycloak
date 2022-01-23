@@ -11,6 +11,10 @@ on:
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [master]
+    paths-ignore:
+      - 'testsuite/**'
+      - 'examples/**'
+      - 'quarkus/tests/**'    
   schedule:
     - cron: '0 9 * * 2'
 

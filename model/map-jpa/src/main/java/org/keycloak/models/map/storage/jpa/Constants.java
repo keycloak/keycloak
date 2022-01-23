@@ -18,4 +18,5 @@ package org.keycloak.models.map.storage.jpa;
 
 public interface Constants {
     public static final Integer SUPPORTED_VERSION_CLIENT = 1;
+    public static final Integer SUPPORTED_VERSION_ROLE = 1;
 }
