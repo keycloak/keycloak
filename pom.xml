@@ -81,7 +81,7 @@
         <infinispan.version>12.1.7.Final</infinispan.version>
         <infinispan.protostream.processor.version>4.4.1.Final</infinispan.protostream.processor.version>
         <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
-        <jackson.version>2.12.1</jackson.version>
+        <jackson.version>2.13.1</jackson.version>
         <jackson.databind.version>${jackson.version}</jackson.databind.version>
         <jackson.annotations.version>${jackson.databind.version}</jackson.annotations.version>
         <jakarta.mail.version>1.6.5</jakarta.mail.version>
@@ -206,6 +206,10 @@
         <galleon.fork.embedded>true</galleon.fork.embedded>
         <galleon.log.time>true</galleon.log.time>
         <galleon.offline>true</galleon.offline>
+
+        <!-- Kubernetes / Operator -->
+        <kubernetes-client.version>5.12.0</kubernetes-client.version>
+        <validation-api.version>2.0.1.Final</validation-api.version>
 
         <!-- Properties that drive the names of various directories produced by and used in the build -->
         <server.output.dir.prefix>keycloak</server.output.dir.prefix>
@@ -1742,6 +1746,22 @@
                 </exclusions>
             </dependency>
 
+            <!-- Kubernetes/Operator dependencies -->
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>crd-generator-api</artifactId>
+                <version>${kubernetes-client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>crd-generator-apt</artifactId>
+                <version>${kubernetes-client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.validation</groupId>
+                <artifactId>validation-api</artifactId>
+                <version>${validation-api.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

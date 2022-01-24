@@ -19,6 +19,7 @@ package org.keycloak.representations.idm.authorization;
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
+import io.fabric8.crd.generator.annotation.SchemaFrom;
 
 /**
  * <p>A bounded extent of access that is possible to perform on a resource set. In authorization policy terminology,
@@ -33,7 +34,9 @@ public class ScopeRepresentation {
     private String id;
     private String name;
     private String iconUri;
+    @SchemaFrom(type = java.lang.Void.class)
     private List<PolicyRepresentation> policies;
+    @SchemaFrom(type = java.lang.Void.class)
     private List<ResourceRepresentation> resources;
     private String displayName;
 
