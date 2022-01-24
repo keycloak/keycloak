@@ -28,21 +28,21 @@ import org.keycloak.models.map.client.MapClientEntity;
 import org.keycloak.models.map.client.MapClientEntityFields;
 import org.keycloak.models.map.common.EntityField;
 import org.keycloak.models.map.common.delegate.DelegateProvider;
+import org.keycloak.models.map.storage.jpa.JpaDelegateProvider;
 import org.keycloak.models.map.storage.jpa.client.entity.JpaClientEntity;
 
-public class JpaClientDelegateProvider implements DelegateProvider<MapClientEntity> {
+public class JpaClientDelegateProvider extends JpaDelegateProvider<JpaClientEntity> implements DelegateProvider<MapClientEntity> {
 
-    private JpaClientEntity delegate;
     private final EntityManager em;
 
     public JpaClientDelegateProvider(JpaClientEntity delegate, EntityManager em) {
-        this.delegate = delegate;
+        super(delegate);
         this.em = em;
     }
 
     @Override
     public MapClientEntity getDelegate(boolean isRead, Enum<? extends EntityField<MapClientEntity>> field, Object... parameters) {
-        if (delegate.isMetadataInitialized()) return delegate;
+        if (getDelegate().isMetadataInitialized()) return getDelegate();
         if (isRead) {
             if (field instanceof MapClientEntityFields) {
                 switch ((MapClientEntityFields) field) {
@@ -51,26 +51,26 @@ public class JpaClientDelegateProvider implements DelegateProvider<MapClientEnti
                     case CLIENT_ID:
                     case PROTOCOL:
                     case ENABLED:
-                        return delegate;
+                        return getDelegate();
 
                     case ATTRIBUTES:
                         CriteriaBuilder cb = em.getCriteriaBuilder();
                         CriteriaQuery<JpaClientEntity> query = cb.createQuery(JpaClientEntity.class);
                         Root<JpaClientEntity> root = query.from(JpaClientEntity.class);
                         root.fetch("attributes", JoinType.INNER);
-                        query.select(root).where(cb.equal(root.get("id"), UUID.fromString(delegate.getId())));
+                        query.select(root).where(cb.equal(root.get("id"), UUID.fromString(getDelegate().getId())));
 
-                        delegate = em.createQuery(query).getSingleResult();
+                        setDelegate(em.createQuery(query).getSingleResult());
                         break;
 
                     default:
-                        delegate = em.find(JpaClientEntity.class, UUID.fromString(delegate.getId()));
+                        setDelegate(em.find(JpaClientEntity.class, UUID.fromString(getDelegate().getId())));
                 }
             } else throw new IllegalStateException("Not a valid client field: " + field);
         } else {
-            delegate = em.find(JpaClientEntity.class, UUID.fromString(delegate.getId()));
+            setDelegate(em.find(JpaClientEntity.class, UUID.fromString(getDelegate().getId())));
         }
-        return delegate;
+        return getDelegate();
     }
 
 }

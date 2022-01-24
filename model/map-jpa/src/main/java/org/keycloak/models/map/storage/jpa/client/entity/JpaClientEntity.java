@@ -45,6 +45,8 @@ import org.keycloak.models.map.client.MapClientEntity.AbstractClientEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import static org.keycloak.models.map.storage.jpa.Constants.SUPPORTED_VERSION_CLIENT;
+
+import org.keycloak.models.map.storage.jpa.JpaRootEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
 /**
@@ -60,7 +62,7 @@ import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
             )
 })
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
-public class JpaClientEntity extends AbstractClientEntity implements Serializable {
+public class JpaClientEntity extends AbstractClientEntity implements Serializable, JpaRootEntity {
 
     @Id
     @Column
@@ -113,9 +115,10 @@ public class JpaClientEntity extends AbstractClientEntity implements Serializabl
      * Used by hibernate when calling cb.construct from read(QueryParameters) method.
      * It is used to select client without metadata(json) field.
      */
-    public JpaClientEntity(UUID id, Integer entityVersion, String realmId, String clientId, 
+    public JpaClientEntity(UUID id, int version, Integer entityVersion,  String realmId, String clientId,
             String protocol, Boolean enabled) {
         this.id = id;
+        this.version = version;
         this.entityVersion = entityVersion;
         this.realmId = realmId;
         this.clientId = clientId;
@@ -148,6 +151,7 @@ public class JpaClientEntity extends AbstractClientEntity implements Serializabl
         metadata.setEntityVersion(entityVersion);
     }
 
+    @Override
     public int getVersion() {
         return version;
     }

@@ -74,8 +74,9 @@ public class JpaClientMapKeycloakTransaction extends JpaKeycloakTransaction impl
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<JpaClientEntity> query = cb.createQuery(JpaClientEntity.class);
         Root<JpaClientEntity> root = query.from(JpaClientEntity.class);
-        query.select(cb.construct(JpaClientEntity.class, 
-                root.get("id"), 
+        query.select(cb.construct(JpaClientEntity.class,
+                root.get("id"),
+                root.get("version"),
                 root.get("entityVersion"), 
                 root.get("realmId"), 
                 root.get("clientId"), 
