@@ -24,6 +24,8 @@ import static java.util.Objects.nonNull;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.component.ComponentFactory;
@@ -64,6 +66,7 @@ import org.keycloak.models.utils.ComponentUtil;
 
 public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implements RealmModel {
 
+    private static final Logger LOG = Logger.getLogger(MapRealmAdapter.class);
     private static final String ACTION_TOKEN_GENERATED_BY_USER_LIFESPAN = "actionTokenGeneratedByUserLifespan";
     private static final String DEFAULT_SIGNATURE_ALGORITHM = "defaultSignatureAlgorithm";
     private static final String BRUTE_FORCE_PROTECTED = "bruteForceProtected";
@@ -207,7 +210,15 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
     public Map<String, String> getAttributes() {
         return entity.getAttributes().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, 
             entry -> {
-                if (entry.getValue().isEmpty()) return null;
+                if (entry.getValue().isEmpty()) {
+                    return null;
+                } else if (entry.getValue().size() > 1) {
+                    // This could be caused by an inconsistency in the storage, a programming error,
+                    // or a downgrade from a future version of Keycloak that already supports multi-valued attributes.
+                    // The caller will not see the other values, and when this entity is later updated, the additional values be will lost.
+                    LOG.warnf("Realm '%s' has attribute '%s' with %d values, retrieving only the first", getId(), entry.getKey(),
+                            entry.getValue().size());
+                }
                 return entry.getValue().get(0);
             })
         );
