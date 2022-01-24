@@ -587,7 +587,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
             JpaClientAttributeEntity attr = iterator.next();
             if (Objects.equals(attr.getName(), name)) {
                 iterator.remove();
-                attr.setClient(null);
             }
         }
     }
@@ -625,9 +624,7 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
     public void setAttributes(Map<String, List<String>> attributes) {
         checkEntityVersionForUpdate();
         for (Iterator<JpaClientAttributeEntity> iterator = this.attributes.iterator(); iterator.hasNext();) {
-            JpaClientAttributeEntity attr = iterator.next();
             iterator.remove();
-            attr.setClient(null);
         }
         if (attributes != null) {
             for (Map.Entry<String, List<String>> attrEntry : attributes.entrySet()) {

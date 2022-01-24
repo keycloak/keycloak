@@ -257,9 +257,7 @@ public class JpaRoleEntity extends AbstractRoleEntity implements JpaRootEntity {
     public void setAttributes(Map<String, List<String>> attributes) {
         checkEntityVersionForUpdate();
         for (Iterator<JpaRoleAttributeEntity> iterator = this.attributes.iterator(); iterator.hasNext();) {
-            JpaRoleAttributeEntity attr = iterator.next();
             iterator.remove();
-            attr.setRole(null);
         }
         if (attributes != null) {
             for (Map.Entry<String, List<String>> entry : attributes.entrySet()) {
@@ -285,7 +283,6 @@ public class JpaRoleEntity extends AbstractRoleEntity implements JpaRootEntity {
             JpaRoleAttributeEntity attr = iterator.next();
             if (Objects.equals(attr.getName(), name)) {
                 iterator.remove();
-                attr.setRole(null);
             }
         }
     }
