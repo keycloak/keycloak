@@ -187,7 +187,6 @@
         <surefire.system.args></surefire.system.args>
 
         <!-- Tomcat versions -->
-        <tomcat7.version>7.0.92</tomcat7.version>
         <tomcat8.version>8.5.38</tomcat8.version>
         <tomcat9.version>9.0.16</tomcat9.version>
 
@@ -1207,17 +1206,7 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-tomcat7-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-tomcat-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-tomcat7-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -1492,12 +1481,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-tomcat7-adapter-dist</artifactId>
-                <version>${project.version}</version>
-                <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-tomcat-adapter-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
@@ -1547,12 +1530,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-adapter-feature-pack</artifactId>
-                <version>${project.version}</version>
-                <type>zip</type>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-tomcat7-adapter-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>
