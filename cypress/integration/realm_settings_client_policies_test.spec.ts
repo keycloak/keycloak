@@ -1,30 +1,35 @@
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
 import RealmSettingsPage from "../support/pages/admin_console/manage/realm_settings/RealmSettingsPage";
-import { keycloakBefore } from "../support/util/keycloak_hooks";
+import {
+  keycloakBefore,
+  keycloakBeforeEach,
+} from "../support/util/keycloak_hooks";
 import AdminClient from "../support/util/AdminClient";
 
 const loginPage = new LoginPage();
 const sidebarPage = new SidebarPage();
-const realmSettingsPage = new RealmSettingsPage();
 
 describe("Realm settings client policies tab tests", () => {
   const realmName = "Realm_" + (Math.random() + 1).toString(36).substring(7);
+  const realmSettingsPage = new RealmSettingsPage(realmName);
 
   beforeEach(() => {
-    keycloakBefore();
-    loginPage.logIn();
+    keycloakBeforeEach();
+    sidebarPage.goToRealm(realmName);
     sidebarPage.goToRealmSettings();
     cy.findByTestId("rs-clientPolicies-tab").click();
     cy.findByTestId("rs-policies-clientPolicies-tab").click();
   });
 
-  before(async () => {
-    await new AdminClient().createRealm(realmName);
+  before(() => {
+    keycloakBefore();
+    new AdminClient().createRealm(realmName);
+    loginPage.logIn();
   });
 
-  after(async () => {
-    await new AdminClient().deleteRealm(realmName);
+  after(() => {
+    new AdminClient().deleteRealm(realmName);
   });
 
   it("Go to client policies tab", () => {
@@ -96,14 +101,17 @@ describe("Realm settings client policies tab tests", () => {
   });
 
   it("Should not create duplicate client profile", () => {
+    const url = `/auth/admin/realms/${realmName}/client-policies/policies`;
+    cy.intercept("PUT", url).as("save");
     realmSettingsPage.shouldCompleteAndCreateNewClientPolicyFromEmptyState();
+    cy.wait("@save");
 
     sidebarPage.goToRealmSettings();
     cy.findByTestId("rs-clientPolicies-tab").click();
     cy.findByTestId("rs-policies-clientPolicies-tab").click();
     realmSettingsPage.shouldCompleteAndCreateNewClientPolicy();
+    cy.wait("@save");
     realmSettingsPage.shouldNotCreateDuplicateClientPolicy();
-    cy.wait(2000);
     sidebarPage.goToRealmSettings();
     cy.findByTestId("rs-clientPolicies-tab").click();
     cy.findByTestId("rs-policies-clientPolicies-tab").click();

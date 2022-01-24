@@ -220,6 +220,11 @@ export default class RealmSettingsPage {
   private deleteClientRolesCondition = "delete-client-roles-condition";
   private deleteClientScopesCondition = "delete-client-scopes-condition";
 
+  private realmName?: string;
+  constructor(realmName?: string) {
+    this.realmName = realmName;
+  }
+
   selectLoginThemeType(themeType: string) {
     cy.get(this.selectLoginTheme).click();
     cy.get(this.loginThemeList).contains(themeType).click();
@@ -303,7 +308,7 @@ export default class RealmSettingsPage {
   }
 
   toggleAddProviderDropdown() {
-    const keysUrl = "/auth/admin/realms/master/keys";
+    const keysUrl = `/auth/admin/realms/${this.realmName}/keys`;
     cy.intercept(keysUrl).as("keysFetch");
     cy.findByTestId(this.addProviderDropdown).click();
 
@@ -325,17 +330,6 @@ export default class RealmSettingsPage {
     cy.findByTestId(this.confirmAddBundle).click();
 
     return this;
-  }
-
-  deleteProvider(providerName: string) {
-    cy.findAllByTestId("provider-name-link")
-      .contains(providerName)
-      .parent()
-      .siblings(".pf-c-data-list__item-action")
-      .click()
-      .findByTestId(this.deleteAction)
-      .click();
-    cy.wait(500).findByTestId(this.modalConfirm).click();
   }
 
   enterConsoleDisplayName(name: string) {
@@ -772,9 +766,9 @@ export default class RealmSettingsPage {
   shouldCancelEditingExecutor() {
     cy.get(this.clientProfileTwo).click();
 
-    cy.intercept("/auth/admin/realms/master/client-policies/profiles*").as(
-      "profilesFetch"
-    );
+    cy.intercept(
+      `/auth/admin/realms/${this.realmName}/client-policies/profiles*`
+    ).as("profilesFetch");
     cy.findByTestId(this.editExecutor).first().click();
     cy.wait("@profilesFetch");
 
@@ -1016,6 +1010,10 @@ export default class RealmSettingsPage {
   }
 
   shouldAddClientScopesCondition() {
+    cy.intercept(`/auth/admin/realms/${this.realmName}/client-scopes`).as(
+      "clientScopes"
+    );
+
     cy.get(this.clientPolicy).click();
     cy.findByTestId(this.addCondition).click();
     cy.get(this.addConditionDrpDwn).click();
@@ -1023,6 +1021,7 @@ export default class RealmSettingsPage {
       .contains("client-scopes")
       .click();
 
+    cy.wait("@clientScopes");
     this.addClientScopes();
 
     cy.findByTestId(this.addConditionSaveBtn).click();
@@ -1051,12 +1050,13 @@ export default class RealmSettingsPage {
   }
 
   shouldEditClientScopesCondition() {
+    cy.intercept(`/auth/admin/realms/${this.realmName}/client-scopes`).as(
+      "clientScopes"
+    );
     cy.get(this.clientPolicy).click();
-
     cy.findByTestId(this.clientScopesConditionLink).click();
 
-    cy.wait(200);
-
+    cy.wait("@clientScopes");
     this.addClientScopes();
 
     cy.findByTestId(this.addConditionSaveBtn).click();
@@ -1117,9 +1117,16 @@ export default class RealmSettingsPage {
     cy.findByTestId(this.newClientPolicyDescriptionInput).type(
       "Test Again Description"
     );
+    cy.intercept(
+      "PUT",
+      `/auth/admin/realms/${this.realmName}/client-policies/policies`
+    ).as("save");
+
     cy.findByTestId(this.saveNewClientPolicyBtn).click();
     cy.get(this.alertMessage).should("be.visible", "New client policy created");
-    cy.wait(500);
+    cy.wait("@save");
+    cy.get(".pf-c-alert").should("not.exist");
+
     cy.findByTestId(this.clientPolicyDrpDwn).contains("Action").click();
     cy.findByTestId("deleteClientPolicyDropdown").click();
     cy.findByTestId("modalConfirm").contains("Delete").click();
