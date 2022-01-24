@@ -20,6 +20,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -30,7 +31,14 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.sql.DataSource;
+
+import org.hibernate.boot.Metadata;
 import org.hibernate.cfg.AvailableSettings;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.event.service.spi.EventListenerRegistry;
+import org.hibernate.event.spi.EventType;
+import org.hibernate.jpa.boot.spi.IntegratorProvider;
+import org.hibernate.service.spi.SessionFactoryServiceRegistry;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
@@ -159,6 +167,31 @@ public class JpaMapStorageProviderFactory implements
                     properties.put("hibernate.show_sql", config.getBoolean("showSql", false));
                     properties.put("hibernate.format_sql", config.getBoolean("formatSql", true));
                     properties.put("hibernate.dialect", config.get("driverDialect"));
+
+                    properties.put(
+                            "hibernate.integrator_provider",
+                            (IntegratorProvider) () -> Collections.singletonList(
+                                    new org.hibernate.integrator.spi.Integrator() {
+
+                                        @Override
+                                        public void integrate(Metadata metadata, SessionFactoryImplementor sessionFactoryImplementor,
+                                                              SessionFactoryServiceRegistry sessionFactoryServiceRegistry) {
+                                            final EventListenerRegistry eventListenerRegistry =
+                                                    sessionFactoryServiceRegistry.getService( EventListenerRegistry.class );
+
+                                            eventListenerRegistry.appendListeners(EventType.PRE_INSERT, JpaChildEntityListener.INSTANCE);
+                                            eventListenerRegistry.appendListeners(EventType.PRE_UPDATE, JpaChildEntityListener.INSTANCE);
+                                            eventListenerRegistry.appendListeners(EventType.PRE_DELETE, JpaChildEntityListener.INSTANCE);
+                                        }
+
+                                        @Override
+                                        public void disintegrate(SessionFactoryImplementor sessionFactoryImplementor,
+                                                                 SessionFactoryServiceRegistry sessionFactoryServiceRegistry) {
+
+                                        }
+                                    }
+                            )
+                    );
 
                     Integer isolation = config.getInt("isolation");
                     if (isolation != null) {
