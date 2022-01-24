@@ -26,21 +26,21 @@ import org.keycloak.models.map.common.EntityField;
 import org.keycloak.models.map.common.delegate.DelegateProvider;
 import org.keycloak.models.map.role.MapRoleEntity;
 import org.keycloak.models.map.role.MapRoleEntityFields;
+import org.keycloak.models.map.storage.jpa.JpaDelegateProvider;
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity;
 
-public class JpaRoleDelegateProvider implements DelegateProvider<MapRoleEntity> {
+public class JpaRoleDelegateProvider extends JpaDelegateProvider<JpaRoleEntity> implements DelegateProvider<MapRoleEntity> {
 
-    private JpaRoleEntity delegate;
     private final EntityManager em;
 
     public JpaRoleDelegateProvider(JpaRoleEntity delegate, EntityManager em) {
-        this.delegate = delegate;
+        super(delegate);
         this.em = em;
     }
 
     @Override
     public JpaRoleEntity getDelegate(boolean isRead, Enum<? extends EntityField<MapRoleEntity>> field, Object... parameters) {
-        if (delegate.isMetadataInitialized()) return delegate;
+        if (getDelegate().isMetadataInitialized()) return getDelegate();
         if (isRead) {
             if (field instanceof MapRoleEntityFields) {
                 switch ((MapRoleEntityFields) field) {
@@ -49,26 +49,26 @@ public class JpaRoleDelegateProvider implements DelegateProvider<MapRoleEntity> 
                     case CLIENT_ID:
                     case NAME:
                     case DESCRIPTION:
-                        return delegate;
+                        return getDelegate();
 
                     case ATTRIBUTES:
                         CriteriaBuilder cb = em.getCriteriaBuilder();
                         CriteriaQuery<JpaRoleEntity> query = cb.createQuery(JpaRoleEntity.class);
                         Root<JpaRoleEntity> root = query.from(JpaRoleEntity.class);
                         root.fetch("attributes", JoinType.INNER);
-                        query.select(root).where(cb.equal(root.get("id"), UUID.fromString(delegate.getId())));
+                        query.select(root).where(cb.equal(root.get("id"), UUID.fromString(getDelegate().getId())));
 
-                        delegate = em.createQuery(query).getSingleResult();
+                        setDelegate(em.createQuery(query).getSingleResult());
                         break;
 
                     default:
-                        delegate = em.find(JpaRoleEntity.class, UUID.fromString(delegate.getId()));
+                        setDelegate(em.find(JpaRoleEntity.class, UUID.fromString(getDelegate().getId())));
                 }
             } else throw new IllegalStateException("Not a valid role field: " + field);
         } else {
-            delegate = em.find(JpaRoleEntity.class, UUID.fromString(delegate.getId()));
+            setDelegate(em.find(JpaRoleEntity.class, UUID.fromString(getDelegate().getId())));
         }
-        return delegate;
+        return getDelegate();
     }
 
 }

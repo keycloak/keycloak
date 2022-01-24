@@ -75,7 +75,8 @@ public class JpaRoleMapKeycloakTransaction extends JpaKeycloakTransaction implem
         CriteriaQuery<JpaRoleEntity> query = cb.createQuery(JpaRoleEntity.class);
         Root<JpaRoleEntity> root = query.from(JpaRoleEntity.class);
         query.select(cb.construct(JpaRoleEntity.class, 
-                root.get("id"), 
+                root.get("id"),
+                root.get("version"),
                 root.get("entityVersion"),
                 root.get("realmId"),
                 root.get("clientId"),

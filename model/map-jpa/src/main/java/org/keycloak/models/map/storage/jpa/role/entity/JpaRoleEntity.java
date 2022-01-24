@@ -43,6 +43,8 @@ import org.hibernate.annotations.TypeDefs;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.role.MapRoleEntity.AbstractRoleEntity;
 import static org.keycloak.models.map.storage.jpa.Constants.SUPPORTED_VERSION_ROLE;
+
+import org.keycloak.models.map.storage.jpa.JpaRootEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
 /**
@@ -53,7 +55,7 @@ import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 @Entity
 @Table(name = "role", uniqueConstraints = {@UniqueConstraint(columnNames = {"realmId", "clientId", "name"})})
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
-public class JpaRoleEntity extends AbstractRoleEntity implements Serializable {
+public class JpaRoleEntity extends AbstractRoleEntity implements Serializable, JpaRootEntity {
 
     @Id
     @Column
@@ -106,8 +108,9 @@ public class JpaRoleEntity extends AbstractRoleEntity implements Serializable {
      * Used by hibernate when calling cb.construct from read(QueryParameters) method.
      * It is used to select role without metadata(json) field.
      */
-    public JpaRoleEntity(UUID id, Integer entityVersion, String realmId, String clientId, String name, String description) {
+    public JpaRoleEntity(UUID id, int version, Integer entityVersion, String realmId, String clientId, String name, String description) {
         this.id = id;
+        this.version = version;
         this.entityVersion = entityVersion;
         this.realmId = realmId;
         this.clientId = clientId;
@@ -140,6 +143,7 @@ public class JpaRoleEntity extends AbstractRoleEntity implements Serializable {
         metadata.setEntityVersion(entityVersion);
     }
 
+    @Override
     public int getVersion() {
         return version;
     }
