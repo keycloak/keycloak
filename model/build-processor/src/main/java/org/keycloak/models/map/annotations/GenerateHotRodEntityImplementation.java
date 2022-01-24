@@ -26,5 +26,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface GenerateHotRodEntityImplementation {
     String implementInterface();
-    String inherits() default "org.keycloak.models.map.common.UpdatableEntity.Impl";
+    String inherits() default "org.keycloak.models.map.storage.hotRod.common.UpdatableHotRodEntityDelegateImpl";
 }
