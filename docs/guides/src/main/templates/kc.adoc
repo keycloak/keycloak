@@ -11,3 +11,10 @@ bin/kc.[sh|bat] build ${parameters}
 bin/kc.[sh|bat] start ${parameters}
 ----
 </#macro>
+
+<#macro startdev parameters>
+[source,bash]
+----
+bin/kc.[sh|bat] start-dev ${parameters}
+----
+</#macro>
