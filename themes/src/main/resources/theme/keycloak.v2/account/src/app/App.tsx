@@ -19,14 +19,14 @@ import * as React from 'react';
 import {KeycloakService} from './keycloak-service/keycloak.service';
 
 import {PageNav} from './PageNav';
-import {PageToolbar} from './PageToolbar';
+import {PageHeaderTool} from './PageHeaderTool';
 import {makeRoutes} from './ContentPages';
 
 import {
     Brand,
     Page,
     PageHeader,
-    PageSidebar,
+    PageSidebar
 } from '@patternfly/react-core';
 
 import { KeycloakContext } from './keycloak-service/KeycloakContext';
@@ -64,7 +64,7 @@ export class App extends React.Component<AppProps> {
         const Header = (
             <PageHeader
                 logo={<a id="brandLink" href={brandUrl}><Brand src={brandImg} alt="Logo" className="brand"/></a>}
-                headerTools={<PageToolbar/>}
+                headerTools={<PageHeaderTool/>}
                 // avatar={username}
                 showNavToggle
             />
