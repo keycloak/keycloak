@@ -77,6 +77,8 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
             if (interfaceClass == null || interfaceClass.isEmpty()) return;
             TypeElement parentClassElement = elements.getTypeElement(hotRodAnnotation.inherits());
             if (parentClassElement == null) return;
+            boolean parentClassHasGeneric = !getGenericsDeclaration(parentClassElement.asType()).isEmpty();
+
 
             TypeElement parentInterfaceElement = elements.getTypeElement(interfaceClass);
             if (parentInterfaceElement == null) return;
@@ -119,9 +121,11 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
                 pw.println("import java.util.stream.Collectors;");
                 pw.println();
                 pw.println("// DO NOT CHANGE THIS CLASS, IT IS GENERATED AUTOMATICALLY BY " + GenerateHotRodEntityImplementationsProcessor.class.getSimpleName());
-                pw.println("public class " + hotRodSimpleClassName + " extends " + parentClassElement.getQualifiedName().toString() + " implements "
+                pw.println("public class " + hotRodSimpleClassName
+                        + " extends "
+                        + parentClassElement.getQualifiedName().toString() + (parentClassHasGeneric ? "<" + e.getQualifiedName().toString() + ">" : "")
+                        + " implements "
                         + parentInterfaceElement.getQualifiedName().toString()
-                        + ", " + generalHotRodDelegate.getQualifiedName().toString() + "<" + e.getQualifiedName().toString() + ">"
                         + " {");
                 pw.println();
                 pw.println("    private final " + className + " " + ENTITY_VARIABLE + ";");
@@ -325,7 +329,7 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
                         pw.println("        p0 = " + deepClone(fieldType, "p0") + ";");
                     }
                     pw.println("        " + hotRodFieldType.toString() + " migrated = " + migrateToType(hotRodFieldType, firstParameterType, "p0") + ";");
-                    pw.println("        updated |= ! Objects.equals(" + hotRodEntityField(fieldName) + ", migrated);");
+                    pw.println("        " + hotRodEntityField("updated") + " |= ! Objects.equals(" + hotRodEntityField(fieldName) + ", migrated);");
                     pw.println("        " + hotRodEntityField(fieldName) + " = migrated;");
                     pw.println("    }");
                     return true;
@@ -338,10 +342,10 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
                     }
                     pw.println("        " + collectionItemType.toString() + " migrated = " + migrateToType(collectionItemType, firstParameterType, "p0") + ";");
                     if (isSetType(typeElement)) {
-                        pw.println("        updated |= " + hotRodEntityField(fieldName) + ".add(migrated);");
+                        pw.println("        " + hotRodEntityField("updated") + " |= " + hotRodEntityField(fieldName) + ".add(migrated);");
                     } else {
                         pw.println("        " + hotRodEntityField(fieldName) + ".add(migrated);");
-                        pw.println("        updated = true;");
+                        pw.println("        " + hotRodEntityField("updated") + " = true;");
                     }
                     pw.println("    }");
                     return true;
@@ -350,7 +354,7 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
                     pw.println("    @SuppressWarnings(\"unchecked\") @Override public " + method.getReturnType() + " " + method.getSimpleName() + "(" + firstParameterType + " p0) {");
                     if (isMapType(typeElement)) {
                         // Maps are stored as sets
-                        pw.println("        this.updated |= " + hotRodUtils.getQualifiedName().toString() + ".removeFromSetByMapKey("
+                        pw.println("        " + hotRodEntityField("updated") + " |= " + hotRodUtils.getQualifiedName().toString() + ".removeFromSetByMapKey("
                                 + hotRodEntityField(fieldName) + ", "
                                 + "p0, "
                                 + keyGetterReference(collectionItemType) + ");"
@@ -358,7 +362,7 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
                     } else {
                         pw.println("        if (" + hotRodEntityField(fieldName) + " == null) { return; }");
                         pw.println("        boolean removed = " + hotRodEntityField(fieldName) + ".remove(p0);");
-                        pw.println("        updated |= removed;");
+                        pw.println("        " + hotRodEntityField("updated") + " |= removed;");
                     }
                     pw.println("    }");
                     return true;
@@ -371,12 +375,12 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
                     if (! isImmutableFinalType(secondParameterType)) {
                         pw.println("        p1 = " + deepClone(secondParameterType, "p1") + ";");
                     }
-                    pw.println("        this.updated |= " + hotRodUtils.getQualifiedName().toString() + ".removeFromSetByMapKey("
+                    pw.println("        " + hotRodEntityField("updated") + " |= " + hotRodUtils.getQualifiedName().toString() + ".removeFromSetByMapKey("
                             + hotRodEntityField(fieldName) + ", "
                             + "p0, "
                             + keyGetterReference(collectionItemType) + ");"
                     );
-                    pw.println("        this.updated |= !valueUndefined && " + hotRodEntityField(fieldName)
+                    pw.println("        " + hotRodEntityField("updated") + " |= !valueUndefined && " + hotRodEntityField(fieldName)
                             + ".add(" + migrateToType(collectionItemType, new TypeMirror[]{firstParameterType, secondParameterType}, new String[]{"p0", "p1"}) + ");");
                     pw.println("    }");
                     return true;

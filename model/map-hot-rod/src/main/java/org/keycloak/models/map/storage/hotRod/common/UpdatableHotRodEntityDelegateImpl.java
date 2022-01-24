@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,16 +19,15 @@ package org.keycloak.models.map.storage.hotRod.common;
 
 import org.keycloak.models.map.common.UpdatableEntity;
 
-public abstract class AbstractHotRodEntity implements UpdatableEntity {
-    public boolean updated;
+public abstract class UpdatableHotRodEntityDelegateImpl<E extends UpdatableEntity> implements HotRodEntityDelegate<E> {
 
     @Override
     public boolean isUpdated() {
-        return this.updated;
+        return getHotRodEntity().isUpdated();
     }
 
     @Override
     public void clearUpdatedFlag() {
-        this.updated = false;
+        getHotRodEntity().clearUpdatedFlag();
     }
 }
