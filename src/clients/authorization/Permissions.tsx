@@ -30,12 +30,13 @@ import { useAlerts } from "../../components/alert/Alerts";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import useToggle from "../../utils/useToggle";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { SearchDropdown } from "./SearchDropdown";
+import { SearchDropdown, SearchForm } from "./SearchDropdown";
 import { MoreLabel } from "./MoreLabel";
 import { DetailDescription } from "./DetailDescription";
 import { EmptyPermissionsState } from "./EmptyPermissionsState";
 import { toNewPermission } from "../routes/NewPermission";
 import { toPermissionDetails } from "../routes/PermissionDetails";
+import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 
 import "./permissions.css";
 
@@ -64,6 +65,7 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
   const [disabledCreate, setDisabledCreate] =
     useState<{ resources: boolean; scopes: boolean }>();
   const [createOpen, toggleCreate] = useToggle();
+  const [search, setSearch] = useState<SearchForm>({});
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
@@ -90,6 +92,7 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
         first,
         max,
         id: clientId,
+        ...search,
       });
 
       return await Promise.all(
@@ -109,7 +112,7 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
       );
     },
     setPermissions,
-    [key]
+    [key, search]
   );
 
   useFetch(
@@ -166,10 +169,12 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
     return <KeycloakSpinner />;
   }
 
+  const noData = permissions.length === 0;
+  const searching = Object.keys(search).length !== 0;
   return (
     <PageSection variant="light" className="pf-u-p-0">
       <DeleteConfirm />
-      {permissions.length > 0 && (
+      {(!noData || searching) && (
         <PaginatingTableToolbar
           count={permissions.length}
           first={first}
@@ -183,7 +188,7 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
           toolbarItem={
             <>
               <ToolbarItem>
-                <SearchDropdown types={policyProviders} />
+                <SearchDropdown types={policyProviders} onSearch={setSearch} />
               </ToolbarItem>
               <ToolbarItem>
                 <Dropdown
@@ -238,102 +243,111 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
             </>
           }
         >
-          <TableComposable aria-label={t("resources")} variant="compact">
-            <Thead>
-              <Tr>
-                <Th />
-                <Th>{t("common:name")}</Th>
-                <Th>{t("common:type")}</Th>
-                <Th>{t("associatedPolicy")}</Th>
-                <Th>{t("common:description")}</Th>
-                <Th />
-              </Tr>
-            </Thead>
-            {permissions.map((permission, rowIndex) => (
-              <Tbody key={permission.id} isExpanded={permission.isExpanded}>
+          {!noData && (
+            <TableComposable aria-label={t("resources")} variant="compact">
+              <Thead>
                 <Tr>
-                  <Td
-                    expand={{
-                      rowIndex,
-                      isExpanded: permission.isExpanded,
-                      onToggle: (_, rowIndex) => {
-                        const rows = permissions.map((p, index) =>
-                          index === rowIndex
-                            ? { ...p, isExpanded: !p.isExpanded }
-                            : p
-                        );
-                        setPermissions(rows);
-                      },
-                    }}
-                  />
-                  <Td data-testid={`name-column-${permission.name}`}>
-                    <Link
-                      to={toPermissionDetails({
-                        realm,
-                        id: clientId,
-                        permissionType: permission.type!,
-                        permissionId: permission.id!,
-                      })}
-                    >
-                      {permission.name}
-                    </Link>
-                  </Td>
-                  <Td>
-                    {
-                      policyProviders?.find((p) => p.type === permission.type)
-                        ?.name
-                    }
-                  </Td>
-                  <Td>
-                    <AssociatedPoliciesRenderer row={permission} />
-                  </Td>
-                  <Td>{permission.description}</Td>
-                  <Td
-                    actions={{
-                      items: [
-                        {
-                          title: t("common:delete"),
-                          onClick: async () => {
-                            setSelectedPermission(permission);
-                            toggleDeleteDialog();
-                          },
+                  <Th />
+                  <Th>{t("common:name")}</Th>
+                  <Th>{t("common:type")}</Th>
+                  <Th>{t("associatedPolicy")}</Th>
+                  <Th>{t("common:description")}</Th>
+                  <Th />
+                </Tr>
+              </Thead>
+              {permissions.map((permission, rowIndex) => (
+                <Tbody key={permission.id} isExpanded={permission.isExpanded}>
+                  <Tr>
+                    <Td
+                      expand={{
+                        rowIndex,
+                        isExpanded: permission.isExpanded,
+                        onToggle: (_, rowIndex) => {
+                          const rows = permissions.map((p, index) =>
+                            index === rowIndex
+                              ? { ...p, isExpanded: !p.isExpanded }
+                              : p
+                          );
+                          setPermissions(rows);
                         },
-                      ],
-                    }}
-                  ></Td>
-                </Tr>
-                <Tr
-                  key={`child-${permission.id}`}
-                  isExpanded={permission.isExpanded}
-                >
-                  <Td />
-                  <Td colSpan={5}>
-                    <ExpandableRowContent>
-                      {permission.isExpanded && (
-                        <DescriptionList
-                          isHorizontal
-                          className="keycloak_resource_details"
-                        >
-                          <DetailDescription
-                            name="associatedPolicy"
-                            array={permission.associatedPolicies}
-                            convert={(p) => p.name!}
-                          />
-                        </DescriptionList>
-                      )}
-                    </ExpandableRowContent>
-                  </Td>
-                </Tr>
-              </Tbody>
-            ))}
-          </TableComposable>
+                      }}
+                    />
+                    <Td data-testid={`name-column-${permission.name}`}>
+                      <Link
+                        to={toPermissionDetails({
+                          realm,
+                          id: clientId,
+                          permissionType: permission.type!,
+                          permissionId: permission.id!,
+                        })}
+                      >
+                        {permission.name}
+                      </Link>
+                    </Td>
+                    <Td>
+                      {
+                        policyProviders?.find((p) => p.type === permission.type)
+                          ?.name
+                      }
+                    </Td>
+                    <Td>
+                      <AssociatedPoliciesRenderer row={permission} />
+                    </Td>
+                    <Td>{permission.description}</Td>
+                    <Td
+                      actions={{
+                        items: [
+                          {
+                            title: t("common:delete"),
+                            onClick: async () => {
+                              setSelectedPermission(permission);
+                              toggleDeleteDialog();
+                            },
+                          },
+                        ],
+                      }}
+                    ></Td>
+                  </Tr>
+                  <Tr
+                    key={`child-${permission.id}`}
+                    isExpanded={permission.isExpanded}
+                  >
+                    <Td />
+                    <Td colSpan={5}>
+                      <ExpandableRowContent>
+                        {permission.isExpanded && (
+                          <DescriptionList
+                            isHorizontal
+                            className="keycloak_resource_details"
+                          >
+                            <DetailDescription
+                              name="associatedPolicy"
+                              array={permission.associatedPolicies}
+                              convert={(p) => p.name!}
+                            />
+                          </DescriptionList>
+                        )}
+                      </ExpandableRowContent>
+                    </Td>
+                  </Tr>
+                </Tbody>
+              ))}
+            </TableComposable>
+          )}
         </PaginatingTableToolbar>
       )}
-      {permissions.length === 0 && (
+      {noData && !searching && (
         <EmptyPermissionsState
           clientId={clientId}
           isResourceEnabled={disabledCreate?.resources}
           isScopeEnabled={disabledCreate?.scopes}
+        />
+      )}
+      {noData && searching && (
+        <ListEmptyState
+          isSearchVariant
+          message={t("common:noSearchResults")}
+          instructions={t("common:noSearchResultsInstructions")}
         />
       )}
     </PageSection>
