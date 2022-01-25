@@ -129,17 +129,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
         return metadata != null;
     }
 
-    /**
-     * In case of any update on entity, we want to update the entityVerion
-     * to current one.
-     */
-    private void checkEntityVersionForUpdate() {
-        Integer ev = getEntityVersion();
-        if (ev != null && ev < CURRENT_SCHEMA_VERSION_CLIENT) {
-            setEntityVersion(CURRENT_SCHEMA_VERSION_CLIENT);
-        }
-    }
-
     @Override
     public Integer getEntityVersion() {
         if (isMetadataInitialized()) return metadata.getEntityVersion();
@@ -149,6 +138,11 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
     @Override
     public void setEntityVersion(Integer entityVersion) {
         metadata.setEntityVersion(entityVersion);
+    }
+
+    @Override
+    public Integer getCurrentSchemaVersion() {
+        return CURRENT_SCHEMA_VERSION_CLIENT;
     }
 
     @Override
@@ -174,7 +168,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setRealmId(String realmId) {
-        checkEntityVersionForUpdate();
         metadata.setRealmId(realmId);
     }
 
@@ -186,13 +179,11 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setClientId(String clientId) {
-        checkEntityVersionForUpdate();
         metadata.setClientId(clientId);
     }
 
     @Override
     public void setEnabled(Boolean enabled) {
-        checkEntityVersionForUpdate();
         metadata.setEnabled(enabled);
     }
 
@@ -209,13 +200,11 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setClientScope(String id, Boolean defaultScope) {
-        checkEntityVersionForUpdate();
         metadata.setClientScope(id, defaultScope);
     }
 
     @Override
     public void removeClientScope(String id) {
-        checkEntityVersionForUpdate();
         metadata.removeClientScope(id);
     }
 
@@ -231,19 +220,16 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void removeProtocolMapper(String id) {
-        checkEntityVersionForUpdate();
         metadata.removeProtocolMapper(id);
     }
 
     @Override
     public void setProtocolMapper(String id, MapProtocolMapperEntity mapping) {
-        checkEntityVersionForUpdate();
         metadata.setProtocolMapper(id, mapping);
     }
 
     @Override
     public void addRedirectUri(String redirectUri) {
-        checkEntityVersionForUpdate();
         metadata.addRedirectUri(redirectUri);
     }
 
@@ -254,25 +240,21 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void removeRedirectUri(String redirectUri) {
-        checkEntityVersionForUpdate();
         metadata.removeRedirectUri(redirectUri);
     }
 
     @Override
     public void setRedirectUris(Set<String> redirectUris) {
-        checkEntityVersionForUpdate();
         metadata.setRedirectUris(redirectUris);
     }
 
     @Override
     public void addScopeMapping(String id) {
-        checkEntityVersionForUpdate();
         metadata.addScopeMapping(id);
     }
 
     @Override
     public void removeScopeMapping(String id) {
-        checkEntityVersionForUpdate();
         metadata.removeScopeMapping(id);
     }
 
@@ -283,7 +265,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void addWebOrigin(String webOrigin) {
-        checkEntityVersionForUpdate();
         metadata.addWebOrigin(webOrigin);
     }
 
@@ -294,13 +275,11 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void removeWebOrigin(String webOrigin) {
-        checkEntityVersionForUpdate();
         metadata.removeWebOrigin(webOrigin);
     }
 
     @Override
     public void setWebOrigins(Set<String> webOrigins) {
-        checkEntityVersionForUpdate();
         metadata.setWebOrigins(webOrigins);
     }
 
@@ -316,13 +295,11 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void removeAuthenticationFlowBindingOverride(String binding) {
-        checkEntityVersionForUpdate();
         metadata.removeAuthenticationFlowBindingOverride(binding);
     }
 
     @Override
     public void setAuthenticationFlowBindingOverride(String binding, String flowId) {
-        checkEntityVersionForUpdate();
         metadata.setAuthenticationFlowBindingOverride(binding, flowId);
     }
 
@@ -333,7 +310,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setBaseUrl(String baseUrl) {
-        checkEntityVersionForUpdate();
         metadata.setBaseUrl(baseUrl);
     }
 
@@ -344,7 +320,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setClientAuthenticatorType(String clientAuthenticatorType) {
-        checkEntityVersionForUpdate();
         metadata.setClientAuthenticatorType(clientAuthenticatorType);
     }
 
@@ -355,7 +330,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setDescription(String description) {
-        checkEntityVersionForUpdate();
         metadata.setDescription(description);
     }
 
@@ -366,7 +340,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setManagementUrl(String managementUrl) {
-        checkEntityVersionForUpdate();
         metadata.setManagementUrl(managementUrl);
     }
 
@@ -377,7 +350,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setName(String name) {
-        checkEntityVersionForUpdate();
         metadata.setName(name);
     }
 
@@ -388,7 +360,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setNodeReRegistrationTimeout(Integer nodeReRegistrationTimeout) {
-        checkEntityVersionForUpdate();
         metadata.setNodeReRegistrationTimeout(nodeReRegistrationTimeout);
     }
 
@@ -399,7 +370,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setNotBefore(Integer notBefore) {
-        checkEntityVersionForUpdate();
         metadata.setNotBefore(notBefore);
     }
 
@@ -411,7 +381,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setProtocol(String protocol) {
-        checkEntityVersionForUpdate();
         metadata.setProtocol(protocol);
     }
 
@@ -422,7 +391,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setRegistrationToken(String registrationToken) {
-        checkEntityVersionForUpdate();
         metadata.setRegistrationToken(registrationToken);
     }
 
@@ -433,7 +401,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setRootUrl(String rootUrl) {
-        checkEntityVersionForUpdate();
         metadata.setRootUrl(rootUrl);
     }
 
@@ -444,7 +411,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setScope(Set<String> scope) {
-        checkEntityVersionForUpdate();
         metadata.setScope(scope);
     }
 
@@ -455,7 +421,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setSecret(String secret) {
-        checkEntityVersionForUpdate();
         metadata.setSecret(secret);
     }
 
@@ -466,7 +431,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setAlwaysDisplayInConsole(Boolean alwaysDisplayInConsole) {
-        checkEntityVersionForUpdate();
         metadata.setAlwaysDisplayInConsole(alwaysDisplayInConsole);
     }
 
@@ -477,7 +441,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setBearerOnly(Boolean bearerOnly) {
-        checkEntityVersionForUpdate();
         metadata.setBearerOnly(bearerOnly);
     }
 
@@ -488,7 +451,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setConsentRequired(Boolean consentRequired) {
-        checkEntityVersionForUpdate();
         metadata.setConsentRequired(consentRequired);
     }
 
@@ -499,7 +461,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setDirectAccessGrantsEnabled(Boolean directAccessGrantsEnabled) {
-        checkEntityVersionForUpdate();
         metadata.setDirectAccessGrantsEnabled(directAccessGrantsEnabled);
     }
 
@@ -510,7 +471,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setFrontchannelLogout(Boolean frontchannelLogout) {
-        checkEntityVersionForUpdate();
         metadata.setFrontchannelLogout(frontchannelLogout);
     }
 
@@ -521,7 +481,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setFullScopeAllowed(Boolean fullScopeAllowed) {
-        checkEntityVersionForUpdate();
         metadata.setFullScopeAllowed(fullScopeAllowed);
     }
 
@@ -532,7 +491,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setImplicitFlowEnabled(Boolean implicitFlowEnabled) {
-        checkEntityVersionForUpdate();
         metadata.setImplicitFlowEnabled(implicitFlowEnabled);
     }
 
@@ -543,7 +501,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setPublicClient(Boolean publicClient) {
-        checkEntityVersionForUpdate();
         metadata.setPublicClient(publicClient);
     }
 
@@ -554,7 +511,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setServiceAccountsEnabled(Boolean serviceAccountsEnabled) {
-        checkEntityVersionForUpdate();
         metadata.setServiceAccountsEnabled(serviceAccountsEnabled);
     }
 
@@ -565,7 +521,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setStandardFlowEnabled(Boolean standardFlowEnabled) {
-        checkEntityVersionForUpdate();
         metadata.setStandardFlowEnabled(standardFlowEnabled);
     }
 
@@ -576,13 +531,11 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setSurrogateAuthRequired(Boolean surrogateAuthRequired) {
-        checkEntityVersionForUpdate();
         metadata.setSurrogateAuthRequired(surrogateAuthRequired);
     }
 
     @Override
     public void removeAttribute(String name) {
-        checkEntityVersionForUpdate();
         for (Iterator<JpaClientAttributeEntity> iterator = attributes.iterator(); iterator.hasNext();) {
             JpaClientAttributeEntity attr = iterator.next();
             if (Objects.equals(attr.getName(), name)) {
@@ -593,7 +546,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setAttribute(String name, List<String> values) {
-        checkEntityVersionForUpdate();
         removeAttribute(name);
         for (String value : values) {
             JpaClientAttributeEntity attribute = new JpaClientAttributeEntity(this, name, value);
@@ -622,7 +574,6 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setAttributes(Map<String, List<String>> attributes) {
-        checkEntityVersionForUpdate();
         for (Iterator<JpaClientAttributeEntity> iterator = this.attributes.iterator(); iterator.hasNext();) {
             iterator.remove();
         }
