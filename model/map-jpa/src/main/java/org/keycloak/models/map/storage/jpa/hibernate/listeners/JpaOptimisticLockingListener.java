@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.map.storage.jpa;
+package org.keycloak.models.map.storage.jpa.hibernate.listeners;
 
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
@@ -25,22 +25,23 @@ import org.hibernate.event.spi.PreInsertEvent;
 import org.hibernate.event.spi.PreInsertEventListener;
 import org.hibernate.event.spi.PreUpdateEvent;
 import org.hibernate.event.spi.PreUpdateEventListener;
+import org.keycloak.models.map.storage.jpa.JpaChildEntity;
 
 import javax.persistence.LockModeType;
 
 /**
- * Listen on changes on child entities and forces an optimistic locking increment on the topmost parent.
+ * Listen on changes on child entities and forces an optimistic locking increment on the topmost parent aka root.
  *
  * This support a multiple level parent-child relationship, where only the upmost parent is locked.
  */
-public class JpaChildEntityListener implements PreInsertEventListener, PreDeleteEventListener, PreUpdateEventListener {
+public class JpaOptimisticLockingListener implements PreInsertEventListener, PreDeleteEventListener, PreUpdateEventListener {
 
-    public static final JpaChildEntityListener INSTANCE = new JpaChildEntityListener();
+    public static final JpaOptimisticLockingListener INSTANCE = new JpaOptimisticLockingListener();
 
     /**
-     * Check if the entity is a child with a parent and force optimistic locking increment on the upmost parent.
+     * Check if the entity is a child with a parent and force optimistic locking increment on the upmost parent aka root.
      */
-    public void checkRoot(Session session, Object entity) throws HibernateException {
+    public void lockRootEntity(Session session, Object entity) throws HibernateException {
         if(entity instanceof JpaChildEntity) {
             Object root = entity;
             while (root instanceof JpaChildEntity) {
@@ -52,19 +53,19 @@ public class JpaChildEntityListener implements PreInsertEventListener, PreDelete
 
     @Override
     public boolean onPreInsert(PreInsertEvent event) {
-        checkRoot(event.getSession(), event.getEntity());
+        lockRootEntity(event.getSession(), event.getEntity());
         return false;
     }
 
     @Override
     public boolean onPreDelete(PreDeleteEvent event) {
-        checkRoot(event.getSession(), event.getEntity());
+        lockRootEntity(event.getSession(), event.getEntity());
         return false;
     }
 
     @Override
     public boolean onPreUpdate(PreUpdateEvent event) {
-        checkRoot(event.getSession(), event.getEntity());
+        lockRootEntity(event.getSession(), event.getEntity());
         return false;
     }
 }
