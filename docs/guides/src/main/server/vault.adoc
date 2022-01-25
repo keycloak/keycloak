@@ -7,7 +7,7 @@ summary="Learn how to use Kubernetes / OpenShift secrets in Keycloak"
 priority=30
 includedOptions="vault vault-*">
 
-Keycloak supports a file based vault implementation for Kubernetes / OpenShift secrets. Mount Kubernetes secrets as data volumes, and they appear in a directory with a flat-file structure. Keycloak represents each secret as a file with the file’s name as the secret name and the file’s content as the secret value.
+Keycloak supports a file based vault implementation for Kubernetes / OpenShift secrets. Mount Kubernetes secrets into the Keycloak Container, and the data fields will be available in the mounted folder with a flat-file structure.
 
 == Available integrations
 You can use Kubernetes / OpenShift secrets for the following use-cases:
