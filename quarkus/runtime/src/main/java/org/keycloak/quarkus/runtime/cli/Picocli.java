@@ -78,7 +78,7 @@ public final class Picocli {
     public static void parseAndRun(List<String> cliArgs) {
         CommandLine cmd = createCommandLine(cliArgs);
 
-        if (Boolean.getBoolean("kc.config.rebuild-and-exit")) {
+        if (Environment.isRebuildCheck()) {
             runReAugmentationIfNeeded(cliArgs, cmd);
             Quarkus.asyncExit(cmd.getCommandSpec().exitCodeOnSuccess());
             return;

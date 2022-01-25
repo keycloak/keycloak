@@ -391,6 +391,15 @@ public class ConfigurationTest {
         assertEquals("my_secret=", config.getConfigValue("kc.db-password").getValue());
     }
 
+    @Test
+    public void testResolvePropertyFromDefaultProfile() {
+        Environment.setProfile("import_export");
+        assertEquals("false", createConfig().getConfigValue("kc.hostname-strict").getValue());
+
+        Environment.setProfile("prod");
+        assertEquals("true", createConfig().getConfigValue("kc.hostname-strict").getValue());
+    }
+
     private Config.Scope initConfig(String... scope) {
         Config.init(new MicroProfileConfigProvider(createConfig()));
         return Config.scope(scope);

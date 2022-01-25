@@ -35,7 +35,8 @@ public class ClusterConfigDistTest {
     @Test
     @Launch({ "start-dev", "--cache=ispn" })
     void changeClusterSetting(LaunchResult result) {
-        assertTrue(isClustered(result));
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertClusteredCache();
     }
 
     @Test
@@ -61,7 +62,7 @@ public class ClusterConfigDistTest {
     void testExplicitCacheConfigFile(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStartedDevMode();
-        assertTrue(isClustered(cliResult));
+        cliResult.assertClusteredCache();
     }
 
     @Test
@@ -69,7 +70,7 @@ public class ClusterConfigDistTest {
     void testStartDefaultsToClustering(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStarted();
-        assertTrue(isClustered(result));
+        cliResult.assertClusteredCache();
     }
 
     @Test
@@ -77,10 +78,6 @@ public class ClusterConfigDistTest {
     void testStartDevDefaultsToLocalCaches(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStartedDevMode();
-        assertFalse(isClustered(result));
-    }
-
-    private boolean isClustered(LaunchResult result) {
-        return result.getOutput().contains("Starting JGroups channel `ISPN`");
+        cliResult.assertLocalCache();
     }
 }

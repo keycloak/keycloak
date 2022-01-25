@@ -83,6 +83,10 @@ public class CLITestExtension extends QuarkusMainTestExtension {
                 if (dist == null) {
                     dist = createDistribution(distConfig);
                 }
+
+                onBeforeStartDistribution(context.getRequiredTestClass().getAnnotation(BeforeStartDistribution.class));
+                onBeforeStartDistribution(context.getRequiredTestMethod().getAnnotation(BeforeStartDistribution.class));
+
                 dist.start(Arrays.asList(launch.value()));
             }
         } else {
@@ -91,6 +95,16 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             // WORKAROUND: this intercepts the output when actually starting the server.
             QuarkusConsole.installRedirects();
             super.beforeEach(context);
+        }
+    }
+
+    private void onBeforeStartDistribution(BeforeStartDistribution annotation) {
+        if (annotation != null) {
+            try {
+                annotation.value().getDeclaredConstructor().newInstance().accept(dist);
+            } catch (Exception cause) {
+                throw new RuntimeException("Error when invoking " + annotation.value() + " instance before starting distribution", cause);
+            }
         }
     }
 

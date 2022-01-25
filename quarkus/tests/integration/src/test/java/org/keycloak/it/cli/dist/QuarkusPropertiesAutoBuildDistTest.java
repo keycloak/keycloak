@@ -17,6 +17,9 @@
 
 package org.keycloak.it.cli.dist;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.function.Consumer;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
@@ -32,52 +35,55 @@ import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest(reInstall = DistributionTest.ReInstall.NEVER)
+@BeforeStartDistribution(QuarkusPropertiesAutoBuildDistTest.SetDebugLogLevel.class)
 @RawDistOnly(reason = "Containers are immutable")
 @TestMethodOrder(OrderAnnotation.class)
-public class BuildAndStartDistTest {
+public class QuarkusPropertiesAutoBuildDistTest {
 
     @Test
-    @Launch({ "build", "--cache=local" })
+    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(1)
-    void testBuildWithCliArgs(LaunchResult result) {
+    void testReAugOnFirstRun(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertBuild();
+        cliResult.assertMessage("DEBUG [");
+        cliResult.assertStarted();
     }
 
     @Test
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(2)
-    void testStartUsingCliArgs(LaunchResult result) {
+    void testSecondStartDoNotTriggerReAug(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
+        cliResult.assertNoBuild();
+        cliResult.assertMessage("DEBUG [");
         cliResult.assertStarted();
-        cliResult.assertLocalCache();
     }
 
     @Test
-    @BeforeStartDistribution(SetDefaultOptions.class)
-    @Launch({ "build" })
+    @BeforeStartDistribution(SetInfoLogLevel.class)
+    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(3)
-    void testBuildUsingConfFile(LaunchResult result) {
+    void testReAugAfterChangingProperty(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertBuild();
+        assertFalse(cliResult.getOutput().contains("DEBUG ["));
     }
 
-    @Test
-    @Launch({ "start" })
-    @Order(4)
-    void testStartUsingConfFile(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
-        cliResult.assertStarted();
-        cliResult.assertLocalCache();
-    }
-
-    public static class SetDefaultOptions implements Consumer<KeycloakDistribution> {
+    public static class SetDebugLogLevel implements Consumer<KeycloakDistribution> {
 
         @Override
         public void accept(KeycloakDistribution distribution) {
-            distribution.setProperty("http-enabled", "true");
-            distribution.setProperty("hostname-strict", "false");
-            distribution.setProperty("cache", "local");
+            distribution.setQuarkusProperty("quarkus.log.level", "DEBUG");
         }
     }
+
+    public static class SetInfoLogLevel implements Consumer<KeycloakDistribution> {
+
+        @Override
+        public void accept(KeycloakDistribution distribution) {
+            distribution.setQuarkusProperty("quarkus.log.level", "INFO");
+        }
+    }
+
 }
