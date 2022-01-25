@@ -348,6 +348,9 @@ public class ClientResource {
         if (clientScope == null) {
             throw new javax.ws.rs.NotFoundException("Client scope not found");
         }
+        if (defaultScope && clientScope.isDynamicScope()) {
+            throw new ErrorResponseException("invalid_request", "Can't assign a Dynamic Scope to a Client as a Default Scope", Response.Status.BAD_REQUEST);
+        }
         client.addClientScope(clientScope, defaultScope);
 
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.CLIENT_SCOPE_CLIENT_MAPPING).resourcePath(session.getContext().getUri()).success();
