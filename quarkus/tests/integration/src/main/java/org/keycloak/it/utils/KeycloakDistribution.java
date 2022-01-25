@@ -38,4 +38,16 @@ public interface KeycloakDistribution {
 
         return commands.toArray(new String[0]);
     }
+
+    default void setQuarkusProperty(String key, String value) {
+        throw new RuntimeException("Not implemented");
+    }
+
+    default void setProperty(String key, String value) {
+        throw new RuntimeException("Not implemented");
+    }
+
+    default void deleteQuarkusProperties() {
+        throw new RuntimeException("Not implemented");
+    }
 }

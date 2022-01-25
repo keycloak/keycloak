@@ -49,7 +49,7 @@ public final class PropertyMappers {
     }
 
     public static boolean isBuildTimeProperty(String name) {
-        if (isFeaturesBuildTimeProperty(name) || isSpiBuildTimeProperty(name)) {
+        if (isFeaturesBuildTimeProperty(name) || isSpiBuildTimeProperty(name) || name.startsWith(MicroProfileConfigProvider.NS_QUARKUS)) {
             return true;
         }
 
@@ -123,6 +123,9 @@ public final class PropertyMappers {
     }
 
     public static PropertyMapper getMapper(String property) {
+        if (property.startsWith("%")) {
+            return MAPPERS.get(property.substring(property.indexOf('.') + 1));
+        }
         return MAPPERS.get(property);
     }
 

@@ -23,7 +23,6 @@ import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.
 
 import java.io.File;
 import java.lang.reflect.Field;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -390,6 +389,15 @@ public class ConfigurationTest {
         System.setProperty(CLI_ARGS, "--db-password=my_secret=");
         SmallRyeConfig config = createConfig();
         assertEquals("my_secret=", config.getConfigValue("kc.db-password").getValue());
+    }
+
+    @Test
+    public void testResolvePropertyFromDefaultProfile() {
+        Environment.setProfile("import_export");
+        assertEquals("false", createConfig().getConfigValue("kc.hostname-strict").getValue());
+
+        Environment.setProfile("prod");
+        assertEquals("true", createConfig().getConfigValue("kc.hostname-strict").getValue());
     }
 
     private Config.Scope initConfig(String... scope) {

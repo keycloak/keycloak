@@ -28,12 +28,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.regex.Pattern;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import io.smallrye.config.AbstractLocationConfigSourceLoader;
 import io.smallrye.config.PropertiesConfigSource;
@@ -62,7 +63,7 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
 
     @Override
     protected ConfigSource loadConfigSource(URL url, int ordinal) throws IOException {
-        return new PropertiesConfigSource(transform(ConfigSourceUtil.urlToMap(url)), KEYCLOAK_CONF_FILE, ordinal);
+        return new PropertiesConfigSource(transform(ConfigSourceUtil.urlToMap(url)), url.toString(), ordinal);
     }
 
     public static class InClassPath extends KeycloakPropertiesConfigSource implements ConfigSourceProvider {
@@ -143,11 +144,22 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
         Map<String, String> result = new HashMap<>(properties.size());
         properties.keySet().forEach(k -> {
             String key = transformKey(k);
-            String value = replaceProperties(properties.get(k));
+            PropertyMapper mapper = PropertyMappers.getMapper(key);
 
-            result.put(key, value);
-            result.put(getMappedPropertyName(key), value);
+            //TODO: remove explicit checks for spi and feature options once we have proper support in our config mappers
+            if (mapper != null
+                    || key.contains(NS_KEYCLOAK_PREFIX + "spi")
+                    || key.contains(NS_KEYCLOAK_PREFIX + "feature")) {
+                String value = replaceProperties(properties.get(k));
+
+                result.put(key, value);
+
+                if (mapper != null && key.charAt(0) != '%') {
+                    result.put(getMappedPropertyName(key), value);
+                }
+            }
         });
+
         return result;
     }
 
