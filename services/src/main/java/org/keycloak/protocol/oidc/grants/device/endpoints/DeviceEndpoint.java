@@ -284,7 +284,6 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         }
     }
 
-<<<<<<< HEAD
     /**
      * @param errorMessage Message code for the verification page
      * @param reason For event details; not exposed to end user
