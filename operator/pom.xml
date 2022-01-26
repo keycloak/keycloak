@@ -22,6 +22,7 @@
         -->
         <resteasy.version>4.7.4.Final</resteasy.version>
         <wildfly.common.version>1.5.4.Final-format-001</wildfly.common.version>
+        <jackson.version>2.13.1</jackson.version>
 
         <compiler-plugin.version>3.8.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
