@@ -17,11 +17,8 @@
 
 package org.keycloak.quarkus.runtime;
 
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuildTimeProperty;
-
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.configuration.parsing.ParserRegistry;
@@ -78,29 +75,8 @@ public class KeycloakRecorder {
             Map<Class<? extends Provider>, String> defaultProviders,
             Map<String, ProviderFactory> preConfiguredProviders,
             Boolean reaugmented) {
-        Profile.setInstance(createProfile());
+        Profile.setInstance(new QuarkusProfile());
         QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories, defaultProviders, preConfiguredProviders, reaugmented));
-    }
-
-    public static Profile createProfile() {
-        return new Profile(new Profile.PropertyResolver() {
-            @Override 
-            public String resolve(String feature) {
-                if (feature.startsWith("keycloak.profile.feature")) {
-                    feature = feature.replaceFirst("keycloak\\.profile\\.feature.", "kc\\.features-");
-                } else {
-                    feature = "kc.features";
-                }
-
-                Optional<String> value = getBuildTimeProperty(feature);
-
-                if (value.isPresent()) {
-                    return value.get();
-                }
-
-                return Configuration.getRawValue(feature);
-            }
-        });
     }
 
     public RuntimeValue<CacheManagerFactory> createCacheInitializer(String config, ShutdownContext shutdownContext) {

@@ -29,6 +29,7 @@ public final class PropertyMappers {
         MAPPERS.addAll(MetricsPropertyMappers.getMetricsPropertyMappers());
         MAPPERS.addAll(ProxyPropertyMappers.getProxyPropertyMappers());
         MAPPERS.addAll(VaultPropertyMappers.getVaultPropertyMappers());
+        MAPPERS.addAll(FeaturePropertyMappers.getMappers());
     }
 
     public static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
