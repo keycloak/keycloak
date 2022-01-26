@@ -327,7 +327,8 @@ class KeycloakProcessor {
                     }
                 }
             } else if (mapper.isBuildTime()) {
-                value = Configuration.getConfigValue(mapper.getFrom());
+                name = mapper.getFrom();
+                value = Configuration.getConfigValue(name);
             }
 
             if (value != null && value.getValue() != null) {

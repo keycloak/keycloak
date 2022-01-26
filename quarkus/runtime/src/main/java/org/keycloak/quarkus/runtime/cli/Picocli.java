@@ -240,6 +240,13 @@ public final class Picocli {
             String runtimeValue = getRuntimeProperty(propertyName).orElse(null);
 
             if (runtimeValue == null && isNotBlank(persistedValue)) {
+                PropertyMapper mapper = PropertyMappers.getMapper(propertyName);
+
+                if (mapper != null && persistedValue.equals(mapper.getDefaultValue())) {
+                    // same as default
+                    continue;
+                }
+
                 // probably because it was unset
                 return true;
             }

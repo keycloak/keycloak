@@ -76,4 +76,21 @@ public class StartAutoBuildDistTest {
         cliResult.assertNoBuild();
         cliResult.assertStarted();
     }
+
+    @Test
+    @Launch({ "build", "--db=postgres" })
+    @Order(5)
+    void testBuildForReAugWhenAutoBuild(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertBuild();
+    }
+
+    @Test
+    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Order(6)
+    void testReAugWhenNoOptionAfterBuild(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertBuild();
+        cliResult.assertStarted();
+    }
 }
