@@ -22,11 +22,15 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAuthenticatorFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
+import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -131,6 +135,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractTestRealmKeycl
 
         if (isPasswordless()) {
             makePasswordlessRequiredActionDefault(realmRepresentation);
+            switchExecutionInBrowserFormToPasswordless(realmRepresentation);
         }
 
         testRealms.add(realmRepresentation);
@@ -328,6 +333,37 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractTestRealmKeycl
 
         webAuthnPasswordlessProvider.setEnabled(true);
         webAuthnPasswordlessProvider.setDefaultAction(true);
+    }
+
+    // Switch WebAuthn authenticator with Passwordless authenticator in browser flow
+    protected void switchExecutionInBrowserFormToPasswordless(RealmRepresentation realm) {
+        List<AuthenticationFlowRepresentation> flows = realm.getAuthenticationFlows();
+        assertThat(flows, notNullValue());
+
+        AuthenticationFlowRepresentation browserForm = flows.stream()
+                .filter(f -> f.getAlias().equals("browser-webauthn-forms"))
+                .findFirst()
+                .orElse(null);
+        assertThat("Cannot find 'browser-webauthn-forms' flow", browserForm, notNullValue());
+
+        flows.removeIf(f -> f.getAlias().equals(browserForm.getAlias()));
+
+        List<AuthenticationExecutionExportRepresentation> browserFormExecutions = browserForm.getAuthenticationExecutions();
+        assertThat("Flow 'browser-webauthn-forms' doesn't have any executions", browserForm, notNullValue());
+
+        AuthenticationExecutionExportRepresentation webAuthn = browserFormExecutions.stream()
+                .filter(f -> WebAuthnAuthenticatorFactory.PROVIDER_ID.equals(f.getAuthenticator()))
+                .findFirst()
+                .orElse(null);
+        assertThat("Cannot find WebAuthn execution in Browser flow", webAuthn, notNullValue());
+
+        browserFormExecutions.removeIf(f -> webAuthn.getAuthenticator().equals(f.getAuthenticator()));
+        webAuthn.setAuthenticator(WebAuthnPasswordlessAuthenticatorFactory.PROVIDER_ID);
+        browserFormExecutions.add(webAuthn);
+        browserForm.setAuthenticationExecutions(browserFormExecutions);
+        flows.add(browserForm);
+
+        realm.setAuthenticationFlows(flows);
     }
 
     protected void logout() {
