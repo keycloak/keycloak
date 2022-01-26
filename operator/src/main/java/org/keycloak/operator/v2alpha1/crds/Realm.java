@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,17 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.crd;
+package org.keycloak.operator.v2alpha1.crds;
 
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.model.annotation.Group;
+import io.fabric8.kubernetes.model.annotation.Plural;
+import io.fabric8.kubernetes.model.annotation.ShortNames;
 import io.fabric8.kubernetes.model.annotation.Version;
+import org.keycloak.operator.Constants;
 
-// Demo CRD to verify that the generator doesn't break
-// Result is available at: target/test-classes/META-INF/fabric8/examplerealmcrds.keycloak.org-v1.yml
-@Group("keycloak.org")
-@Version("v1alpha1")
-public class ExampleRealmCRD extends CustomResource<ExampleRealmCRDSpec, Void> implements Namespaced {
+@Group(Constants.CRDS_GROUP)
+@Version(Constants.CRDS_VERSION)
+public class Realm extends CustomResource<RealmSpec, Void> implements Namespaced {
 
 }

@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import io.fabric8.crd.generator.annotation.SchemaFrom;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -33,6 +34,7 @@ public class GroupRepresentation {
     protected Map<String, List<String>>  attributes;
     protected List<String> realmRoles;
     protected Map<String, List<String>> clientRoles;
+    @SchemaFrom(type = org.keycloak.representations.overrides.NoSubGroupsGroupRepresentationList.class)
     protected List<GroupRepresentation> subGroups;
     private Map<String, Boolean> access;
 

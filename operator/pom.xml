@@ -58,6 +58,13 @@
 
 
     <dependencies>
+        <!-- Fabric8 -->
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>crd-generator-apt</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- Quarkus -->
         <dependency>
             <groupId>io.quarkiverse.operatorsdk</groupId>
@@ -103,7 +110,7 @@
         <!-- Keycloak -->
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-core</artifactId>
+            <artifactId>keycloak-common</artifactId>
         </dependency>
     </dependencies>
 
@@ -138,23 +145,65 @@
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
                     <execution>
-                    <id>copy-resources</id>
-                    <phase>validate</phase>
-                    <goals>
-                        <goal>copy-resources</goal>
-                    </goals>
-                    <configuration>
-                        <outputDirectory>${basedir}/target</outputDirectory>
-                        <resources>          
-                        <resource>
-                            <directory>src/main/kubernetes</directory>
-                            <filtering>true</filtering>
-                        </resource>
-                        </resources>              
-                    </configuration>            
+                        <id>copy-resources</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target</outputDirectory>
+                            <resources>          
+                            <resource>
+                                <directory>src/main/kubernetes</directory>
+                                <filtering>true</filtering>
+                            </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>import-keycloak-core</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target/keycloak-core</outputDirectory>
+                            <resources>          
+                            <resource>
+                                <directory>${basedir}/../core/src/main/java</directory>
+                                <filtering>true</filtering>
+                                <exclude>org/keycloak/representations/idm/GroupRepresentation.java</exclude>
+                                <exclude>org/keycloak/representations/idm/RealmRepresentation.java</exclude>
+                                <exclude>org/keycloak/representations/idm/CredentialRepresentation.java</exclude>
+                                <exclude>org/keycloak/representations/idm/ComponentRepresentation.java</exclude>
+                                <exclude>org/keycloak/representations/idm/ComponentExportRepresentation.java</exclude>
+                                <exclude>org/keycloak/representations/idm/authorization/ScopeRepresentation.java</exclude>
+                            </resource>
+                            </resources>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${basedir}/target/keycloak-core</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
     </build>
     

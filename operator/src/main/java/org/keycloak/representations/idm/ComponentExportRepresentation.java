@@ -18,21 +18,21 @@
 package org.keycloak.representations.idm;
 
 import org.keycloak.common.util.MultivaluedHashMap;
+import io.fabric8.crd.generator.annotation.SchemaFrom;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ComponentRepresentation {
-
-    public static final String SECRET_VALUE = "**********";
+public class ComponentExportRepresentation {
 
     private String id;
     private String name;
     private String providerId;
-    private String providerType;
-    private String parentId;
     private String subType;
-    private MultivaluedHashMap<String, String> config;
+    @SchemaFrom(type = org.keycloak.representations.overrides.NoSubcomponentsComponentExportRepresentationMap.class)
+    private MultivaluedHashMap<String, ComponentExportRepresentation> subComponents = new MultivaluedHashMap<>();
+    @SchemaFrom(type = org.keycloak.representations.overrides.MultivaluedStringStringHashMap.class)
+    private MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
 
     public String getId() {
         return id;
@@ -58,22 +58,6 @@ public class ComponentRepresentation {
         this.providerId = providerId;
     }
 
-    public String getProviderType() {
-        return providerType;
-    }
-
-    public void setProviderType(String providerType) {
-        this.providerType = providerType;
-    }
-
-    public String getParentId() {
-        return parentId;
-    }
-
-    public void setParentId(String parentId) {
-        this.parentId = parentId;
-    }
-
     public String getSubType() {
         return subType;
     }
@@ -90,20 +74,11 @@ public class ComponentRepresentation {
         this.config = config;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        ComponentRepresentation that = (ComponentRepresentation) o;
-
-        if (!id.equals(that.id)) return false;
-
-        return true;
+    public MultivaluedHashMap<String, ComponentExportRepresentation> getSubComponents() {
+        return subComponents;
     }
 
-    @Override
-    public int hashCode() {
-        return id.hashCode();
+    public void setSubComponents(MultivaluedHashMap<String, ComponentExportRepresentation> subComponents) {
+        this.subComponents = subComponents;
     }
 }
