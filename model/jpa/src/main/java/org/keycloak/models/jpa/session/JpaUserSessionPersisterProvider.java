@@ -259,24 +259,21 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
         String offlineStr = offlineToString(offline);
 
-        Query query = em.createNamedQuery("findUserSessionsCountsByClientId");
+        TypedQuery<Object[]> query = em.createNamedQuery("findClientSessionsClientIds", Object[].class);
 
         query.setParameter("offline", offlineStr);
         query.setParameter("realmId", realm.getId());
 
-        Map<String, Long> offlineSessionsByClient = new HashMap<>();
-
-        closing(query.getResultStream()).forEach(record -> {
-
-            Object[] row = (Object[]) record;
-
-            String clientId = String.valueOf(row[0]);
-            Long count = ((Number)row[1]).longValue();
-
-            offlineSessionsByClient.put(clientId, count);
-        });
-
-        return offlineSessionsByClient;
+        return closing(query.getResultStream())
+                .collect(Collectors.toMap(row -> {
+                    String clientId = row[0].toString();
+                    if (clientId.equals(PersistentClientSessionEntity.EXTERNAL)) {
+                        final String externalClientId = row[1].toString();
+                        final String clientStorageProvider = row[2].toString();
+                        clientId = new StorageId(clientStorageProvider, externalClientId).getId();
+                    }
+                    return clientId;
+                }, row -> (Long) row[3]));
     }
 
     @Override
@@ -319,14 +316,23 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     public Stream<UserSessionModel> loadUserSessionsStream(RealmModel realm, ClientModel client, boolean offline, Integer firstResult, Integer maxResults) {
 
         String offlineStr = offlineToString(offline);
-
-        TypedQuery<PersistentUserSessionEntity> query = paginateQuery(
-                em.createNamedQuery("findUserSessionsByClientId", PersistentUserSessionEntity.class),
-                firstResult, maxResults);
+        TypedQuery<PersistentUserSessionEntity> query;
+        StorageId clientStorageId = new StorageId(client.getId());
+        if (clientStorageId.isLocal()) {
+            query = paginateQuery(
+                    em.createNamedQuery("findUserSessionsByClientId", PersistentUserSessionEntity.class),
+                    firstResult, maxResults);
+            query.setParameter("clientId", client.getId());
+        } else {
+            query = paginateQuery(
+                    em.createNamedQuery("findUserSessionsByExternalClientId", PersistentUserSessionEntity.class),
+                    firstResult, maxResults);
+            query.setParameter("clientStorageProvider", clientStorageId.getProviderId());
+            query.setParameter("externalClientId", clientStorageId.getExternalId());
+        }
 
         query.setParameter("offline", offlineStr);
         query.setParameter("realmId", realm.getId());
-        query.setParameter("clientId", client.getId());
 
         return loadUserSessionsWithClientSessions(query, offlineStr);
     }
@@ -461,11 +467,20 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     public int getUserSessionsCount(RealmModel realm, ClientModel clientModel, boolean offline) {
 
         String offlineStr = offlineToString(offline);
+        Query query;
+        StorageId clientStorageId = new StorageId(clientModel.getId());
+        if (clientStorageId.isLocal()) {
+            query = em.createNamedQuery("findClientSessionsCountByClient");
+            query.setParameter("clientId", clientModel.getId());
+        } else {
+            query = em.createNamedQuery("findClientSessionsCountByExternalClient");
+            query.setParameter("clientStorageProvider", clientStorageId.getProviderId());
+            query.setParameter("externalClientId", clientStorageId.getExternalId());
+        }
 
-        Query query = em.createNamedQuery("findClientSessionsCountByClient");
-        // Note, that realm is unused here, since the clientModel id already determines the offline user-sessions bound to a owning realm.
+        // Note, that realm is unused here, since the clientModel id already determines the offline user-sessions bound to an owning realm.
         query.setParameter("offline", offlineStr);
-        query.setParameter("clientId", clientModel.getId());
+
         Number n = (Number) query.getSingleResult();
         return n.intValue();
     }

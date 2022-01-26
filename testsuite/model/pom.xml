@@ -26,7 +26,7 @@
         <log4j.configuration>file:${project.build.directory}/dependency/log4j.properties</log4j.configuration>
         <jacoco.skip>true</jacoco.skip>
         <keycloak.profile.feature.map_storage>disabled</keycloak.profile.feature.map_storage>
-        <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>true</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
+        <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>false</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
     </properties>
     
     <dependencies>
@@ -195,10 +195,18 @@
         </profile>
 
         <profile>
-            <id>jpa+infinispan-sessions-preloading-disabled</id>
+            <id>jpa+cross-dc-infinispan-offline-sessions-preloading</id>
+            <properties>
+                <keycloak.model.parameters>CrossDCInfinispan,Jpa</keycloak.model.parameters>
+                <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>true</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>jpa+infinispan-offline-sessions-preloading</id>
             <properties>
                 <keycloak.model.parameters>Infinispan,Jpa</keycloak.model.parameters>
-                <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>false</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
+                <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>true</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
             </properties>
         </profile>
 
