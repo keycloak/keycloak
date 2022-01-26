@@ -179,12 +179,6 @@
                             <resource>
                                 <directory>${basedir}/../core/src/main/java</directory>
                                 <filtering>true</filtering>
-                                <exclude>org/keycloak/representations/idm/GroupRepresentation.java</exclude>
-                                <exclude>org/keycloak/representations/idm/RealmRepresentation.java</exclude>
-                                <exclude>org/keycloak/representations/idm/CredentialRepresentation.java</exclude>
-                                <exclude>org/keycloak/representations/idm/ComponentRepresentation.java</exclude>
-                                <exclude>org/keycloak/representations/idm/ComponentExportRepresentation.java</exclude>
-                                <exclude>org/keycloak/representations/idm/authorization/ScopeRepresentation.java</exclude>
                             </resource>
                             </resources>
                         </configuration>
@@ -210,6 +204,24 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <plugin>
+                <artifactId>exec-maven-plugin</artifactId>
+                <groupId>org.codehaus.mojo</groupId>
+                <version>1.6.0</version>
+                <executions>
+                    <execution>
+                        <id>patch-core-sources</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>${basedir}/patch-sources.sh</executable>
+                        </configuration>
+                    </execution>
+                </executions>
+              </plugin>
 
         </plugins>
     </build>
