@@ -15,7 +15,7 @@
  */
 
 import * as React from 'react';
-import { Modal, Button, ButtonProps } from '@patternfly/react-core';
+import { Modal, ModalVariant, Button, ButtonProps } from '@patternfly/react-core';
 import {Msg} from './Msg';
 
 /**
@@ -87,6 +87,7 @@ export class ContinueCancelModal extends React.Component<ContinueCancelModalProp
                 {this.props.render && this.props.render(this.handleModalToggle)}
                 <Modal
                     {...this.props}
+                    variant={ModalVariant.small}
                     title={Msg.localize(this.props.modalTitle)}
                     isOpen={isModalOpen}
                     onClose={this.handleModalToggle}
