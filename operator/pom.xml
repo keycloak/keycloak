@@ -23,6 +23,7 @@
         <resteasy.version>4.7.4.Final</resteasy.version>
         <wildfly.common.version>1.5.4.Final-format-001</wildfly.common.version>
         <jackson.version>2.13.1</jackson.version>
+        <kubernetes-client.version>5.12.0</kubernetes-client.version>
 
         <compiler-plugin.version>3.8.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
@@ -62,8 +63,13 @@
         <!-- Fabric8 -->
         <dependency>
             <groupId>io.fabric8</groupId>
+            <artifactId>crd-generator-api</artifactId>
+            <version>${kubernetes-client.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.fabric8</groupId>
             <artifactId>crd-generator-apt</artifactId>
-            <scope>provided</scope>
+            <version>${kubernetes-client.version}</version>
         </dependency>
 
         <!-- Quarkus -->

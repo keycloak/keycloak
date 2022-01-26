@@ -207,9 +207,6 @@
         <galleon.log.time>true</galleon.log.time>
         <galleon.offline>true</galleon.offline>
 
-        <!-- Kubernetes / Operator -->
-        <kubernetes-client.version>5.12.0</kubernetes-client.version>
-
         <!-- Properties that drive the names of various directories produced by and used in the build -->
         <server.output.dir.prefix>keycloak</server.output.dir.prefix>
         <!-- Version suffix that is appended to directories. Default is the maven GAV version but this can be edited to use a short form version -->
@@ -1745,17 +1742,6 @@
                 </exclusions>
             </dependency>
 
-            <!-- Kubernetes/Operator dependencies -->
-            <dependency>
-                <groupId>io.fabric8</groupId>
-                <artifactId>crd-generator-api</artifactId>
-                <version>${kubernetes-client.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.fabric8</groupId>
-                <artifactId>crd-generator-apt</artifactId>
-                <version>${kubernetes-client.version}</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
