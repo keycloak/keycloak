@@ -46,10 +46,11 @@ import static org.junit.Assert.assertTrue;
  */
 public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedActionTest {
 
-    public AppInitiatedActionResetPasswordTest() {
-        super(UserModel.RequiredAction.UPDATE_PASSWORD.name());
+    @Override
+    protected String getAiaAction() {
+        return UserModel.RequiredAction.UPDATE_PASSWORD.name();
     }
-    
+
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         testRealm.setResetPasswordAllowed(Boolean.TRUE);
@@ -86,7 +87,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
         events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
 
-        assertKcActionStatus("success");
+        assertKcActionStatus(SUCCESS);
 
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
@@ -121,7 +122,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         changePasswordPage.changePassword("new-password", "new-password");
 
         events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
-        assertKcActionStatus("success");
+        assertKcActionStatus(SUCCESS);
     }
 
     @Test
@@ -133,7 +134,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         changePasswordPage.assertCurrent();
         changePasswordPage.cancel();
         
-        assertKcActionStatus("cancelled");
+        assertKcActionStatus(CANCELLED);
     }
 
     @Test
@@ -157,7 +158,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
         events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
 
-        assertKcActionStatus("success");
+        assertKcActionStatus(SUCCESS);
     }
 
     @Test
@@ -184,7 +185,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         assertTrue("Logout sessions is checked by default", changePasswordPage.isLogoutSessionsChecked());
         changePasswordPage.changePassword("All Right Then, Keep Your Secrets", "All Right Then, Keep Your Secrets");
         events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
-        assertKcActionStatus("success");
+        assertKcActionStatus(SUCCESS);
 
         sessions = testUser.getUserSessions();
         assertEquals(1, sessions.size());
@@ -212,7 +213,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         changePasswordPage.uncheckLogoutSessions();
         changePasswordPage.changePassword("All Right Then, Keep Your Secrets", "All Right Then, Keep Your Secrets");
         events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
-        assertKcActionStatus("success");
+        assertKcActionStatus(SUCCESS);
 
         assertEquals(2, testUser.getUserSessions().size());
     }
