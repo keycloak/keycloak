@@ -1,0 +1,6 @@
+= Highlights
+
+== Improved User Search
+
+{project_name} now supports a glob-like syntax for the user search when listing users in the Admin Console,
+which allows for three different types of searches: prefix (`foo*` which became the default search), infix (`\*foo*`), and exact `"foo"`)
