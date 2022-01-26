@@ -34,7 +34,6 @@ interface ContinueCancelModalProps {
     onContinue: () => void;
     onClose?: () => void;
     isDisabled?: boolean;
-    isLarge?: boolean;
 }
 
 interface ContinueCancelModalState {
@@ -52,8 +51,7 @@ export class ContinueCancelModal extends React.Component<ContinueCancelModalProp
         buttonVariant: 'primary',
         modalContinueButtonLabel: 'continue',
         modalCancelButtonLabel: 'doCancel',
-        isDisabled: false,
-        isSmall: true
+        isDisabled: false
     };
 
     public constructor(props: ContinueCancelModalProps) {
@@ -92,11 +90,11 @@ export class ContinueCancelModal extends React.Component<ContinueCancelModalProp
                     isOpen={isModalOpen}
                     onClose={this.handleModalToggle}
                     actions={[
-                        <Button id='modal-cancel' key="cancel" variant="secondary" onClick={this.handleModalToggle}>
-                            <Msg msgKey={this.props.modalCancelButtonLabel!}/>
-                        </Button>,
                         <Button id='modal-confirm' key="confirm" variant="primary" onClick={this.handleContinue}>
                             <Msg msgKey={this.props.modalContinueButtonLabel!}/>
+                        </Button>,
+                        <Button id='modal-cancel' key="cancel" variant="secondary" onClick={this.handleModalToggle}>
+                            <Msg msgKey={this.props.modalCancelButtonLabel!}/>
                         </Button>
                     ]}
                 >

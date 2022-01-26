@@ -176,7 +176,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                         className="pf-u-align-items-center"
                         dataListCells={[
                           <DataListCell id={this.elementId('name', application)} width={2} key={'app-' + appIndex}>
-                            <Button className="pf-u-pl-0" component="a" variant="link" onClick={() => window.open(application.effectiveUrl)}>
+                            <Button className="pf-u-pl-0 title-case" component="a" variant="link" onClick={() => window.open(application.effectiveUrl)}>
                               {application.clientName || application.clientId} <ExternalLinkAltIcon/>
                             </Button>
                           </DataListCell>,
