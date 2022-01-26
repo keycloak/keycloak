@@ -35,4 +35,48 @@ Please consult the documentation of your reverse proxy on how to set these heade
 
 Take extra precautions to ensure that the X-Forwarded-For header is set by your reverse proxy. If it is not configured correctly, rogue clients can set this header themselves and trick Keycloak into thinking the client is connecting from a different IP address than it actually does. This may become really important if you are doing any black or white listing of IP addresses.
 
+=== Exposed path recommendations
+When using a reverse proxy, not all paths have to be exposed in order for Keycloak to work correctly. The recommendations on which paths to expose and which not to expose are as follows:
+
+|===
+|Keycloak Path|Reverse Proxy Path|Exposed|Reason
+
+|/
+|-
+|No
+|When exposing all paths, admin paths are exposed unnecessarily
+
+|/admin/
+| -
+|No
+|Exposed admin paths lead to an unnecessary attack vector
+
+|/js/
+| -
+|No
+|It's good practice to not use external js for the javascript client, but bake it into your public client instead
+
+|/welcome/
+| -
+|No
+|No need to expose the welcome page after initial installation.
+
+|/realms/
+|/realms/
+|Yes
+|Needed to work correctly (e.g. oidc endpoints)
+
+|/resources/
+|/resources/
+|Yes
+|Needed to serve assets correctly. May be served from a CDN instead of the Keycloak path.
+
+|/robots.txt
+|/robots.txt
+|Yes
+|Search engine rules
+
+|===
+We assume you run Keycloak on the root path `/` on your reverse proxy/gateways public API. If not, prefix the path with your desired one.
+
 </@tmpl.guide>
