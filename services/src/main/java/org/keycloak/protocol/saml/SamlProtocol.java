@@ -469,7 +469,8 @@ public class SamlProtocol implements LoginProtocol {
         boolean postBinding = isPostBinding(authSession);
         String keyName = samlClient.getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
         String nameId = getSAMLNameId(samlNameIdMappers, nameIdFormat, session, userSession, clientSession);
-
+        nameIdFormat = getSAMLNameIdFormat(samlNameIdMappers, nameIdFormat);
+        
         if (nameId == null) {
             return samlErrorMessage(null, samlClient, isPostBinding(authSession), redirectUri,
                     JBossSAMLURIConstants.STATUS_INVALID_NAMEIDPOLICY, relayState);
@@ -598,11 +599,17 @@ public class SamlProtocol implements LoginProtocol {
             List<ProtocolMapperProcessor<SAMLNameIdMapper>> samlNameIdMappers, String nameIdFormat, KeycloakSession session,
                                     UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
         for (ProtocolMapperProcessor<SAMLNameIdMapper> nameIdMap : samlNameIdMappers) {
-            if(nameIdFormat.equals(nameIdMap.model.getConfig().get(NameIdMapperHelper.MAPPER_NAMEID_FORMAT))) {
-                return nameIdMap.mapper.mapperNameId(nameIdFormat, nameIdMap.model, session, userSession, clientSession);
-            }
+            return nameIdMap.mapper.mapperNameId(nameIdFormat, nameIdMap.model, session, userSession, clientSession);
         }
         return getNameId(nameIdFormat, clientSession, userSession);
+    }
+
+    protected String getSAMLNameIdFormat(
+            List<ProtocolMapperProcessor<SAMLNameIdMapper>> samlNameIdMappers, String nameIdFormat) {
+        for (ProtocolMapperProcessor<SAMLNameIdMapper> nameIdMap : samlNameIdMappers) {
+            return nameIdMap.model.getConfig().get(NameIdMapperHelper.MAPPER_NAMEID_FORMAT);
+        }
+        return nameIdFormat;
     }
 
     public static String getLogoutServiceUrl(KeycloakSession session, ClientModel client, String bindingType, boolean backChannelLogout) {
