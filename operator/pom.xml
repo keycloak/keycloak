@@ -106,6 +106,13 @@
             <artifactId>quarkus-kubernetes-client</artifactId>
         </dependency>
 
+        <!-- Lombok for the imported CRD -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.22</version>
+        </dependency>
+
 
         <!--  This dependency is needed only to ensure proper building order so that this module is build after the CSV extension -->
         <dependency>
