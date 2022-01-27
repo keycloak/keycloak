@@ -11,7 +11,7 @@ export class PageHeaderTool extends React.Component {
 
     public render(): React.ReactNode {
         return (
-            <PageHeaderTools className="testClass1234">
+            <PageHeaderTools>
                 {this.hasReferrer &&
                     <div className="pf-c-page__header-tools-group">
                         <ReferrerLink/>
