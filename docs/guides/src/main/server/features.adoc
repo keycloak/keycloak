@@ -4,7 +4,8 @@
 
 <@tmpl.guide
 title="Enabling and disabling features"
-summary="Understand how to configure Keycloak to use optional features">
+summary="Understand how to configure Keycloak to use optional features"
+includedOptions="features features-*">
 
 Keycloak has packed some functionality in features, some of them not enabled by default. These features include features that are in tech preview or deprecated features. In addition there are some features that are enabled by default, but can be disabled if you don't need them for your specific usage scenario.
 

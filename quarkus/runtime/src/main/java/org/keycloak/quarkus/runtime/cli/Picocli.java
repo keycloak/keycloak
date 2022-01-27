@@ -35,7 +35,6 @@ import static picocli.CommandLine.Model.UsageMessageSpec.SECTION_KEY_COMMAND_LIS
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +50,6 @@ import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
-import org.keycloak.common.Profile;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.ConfigCategory;
@@ -295,41 +293,9 @@ public final class Picocli {
 
         if (includeBuildTime) {
             mappers.addAll(PropertyMappers.getBuildTimeMappers());
-            addFeatureOptions(commandSpec);
         }
 
         addMappedOptionsToArgGroups(commandSpec, mappers);
-    }
-
-    private static void addFeatureOptions(CommandSpec commandSpec) {
-        ArgGroupSpec.Builder featureGroupBuilder = ArgGroupSpec.builder()
-                .heading(ConfigCategory.FEATURE.getHeading() + ":")
-                .order(ConfigCategory.FEATURE.getOrder())
-                .validate(false);
-
-        String previewName = Profile.Type.PREVIEW.name().toLowerCase();
-
-        featureGroupBuilder.addArg(OptionSpec.builder(new String[] {"-ft", "--features"})
-                .description("Enables all tech preview features.")
-                .paramLabel(previewName)
-                .completionCandidates(Collections.singleton(previewName))
-                .parameterConsumer(PropertyMapperParameterConsumer.INSTANCE)
-                .type(String.class)
-                .build());
-
-        List<String> expectedValues = asList("enabled", "disabled");
-
-        for (Profile.Feature feature : Profile.Feature.values()) {
-            featureGroupBuilder.addArg(OptionSpec.builder("--features-" + feature.name().toLowerCase())
-                    .description("Enables the " + feature.name() + " feature.")
-                    .paramLabel(String.join("|", expectedValues))
-                    .type(String.class)
-                    .parameterConsumer(PropertyMapperParameterConsumer.INSTANCE)
-                    .completionCandidates(expectedValues)
-                    .build());
-        }
-
-        commandSpec.addArgGroup(featureGroupBuilder.build());
     }
 
     private static void addMappedOptionsToArgGroups(CommandSpec cSpec, List<PropertyMapper> propertyMappers) {

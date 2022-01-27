@@ -19,8 +19,12 @@ package org.keycloak.quarkus.runtime.cli;
 
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
 
-import java.util.Iterator;
+import java.util.List;
 import java.util.Stack;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import org.keycloak.utils.StringUtil;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Model.ArgSpec;
@@ -79,21 +83,23 @@ public final class PropertyMapperParameterConsumer implements CommandLine.IParam
     }
 
     private boolean isExpectedValue(OptionSpec option, String value) {
-        Iterator<String> expectedValues = option.completionCandidates().iterator();
+        List<String> expectedValues = StreamSupport.stream(option.completionCandidates().spliterator(), false).collect(Collectors.toList());
 
-        if (!expectedValues.hasNext()) {
+        if (expectedValues.isEmpty()) {
             // accept any
             return true;
         }
 
-        while (expectedValues.hasNext()) {
-            String expectedValue = expectedValues.next();
+        if (StringUtil.isBlank(value)) {
+            return false;
+        }
 
-            if (expectedValue.equals(value)) {
-                return true;
+        for (String v : value.split(",")) {
+            if (!expectedValues.contains(v)) {
+                return false;
             }
         }
 
-        return false;
+        return true;
     }
 }
