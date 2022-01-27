@@ -63,7 +63,8 @@ public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity>
 
     @Override
     public Set<String> getUris() {
-        return entity.getUris();
+        Set<String> uris = entity.getUris();
+        return uris == null ? Collections.emptySet() : entity.getUris();
     }
 
     @Override
@@ -85,7 +86,8 @@ public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity>
 
     @Override
     public List<Scope> getScopes() {
-        return entity.getScopeIds().stream()
+        Set<String> ids = entity.getScopeIds();
+        return ids == null ? Collections.emptyList() : ids.stream()
                 .map(id -> storeFactory
                         .getScopeStore().findById(id, entity.getResourceServerId()))
                 .collect(Collectors.toList());
@@ -114,7 +116,8 @@ public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity>
 
     @Override
     public boolean isOwnerManagedAccess() {
-        return entity.isOwnerManagedAccess();
+        Boolean isOMA = entity.isOwnerManagedAccess();
+        return isOMA == null ? false : isOMA;
     }
 
     @Override
@@ -131,7 +134,8 @@ public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity>
 
     @Override
     public Map<String, List<String>> getAttributes() {
-        return Collections.unmodifiableMap(new HashMap<>(entity.getAttributes()));
+        Map<String, List<String>> attrs = entity.getAttributes();
+        return attrs == null ? Collections.emptyMap() : Collections.unmodifiableMap(new HashMap<>(attrs));
     }
 
     @Override

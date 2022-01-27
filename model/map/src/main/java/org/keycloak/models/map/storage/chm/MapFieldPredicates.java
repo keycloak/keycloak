@@ -341,10 +341,10 @@ public class MapFieldPredicates {
             getter = re -> re.getUris() != null && !re.getUris().isEmpty();
         } else if (op == Operator.IN && values != null && values.length == 1 && (values[0] instanceof Collection)) {
             Collection<?> c = (Collection<?>) values[0];
-            getter = re -> re.getUris().stream().anyMatch(c::contains);
+            getter = re -> Optional.ofNullable(re.getUris()).orElseGet(Collections::emptySet).stream().anyMatch(c::contains);
         } else {
             String uri = ensureEqSingleValue(Resource.SearchableFields.URI, "uri", op, values);
-            getter = re -> re.getUris().contains(uri);
+            getter = re -> Optional.ofNullable(re.getUris()).orElseGet(Collections::emptySet).contains(uri);
         }
 
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
@@ -355,10 +355,10 @@ public class MapFieldPredicates {
 
         if (op == Operator.IN && values != null && values.length == 1 && (values[0] instanceof Collection)) {
             Collection<?> c = (Collection<?>) values[0];
-            getter = re -> re.getScopeIds().stream().map(Object::toString).anyMatch(c::contains);
+            getter = re -> Optional.ofNullable(re.getScopeIds()).orElseGet(Collections::emptySet).stream().map(Object::toString).anyMatch(c::contains);
         } else {
             String scope = ensureEqSingleValue(Resource.SearchableFields.URI, "scope_id", op, values);
-            getter = re -> re.getScopeIds().stream().map(Object::toString).anyMatch(scope::equals);
+            getter = re -> Optional.ofNullable(re.getScopeIds()).orElseGet(Collections::emptySet).stream().map(Object::toString).anyMatch(scope::equals);
         }
 
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
@@ -368,13 +368,13 @@ public class MapFieldPredicates {
         Function<MapPolicyEntity, ?> getter;
 
         if (op == Operator.NOT_EXISTS) {
-            getter = re -> re.getResourceIds().isEmpty();
+            getter = re -> re.getResourceIds() == null || re.getResourceIds().isEmpty();
         } else if (op == Operator.IN && values != null && values.length == 1 && (values[0] instanceof Collection)) {
             Collection<?> c = (Collection<?>) values[0];
-            getter = re -> re.getResourceIds().stream().map(Object::toString).anyMatch(c::contains);
+            getter = re -> Optional.ofNullable(re.getResourceIds()).orElseGet(Collections::emptySet).stream().map(Object::toString).anyMatch(c::contains);
         } else {
             String scope = ensureEqSingleValue(Policy.SearchableFields.RESOURCE_ID, "resource_id", op, values, String.class);
-            getter = re -> re.getResourceIds().stream().map(Object::toString).anyMatch(scope::equals);
+            getter = re -> Optional.ofNullable(re.getResourceIds()).orElseGet(Collections::emptySet).stream().map(Object::toString).anyMatch(scope::equals);
         }
 
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
@@ -385,10 +385,10 @@ public class MapFieldPredicates {
 
         if (op == Operator.IN && values != null && values.length == 1 && (values[0] instanceof Collection)) {
             Collection<?> c = (Collection<?>) values[0];
-            getter = re -> re.getScopeIds().stream().map(Object::toString).anyMatch(c::contains); // TODO: Use KeyConverter
+            getter = re -> Optional.ofNullable(re.getScopeIds()).orElseGet(Collections::emptySet).stream().map(Object::toString).anyMatch(c::contains); // TODO: Use KeyConverter
         } else {
             String scope = ensureEqSingleValue(Policy.SearchableFields.CONFIG, "scope_id", op, values);
-            getter = re -> re.getScopeIds().stream().map(Object::toString).anyMatch(scope::equals);
+            getter = re -> Optional.ofNullable(re.getScopeIds()).orElseGet(Collections::emptySet).stream().map(Object::toString).anyMatch(scope::equals);
         }
 
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
@@ -407,7 +407,7 @@ public class MapFieldPredicates {
         System.arraycopy(values, 1, realValues, 0, values.length - 1);
         Predicate<Object> valueComparator = CriteriaOperator.predicateFor(op, realValues);
         getter = pe -> {
-            final String configValue = pe.getConfigValue(attrNameS);
+            final String configValue = pe.getConfig(attrNameS);
             return valueComparator.test(configValue);
         };
 
@@ -419,10 +419,10 @@ public class MapFieldPredicates {
 
         if (op == Operator.IN && values != null && values.length == 1 && (values[0] instanceof Collection)) {
             Collection<?> c = (Collection<?>) values[0];
-            getter = re -> re.getAssociatedPoliciesIds().stream().map(Object::toString).anyMatch(c::contains);
+            getter = re -> Optional.ofNullable(re.getAssociatedPolicyIds()).orElseGet(Collections::emptySet).stream().map(Object::toString).anyMatch(c::contains);
         } else {
             String policyId = ensureEqSingleValue(Policy.SearchableFields.ASSOCIATED_POLICY_ID, "associated_policy_id", op, values);
-            getter = re -> re.getAssociatedPoliciesIds().stream().map(Object::toString).anyMatch(policyId::equals);
+            getter = re -> Optional.ofNullable(re.getAssociatedPolicyIds()).orElseGet(Collections::emptySet).stream().map(Object::toString).anyMatch(policyId::equals);
         }
 
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);

@@ -36,7 +36,8 @@ public class MapResourceServerAdapter extends AbstractResourceServerModel<MapRes
 
     @Override
     public boolean isAllowRemoteResourceManagement() {
-        return entity.isAllowRemoteResourceManagement();
+        Boolean isARRM = entity.isAllowRemoteResourceManagement();
+        return isARRM == null ? false : isARRM;
     }
 
     @Override
@@ -47,7 +48,8 @@ public class MapResourceServerAdapter extends AbstractResourceServerModel<MapRes
 
     @Override
     public PolicyEnforcementMode getPolicyEnforcementMode() {
-        return entity.getPolicyEnforcementMode();
+        PolicyEnforcementMode pem = entity.getPolicyEnforcementMode();
+        return pem == null ? PolicyEnforcementMode.ENFORCING : pem;
     }
 
     @Override
@@ -64,7 +66,8 @@ public class MapResourceServerAdapter extends AbstractResourceServerModel<MapRes
 
     @Override
     public DecisionStrategy getDecisionStrategy() {
-        return entity.getDecisionStrategy();
+        DecisionStrategy ds = entity.getDecisionStrategy();
+        return ds == null ? DecisionStrategy.UNANIMOUS : ds;
     }
 
     @Override

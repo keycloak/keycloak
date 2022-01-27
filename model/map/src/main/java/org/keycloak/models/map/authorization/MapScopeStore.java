@@ -27,6 +27,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.map.authorization.adapter.MapScopeAdapter;
 import org.keycloak.models.map.authorization.entity.MapScopeEntity;
+import org.keycloak.models.map.authorization.entity.MapScopeEntityImpl;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 
@@ -81,8 +82,8 @@ public class MapScopeStore implements ScopeStore {
             throw new ModelDuplicateException("Scope with name '" + name + "' for " + resourceServer.getId() + " already exists");
         }
 
-        MapScopeEntity entity = new MapScopeEntity(id);
-
+        MapScopeEntity entity = new MapScopeEntityImpl();
+        entity.setId(id);
         entity.setName(name);
         entity.setResourceServerId(resourceServer.getId());
 

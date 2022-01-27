@@ -16,6 +16,14 @@
  */
 package org.keycloak.models.map.storage.chm;
 
+import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntity;
+import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntityImpl;
+import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
+import org.keycloak.models.map.authorization.entity.MapPolicyEntityImpl;
+import org.keycloak.models.map.authorization.entity.MapResourceEntityImpl;
+import org.keycloak.models.map.authorization.entity.MapResourceServerEntityImpl;
+import org.keycloak.models.map.authorization.entity.MapScopeEntity;
+import org.keycloak.models.map.authorization.entity.MapScopeEntityImpl;
 import org.keycloak.models.map.common.StringKeyConvertor;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.Config.Scope;
@@ -94,6 +102,11 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
       .constructor(MapUserFederatedIdentityEntityImpl.class,        MapUserFederatedIdentityEntityImpl::new)
       .constructor(MapUserConsentEntityImpl.class,                  MapUserConsentEntityImpl::new)
       .constructor(MapClientScopeEntityImpl.class,                  MapClientScopeEntityImpl::new)
+      .constructor(MapResourceServerEntityImpl.class,               MapResourceServerEntityImpl::new)
+      .constructor(MapResourceEntityImpl.class,                     MapResourceEntityImpl::new)
+      .constructor(MapScopeEntity.class,                            MapScopeEntityImpl::new)
+      .constructor(MapPolicyEntity.class,                           MapPolicyEntityImpl::new)
+      .constructor(MapPermissionTicketEntity.class,                 MapPermissionTicketEntityImpl::new)
       .build();
 
     private static final Map<String, StringKeyConvertor> KEY_CONVERTORS = new HashMap<>();

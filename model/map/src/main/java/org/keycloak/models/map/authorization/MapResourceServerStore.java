@@ -34,6 +34,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.map.authorization.adapter.MapResourceServerAdapter;
 import org.keycloak.models.map.authorization.entity.MapResourceServerEntity;
+import org.keycloak.models.map.authorization.entity.MapResourceServerEntityImpl;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.storage.StorageId;
@@ -74,7 +75,8 @@ public class MapResourceServerStore implements ResourceServerStore {
             throw new ModelDuplicateException("Resource server already exists: " + clientId);
         }
 
-        MapResourceServerEntity entity = new MapResourceServerEntity(clientId);
+        MapResourceServerEntity entity = new MapResourceServerEntityImpl();
+        entity.setId(clientId);
 
         return entityToAdapter(tx.create(entity));
     }
