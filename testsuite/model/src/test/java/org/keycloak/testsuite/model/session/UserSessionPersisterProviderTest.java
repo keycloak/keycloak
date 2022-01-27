@@ -39,10 +39,12 @@ import org.keycloak.services.managers.RealmManager;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -50,6 +52,7 @@ import java.util.stream.Stream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import org.keycloak.models.Constants;
 import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
 import org.hamcrest.Matchers;
@@ -132,12 +135,18 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             return createSessions(session, realmId);
         });
 
+        final Map<String, String> onlineSessionToOfflineSessionIds = new HashMap<>();
         inComittedTransaction(session -> {
             // Persist 3 created userSessions and clientSessions as offline
             RealmModel realm = session.realms().getRealm(realmId);
             ClientModel testApp = realm.getClientByClientId("test-app");
-            session.sessions().getUserSessionsStream(realm, testApp).collect(Collectors.toList())
-                    .forEach(userSessionLooper -> persistUserSession(session, userSessionLooper, true));
+            List<UserSessionModel> onlineSessionList =
+                    session.sessions().getUserSessionsStream(realm, testApp).collect(Collectors.toList());
+            for (int i = 0; i < onlineSessionList.size(); i++) {
+                UserSessionModel onlineSession = onlineSessionList.get(i);
+                String offlineSessionId = persistUserSession(session, onlineSession, true);
+                onlineSessionToOfflineSessionIds.put(onlineSession.getId(), offlineSessionId);
+            }
         });
 
         inComittedTransaction(session -> {
@@ -150,18 +159,23 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         inComittedTransaction(session -> { // Assert online session
             RealmModel realm = session.realms().getRealm(realmId);
             List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, false, 1, 1, 1);
-            assertSession(loadedSessions.get(0), session.users().getUserByUsername(realm, "user1"), "127.0.0.1", started, started, "test-app", "third-party");
+            assertSession(loadedSessions.get(0), session.users().getUserByUsername(realm, "user1"), "127.0.0.1",
+                    started, started, "test-app", "third-party");
         });
 
         inComittedTransaction(session -> {
             // Assert offline sessions
             RealmModel realm = session.realms().getRealm(realmId);
             List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, true, 2, 2, 3);
-            assertSessions(loadedSessions, new String[] { origSessions[0].getId(), origSessions[1].getId(), origSessions[2].getId() });
+            assertSessions(loadedSessions, onlineSessionToOfflineSessionIds.values().toArray(new String[0]));
 
-            assertSessionLoaded(loadedSessions, origSessions[0].getId(), session.users().getUserByUsername(realm, "user1"), "127.0.0.1", started, started, "test-app", "third-party");
-            assertSessionLoaded(loadedSessions, origSessions[1].getId(), session.users().getUserByUsername(realm, "user1"), "127.0.0.2", started, started, "test-app");
-            assertSessionLoaded(loadedSessions, origSessions[2].getId(), session.users().getUserByUsername(realm, "user2"), "127.0.0.3", started, started, "test-app");
+            assertSessionLoaded(loadedSessions, onlineSessionToOfflineSessionIds.get(origSessions[0].getId()),
+                    session.users().getUserByUsername(realm, "user1"), "127.0.0.1", started, started, "test-app",
+                    "third-party");
+            assertSessionLoaded(loadedSessions, onlineSessionToOfflineSessionIds.get(origSessions[1].getId()),
+                    session.users().getUserByUsername(realm, "user1"), "127.0.0.2", started, started, "test-app");
+            assertSessionLoaded(loadedSessions, onlineSessionToOfflineSessionIds.get(origSessions[2].getId()),
+                    session.users().getUserByUsername(realm, "user2"), "127.0.0.3", started, started, "test-app");
         });
     }
 
@@ -170,10 +184,9 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         int started = Time.currentTime();
 
         AtomicReference<UserSessionModel[]> origSessionsAt = new AtomicReference<>();
-        AtomicReference<List<UserSessionModel>> loadedSessionsAt = new AtomicReference<>();
 
-        AtomicReference<UserSessionModel> userSessionAt = new AtomicReference<>();
-        AtomicReference<UserSessionModel> persistedSessionAt = new AtomicReference<>();
+        AtomicReference<String> onlineSessionId = new AtomicReference<>();
+        AtomicReference<String> offlineSessionId = new AtomicReference<>();
 
         inComittedTransaction(session -> {
             // Create some sessions in infinispan
@@ -186,10 +199,10 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             UserSessionModel[] origSessions = origSessionsAt.get();
 
             // Persist 1 offline session
-            UserSessionModel userSession = session.sessions().getUserSession(realm, origSessions[1].getId());
-            userSessionAt.set(userSession);
+            onlineSessionId.set(origSessions[1].getId());
+            UserSessionModel userSession = session.sessions().getUserSession(realm, onlineSessionId.get());
 
-            persistUserSession(session, userSession, true);
+            offlineSessionId.set(persistUserSession(session, userSession, true));
         });
 
         inComittedTransaction(session -> {
@@ -199,28 +212,29 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
             // Load offline session
             List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, true, 10, 1, 1);
-            loadedSessionsAt.set(loadedSessions);
 
             UserSessionModel persistedSession = loadedSessions.get(0);
-            persistedSessionAt.set(persistedSession);
+            assertThat(persistedSession.getId(), equalTo(offlineSessionId.get()));
 
-            assertSession(persistedSession, session.users().getUserByUsername(realm, "user1"), "127.0.0.2", started, started, "test-app");
+            assertSession(persistedSession, session.users().getUserByUsername(realm, "user1"), "127.0.0.2", started,
+                    started, "test-app");
 
             // create new clientSession
-            AuthenticatedClientSessionModel clientSession = createClientSession(session, realmId, realm.getClientByClientId("third-party"), session.sessions().getUserSession(realm, persistedSession.getId()),
-                    "http://redirect", "state");
-            persister.createClientSession(clientSession, true);
-
+            AuthenticatedClientSessionModel clientSession =
+                    createClientSession(session, realmId, realm.getClientByClientId("third-party"),
+                            session.sessions().getUserSession(realm, onlineSessionId.get()),
+                            "http://redirect", "state");
+            persister.createClientSession(clientSession, true, persistedSession.getId());
         });
 
         inComittedTransaction(session -> {
             RealmModel realm = session.realms().getRealm(realmId);
 
             UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-            UserSessionModel userSession = userSessionAt.get();
 
             // Remove clientSession
-            persister.removeClientSession(userSession.getId(), realm.getClientByClientId("third-party").getId(), true);
+            persister.removeClientSession(offlineSessionId.get(), realm.getClientByClientId("third-party").getId(),
+                    true);
         });
 
         inComittedTransaction(session -> {
@@ -231,7 +245,8 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             // Assert clientSession removed
             List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, true, 10, 1, 1);
             UserSessionModel persistedSession = loadedSessions.get(0);
-            assertSession(persistedSession, session.users().getUserByUsername(realm, "user1"), "127.0.0.2", started, started, "test-app");
+            assertSession(persistedSession, session.users().getUserByUsername(realm, "user1"), "127.0.0.2", started,
+                    started, "test-app");
 
             // Remove userSession
             persister.removeUserSession(persistedSession.getId(), true);
@@ -464,8 +479,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
     @Test
     public void testExpiredSessions() {
         int started = Time.currentTime();
-        final UserSessionModel[] userSession1 = {null};
-        final UserSessionModel[] userSession2 = {null};
+        final String[] offlineSession1Id = new String[1];
 
         UserSessionModel[] origSessions = inComittedTransaction(session -> {
             // Create some sessions in infinispan
@@ -475,10 +489,10 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         inComittedTransaction(session -> {
             // Persist 2 offline sessions of 2 users
             RealmModel realm = session.realms().getRealm(realmId);
-            userSession1[0] = session.sessions().getUserSession(realm, origSessions[1].getId());
-            userSession2[0] = session.sessions().getUserSession(realm, origSessions[2].getId());
-            persistUserSession(session, userSession1[0], true);
-            persistUserSession(session, userSession2[0], true);
+            UserSessionModel onlineSession1 = session.sessions().getUserSession(realm, origSessions[1].getId());
+            UserSessionModel onlineSession2 = session.sessions().getUserSession(realm, origSessions[2].getId());
+            offlineSession1Id[0] = persistUserSession(session, onlineSession1, true);
+            persistUserSession(session, onlineSession2, true);
         });
 
         inComittedTransaction(session -> {
@@ -487,7 +501,8 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             RealmModel realm = session.realms().getRealm(realmId);
             UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
 
-            persister.updateLastSessionRefreshes(realm, lastSessionRefresh, Collections.singleton(userSession1[0].getId()), true);
+            persister.updateLastSessionRefreshes(realm, lastSessionRefresh, Collections.singleton(offlineSession1Id[0]),
+                    true);
 
             // Increase time offset - 40 days
             Time.setOffset(3456000);
@@ -533,12 +548,14 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         return sessions;
     }
 
-    private void persistUserSession(KeycloakSession session, UserSessionModel userSession, boolean offline) {
+    private String persistUserSession(KeycloakSession session, UserSessionModel userSession, boolean offline) {
         UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-        persister.createUserSession(userSession, offline);
+        String userSessionId = offline ? UUID.randomUUID().toString() : userSession.getId();
+        persister.createUserSession(userSession, offline, userSessionId);
         for (AuthenticatedClientSessionModel clientSession : userSession.getAuthenticatedClientSessions().values()) {
-            persister.createClientSession(clientSession, offline);
+            persister.createClientSession(clientSession, offline, userSessionId);
         }
+        return userSessionId;
     }
 
     public static void assertSessionLoaded(List<UserSessionModel> sessions, String id, UserModel user, String ipAddress, int started, int lastRefresh, String... clients) {

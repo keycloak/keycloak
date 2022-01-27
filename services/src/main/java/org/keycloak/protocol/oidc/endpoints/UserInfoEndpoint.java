@@ -284,18 +284,23 @@ public class UserInfoEndpoint {
             return createTransientSessionForClient(token, client);
         }
 
-        UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), false, client.getId());
+        UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm,
+                token.getSessionState(), false, client.getId());
         UserSessionModel offlineUserSession = null;
         if (AuthenticationManager.isSessionValid(realm, userSession)) {
             checkTokenIssuedAt(token, userSession, event, client);
             event.session(userSession);
             return userSession;
         } else {
-            offlineUserSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), true, client.getId());
-            if (AuthenticationManager.isOfflineSessionValid(realm, offlineUserSession)) {
-                checkTokenIssuedAt(token, offlineUserSession, event, client);
-                event.session(offlineUserSession);
-                return offlineUserSession;
+            String relatedOfflineSessionId = token.getOfflineSessionId();
+            if (relatedOfflineSessionId != null) {
+                offlineUserSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm,
+                        relatedOfflineSessionId, true, client.getId());
+                if (AuthenticationManager.isOfflineSessionValid(realm, offlineUserSession)) {
+                    checkTokenIssuedAt(token, offlineUserSession, event, client);
+                    event.session(offlineUserSession);
+                    return offlineUserSession;
+                }
             }
         }
 

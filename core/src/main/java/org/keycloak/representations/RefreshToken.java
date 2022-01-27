@@ -17,17 +17,23 @@
 
 package org.keycloak.representations;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.keycloak.TokenCategory;
 import org.keycloak.util.TokenUtil;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class RefreshToken extends AccessToken {
+
+    public static final String ONLINE_SESSION_ID = "online_sid";
+
+    /**
+     * Holds the (user) sessionId of the originating online session, in case of an offline token.
+     */
+    @JsonProperty(ONLINE_SESSION_ID)
+    protected String onlineSessionId;
 
     private RefreshToken() {
         type(TokenUtil.TOKEN_TYPE_REFRESH);
@@ -52,5 +58,18 @@ public class RefreshToken extends AccessToken {
     @Override
     public TokenCategory getCategory() {
         return TokenCategory.INTERNAL;
+    }
+
+    public String getOnlineSessionId() {
+        /*
+         * Backwards-compatibility: For tokens created after onlineSessionId was introduced, it would be ok to just
+         * return the onlineSessionId.
+         * The sessionId is returned for older tokens.
+         */
+        return onlineSessionId != null ? onlineSessionId : sessionState;
+    }
+
+    public void setOnlineSessionId(String onlineSessionId) {
+        this.onlineSessionId = onlineSessionId;
     }
 }

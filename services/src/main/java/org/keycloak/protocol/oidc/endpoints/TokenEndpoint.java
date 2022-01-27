@@ -64,6 +64,8 @@ import org.keycloak.protocol.saml.SamlClient;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.IDToken;
+import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
@@ -683,15 +685,30 @@ public class TokenEndpoint {
         UserSessionModel userSession = processor.getUserSession();
         updateUserSessionFromClientAuth(userSession);
 
+        String offlineSessionId = null;
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager
             .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).generateAccessToken();
         if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()) {
             responseBuilder.generateRefreshToken();
+
+            RefreshToken newRefreshToken = responseBuilder.getRefreshToken();
+            if (TokenUtil.TOKEN_TYPE_OFFLINE.equals(newRefreshToken.getType())) {
+                offlineSessionId = newRefreshToken.getSessionId();
+            }
         }
 
         String scopeParam = clientSessionCtx.getClientSession().getNote(OAuth2Constants.SCOPE);
         if (TokenUtil.isOIDCRequest(scopeParam)) {
             responseBuilder.generateIDToken().generateAccessTokenHash();
+        }
+
+        if (offlineSessionId != null) {
+            responseBuilder.getAccessToken().setOfflineSessionId(offlineSessionId);
+
+            IDToken responseIdToken = responseBuilder.getIdToken();
+            if (responseIdToken != null) {
+                responseIdToken.setOfflineSessionId(offlineSessionId);
+            }
         }
 
         // TODO : do the same as codeToToken()

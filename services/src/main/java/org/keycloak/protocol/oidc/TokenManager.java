@@ -265,9 +265,13 @@ public class TokenManager {
             if (AuthenticationManager.isSessionValid(realm, userSession)) {
                 valid = isUserValid(session, realm, token, userSession.getUser());
             } else {
-                userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), true, client.getId());
-                if (AuthenticationManager.isOfflineSessionValid(realm, userSession)) {
-                    valid = isUserValid(session, realm, token, userSession.getUser());
+                String relatedOfflineSessionId = token.getOfflineSessionId();
+                if (relatedOfflineSessionId != null) {
+                    userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm,
+                            relatedOfflineSessionId, true, client.getId());
+                    if (AuthenticationManager.isOfflineSessionValid(realm, userSession)) {
+                        valid = isUserValid(session, realm, token, userSession.getUser());
+                    }
                 }
             }
 
@@ -412,6 +416,15 @@ public class TokenManager {
         String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
         if (TokenUtil.isOIDCRequest(scopeParam)) {
             responseBuilder.generateIDToken().generateAccessTokenHash();
+        }
+
+        RefreshToken newRefreshToken = responseBuilder.getRefreshToken();
+        if (newRefreshToken != null && TokenUtil.TOKEN_TYPE_OFFLINE.equals(newRefreshToken.getType())) {
+            responseBuilder.getAccessToken().setOfflineSessionId(newRefreshToken.getSessionId());
+            IDToken newIDToken = responseBuilder.getIdToken();
+            if (newIDToken != null) {
+                newIDToken.setOfflineSessionId(newRefreshToken.getSessionId());
+            }
         }
 
         AccessTokenResponse res = responseBuilder.build();
@@ -1067,7 +1080,12 @@ public class TokenManager {
                 refreshToken.type(TokenUtil.TOKEN_TYPE_OFFLINE);
                 if (realm.isOfflineSessionMaxLifespanEnabled())
                     refreshToken.expiration(getOfflineExpiration());
-                sessionManager.createOrUpdateOfflineSession(clientSessionCtx.getClientSession(), userSession);
+                UserSessionModel offlineSession =
+                        sessionManager.createOrUpdateOfflineSession(clientSessionCtx.getClientSession(), userSession);
+                // refresh token needs the ID of the offline session (instead of the ID of the current online session)
+                refreshToken.setSessionState(offlineSession.getId());
+                // link the online session to the token to enable functionality like logout
+                refreshToken.setOnlineSessionId(userSession.getId());
             } else {
                 refreshToken = new RefreshToken(accessToken);
                 refreshToken.expiration(getRefreshExpiration());

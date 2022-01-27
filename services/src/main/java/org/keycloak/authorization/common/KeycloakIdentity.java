@@ -118,14 +118,10 @@ public class KeycloakIdentity implements Identity {
             this.accessToken = AccessToken.class.cast(token);
         } else {
             UserSessionProvider sessions = keycloakSession.sessions();
-            UserSessionModel userSession = sessions.getUserSession(realm, token.getSessionState());
+            UserSessionModel userSession = sessions.getUserSessionWithOfflineFallback(realm, token);
 
             if (userSession == null) {
-                userSession = sessions.getOfflineUserSession(realm, token.getSessionState());
-            }
-            
-            if (userSession == null) {
-                throw new RuntimeException("No active session associated with the token");
+                throw new IllegalStateException("No session associated with the token");
             }
 
             ClientModel client = realm.getClientByClientId(token.getIssuedFor());
@@ -282,10 +278,10 @@ public class KeycloakIdentity implements Identity {
         }
 
         UserSessionProvider sessions = keycloakSession.sessions();
-        UserSessionModel userSession = sessions.getUserSession(realm, accessToken.getSessionState());
+        UserSessionModel userSession = sessions.getUserSessionWithOfflineFallback(realm, accessToken);
 
         if (userSession == null) {
-            userSession = sessions.getOfflineUserSession(realm, accessToken.getSessionState());
+            throw new ErrorResponseException("no_user_session", "No user session", Status.FORBIDDEN);
         }
 
         return userSession.getUser();

@@ -258,7 +258,7 @@ public class LogoutEndpoint {
 
             if (userSessionModel != null) {
                 checkTokenIssuedAt(token, userSessionModel);
-                logout(userSessionModel, offline);
+                logout(userSessionModel, offline, token.getOnlineSessionId());
             }
         } catch (OAuthErrorException e) {
             // KEYCLOAK-6771 Certificate Bound Token
@@ -436,8 +436,9 @@ public class LogoutEndpoint {
                                 clientResponse.getResponseCode().get() == Response.Status.NO_CONTENT.getStatusCode())));
     }
 
-    private void logout(UserSessionModel userSession, boolean offline) {
-        AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers, true, offline);
+    private void logout(UserSessionModel userSession, boolean offline, String onlineUserSessionId) {
+        AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(),
+                clientConnection, headers, true, offline, onlineUserSessionId);
         event.user(userSession.getUser()).session(userSession).success();
     }
 

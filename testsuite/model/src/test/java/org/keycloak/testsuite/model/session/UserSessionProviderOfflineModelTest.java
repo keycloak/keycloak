@@ -47,6 +47,10 @@ import java.util.stream.IntStream;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
@@ -112,8 +116,9 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
         InfinispanTestUtil.setTestingTimeService(kcSession);
 
         try {
-            // Key is userSessionId, value is set of client UUIDS
-            Map<String, Set<String>> offlineSessions = new HashMap<>();
+            // Key is userSessionId, value is client UUID
+            Map<String, String> offlineSessions = new HashMap<>();
+            String[] offlineSessionIdForRefresh = new String[1];
             ClientModel[] testApp = new ClientModel[1];
 
             UserSessionModel[] origSessions = inComittedTransaction(session -> {
@@ -129,26 +134,30 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
                 // Persist 3 created userSessions and clientSessions as offline
                 testApp[0] = realm.getClientByClientId("test-app");
                 session.sessions().getUserSessionsStream(realm, testApp[0]).collect(Collectors.toList())
-                        .forEach(userSession -> offlineSessions.put(userSession.getId(), createOfflineSessionIncludeClientSessions(session, userSession)));
+                        .forEach(userSession -> offlineSessions
+                                .putAll(createOfflineSessionIncludeClientSessions(session, userSession)));
 
                 // Assert all previously saved offline sessions found
-                for (Map.Entry<String, Set<String>> entry : offlineSessions.entrySet()) {
+                for (Map.Entry<String, String> entry : offlineSessions.entrySet()) {
                     UserSessionModel foundSession = sessionManager.findOfflineUserSession(realm, entry.getKey());
-                    Assert.assertEquals(foundSession.getAuthenticatedClientSessions().keySet(), entry.getValue());
+                    Set<String> foundClientUuidSet = foundSession.getAuthenticatedClientSessions().keySet();
+                    assertThat(foundClientUuidSet, hasSize(1));
+                    assertThat(foundClientUuidSet.iterator().next(), equalTo(entry.getValue()));
                 }
             });
 
-            log.info("Persisted 3 sessions to UserSessionPersisterProvider");
+            log.info("Persisted 4 sessions to UserSessionPersisterProvider (one per client session)");
 
             inComittedTransaction(session -> {
                 RealmModel realm = session.realms().getRealm(realmId);
                 persister = session.getProvider(UserSessionPersisterProvider.class);
 
-                UserSessionModel session0 = session.sessions().getOfflineUserSession(realm, origSessions[0].getId());
+                offlineSessionIdForRefresh[0] = offlineSessions.keySet().iterator().next();
+                UserSessionModel session0 = session.sessions().getOfflineUserSession(realm, offlineSessionIdForRefresh[0]);
                 Assert.assertNotNull(session0);
 
                 // sessions are in persister too
-                Assert.assertEquals(3, persister.getUserSessionsCount(true));
+                Assert.assertEquals(4, persister.getUserSessionsCount(true));
 
                 Time.setOffset(300);
                 log.infof("Set time offset to 300. Time is: %d", Time.currentTime());
@@ -168,7 +177,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
                 Time.setOffset(timeOffset);
                 log.infof("Set time offset to %d. Time is: %d", timeOffset, Time.currentTime());
 
-                UserSessionModel session0 = session.sessions().getOfflineUserSession(realm, origSessions[0].getId());
+                UserSessionModel session0 = session.sessions().getOfflineUserSession(realm, offlineSessionIdForRefresh[0]);
                 session0.setLastSessionRefresh(Time.currentTime());
 
                 return null;
@@ -191,9 +200,11 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
                 persister = session.getProvider(UserSessionPersisterProvider.class);
 
                 // assert session0 is the only session found
-                Assert.assertNotNull(session.sessions().getOfflineUserSession(realm, origSessions[0].getId()));
-                Assert.assertNull(session.sessions().getOfflineUserSession(realm, origSessions[1].getId()));
-                Assert.assertNull(session.sessions().getOfflineUserSession(realm, origSessions[2].getId()));
+                Assert.assertNotNull(session.sessions().getOfflineUserSession(realm, offlineSessionIdForRefresh[0]));
+                Set<String> expectedExpiredSessionIds = new HashSet<>(offlineSessions.keySet());
+                expectedExpiredSessionIds.remove(offlineSessionIdForRefresh[0]);
+                expectedExpiredSessionIds.forEach(expectedExpiredSessionId -> Assert
+                        .assertNull(session.sessions().getOfflineUserSession(realm, expectedExpiredSessionId)));
 
                 Assert.assertEquals(1, persister.getUserSessionsCount(true));
 
@@ -252,12 +263,12 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
                         .forEach(userSession -> createOfflineSessionIncludeClientSessions(session, userSession));
             });
 
-            log.info("Persisted 3 sessions to UserSessionPersisterProvider");
+            log.info("Persisted 4 sessions to UserSessionPersisterProvider (one per client session)");
 
             inComittedTransaction(session -> {
                 persister = session.getProvider(UserSessionPersisterProvider.class);
 
-                Assert.assertEquals(3, persister.getUserSessionsCount(true));
+                Assert.assertEquals(4, persister.getUserSessionsCount(true));
             });
 
             inComittedTransaction(session -> {
@@ -297,13 +308,13 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
         }
     }
 
-    private static Set<String> createOfflineSessionIncludeClientSessions(KeycloakSession session, UserSessionModel
-            userSession) {
-        Set<String> offlineSessions = new HashSet<>();
+    private static Map<String, String> createOfflineSessionIncludeClientSessions(KeycloakSession session,
+            UserSessionModel userSession) {
+        Map<String, String> offlineSessions = new HashMap<>();
         UserSessionManager localManager = new UserSessionManager(session);
         for (AuthenticatedClientSessionModel clientSession : userSession.getAuthenticatedClientSessions().values()) {
-            localManager.createOrUpdateOfflineSession(clientSession, userSession);
-            offlineSessions.add(clientSession.getClient().getId());
+            UserSessionModel offlineSession = localManager.createOrUpdateOfflineSession(clientSession, userSession);
+            offlineSessions.put(offlineSession.getId(), clientSession.getClient().getId());
         }
 
         return offlineSessions;

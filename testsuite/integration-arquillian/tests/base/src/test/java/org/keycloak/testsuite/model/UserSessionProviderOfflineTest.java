@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserManager;
@@ -37,6 +38,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 
 import java.util.HashMap;
@@ -47,10 +49,13 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.oneOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import org.keycloak.models.Constants;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -92,7 +97,8 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
     @Test
     @ModelTest
     public void testOfflineSessionsCrud(KeycloakSession session) {
-        Map<String, Set<String>> offlineSessions = new HashMap<>();
+        // Key is userSession ID, value is client UUID
+        Map<String, String> offlineSessions = new HashMap<>();
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionCrud) -> {
             // Create some online sessions in infinispan
@@ -105,11 +111,11 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
             realm = currentSession.realms().getRealm("test");
             sessionManager = new UserSessionManager(currentSession);
 
-            // Key is userSession ID, values are client UUIDS
-            // Persist 3 created userSessions and clientSessions as offline
+            // Persist 4 created userSessions and clientSessions as offline
             ClientModel testApp = realm.getClientByClientId("test-app");
             currentSession.sessions().getUserSessionsStream(realm, testApp).collect(Collectors.toList())
-                    .forEach(userSession -> offlineSessions.put(userSession.getId(), createOfflineSessionIncludeClientSessions(currentSession, userSession)));
+                    .forEach(userSession -> offlineSessions
+                            .putAll(createOfflineSessionIncludeClientSessions(currentSession, userSession)));
         });
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionCrud3) -> {
@@ -118,32 +124,35 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
             sessionManager = new UserSessionManager(currentSession);
 
             // Assert all previously saved offline sessions found
-            for (Map.Entry<String, Set<String>> entry : offlineSessions.entrySet()) {
+            assertThat(offlineSessions.entrySet(), hasSize(4));
+            for (Map.Entry<String, String> entry : offlineSessions.entrySet()) {
                 UserSessionModel offlineSession = sessionManager.findOfflineUserSession(realm, entry.getKey());
-                Assert.assertNotNull(offlineSession);
-                Assert.assertEquals(offlineSession.getAuthenticatedClientSessions().keySet(), entry.getValue());
+                assertThat(offlineSession, notNullValue());
+                Set<String> foundClientUuidSet = offlineSession.getAuthenticatedClientSessions().keySet();
+                assertThat(foundClientUuidSet, hasSize(1));
+                assertThat(foundClientUuidSet.iterator().next(), equalTo(entry.getValue()));
             }
 
             // Find clients with offline token
             UserModel user1 = currentSession.users().getUserByUsername(realm, "user1");
 
             Set<ClientModel> clients = sessionManager.findClientsWithOfflineToken(realm, user1);
-            Assert.assertEquals(clients.size(), 2);
+            assertThat(clients, hasSize(2));
             for (ClientModel client : clients) {
-                Assert.assertTrue(client.getClientId().equals("test-app") || client.getClientId().equals("third-party"));
+                assertThat(client.getClientId(), oneOf("test-app", "third-party"));
             }
 
             UserModel user2 = currentSession.users().getUserByUsername(realm, "user2");
 
             clients = sessionManager.findClientsWithOfflineToken(realm, user2);
-            Assert.assertEquals(clients.size(), 1);
-            Assert.assertEquals("test-app", clients.iterator().next().getClientId());
+            assertThat(clients, hasSize(1));
+            assertThat(clients.iterator().next().getClientId(), equalTo("test-app"));
 
             // Test count
             ClientModel testApp = realm.getClientByClientId("test-app");
             ClientModel thirdparty = realm.getClientByClientId("third-party");
-            Assert.assertEquals(3, currentSession.sessions().getOfflineSessionsCount(realm, testApp));
-            Assert.assertEquals(1, currentSession.sessions().getOfflineSessionsCount(realm, thirdparty));
+            assertThat(currentSession.sessions().getOfflineSessionsCount(realm, testApp), equalTo(3L));
+            assertThat(currentSession.sessions().getOfflineSessionsCount(realm, thirdparty), equalTo(1L));
             // Revoke "test-app" for user1
             sessionManager.revokeOfflineToken(user1, testApp);
         });
@@ -211,7 +220,8 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionRR1) -> {
             currentSession = sessionRR1;
             RealmModel fooRealm = currentSession.realms().createRealm("foo", "foo");
-            fooRealm.setDefaultRole(currentSession.roles().addRealmRole(fooRealm, Constants.DEFAULT_ROLES_ROLE_PREFIX  + "-" + fooRealm.getName()));
+            fooRealm.setDefaultRole(currentSession.roles().addRealmRole(fooRealm,
+                    Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + fooRealm.getName()));
             fooRealm.setSsoSessionIdleTimeout(1800);
             fooRealm.setSsoSessionMaxLifespan(36000);
             fooRealm.setOfflineSessionIdleTimeout(2592000);
@@ -219,10 +229,13 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
             fooRealm.addClient("foo-app");
             currentSession.users().addUser(fooRealm, "user3");
 
-            UserSessionModel userSession = currentSession.sessions().createUserSession(fooRealm, currentSession.users().getUserByUsername(fooRealm, "user3"), "user3", "127.0.0.1", "form", true, null, null);
+            UserSessionModel userSession = currentSession.sessions().createUserSession(fooRealm,
+                    currentSession.users().getUserByUsername(fooRealm, "user3"), "user3", "127.0.0.1", "form", true,
+                    null, null);
             userSessionID.set(userSession.getId());
 
-            createClientSession(currentSession, fooRealm.getClientByClientId("foo-app"), userSession, "http://redirect", "state");
+            createClientSession(currentSession, fooRealm.getClientByClientId("foo-app"), userSession, "http://redirect",
+                    "state");
         });
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionRR2) -> {
@@ -232,11 +245,15 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
             // Persist offline session
             RealmModel fooRealm = currentSession.realms().getRealm("foo");
             UserSessionModel userSession = currentSession.sessions().getUserSession(fooRealm, userSessionID.get());
-            createOfflineSessionIncludeClientSessions(currentSession, userSession);
+            Map<String, String> offlineSessions =
+                    createOfflineSessionIncludeClientSessions(currentSession, userSession);
+            assertThat(offlineSessions.keySet(), hasSize(1));
+            String offlineUserSessionId = offlineSessions.keySet().iterator().next();
 
-            UserSessionModel offlineUserSession = sessionManager.findOfflineUserSession(fooRealm, userSession.getId());
-            Assert.assertEquals(offlineUserSession.getAuthenticatedClientSessions().size(), 1);
-            AuthenticatedClientSessionModel offlineClientSession = offlineUserSession.getAuthenticatedClientSessions().values().iterator().next();
+            UserSessionModel offlineUserSession = sessionManager.findOfflineUserSession(fooRealm, offlineUserSessionId);
+            assertThat(offlineUserSession.getAuthenticatedClientSessions().entrySet(), hasSize(1));
+            AuthenticatedClientSessionModel offlineClientSession =
+                    offlineUserSession.getAuthenticatedClientSessions().values().iterator().next();
             Assert.assertEquals("foo-app", offlineClientSession.getClient().getClientId());
             Assert.assertEquals("user3", offlineClientSession.getUserSession().getUser().getUsername());
 
@@ -248,7 +265,8 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionRR3) -> {
             currentSession = sessionRR3;
             RealmModel fooRealm = currentSession.realms().createRealm("foo", "foo");
-            fooRealm.setDefaultRole(currentSession.roles().addRealmRole(fooRealm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + fooRealm.getName()));
+            fooRealm.setDefaultRole(currentSession.roles().addRealmRole(fooRealm,
+                    Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + fooRealm.getName()));
 
             fooRealm.addClient("foo-app");
             currentSession.users().addUser(fooRealm, "user3");
@@ -258,7 +276,8 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
             currentSession = sessionRR4;
             RealmModel fooRealm = currentSession.realms().getRealm("foo");
 
-            Assert.assertEquals(0, currentSession.sessions().getOfflineSessionsCount(fooRealm, fooRealm.getClientByClientId("foo-app")));
+            assertThat(currentSession.sessions().getOfflineSessionsCount(fooRealm,
+                    fooRealm.getClientByClientId("foo-app")), equalTo(0L));
 
             // Cleanup
             RealmManager realmMgr = new RealmManager(currentSession);
@@ -273,93 +292,156 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionCR) -> {
             try {
                 int started = Time.currentTime();
-                AtomicReference<String> userSessionID = new AtomicReference<>();
+                AtomicReference<String> onlineUserSessionID = new AtomicReference<>();
+                AtomicReference<Map<String, String>> offlineUserSessionIDs = new AtomicReference<>();
+                AtomicReference<String> fooAppOfflineUserSessionUuid = new AtomicReference<>();
+                AtomicReference<String> barAppOfflineUserSessionUuid = new AtomicReference<>();
 
-                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionCR1) -> {
-                    currentSession = sessionCR1;
-                    sessionManager = new UserSessionManager(currentSession);
-                    RealmModel fooRealm = currentSession.realms().createRealm("foo", "foo");
-                    fooRealm.setDefaultRole(currentSession.roles().addRealmRole(fooRealm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + fooRealm.getName()));
-                    fooRealm.setSsoSessionIdleTimeout(1800);
-                    fooRealm.setSsoSessionMaxLifespan(36000);
-                    fooRealm.setOfflineSessionIdleTimeout(2592000);
-                    fooRealm.setOfflineSessionMaxLifespan(5184000);
+                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
+                        (KeycloakSession sessionCR1) -> {
+                            currentSession = sessionCR1;
+                            sessionManager = new UserSessionManager(currentSession);
+                            RealmModel fooRealm = currentSession.realms().createRealm("foo", "foo");
+                            fooRealm.setDefaultRole(currentSession.roles().addRealmRole(fooRealm,
+                                    Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + fooRealm.getName()));
+                            fooRealm.setSsoSessionIdleTimeout(1800);
+                            fooRealm.setSsoSessionMaxLifespan(36000);
+                            fooRealm.setOfflineSessionIdleTimeout(2592000);
+                            fooRealm.setOfflineSessionMaxLifespan(5184000);
 
-                    fooRealm.addClient("foo-app");
-                    fooRealm.addClient("bar-app");
-                    currentSession.users().addUser(fooRealm, "user3");
+                            fooRealm.addClient("foo-app");
+                            fooRealm.addClient("bar-app");
+                            currentSession.users().addUser(fooRealm, "user3");
 
-                    UserSessionModel userSession = currentSession.sessions().createUserSession(fooRealm, currentSession.users().getUserByUsername(fooRealm, "user3"), "user3", "127.0.0.1", "form", true, null, null);
-                    userSessionID.set(userSession.getId());
+                            UserSessionModel userSession = currentSession.sessions().createUserSession(fooRealm,
+                                    currentSession.users().getUserByUsername(fooRealm, "user3"), "user3", "127.0.0.1",
+                                    "form", true, null, null);
+                            onlineUserSessionID.set(userSession.getId());
 
-                    createClientSession(currentSession, fooRealm.getClientByClientId("foo-app"), userSession, "http://redirect", "state");
-                    createClientSession(currentSession, fooRealm.getClientByClientId("bar-app"), userSession, "http://redirect", "state");
-                });
+                            createClientSession(currentSession, fooRealm.getClientByClientId("foo-app"), userSession,
+                                    "http://redirect", "state");
+                            createClientSession(currentSession, fooRealm.getClientByClientId("bar-app"), userSession,
+                                    "http://redirect", "state");
+                        });
 
-                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionCR2) -> {
-                    currentSession = sessionCR2;
-                    // Create offline currentSession
-                    RealmModel fooRealm = currentSession.realms().getRealm("foo");
-                    UserSessionModel userSession = currentSession.sessions().getUserSession(fooRealm, userSessionID.get());
-                    createOfflineSessionIncludeClientSessions(currentSession, userSession);
-                });
+                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
+                        (KeycloakSession sessionCR2) -> {
+                            currentSession = sessionCR2;
+                            // Create offline currentSession
+                            RealmModel fooRealm = currentSession.realms().getRealm("foo");
+                            UserSessionModel userSession =
+                                    currentSession.sessions().getUserSession(fooRealm, onlineUserSessionID.get());
+                            offlineUserSessionIDs
+                                    .set(createOfflineSessionIncludeClientSessions(currentSession, userSession));
+                        });
 
-                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionCR3) -> {
-                    currentSession = sessionCR3;
-                    RealmManager realmMgr = new RealmManager(currentSession);
-                    ClientManager clientMgr = new ClientManager(realmMgr);
-                    RealmModel fooRealm = realmMgr.getRealm("foo");
+                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
+                        (KeycloakSession sessionCR3) -> {
+                            currentSession = sessionCR3;
+                            RealmManager realmMgr = new RealmManager(currentSession);
+                            ClientManager clientMgr = new ClientManager(realmMgr);
+                            RealmModel fooRealm = realmMgr.getRealm("foo");
 
-                    // Assert currentSession was persisted with both clientSessions
-                    UserSessionModel offlineSession = currentSession.sessions().getOfflineUserSession(fooRealm, userSessionID.get());
-                    assertSession(offlineSession, currentSession.users().getUserByUsername(fooRealm, "user3"), "127.0.0.1", started, started, "foo-app", "bar-app");
+                            // Assert an offline session was created for each client session of the online session
+                            assertThat(offlineUserSessionIDs.get().entrySet(), hasSize(2));
 
-                    // Remove foo-app client
-                    ClientModel client = fooRealm.getClientByClientId("foo-app");
-                    clientMgr.removeClient(fooRealm, client);
-                });
+                            ClientModel fooAppClient = fooRealm.getClientByClientId("foo-app");
+                            String foundFooAppOfflineUserSessionId = offlineUserSessionIDs.get().entrySet().stream()
+                                    .filter(entry -> fooAppClient.getId().equals(entry.getValue()))
+                                    .map(Map.Entry::getKey).findAny()
+                                    .orElse(null);
+                            assertThat(foundFooAppOfflineUserSessionId, notNullValue());
+                            fooAppOfflineUserSessionUuid.set(foundFooAppOfflineUserSessionId);
+                            UserSessionModel fooAppOfflineSession =
+                                    currentSession.sessions().getOfflineUserSession(fooRealm,
+                                            foundFooAppOfflineUserSessionId);
+                            assertSession(fooAppOfflineSession,
+                                    currentSession.users().getUserByUsername(fooRealm, "user3"),
+                                    "127.0.0.1", started, started, "foo-app");
 
-                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionCR4) -> {
-                    currentSession = sessionCR4;
-                    RealmManager realmMgr = new RealmManager(currentSession);
-                    ClientManager clientMgr = new ClientManager(realmMgr);
-                    RealmModel fooRealm = realmMgr.getRealm("foo");
+                            ClientModel barAppClient = fooRealm.getClientByClientId("bar-app");
+                            String foundBarAppOfflineUserSessionId = offlineUserSessionIDs.get().entrySet().stream()
+                                    .filter(entry -> barAppClient.getId().equals(entry.getValue()))
+                                    .map(Map.Entry::getKey).findAny()
+                                    .orElse(null);
+                            assertThat(foundBarAppOfflineUserSessionId, notNullValue());
+                            barAppOfflineUserSessionUuid.set(foundBarAppOfflineUserSessionId);
+                            UserSessionModel barAppOfflineSession =
+                                    currentSession.sessions().getOfflineUserSession(fooRealm,
+                                            foundBarAppOfflineUserSessionId);
+                            assertSession(barAppOfflineSession,
+                                    currentSession.users().getUserByUsername(fooRealm, "user3"),
+                                    "127.0.0.1", started, started, "bar-app");
 
-                    // Assert just one bar-app clientSession persisted now
-                    UserSessionModel offlineSession = currentSession.sessions().getOfflineUserSession(fooRealm, userSessionID.get());
-                    Assert.assertEquals(1, offlineSession.getAuthenticatedClientSessions().size());
-                    Assert.assertEquals("bar-app", offlineSession.getAuthenticatedClientSessions().values().iterator().next().getClient().getClientId());
+                            // Remove foo-app client
+                            clientMgr.removeClient(fooRealm, fooAppClient);
+                        });
 
-                    // Remove bar-app client
-                    ClientModel client = fooRealm.getClientByClientId("bar-app");
-                    clientMgr.removeClient(fooRealm, client);
-                });
+                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
+                        (KeycloakSession sessionCR4) -> {
+                            currentSession = sessionCR4;
+                            RealmManager realmMgr = new RealmManager(currentSession);
+                            ClientManager clientMgr = new ClientManager(realmMgr);
+                            RealmModel fooRealm = realmMgr.getRealm("foo");
 
-                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionCR5) -> {
-                    currentSession = sessionCR5;
-                    // Assert nothing loaded - userSession was removed as well because it was last userSession
-                    RealmManager realmMgr = new RealmManager(currentSession);
-                    RealmModel fooRealm = realmMgr.getRealm("foo");
-                    UserSessionModel offlineSession = currentSession.sessions().getOfflineUserSession(fooRealm, userSessionID.get());
-                    Assert.assertEquals(0, offlineSession.getAuthenticatedClientSessions().size());
-                });
+                            // Assert that bar-app clientSession is still persisted
+                            UserSessionModel barAppOfflineSession =
+                                    currentSession.sessions().getOfflineUserSession(fooRealm,
+                                            barAppOfflineUserSessionUuid.get());
+                            assertThat(barAppOfflineSession.getAuthenticatedClientSessions().entrySet(), hasSize(1));
+                            assertThat(barAppOfflineSession.getAuthenticatedClientSessions().values().iterator().next()
+                                    .getClient().getClientId(), equalTo("bar-app"));
+
+                            // Assert that foo-app clientSession has been removed from its offlineSession
+                            UserSessionModel fooAppOfflineSession =
+                                    currentSession.sessions().getOfflineUserSession(fooRealm,
+                                            fooAppOfflineUserSessionUuid.get());
+                            assertThat(fooAppOfflineSession, notNullValue());
+                            assertThat(fooAppOfflineSession.getAuthenticatedClientSessions().entrySet(), hasSize(0));
+
+                            // Remove bar-app client
+                            ClientModel client = fooRealm.getClientByClientId("bar-app");
+                            clientMgr.removeClient(fooRealm, client);
+                        });
+
+                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
+                        (KeycloakSession sessionCR5) -> {
+                            currentSession = sessionCR5;
+                            RealmManager realmMgr = new RealmManager(currentSession);
+                            RealmModel fooRealm = realmMgr.getRealm("foo");
+
+                            // Assert that both foo-app and bar-app clientSession has been removed from their
+                            // offlineSessions
+                            UserSessionModel fooAppOfflineSession =
+                                    currentSession.sessions().getOfflineUserSession(fooRealm,
+                                            fooAppOfflineUserSessionUuid.get());
+                            assertThat(fooAppOfflineSession, notNullValue());
+                            assertThat(fooAppOfflineSession.getAuthenticatedClientSessions().entrySet(), hasSize(0));
+
+                            UserSessionModel barAppOfflineSession =
+                                    currentSession.sessions().getOfflineUserSession(fooRealm,
+                                            barAppOfflineUserSessionUuid.get());
+                            assertThat(barAppOfflineSession, notNullValue());
+                            assertThat(barAppOfflineSession.getAuthenticatedClientSessions().entrySet(), hasSize(0));
+                        });
 
             } catch (Exception e) {
                 throw new RuntimeException(e);
             } finally {
-                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionTearDown) -> {
-                    currentSession = sessionTearDown;
-                    RealmManager realmMgr = new RealmManager(currentSession);
-                    RealmModel fooRealm = realmMgr.getRealm("foo");
-                    UserModel user3 = currentSession.users().getUserByUsername(fooRealm, "user3");
+                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
+                        (KeycloakSession sessionTearDown) -> {
+                            currentSession = sessionTearDown;
+                            RealmManager realmMgr = new RealmManager(currentSession);
+                            RealmModel fooRealm = realmMgr.getRealm("foo");
+                            UserModel user3 = currentSession.users().getUserByUsername(fooRealm, "user3");
 
-                    // Remove user3
-                    new UserManager(currentSession).removeUser(fooRealm, user3);
+                            // Remove user3
+                            new UserManager(currentSession).removeUser(fooRealm, user3);
 
-                    // Cleanup
-                    realmMgr = new RealmManager(currentSession);
-                    realmMgr.removeRealm(realmMgr.getRealm("foo"));
-                });
+                            // Cleanup
+                            realmMgr = new RealmManager(currentSession);
+                            realmMgr.removeRealm(realmMgr.getRealm("foo"));
+                        });
             }
         });
     }
@@ -371,74 +453,89 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionUR) -> {
             try {
                 int started = Time.currentTime();
-                AtomicReference<String> userSessionID = new AtomicReference<>();
+                AtomicReference<String> onlineUserSessionID = new AtomicReference<>();
+                AtomicReference<String> offlineUserSessionID = new AtomicReference<>();
 
-                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionUR1) -> {
-                    currentSession = sessionUR1;
-                    RealmModel fooRealm = currentSession.realms().createRealm("foo", "foo");
-                    fooRealm.setDefaultRole(currentSession.roles().addRealmRole(fooRealm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + fooRealm.getName()));
-                    fooRealm.setSsoSessionIdleTimeout(1800);
-                    fooRealm.setSsoSessionMaxLifespan(36000);
-                    fooRealm.setOfflineSessionIdleTimeout(2592000);
-                    fooRealm.setOfflineSessionMaxLifespan(5184000);
-                    fooRealm.addClient("foo-app");
-                    currentSession.users().addUser(fooRealm, "user3");
 
-                    UserSessionModel userSession = currentSession.sessions().createUserSession(fooRealm, currentSession.users().getUserByUsername(fooRealm, "user3"), "user3", "127.0.0.1", "form", true, null, null);
-                    userSessionID.set(userSession.getId());
+                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
+                        (KeycloakSession sessionUR1) -> {
+                            currentSession = sessionUR1;
+                            RealmModel fooRealm = currentSession.realms().createRealm("foo", "foo");
+                            fooRealm.setDefaultRole(currentSession.roles().addRealmRole(fooRealm,
+                                    Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + fooRealm.getName()));
+                            fooRealm.setSsoSessionIdleTimeout(1800);
+                            fooRealm.setSsoSessionMaxLifespan(36000);
+                            fooRealm.setOfflineSessionIdleTimeout(2592000);
+                            fooRealm.setOfflineSessionMaxLifespan(5184000);
+                            fooRealm.addClient("foo-app");
+                            currentSession.users().addUser(fooRealm, "user3");
 
-                    createClientSession(currentSession, fooRealm.getClientByClientId("foo-app"), userSession, "http://redirect", "state");
-                });
+                            UserSessionModel userSession = currentSession.sessions().createUserSession(fooRealm,
+                                    currentSession.users().getUserByUsername(fooRealm, "user3"), "user3", "127.0.0.1",
+                                    "form", true, null, null);
+                            onlineUserSessionID.set(userSession.getId());
 
-                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionUR2) -> {
-                    currentSession = sessionUR2;
+                            createClientSession(currentSession, fooRealm.getClientByClientId("foo-app"), userSession,
+                                    "http://redirect", "state");
+                        });
 
-                    // Create offline session
-                    RealmModel fooRealm = currentSession.realms().getRealm("foo");
-                    UserSessionModel userSession = currentSession.sessions().getUserSession(fooRealm, userSessionID.get());
-                    createOfflineSessionIncludeClientSessions(currentSession, userSession);
-                });
+                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
+                        (KeycloakSession sessionUR2) -> {
+                            currentSession = sessionUR2;
 
-                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionUR3) -> {
-                    currentSession = sessionUR3;
+                            // Create offline session
+                            RealmModel fooRealm = currentSession.realms().getRealm("foo");
+                            UserSessionModel userSession =
+                                    currentSession.sessions().getUserSession(fooRealm, onlineUserSessionID.get());
+                            Map<String, String> offlineSessions =
+                                    createOfflineSessionIncludeClientSessions(currentSession, userSession);
+                            assertThat(offlineSessions.keySet(), hasSize(1));
+                            offlineUserSessionID.set(offlineSessions.keySet().iterator().next());
+                        });
 
-                    RealmManager realmMgr = new RealmManager(currentSession);
-                    RealmModel fooRealm = realmMgr.getRealm("foo");
-                    UserModel user3 = currentSession.users().getUserByUsername(fooRealm, "user3");
+                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
+                        (KeycloakSession sessionUR3) -> {
+                            currentSession = sessionUR3;
 
-                    // Assert session was persisted with both clientSessions
-                    UserSessionModel offlineSession = currentSession.sessions().getOfflineUserSession(fooRealm, userSessionID.get());
-                    assertSession(offlineSession, user3, "127.0.0.1", started, started, "foo-app");
-                });
+                            RealmManager realmMgr = new RealmManager(currentSession);
+                            RealmModel fooRealm = realmMgr.getRealm("foo");
+                            UserModel user3 = currentSession.users().getUserByUsername(fooRealm, "user3");
+
+                            // Assert session was persisted with both clientSessions
+                            UserSessionModel offlineSession = currentSession.sessions().getOfflineUserSession(fooRealm,
+                                    offlineUserSessionID.get());
+                            assertSession(offlineSession, user3, "127.0.0.1", started, started, "foo-app");
+                        });
 
             } catch (Exception e) {
                 throw new RuntimeException(e);
             } finally {
-                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionTearDown) -> {
-                    currentSession = sessionTearDown;
+                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(),
+                        (KeycloakSession sessionTearDown) -> {
+                            currentSession = sessionTearDown;
 
-                    RealmManager realmMgr = new RealmManager(currentSession);
-                    RealmModel fooRealm = realmMgr.getRealm("foo");
-                    UserModel user3 = currentSession.users().getUserByUsername(fooRealm, "user3");
+                            RealmManager realmMgr = new RealmManager(currentSession);
+                            RealmModel fooRealm = realmMgr.getRealm("foo");
+                            UserModel user3 = currentSession.users().getUserByUsername(fooRealm, "user3");
 
-                    // Remove user3
-                    new UserManager(currentSession).removeUser(fooRealm, user3);
+                            // Remove user3
+                            new UserManager(currentSession).removeUser(fooRealm, user3);
 
-                    // Cleanup
-                    realmMgr = new RealmManager(currentSession);
-                    realmMgr.removeRealm(realmMgr.getRealm("foo"));
-                });
+                            // Cleanup
+                            realmMgr = new RealmManager(currentSession);
+                            realmMgr.removeRealm(realmMgr.getRealm("foo"));
+                        });
             }
         });
     }
 
-    private static Set<String> createOfflineSessionIncludeClientSessions(KeycloakSession session, UserSessionModel
-            userSession) {
-        Set<String> offlineSessions = new HashSet<>();
+    private static Map<String, String> createOfflineSessionIncludeClientSessions(KeycloakSession session,
+                                                                                 UserSessionModel userSession) {
+        Map<String, String> offlineSessions = new HashMap<>();
         UserSessionManager localManager = new UserSessionManager(session);
         for (AuthenticatedClientSessionModel clientSession : userSession.getAuthenticatedClientSessions().values()) {
-            localManager.createOrUpdateOfflineSession(clientSession, userSession);
-            offlineSessions.add(clientSession.getClient().getId());
+            UserSessionModel offlineSession = localManager.createOrUpdateOfflineSession(clientSession, userSession);
+            offlineSessions.put(offlineSession.getId(), clientSession.getClient().getId());
         }
 
         return offlineSessions;

@@ -67,13 +67,13 @@ public class DisabledUserSessionPersisterProvider implements UserSessionPersiste
     }
 
     @Override
-    public void createUserSession(UserSessionModel userSession, boolean offline) {
+    public void createUserSession(UserSessionModel userSession, boolean offline, String userSessionId) {
 
     }
 
     @Override
-    public void createClientSession(AuthenticatedClientSessionModel clientSession, boolean offline) {
-
+    public void createClientSession(AuthenticatedClientSessionModel clientSession, boolean offline,
+            String userSessionId) {
     }
 
     @Override
@@ -128,6 +128,11 @@ public class DisabledUserSessionPersisterProvider implements UserSessionPersiste
     @Override
     public Stream<UserSessionModel> loadUserSessionsStream(Integer firstResult, Integer maxResults, boolean offline,
                                                            String lastUserSessionId) {
+        return Stream.empty();
+    }
+
+    @Override
+    public Stream<AuthenticatedClientSessionModel> loadClientSessions(RealmModel realm, String userSessionId, String userId, boolean offline) {
         return Stream.empty();
     }
 

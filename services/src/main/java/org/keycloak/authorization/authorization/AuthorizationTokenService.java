@@ -311,11 +311,11 @@ public class AuthorizationTokenService {
             userSessionModel = sessions.createUserSession(KeycloakModelUtils.generateId(), realm, user, user.getUsername(), request.getClientConnection().getRemoteAddr(),
                     ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
         } else {
-            userSessionModel = sessions.getUserSession(realm, accessToken.getSessionState());
+            userSessionModel = sessions.getUserSessionWithOfflineFallback(realm, accessToken);
+        }
 
-            if (userSessionModel == null) {
-                userSessionModel = sessions.getOfflineUserSession(realm, accessToken.getSessionState());
-            }
+        if (userSessionModel == null) {
+            throw new IllegalStateException("No session associated with the token");
         }
 
         ClientModel client = realm.getClientByClientId(accessToken.getIssuedFor());
@@ -352,6 +352,10 @@ public class AuthorizationTokenService {
                 .generateAccessToken();
 
         AccessToken rpt = responseBuilder.getAccessToken();
+        if (accessToken.getOfflineSessionId() != null) {
+            rpt.setOfflineSessionId(accessToken.getOfflineSessionId());
+        }
+
         Authorization authorization = new Authorization();
 
         authorization.setPermissions(entitlements);

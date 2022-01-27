@@ -412,7 +412,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
     public UserSessionModel createOfflineUserSession(UserSessionModel userSession) {
         LOG.tracef("createOfflineUserSession(%s)%s", userSession, getShortStackTrace());
 
-        MapUserSessionEntity offlineUserSession = createUserSessionEntityInstance(userSession, true);
+        MapUserSessionEntity offlineUserSession = createUserSessionEntityInstance(userSession);
         offlineUserSession = userSessionTx.create(offlineUserSession);
 
         // set a reference for the offline user session to the original online user session
@@ -618,7 +618,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
         return userSessionEntity;
     }
 
-    private MapUserSessionEntity createUserSessionEntityInstance(UserSessionModel userSession, boolean offline) {
+    private MapUserSessionEntity createUserSessionEntityInstance(UserSessionModel userSession) {
         MapUserSessionEntity entity = new MapUserSessionEntity(null, userSession.getRealm().getId());
 
         entity.setAuthMethod(userSession.getAuthMethod());
@@ -636,7 +636,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
         entity.setStarted(userSession.getStarted());
         entity.setLastSessionRefresh(userSession.getLastSessionRefresh());
-        entity.setOffline(offline);
+        entity.setOffline(true);
 
         return entity;
     }

@@ -23,6 +23,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshChecker;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
@@ -42,8 +43,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-import static org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshListener.IGNORE_REMOTE_CACHE_UPDATE;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -94,6 +94,13 @@ public class UserSessionAdapter implements UserSessionModel {
                     final AuthenticatedClientSessionAdapter clientSession = provider.getClientSession(this, client, value, offline);
                     if (clientSession != null) {
                         result.put(key, clientSession);
+                    } else if (offline) {
+                        AuthenticatedClientSessionModel authenticatedClientSessionModel =
+                                loadFromPersistence(client.getId());
+
+                        if (authenticatedClientSessionModel != null) {
+                            result.put(client.getId(), authenticatedClientSessionModel);
+                        }
                     }
                 } else {
                     removedClientUUIDS.add(key);
@@ -104,6 +111,25 @@ public class UserSessionAdapter implements UserSessionModel {
         removeAuthenticatedClientSessions(removedClientUUIDS);
 
         return Collections.unmodifiableMap(result);
+    }
+
+    private AuthenticatedClientSessionModel loadFromPersistence(String clientUuid) {
+        Stream<AuthenticatedClientSessionModel> persistedClientSessions =
+                session.getProvider(UserSessionPersisterProvider.class).loadClientSessions(realm, entity.getId(),
+                        entity.getUser(), offline);
+
+        AuthenticatedClientSessionModel authenticatedClientSessionModel = persistedClientSessions
+                .filter(authenticatedClientSession -> clientUuid
+                        .equals(authenticatedClientSession.getClient().getId()))
+                .findAny().orElse(null);
+
+        if (authenticatedClientSessionModel != null) {
+            // make sure that the whole offline session is updated in the cache (including the client sessions)
+            provider.reloadOfflineUserSession(realm, entity.getId());
+            return authenticatedClientSessionModel;
+        } else {
+            return null;
+        }
     }
 
     @Override
@@ -118,7 +144,11 @@ public class UserSessionAdapter implements UserSessionModel {
         ClientModel client = realm.getClientById(clientUUID);
 
         if (client != null) {
-            return provider.getClientSession(this, client, clientSessionId, offline);
+            AuthenticatedClientSessionModel clientSession = provider.getClientSession(this, client, clientSessionId, offline);
+            if (clientSession == null) {
+                clientSession = loadFromPersistence(client.getId());
+            }
+            return clientSession;
         }
 
         removeAuthenticatedClientSessions(Collections.singleton(clientUUID));

@@ -45,7 +45,8 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
 
     private PersistentClientSessionData data;
 
-    public PersistentAuthenticatedClientSessionAdapter(KeycloakSession session, AuthenticatedClientSessionModel clientSession) {
+    public PersistentAuthenticatedClientSessionAdapter(KeycloakSession session,
+            AuthenticatedClientSessionModel clientSession, String userSessionId) {
         data = new PersistentClientSessionData();
         data.setAction(clientSession.getAction());
         data.setAuthMethod(clientSession.getProtocol());
@@ -55,7 +56,7 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
         model = new PersistentClientSessionModel();
         model.setClientId(clientSession.getClient().getId());
         model.setUserId(clientSession.getUserSession().getUser().getId());
-        model.setUserSessionId(clientSession.getUserSession().getId());
+        model.setUserSessionId(userSessionId);
         model.setTimestamp(clientSession.getTimestamp());
 
         this.session = session;

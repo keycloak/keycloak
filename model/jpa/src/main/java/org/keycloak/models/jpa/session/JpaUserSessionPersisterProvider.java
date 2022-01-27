@@ -68,9 +68,10 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     }
 
     @Override
-    public void createUserSession(UserSessionModel userSession, boolean offline) {
+    public void createUserSession(UserSessionModel userSession, boolean offline, String userSessionId) {
         PersistentUserSessionAdapter adapter = new PersistentUserSessionAdapter(userSession);
         PersistentUserSessionModel model = adapter.getUpdatedModel();
+        model.setUserSessionId(userSessionId);
 
         PersistentUserSessionEntity entity = new PersistentUserSessionEntity();
         entity.setUserSessionId(model.getUserSessionId());
@@ -86,8 +87,10 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     }
 
     @Override
-    public void createClientSession(AuthenticatedClientSessionModel clientSession, boolean offline) {
-        PersistentAuthenticatedClientSessionAdapter adapter = new PersistentAuthenticatedClientSessionAdapter(session, clientSession);
+    public void createClientSession(AuthenticatedClientSessionModel clientSession, boolean offline,
+            String userSessionId) {
+        PersistentAuthenticatedClientSessionAdapter adapter =
+                new PersistentAuthenticatedClientSessionAdapter(session, clientSession, userSessionId);
         PersistentClientSessionModel model = adapter.getUpdatedModel();
 
         PersistentClientSessionEntity entity = new PersistentClientSessionEntity();
@@ -105,7 +108,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         entity.setTimestamp(clientSession.getTimestamp());
         String offlineStr = offlineToString(offline);
         entity.setOffline(offlineStr);
-        entity.setUserSessionId(clientSession.getUserSession().getId());
+        entity.setUserSessionId(userSessionId);
         entity.setData(model.getData());
         em.persist(entity);
         em.flush();
@@ -431,20 +434,40 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         return new PersistentUserSessionAdapter(session, model, realm, entity.getUserId(), clientSessions);
     }
 
-    private PersistentAuthenticatedClientSessionAdapter toAdapter(RealmModel realm, PersistentUserSessionAdapter userSession, PersistentClientSessionEntity entity) {
-        String clientId = entity.getClientId();
-        if (!entity.getExternalClientId().equals("local")) {
-            clientId = new StorageId(entity.getClientStorageProvider(), entity.getExternalClientId()).getId();
+    private PersistentAuthenticatedClientSessionAdapter toAdapter(RealmModel realm,
+            PersistentUserSessionAdapter userSession, PersistentClientSessionEntity entity) {
+        return toAdapter(realm, userSession, userSession.getId(), userSession.getUserId(), entity);
+    }
+
+    private PersistentAuthenticatedClientSessionAdapter toAdapter(RealmModel realm,
+            PersistentUserSessionAdapter userSession, String userSessionId, String userId,
+            PersistentClientSessionEntity clientSessionEntity) {
+        String clientId = clientSessionEntity.getClientId();
+        if (!clientSessionEntity.getExternalClientId().equals("local")) {
+            clientId = new StorageId(clientSessionEntity.getClientStorageProvider(),
+                    clientSessionEntity.getExternalClientId()).getId();
         }
         ClientModel client = realm.getClientById(clientId);
 
         PersistentClientSessionModel model = new PersistentClientSessionModel();
         model.setClientId(clientId);
-        model.setUserSessionId(userSession.getId());
-        model.setUserId(userSession.getUserId());
-        model.setTimestamp(entity.getTimestamp());
-        model.setData(entity.getData());
+        model.setUserSessionId(userSessionId);
+        model.setUserId(userId);
+        model.setTimestamp(clientSessionEntity.getTimestamp());
+        model.setData(clientSessionEntity.getData());
         return new PersistentAuthenticatedClientSessionAdapter(session, model, realm, client, userSession);
+    }
+
+    @Override
+    public Stream<AuthenticatedClientSessionModel> loadClientSessions(RealmModel realm, String userSessionId,
+            String userId, boolean offline) {
+        UserSessionModel userSession = loadUserSession(realm, userSessionId, offline);
+
+        if (userSession == null) {
+            return Stream.empty();
+        }
+
+        return userSession.getAuthenticatedClientSessions().values().stream();
     }
 
     @Override

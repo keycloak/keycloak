@@ -54,6 +54,7 @@ public class IDToken extends JsonWebToken {
     public static final String CLAIMS_LOCALES = "claims_locales";
     public static final String ACR = "acr";
     public static final String SESSION_ID = "sid";
+    public static final String OFFLINE_SESSION_ID = "offline_sid";
 
     // Financial API - Part 2: Read and Write API Security Profile
     // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
@@ -139,6 +140,13 @@ public class IDToken extends JsonWebToken {
 
     @JsonProperty(ACR)
     protected String acr;
+
+    /**
+     * Holds the (user) sessionId of the originating offline session, in case the token was created by means of an
+     * offline token.
+     */
+    @JsonProperty(OFFLINE_SESSION_ID)
+    protected String offlineSessionId;
 
     // Financial API - Part 2: Read and Write API Security Profile
     // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
@@ -382,6 +390,19 @@ public class IDToken extends JsonWebToken {
 
     public void setStateHash(String stateHash) {
         this.stateHash = stateHash;
+    }
+
+    public String getOfflineSessionId() {
+        /*
+         * Backwards-compatibility: For tokens created after offlineSessionId was introduced, it would be ok to just
+         * return the offlineSessionId.
+         * The sessionId is returned for older tokens.
+         */
+        return offlineSessionId != null ? offlineSessionId : sessionState;
+    }
+
+    public void setOfflineSessionId(String offlineSessionId) {
+        this.offlineSessionId = offlineSessionId;
     }
 
     @Override

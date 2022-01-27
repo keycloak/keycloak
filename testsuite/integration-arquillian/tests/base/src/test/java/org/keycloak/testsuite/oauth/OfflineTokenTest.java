@@ -305,7 +305,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         Assert.assertEquals(1, refreshedToken.getResourceAccess("test-app").getRoles().size());
         assertTrue(refreshedToken.getResourceAccess("test-app").isUserInRole("customer-user"));
 
-        EventRepresentation refreshEvent = events.expectRefresh(offlineToken.getId(), sessionId)
+        EventRepresentation refreshEvent = events.expectRefresh(offlineToken.getId(), offlineToken.getSessionId())
                 .client("offline-client")
                 .user(userId)
                 .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID)
@@ -385,7 +385,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         // Assert second refresh with same refresh token will fail
         OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(offlineTokenString, "secret1");
         Assert.assertEquals(400, response.getStatusCode());
-        events.expectRefresh(offlineToken.getId(), token.getSessionState())
+        events.expectRefresh(offlineToken.getId(), offlineToken.getSessionState())
                 .client("offline-client")
                 .error(Errors.INVALID_TOKEN)
                 .user(userId)
@@ -691,7 +691,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
         codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
-        events.expectCodeToToken(codeId, offlineToken2.getSessionState())
+        events.expectCodeToToken(codeId, offlineToken2.getOnlineSessionId())
                 .client("offline-client")
                 .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
                 .assertEvent();

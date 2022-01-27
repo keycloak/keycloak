@@ -18,6 +18,7 @@
 package org.keycloak.models;
 
 import org.keycloak.provider.Provider;
+import org.keycloak.representations.IDToken;
 
 import java.util.Collection;
 import java.util.List;
@@ -271,6 +272,25 @@ public interface UserSessionProvider extends Provider {
      * @return a non-null {@link Stream} of offline user sessions.
      */
     Stream<UserSessionModel> getOfflineUserSessionsStream(RealmModel realm, ClientModel client, Integer firstResult, Integer maxResults);
+
+    /**
+     * Finds a user session based on the given {@code token}. Tries to find an online session is first; if an online
+     * session is not found, tries to find the originating offline session (if the token has been created by means of an
+     * offline token).
+     * 
+     * @param realm a reference to realm holding the relevant user sessions
+     * @param token the token for which the user session should be found
+     * @return an online or offline user session or {@code null}, if none was found
+     */
+    default UserSessionModel getUserSessionWithOfflineFallback(RealmModel realm, IDToken token) {
+        UserSessionModel userSessionModel = getUserSession(realm, token.getSessionState());
+
+        if (userSessionModel == null && token.getOfflineSessionId() != null) {
+            userSessionModel = getOfflineUserSession(realm, token.getOfflineSessionId());
+        }
+
+        return userSessionModel;
+    }
 
     /** Triggered by persister during pre-load. It imports authenticatedClientSessions too **/
     void importUserSessions(Collection<UserSessionModel> persistentUserSessions, boolean offline);

@@ -89,16 +89,10 @@ import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
-import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.NewCookie;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -109,8 +103,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.ws.rs.core.Cookie;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.NewCookie;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
+
 import static org.keycloak.common.util.ServerCookie.SameSiteAttributeValue;
-import static org.keycloak.models.UserSessionModel.CORRESPONDING_SESSION_ID;
 import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.isOAuth2DeviceVerificationFlow;
 import static org.keycloak.services.util.CookieHelper.getCookie;
 
@@ -234,7 +234,7 @@ public class AuthenticationManager {
             UserSessionModel userSession, UriInfo uriInfo,
             ClientConnection connection, HttpHeaders headers,
             boolean logoutBroker) {
-        return backchannelLogout(session, realm, userSession, uriInfo, connection, headers, logoutBroker, false);
+        return backchannelLogout(session, realm, userSession, uriInfo, connection, headers, logoutBroker, false, null);
     }
 
     /**
@@ -254,7 +254,7 @@ public class AuthenticationManager {
             UserSessionModel userSession, UriInfo uriInfo,
             ClientConnection connection, HttpHeaders headers,
             boolean logoutBroker,
-            boolean offlineSession) {
+            boolean offlineSession, String onlineUserSessionId) {
         BackchannelLogoutResponse backchannelLogoutResponse = new BackchannelLogoutResponse();
 
         if (userSession == null) {
@@ -292,7 +292,6 @@ public class AuthenticationManager {
             new UserSessionManager(session).revokeOfflineUserSession(userSession);
 
             // Check if "online" session still exists and remove it too
-            String onlineUserSessionId = userSession.getNote(CORRESPONDING_SESSION_ID);
             UserSessionModel onlineUserSession = (onlineUserSessionId != null) ?
                     session.sessions().getUserSession(realm, onlineUserSessionId) :
                     session.sessions().getUserSession(realm, userSession.getId());
@@ -1428,8 +1427,9 @@ public class AuthenticationManager {
 
             if (token.getSessionState() != null && !isSessionValid(realm, userSession)) {
                 // Check if accessToken was for the offline session.
-                if (!isCookie) {
-                    UserSessionModel offlineUserSession = session.sessions().getOfflineUserSession(realm, token.getSessionState());
+                if (!isCookie && token.getOfflineSessionId() != null) {
+                    UserSessionModel offlineUserSession =
+                            session.sessions().getOfflineUserSession(realm, token.getOfflineSessionId());
                     if (isOfflineSessionValid(realm, offlineUserSession)) {
                         user = offlineUserSession.getUser();
                         return new AuthResult(user, offlineUserSession, token);

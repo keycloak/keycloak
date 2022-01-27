@@ -503,7 +503,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
         Assert.assertTrue(refreshedToken.getRealmAccess().isUserInRole(Constants.OFFLINE_ACCESS_ROLE));
 
 
-        EventRepresentation refreshEvent = events.expectRefresh(offlineToken.getId(), sessionId)
+        EventRepresentation refreshEvent = events.expectRefresh(offlineToken.getId(), offlineUserSessionId)
                 .client("hardcoded-client")
                 .user(userId)
                 .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID)

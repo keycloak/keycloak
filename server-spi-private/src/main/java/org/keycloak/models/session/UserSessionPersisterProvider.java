@@ -36,10 +36,10 @@ import java.util.stream.Stream;
 public interface UserSessionPersisterProvider extends Provider {
 
     // Persist just userSession. Not it's clientSessions
-    void createUserSession(UserSessionModel userSession, boolean offline);
+    void createUserSession(UserSessionModel userSession, boolean offline, String userSessionId);
 
     // Assuming that corresponding userSession is already persisted
-    void createClientSession(AuthenticatedClientSessionModel clientSession, boolean offline);
+    void createClientSession(AuthenticatedClientSessionModel clientSession, boolean offline, String userSessionId);
 
     // Called during logout (for online session) or during periodic expiration. It will remove all corresponding clientSessions too
     void removeUserSession(String userSessionId, boolean offline);
@@ -108,6 +108,14 @@ public interface UserSessionPersisterProvider extends Provider {
      */
     Stream<UserSessionModel> loadUserSessionsStream(Integer firstResult, Integer maxResults, boolean offline,
                                                     String lastUserSessionId);
+
+    /**
+     * Loads the client sessions for the given userSessionId.
+     *
+     * @return the client sessions
+     */
+    Stream<AuthenticatedClientSessionModel> loadClientSessions(RealmModel realm, String userSessionId, String userId,
+            boolean offline);
 
     /**
      * Retrieves the count of user sessions for all realms.

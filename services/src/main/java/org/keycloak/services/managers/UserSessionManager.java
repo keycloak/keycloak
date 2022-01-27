@@ -53,25 +53,27 @@ public class UserSessionManager {
         this.persister = session.getProvider(UserSessionPersisterProvider.class);
     }
 
-    public void createOrUpdateOfflineSession(AuthenticatedClientSessionModel clientSession, UserSessionModel userSession) {
-        UserModel user = userSession.getUser();
-
-        // Create and persist offline userSession if we don't have one
-        UserSessionModel offlineUserSession = kcSession.sessions().getOfflineUserSession(clientSession.getRealm(), userSession.getId());
-        if (offlineUserSession == null) {
-            offlineUserSession = createOfflineUserSession(user, userSession);
-        } else {
+    public UserSessionModel createOrUpdateOfflineSession(AuthenticatedClientSessionModel clientSession, UserSessionModel userSession) {
+        if (userSession.isOffline()) {
             // update lastSessionRefresh but don't need to persist
-            offlineUserSession.setLastSessionRefresh(Time.currentTime());
-        }
-
-        // Create and persist clientSession
-        AuthenticatedClientSessionModel offlineClientSession = offlineUserSession.getAuthenticatedClientSessionByClient(clientSession.getClient().getId());
-        if (offlineClientSession == null) {
-            createOfflineClientSession(user, clientSession, offlineUserSession);
+            userSession.setLastSessionRefresh(Time.currentTime());
+            return userSession;
+        } else {
+            return createOfflineSession(clientSession, userSession);
         }
     }
 
+    private UserSessionModel createOfflineSession(AuthenticatedClientSessionModel clientSession, UserSessionModel userSession) {
+        UserModel user = userSession.getUser();
+
+        // Create and persist offline userSession
+        UserSessionModel offlineUserSession = createOfflineUserSession(user, userSession);
+
+        // Create and persist clientSession
+        createOfflineClientSession(user, clientSession, offlineUserSession);
+
+        return offlineUserSession;
+    }
 
     public UserSessionModel findOfflineUserSession(RealmModel realm, String userSessionId) {
         return kcSession.sessions().getOfflineUserSession(realm, userSessionId);
@@ -135,16 +137,22 @@ public class UserSessionManager {
 
     private UserSessionModel createOfflineUserSession(UserModel user, UserSessionModel userSession) {
         if (logger.isTraceEnabled()) {
-            logger.tracef("Creating new offline user session. UserSessionID: '%s' , Username: '%s'", userSession.getId(), user.getUsername());
+            logger.tracef("Creating new offline user session. Originating UserSessionID: '%s', Username: '%s'", userSession.getId(), user.getUsername());
         }
 
         UserSessionModel offlineUserSession = kcSession.sessions().createOfflineUserSession(userSession);
+        if (logger.isTraceEnabled()) {
+            logger.tracef(
+                    "Successfully created new offline user session. Originating UserSessionID: '%s', Username: '%s', Created Offline UserSessionId: '%s'",
+                    userSession.getId(), user.getUsername(), offlineUserSession.getId());
+        }
+        
         return offlineUserSession;
     }
 
     private void createOfflineClientSession(UserModel user, AuthenticatedClientSessionModel clientSession, UserSessionModel offlineUserSession) {
         if (logger.isTraceEnabled()) {
-            logger.tracef("Creating new offline token client session. ClientSessionId: '%s', UserSessionID: '%s' , Username: '%s', Client: '%s'" ,
+            logger.tracef("Creating new offline token client session. Originating ClientSessionId: '%s', Originating UserSessionID: '%s' , Username: '%s', Client: '%s'" ,
                     clientSession.getId(), offlineUserSession.getId(), user.getUsername(), clientSession.getClient().getClientId());
         }
 

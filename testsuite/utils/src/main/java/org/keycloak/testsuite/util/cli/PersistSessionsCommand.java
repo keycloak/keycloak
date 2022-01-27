@@ -19,6 +19,7 @@ package org.keycloak.testsuite.util.cli;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -115,10 +116,11 @@ public class PersistSessionsCommand extends AbstractCommand {
                 for (String userSessionId : userSessionIds) {
                     counter++;
                     UserSessionModel userSession = session.sessions().getUserSession(realm, userSessionId);
-                    persister.createUserSession(userSession, true);
+                    String offlineUserSessionId = UUID.randomUUID().toString();
+                    persister.createUserSession(userSession, true, offlineUserSessionId);
 
                     AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(testApp.getId());
-                    persister.createClientSession(clientSession, true);
+                    persister.createClientSession(clientSession, true, offlineUserSessionId);
                 }
 
                 log.infof("%d user sessions persisted. Continue", counter);
