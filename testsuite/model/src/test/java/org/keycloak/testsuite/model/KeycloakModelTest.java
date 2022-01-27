@@ -59,6 +59,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -331,7 +332,27 @@ public abstract class KeycloakModelTest {
     public static void inIndependentFactories(int numThreads, int timeoutSeconds, Runnable task) throws InterruptedException {
         ExecutorService es = Executors.newFixedThreadPool(numThreads);
         try {
-            Callable<?> independentTask = () -> inIndependentFactory(() -> { task.run(); return null; });
+            /*
+                workaround for Infinispan 12.1.7.Final to prevent an internal Infinispan NullPointerException
+                when multiple nodes tried to join at the same time by starting them sequentially with 1 sec delay.
+                Already fixed in Infinispan 13.
+                https://issues.redhat.com/browse/ISPN-13231
+            */
+            Semaphore sem = new Semaphore(1);
+            Callable<?> independentTask = () -> {
+                try {
+                    sem.acquire();
+                    return inIndependentFactory(() -> {
+                        Thread.sleep(1000);
+                        sem.release();
+                        task.run();
+                        return null;
+                    });
+                } catch (Exception ex) {
+                    LOG.error("Thread terminated with an exception", ex);
+                    return null;
+                }
+            };
             es.invokeAll(
               IntStream.range(0, numThreads)
                 .mapToObj(i -> independentTask)
@@ -339,7 +360,9 @@ public abstract class KeycloakModelTest {
               timeoutSeconds, TimeUnit.SECONDS
             );
         } finally {
-            es.shutdownNow();
+            LOG.debugf("waiting for threads to shutdown to avoid that one test pollutes another test");
+            es.shutdown();
+            LOG.debugf("shutdown of threads complete");
         }
     }
 
