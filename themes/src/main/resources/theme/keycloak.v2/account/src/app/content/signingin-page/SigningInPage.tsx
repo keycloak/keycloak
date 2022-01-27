@@ -341,7 +341,7 @@ class SigningInPage extends React.Component<
         type: string
     ): React.ReactNode[] {
         const credRowCells: React.ReactNode[] = [];
-        let maxWidth = { "--pf-u-max-width--MaxWidth": "250px" } as React.CSSProperties;
+        let maxWidth = { "--pf-u-max-width--MaxWidth": "300px" } as React.CSSProperties;
         credRowCells.push(
             <DataListCell
                 id={`${SigningInPage.credElementId(
