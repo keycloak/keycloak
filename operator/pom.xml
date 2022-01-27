@@ -22,6 +22,8 @@
         -->
         <resteasy.version>4.7.4.Final</resteasy.version>
         <wildfly.common.version>1.5.4.Final-format-001</wildfly.common.version>
+        <jackson.version>2.13.1</jackson.version>
+        <kubernetes-client.version>5.12.0</kubernetes-client.version>
 
         <compiler-plugin.version>3.8.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
@@ -58,6 +60,18 @@
 
 
     <dependencies>
+        <!-- Fabric8 -->
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>crd-generator-api</artifactId>
+            <version>${kubernetes-client.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>crd-generator-apt</artifactId>
+            <version>${kubernetes-client.version}</version>
+        </dependency>
+
         <!-- Quarkus -->
         <dependency>
             <groupId>io.quarkiverse.operatorsdk</groupId>
@@ -103,7 +117,7 @@
         <!-- Keycloak -->
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-core</artifactId>
+            <artifactId>keycloak-common</artifactId>
         </dependency>
     </dependencies>
 
@@ -138,23 +152,77 @@
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
                     <execution>
-                    <id>copy-resources</id>
-                    <phase>validate</phase>
-                    <goals>
-                        <goal>copy-resources</goal>
-                    </goals>
-                    <configuration>
-                        <outputDirectory>${basedir}/target</outputDirectory>
-                        <resources>          
-                        <resource>
-                            <directory>src/main/kubernetes</directory>
-                            <filtering>true</filtering>
-                        </resource>
-                        </resources>              
-                    </configuration>            
+                        <id>copy-resources</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target</outputDirectory>
+                            <resources>          
+                            <resource>
+                                <directory>src/main/kubernetes</directory>
+                                <filtering>true</filtering>
+                            </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>import-keycloak-core</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target/keycloak-core</outputDirectory>
+                            <resources>          
+                            <resource>
+                                <directory>${basedir}/../core/src/main/java</directory>
+                                <filtering>true</filtering>
+                            </resource>
+                            </resources>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${basedir}/target/keycloak-core</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <artifactId>exec-maven-plugin</artifactId>
+                <groupId>org.codehaus.mojo</groupId>
+                <version>1.6.0</version>
+                <executions>
+                    <execution>
+                        <id>patch-core-sources</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>${basedir}/patch-sources.sh</executable>
+                        </configuration>
+                    </execution>
+                </executions>
+              </plugin>
+
         </plugins>
     </build>
     
