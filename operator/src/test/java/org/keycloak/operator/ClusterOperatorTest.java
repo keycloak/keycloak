@@ -55,7 +55,7 @@ public abstract class ClusterOperatorTest {
     createNamespace();
 
     if (operatorDeployment == OperatorDeployment.remote) {
-      createCRD();
+      createCRDs();
       createRBACresourcesAndOperatorDeployment();
     } else {
       createOperator();
@@ -90,9 +90,10 @@ public abstract class ClusterOperatorTest {
     k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER +deploymentTarget+".yml"))
             .inNamespace(namespace).delete();
   }
-  private static void createCRD() throws FileNotFoundException {
-    Log.info("Creating CRD ");
+  private static void createCRDs() throws FileNotFoundException {
+    Log.info("Creating CRDs");
     k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaks.keycloak.org-v1.yml")).createOrReplace();
+    k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloakrealmimports.keycloak.org-v1.yml")).createOrReplace();
   }
 
   private static void registerReconcilers() {

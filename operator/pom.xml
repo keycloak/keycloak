@@ -40,13 +40,6 @@
         <maven-failsafe-plugin.version>2.22.0</maven-failsafe-plugin.version>
     </properties>
     
-    <repositories>
-        <repository>
-        <id>s01.oss.sonatype</id>
-        <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
-        </repository>
-    </repositories>
-    
     <dependencyManagement>
         <dependencies>
         <dependency>

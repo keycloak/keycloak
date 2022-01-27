@@ -61,7 +61,7 @@ public class KeycloakDeployment extends OperatorManagedResource {
     }
 
     @Override
-    protected HasMetadata getReconciledResource() {
+    protected Optional<HasMetadata> getReconciledResource() {
         Deployment baseDeployment = new DeploymentBuilder(this.baseDeployment).build(); // clone not to change the base template
         Deployment reconciledDeployment;
         if (existingDeployment == null) {
@@ -75,7 +75,7 @@ public class KeycloakDeployment extends OperatorManagedResource {
             reconciledDeployment.setSpec(baseDeployment.getSpec());
         }
 
-        return reconciledDeployment;
+        return Optional.of(reconciledDeployment);
     }
 
     private Deployment fetchExistingDeployment() {
