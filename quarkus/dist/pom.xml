@@ -19,14 +19,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>keycloak-distribution-parent</artifactId>
+        <artifactId>keycloak-quarkus-parent</artifactId>
         <groupId>org.keycloak</groupId>
         <version>17.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>keycloak-server-x-dist</artifactId>
+    <artifactId>keycloak-quarkus-dist</artifactId>
     <packaging>pom</packaging>
-    <name>Keycloak.X Server Distribution</name>
+    <name>Keycloak Quarkus Server Distribution</name>
     <description/>
 
     <dependencies>
@@ -49,7 +49,7 @@
     </dependencies>
 
     <build>
-        <finalName>keycloak.x-${project.version}</finalName>
+        <finalName>keycloak-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

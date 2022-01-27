@@ -155,6 +155,7 @@
         <module>runtime</module>
         <module>deployment</module>
         <module>server</module>
+        <module>dist</module>
         <module>tests</module>
     </modules>
 

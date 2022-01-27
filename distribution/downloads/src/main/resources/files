@@ -1,6 +1,6 @@
 ./
-    keycloak-server-dist:keycloak
-    keycloak-server-x-dist:keycloak.x-preview
+    keycloak-server-dist:keycloak-legacy
+    keycloak-quarkus-dist:keycloak
     keycloak-api-docs-dist:keycloak-api-docs
 
     keycloak-jetty92-adapter-dist:keycloak-oidc-jetty92-adapter

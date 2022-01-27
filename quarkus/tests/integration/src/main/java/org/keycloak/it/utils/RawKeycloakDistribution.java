@@ -250,7 +250,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         try {
             Path distRootPath = Paths.get(System.getProperty("java.io.tmpdir")).resolve("kc-tests");
             distRootPath.toFile().mkdirs();
-            File distFile = new File("../../../distribution/server-x-dist/target/keycloak.x-" + Version.VERSION_KEYCLOAK + ".zip");
+            File distFile = new File("../../dist/target/keycloak-" + Version.VERSION_KEYCLOAK + ".zip");
             if (!distFile.exists()) {
                 throw new RuntimeException("Distribution archive " + distFile.getAbsolutePath() +" doesn't exists");
             }

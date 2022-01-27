@@ -35,7 +35,7 @@
 
     <artifactId>keycloak-server-dist</artifactId>
 
-    <name>Keycloak Server Galleon Based Distribution</name>
+    <name>Keycloak Server Legacy WildFly Distribution</name>
     <description/>
 
     <packaging>pom</packaging>
@@ -301,7 +301,7 @@
                 </dependency>
             </dependencies>
             <build>
-                <finalName>keycloak-${project.version}</finalName>
+                <finalName>keycloak-legacy-${project.version}</finalName>
             </build>
         </profile>
         <profile>

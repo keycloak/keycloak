@@ -1468,7 +1468,7 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-server-x-dist</artifactId>
+                <artifactId>keycloak-quarkus-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>
