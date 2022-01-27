@@ -7,7 +7,7 @@
     title="Relational database setup"
     summary="Understand how to configure different relational databases for Keycloak"
     priority=10
-    includedOptions="db db.* hostname">
+    includedOptions="db db-* hostname">
 
 First step is to decide which database vendor you are going to use. Keycloak has support for a number of different vendors.
 

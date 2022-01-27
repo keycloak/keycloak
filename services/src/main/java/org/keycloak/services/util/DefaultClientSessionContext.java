@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -41,6 +42,10 @@ import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.rar.AuthorizationRequestParserProvider;
+import org.keycloak.protocol.oidc.rar.parsers.ClientScopeAuthorizationRequestParserProviderFactory;
+import org.keycloak.rar.AuthorizationRequestContext;
+import org.keycloak.rar.AuthorizationRequestSource;
 import org.keycloak.util.TokenUtil;
 
 /**
@@ -154,6 +159,14 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     @Override
     public String getScopeString() {
+        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+            String scopeParam = buildScopesStringFromAuthorizationRequest();
+            String scopeSent = clientSession.getNote(OAuth2Constants.SCOPE);
+            if (TokenUtil.isOIDCRequest(scopeSent)) {
+                scopeParam = TokenUtil.attachOIDCScope(scopeParam);
+            }
+            return scopeParam;
+        }
         // Add both default and optional scopes to scope parameter. Don't add client itself
         String scopeParam = getClientScopesStream()
                 .filter(((Predicate<ClientScopeModel>) ClientModel.class::isInstance).negate())
@@ -170,6 +183,22 @@ public class DefaultClientSessionContext implements ClientSessionContext {
         return scopeParam;
     }
 
+    /**
+     * Get all the scopes from the {@link AuthorizationRequestContext} by filtering entries by Source and by whether
+     * they should be included in tokens or not.
+     * Then return the scope name from the data stored in the RAR object representation.
+     *
+     * @return see description
+     */
+    private String buildScopesStringFromAuthorizationRequest() {
+        return this.getAuthorizationRequestContext().getAuthorizationDetailEntries().stream()
+                .filter(authorizationDetails -> authorizationDetails.getSource().equals(AuthorizationRequestSource.SCOPE))
+                .filter(authorizationDetails -> authorizationDetails.getClientScope().isIncludeInTokenScope())
+                .filter(authorizationDetails -> isClientScopePermittedForUser(authorizationDetails.getClientScope()))
+                .map(authorizationDetails -> authorizationDetails.getAuthorizationDetails().getScopeNameFromCustomData())
+                .collect(Collectors.joining(" "));
+    }
+
 
     @Override
     public void setAttribute(String name, Object value) {
@@ -183,6 +212,21 @@ public class DefaultClientSessionContext implements ClientSessionContext {
         return clazz.cast(value);
     }
 
+    @Override
+    public AuthorizationRequestContext getAuthorizationRequestContext() {
+        if (!Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+            throw new RuntimeException("The Dynamic Scopes feature is not enabled and the AuthorizationRequestContext hasn't been generated");
+        }
+        AuthorizationRequestParserProvider clientScopeParser = session.getProvider(AuthorizationRequestParserProvider.class,
+                ClientScopeAuthorizationRequestParserProviderFactory.CLIENT_SCOPE_PARSER_ID);
+
+        if (clientScopeParser == null) {
+            throw new RuntimeException(String.format("No provider found for authorization requests parser %1s",
+                    ClientScopeAuthorizationRequestParserProviderFactory.CLIENT_SCOPE_PARSER_ID));
+        }
+
+        return clientScopeParser.parseScopes(clientSession.getNote(OAuth2Constants.SCOPE));
+    }
 
     // Loading data
 

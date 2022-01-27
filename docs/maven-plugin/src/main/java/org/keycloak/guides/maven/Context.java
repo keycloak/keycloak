@@ -11,11 +11,13 @@ public class Context {
 
     private File srcDir;
     private Options options;
+    private Features features;
     private List<Guide> guides;
 
     public Context(File srcDir) throws IOException {
         this.srcDir = srcDir;
         this.options = new Options();
+        this.features = new Features();
 
         this.guides = new LinkedList<>();
 
@@ -34,7 +36,12 @@ public class Context {
         return options;
     }
 
+    public Features getFeatures() {
+        return features;
+    }
+
     public List<Guide> getGuides() {
         return guides;
     }
+
 }

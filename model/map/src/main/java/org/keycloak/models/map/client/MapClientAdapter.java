@@ -16,6 +16,7 @@
  */
 package org.keycloak.models.map.client;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -39,6 +40,7 @@ import java.util.stream.Stream;
  */
 public abstract class MapClientAdapter extends AbstractClientModel<MapClientEntity> implements ClientModel {
 
+    private static final Logger LOG = Logger.getLogger(MapClientAdapter.class);
     private final MapProtocolMapperUtils pmUtils;
 
     public MapClientAdapter(KeycloakSession session, RealmModel realm, MapClientEntity entity) {
@@ -286,7 +288,15 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
         final Map<String, List<String>> a = attributes == null ? Collections.emptyMap() : attributes;
         return a.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey,
             entry -> {
-                if (entry.getValue().isEmpty()) return null;
+                if (entry.getValue().isEmpty()) {
+                    return null;
+                } else if (entry.getValue().size() > 1) {
+                    // This could be caused by an inconsistency in the storage, a programming error,
+                    // or a downgrade from a future version of Keycloak that already supports multi-valued attributes.
+                    // The caller will not see the other values, and when this entity is later updated, the additional values will be lost.
+                    LOG.warnf("Client '%s' realm '%s' has attribute '%s' with %d values, retrieving only the first", getClientId(), getRealm().getName(), entry.getKey(),
+                            entry.getValue().size());
+                }
                 return entry.getValue().get(0);
             })
         );

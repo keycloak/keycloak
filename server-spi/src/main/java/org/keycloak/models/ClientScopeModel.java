@@ -112,7 +112,7 @@ public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeCon
     }
 
     default boolean isDynamicScope() {
-        return Optional.ofNullable(getAttribute(IS_DYNAMIC_SCOPE)).isPresent();
+        return Boolean.parseBoolean(getAttribute(IS_DYNAMIC_SCOPE));
     }
 
     default void setIsDynamicScope(boolean isDynamicScope) {

@@ -95,6 +95,11 @@ Proxy:
 --proxy <mode>       The proxy address forwarding mode if the server is behind a reverse proxy.
                        Possible values are: none,edge,reencrypt,passthrough Default: none.
 
+Vault:
+
+--vault-dir <dir>    If set, secrets can be obtained by reading the content of files within the
+                       given directory.
+
 Do NOT start the server using this command when deploying to production.
 
 Use 'kc.sh start-dev --help-all' to list all available options, including build

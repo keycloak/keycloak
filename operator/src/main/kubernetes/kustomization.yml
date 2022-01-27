@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: keycloak
+
+resources:
+  - kubernetes/keycloaks.keycloak.org-v1.yml
+  - kubernetes/kubernetes.yml
+
+patches:
+  - kubernetes/minikube.yml

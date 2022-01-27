@@ -26,7 +26,7 @@ import java.util.Objects;
 import java.util.Set;
 
 @GenerateHotRodEntityImplementation(implementInterface = "org.keycloak.models.map.client.MapProtocolMapperEntity")
-public class HotRodProtocolMapperEntity implements AbstractHotRodEntity {
+public class HotRodProtocolMapperEntity extends AbstractHotRodEntity {
     @ProtoField(number = 1)
     public String id;
     @ProtoField(number = 2)

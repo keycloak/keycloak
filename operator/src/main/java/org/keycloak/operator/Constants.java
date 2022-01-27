@@ -28,9 +28,11 @@ public final class Constants {
     public static final String MANAGED_BY_VALUE = "keycloak-operator";
 
     public static final Map<String, String> DEFAULT_LABELS = Map.of(
-            "app", NAME
+            "app", NAME,
+            MANAGED_BY_LABEL, MANAGED_BY_VALUE
     );
 
-    public static final String DEFAULT_KEYCLOAK_IMAGE = "quay.io/keycloak/keycloak-x:latest";
-    public static final String DEFAULT_KEYCLOAK_INIT_IMAGE = "quay.io/keycloak/keycloak-init-container:latest";
+    public static final Map<String, String> DEFAULT_DIST_CONFIG = Map.of(
+        "KEYCLOAK_METRICS_ENABLED", "true"
+    );
 }

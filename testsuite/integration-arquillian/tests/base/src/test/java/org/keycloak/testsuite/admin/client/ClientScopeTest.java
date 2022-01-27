@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.admin.client;
 
+import org.hamcrest.MatcherAssert;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -737,6 +738,65 @@ public class ClientScopeTest extends AbstractClientTest {
             put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dynamic-scope-def:*:*");
         }});
         handleExpectedCreateFailure(scopeRep, 400, "Invalid format for the Dynamic Scope regexp dynamic-scope-def:*:*");
+    }
+
+    @Test
+    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    public void updateAssignedDefaultClientScopeToDynamicScope() {
+        ClientRepresentation clientRep = new ClientRepresentation();
+        clientRep.setClientId("dyn-scope-client");
+        clientRep.setProtocol("openid-connect");
+        String clientUuid = createClient(clientRep);
+        getCleanup().addClientUuid(clientUuid);
+
+        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
+        scopeRep.setName("dynamic-scope-def");
+        scopeRep.setProtocol("openid-connect");
+        String scopeDefId = createClientScope(scopeRep);
+        getCleanup().addClientScopeId(scopeDefId);
+
+        testRealmResource().clients().get(clientUuid).addDefaultClientScope(scopeDefId);
+
+        scopeRep.setAttributes(new HashMap<String, String>() {{
+            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
+            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dynamic-scope-def:*:*");
+        }});
+
+        try {
+            clientScopes().get(scopeDefId).update(scopeRep);
+            Assert.fail("This update should fail");
+        } catch (ClientErrorException ex) {
+            MatcherAssert.assertThat(ex.getResponse(), Matchers.statusCodeIs(Status.BAD_REQUEST));
+        }
+    }
+
+    @Test
+    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    public void dynamicClientScopeCannotBeAssignedAsDefaultClientScope() {
+        ClientRepresentation clientRep = new ClientRepresentation();
+        clientRep.setClientId("dyn-scope-client");
+        clientRep.setProtocol("openid-connect");
+        String clientUuid = createClient(clientRep);
+        getCleanup().addClientUuid(clientUuid);
+
+        ClientScopeRepresentation optionalClientScope = new ClientScopeRepresentation();
+        optionalClientScope.setName("optional-dynamic-client-scope");
+        optionalClientScope.setProtocol("openid-connect");
+        optionalClientScope.setAttributes(new HashMap<String, String>() {{
+            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
+            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dynamic-scope-def:*");
+        }});
+        String optionalClientScopeId = createClientScope(optionalClientScope);
+        getCleanup().addClientScopeId(optionalClientScopeId);
+
+        try {
+            ClientResource clientResource = testRealmResource().clients().get(clientUuid);
+            clientResource.addDefaultClientScope(optionalClientScopeId);
+            Assert.fail("A Dynamic Scope shouldn't not be assigned as a default scope to a client");
+        } catch (ClientErrorException ex) {
+            MatcherAssert.assertThat(ex.getResponse(), Matchers.statusCodeIs(Status.BAD_REQUEST));
+        }
+
     }
 
     private void handleExpectedCreateFailure(ClientScopeRepresentation scopeRep, int expectedErrorCode, String expectedErrorMessage) {

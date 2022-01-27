@@ -47,6 +47,7 @@ import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.StorageId;
+import org.keycloak.storage.UserStorageManager;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 
@@ -608,25 +609,15 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
                 continue;
             }
             value = value.trim();
-            
+
             final String searchedString = exactSearch ? value : ("%" + value + "%");
 
             switch (key) {
                 case UserModel.SEARCH:
-                    for (String stringToSearch : value.trim().split("\\s+")) {
-                        if (value.isEmpty()) {
-                            continue;
-                        }
-                        final String s = exactSearch ? stringToSearch : ("%" + stringToSearch + "%");
-                        mcb = mcb.or(
-                                mcb.compare(SearchableFields.USERNAME, Operator.ILIKE, s),
-                                mcb.compare(SearchableFields.EMAIL, Operator.ILIKE, s),
-                                mcb.compare(SearchableFields.FIRST_NAME, Operator.ILIKE, s),
-                                mcb.compare(SearchableFields.LAST_NAME, Operator.ILIKE, s)
-                        );
+                    for (String stringToSearch : value.split("\\s+")) {
+                        mcb = addSearchToModelCriteria(stringToSearch, mcb);
                     }
                     break;
-
                 case USERNAME:
                     mcb = mcb.compare(SearchableFields.USERNAME, Operator.ILIKE, searchedString);
                     break;
@@ -650,13 +641,14 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
                     break;
                 }
                 case UserModel.IDP_ALIAS: {
-                    if (! attributes.containsKey(UserModel.IDP_USER_ID)) {
+                    if (!attributes.containsKey(UserModel.IDP_USER_ID)) {
                         mcb = mcb.compare(SearchableFields.IDP_AND_USER, Operator.EQ, value);
                     }
                     break;
                 }
                 case UserModel.IDP_USER_ID: {
-                    mcb = mcb.compare(SearchableFields.IDP_AND_USER, Operator.EQ, attributes.get(UserModel.IDP_ALIAS), value);
+                    mcb = mcb.compare(SearchableFields.IDP_AND_USER, Operator.EQ, attributes.get(UserModel.IDP_ALIAS),
+                            value);
                     break;
                 }
                 case UserModel.EXACT:
@@ -678,12 +670,13 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
                 return Stream.empty();
             }
 
-            final ResourceStore resourceStore = session.getProvider(AuthorizationProvider.class).getStoreFactory().getResourceStore();
+            final ResourceStore resourceStore =
+                    session.getProvider(AuthorizationProvider.class).getStoreFactory().getResourceStore();
 
             HashSet<String> authorizedGroups = new HashSet<>(userGroups);
             authorizedGroups.removeIf(id -> {
                 Map<Resource.FilterOption, String[]> values = new EnumMap<>(Resource.FilterOption.class);
-                values.put(Resource.FilterOption.EXACT_NAME, new String[] { "group.resource." + id });
+                values.put(Resource.FilterOption.EXACT_NAME, new String[] {"group.resource." + id});
                 return resourceStore.findByResourceServer(values, null, 0, 1).isEmpty();
             });
 
@@ -831,5 +824,31 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public void close() {
 
+    }
+
+    private DefaultModelCriteria<UserModel> addSearchToModelCriteria(String value,
+            DefaultModelCriteria<UserModel> mcb) {
+
+        if (value.length() >= 2 && value.charAt(0) == '"' && value.charAt(value.length() - 1) == '"') {
+            // exact search
+            value = value.substring(1, value.length() - 1);
+        } else {
+            if (value.length() >= 2 && value.charAt(0) == '*' && value.charAt(value.length() - 1) == '*') {
+                // infix search
+                value = "%" + value.substring(1, value.length() - 1) + "%";
+            } else {
+                // default to prefix search
+                if (value.length() > 0 && value.charAt(value.length() - 1) == '*') {
+                    value = value.substring(0, value.length() - 1);
+                }
+                value += "%";
+            }
+        }
+
+        return mcb.or(
+                mcb.compare(SearchableFields.USERNAME, Operator.ILIKE, value),
+                mcb.compare(SearchableFields.EMAIL, Operator.ILIKE, value),
+                mcb.compare(SearchableFields.FIRST_NAME, Operator.ILIKE, value),
+                mcb.compare(SearchableFields.LAST_NAME, Operator.ILIKE, value));
     }
 }

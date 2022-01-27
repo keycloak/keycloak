@@ -20,11 +20,10 @@ package org.keycloak.models.map.storage.hotRod.group;
 import org.infinispan.protostream.annotations.ProtoDoc;
 import org.infinispan.protostream.annotations.ProtoField;
 import org.keycloak.models.map.annotations.GenerateHotRodEntityImplementation;
-import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.group.MapGroupEntity;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
 import org.keycloak.models.map.storage.hotRod.common.HotRodAttributeEntityNonIndexed;
-import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDelegate;
+import org.keycloak.models.map.storage.hotRod.common.UpdatableHotRodEntityDelegateImpl;
 
 import java.util.Objects;
 import java.util.Set;
@@ -34,9 +33,9 @@ import java.util.Set;
         inherits = "org.keycloak.models.map.storage.hotRod.group.HotRodGroupEntity.AbstractHotRodGroupEntityDelegate"
 )
 @ProtoDoc("@Indexed")
-public class HotRodGroupEntity implements AbstractHotRodEntity {
+public class HotRodGroupEntity extends AbstractHotRodEntity {
 
-    public static abstract class AbstractHotRodGroupEntityDelegate extends UpdatableEntity.Impl implements HotRodEntityDelegate<HotRodGroupEntity>, MapGroupEntity {
+    public static abstract class AbstractHotRodGroupEntityDelegate extends UpdatableHotRodEntityDelegateImpl<HotRodGroupEntity> implements MapGroupEntity {
 
         @Override
         public String getId() {
@@ -48,13 +47,13 @@ public class HotRodGroupEntity implements AbstractHotRodEntity {
             HotRodGroupEntity entity = getHotRodEntity();
             if (entity.id != null) throw new IllegalStateException("Id cannot be changed");
             entity.id = id;
-            this.updated |= id != null;
+            entity.updated |= id != null;
         }
 
         @Override
         public void setName(String name) {
             HotRodGroupEntity entity = getHotRodEntity();
-            updated |= ! Objects.equals(entity.name, name);
+            entity.updated |= ! Objects.equals(entity.name, name);
             entity.name = name;
             entity.nameLowercase = name == null ? null : name.toLowerCase();
         }

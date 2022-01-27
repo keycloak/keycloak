@@ -1,4 +1,0 @@
-resources:
-  - target/kubernetes/keycloaks.keycloak.org-v1.yml
-  - target/kubernetes/minikube.yml
-  - kubernetes/deployments-role.yaml

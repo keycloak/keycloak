@@ -22,10 +22,9 @@ import org.infinispan.protostream.annotations.ProtoField;
 import org.keycloak.models.map.annotations.GenerateHotRodEntityImplementation;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
 import org.keycloak.models.map.storage.hotRod.common.HotRodAttributeEntity;
-import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.common.HotRodPair;
 import org.keycloak.models.map.client.MapClientEntity;
-import org.keycloak.models.map.common.UpdatableEntity;
+import org.keycloak.models.map.storage.hotRod.common.UpdatableHotRodEntityDelegateImpl;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -40,7 +39,7 @@ import java.util.stream.Stream;
         inherits = "org.keycloak.models.map.storage.hotRod.client.HotRodClientEntity.AbstractHotRodClientEntityDelegate"
 )
 @ProtoDoc("@Indexed")
-public class HotRodClientEntity implements AbstractHotRodEntity {
+public class HotRodClientEntity extends AbstractHotRodEntity {
 
     @ProtoField(number = 1, required = true)
     public int entityVersion = 1;
@@ -160,7 +159,7 @@ public class HotRodClientEntity implements AbstractHotRodEntity {
     @ProtoField(number = 36)
     public Integer nodeReRegistrationTimeout;
 
-    public static abstract class AbstractHotRodClientEntityDelegate extends UpdatableEntity.Impl implements HotRodEntityDelegate<HotRodClientEntity>, MapClientEntity {
+    public static abstract class AbstractHotRodClientEntityDelegate extends UpdatableHotRodEntityDelegateImpl<HotRodClientEntity> implements MapClientEntity {
 
         @Override
         public String getId() {
@@ -172,13 +171,13 @@ public class HotRodClientEntity implements AbstractHotRodEntity {
             HotRodClientEntity entity = getHotRodEntity();
             if (entity.id != null) throw new IllegalStateException("Id cannot be changed");
             entity.id = id;
-            this.updated |= id != null;
+            entity.updated |= id != null;
         }
 
         @Override
         public void setClientId(String clientId) {
             HotRodClientEntity entity = getHotRodEntity();
-            this.updated |= ! Objects.equals(entity.clientId, clientId);
+            entity.updated |= ! Objects.equals(entity.clientId, clientId);
             entity.clientId = clientId;
             entity.clientIdLowercase = clientId == null ? null : clientId.toLowerCase();
         }

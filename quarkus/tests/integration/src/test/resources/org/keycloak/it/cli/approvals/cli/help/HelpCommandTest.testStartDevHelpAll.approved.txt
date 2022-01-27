@@ -54,44 +54,9 @@ Database:
 
 Feature:
 
---features-account2 <enabled|disabled>
-                     Enables the ACCOUNT2 feature.
---features-account_api <enabled|disabled>
-                     Enables the ACCOUNT_API feature.
---features-admin2 <enabled|disabled>
-                     Enables the ADMIN2 feature.
---features-admin_fine_grained_authz <enabled|disabled>
-                     Enables the ADMIN_FINE_GRAINED_AUTHZ feature.
---features-authorization <enabled|disabled>
-                     Enables the AUTHORIZATION feature.
---features-ciba <enabled|disabled>
-                     Enables the CIBA feature.
---features-client_policies <enabled|disabled>
-                     Enables the CLIENT_POLICIES feature.
---features-declarative_user_profile <enabled|disabled>
-                     Enables the DECLARATIVE_USER_PROFILE feature.
---features-docker <enabled|disabled>
-                     Enables the DOCKER feature.
---features-dynamic_scopes <enabled|disabled>
-                     Enables the DYNAMIC_SCOPES feature.
---features-impersonation <enabled|disabled>
-                     Enables the IMPERSONATION feature.
---features-map_storage <enabled|disabled>
-                     Enables the MAP_STORAGE feature.
---features-openshift_integration <enabled|disabled>
-                     Enables the OPENSHIFT_INTEGRATION feature.
---features-par <enabled|disabled>
-                     Enables the PAR feature.
---features-scripts <enabled|disabled>
-                     Enables the SCRIPTS feature.
---features-token_exchange <enabled|disabled>
-                     Enables the TOKEN_EXCHANGE feature.
---features-upload_scripts <enabled|disabled>
-                     Enables the UPLOAD_SCRIPTS feature.
---features-web_authn <enabled|disabled>
-                     Enables the WEB_AUTHN feature.
--ft, --features <preview>
-                     Enables all tech preview features.
+--features <feature> Enables a set of one or more features.
+--features-disabled <feature>
+                     Disables a set of one or more features.
 
 Hostname:
 
@@ -161,11 +126,9 @@ Proxy:
 
 Vault:
 
---vault-file-path <dir>
-                     If set, secrets can be obtained by reading the content of files within the
-                       given path.
---vault-hashicorp-paths <paths>
-                     A set of one or more paths that should be used when looking up secrets.
+--vault <provider>   Enables a vault provider.
+--vault-dir <dir>    If set, secrets can be obtained by reading the content of files within the
+                       given directory.
 
 Do NOT start the server using this command when deploying to production.
 

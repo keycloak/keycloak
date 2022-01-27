@@ -81,4 +81,20 @@ public interface CLIResult extends LaunchResult {
     default void assertBuild() {
         assertMessage("Server configuration updated and persisted");
     }
+
+    default void assertNoBuild() {
+        assertFalse(getOutput().contains("Server configuration updated and persisted"));
+    }
+
+    default boolean isClustered() {
+        return getOutput().contains("Starting JGroups channel `ISPN`");
+    }
+
+    default void assertLocalCache() {
+        assertFalse(isClustered());
+    }
+
+    default void assertClusteredCache() {
+        assertTrue(isClustered());
+    }
 }

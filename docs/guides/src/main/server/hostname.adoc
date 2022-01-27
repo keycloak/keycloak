@@ -1,0 +1,146 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Configure the Hostname"
+summary="Learn how to configure the frontend and backchannel endpoints exposed by Keycloak."
+includedOptions="hostname-* proxy">
+
+When running Keycloak in environments such as Kubernetes, OpenShift or even on-premise, you usually do not want to expose the internal URLs to the public facing internet. Instead, you want to use your public hostname. This guide will show you how to configure Keycloak to use the right hostname for different scenarios.
+
+== Keycloak API Endpoint categories
+Keycloak exposes three different API endpoint categories, each using a specific base URL. These categories are:
+
+=== Frontend Endpoints
+Frontend endpoints are used to externally access Keycloak. When no Hostname is set, the base URL used for the frontend is taken from the incoming request. This has some major disadvantages, e.g. in High availability setups spanning multiple Keycloak instances, where it should not depend on the instance the request lands what URL is used, but instead one URL should be used for all instances, so they are seen as one system from the outside.
+
+The `hostname` property can be used to set the hostname part of the frontend base URL:
+
+<@kc.start parameters="--hostname=<value>"/>
+
+=== Backend Endpoints
+Backend endpoints are used for direct communication between Keycloak and applications. Examples are the Token endpoint or the User info endpoint. Backend endpoints are also taking the base URL from the request by default. To override this behaviour, set the `hostname-strict-backchannel` configuration option:
+
+<@kc.start parameters="--hostname=<value> --hostname-strict-backchannel=true"/>
+
+When all applications connected to Keycloak communicate through the public URL, set `hostname-strict-backchannel` to true. Otherwise, leave it as false to allow internal applications to communicate with Keycloak through an internal URL
+
+=== Administrative Endpoints
+When the admin console is exposed on a different hostname, use `--hostname-admin` to link to it:
+
+<@kc.start parameters="--hostname=<hostname> --hostname-admin=<adminHostname>"/>
+
+When `hostname-admin` is configured, all links and static resources used to render the admin console are served from the value you enter for `<adminHostname>` instead of using `<hostname>`.
+
+Keycloaks administration endpoints and its admin console should not be publicly accessible at all to reduce attack surface, so you might want to secure them using a reverse proxy. For more information about which paths to expose using a reverse proxy, please refer to the <@links.server id="proxy"/> Guide.
+
+== Overriding the hostname path
+When running behind a reverse proxy, you may expose Keycloak using a different context path such as `myproxy.url/mykeycloak`. To do this, you can override the hostname path to use the path defined in your reverse proxy:
+
+<@kc.start parameters="--hostname=myurl --hostname-path=mykeycloak"/>
+
+
+The `hostname-path` configuration only takes effect when a reverse proxy is enabled. Please see the <@links.server id="proxy"/> Guide for details.
+
+== Using the hostname in development mode
+When running Keycloak in development mode by using `start-dev`, the hostname setting is optional. When the `hostname` is not specified the incoming request headers will be used.
+
+=== Example: Hostname in development mode
+.Keycloak configuration:
+<@kc.startdev parameters=""/>
+
+.Invoked command:
+[source, bash]
+----
+curl GET "https://localhost:8080/realms/master/.well-known/openid-configuration" | jq .
+----
+
+.Result:
+[source, bash]
+----
+# Frontend endpoints: request://request:request -> http://localhost:8080
+# Backend endpoints: request://request:request -> http://localhost:8080
+----
+
+Invoking the curl GET request above when running in development mode will show you the current OpenID Discovery configuration. In this configuration, all base URLS will be taken from the incoming request, so `http://localhost:8080` will be used for all endpoints.
+
+== Example Scenarios
+Here are a few more example scenarios and the corresponding commands for setting up a hostname.
+
+=== Assumptions for all scenarios
+* Keycloak is set up using HTTPS certificates and Port 8443.
+* `intlUrl` refers to an internal IP/DNS for Keycloak
+* `myUrl` refers to an exposed public URL
+* Keycloak runs in production mode using the `start` command
+
+=== Example 1: Hostname configuration without reverse proxy
+.Keycloak configuration:
+<@kc.start parameters="--hostname=myurl"/>
+
+.Invoked command:
+[source, bash]
+----
+curl GET "https://intUrl:8443/realms/master/.well-known/openid-configuration" | jq .
+----
+
+.Result:
+[source, bash]
+----
+# Frontend Endpoints: request://myurl:request -> https://myurl:8443
+# Backend Endpoints: request://request:request -> https://internal:8443
+----
+
+=== Example 2: Hostname configuration without reverse proxy - strict backchannel enabled
+
+.Keycloak configuration:
+<@kc.start parameters="--hostname=myurl --hostname-strict-backchannel=true"/>
+
+.Invoked command:
+[source, bash]
+----
+curl GET "https://intUrl:8443/realms/master/.well-known/openid-configuration" | jq .
+----
+
+.Result:
+[source, bash]
+----
+# Frontend: request://myurl:request -> https://myurl:8443
+# Backend: request://myurl:request -> https://myurl:8443
+----
+
+=== Example 3: Hostname configuration with reverse proxy
+.Keycloak configuration:
+<@kc.start parameters="--hostname=myurl --proxy=passthrough"/>
+
+.Invoked command:
+[source, bash]
+----
+curl GET "https://intUrl:8443/realms/master/.well-known/openid-configuration" | jq .
+----
+
+.Result:
+[source, bash]
+----
+# Frontend Endpoints: request://myurl ->  https://myurl
+# Backend Endpoints: request://request:request -> https://internal:8443
+----
+
+=== Hostname configuration with reverse proxy and different path
+.Keycloak configuration:
+<@kc.start parameters="--hostname=myurl --proxy=passthrough --hostname-path=mykeycloak"/>
+
+.Invoked command:
+[source, bash]
+----
+curl GET "https://intUrl:8443/realms/master/.well-known/openid-configuration" | jq .
+----
+
+.Result:
+[source, bash]
+----
+# Frontend Endpoints: request://myurl ->  https://myurl/mykeycloak
+# Backend Endpoints: request://request:request -> https://internal:8443
+----
+
+</@tmpl.guide>

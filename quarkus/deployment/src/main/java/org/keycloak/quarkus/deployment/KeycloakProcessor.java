@@ -18,6 +18,8 @@
 package org.keycloak.quarkus.deployment;
 
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS;
+import static org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource.QUARKUS_PROPERTY_ENABLED;
 import static org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX;
 import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.AUTHENTICATORS;
@@ -81,7 +83,9 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.Config;
+import org.keycloak.quarkus.runtime.QuarkusProfile;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
+import org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.integration.jaxrs.QuarkusKeycloakApplication;
@@ -127,6 +131,7 @@ import org.keycloak.url.DefaultHostnameProviderFactory;
 import org.keycloak.url.FixedHostnameProviderFactory;
 import org.keycloak.url.RequestHostnameProviderFactory;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.vault.FilesPlainTextVaultProviderFactory;
 
 class KeycloakProcessor {
 
@@ -146,7 +151,8 @@ class KeycloakProcessor {
             LiquibaseJpaUpdaterProviderFactory.class,
             DefaultHostnameProviderFactory.class,
             FixedHostnameProviderFactory.class,
-            RequestHostnameProviderFactory.class);
+            RequestHostnameProviderFactory.class,
+            FilesPlainTextVaultProviderFactory.class);
 
     static {
         DEPLOYEABLE_SCRIPT_PROVIDERS.put(AUTHENTICATORS, KeycloakProcessor::registerScriptAuthenticator);
@@ -239,7 +245,7 @@ class KeycloakProcessor {
     @Record(ExecutionTime.RUNTIME_INIT)
     @BuildStep
     KeycloakSessionFactoryPreInitBuildItem configureProviders(KeycloakRecorder recorder) {
-        Profile.setInstance(recorder.createProfile());
+        Profile.setInstance(new QuarkusProfile());
         Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories = new HashMap<>();
         Map<Class<? extends Provider>, String> defaultProviders = new HashMap<>();
         Map<String, ProviderFactory> preConfiguredProviders = new HashMap<>();
@@ -311,14 +317,22 @@ class KeycloakProcessor {
 
         for (String name : getPropertyNames()) {
             PropertyMapper mapper = PropertyMappers.getMapper(name);
+            ConfigValue value = null;
 
             if (mapper == null) {
-                continue;
+                if (name.startsWith(NS_QUARKUS)) {
+                    value = Configuration.getConfigValue(name);
+
+                    if (!QuarkusPropertiesConfigSource.isSameSource(value)) {
+                        continue;
+                    }
+                }
+            } else if (mapper.isBuildTime()) {
+                name = mapper.getFrom();
+                value = Configuration.getConfigValue(name);
             }
 
-            ConfigValue value = Configuration.getConfigValue(mapper.getFrom());
-
-            if (mapper.isBuildTime() && value != null && value.getValue() != null) {
+            if (value != null && value.getValue() != null) {
                 properties.put(name, value.getValue());
             }
         }
@@ -326,6 +340,8 @@ class KeycloakProcessor {
         for (File jar : getProviderFiles().values()) {
             properties.put(String.format("kc.provider.file.%s.last-modified", jar.getName()), String.valueOf(jar.lastModified()));
         }
+
+        properties.put(QUARKUS_PROPERTY_ENABLED, String.valueOf(QuarkusPropertiesConfigSource.getConfigurationFile() != null));
 
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             properties.store(outputStream, " Auto-generated, DO NOT change this file");
