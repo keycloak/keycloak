@@ -307,7 +307,7 @@ class SigningInPage extends React.Component<
         const infoMessage = credMetadata.infoMessage ? JSON.parse(credMetadata.infoMessage) : null;
         const warningMessageTitle = credMetadata.warningMessageTitle ? JSON.parse(credMetadata.warningMessageTitle) : null;
         const warningMessageDescription = credMetadata.warningMessageDescription ? JSON.parse(credMetadata.warningMessageDescription) : null;
-        let maxWidth = { "--pf-u-max-width--MaxWidth": "250px" } as React.CSSProperties;
+        let maxWidth = { "--pf-u-max-width--MaxWidth": "300px" } as React.CSSProperties;
         credRowCells.push(
             <DataListCell id={`${SigningInPage.credElementId(type, credential.id, 'label')}`} key={'userLabel-' + credential.id} className="pf-u-max-width" style={maxWidth}>
                 {credential.userLabel}
