@@ -32,14 +32,14 @@ spec:
             port: 8080
           initialDelaySeconds: 15
           periodSeconds: 2
-          failureThreshold: 10
+          failureThreshold: 100
         readinessProbe:
           httpGet:
             path: /health/ready
             port: 8080
           initialDelaySeconds: 15
           periodSeconds: 2
-          failureThreshold: 10
+          failureThreshold: 200
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
