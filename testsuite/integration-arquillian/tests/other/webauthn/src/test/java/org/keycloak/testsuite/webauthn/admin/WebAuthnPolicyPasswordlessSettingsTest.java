@@ -59,7 +59,7 @@ public class WebAuthnPolicyPasswordlessSettingsTest extends AbstractWebAuthnPoli
     }
 
     @Override
-    protected AbstractWebAuthnRealmUpdater getWebAuthnRealmUpdater() {
+    protected AbstractWebAuthnRealmUpdater<PasswordLessRealmAttributeUpdater> getWebAuthnRealmUpdater() {
         return new PasswordLessRealmAttributeUpdater(testRealmResource());
     }
 

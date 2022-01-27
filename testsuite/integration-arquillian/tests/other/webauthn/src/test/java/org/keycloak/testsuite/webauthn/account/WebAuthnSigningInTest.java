@@ -23,11 +23,11 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
+import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.testsuite.ui.account2.page.SigningInPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
-import org.keycloak.testsuite.webauthn.authenticators.UseVirtualAuthenticators;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnAuthenticatorsList;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnLoginPage;
 import org.keycloak.theme.DateTimeFormatterUtil;
@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -55,7 +56,7 @@ import static org.keycloak.testsuite.ui.account2.page.utils.SigningInPageUtils.t
 import static org.keycloak.testsuite.util.UIUtils.refreshPageAndWaitForLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
-public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest implements UseVirtualAuthenticators {
+public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
 
     @Page
     protected WebAuthnLoginPage webAuthnLoginPage;
@@ -216,6 +217,47 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest implement
 
         webAuthnLoginPage.assertCurrent();
         assertThat(webAuthnLoginPage.getAuthenticators().getCount(), is(0));
+
+        webAuthnLoginPage.clickAuthenticate();
+        signingInPage.assertCurrent();
+    }
+
+    @Test
+    public void availableAuthenticatorsAfterRemove(){
+        addWebAuthnCredential("authenticator#1");
+        addWebAuthnCredential("authenticator#2");
+
+        final int webAuthnCount = webAuthnCredentialType.getUserCredentialsCount();
+        assertThat(webAuthnCount, is(2));
+
+        setUpWebAuthnFlow("webAuthnFlow");
+        logout();
+
+        signingInPage.navigateTo();
+        loginToAccount();
+
+        webAuthnLoginPage.assertCurrent();
+
+        WebAuthnAuthenticatorsList authenticators = webAuthnLoginPage.getAuthenticators();
+        assertThat(authenticators.getCount(), is(2));
+        assertThat(authenticators.getLabels(), Matchers.contains("authenticator#1", "authenticator#2"));
+
+        final String credentialId = testUserResource().credentials()
+                .stream()
+                .filter(Objects::nonNull)
+                .filter(f -> WebAuthnCredentialModel.TYPE_TWOFACTOR.equals(f.getType()))
+                .map(CredentialRepresentation::getId)
+                .findFirst()
+                .orElse(null);
+
+        assertThat(credentialId, notNullValue());
+        testUserResource().removeCredential(credentialId);
+
+        driver.navigate().refresh();
+
+        webAuthnLoginPage.assertCurrent();
+        authenticators = webAuthnLoginPage.getAuthenticators();
+        assertThat(authenticators.getCount(), is(1));
 
         webAuthnLoginPage.clickAuthenticate();
         signingInPage.assertCurrent();

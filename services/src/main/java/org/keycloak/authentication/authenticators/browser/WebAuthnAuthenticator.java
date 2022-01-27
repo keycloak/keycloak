@@ -57,6 +57,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 
+import static org.keycloak.WebAuthnConstants.ERR_DETAIL_LABEL;
+import static org.keycloak.WebAuthnConstants.ERR_LABEL;
 import static org.keycloak.services.messages.Messages.*;
 
 /**
@@ -168,8 +170,8 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
                 String firstAuthenticatedUserId = context.getUser().getId();
                 if (firstAuthenticatedUserId != null && !firstAuthenticatedUserId.equals(userId)) {
                     context.getEvent()
-                            .detail("first_authenticated_user_id", firstAuthenticatedUserId)
-                            .detail("web_authn_authenticator_authenticated_user_id", userId);
+                            .detail(WebAuthnConstants.FIRST_AUTHENTICATED_USER_ID, firstAuthenticatedUserId)
+                            .detail(WebAuthnConstants.AUTHENTICATED_USER_ID, userId);
                     setErrorResponse(context, WEBAUTHN_ERROR_DIFFERENT_USER, null);
                     return;
                 }
@@ -218,13 +220,13 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
             logger.debugv("WebAuthn Authentication successed. isUserVerificationChecked = {0}, PublicKeyCredentialID = {1}", isUVChecked, encodedCredentialID);
             context.setUser(user);
             context.getEvent()
-                .detail("web_authn_authenticator_user_verification_checked", isUVChecked)
-                .detail("public_key_credential_id", encodedCredentialID);
+                .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, isUVChecked)
+                .detail(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, encodedCredentialID);
             context.success();
         } else {
             context.getEvent()
-                .detail("web_authn_authenticated_user_id", userId)
-                .detail("public_key_credential_id", encodedCredentialID);
+                .detail(WebAuthnConstants.AUTHENTICATED_USER_ID, userId)
+                .detail(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, encodedCredentialID);
             setErrorResponse(context, WEBAUTHN_ERROR_USER_NOT_FOUND, null);
             context.cancelLogin();
         }
@@ -258,9 +260,6 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
     public WebAuthnCredentialProvider getCredentialProvider(KeycloakSession session) {
         return (WebAuthnCredentialProvider)session.getProvider(CredentialProvider.class, WebAuthnCredentialProviderFactory.PROVIDER_ID);
     }
-
-    private static final String ERR_LABEL = "web_authn_authentication_error";
-    private static final String ERR_DETAIL_LABEL = "web_authn_authentication_error_detail";
 
     private void setErrorResponse(AuthenticationFlowContext context, final String errorCase, final String errorMessage) {
         Response errorResponse = null;

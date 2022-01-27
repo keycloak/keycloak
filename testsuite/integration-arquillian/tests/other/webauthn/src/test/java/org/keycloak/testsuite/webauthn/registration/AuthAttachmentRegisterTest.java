@@ -19,6 +19,7 @@ package org.keycloak.testsuite.webauthn.registration;
 import com.webauthn4j.data.AuthenticatorAttachment;
 import com.webauthn4j.data.UserVerificationRequirement;
 import org.junit.Test;
+import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
 
 import java.io.Closeable;
@@ -34,7 +35,7 @@ import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthO
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
-public class AuthAttachmentRegisterTest extends AbstractWebAuthnRegisterTest {
+public class AuthAttachmentRegisterTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void authenticatorAttachmentCrossPlatform() {
@@ -62,7 +63,7 @@ public class AuthAttachmentRegisterTest extends AbstractWebAuthnRegisterTest {
             assertThat(realmData.getAuthenticatorAttachment(), is(AuthenticatorAttachment.PLATFORM.getValue()));
             assertThat(realmData.getUserVerificationRequirement(), is(UserVerificationRequirement.DISCOURAGED.getValue()));
 
-            registerDefaultWebAuthnUser(false);
+            registerDefaultUser(false);
 
             webAuthnRegisterPage.assertCurrent();
 
@@ -87,7 +88,7 @@ public class AuthAttachmentRegisterTest extends AbstractWebAuthnRegisterTest {
             WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
             assertThat(realmData.getAuthenticatorAttachment(), is(attachment.getValue()));
 
-            registerDefaultWebAuthnUser(shouldSuccess);
+            registerDefaultUser(shouldSuccess);
 
             displayErrorMessageIfPresent();
 

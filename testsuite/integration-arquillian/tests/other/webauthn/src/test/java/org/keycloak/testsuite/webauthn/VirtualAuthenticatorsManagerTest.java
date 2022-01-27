@@ -27,15 +27,10 @@ import org.keycloak.testsuite.webauthn.authenticators.VirtualAuthenticatorManage
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
 
-import java.io.Closeable;
-import java.io.IOException;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_NFC;
-import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_USB;
 
 /**
  * Test class for VirtualAuthenticatorManager
