@@ -37,16 +37,15 @@
             See https://github.com/quarkusio/quarkus/blob/<versionTag>/bom/application/pom.xml
             for reference
         -->
-        <resteasy.version>4.7.3.Final</resteasy.version>
-        <jackson.version>2.12.5</jackson.version>
+        <resteasy.version>4.7.5.Final</resteasy.version>
+        <jackson.version>2.13.1</jackson.version>
         <jackson.databind.version>${jackson.version}</jackson.databind.version>
-        <hibernate.core.version>5.6.1.Final</hibernate.core.version>
-        <mysql.driver.version>8.0.27</mysql.driver.version>
+        <hibernate.core.version>5.6.5.Final</hibernate.core.version>
+        <mysql.driver.version>8.0.28</mysql.driver.version>
         <postgresql.version>42.3.1</postgresql.version>
         <microprofile-metrics-api.version>3.0</microprofile-metrics-api.version>
         <wildfly.common.version>1.5.4.Final-format-001</wildfly.common.version>
-        <infinispan.version>13.0.0.Final</infinispan.version>
-
+        <infinispan.version>13.0.5.Final</infinispan.version>
         <!--
             Java EE dependencies. Not available from JDK 11+.
             The dependencies and their versions are the same used by Wildfly distribution.
