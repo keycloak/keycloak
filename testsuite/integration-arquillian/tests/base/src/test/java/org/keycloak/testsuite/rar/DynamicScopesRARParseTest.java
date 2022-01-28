@@ -46,7 +46,6 @@ import static org.junit.Assert.assertEquals;
 public class DynamicScopesRARParseTest extends AbstractRARParserTest {
 
     @Test
-    @Ignore("ignored until we figure out why it fails on Quarkus and Wildfly")
     public void generatedAuthorizationRequestsShouldMatchDefaultScopes() {
         ClientResource testApp = ApiUtil.findClientByClientId(testRealm(), "test-app");
         List<ClientScopeRepresentation> defScopes = testApp.getDefaultClientScopes();
@@ -56,7 +55,7 @@ public class DynamicScopesRARParseTest extends AbstractRARParserTest {
         events.expectLogin()
                 .user(userId)
                 .assertEvent();
-        AuthorizationRequestContextHolder contextHolder = fetchAuthorizationRequestContextHolder();
+        AuthorizationRequestContextHolder contextHolder = fetchAuthorizationRequestContextHolder(userId);
         List<AuthorizationRequestContextHolder.AuthorizationRequestHolder> authorizationRequestHolders = contextHolder.getAuthorizationRequestHolders().stream()
                 .filter(authorizationRequestHolder -> authorizationRequestHolder.getSource().equals(AuthorizationRequestSource.SCOPE))
                 .collect(Collectors.toList());
@@ -73,7 +72,6 @@ public class DynamicScopesRARParseTest extends AbstractRARParserTest {
     }
 
     @Test
-    @Ignore("ignored until we figure out why it fails on Quarkus and Wildfly")
     public void generatedAuthorizationRequestsShouldMatchRequestedAndDefaultScopes() {
         Response response = createScope("static-scope", false);
         String scopeId = ApiUtil.getCreatedId(response);
@@ -93,7 +91,7 @@ public class DynamicScopesRARParseTest extends AbstractRARParserTest {
                 .user(userId)
                 .assertEvent();
 
-        AuthorizationRequestContextHolder contextHolder = fetchAuthorizationRequestContextHolder();
+        AuthorizationRequestContextHolder contextHolder = fetchAuthorizationRequestContextHolder(userId);
         List<AuthorizationRequestContextHolder.AuthorizationRequestHolder> authorizationRequestHolders = contextHolder.getAuthorizationRequestHolders().stream()
                 .filter(authorizationRequestHolder -> authorizationRequestHolder.getSource().equals(AuthorizationRequestSource.SCOPE))
                 .collect(Collectors.toList());
@@ -112,7 +110,6 @@ public class DynamicScopesRARParseTest extends AbstractRARParserTest {
     }
 
     @Test
-    @Ignore("ignored until we figure out why it fails on Quarkus and Wildfly")
     public void generatedAuthorizationRequestsShouldMatchRequestedDynamicAndDefaultScopes() {
         Response response = createScope("dynamic-scope", true);
         String scopeId = ApiUtil.getCreatedId(response);
@@ -132,7 +129,7 @@ public class DynamicScopesRARParseTest extends AbstractRARParserTest {
                 .user(userId)
                 .assertEvent();
 
-        AuthorizationRequestContextHolder contextHolder = fetchAuthorizationRequestContextHolder();
+        AuthorizationRequestContextHolder contextHolder = fetchAuthorizationRequestContextHolder(userId);
         List<AuthorizationRequestContextHolder.AuthorizationRequestHolder> authorizationRequestHolders = contextHolder.getAuthorizationRequestHolders().stream()
                 .filter(authorizationRequestHolder -> authorizationRequestHolder.getSource().equals(AuthorizationRequestSource.SCOPE))
                 .collect(Collectors.toList());

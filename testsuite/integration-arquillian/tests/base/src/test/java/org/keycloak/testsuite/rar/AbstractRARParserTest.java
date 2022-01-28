@@ -88,7 +88,7 @@ public abstract class AbstractRARParserTest extends AbstractTestRealmKeycloakTes
      * @return the {@link AuthorizationRequestContextHolder} local testsuite representation of the Authorization Request Context
      * with all the parsed authorization_detail objects.
      */
-    protected AuthorizationRequestContextHolder fetchAuthorizationRequestContextHolder() {
+    protected AuthorizationRequestContextHolder fetchAuthorizationRequestContextHolder(String userId) {
         AuthorizationRequestContextHolder authorizationRequestContextHolder = testingClient.server("test").fetch(session -> {
             final RealmModel realm = session.realms().getRealmByName("test");
             final UserModel user = session.users().getUserById(realm, userId);
