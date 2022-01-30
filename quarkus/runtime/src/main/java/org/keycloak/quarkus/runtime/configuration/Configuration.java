@@ -17,18 +17,17 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
+import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 import static org.keycloak.quarkus.runtime.Environment.getProfileOrDefault;
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.toCLIFormat;
+import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
-import io.smallrye.config.SmallRyeConfigProviderResolver;
 
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
@@ -39,37 +38,39 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
  */
 public final class Configuration {
 
-    private static volatile SmallRyeConfig CONFIG;
+    public static final char OPTION_PART_SEPARATOR_CHAR = '-';
+    public static final String OPTION_PART_SEPARATOR = String.valueOf(OPTION_PART_SEPARATOR_CHAR);
 
     private Configuration() {
 
     }
 
     public static synchronized SmallRyeConfig getConfig() {
-        if (CONFIG == null) {
-            CONFIG = (SmallRyeConfig) SmallRyeConfigProviderResolver.instance().getConfig();
-        }
-        return CONFIG;
+        return (SmallRyeConfig) ConfigProviderResolver.instance().getConfig();
     }
 
-    public static Optional<String> getBuiltTimeProperty(String name) {
-        String value = KeycloakConfigSourceProvider.PERSISTED_CONFIG_SOURCE.getValue(name);
+    public static Optional<String> getBuildTimeProperty(String name) {
+        Optional<String> value = getRawPersistedProperty(name);
 
-        if (value == null) {
-            value = KeycloakConfigSourceProvider.PERSISTED_CONFIG_SOURCE.getValue(getMappedPropertyName(name));
+        if (value.isEmpty()) {
+            value = getRawPersistedProperty(getMappedPropertyName(name));
         }
 
-        if (value == null) {
+        if (value.isEmpty()) {
             String profile = Environment.getProfile();
 
             if (profile == null) {
                 profile = getConfig().getRawValue(Environment.PROFILE);
             }
 
-            value = KeycloakConfigSourceProvider.PERSISTED_CONFIG_SOURCE.getValue("%" + profile + "." + name);
+            value = getRawPersistedProperty("%" + profile + "." + name);
         }
 
-        return Optional.ofNullable(value);
+        return value;
+    }
+
+    public static Optional<String> getRawPersistedProperty(String name) {
+        return Optional.ofNullable(PersistedConfigSource.getInstance().getValue(name));
     }
 
     public static String getRawValue(String propertyName) {
@@ -98,17 +99,14 @@ public final class Configuration {
     }
 
     public static String getMappedPropertyName(String key) {
-        for (PropertyMapper mapper : PropertyMappers.getMappers()) {
-            String mappedProperty = mapper.getFrom();
-            List<String> expectedFormats = Arrays.asList(mappedProperty, toCLIFormat(mappedProperty), mappedProperty.toUpperCase().replace('.', '_').replace('-', '_'));
+        PropertyMapper mapper = PropertyMappers.getMapper(key);
 
-            if (expectedFormats.contains(key)) {
-                // we also need to make sure the target property is available when defined such as when defining alias for provider config (no spi-prefix).
-                return mapper.getTo() == null ? mappedProperty : mapper.getTo();
-            }
+        if (mapper == null) {
+            return key;
         }
 
-        return key;
+        // we also need to make sure the target property is available when defined such as when defining alias for provider config (no spi-prefix).
+        return mapper.getTo() == null ? mapper.getFrom() : mapper.getTo();
     }
 
     public static Optional<String> getRuntimeProperty(String name) {
@@ -129,6 +127,14 @@ public final class Configuration {
         }
 
         return Optional.empty();
+    }
+
+    public static String toEnvVarFormat(String key) {
+        return replaceNonAlphanumericByUnderscores(key).toUpperCase();
+    }
+
+    public static String toCliFormat(String key) {
+        return ARG_PREFIX + key;
     }
 
     private static String getValue(ConfigSource configSource, String name) {

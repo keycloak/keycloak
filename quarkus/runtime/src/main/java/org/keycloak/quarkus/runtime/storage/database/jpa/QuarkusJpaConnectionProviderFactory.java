@@ -65,6 +65,7 @@ import org.keycloak.models.dblock.DBLockManager;
 import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ServicesLogger;
@@ -81,7 +82,7 @@ public final class QuarkusJpaConnectionProviderFactory implements JpaConnectionP
 
     public static final String QUERY_PROPERTY_PREFIX = "kc.query.";
     private static final Logger logger = Logger.getLogger(QuarkusJpaConnectionProviderFactory.class);
-    private static final String SQL_GET_LATEST_VERSION = "SELECT VERSION FROM %sMIGRATION_MODEL";
+    private static final String SQL_GET_LATEST_VERSION = "SELECT VERSION FROM %sMIGRATION_MODEL ORDER BY UPDATE_TIME DESC";
 
     enum MigrationStrategy {
         UPDATE, VALIDATE, MANUAL
@@ -175,7 +176,7 @@ public final class QuarkusJpaConnectionProviderFactory implements JpaConnectionP
 
     @Override
     public String getSchema() {
-        return config.get("schema");
+        return Configuration.getRawValue("kc.db-schema");
     }
 
     @Override

@@ -3,6 +3,7 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 import java.util.Collection;
@@ -28,18 +29,18 @@ public final class PropertyMappers {
         MAPPERS.addAll(MetricsPropertyMappers.getMetricsPropertyMappers());
         MAPPERS.addAll(ProxyPropertyMappers.getProxyPropertyMappers());
         MAPPERS.addAll(VaultPropertyMappers.getVaultPropertyMappers());
+        MAPPERS.addAll(FeaturePropertyMappers.getMappers());
     }
 
     public static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
         PropertyMapper mapper = MAPPERS.getOrDefault(name, PropertyMapper.IDENTITY);
-        ConfigValue configValue = mapper
-                .getOrDefault(name, context, context.proceed(name));
+        ConfigValue configValue = mapper.getConfigValue(name, context);
 
         if (configValue == null) {
             Optional<String> prefixedMapper = getPrefixedMapper(name);
 
             if (prefixedMapper.isPresent()) {
-                return MAPPERS.get(prefixedMapper.get()).getOrDefault(name, context, configValue);
+                return MAPPERS.get(prefixedMapper.get()).getConfigValue(name, context);
             }
         } else {
             configValue.withName(mapper.getTo());
@@ -49,7 +50,7 @@ public final class PropertyMappers {
     }
 
     public static boolean isBuildTimeProperty(String name) {
-        if (isFeaturesBuildTimeProperty(name) || isSpiBuildTimeProperty(name)) {
+        if (isFeaturesBuildTimeProperty(name) || isSpiBuildTimeProperty(name) || name.startsWith(MicroProfileConfigProvider.NS_QUARKUS)) {
             return true;
         }
 
@@ -76,13 +77,13 @@ public final class PropertyMappers {
 
         return isBuildTimeProperty
                 && !"kc.version".equals(name)
-                && !Environment.CLI_ARGS.equals(name)
+                && !ConfigArgsConfigSource.CLI_ARGS.equals(name)
                 && !"kc.home.dir".equals(name)
                 && !"kc.config.file".equals(name)
                 && !Environment.PROFILE.equals(name)
                 && !"kc.show.config".equals(name)
                 && !"kc.show.config.runtime".equals(name)
-                && !toCLIFormat("kc.config.file").equals(name);
+                && !"kc.config-file".equals(name);
     }
 
     private static boolean isSpiBuildTimeProperty(String name) {
@@ -93,16 +94,6 @@ public final class PropertyMappers {
         return name.startsWith("kc.features");
     }
 
-    public static String toCLIFormat(String name) {
-        if (name.indexOf('.') == -1) {
-            return name;
-        }
-
-        return MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX
-                .concat(name.substring(3, name.lastIndexOf('.') + 1)
-                        .replaceAll("\\.", "-") + name.substring(name.lastIndexOf('.') + 1));
-    }
-
     public static List<PropertyMapper> getRuntimeMappers() {
         return MAPPERS.values().stream()
                 .filter(entry -> !entry.isBuildTime()).collect(Collectors.toList());
@@ -111,10 +102,6 @@ public final class PropertyMappers {
     public static List<PropertyMapper> getBuildTimeMappers() {
         return MAPPERS.values().stream()
                 .filter(PropertyMapper::isBuildTime).collect(Collectors.toList());
-    }
-
-    public static String canonicalFormat(String name) {
-        return name.replaceAll("-", "\\.");
     }
 
     public static String formatValue(String property, String value) {
@@ -137,6 +124,9 @@ public final class PropertyMappers {
     }
 
     public static PropertyMapper getMapper(String property) {
+        if (property.startsWith("%")) {
+            return MAPPERS.get(property.substring(property.indexOf('.') + 1));
+        }
         return MAPPERS.get(property);
     }
 
@@ -170,6 +160,7 @@ public final class PropertyMappers {
                 super.put(mapper.getTo(), mapper);
                 super.put(mapper.getFrom(), mapper);
                 super.put(mapper.getCliFormat(), mapper);
+                super.put(mapper.getEnvVarFormat(), mapper);
             }
         }
 

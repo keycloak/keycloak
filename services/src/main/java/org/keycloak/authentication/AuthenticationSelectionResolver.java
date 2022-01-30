@@ -200,7 +200,7 @@ class AuthenticationSelectionResolver {
 
                 // For conditional execution, we must check if condition is true. Otherwise return false, which means trying next
                 // requiredExecution in the list
-                return !flow.isConditionalSubflowDisabled(ex);
+                return !flow.isConditionalSubflowDisabled(ex, false);
 
             }).findFirst().orElse(null);
 

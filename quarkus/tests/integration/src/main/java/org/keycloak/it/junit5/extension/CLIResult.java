@@ -19,22 +19,14 @@ package org.keycloak.it.junit5.extension;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.util.Arrays;
 import java.util.List;
-
-import org.keycloak.quarkus.runtime.cli.Picocli;
-
+import org.approvaltests.Approvals;
 import io.quarkus.test.junit.main.LaunchResult;
-import picocli.CommandLine;
 
 public interface CLIResult extends LaunchResult {
 
-    static Object create(List<String> outputStream, List<String> errStream, int exitCode, boolean distribution) {
+    static Object create(List<String> outputStream, List<String> errStream, int exitCode) {
         return new CLIResult() {
             @Override
             public List<String> getOutputStream() {
@@ -50,29 +42,23 @@ public interface CLIResult extends LaunchResult {
             public int exitCode() {
                 return exitCode;
             }
-
-            @Override
-            public boolean isDistribution() {
-                return distribution;
-            }
         };
     }
 
-    boolean isDistribution();
-
     default void assertStarted() {
+        assertFalse(getOutput().contains("The delayed handler's queue was overrun and log record(s) were lost (Did you forget to configure logging?)"), () -> "The standard Output:\n" + getOutput() + "should not contain a warning about log queue overrun.");
         assertTrue(getOutput().contains("Listening on:"), () -> "The standard output:\n" + getOutput() + "does include \"Listening on:\"");
         assertNotDevMode();
     }
 
     default void assertNotDevMode() {
         assertFalse(getOutput().contains("Running the server in dev mode."),
-                () -> "The standard output:\n" + getOutput() + "does include the Start Dev output");
+                () -> "The standard output:\n" + getOutput() + "\ndoes include the Start Dev output");
     }
 
     default void assertStartedDevMode() {
         assertTrue(getOutput().contains("Running the server in dev mode."),
-                () -> "The standard output:\n" + getOutput() + "doesn't include the Start Dev output");
+                () -> "The standard output:\n" + getOutput() + "\ndoesn't include the Start Dev output");
     }
 
     default void assertError(String msg) {
@@ -80,32 +66,35 @@ public interface CLIResult extends LaunchResult {
                 () -> "The Error Output:\n " + getErrorOutput() + "\ndoesn't contains " + msg);
     }
 
-    default void assertHelp(String command) {
-        if (command == null) {
-            fail("No command provided");
-        }
-
-        CommandLine cmd = Picocli.createCommandLine(Arrays.asList(command, "--help"));
-
-        if (isDistribution()) {
-            cmd.setCommandName("kc.sh");
-        }
-
-        try (
-                ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-                PrintStream printStream = new PrintStream(outStream, true)
-        ) {
-            if ("kc.sh".equals(command)) {
-                cmd.usage(printStream);
-            } else {
-                cmd.getSubcommands().get(command).usage(printStream);
-            }
-
-            // not very reliable, we should be comparing the output with some static reference to the help message.
-            assertTrue(getOutput().trim().equals(outStream.toString().trim()),
-                    () -> "The Output:\n " + getOutput() + "\ndoesnt't contains " + outStream.toString().trim());
-        } catch (IOException cause) {
+    default void assertHelp() {
+        try {
+            Approvals.verify(getOutput());
+        } catch (Exception cause) {
             throw new RuntimeException("Failed to assert help", cause);
         }
+    }
+
+    default void assertMessage(String message) {
+        assertTrue(getOutput().contains(message));
+    }
+
+    default void assertBuild() {
+        assertMessage("Server configuration updated and persisted");
+    }
+
+    default void assertNoBuild() {
+        assertFalse(getOutput().contains("Server configuration updated and persisted"));
+    }
+
+    default boolean isClustered() {
+        return getOutput().contains("Starting JGroups channel `ISPN`");
+    }
+
+    default void assertLocalCache() {
+        assertFalse(isClustered());
+    }
+
+    default void assertClusteredCache() {
+        assertTrue(isClustered());
     }
 }

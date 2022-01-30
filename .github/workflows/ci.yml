@@ -425,6 +425,13 @@ jobs:
           find . -path '*/target/surefire-reports/*.xml' | zip -q reports-quarkus-tests.zip -@
           exit $TEST_RESULT
 
+      - name: Run Quarkus Storage Tests
+        run: |
+          mvn clean install -nsu -B -f quarkus/tests/pom.xml -Ptest-database -Dtest=PostgreSQLStartDatabaseTest | misc/log/trimmer.sh
+          TEST_RESULT=${PIPESTATUS[0]}
+          find . -path '*/target/surefire-reports/*.xml' | zip -q reports-quarkus-tests.zip -@
+          exit $TEST_RESULT
+
       - name: Quarkus test reports
         uses: actions/upload-artifact@v2
         if: failure()

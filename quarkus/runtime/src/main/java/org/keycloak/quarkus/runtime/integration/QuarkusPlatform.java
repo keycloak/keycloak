@@ -65,18 +65,6 @@ public class QuarkusPlatform implements PlatformProvider {
         }
     }
 
-    /**
-     * Similar behavior as per {@code #exitOnError} but convenient to throw a {@link InitializationException} with a single
-     * {@code cause}
-     * 
-     * @param cause the cause
-     * @throws InitializationException the initialization exception with the given {@code cause}.
-     */
-    public static void exitOnError(Throwable cause) throws InitializationException{
-        addInitializationException(cause);
-        exitOnError();
-    }
-
     Runnable startupHook;
     Runnable shutdownHook;
 
@@ -155,7 +143,7 @@ public class QuarkusPlatform implements PlatformProvider {
             } else {
                 String dataDir = Environment.getDataDir();
                 tmpDir = new File(dataDir, "tmp");
-                tmpDir.mkdir();
+                tmpDir.mkdirs();
             }
 
             if (tmpDir.isDirectory()) {

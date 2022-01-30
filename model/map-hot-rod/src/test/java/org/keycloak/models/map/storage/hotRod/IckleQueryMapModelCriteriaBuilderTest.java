@@ -20,6 +20,7 @@ package org.keycloak.models.map.storage.hotRod;
 import org.junit.Test;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.map.storage.hotRod.client.HotRodClientEntity;
+import org.keycloak.models.map.storage.hotRod.client.HotRodClientEntityDelegate;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 
@@ -36,9 +37,9 @@ import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.crit
 public class IckleQueryMapModelCriteriaBuilderTest {
     @Test
     public void testSimpleIckleQuery() {
-        IckleQueryMapModelCriteriaBuilder<String, HotRodClientEntity, ClientModel> v = new IckleQueryMapModelCriteriaBuilder<>();
-        IckleQueryMapModelCriteriaBuilder<String, HotRodClientEntity, ClientModel> mcb = v.compare(CLIENT_ID, ModelCriteriaBuilder.Operator.EQ, 3);
-        assertThat(mcb.getIckleQuery(), is(equalTo("FROM org.keycloak.models.map.storage.hotrod.HotRodClientEntity c WHERE (c.clientId = :clientId0)")));
+        IckleQueryMapModelCriteriaBuilder<HotRodClientEntity, ClientModel> v = new IckleQueryMapModelCriteriaBuilder<>(HotRodClientEntity.class);
+        IckleQueryMapModelCriteriaBuilder<HotRodClientEntity, ClientModel> mcb = v.compare(CLIENT_ID, ModelCriteriaBuilder.Operator.EQ, 3);
+        assertThat(mcb.getIckleQuery(), is(equalTo("FROM kc.HotRodClientEntity c WHERE (c.clientId = :clientId0)")));
         assertThat(mcb.getParameters().entrySet(), hasSize(1));
         assertThat(mcb.getParameters(), hasEntry("clientId0", 3));
 
@@ -46,7 +47,7 @@ public class IckleQueryMapModelCriteriaBuilderTest {
         mcb = v.compare(CLIENT_ID, ModelCriteriaBuilder.Operator.EQ, 4)
                 .compare(ID, ModelCriteriaBuilder.Operator.EQ, 5);
 
-        assertThat(mcb.getIckleQuery(), is(equalTo("FROM org.keycloak.models.map.storage.hotrod.HotRodClientEntity c WHERE ((c.clientId = :clientId0) AND (c.id = :id0))")));
+        assertThat(mcb.getIckleQuery(), is(equalTo("FROM kc.HotRodClientEntity c WHERE ((c.clientId = :clientId0) AND (c.id = :id0))")));
         assertThat(mcb.getParameters().entrySet(), hasSize(2));
         assertThat(mcb.getParameters(), allOf(hasEntry("clientId0", 4), hasEntry("id0", 5)));
     }
@@ -55,16 +56,16 @@ public class IckleQueryMapModelCriteriaBuilderTest {
     @Test
     public void testSimpleIckleQueryFlashedFromDefault() {
         DefaultModelCriteria<ClientModel> v = criteria();
-        IckleQueryMapModelCriteriaBuilder<String, HotRodClientEntity, ClientModel> mcb = v.compare(CLIENT_ID, ModelCriteriaBuilder.Operator.EQ, 3).flashToModelCriteriaBuilder(new IckleQueryMapModelCriteriaBuilder<>());
-        assertThat(mcb.getIckleQuery(), is(equalTo("FROM org.keycloak.models.map.storage.hotrod.HotRodClientEntity c WHERE (c.clientId = :clientId0)")));
+        IckleQueryMapModelCriteriaBuilder<HotRodClientEntity, ClientModel> mcb = v.compare(CLIENT_ID, ModelCriteriaBuilder.Operator.EQ, 3).flashToModelCriteriaBuilder(new IckleQueryMapModelCriteriaBuilder<>(HotRodClientEntity.class));
+        assertThat(mcb.getIckleQuery(), is(equalTo("FROM kc.HotRodClientEntity c WHERE (c.clientId = :clientId0)")));
         assertThat(mcb.getParameters().entrySet(), hasSize(1));
         assertThat(mcb.getParameters(), hasEntry("clientId0", 3));
 
 
         mcb = v.compare(CLIENT_ID, ModelCriteriaBuilder.Operator.EQ, 4)
-                .compare(ID, ModelCriteriaBuilder.Operator.EQ, 5).flashToModelCriteriaBuilder(new IckleQueryMapModelCriteriaBuilder<>());
+                .compare(ID, ModelCriteriaBuilder.Operator.EQ, 5).flashToModelCriteriaBuilder(new IckleQueryMapModelCriteriaBuilder<>(HotRodClientEntity.class));
 
-        assertThat(mcb.getIckleQuery(), is(equalTo("FROM org.keycloak.models.map.storage.hotrod.HotRodClientEntity c WHERE ((c.clientId = :clientId0) AND (c.id = :id0))")));
+        assertThat(mcb.getIckleQuery(), is(equalTo("FROM kc.HotRodClientEntity c WHERE ((c.clientId = :clientId0) AND (c.id = :id0))")));
         assertThat(mcb.getParameters().entrySet(), hasSize(2));
         assertThat(mcb.getParameters(), allOf(hasEntry("clientId0", 4), hasEntry("id0", 5)));
     }

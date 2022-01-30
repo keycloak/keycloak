@@ -17,10 +17,11 @@
 
 package org.keycloak.protocol.oidc;
 
+import static org.keycloak.protocol.oidc.OIDCConfigAttributes.USE_LOWER_CASE_IN_TOKEN_RESPONSE;
+
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.utils.StringUtil;
@@ -175,6 +176,14 @@ public class OIDCAdvancedConfigWrapper {
     public void setUseRefreshToken(boolean useRefreshToken) {
         String val = String.valueOf(useRefreshToken);
         setAttribute(OIDCConfigAttributes.USE_REFRESH_TOKEN, val);
+    }
+
+    public boolean isUseLowerCaseInTokenResponse() {
+        return Boolean.parseBoolean(getAttribute(USE_LOWER_CASE_IN_TOKEN_RESPONSE, "false"));
+    }
+
+    public void setUseLowerCaseInTokenResponse(boolean useRefreshToken) {
+        setAttribute(USE_LOWER_CASE_IN_TOKEN_RESPONSE, String.valueOf(useRefreshToken));
     }
 
     /**

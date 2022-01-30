@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.admin.group;
 
 import com.google.common.collect.Comparators;
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
@@ -62,6 +63,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.Response.Status;
 import static org.hamcrest.Matchers.*;
@@ -1117,6 +1120,18 @@ public class GroupTest extends AbstractGroupTest {
 
         assertEquals(new Long(allGroups.size()), realm.groups().count(true).get("count"));
         assertEquals(new Long(allGroups.size() + 1), realm.groups().count(false).get("count"));
+        //add another subgroup
+        GroupRepresentation level2Group2 = new GroupRepresentation();
+        level2Group2.setName("group111111");
+        realm.groups().group(firstGroupId).subGroup(level2Group2);
+        //search and count for group with string group11 -> return 2 top level group, group11 and group0 having subgroups group1111 and group111111
+        search = realm.groups().groups("group11",0,10);
+        assertEquals(2, search.size());
+        GroupRepresentation group0 = search.stream().filter(group -> "group0".equals(group.getName())).findAny().orElseGet(null);
+        assertNotNull(group0);
+        assertEquals(2,group0.getSubGroups().size());
+        assertThat(group0.getSubGroups().stream().map(GroupRepresentation::getName).collect(Collectors.toList()), Matchers.containsInAnyOrder("group1111", "group111111"));
+        assertEquals(new Long(search.size()), realm.groups().count("group11").get("count"));
     }
 
     @Test

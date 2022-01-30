@@ -25,8 +25,9 @@ final class DatabasePropertyMappers {
                         .build(),
                 builder().from("db-driver")
                         .mapFrom("db")
+                        .defaultValue(Database.getDriver("h2-file").get())
                         .to("quarkus.datasource.jdbc.driver")
-                        .transformer((db, context) -> Database.getDriver(db).orElse(Database.getDriver("h2-file").get()))
+                        .transformer((db, context) -> Database.getDriver(db).orElse(db))
                         .hidden(true)
                         .build(),
                 builder().from("db").
@@ -38,12 +39,11 @@ final class DatabasePropertyMappers {
                         .expectedValues(asList(Database.getAliases()))
                         .build(),
                 builder().from("db-tx-type")
-                        .mapFrom("db")
+                        .defaultValue("xa")
                         .to("quarkus.datasource.jdbc.transactions")
-                        .transformer((db, context) -> "xa")
                         .hidden(true)
                         .build(),
-                builder().from("db.url")
+                builder().from("db-url")
                         .to("quarkus.datasource.jdbc.url")
                         .mapFrom("db")
                         .transformer((value, context) -> Database.getDefaultUrl(value).orElse(value))
@@ -51,48 +51,48 @@ final class DatabasePropertyMappers {
                                 "For instance, if using 'postgres', the default JDBC URL would be 'jdbc:postgresql://localhost/keycloak'. ")
                         .paramLabel("jdbc-url")
                         .build(),
-                builder().from("db.url.host")
-                        .to("kc.db.url.host")
+                builder().from("db-url-host")
+                        .to("kc.db-url-host")
                         .description("Sets the hostname of the default JDBC URL of the chosen vendor. If the `db-url` option is set, this option is ignored.")
                         .paramLabel("hostname")
                         .build(),
-                builder().from("db.url.database")
-                        .to("kc.db.url.database")
+                builder().from("db-url-database")
+                        .to("kc.db-url-database")
                         .description("Sets the database name of the default JDBC URL of the chosen vendor. If the `db-url` option is set, this option is ignored.")
                         .paramLabel("dbname")
                         .build(),
-                builder().from("db.url.properties")
-                        .to("kc.db.url.properties")
+                builder().from("db-url-properties")
+                        .to("kc.db-url-properties")
                         .description("Sets the properties of the default JDBC URL of the chosen vendor. If the `db-url` option is set, this option is ignored.")
                         .paramLabel("properties")
                         .build(),
-                builder().from("db.username")
+                builder().from("db-username")
                         .to("quarkus.datasource.username")
                         .description("The username of the database user.")
                         .paramLabel("username")
                         .build(),
-                builder().from("db.password")
+                builder().from("db-password")
                         .to("quarkus.datasource.password")
                         .description("The password of the database user.")
                         .paramLabel("password")
                         .isMasked(true)
                         .build(),
-                builder().from("db.schema")
-                        .to("quarkus.datasource.schema")
+                builder().from("db-schema")
+                        .to("quarkus.hibernate-orm.database.default-schema")
                         .description("The database schema to be used.")
                         .paramLabel("schema")
                         .build(),
-                builder().from("db.pool.initial-size")
+                builder().from("db-pool-initial-size")
                         .to("quarkus.datasource.jdbc.initial-size")
                         .description("The initial size of the connection pool.")
                         .paramLabel("size")
                         .build(),
-                builder().from("db.pool.min-size")
+                builder().from("db-pool-min-size")
                         .to("quarkus.datasource.jdbc.min-size")
                         .description("The minimal size of the connection pool.")
                         .paramLabel("size")
                         .build(),
-                builder().from("db.pool.max-size")
+                builder().from("db-pool-max-size")
                         .to("quarkus.datasource.jdbc.max-size")
                         .defaultValue(String.valueOf(100))
                         .description("The maximum size of the connection pool.")

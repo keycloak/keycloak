@@ -1,0 +1,20 @@
+<#macro build parameters>
+[source,bash]
+----
+bin/kc.[sh|bat] build ${parameters}
+----
+</#macro>
+
+<#macro start parameters>
+[source,bash]
+----
+bin/kc.[sh|bat] start ${parameters}
+----
+</#macro>
+
+<#macro startdev parameters>
+[source,bash]
+----
+bin/kc.[sh|bat] start-dev ${parameters}
+----
+</#macro>

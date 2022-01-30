@@ -1,0 +1,82 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+
+<@tmpl.guide
+title="Configuring a reverse proxy"
+summary="Learn how to configure Keycloak together with a reverse proxy, api gateway or load balancer."
+priority=20
+includedOptions="proxy proxy-*">
+
+It is pretty common nowadays to use a reverse proxy in distributed environments. If you want to use Keycloak together with such a proxy, you can use different proxy modes depending on the TLS termination in your specific environment:
+
+== Available proxy modes
+The `none` mode disables proxy support. It is the default mode.
+
+The `edge` mode enables communication through HTTP between the proxy and Keycloak. This mode is suitable for deployments with a highly secure internal network where the reverse proxy keeps a secure connection (HTTP over TLS) with clients while communicating with Keycloak using HTTP.
+
+The `reencrypt` mode requires communication through HTTPS between the proxy and Keycloak. This mode is suitable for deployments where internal communication between the reverse proxy and Keycloak should also be protected, and different keys and certificates are used on the reverse proxy as well as on Keycloak.
+
+The `passthrough` mode enables communication through HTTP or HTTPS between the proxy and Keycloak. This mode is suitable for deployments where the reverse proxy is not terminating TLS, but only forwarding the requests to the Keycloak server so that secure connections between the server and clients are based on the keys and certificates used by the Keycloak server itself.
+
+== Configure the proxy mode in Keycloak
+To select the proxy mode, run:
+
+<@kc.start parameters="--proxy <mode>"/>
+
+== Configure the reverse proxy
+Make sure your reverse proxy is configured correctly. To do so, please:
+
+* Properly set X-Forwarded-For and X-Forwarded-Proto HTTP headers.
+
+* Preserve the original 'Host' HTTP header.
+
+Please consult the documentation of your reverse proxy on how to set these headers.
+
+Take extra precautions to ensure that the X-Forwarded-For header is set by your reverse proxy. If it is not configured correctly, rogue clients can set this header themselves and trick Keycloak into thinking the client is connecting from a different IP address than it actually does. This may become really important if you are doing any black or white listing of IP addresses.
+
+=== Exposed path recommendations
+When using a reverse proxy, not all paths have to be exposed in order for Keycloak to work correctly. The recommendations on which paths to expose and which not to expose are as follows:
+
+|===
+|Keycloak Path|Reverse Proxy Path|Exposed|Reason
+
+|/
+|-
+|No
+|When exposing all paths, admin paths are exposed unnecessarily
+
+|/admin/
+| -
+|No
+|Exposed admin paths lead to an unnecessary attack vector
+
+|/js/
+| -
+|No
+|It's good practice to not use external js for the javascript client, but bake it into your public client instead
+
+|/welcome/
+| -
+|No
+|No need to expose the welcome page after initial installation.
+
+|/realms/
+|/realms/
+|Yes
+|Needed to work correctly (e.g. oidc endpoints)
+
+|/resources/
+|/resources/
+|Yes
+|Needed to serve assets correctly. May be served from a CDN instead of the Keycloak path.
+
+|/robots.txt
+|/robots.txt
+|Yes
+|Search engine rules
+
+|===
+We assume you run Keycloak on the root path `/` on your reverse proxy/gateways public API. If not, prefix the path with your desired one.
+
+</@tmpl.guide>

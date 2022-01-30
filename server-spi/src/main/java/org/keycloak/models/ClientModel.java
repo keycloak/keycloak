@@ -50,7 +50,7 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
         public static final SearchableModelField<ClientModel> ALWAYS_DISPLAY_IN_CONSOLE = new SearchableModelField<>("alwaysDisplayInConsole", Boolean.class);
 
         /**
-         * Search for attribute value. The parameters is a pair {@code (attribute_name, values...)} where {@code attribute_name}
+         * Search for attribute value. The parameters is a pair {@code (attribute_name, value)} where {@code attribute_name}
          * is always checked for equality, and the value is checked per the operator.
          */
         public static final SearchableModelField<ClientModel> ATTRIBUTE          = new SearchableModelField<>("attribute", String[].class);

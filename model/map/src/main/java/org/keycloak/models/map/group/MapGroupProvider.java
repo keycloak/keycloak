@@ -32,6 +32,8 @@ import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.QueryParameters;
 
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
+
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -128,11 +130,7 @@ public class MapGroupProvider implements GroupProvider {
 
     @Override
     public Long getGroupsCountByNameContaining(RealmModel realm, String search) {
-        DefaultModelCriteria<GroupModel> mcb = criteria();
-        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%");
-
-        return tx.getCount(withCriteria(mcb));
+        return searchForGroupByNameStream(realm, search, null, null).count();
     }
 
     @Override

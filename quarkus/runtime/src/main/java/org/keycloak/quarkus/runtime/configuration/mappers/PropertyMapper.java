@@ -16,13 +16,18 @@
  */
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
+import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR_CHAR;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.toCliFormat;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.toEnvVarFormat;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.function.BiFunction;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
-import org.keycloak.quarkus.runtime.cli.Picocli;
+
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 public class PropertyMapper {
@@ -30,8 +35,8 @@ public class PropertyMapper {
     static PropertyMapper IDENTITY = new PropertyMapper(null, null, null, null, null,
             false,null, null, false,Collections.emptyList(),null, true) {
         @Override
-        public ConfigValue getOrDefault(String name, ConfigSourceInterceptorContext context, ConfigValue current) {
-            return current;
+        public ConfigValue getConfigValue(String name, ConfigSourceInterceptorContext context) {
+            return context.proceed(name);
         }
     };
 
@@ -47,8 +52,8 @@ public class PropertyMapper {
     private final ConfigCategory category;
     private final String paramLabel;
     private final boolean hidden;
+    private final String envVarFormat;
     private String cliFormat;
-
 
     PropertyMapper(String from, String to, String defaultValue, BiFunction<String, ConfigSourceInterceptorContext, String> mapper,
             String mapFrom, boolean buildTime, String description, String paramLabel, boolean mask, Iterable<String> expectedValues,
@@ -65,7 +70,8 @@ public class PropertyMapper {
         this.expectedValues = expectedValues == null ? Collections.emptyList() : expectedValues;
         this.category = category != null ? category : ConfigCategory.GENERAL;
         this.hidden = hidden;
-        setCliFormat(this.from);
+        this.cliFormat = toCliFormat(from);
+        this.envVarFormat = toEnvVarFormat(this.from);
     }
 
     public static PropertyMapper.Builder builder(String fromProp, String toProp) {
@@ -80,26 +86,35 @@ public class PropertyMapper {
         return value;
     }
 
-    ConfigValue getOrDefault(ConfigSourceInterceptorContext context, ConfigValue current) {
-        return getOrDefault(null, context, current);        
+    ConfigValue getConfigValue(ConfigSourceInterceptorContext context) {
+        return getConfigValue(to, context);
     }
 
-    ConfigValue getOrDefault(String name, ConfigSourceInterceptorContext context, ConfigValue current) {
+    ConfigValue getConfigValue(String name, ConfigSourceInterceptorContext context) {
         String from = this.from;
 
-        if (to != null && to.endsWith(".")) {
+        if (to != null && to.endsWith(OPTION_PART_SEPARATOR)) {
             // in case mapping is based on prefixes instead of full property names
-            from = name.replace(to.substring(0, to.lastIndexOf('.')), from.substring(0, from.lastIndexOf('.')));
+            from = name.replace(to.substring(0, to.lastIndexOf('.')), from.substring(0, from.lastIndexOf(OPTION_PART_SEPARATOR_CHAR)));
         }
 
-        // try to obtain the value for the property we want to map
+        // try to obtain the value for the property we want to map first
         ConfigValue config = context.proceed(from);
 
         if (config == null) {
             if (mapFrom != null) {
                 // if the property we want to map depends on another one, we use the value from the other property to call the mapper
-                String parentKey = MicroProfileConfigProvider.NS_KEYCLOAK + "." + mapFrom;
+                String parentKey = MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + mapFrom;
                 ConfigValue parentValue = context.proceed(parentKey);
+
+                if (parentValue == null) {
+                    // parent value not explicitly set, try to resolve the default value set to the parent property
+                    PropertyMapper parentMapper = PropertyMappers.getMapper(parentKey);
+
+                    if (parentMapper != null) {
+                        parentValue = ConfigValue.builder().withValue(parentMapper.getDefaultValue()).build();
+                    }
+                }
 
                 if (parentValue != null) {
                     ConfigValue value = transformValue(parentValue.getValue(), context);
@@ -107,28 +122,23 @@ public class PropertyMapper {
                     if (value != null) {
                         return value;
                     }
+
+                    return parentValue;
                 }
             }
 
-            // if not defined, return the current value from the property as a default if the property is not explicitly set
-            if (defaultValue == null
-                    || (current != null && !current.getConfigSourceName().equalsIgnoreCase("default values"))) {
-                if (defaultValue == null && mapper != null) {
-                    String value = current == null ? null : current.getValue();
-                    return ConfigValue.builder().withName(to).withValue(mapper.apply(value, context)).build();
-                }
-                return current;
-            }
-
-            if (mapper != null) {
+            if (defaultValue != null) {
                 return transformValue(defaultValue, context);
             }
-            
-            return ConfigValue.builder().withName(to).withValue(defaultValue).build();
-        }
 
-        if (mapFrom != null) {
-            return config;
+            // now tries any defaults from quarkus
+            ConfigValue current = context.proceed(name);
+
+            if (current != null) {
+                return transformValue(current.getValue(), context);
+            }
+
+            return current;
         }
 
         if (config.getName().equals(name)) {
@@ -139,7 +149,7 @@ public class PropertyMapper {
 
         // we always fallback to the current value from the property we are mapping
         if (value == null) {
-            return current;
+            return context.proceed(name);
         }
 
         return value;
@@ -183,6 +193,10 @@ public class PropertyMapper {
         return cliFormat;
     }
 
+    public String getEnvVarFormat() {
+        return envVarFormat;
+    }
+
     boolean isMask() {
         return mask;
     }
@@ -203,10 +217,6 @@ public class PropertyMapper {
         }
 
         return null;
-    }
-
-    private void setCliFormat(String from) {
-        cliFormat = Picocli.ARG_PREFIX + PropertyMappers.toCLIFormat(from).substring(3);
     }
 
     public static class Builder {

@@ -43,7 +43,12 @@ public class SAMLRequestParser {
 
     public static SAMLDocumentHolder parseRequestRedirectBinding(String samlMessage) {
         InputStream is;
-        is = RedirectBindingUtil.base64DeflateDecode(samlMessage);
+        try {
+            is = RedirectBindingUtil.base64DeflateDecode(samlMessage);
+        } catch (IOException e) {
+            logger.samlBase64DecodingError(e);
+            return null;
+        }
         if (log.isDebugEnabled()) {
             String message = null;
             try {
@@ -105,7 +110,13 @@ public class SAMLRequestParser {
     }
 
     public static SAMLDocumentHolder parseResponseRedirectBinding(String samlMessage) {
-        InputStream is = RedirectBindingUtil.base64DeflateDecode(samlMessage);
+        InputStream is;
+        try {
+            is = RedirectBindingUtil.base64DeflateDecode(samlMessage);
+        } catch (IOException e) {
+            logger.samlBase64DecodingError(e);
+            return null;
+        }
         if (log.isDebugEnabled()) {
             String message = null;
             try {

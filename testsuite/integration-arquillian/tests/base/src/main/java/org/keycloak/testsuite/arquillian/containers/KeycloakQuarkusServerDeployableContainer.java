@@ -46,9 +46,6 @@ import org.keycloak.testsuite.arquillian.SuiteContext;
 public class KeycloakQuarkusServerDeployableContainer implements DeployableContainer<KeycloakQuarkusConfiguration> {
 
     private static final Logger log = Logger.getLogger(KeycloakQuarkusServerDeployableContainer.class);
-    public static final String CONF_PERSISTED_PROPERTIES_FILENAME = "data/generated/persisted.properties";
-    public static final String SPI_PROVIDER_PROPERTY_PREFIX = "kc.spi-";
-    public static final String SPI_PROVIDER_PROPERTY_SUFFIX = "-provider";
 
     private KeycloakQuarkusConfiguration configuration;
     private Process container;
@@ -129,23 +126,6 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
 
     }
 
-    /**
-     * Get the currently configured default provider for the passed spi.
-     * 
-     * @param spi the spi to get the current default provider for (dash-cased)
-     * @return the current configured provider or null if not configured
-     */
-    public String getCurrentlyConfiguredSpiProviderFor(String spi) {
-        try {
-            File persistedPropertiesFile = configuration.getProvidersPath().resolve(CONF_PERSISTED_PROPERTIES_FILENAME).toFile();
-            Properties props = new Properties();
-            props.load(new FileInputStream(persistedPropertiesFile));
-            return props.get(SPI_PROVIDER_PROPERTY_PREFIX + spi + SPI_PROVIDER_PROPERTY_SUFFIX).toString().trim();
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
     private Process startContainer() throws IOException {
         ProcessBuilder pb = new ProcessBuilder(getProcessCommands());
         File wrkDir = configuration.getProvidersPath().resolve("bin").toFile();
@@ -172,16 +152,15 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
 
         commands.add("./kc.sh");
         commands.add("start");
-        commands.add("-Dquarkus.http.root-path=/auth");
-        commands.add("--auto-build");
         commands.add("--http-enabled=true");
 
-        if (configuration.getDebugPort() > 0) {
+        if (Boolean.parseBoolean(System.getProperty("auth.server.debug", "false"))) {
             commands.add("--debug");
-            commands.add(Integer.toString(configuration.getDebugPort()));
-        } else if (Boolean.parseBoolean(System.getProperty("auth.server.debug", "false"))) {
-            commands.add("--debug");
-            commands.add(System.getProperty("auth.server.debug.port", "5005"));
+            if (configuration.getDebugPort() > 0) {
+                commands.add(Integer.toString(configuration.getDebugPort()));
+            } else {
+                commands.add(System.getProperty("auth.server.debug.port", "5005"));
+            }
         }
 
         commands.add("--http-port=" + configuration.getBindHttpPort());
@@ -191,19 +170,23 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
             commands.add("-Djboss.node.name=" + configuration.getRoute());
         }
 
-        commands.add("--cluster=" + System.getProperty("auth.server.quarkus.cluster.config", "local"));
-        commands.addAll(getAdditionalBuildArgs());
+        // only run auto-build during restarts or when running cluster tests
+        if (restart.get() || "ha".equals(System.getProperty("auth.server.quarkus.cluster.config"))) {
+            commands.add("--auto-build");
+            commands.add("--http-relative-path=/auth");
 
-        if (!containsUserProfileSpiConfiguration(commands)) {
-            // ensure that at least one user profile provider is configured
-            commands.add("--spi-user-profile-provider=declarative-user-profile");
+            String cacheMode = System.getProperty("auth.server.quarkus.cluster.config", "local");
+
+            if ("local".equals(cacheMode)) {
+                commands.add("--cache=local");
+            } else {
+                commands.add("--cache-config-file=cluster-" + cacheMode + ".xml");
+            }
         }
 
-        return commands.toArray(new String[0]);
-    }
+        commands.addAll(getAdditionalBuildArgs());
 
-    private boolean containsUserProfileSpiConfiguration(List<String> commands) {
-        return commands.stream().anyMatch(s -> s.startsWith("--spi-user-profile-provider="));
+        return commands.toArray(new String[0]);
     }
 
     private void waitForReadiness() throws MalformedURLException, LifecycleException {

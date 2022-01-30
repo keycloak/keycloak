@@ -23,25 +23,37 @@ import org.keycloak.it.junit5.extension.CLITest;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
+import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+
+import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
 
 @CLITest
-class ShowConfigCommandTest {
+public class ShowConfigCommandTest {
 
     @Test
-    @Launch({ "show-config" })
+    @Launch({ ShowConfig.NAME })
     void testShowConfigCommandShowsRuntimeConfig(LaunchResult result) {
         Assertions.assertTrue(result.getOutput()
                 .contains("Runtime Configuration"));
     }
 
     @Test
-    @Launch({ "show-config", "all" })
+    @Launch({ ShowConfig.NAME, "all" })
     void testShowConfigCommandWithAllShowsAllProfiles(LaunchResult result) {
         Assertions.assertTrue(result.getOutput()
                 .contains("Runtime Configuration"));
         Assertions.assertTrue(result.getOutput()
                 .contains("Quarkus Configuration"));
-        Assertions.assertTrue(result.getOutput()
-                .contains("Profile \"import_export\" Configuration"));
+    }
+
+    @Test
+    @Launch({ CONFIG_FILE_LONG_NAME+"=src/test/resources/ShowConfigCommandTest/keycloak.conf", ShowConfig.NAME, "all" })
+    void testShowConfigCommandHidesCredentialsInProfiles(LaunchResult result) {
+        String output = result.getOutput();
+        Assertions.assertFalse(output.contains("testpw1"));
+        Assertions.assertFalse(output.contains("testpw2"));
+        Assertions.assertFalse(output.contains("testpw3"));
+        Assertions.assertTrue(output.contains("kc.db-password =  " + PropertyMappers.VALUE_MASK));
     }
 }

@@ -1,0 +1,32 @@
+<#macro expectedValues option>
+<#list ctx.options.getOption(option).expectedValues as expectedValue>
+* ${expectedValue}
+</#list>
+</#macro>
+
+<#macro list options>
+[cols="12a,4,4,1",role="options"]
+|===
+| |Type|Default|
+
+<#list options as option>
+|
+[.options-key]#${option.key}#
+
+[.options-description]#${option.description}#
+
+[#option-extended-${option.key},role="options-extended"]
+!===
+!<#if option.descriptionExtended?has_content>[.options-description-extended]#${option.descriptionExtended!}#</#if>
+![.options-description-example]#*CLI:* `${option.keyCli}`#
+![.options-description-example]#*Env:* `${option.keyEnv}`#
+!===
+|<#if option.expectedValues?has_content>[.options-type]#${option.expectedValues?join(", ")}#</#if>
+
+|<#if option.defaultValue?has_content>[.options-default]#${option.defaultValue!}#</#if>
+
+|<#if option.build>icon:tools[role=options-build]</#if>
+</#list>
+
+|===
+</#macro>
