@@ -17,17 +17,24 @@
 
 package org.keycloak.models.cache.infinispan;
 
-import java.util.function.Supplier;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
-import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.ProtocolMapperModel;
@@ -44,6 +51,7 @@ import org.keycloak.models.cache.infinispan.entities.CachedUser;
 import org.keycloak.models.cache.infinispan.entities.CachedUserConsent;
 import org.keycloak.models.cache.infinispan.entities.CachedUserConsents;
 import org.keycloak.models.cache.infinispan.entities.UserListQuery;
+import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.models.cache.infinispan.events.UserCacheRealmInvalidationEvent;
 import org.keycloak.models.cache.infinispan.events.UserConsentsUpdatedEvent;
 import org.keycloak.models.cache.infinispan.events.UserFederationLinkRemovedEvent;
@@ -58,15 +66,6 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.client.ClientStorageProvider;
-
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -248,7 +247,7 @@ public class UserCacheSession implements UserCache.Streams {
                 realm,
                 username,
                 getUserByUsernameCacheKey(realm.getId(), username),
-                () -> getDelegate().getUserByUsername(realm, username)
+                usernameToLookFor -> getDelegate().getUserByUsername(realm, usernameToLookFor)
         );
     }
 
@@ -339,7 +338,7 @@ public class UserCacheSession implements UserCache.Streams {
                 realm,
                 email,
                 getUserByEmailCacheKey(realm.getId(), email),
-                () -> getDelegate().getUserByEmail(realm, email)
+                emailToLookFor -> getDelegate().getUserByEmail(realm, emailToLookFor)
         );
     }
 
@@ -349,20 +348,20 @@ public class UserCacheSession implements UserCache.Streams {
                 realm,
                 emailOrUsername,
                 getUserByEmailOrUsernameCacheKey(realm.getId(), emailOrUsername),
-                () -> getDelegate().getUserByEmailOrUsername(realm, emailOrUsername)
+                emailOrUsernameToLookFor -> getDelegate().getUserByEmailOrUsername(realm, emailOrUsernameToLookFor)
         );
     }
 
-    private UserModel getUserBySimpleCriterion(RealmModel realm, String criterionValue, String cacheKey, Supplier<UserModel> fallbackSupplier) {
+    private UserModel getUserBySimpleCriterion(RealmModel realm, String criterionValue, String cacheKey, Function<String, UserModel> fallbackSupplier) {
         logger.tracev("getUserByCriterion: {0}", criterionValue);
         criterionValue = criterionValue.toLowerCase();
         if (realmInvalidations.contains(realm.getId())) {
             logger.tracev("realmInvalidations");
-            return fallbackSupplier.get();
+            return fallbackSupplier.apply(criterionValue);
         }
         if (invalidations.contains(cacheKey)) {
             logger.tracev("invalidations");
-            return fallbackSupplier.get();
+            return fallbackSupplier.apply(criterionValue);
         }
         UserListQuery query = cache.get(cacheKey, UserListQuery.class);
 
@@ -370,7 +369,7 @@ public class UserCacheSession implements UserCache.Streams {
         if (query == null) {
             logger.tracev("query null");
             Long loaded = cache.getCurrentRevision(cacheKey);
-            UserModel model = fallbackSupplier.get();
+            UserModel model = fallbackSupplier.apply(criterionValue);
             if (model == null) {
                 logger.tracev("model from delegate null");
                 return null;
@@ -393,7 +392,7 @@ public class UserCacheSession implements UserCache.Streams {
             userId = query.getUsers().iterator().next();
             if (invalidations.contains(userId)) {
                 logger.tracev("invalidated cache return delegate");
-                return fallbackSupplier.get();
+                return fallbackSupplier.apply(criterionValue);
 
             }
             logger.trace("return getUserById");
