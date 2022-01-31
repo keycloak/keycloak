@@ -398,6 +398,9 @@ public class ConfigurationTest {
 
         Environment.setProfile("prod");
         assertEquals("true", createConfig().getConfigValue("kc.hostname-strict").getValue());
+
+        Environment.setProfile("prod");
+        assertEquals("false", createConfig().getConfigValue("kc.spi-sticky-session-encoder-infinispan-should-attach-route").getValue());
     }
 
     private Config.Scope initConfig(String... scope) {
