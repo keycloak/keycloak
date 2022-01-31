@@ -34,6 +34,18 @@ jobs:
         run: |
           mvn clean install -DskipTests -DskipExamples -DskipTestsuite
 
-      - name: Build the Keycloak Operator
+      - name: Setup Minikube-Kubernetes
+        uses: manusa/actions-setup-minikube@v2.4.3
+        with:
+          minikube version: v1.24.0
+          kubernetes version: v1.22.3
+          github token: ${{ secrets.GITHUB_TOKEN }}
+          driver: docker
+      - name: Build , deploy and test operator in minikube
         run: |
-          mvn clean package -nsu -B -e -pl operator -Doperator -Dquarkus.container-image.build=true -Dquarkus.kubernetes.deployment-target=minikube
+          cd operator
+          eval $(minikube -p minikube docker-env) 
+          mvn clean verify \
+              -Dquarkus.container-image.build=true -Dquarkus.container-image.tag=test \
+              -Dquarkus.kubernetes.deployment-target=kubernetes \
+              --no-transfer-progress -Dtest.operator.deployment=remote

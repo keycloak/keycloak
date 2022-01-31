@@ -27,16 +27,19 @@ spec:
         - containerPort: 8080
           protocol: TCP
         livenessProbe:
-          exec:
-            command:
-              - curl --head --fail --silent http://127.0.0.1:8080/health/live
-          periodSeconds: 1
+          httpGet:
+            path: /health/live
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 2
+          failureThreshold: 10
         readinessProbe:
-          exec:
-            command:
-              - curl --head --fail --silent http://127.0.0.1:8080/health/ready
-          periodSeconds: 1
-          failureThreshold: 180
+          httpGet:
+            path: /health/ready
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 2
+          failureThreshold: 10
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       terminationGracePeriodSeconds: 30

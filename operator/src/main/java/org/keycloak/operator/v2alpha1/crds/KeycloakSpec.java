@@ -16,8 +16,6 @@
  */
 package org.keycloak.operator.v2alpha1.crds;
 
-import io.fabric8.kubernetes.api.model.PodTemplate;
-
 import java.util.Map;
 
 public class KeycloakSpec {
