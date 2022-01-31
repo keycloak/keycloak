@@ -31,7 +31,6 @@ import { useAlerts } from "../components/alert/Alerts";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { PlusCircleIcon, TrashIcon } from "@patternfly/react-icons";
-import "./RealmSettingsSection.css";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import type ClientPolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyRepresentation";
 import { toNewClientPolicyCondition } from "./routes/AddCondition";
@@ -40,7 +39,9 @@ import { toEditClientPolicyCondition } from "./routes/EditCondition";
 import type { EditClientPolicyParams } from "./routes/EditClientPolicy";
 import { AddClientProfileModal } from "./AddClientProfileModal";
 import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
-import { toRealmSettings } from "./routes/RealmSettings";
+import { toClientPolicies } from "./routes/ClientPolicies";
+
+import "./RealmSettingsSection.css";
 
 type NewClientPolicyForm = Required<ClientPolicyRepresentation>;
 
@@ -275,10 +276,9 @@ export default function NewClientPolicyForm() {
         });
         addAlert(t("deleteClientPolicySuccess"), AlertVariant.success);
         history.push(
-          toRealmSettings({
+          toClientPolicies({
             realm,
-            tab: "clientPolicies",
-            subTab: "policies",
+            tab: "policies",
           })
         );
       } catch (error) {
@@ -321,10 +321,9 @@ export default function NewClientPolicyForm() {
             });
             addAlert(t("deleteClientSuccess"), AlertVariant.success);
             history.push(
-              toRealmSettings({
+              toClientPolicies({
                 realm,
-                tab: "clientPolicies",
-                subTab: "policies",
+                tab: "policies",
               })
             );
           } catch (error) {
@@ -367,10 +366,9 @@ export default function NewClientPolicyForm() {
           });
           addAlert(t("deleteClientSuccess"), AlertVariant.success);
           history.push(
-            toRealmSettings({
+            toClientPolicies({
               realm,
-              tab: "clientPolicies",
-              subTab: "policies",
+              tab: "policies",
             })
           );
         } catch (error) {
@@ -507,10 +505,9 @@ export default function NewClientPolicyForm() {
                 showAddConditionsAndProfilesForm || policyName
                   ? reset()
                   : history.push(
-                      toRealmSettings({
+                      toClientPolicies({
                         realm,
-                        tab: "clientPolicies",
-                        subTab: "policies",
+                        tab: "policies",
                       })
                     )
               }

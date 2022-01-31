@@ -2,7 +2,6 @@ import type { LocationDescriptorObject } from "history";
 import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { EditProviderCrumb } from "../RealmSettingsSection";
 
 export type JavaKeystoreSettingsParams = {
   realm: string;
@@ -10,11 +9,11 @@ export type JavaKeystoreSettingsParams = {
 };
 
 export const JavaKeystoreSettingsRoute: RouteDef = {
-  path: "/:realm/realm-settings/keys/:id/java-keystore/settings",
+  path: "/:realm/realm-settings/keys/providers/:id/java-keystore/settings",
   component: lazy(
     () => import("../key-providers/java-keystore/JavaKeystoreForm")
   ),
-  breadcrumb: () => EditProviderCrumb,
+  breadcrumb: (t) => t("realm-settings:editProvider"),
   access: "view-realm",
 };
 

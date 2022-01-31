@@ -9,7 +9,6 @@ import {
   DropdownSeparator,
   PageSection,
   Tab,
-  Tabs,
   TabTitleText,
 } from "@patternfly/react-core";
 
@@ -48,7 +47,7 @@ import ProfilesTab from "./ProfilesTab";
 import { PoliciesTab } from "./PoliciesTab";
 import { PartialImportDialog } from "./PartialImport";
 import { PartialExportDialog } from "./PartialExport";
-import { toRealmSettings } from "./routes/RealmSettings";
+import { RealmSettingsTab, toRealmSettings } from "./routes/RealmSettings";
 import { LocalizationTab } from "./LocalizationTab";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { UserRegistration } from "./UserRegistration";
@@ -57,7 +56,8 @@ import environment from "../environment";
 import helpUrls from "../help-urls";
 import { UserProfileTab } from "./user-profile/UserProfileTab";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
-import { toClientPolicies } from "./routes/ClientPolicies";
+import { ClientPoliciesTab, toClientPolicies } from "./routes/ClientPolicies";
+import { KeySubTab, toKeysTab } from "./routes/KeysTab";
 
 type RealmSettingsHeaderProps = {
   onChange: (value: boolean) => void;
@@ -188,7 +188,6 @@ export const RealmSettingsTabs = ({
   const form = useForm({ mode: "onChange", shouldUnregister: false });
   const { control, getValues, setValue, reset: resetForm } = form;
 
-  const [activeTab, setActiveTab] = useState(0);
   const [key, setKey] = useState(0);
 
   const refreshHeader = () => {
@@ -219,7 +218,7 @@ export const RealmSettingsTabs = ({
       const isRealmRenamed = realmName !== realm.realm;
       if (isRealmRenamed) {
         await refreshRealms();
-        history.push(toRealmSettings({ realm: realm.realm! }));
+        history.push(toRealmSettings({ realm: realm.realm!, tab: "general" }));
       }
       addAlert(t("saveSuccess"), AlertVariant.success);
     } catch (error) {
@@ -233,6 +232,26 @@ export const RealmSettingsTabs = ({
     defaultValue: "false",
   });
 
+  const route = (tab: RealmSettingsTab | undefined = "general") =>
+    routableTab({
+      to: toRealmSettings({ realm: realmName, tab }),
+      history,
+    });
+
+  const policiesRoute = (tab: ClientPoliciesTab) =>
+    routableTab({
+      to: toClientPolicies({
+        realm: realmName,
+        tab,
+      }),
+      history,
+    });
+
+  const keysRoute = (tab: KeySubTab) =>
+    routableTab({
+      to: toKeysTab({ realm: realmName, tab }),
+      history,
+    });
   return (
     <>
       <Controller
@@ -251,14 +270,18 @@ export const RealmSettingsTabs = ({
       />
       <PageSection variant="light" className="pf-u-p-0">
         <FormProvider {...form}>
-          <RoutableTabs isBox mountOnEnter>
+          <RoutableTabs
+            isBox
+            mountOnEnter
+            defaultLocation={toRealmSettings({
+              realm: realmName,
+              tab: "general",
+            })}
+          >
             <Tab
               title={<TabTitleText>{t("general")}</TabTitleText>}
               data-testid="rs-general-tab"
-              {...routableTab({
-                to: toRealmSettings({ realm: realmName }),
-                history,
-              })}
+              {...route()}
             >
               <RealmSettingsGeneralTab
                 save={save}
@@ -268,10 +291,7 @@ export const RealmSettingsTabs = ({
             <Tab
               title={<TabTitleText>{t("login")}</TabTitleText>}
               data-testid="rs-login-tab"
-              {...routableTab({
-                to: toRealmSettings({ realm: realmName, tab: "login" }),
-                history,
-              })}
+              {...route("login")}
             >
               <RealmSettingsLoginTab
                 refresh={refresh}
@@ -282,20 +302,14 @@ export const RealmSettingsTabs = ({
             <Tab
               title={<TabTitleText>{t("email")}</TabTitleText>}
               data-testid="rs-email-tab"
-              {...routableTab({
-                to: toRealmSettings({ realm: realmName, tab: "email" }),
-                history,
-              })}
+              {...route("email")}
             >
               <RealmSettingsEmailTab realm={realm} />
             </Tab>
             <Tab
               title={<TabTitleText>{t("themes")}</TabTitleText>}
               data-testid="rs-themes-tab"
-              {...routableTab({
-                to: toRealmSettings({ realm: realmName, tab: "themes" }),
-                history,
-              })}
+              {...route("themes")}
             >
               <RealmSettingsThemesTab
                 save={save}
@@ -305,21 +319,17 @@ export const RealmSettingsTabs = ({
             <Tab
               title={<TabTitleText>{t("realm-settings:keys")}</TabTitleText>}
               data-testid="rs-keys-tab"
-              {...routableTab({
-                to: toRealmSettings({ realm: realmName, tab: "keys" }),
-                history,
-              })}
+              {...route("keys")}
             >
-              <Tabs
-                activeKey={activeTab}
-                onSelect={(_, key) => setActiveTab(Number(key))}
+              <RoutableTabs
+                defaultLocation={toKeysTab({ realm: realmName, tab: "list" })}
               >
                 <Tab
                   id="keysList"
-                  eventKey={0}
                   data-testid="rs-keys-list-tab"
                   aria-label="keys-list-subtab"
                   title={<TabTitleText>{t("keysList")}</TabTitleText>}
+                  {...keysRoute("list")}
                 >
                   <KeysListTab realmComponents={realmComponents} />
                 </Tab>
@@ -327,8 +337,8 @@ export const RealmSettingsTabs = ({
                   id="providers"
                   data-testid="rs-providers-tab"
                   aria-label="rs-providers-tab"
-                  eventKey={1}
                   title={<TabTitleText>{t("providers")}</TabTitleText>}
+                  {...keysRoute("providers")}
                 >
                   <KeysProvidersTab
                     realmComponents={realmComponents}
@@ -336,25 +346,19 @@ export const RealmSettingsTabs = ({
                     refresh={refresh}
                   />
                 </Tab>
-              </Tabs>
+              </RoutableTabs>
             </Tab>
             <Tab
               title={<TabTitleText>{t("events")}</TabTitleText>}
               data-testid="rs-realm-events-tab"
-              {...routableTab({
-                to: toRealmSettings({ realm: realmName, tab: "events" }),
-                history,
-              })}
+              {...route("events")}
             >
               <EventsTab />
             </Tab>
             <Tab
               title={<TabTitleText>{t("localization")}</TabTitleText>}
               data-testid="rs-localization-tab"
-              {...routableTab({
-                to: toRealmSettings({ realm: realmName, tab: "localization" }),
-                history,
-              })}
+              {...route("localization")}
             >
               <LocalizationTab
                 key={key}
@@ -367,13 +371,7 @@ export const RealmSettingsTabs = ({
             <Tab
               title={<TabTitleText>{t("securityDefences")}</TabTitleText>}
               data-testid="rs-security-defenses-tab"
-              {...routableTab({
-                to: toRealmSettings({
-                  realm: realmName,
-                  tab: "securityDefences",
-                }),
-                history,
-              })}
+              {...route("securityDefences")}
             >
               <SecurityDefences save={save} reset={() => resetForm(realm)} />
             </Tab>
@@ -382,26 +380,14 @@ export const RealmSettingsTabs = ({
                 <TabTitleText>{t("realm-settings:sessions")}</TabTitleText>
               }
               data-testid="rs-sessions-tab"
-              {...routableTab({
-                to: toRealmSettings({
-                  realm: realmName,
-                  tab: "sessions",
-                }),
-                history,
-              })}
+              {...route("sessions")}
             >
               <RealmSettingsSessionsTab key={key} realm={realm} save={save} />
             </Tab>
             <Tab
               title={<TabTitleText>{t("realm-settings:tokens")}</TabTitleText>}
               data-testid="rs-tokens-tab"
-              {...routableTab({
-                to: toRealmSettings({
-                  realm: realmName,
-                  tab: "tokens",
-                }),
-                history,
-              })}
+              {...route("tokens")}
             >
               <RealmSettingsTokensTab
                 save={save}
@@ -416,13 +402,7 @@ export const RealmSettingsTabs = ({
                 </TabTitleText>
               }
               data-testid="rs-clientPolicies-tab"
-              {...routableTab({
-                to: toRealmSettings({
-                  realm: realmName,
-                  tab: "clientPolicies",
-                }),
-                history,
-              })}
+              {...route("clientPolicies")}
             >
               <RoutableTabs
                 mountOnEnter
@@ -445,13 +425,7 @@ export const RealmSettingsTabs = ({
                       </span>
                     </TabTitleText>
                   }
-                  {...routableTab({
-                    to: toClientPolicies({
-                      realm: realmName,
-                      tab: "profiles",
-                    }),
-                    history,
-                  })}
+                  {...policiesRoute("profiles")}
                 >
                   <ProfilesTab />
                 </Tab>
@@ -459,13 +433,7 @@ export const RealmSettingsTabs = ({
                   id="policies"
                   data-testid="rs-policies-clientPolicies-tab"
                   aria-label={t("clientPoliciesSubTab")}
-                  {...routableTab({
-                    to: toClientPolicies({
-                      realm: realmName,
-                      tab: "policies",
-                    }),
-                    history,
-                  })}
+                  {...policiesRoute("policies")}
                   title={
                     <TabTitleText>
                       {t("policies")}
@@ -491,13 +459,7 @@ export const RealmSettingsTabs = ({
                     </TabTitleText>
                   }
                   data-testid="rs-user-profile-tab"
-                  {...routableTab({
-                    to: toRealmSettings({
-                      realm: realmName,
-                      tab: "userProfile",
-                    }),
-                    history,
-                  })}
+                  {...route("userProfile")}
                 >
                   <UserProfileTab />
                 </Tab>
@@ -505,13 +467,7 @@ export const RealmSettingsTabs = ({
             <Tab
               title={<TabTitleText>{t("userRegistration")}</TabTitleText>}
               data-testid="rs-userRegistration-tab"
-              {...routableTab({
-                to: toRealmSettings({
-                  realm: realmName,
-                  tab: "userRegistration",
-                }),
-                history,
-              })}
+              {...route("userRegistration")}
             >
               <UserRegistration />
             </Tab>

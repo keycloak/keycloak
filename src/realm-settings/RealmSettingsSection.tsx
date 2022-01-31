@@ -1,7 +1,4 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { Breadcrumb, BreadcrumbItem } from "@patternfly/react-core";
 
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
@@ -9,115 +6,7 @@ import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner"
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { KEY_PROVIDER_TYPE } from "../util";
-import { toRealmSettings } from "./routes/RealmSettings";
 import { RealmSettingsTabs } from "./RealmSettingsTabs";
-import { toClientPolicies } from "./routes/ClientPolicies";
-
-export const EditProviderCrumb = () => {
-  const { t } = useTranslation("realm-settings");
-  const { realm } = useRealm();
-
-  return (
-    <Breadcrumb>
-      <BreadcrumbItem
-        render={(props) => (
-          <Link {...props} to={toRealmSettings({ realm, tab: "keys" })}>
-            {t("keys")}
-          </Link>
-        )}
-      />
-      <BreadcrumbItem>{t("providers")}</BreadcrumbItem>
-      <BreadcrumbItem isActive>{t("editProvider")}</BreadcrumbItem>
-    </Breadcrumb>
-  );
-};
-
-export const ToClientPolicies = () => {
-  const { t } = useTranslation("realm-settings");
-  const { realm } = useRealm();
-
-  return (
-    <BreadcrumbItem
-      render={(props) => (
-        <Link
-          {...props}
-          to={toRealmSettings({
-            realm,
-            tab: "clientPolicies",
-            subTab: "policies",
-          })}
-        >
-          {t("clientPolicies")}
-        </Link>
-      )}
-    />
-  );
-};
-
-export const EditPolicyCrumb = () => {
-  const { t } = useTranslation("realm-settings");
-
-  return (
-    <Breadcrumb>
-      <ToClientPolicies />
-      <BreadcrumbItem isActive>{t("policyDetails")}</BreadcrumbItem>
-    </Breadcrumb>
-  );
-};
-
-export const EditProfileCrumb = () => {
-  const { t } = useTranslation("realm-settings");
-  const { realm } = useRealm();
-
-  return (
-    <Breadcrumb>
-      <BreadcrumbItem
-        render={(props) => (
-          <Link {...props} to={toClientPolicies({ realm, tab: "profiles" })}>
-            {t("clientPolicies")}
-          </Link>
-        )}
-      />
-      <BreadcrumbItem isActive>{t("clientProfile")}</BreadcrumbItem>
-    </Breadcrumb>
-  );
-};
-
-export const EditExecutorCrumb = () => {
-  const { t } = useTranslation("realm-settings");
-  const { realm } = useRealm();
-
-  return (
-    <Breadcrumb>
-      <BreadcrumbItem
-        render={(props) => (
-          <Link {...props} to={toClientPolicies({ realm, tab: "profiles" })}>
-            {t("clientPolicies")}
-          </Link>
-        )}
-      />
-      <BreadcrumbItem isActive>{t("executorDetails")}</BreadcrumbItem>
-    </Breadcrumb>
-  );
-};
-
-export const NewPolicyCrumb = () => {
-  const { t } = useTranslation("realm-settings");
-  const { realm } = useRealm();
-
-  return (
-    <Breadcrumb>
-      <BreadcrumbItem
-        render={(props) => (
-          <Link {...props} to={toClientPolicies({ realm, tab: "policy" })}>
-            {t("clientPolicies")}
-          </Link>
-        )}
-      />
-      <BreadcrumbItem isActive>{t("createPolicy")}</BreadcrumbItem>
-    </Breadcrumb>
-  );
-};
 
 const sortByPriority = (components: ComponentRepresentation[]) => {
   const sortedComponents = [...components].sort((a, b) => {

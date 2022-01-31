@@ -2,7 +2,6 @@ import type { LocationDescriptorObject } from "history";
 import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import { EditProviderCrumb } from "../RealmSettingsSection";
 
 export type HmacGeneratedSettingsParams = {
   realm: string;
@@ -10,11 +9,11 @@ export type HmacGeneratedSettingsParams = {
 };
 
 export const HmacGeneratedSettingsRoute: RouteDef = {
-  path: "/:realm/realm-settings/keys/:id/hmac-generated/settings",
+  path: "/:realm/realm-settings/keys/providers/:id/hmac-generated/settings",
   component: lazy(
     () => import("../key-providers/hmac-generated/HMACGeneratedForm")
   ),
-  breadcrumb: () => EditProviderCrumb,
+  breadcrumb: (t) => t("realm-settings:editProvider"),
   access: "view-realm",
 };
 

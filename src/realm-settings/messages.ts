@@ -273,7 +273,6 @@ export default {
     addClientProfileError: "Could not create client profile: '{{error}}'",
     createClientProfileNameHelperText:
       "The name must be unique within the realm",
-    allClientPolicies: "Client policies",
     newClientProfile: "Create client profile",
     newClientProfileName: "Client profile name",
     clientProfile: "Client profile details",
