@@ -172,7 +172,7 @@ export default class RealmSettingsPage {
   private moreDrpDwnItems = ".pf-c-dropdown__menu-item";
   private deleteDialogTitle = ".pf-c-modal-box__title-text";
   private deleteDialogBodyText = ".pf-c-modal-box__body";
-  private deleteDialogCancelBtn = ".pf-c-button.pf-m-link";
+  private deleteDialogCancelBtn = "#modal-cancel";
   private jsonEditorSaveBtn = "jsonEditor-saveBtn";
   private jsonEditorSavePoliciesBtn = "jsonEditor-policies-saveBtn";
   private jsonEditorReloadBtn = "jsonEditor-reloadBtn";
@@ -1002,9 +1002,9 @@ export default class RealmSettingsPage {
 
   addClientScopes() {
     cy.findByTestId(this.selectScopeButton).click();
-    cy.get(".pf-c-table__check > input[name=checkrow0]").click();
-    cy.get(".pf-c-table__check > input[name=checkrow1]").click();
-    cy.get(".pf-c-table__check > input[name=checkrow2]").click();
+    cy.get(".pf-c-table__check > label > input[name=checkrow0]").click();
+    cy.get(".pf-c-table__check > label > input[name=checkrow1]").click();
+    cy.get(".pf-c-table__check > label > input[name=checkrow2]").click();
 
     cy.findByTestId("modalConfirm").contains("Add").click();
   }
