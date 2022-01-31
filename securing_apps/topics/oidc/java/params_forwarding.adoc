@@ -43,4 +43,4 @@ For more information see the `Identity Brokering` section in the link:{adminguid
 
 WARNING: If you open the URL using the attached parameters, the adapter will not redirect you to {project_name} if you are already authenticated
 in the application. For example, opening $$http://myappserver/mysecuredapp?prompt=login$$ will not automatically redirect you to
-the {project_name} login page if you are already authenticated to the application `mysecredapp` . This behavior may be changed in the future.
+the {project_name} login page if you are already authenticated to the application `mysecuredapp` . This behavior may be changed in the future.
