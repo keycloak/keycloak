@@ -22,7 +22,7 @@ import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDial
 import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
 import { FormAccess } from "../../../components/form-access/FormAccess";
 import { useAlerts } from "../../../components/alert/Alerts";
-import { toClient } from "../../routes/Client";
+import { toAuthorizationTab } from "../../routes/AuthenticationTab";
 import { Aggregate } from "./Aggregate";
 import { Client } from "./Client";
 import { User } from "./User";
@@ -150,7 +150,9 @@ export default function PolicyDetails() {
           policyId,
         });
         addAlert(t("policyDeletedSuccess"), AlertVariant.success);
-        history.push(toClient({ realm, clientId: id, tab: "authorization" }));
+        history.push(
+          toAuthorizationTab({ realm, clientId: id, tab: "policies" })
+        );
       } catch (error) {
         addError("clients:policyDeletedError", error);
       }
@@ -212,10 +214,10 @@ export default function PolicyDetails() {
                 component={(props) => (
                   <Link
                     {...props}
-                    to={toClient({
+                    to={toAuthorizationTab({
                       realm,
                       clientId: id,
-                      tab: "authorization",
+                      tab: "policies",
                     })}
                   />
                 )}

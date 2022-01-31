@@ -19,7 +19,7 @@ import type { ScopeDetailsParams } from "../routes/Scope";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { toClient } from "../routes/Client";
+import { toAuthorizationTab } from "../routes/AuthenticationTab";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
 import useToggle from "../../utils/useToggle";
@@ -77,7 +77,9 @@ export default function ScopeDetails() {
             iconUri: scope.iconUri,
           }
         );
-        history.push(toClient({ realm, clientId: id, tab: "authorization" }));
+        history.push(
+          toAuthorizationTab({ realm, clientId: id, tab: "scopes" })
+        );
       }
       addAlert(
         t((scopeId ? "update" : "create") + "ScopeSuccess"),
@@ -96,7 +98,9 @@ export default function ScopeDetails() {
         toggleDialog={toggleDeleteDialog}
         selectedScope={scope}
         refresh={() =>
-          history.push(toClient({ realm, clientId: id, tab: "authorization" }))
+          history.push(
+            toAuthorizationTab({ realm, clientId: id, tab: "scopes" })
+          )
         }
       />
       <ViewHeader
@@ -183,10 +187,10 @@ export default function ScopeDetails() {
                   component={(props) => (
                     <Link
                       {...props}
-                      to={toClient({
+                      to={toAuthorizationTab({
                         realm,
                         clientId: id,
-                        tab: "authorization",
+                        tab: "scopes",
                       })}
                     ></Link>
                   )}

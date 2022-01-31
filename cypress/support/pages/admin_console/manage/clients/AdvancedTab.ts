@@ -17,10 +17,10 @@ export default class AdvancedTab {
   private fineGrainSaveBtn = "#fineGrainSave";
   private fineGrainRevertBtn = "#fineGrainRevert";
 
-  private advancedTab = "#pf-tab-advanced-advanced";
+  private advancedTab = "advancedTab";
 
   goToAdvancedTab() {
-    cy.get(this.advancedTab).click();
+    cy.findByTestId(this.advancedTab).click();
     return this;
   }
 

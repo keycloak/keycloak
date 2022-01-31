@@ -5,11 +5,14 @@ import type { RouteDef } from "../../route-config";
 
 export type ClientTab =
   | "settings"
+  | "keys"
+  | "credentials"
   | "roles"
   | "clientScopes"
   | "advanced"
   | "mappers"
-  | "authorization";
+  | "authorization"
+  | "serviceAccount";
 
 export type ClientParams = {
   realm: string;

@@ -5,11 +5,11 @@ import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/s
 type PermissionType = "resource" | "scope";
 
 export default class AuthorizationTab {
-  private tabName = "#pf-tab-authorization-authorization";
-  private resourcesTabName = "#pf-tab-41-resources";
-  private scopeTabName = "#pf-tab-42-scopes";
-  private policyTabName = "#pf-tab-43-policies";
-  private permissionsTabName = "#pf-tab-44-permissions";
+  private tabName = "authorizationTab";
+  private resourcesTabName = "authorizationResources";
+  private scopeTabName = "authorizationScopes";
+  private policyTabName = "authorizationPolicies";
+  private permissionsTabName = "authorizationPermissions";
   private nameColumnPrefix = "name-column-";
   private emptyPolicyCreateButton = "no-policies-empty-action";
   private createPolicyButton = "createPolicy";
@@ -19,27 +19,27 @@ export default class AuthorizationTab {
   private permissionResourceDropdown = "#resources";
 
   goToAuthenticationTab() {
-    cy.get(this.tabName).click();
+    cy.findByTestId(this.tabName).click();
     return this;
   }
 
   goToResourceSubTab() {
-    cy.get(this.resourcesTabName).click();
+    cy.findByTestId(this.resourcesTabName).click();
     return this;
   }
 
   goToScopeSubTab() {
-    cy.get(this.scopeTabName).click();
+    cy.findByTestId(this.scopeTabName).click();
     return this;
   }
 
   goToPolicySubTab() {
-    cy.get(this.policyTabName).click();
+    cy.findByTestId(this.policyTabName).click();
     return this;
   }
 
   goToPermissionsSubTab() {
-    cy.get(this.permissionsTabName).click();
+    cy.findByTestId(this.permissionsTabName).click();
     return this;
   }
 

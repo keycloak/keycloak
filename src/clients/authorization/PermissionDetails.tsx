@@ -27,9 +27,9 @@ import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog"
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { useAlerts } from "../../components/alert/Alerts";
-import { toClient } from "../routes/Client";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { ResourcesPolicySelect } from "./ResourcesPolicySelect";
+import { toAuthorizationTab } from "../routes/AuthenticationTab";
 
 const DECISION_STRATEGIES = ["UNANIMOUS", "AFFIRMATIVE", "CONSENSUS"] as const;
 
@@ -140,7 +140,9 @@ export default function PermissionDetails() {
           permissionId: permissionId,
         });
         addAlert(t("permissionDeletedSuccess"), AlertVariant.success);
-        history.push(toClient({ realm, clientId: id, tab: "authorization" }));
+        history.push(
+          toAuthorizationTab({ realm, clientId: id, tab: "permissions" })
+        );
       } catch (error) {
         addError("clients:permissionDeletedError", error);
       }
@@ -329,10 +331,10 @@ export default function PermissionDetails() {
                   component={(props) => (
                     <Link
                       {...props}
-                      to={toClient({
+                      to={toAuthorizationTab({
                         realm,
                         clientId: id,
-                        tab: "authorization",
+                        tab: "permissions",
                       })}
                     ></Link>
                   )}

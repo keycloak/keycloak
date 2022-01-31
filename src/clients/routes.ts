@@ -5,6 +5,8 @@ import { ClientsRoute } from "./routes/Clients";
 import { CreateInitialAccessTokenRoute } from "./routes/CreateInitialAccessToken";
 import { ImportClientRoute } from "./routes/ImportClient";
 import { MapperRoute } from "./routes/Mapper";
+import { ClientScopesRoute } from "./routes/ClientScopeTab";
+import { AuthorizationRoute } from "./routes/AuthenticationTab";
 import { NewResourceRoute } from "./routes/NewResource";
 import { ResourceDetailsRoute } from "./routes/Resource";
 import { NewScopeRoute } from "./routes/NewScope";
@@ -21,6 +23,8 @@ const routes: RouteDef[] = [
   CreateInitialAccessTokenRoute,
   ClientRoute,
   MapperRoute,
+  ClientScopesRoute,
+  AuthorizationRoute,
   NewResourceRoute,
   ResourceDetailsRoute,
   NewScopeRoute,

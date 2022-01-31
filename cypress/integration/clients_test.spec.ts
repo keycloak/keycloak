@@ -279,7 +279,7 @@ describe("Clients test", () => {
     });
 
     it("add mapping to openid client", () => {
-      cy.get("#pf-tab-mappers-mappers").click();
+      cy.findByTestId("mappersTab").click();
       cy.findByText("Add predefined mapper").click();
       cy.get("table input").first().click();
       cy.findByTestId("modalConfirm").click();
@@ -343,15 +343,13 @@ describe("Clients test", () => {
 
     it("displays the correct tabs", () => {
       cy.findByTestId("client-tabs")
-        .find("#pf-tab-settings-settings")
+        .findByTestId("clientSettingsTab")
         .should("exist");
 
-      cy.findByTestId("client-tabs")
-        .find("#pf-tab-roles-roles")
-        .should("exist");
+      cy.findByTestId("client-tabs").findByTestId("rolesTab").should("exist");
 
       cy.findByTestId("client-tabs")
-        .find("#pf-tab-advanced-advanced")
+        .findByTestId("advancedTab")
         .should("exist");
 
       cy.findByTestId("client-tabs").find("li").should("have.length", 3);

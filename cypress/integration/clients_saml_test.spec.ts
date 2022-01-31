@@ -73,7 +73,7 @@ describe("Clients SAML tests", () => {
       loginPage.logIn();
       sidebarPage.goToClients();
       listingPage.searchItem(clientId).goToItemDetails(clientId);
-      cy.get("#pf-tab-keys-keys").click();
+      cy.findByTestId("keysTab").click();
     });
 
     it("doesn't disable when no", () => {

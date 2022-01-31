@@ -1,5 +1,5 @@
 export default class KeysTab {
-  private tabName = "#pf-tab-keys-keys";
+  private tabName = "keysTab";
   private useJwksUrl = "useJwksUrl";
   private saveKeys = "saveKeys";
   private generate = "generate";
@@ -9,7 +9,7 @@ export default class KeysTab {
   private confirm = "confirm";
 
   goToTab() {
-    cy.get(this.tabName).click();
+    cy.findByTestId(this.tabName).click();
     return this;
   }
 

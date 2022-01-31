@@ -1,6 +1,6 @@
 const expect = chai.expect;
 export default class RoleMappingTab {
-  private tab = "#pf-tab-serviceAccount-serviceAccount";
+  private tab = "serviceAccountTab";
   private scopeTab = "scopeTab";
   private assignEmptyRoleBtn = "no-roles-for-this-client-empty-action";
   private assignRoleBtn = "assignRole";
@@ -12,7 +12,7 @@ export default class RoleMappingTab {
   private confirmModalBtn = "modalConfirm";
 
   goToServiceAccountTab() {
-    cy.get(this.tab).click();
+    cy.findByTestId(this.tab).click();
     return this;
   }
 

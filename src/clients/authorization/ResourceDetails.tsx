@@ -31,7 +31,7 @@ import type { MultiLine } from "../../components/multi-line-input/multi-line-con
 import type { KeyValueType } from "../../components/attribute-form/attribute-convert";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
-import { toClient } from "../routes/Client";
+import { toAuthorizationTab } from "../routes/AuthenticationTab";
 import { ScopePicker } from "./ScopePicker";
 import { AttributeInput } from "../../components/attribute-input/AttributeInput";
 
@@ -142,7 +142,9 @@ export default function ResourceDetails() {
           resourceId: resourceId!,
         });
         addAlert(t("resourceDeletedSuccess"), AlertVariant.success);
-        history.push(toClient({ realm, clientId: id, tab: "authorization" }));
+        history.push(
+          toAuthorizationTab({ realm, clientId: id, tab: "resources" })
+        );
       } catch (error) {
         addError("clients:resourceDeletedError", error);
       }
@@ -324,10 +326,10 @@ export default function ResourceDetails() {
                   component={(props) => (
                     <Link
                       {...props}
-                      to={toClient({
+                      to={toAuthorizationTab({
                         realm,
                         clientId: id,
-                        tab: "authorization",
+                        tab: "resources",
                       })}
                     ></Link>
                   )}

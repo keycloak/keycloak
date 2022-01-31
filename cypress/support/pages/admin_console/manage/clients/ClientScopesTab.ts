@@ -1,8 +1,8 @@
 export default class ClientScopesTab {
-  private clientScopesTab = "#pf-tab-clientScopes-clientScopes";
+  private clientScopesTab = "clientScopesTab";
 
   goToClientScopesTab() {
-    cy.get(this.clientScopesTab).click();
+    cy.findByTestId(this.clientScopesTab).click();
     return this;
   }
 }
