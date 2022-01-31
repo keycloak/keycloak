@@ -70,7 +70,11 @@ public interface WebAuthnConstants {
     String USER_VERIFICATION_CHECKED = "web_authn_authenticator_user_verification_checked";
     String AUTHENTICATED_USER_ID = "web_authn_authenticated_user_id";
     String FIRST_AUTHENTICATED_USER_ID = "first_authenticated_user_id";
-    String ERR_LABEL = "web_authn_authentication_error";
-    String ERR_DETAIL_LABEL = "web_authn_authentication_error_detail";
+
+    String AUTH_ERR_LABEL = "web_authn_authentication_error";
+    String AUTH_ERR_DETAIL_LABEL = "web_authn_authentication_error_detail";
+
+    String REG_ERR_LABEL = "web_authn_registration_error";
+    String REG_ERR_DETAIL_LABEL = "web_authn_registration_error_detail";
 
 }

@@ -57,8 +57,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 
-import static org.keycloak.WebAuthnConstants.ERR_DETAIL_LABEL;
-import static org.keycloak.WebAuthnConstants.ERR_LABEL;
+import static org.keycloak.WebAuthnConstants.AUTH_ERR_DETAIL_LABEL;
+import static org.keycloak.WebAuthnConstants.AUTH_ERR_LABEL;
 import static org.keycloak.services.messages.Messages.*;
 
 /**
@@ -267,7 +267,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         case WEBAUTHN_ERROR_REGISTRATION:
             logger.warn(errorCase);
             context.getEvent()
-                .detail(ERR_LABEL, errorCase)
+                .detail(AUTH_ERR_LABEL, errorCase)
                 .error(Errors.INVALID_USER_CREDENTIALS);
             errorResponse = createErrorResponse(context, errorCase);
             context.failure(AuthenticationFlowError.INVALID_CREDENTIALS, errorResponse);
@@ -275,8 +275,8 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         case WEBAUTHN_ERROR_API_GET:
             logger.warnv("error returned from navigator.credentials.get(). {0}", errorMessage);
             context.getEvent()
-                .detail(ERR_LABEL, errorCase)
-                .detail(ERR_DETAIL_LABEL, errorMessage)
+                .detail(AUTH_ERR_LABEL, errorCase)
+                .detail(AUTH_ERR_DETAIL_LABEL, errorMessage)
                 .error(Errors.NOT_ALLOWED);
             errorResponse = createErrorResponse(context, errorCase);
             context.failure(AuthenticationFlowError.INVALID_USER, errorResponse);
@@ -284,7 +284,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         case WEBAUTHN_ERROR_DIFFERENT_USER:
             logger.warn(errorCase);
             context.getEvent()
-                .detail(ERR_LABEL, errorCase)
+                .detail(AUTH_ERR_LABEL, errorCase)
                 .error(Errors.DIFFERENT_USER_AUTHENTICATED);
             errorResponse = createErrorResponse(context, errorCase);
             context.failure(AuthenticationFlowError.USER_CONFLICT, errorResponse);
@@ -292,8 +292,8 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         case WEBAUTHN_ERROR_AUTH_VERIFICATION:
             logger.warnv("WebAuthn API .get() response validation failure. {0}", errorMessage);
             context.getEvent()
-                .detail(ERR_LABEL, errorCase)
-                .detail(ERR_DETAIL_LABEL, errorMessage)
+                .detail(AUTH_ERR_LABEL, errorCase)
+                .detail(AUTH_ERR_DETAIL_LABEL, errorMessage)
                 .error(Errors.INVALID_USER_CREDENTIALS);
             errorResponse = createErrorResponse(context, errorCase);
             context.failure(AuthenticationFlowError.INVALID_USER, errorResponse);
@@ -301,7 +301,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         case WEBAUTHN_ERROR_USER_NOT_FOUND:
             logger.warn(errorCase);
             context.getEvent()
-                    .detail(ERR_LABEL, errorCase)
+                    .detail(AUTH_ERR_LABEL, errorCase)
                     .error(Errors.USER_NOT_FOUND);
             errorResponse = createErrorResponse(context, errorCase);
             context.failure(AuthenticationFlowError.UNKNOWN_USER, errorResponse);

@@ -22,7 +22,6 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -38,7 +37,6 @@ import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.UriUtils;
-import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.WebAuthnCredentialModelInput;
 import org.keycloak.credential.WebAuthnCredentialProvider;
@@ -72,6 +70,8 @@ import com.webauthn4j.validator.attestation.trustworthiness.certpath.CertPathTru
 import com.webauthn4j.validator.attestation.trustworthiness.self.DefaultSelfAttestationTrustworthinessValidator;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 
+import static org.keycloak.WebAuthnConstants.REG_ERR_DETAIL_LABEL;
+import static org.keycloak.WebAuthnConstants.REG_ERR_LABEL;
 import static org.keycloak.services.messages.Messages.*;
 
 /**
@@ -340,17 +340,14 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         // NOP
     }
 
-    private static final String ERR_LABEL = "web_authn_registration_error";
-    private static final String ERR_DETAIL_LABEL = "web_authn_registration_error_detail";
-
     private void setErrorResponse(RequiredActionContext context, final String errorCase, final String errorMessage) {
         Response errorResponse = null;
         switch (errorCase) {
         case WEBAUTHN_ERROR_REGISTER_VERIFICATION:
             logger.warnv("WebAuthn API .create() response validation failure. {0}", errorMessage);
             context.getEvent()
-                .detail(ERR_LABEL, errorCase)
-                .detail(ERR_DETAIL_LABEL, errorMessage)
+                .detail(REG_ERR_LABEL, errorCase)
+                .detail(REG_ERR_DETAIL_LABEL, errorMessage)
                 .error(Errors.INVALID_USER_CREDENTIALS);
             errorResponse = context.form()
                 .setError(errorCase, errorMessage)
@@ -361,8 +358,8 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         case WEBAUTHN_ERROR_REGISTRATION:
             logger.warn(errorCase);
             context.getEvent()
-                .detail(ERR_LABEL, errorCase)
-                .detail(ERR_DETAIL_LABEL, errorMessage)
+                .detail(REG_ERR_LABEL, errorCase)
+                .detail(REG_ERR_DETAIL_LABEL, errorMessage)
                 .error(Errors.INVALID_REGISTRATION);
             errorResponse = context.form()
                 .setError(errorCase, errorMessage)
