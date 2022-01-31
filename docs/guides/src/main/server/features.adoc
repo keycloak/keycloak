@@ -1,6 +1,5 @@
 <#import "/templates/guide.adoc" as tmpl>
 <#import "/templates/kc.adoc" as kc>
-<#import "/templates/options.adoc" as opts>
 
 <@tmpl.guide
 title="Enabling and disabling features"
