@@ -15,13 +15,16 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.webauthn;
+package org.keycloak.testsuite.webauthn.passwordless;
+
+import org.keycloak.testsuite.webauthn.AppInitiatedActionWebAuthnTest;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
 public class AppInitiatedActionPwdLessTest extends AppInitiatedActionWebAuthnTest {
 
+    @Override
     protected boolean isPasswordless() {
         return true;
     }
