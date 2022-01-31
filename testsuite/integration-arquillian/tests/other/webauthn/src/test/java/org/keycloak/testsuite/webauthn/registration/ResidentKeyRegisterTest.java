@@ -19,6 +19,7 @@ package org.keycloak.testsuite.webauthn.registration;
 
 import org.junit.Ignore;
 import org.junit.Test;
+import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.utils.PropertyRequirement;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
 import org.openqa.selenium.virtualauthenticator.Credential;
@@ -33,7 +34,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
-public class ResidentKeyRegisterTest extends AbstractWebAuthnRegisterTest{
+public class ResidentKeyRegisterTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void residentKeyNotRequiredNoRK() {
@@ -75,7 +76,7 @@ public class ResidentKeyRegisterTest extends AbstractWebAuthnRegisterTest{
             WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
             assertThat(realmData.getRequireResidentKey(), containsString(requirement.getValue()));
 
-            registerDefaultWebAuthnUser(shouldSuccess);
+            registerDefaultUser(shouldSuccess);
 
             displayErrorMessageIfPresent();
 

@@ -36,6 +36,7 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.Select;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -74,9 +75,9 @@ public abstract class AbstractWebAuthnPolicySettingsTest extends AbstractConsole
 
     protected abstract WebAuthnPolicyPage getPolicyPage();
 
-    protected abstract AbstractWebAuthnRealmUpdater getWebAuthnRealmUpdater();
+    protected abstract AbstractWebAuthnRealmUpdater<?> getWebAuthnRealmUpdater();
 
-    protected AbstractWebAuthnRealmUpdater updateWebAuthnPolicy(
+    protected AbstractWebAuthnRealmUpdater<?> updateWebAuthnPolicy(
             String rpName,
             List<String> algorithms,
             String attestationPreference,
@@ -86,7 +87,7 @@ public abstract class AbstractWebAuthnPolicySettingsTest extends AbstractConsole
             String userVerification,
             List<String> acceptableAaguids) {
 
-        AbstractWebAuthnRealmUpdater updater = getWebAuthnRealmUpdater().setWebAuthnPolicyRpEntityName(rpName);
+        AbstractWebAuthnRealmUpdater<?> updater = getWebAuthnRealmUpdater().setWebAuthnPolicyRpEntityName(rpName);
 
         checkAndSet(algorithms, updater::setWebAuthnPolicySignatureAlgorithms);
         checkAndSet(attestationPreference, updater::setWebAuthnPolicyAttestationConveyancePreference);
@@ -96,7 +97,7 @@ public abstract class AbstractWebAuthnPolicySettingsTest extends AbstractConsole
         checkAndSet(userVerification, updater::setWebAuthnPolicyUserVerificationRequirement);
         checkAndSet(acceptableAaguids, updater::setWebAuthnPolicyAcceptableAaguids);
 
-        return (AbstractWebAuthnRealmUpdater) updater.update();
+        return updater.update();
     }
 
     private <T> void checkAndSet(T value, Consumer<T> consumer) {
@@ -140,7 +141,7 @@ public abstract class AbstractWebAuthnPolicySettingsTest extends AbstractConsole
     }
 
     protected void checkWrongSignatureAlgorithm() throws IOException {
-        try (AbstractWebAuthnRealmUpdater rau = (AbstractWebAuthnRealmUpdater) getWebAuthnRealmUpdater()
+        try (Closeable c = getWebAuthnRealmUpdater()
                 .setWebAuthnPolicySignatureAlgorithms(Collections.singletonList("something-bad"))
                 .update()) {
 

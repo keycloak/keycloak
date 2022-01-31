@@ -19,7 +19,6 @@ package org.keycloak.testsuite.webauthn;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
-import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -32,29 +31,22 @@ import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterF
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.events.Details;
-import org.keycloak.events.EventType;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.models.credential.dto.WebAuthnCredentialData;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.PasswordPage;
-import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.SelectAuthenticatorPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnAuthenticatorsList;
-import org.keycloak.testsuite.webauthn.pages.WebAuthnLoginPage;
-import org.keycloak.testsuite.webauthn.pages.WebAuthnRegisterPage;
 import org.keycloak.testsuite.webauthn.updaters.WebAuthnRealmAttributeUpdater;
 import org.keycloak.util.JsonSerialization;
 
@@ -67,31 +59,14 @@ import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.keycloak.events.EventType.CUSTOM_REQUIRED_ACTION;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.ALTERNATIVE;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
 
 public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
-
-    @Page
-    protected AppPage appPage;
-
-    @Page
-    protected LoginPage loginPage;
-
-    @Page
-    protected WebAuthnLoginPage webAuthnLoginPage;
-
-    @Page
-    protected RegisterPage registerPage;
-
     @Page
     protected ErrorPage errorPage;
-
-    @Page
-    protected WebAuthnRegisterPage webAuthnRegisterPage;
 
     @Page
     protected LoginUsernameOnlyPage loginUsernamePage;
@@ -148,7 +123,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             // confirm that registration is successfully completed
             userId = events.expectRegister(username, email).assertEvent().getUserId();
             // confirm registration event
-            EventRepresentation eventRep = events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION)
+            EventRepresentation eventRep = events.expectRequiredAction(CUSTOM_REQUIRED_ACTION)
                     .user(userId)
                     .detail(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
                     .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, authenticatorLabel)
@@ -195,7 +170,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             sessionId = events.expectLogin()
                     .user(userId)
                     .detail(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, regPubKeyCredentialId)
-                    .detail("web_authn_authenticator_user_verification_checked", Boolean.FALSE.toString())
+                    .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, Boolean.FALSE.toString())
                     .assertEvent().getSessionId();
 
             events.clear();
@@ -253,13 +228,13 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
             appPage.assertCurrent();
 
-            events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION)
+            events.expectRequiredAction(CUSTOM_REQUIRED_ACTION)
                     .user(userId)
                     .detail(Details.CUSTOM_REQUIRED_ACTION, WebAuthnPasswordlessRegisterFactory.PROVIDER_ID)
                     .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, PASSWORDLESS_LABEL)
                     .assertEvent();
 
-            events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION)
+            events.expectRequiredAction(CUSTOM_REQUIRED_ACTION)
                     .user(userId)
                     .detail(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
                     .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, WEBAUTHN_LABEL)

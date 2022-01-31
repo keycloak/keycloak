@@ -21,6 +21,7 @@ import com.webauthn4j.data.AttestationConveyancePreference;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.models.credential.dto.WebAuthnCredentialData;
+import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.updaters.AbstractWebAuthnRealmUpdater;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnDataWrapper;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
@@ -37,14 +38,14 @@ import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthO
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
-public class AttestationConveyanceRegisterTest extends AbstractWebAuthnRegisterTest {
+public class AttestationConveyanceRegisterTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void attestationDefaultValue() {
         WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
         assertThat(realmData.getAttestationConveyancePreference(), is(DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED));
 
-        registerDefaultWebAuthnUser();
+        registerDefaultUser();
         displayErrorMessageIfPresent();
 
         final String credentialType = getCredentialType();
@@ -91,7 +92,7 @@ public class AttestationConveyanceRegisterTest extends AbstractWebAuthnRegisterT
             WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
             assertThat(realmData.getAttestationConveyancePreference(), is(attestation.getValue()));
 
-            registerDefaultWebAuthnUser(shouldSuccess);
+            registerDefaultUser(shouldSuccess);
             displayErrorMessageIfPresent();
 
             final boolean isErrorCurrent = webAuthnErrorPage.isCurrent();
