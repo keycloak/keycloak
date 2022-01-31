@@ -18,6 +18,7 @@
 package org.keycloak.it.cli.dist;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -92,5 +93,23 @@ public class StartAutoBuildDistTest {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertBuild();
         cliResult.assertStarted();
+    }
+
+    @Test
+    @Launch({ "start-dev" })
+    @Order(7)
+    void testStartDevFirstTime(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        assertTrue(cliResult.getOutput().contains("Updating the configuration and installing your custom providers, if any. Please wait."));
+        cliResult.assertStartedDevMode();
+    }
+
+    @Test
+    @Launch({ "start-dev" })
+    @Order(8)
+    void testShouldNotReAugStartDevIfConfigIsSame(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        assertFalse(cliResult.getOutput().contains("Updating the configuration and installing your custom providers, if any. Please wait."));
+        cliResult.assertStartedDevMode();
     }
 }

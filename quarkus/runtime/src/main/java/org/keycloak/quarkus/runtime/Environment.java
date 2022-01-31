@@ -108,12 +108,12 @@ public final class Environment {
 
     public static void setProfile(String profile) {
         System.setProperty(PROFILE, profile);
-        System.setProperty("quarkus.profile", profile);
+        System.setProperty(ProfileManager.QUARKUS_PROFILE_PROP, profile);
         if (isTestLaunchMode()) {
             System.setProperty("mp.config.profile", profile);
-            System.setProperty(ProfileManager.QUARKUS_TEST_PROFILE_PROP, profile);
         }
     }
+
     public static String getCurrentOrPersistedProfile() {
         String profile = getProfile();
         if(profile == null) {
