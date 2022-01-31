@@ -49,8 +49,8 @@ You have packaged the JDBC driver.
 
 . Declare your JDBC driver by editing one of these files based on your deployment mode:
 
-* For standard mode, edit _.../standalone/configuration/standalone.xml_.
-* For standard clustering mode, edit _.../standalone/configuration/standalone-ha.xml_.
+* For standalone mode, edit _.../standalone/configuration/standalone.xml_.
+* For standalone clustering mode, edit _.../standalone/configuration/standalone-ha.xml_.
 * For domain mode, edit _.../domain/configuration/domain.xml_.
 +
 In domain mode, make sure you edit the profile you are using: either `auth-server-standalone` or `auth-server-clustered`
