@@ -125,35 +125,18 @@ public final class Database {
         ),
         POSTGRES("postgresql",
                 "org.postgresql.xa.PGXADataSource",
-                new Function<String, String>() {
-                    @Override
-                    public String apply(String alias) {
-                        if ("postgres-95".equalsIgnoreCase(alias)) {
-                            return "io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL95Dialect";
-                        }
-                        return "io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL10Dialect";
-                    }
-                },
+                "io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL10Dialect",
                 "jdbc:postgresql://${kc.db-url-host:localhost}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",
                 asList("liquibase.database.core.PostgresDatabase",
                         "org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase"),
-                "postgres", "postgres-95"
+                "postgres"
         ),
         MSSQL("mssql",
                 "com.microsoft.sqlserver.jdbc.SQLServerXADataSource",
-                new Function<String, String>() {
-                    @Override
-                    public String apply(String alias) {
-                        if ("mssql-12".equals(alias)) {
-                            return "org.hibernate.dialect.SQLServer2012Dialect";
-                        }
-                        // quarkus latest/default
-                        return "org.hibernate.dialect.SQLServer2016Dialect";
-                    }
-                },
+                "org.hibernate.dialect.SQLServer2016Dialect",
                 "jdbc:sqlserver://${kc.db-url-host:localhost}:1433;databaseName=${kc.db-url-database:keycloak}${kc.db-url-properties:}",
                 asList("org.keycloak.quarkus.runtime.storage.database.liquibase.database.CustomMSSQLDatabase"),
-                "mssql", "mssql-2012"
+                "mssql"
         ),
         ORACLE("oracle",
                 "oracle.jdbc.xa.client.OracleXADataSource",
