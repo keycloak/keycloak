@@ -4,7 +4,6 @@
 <@tmpl.guide
 title="Using Kubernetes Secrets"
 summary="Learn how to use Kubernetes / OpenShift secrets in Keycloak"
-priority=30
 includedOptions="vault vault-*">
 
 Keycloak supports a file based vault implementation for Kubernetes / OpenShift secrets. Mount Kubernetes secrets into the Keycloak Container, and the data fields will be available in the mounted folder with a flat-file structure.

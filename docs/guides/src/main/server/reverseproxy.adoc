@@ -5,7 +5,6 @@
 <@tmpl.guide
 title="Configuring a reverse proxy"
 summary="Learn how to configure Keycloak together with a reverse proxy, api gateway or load balancer."
-priority=20
 includedOptions="proxy proxy-*">
 
 It is pretty common nowadays to use a reverse proxy in distributed environments. If you want to use Keycloak together with such a proxy, you can use different proxy modes depending on the TLS termination in your specific environment:
