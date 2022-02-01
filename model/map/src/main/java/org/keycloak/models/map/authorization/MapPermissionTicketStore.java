@@ -107,7 +107,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
         // @UniqueConstraint(columnNames = {"OWNER", "REQUESTER", "RESOURCE_SERVER_ID", "RESOURCE_ID", "SCOPE_ID"})
         DefaultModelCriteria<PermissionTicket> mcb = forResourceServer(resourceServer)
                 .compare(SearchableFields.OWNER, Operator.EQ, owner)
-                .compare(SearchableFields.RESOURCE_ID, Operator.EQ, resource)
+                .compare(SearchableFields.RESOURCE_ID, Operator.EQ, resource.getId())
                 .compare(SearchableFields.REQUESTER, Operator.EQ, requester);
 
         if (scope != null) {

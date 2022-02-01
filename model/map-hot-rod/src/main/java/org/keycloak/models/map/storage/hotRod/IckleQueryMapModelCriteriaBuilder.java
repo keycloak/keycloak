@@ -17,6 +17,8 @@
 
 package org.keycloak.models.map.storage.hotRod;
 
+import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.Resource;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
@@ -78,6 +80,13 @@ public class IckleQueryMapModelCriteriaBuilder<E extends AbstractHotRodEntity, M
         INFINISPAN_NAME_OVERRIDES.put(UserSessionModel.SearchableFields.IS_OFFLINE, "offline");
         INFINISPAN_NAME_OVERRIDES.put(UserSessionModel.SearchableFields.CLIENT_ID, "authenticatedClientSessions.key");
         INFINISPAN_NAME_OVERRIDES.put(AuthenticatedClientSessionModel.SearchableFields.IS_OFFLINE, "offline");
+
+        INFINISPAN_NAME_OVERRIDES.put(Resource.SearchableFields.SCOPE_ID, "scopeIds");
+
+        INFINISPAN_NAME_OVERRIDES.put(Policy.SearchableFields.RESOURCE_ID, "resourceIds");
+        INFINISPAN_NAME_OVERRIDES.put(Policy.SearchableFields.SCOPE_ID, "scopeIds");
+        INFINISPAN_NAME_OVERRIDES.put(Policy.SearchableFields.ASSOCIATED_POLICY_ID, "associatedPolicyIds");
+        INFINISPAN_NAME_OVERRIDES.put(Policy.SearchableFields.CONFIG, "configs");
     }
 
     static {
@@ -86,6 +95,8 @@ public class IckleQueryMapModelCriteriaBuilder<E extends AbstractHotRodEntity, M
         ANALYZED_MODEL_FIELDS.add(UserModel.SearchableFields.FIRST_NAME);
         ANALYZED_MODEL_FIELDS.add(UserModel.SearchableFields.LAST_NAME);
         ANALYZED_MODEL_FIELDS.add(UserModel.SearchableFields.EMAIL);
+        ANALYZED_MODEL_FIELDS.add(Policy.SearchableFields.TYPE);
+        ANALYZED_MODEL_FIELDS.add(Resource.SearchableFields.TYPE);
     }
 
     public IckleQueryMapModelCriteriaBuilder(Class<E> hotRodEntityClass, StringBuilder whereClauseBuilder, Map<String, Object> parameters) {

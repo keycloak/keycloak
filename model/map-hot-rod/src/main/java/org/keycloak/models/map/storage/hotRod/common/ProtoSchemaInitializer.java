@@ -22,6 +22,14 @@ import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.keycloak.models.map.storage.hotRod.authSession.HotRodAuthenticationSessionEntity;
 import org.keycloak.models.map.storage.hotRod.authSession.HotRodExecutionStatus;
 import org.keycloak.models.map.storage.hotRod.authSession.HotRodRootAuthenticationSessionEntity;
+import org.keycloak.models.map.storage.hotRod.authorization.HotRodDecisionStrategy;
+import org.keycloak.models.map.storage.hotRod.authorization.HotRodLogic;
+import org.keycloak.models.map.storage.hotRod.authorization.HotRodPermissionTicketEntity;
+import org.keycloak.models.map.storage.hotRod.authorization.HotRodPolicyEnforcementMode;
+import org.keycloak.models.map.storage.hotRod.authorization.HotRodPolicyEntity;
+import org.keycloak.models.map.storage.hotRod.authorization.HotRodResourceEntity;
+import org.keycloak.models.map.storage.hotRod.authorization.HotRodResourceServerEntity;
+import org.keycloak.models.map.storage.hotRod.authorization.HotRodScopeEntity;
 import org.keycloak.models.map.storage.hotRod.client.HotRodClientEntity;
 import org.keycloak.models.map.storage.hotRod.client.HotRodProtocolMapperEntity;
 import org.keycloak.models.map.storage.hotRod.clientscope.HotRodClientScopeEntity;
@@ -104,6 +112,16 @@ import org.keycloak.models.map.storage.hotRod.userSession.HotRodUserSessionEntit
 
                 // Client sessions
                 HotRodAuthenticatedClientSessionEntity.class,
+
+                // Authz
+                HotRodResourceServerEntity.class,
+                HotRodResourceEntity.class,
+                HotRodScopeEntity.class,
+                HotRodPolicyEntity.class,
+                HotRodPermissionTicketEntity.class,
+                HotRodDecisionStrategy.class,
+                HotRodLogic.class,
+                HotRodPolicyEnforcementMode.class,
 
                 // Common
                 HotRodPair.class,
