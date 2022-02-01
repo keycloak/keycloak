@@ -1,6 +1,5 @@
 package org.keycloak.it.utils;
 
-import org.apache.commons.io.FileUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.common.Version;
 import org.testcontainers.containers.GenericContainer;
@@ -11,8 +10,6 @@ import org.testcontainers.images.builder.ImageFromDockerfile;
 import org.testcontainers.utility.ResourceReaper;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -30,9 +27,8 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
     private String stderr = "";
     private ToStringConsumer backupConsumer = new ToStringConsumer();
 
-    private File distributionFile = new File("../../../distribution/server-x-dist/target/keycloak.x-" + Version.VERSION_KEYCLOAK + ".tar.gz");
-    private File cachedDockerfile = createDockerCacheFile();
-    private boolean dockerfileFetched = false;
+    private File distributionFile = new File("../../dist/target/keycloak-" + Version.VERSION_KEYCLOAK + ".tar.gz");
+    private File dockerFile = new File("../../container/Dockerfile");
 
     private GenericContainer<?> keycloakContainer = null;
     private String containerId = null;
@@ -44,37 +40,15 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         this.manualStop = manualStop;
     }
 
-    private File createDockerCacheFile() {
-        try {
-            File tmp = File.createTempFile("Dockerfile", "keycloak.x");
-            tmp.deleteOnExit();
-            return tmp;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void fetchDockerfile() {
-        if (!dockerfileFetched) {
-            try {
-                FileUtils.copyURLToFile(new URL("https://raw.githubusercontent.com/keycloak/keycloak-containers/main/server-x/Dockerfile"), cachedDockerfile);
-                dockerfileFetched = true;
-            } catch (Exception cause) {
-                throw new RuntimeException("Cannot download upstream Dockerfile", cause);
-            }
-        }
-    }
-
     private GenericContainer getKeycloakContainer() {
         if (!distributionFile.exists()) {
             throw new RuntimeException("Distribution archive " + distributionFile.getAbsolutePath() +" doesn't exists");
         }
-        fetchDockerfile();
         return new GenericContainer(
-                new ImageFromDockerfile("keycloak.x-under-test", false)
-                        .withFileFromFile("keycloakx.tar.gz", distributionFile)
-                        .withFileFromFile("Dockerfile", cachedDockerfile)
-                        .withBuildArg("KEYCLOAK_DIST", "keycloakx.tar.gz")
+                new ImageFromDockerfile("keycloak-under-test", false)
+                        .withFileFromFile("keycloak.tar.gz", distributionFile)
+                        .withFileFromFile("Dockerfile", dockerFile)
+                        .withBuildArg("KEYCLOAK_DIST", "keycloak.tar.gz")
         )
                 .withExposedPorts(8080)
                 .withStartupAttempts(1)

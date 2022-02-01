@@ -58,6 +58,11 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-quarkus-dist</artifactId>
+            <type>zip</type>
+        </dependency>
+        <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-junit5</artifactId>
         </dependency>
