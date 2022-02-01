@@ -81,6 +81,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.services.util.AuthorizationContextUtil;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.services.util.P3PHelper;
@@ -1190,7 +1191,7 @@ public class AuthenticationManager {
         //if Dynamic Scopes are enabled, get the scopes from the AuthorizationRequestContext, passing the session and scopes as parameters
         // then concat a Stream with the ClientModel, as it's discarded in the getAuthorizationRequestContext method
         if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-            return Stream.concat(DefaultClientSessionContext.getAuthorizationRequestContext(session, authSession.getClientNote(OAuth2Constants.SCOPE))
+            return Stream.concat(AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, authSession.getClientNote(OAuth2Constants.SCOPE))
                     .getAuthorizationDetailEntries().stream(),
                     Collections.singletonList(new AuthorizationDetails(session.getContext().getClient())).stream());
         }
