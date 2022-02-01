@@ -1,14 +1,14 @@
-<#macro build parameters>
+<#macro build rootParameters="" parameters="">
 [source,bash]
 ----
-bin/kc.[sh|bat] build ${parameters}
+bin/kc.[sh|bat] ${rootParameters} build ${parameters}
 ----
 </#macro>
 
-<#macro start parameters>
+<#macro start rootParameters="" parameters="">
 [source,bash]
 ----
-bin/kc.[sh|bat] start ${parameters}
+bin/kc.[sh|bat] ${rootParameters} start ${parameters}
 ----
 </#macro>
 
