@@ -1,11 +1,14 @@
 package org.keycloak.guides.maven;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 public class Context {
 
@@ -22,14 +25,30 @@ public class Context {
         this.guides = new LinkedList<>();
 
         GuideParser parser = new GuideParser();
-        for (File f : new File(srcDir, "server").listFiles((dir, f) -> f.endsWith(".adoc") && !f.equals("index.adoc"))) {
+        File serverDir = new File(srcDir, "server");
+
+        Map<String, Integer> guidePriorities = loadPinnedGuides(new File(serverDir, "pinned-guides"));
+
+        for (File f : serverDir.listFiles((dir, f) -> f.endsWith(".adoc") && !f.equals("index.adoc"))) {
             Guide guide = parser.parse(f);
+
+            if (guidePriorities != null) {
+                Integer priority = guidePriorities.get(guide.getId());
+                guide.setPriority(priority != null ? priority : Integer.MAX_VALUE);
+            }
+
             if (guide != null) {
                 guides.add(guide);
             }
         }
 
-        Collections.sort(guides, Comparator.comparingInt(Guide::getPriority));
+        Collections.sort(guides, (o1, o2) -> {
+            if (o1.getPriority() == o2.getPriority()) {
+                return o1.getTitle().compareTo(o2.getTitle());
+            } else {
+                return Integer.compare(o1.getPriority(), o2.getPriority());
+            }
+        });
     }
 
     public Options getOptions() {
@@ -42,6 +61,24 @@ public class Context {
 
     public List<Guide> getGuides() {
         return guides;
+    }
+
+    private Map<String, Integer> loadPinnedGuides(File pinnedGuides) throws IOException {
+        if (!pinnedGuides.isFile()) {
+            return null;
+        }
+        Map<String, Integer> priorities = new HashMap<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(pinnedGuides))) {
+            int c = 1;
+            for (String l = br.readLine(); l != null; l = br.readLine()) {
+                l = l.trim();
+                if (!l.isEmpty()) {
+                    priorities.put(l, c);
+                }
+                c++;
+            }
+            return priorities;
+        }
     }
 
 }

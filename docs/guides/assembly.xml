@@ -12,5 +12,12 @@
                 <include>generated-guides/**</include>
             </includes>
         </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/src/main/server</directory>
+            <outputDirectory>/generated-guides/server/</outputDirectory>
+            <includes>
+                <include>pinned-guides</include>
+            </includes>
+        </fileSet>
     </fileSets>
 </assembly>

@@ -6,7 +6,6 @@
 <@tmpl.guide
 title="Running in a container"
 summary="Learn how to run Keycloak from a container image"
-priority=20
 includedOptions="db db-url db-username db-password features hostname https-key-store-file https-key-store-password metrics-enabled">
 
 Keycloak is handling containerized environments like Kubernetes or OpenShift as first-class-citizens. In this guide you'll learn how to run and optimize the Keycloak container image to have the best experience running a Keycloak container.
