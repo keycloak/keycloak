@@ -3,7 +3,7 @@
 
 <@tmpl.guide
 title="Configure outgoing HTTP requests"
-summary="How to configure Keycloak's HTTP client for outgoing requests."
+summary="How to configure the client used for outgoing HTTP requests."
 includedOptions="">
 
 Keycloak often needs to make requests to the applications and services it secures. Keycloak manages these outgoing connections using an HTTP client. This guide shows how to configure the client, it's connection pool, proxy environment settings, timeouts and more.
@@ -17,10 +17,10 @@ Please see <<Outgoing Http Client Configuration Options>> for the available conf
 
 == Outgoing Http Client Configuration Options
 
-The Http client Keycloak uses for outgoing communication is highly configurable. The available options are:
+The HTTP client Keycloak uses for outgoing communication is highly configurable. The available options are:
 
 *establish-connection-timeout-millis*::
-Maximum time in milliseconds until a connection approach times out. Default: Not set.
+Maximum time in milliseconds until establishing a connection times out. Default: Not set.
 
 *socket-timeout-millis*::
 Maximum time of inactivity between two data packets until a socket connection times out, in milliseconds. Default: 5000ms
