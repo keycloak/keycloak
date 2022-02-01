@@ -61,7 +61,7 @@ export default class ProviderPage {
   private roleLdapMapper = "role-ldap-mapper";
   private hcLdapRoleMapper = "hardcoded-ldap-role-mapper";
 
-  private rolesTab = "#pf-tab-roles-roles";
+  private rolesTab = "rolesTab";
   private createRoleBtn = "data-testid=no-roles-for-this-client-empty-action";
   private realmRolesSaveBtn = "data-testid=realm-roles-save-button";
   private roleNameField = "#kc-name";
@@ -208,7 +208,7 @@ export default class ProviderPage {
   }
 
   createRole(roleName: string) {
-    cy.get(this.rolesTab).click();
+    cy.findByTestId(this.rolesTab).click();
     cy.wait(1000);
     cy.get(`[${this.createRoleBtn}]`).click();
     cy.wait(1000);

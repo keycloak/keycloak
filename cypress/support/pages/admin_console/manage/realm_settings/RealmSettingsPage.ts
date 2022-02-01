@@ -810,8 +810,14 @@ export default class RealmSettingsPage {
   }
 
   shouldDeleteEditedProfile() {
-    cy.get(this.moreDrpDwn).last().click();
-    cy.get(this.moreDrpDwnItems).click();
+    cy.get('[data-label="Name"]')
+      .contains("Edit")
+      .parentsUntil("tbody")
+      .get(this.moreDrpDwn)
+      .last()
+      .click()
+      .get(this.moreDrpDwnItems)
+      .click();
     cy.findByTestId("modalConfirm").contains("Delete").click();
     cy.get(this.alertMessage).should("be.visible", "Client profile deleted");
     cy.get("table").should("not.have.text", "Edit");
