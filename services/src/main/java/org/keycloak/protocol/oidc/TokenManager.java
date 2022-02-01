@@ -640,6 +640,9 @@ public class TokenManager {
      * @return
      */
     public static boolean isValidScope(String scopes, AuthorizationRequestContext authorizationRequestContext, ClientModel client) {
+        if (scopes == null) {
+            return true;
+        }
         if (authorizationRequestContext.getAuthorizationDetailEntries() == null || authorizationRequestContext.getAuthorizationDetailEntries().isEmpty()) {
             return false;
         }

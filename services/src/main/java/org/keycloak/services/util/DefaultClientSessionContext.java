@@ -42,8 +42,6 @@ import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
-import org.keycloak.protocol.oidc.rar.AuthorizationRequestParserProvider;
-import org.keycloak.protocol.oidc.rar.parsers.ClientScopeAuthorizationRequestParserProviderFactory;
 import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.rar.AuthorizationRequestSource;
 import org.keycloak.util.TokenUtil;
@@ -192,7 +190,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
      * @return see description
      */
     private String buildScopesStringFromAuthorizationRequest() {
-        return this.getAuthorizationRequestContext().getAuthorizationDetailEntries().stream()
+        return AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, clientSession.getNote(OAuth2Constants.SCOPE)).getAuthorizationDetailEntries().stream()
                 .filter(authorizationDetails -> authorizationDetails.getSource().equals(AuthorizationRequestSource.SCOPE))
                 .filter(authorizationDetails -> authorizationDetails.getClientScope().isIncludeInTokenScope())
                 .filter(authorizationDetails -> isClientScopePermittedForUser(authorizationDetails.getClientScope()))
@@ -215,22 +213,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     @Override
     public AuthorizationRequestContext getAuthorizationRequestContext() {
-        return DefaultClientSessionContext.getAuthorizationRequestContext(this.session, clientSession.getNote(OAuth2Constants.SCOPE));
-    }
-
-    public static AuthorizationRequestContext getAuthorizationRequestContext(KeycloakSession keycloakSession, String scopes) {
-        if(!Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-            throw new RuntimeException("The Dynamic Scopes feature is not enabled and the AuthorizationRequestContext hasn't been generated");
-        }
-        AuthorizationRequestParserProvider clientScopeParser = keycloakSession.getProvider(AuthorizationRequestParserProvider.class,
-                ClientScopeAuthorizationRequestParserProviderFactory.CLIENT_SCOPE_PARSER_ID);
-
-        if(clientScopeParser == null) {
-            throw new RuntimeException(String.format("No provider found for authorization requests parser %1s",
-                    ClientScopeAuthorizationRequestParserProviderFactory.CLIENT_SCOPE_PARSER_ID));
-        }
-
-        return clientScopeParser.parseScopes(scopes);
+        return AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, clientSession.getNote(OAuth2Constants.SCOPE));
     }
 
     // Loading data
