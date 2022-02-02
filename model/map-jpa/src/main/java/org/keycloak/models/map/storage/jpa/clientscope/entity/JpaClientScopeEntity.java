@@ -230,7 +230,6 @@ public class JpaClientScopeEntity extends AbstractClientScopeEntity implements J
             JpaClientScopeAttributeEntity attr = iterator.next();
             if (Objects.equals(attr.getName(), name)) {
                 iterator.remove();
-                attr.setClientScope(null);
             }
         }
     }
@@ -268,9 +267,7 @@ public class JpaClientScopeEntity extends AbstractClientScopeEntity implements J
     public void setAttributes(Map<String, List<String>> attributes) {
         checkEntityVersionForUpdate();
         for (Iterator<JpaClientScopeAttributeEntity> iterator = this.attributes.iterator(); iterator.hasNext();) {
-            JpaClientScopeAttributeEntity attr = iterator.next();
             iterator.remove();
-            attr.setClientScope(null);
         }
         if (attributes != null) {
             for (Map.Entry<String, List<String>> attrEntry : attributes.entrySet()) {
