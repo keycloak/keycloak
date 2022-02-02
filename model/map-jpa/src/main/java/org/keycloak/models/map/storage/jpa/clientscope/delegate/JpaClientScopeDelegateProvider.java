@@ -28,47 +28,47 @@ import org.keycloak.models.map.clientscope.MapClientScopeEntity;
 import org.keycloak.models.map.clientscope.MapClientScopeEntityFields;
 import org.keycloak.models.map.common.EntityField;
 import org.keycloak.models.map.common.delegate.DelegateProvider;
+import org.keycloak.models.map.storage.jpa.JpaDelegateProvider;
 import org.keycloak.models.map.storage.jpa.clientscope.entity.JpaClientScopeEntity;
 
-public class JpaClientScopeDelegateProvider implements DelegateProvider<MapClientScopeEntity> {
+public class JpaClientScopeDelegateProvider extends JpaDelegateProvider<JpaClientScopeEntity> implements DelegateProvider<MapClientScopeEntity> {
 
-    private JpaClientScopeEntity delegate;
     private final EntityManager em;
 
     public JpaClientScopeDelegateProvider(JpaClientScopeEntity delegate, EntityManager em) {
-        this.delegate = delegate;
+        super(delegate);
         this.em = em;
     }
 
     @Override
     public MapClientScopeEntity getDelegate(boolean isRead, Enum<? extends EntityField<MapClientScopeEntity>> field, Object... parameters) {
-        if (delegate.isMetadataInitialized()) return delegate;
+        if (getDelegate().isMetadataInitialized()) return getDelegate();
         if (isRead) {
             if (field instanceof MapClientScopeEntityFields) {
                 switch ((MapClientScopeEntityFields) field) {
                     case ID:
                     case REALM_ID:
                     case NAME:
-                        return delegate;
+                        return getDelegate();
 
                     case ATTRIBUTES:
                         CriteriaBuilder cb = em.getCriteriaBuilder();
                         CriteriaQuery<JpaClientScopeEntity> query = cb.createQuery(JpaClientScopeEntity.class);
                         Root<JpaClientScopeEntity> root = query.from(JpaClientScopeEntity.class);
                         root.fetch("attributes", JoinType.INNER);
-                        query.select(root).where(cb.equal(root.get("id"), UUID.fromString(delegate.getId())));
+                        query.select(root).where(cb.equal(root.get("id"), UUID.fromString(getDelegate().getId())));
 
-                        delegate = em.createQuery(query).getSingleResult();
+                        setDelegate(em.createQuery(query).getSingleResult());
                         break;
 
                     default:
-                        delegate = em.find(JpaClientScopeEntity.class, UUID.fromString(delegate.getId()));
+                        setDelegate(em.find(JpaClientScopeEntity.class, UUID.fromString(getDelegate().getId())));
                 }
             } else throw new IllegalStateException("Not a valid client scope field: " + field);
         } else {
-            delegate = em.find(JpaClientScopeEntity.class, UUID.fromString(delegate.getId()));
+            setDelegate(em.find(JpaClientScopeEntity.class, UUID.fromString(getDelegate().getId())));
         }
-        return delegate;
+        return getDelegate();
     }
 
 }

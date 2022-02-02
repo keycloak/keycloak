@@ -135,6 +135,7 @@ public class JpaClientScopeEntity extends AbstractClientScopeEntity implements J
         metadata.setEntityVersion(entityVersion);
     }
 
+    @Override
     public int getVersion() {
         return version;
     }
