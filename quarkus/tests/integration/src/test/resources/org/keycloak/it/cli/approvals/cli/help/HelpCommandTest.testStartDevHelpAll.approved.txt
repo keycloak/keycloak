@@ -27,7 +27,7 @@ Cluster:
 Database:
 
 --db <vendor>        The database vendor. Possible values are: h2-file, h2-mem, mariadb, mssql,
-                       mssql-2012, mysql, oracle, postgres, postgres-95
+                       mysql, oracle, postgres
 --db-password <password>
                      The password of the database user.
 --db-pool-initial-size <size>
