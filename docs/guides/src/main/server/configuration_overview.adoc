@@ -153,7 +153,7 @@ You are able to use placeholders to dynamically change the value of configuratio
 For that purpose, you use the following format when defining the value of an option:
 
 ```
-db.username=${r"${my.db.user}"}
+db-username=${r"${my.db.user}"}
 ```
 
 By using a placeholder such as in the example above, the server is going to try to resolve the `my.db.user` placeholder from the `KC_MY_DB_USER` environment variable.
