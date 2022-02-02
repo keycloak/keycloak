@@ -92,8 +92,6 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         } else {
             configureProfile(context);
             configureDatabase(context);
-            // WORKAROUND: this intercepts the output when actually starting the server.
-            QuarkusConsole.installRedirects();
             super.beforeEach(context);
         }
     }
