@@ -1395,6 +1395,11 @@ public class AuthenticationManager {
                 verifier.audience(checkAudience);
             }
 
+            // Check token revocation in case of access token
+            if (checkTokenType) {
+                verifier.withChecks(new TokenManager.TokenRevocationCheck(session));
+            }
+
             String kid = verifier.getHeader().getKeyId();
             String algorithm = verifier.getHeader().getAlgorithm().name();
 
@@ -1432,7 +1437,11 @@ public class AuthenticationManager {
                     UserSessionModel offlineUserSession = session.sessions().getOfflineUserSession(realm, token.getSessionState());
                     if (isOfflineSessionValid(realm, offlineUserSession)) {
                         user = offlineUserSession.getUser();
-                        return new AuthResult(user, offlineUserSession, token);
+                        ClientModel client = realm.getClientByClientId(token.getIssuedFor());
+                        if (!isClientValid(offlineUserSession, client, token)) {
+                            return null;
+                        }
+                        return new AuthResult(user, offlineUserSession, token, client);
                     }
                 }
 
@@ -1443,11 +1452,43 @@ public class AuthenticationManager {
 
             session.setAttribute("state_checker", token.getOtherClaims().get("state_checker"));
 
-            return new AuthResult(user, userSession, token);
+            ClientModel client;
+            if (isCookie) {
+                client = null;
+            } else {
+                client = realm.getClientByClientId(token.getIssuedFor());
+                if (!isClientValid(userSession, client, token)) {
+                    return null;
+                }
+            }
+            return new AuthResult(user, userSession, token, client);
         } catch (VerificationException e) {
             logger.debugf("Failed to verify identity token: %s", e.getMessage());
         }
         return null;
+    }
+
+    // Verify client and whether clientSession exists
+    private static boolean isClientValid(UserSessionModel userSession, ClientModel client, AccessToken token) {
+        if (client == null || !client.isEnabled()) {
+            logger.debugf("Identity token issued for unknown or disabled client '%s'", token.getIssuedFor());
+            return false;
+        }
+
+        if (token.getIssuedAt() < client.getNotBefore()) {
+            logger.debug("Client notBefore newer than token");
+            return false;
+        }
+
+        // User session may not exists for example during client credentials auth
+        if (userSession == null) return true;
+
+        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
+        if (clientSession == null) {
+            logger.debugf("Client session for client '%s' not present in user session '%s'", client.getClientId(), userSession.getId());
+            return false;
+        }
+        return true;
     }
 
     private static boolean isUserValid(KeycloakSession session, RealmModel realm, UserModel user, AccessToken token) {
@@ -1473,11 +1514,13 @@ public class AuthenticationManager {
         private final UserModel user;
         private final UserSessionModel session;
         private final AccessToken token;
+        private final ClientModel client;
 
-        public AuthResult(UserModel user, UserSessionModel session, AccessToken token) {
+        public AuthResult(UserModel user, UserSessionModel session, AccessToken token, ClientModel client) {
             this.user = user;
             this.session = session;
             this.token = token;
+            this.client = client;
         }
 
         public UserSessionModel getSession() {
@@ -1490,6 +1533,10 @@ public class AuthenticationManager {
 
         public AccessToken getToken() {
             return token;
+        }
+
+        public ClientModel getClient() {
+            return client;
         }
     }
 

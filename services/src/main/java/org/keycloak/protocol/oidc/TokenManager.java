@@ -240,15 +240,10 @@ public class TokenManager {
 
         try {
             TokenVerifier.createWithoutSignature(token)
-                    .withChecks(NotBeforeCheck.forModel(client), TokenVerifier.IS_ACTIVE)
+                    .withChecks(NotBeforeCheck.forModel(client), TokenVerifier.IS_ACTIVE, new TokenRevocationCheck(session))
                     .verify();
         } catch (VerificationException e) {
             logger.debugf("JWT check failed: %s", e.getMessage());
-            return false;
-        }
-
-        TokenRevocationStoreProvider revocationStore = session.getProvider(TokenRevocationStoreProvider.class);
-        if (revocationStore.isRevoked(token.getId())) {
             return false;
         }
 
@@ -1343,6 +1338,24 @@ public class TokenManager {
 
         public static NotBeforeCheck forModel(KeycloakSession session, RealmModel realmModel, UserModel userModel) {
             return new NotBeforeCheck(session.users().getNotBeforeOfUser(realmModel, userModel));
+        }
+    }
+
+    /**
+     * Check if access token was revoked with OAuth revocation endpoint
+     */
+    public static class TokenRevocationCheck implements TokenVerifier.Predicate<AccessToken> {
+
+        private final KeycloakSession session;
+
+        public TokenRevocationCheck(KeycloakSession session) {
+            this.session = session;
+        }
+
+        @Override
+        public boolean test(AccessToken token) {
+            TokenRevocationStoreProvider revocationStore = session.getProvider(TokenRevocationStoreProvider.class);
+            return !revocationStore.isRevoked(token.getId());
         }
     }
 
