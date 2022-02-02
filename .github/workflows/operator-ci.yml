@@ -1,6 +1,20 @@
 name: Keycloak Operator CI
 
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - 'core/**'
+      - 'common/**'
+      - 'operator/**'
+      - 'pom.xml'
+      - '.github/workflows/operator-ci.yml'
+  pull_request:
+    paths:
+      - 'core/**'
+      - 'common/**'
+      - 'operator/**'
+      - 'pom.xml'
+      - '.github/workflows/operator-ci.yml'
 
 env:
   JDK_VERSION: 11
