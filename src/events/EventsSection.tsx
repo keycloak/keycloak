@@ -27,7 +27,7 @@ import { cellWidth, expandable } from "@patternfly/react-table";
 import type EventRepresentation from "@keycloak/keycloak-admin-client/lib/defs/eventRepresentation";
 import type EventType from "@keycloak/keycloak-admin-client/lib/defs/eventTypes";
 import type { RealmEventsConfigRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/realmEventsConfigRepresentation";
-import { pickBy } from "lodash";
+import { pickBy } from "lodash-es";
 import moment from "moment";
 import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";

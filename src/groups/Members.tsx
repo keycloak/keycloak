@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import _ from "lodash";
+import { uniqBy } from "lodash-es";
 import {
   AlertVariant,
   Button,
@@ -74,7 +74,7 @@ export const Members = () => {
           await adminClient.groups.listMembers({ id: group.id! })
         );
       }
-      members = _.uniqBy(members, (member) => member.username);
+      members = uniqBy(members, (member) => member.username);
     }
 
     const memberOfPromises = await Promise.all(

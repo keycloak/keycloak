@@ -5,7 +5,7 @@ import useBreadcrumbs, {
   BreadcrumbsRoute,
 } from "use-react-router-breadcrumbs";
 import { useTranslation } from "react-i18next";
-import _ from "lodash";
+import { uniqBy } from "lodash-es";
 import { Breadcrumb, BreadcrumbItem } from "@patternfly/react-core";
 
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -23,7 +23,7 @@ export const PageBreadCrumbs = () => {
     breadcrumb: route.breadcrumb?.(t),
   }));
 
-  const crumbs = _.uniqBy(
+  const crumbs = uniqBy(
     useBreadcrumbs(routesWithCrumbs, {
       disableDefaults: true,
       excludePaths: ["/", `/${realm}`],

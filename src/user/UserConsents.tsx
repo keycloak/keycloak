@@ -12,7 +12,7 @@ import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable
 import { emptyFormatter } from "../util";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { cellWidth } from "@patternfly/react-table";
-import _ from "lodash";
+import { sortBy } from "lodash-es";
 import type UserConsentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userConsentRepresentation";
 import { CubesIcon } from "@patternfly/react-icons";
 import moment from "moment";
@@ -29,7 +29,7 @@ export const UserConsents = () => {
   const adminClient = useAdminClient();
   const { id } = useParams<{ id: string }>();
   const alphabetize = (consentsList: UserConsentRepresentation[]) => {
-    return _.sortBy(consentsList, (client) => client.clientId?.toUpperCase());
+    return sortBy(consentsList, (client) => client.clientId?.toUpperCase());
   };
 
   const refresh = () => setKey(new Date().getTime());

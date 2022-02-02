@@ -10,7 +10,7 @@ import React from "react";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { UseFormMethods, useWatch, Controller } from "react-hook-form";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import _ from "lodash";
+import { isEqual } from "lodash-es";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import useToggle from "../../utils/useToggle";
 
@@ -112,7 +112,7 @@ const CacheFields = ({ form }: { form: UseFormMethods }) => {
           )}
         />
       </FormGroup>
-      {_.isEqual(cachePolicyType, ["EVICT_WEEKLY"]) ? (
+      {isEqual(cachePolicyType, ["EVICT_WEEKLY"]) ? (
         <FormGroup
           label={t("evictionDay")}
           labelIcon={
@@ -168,8 +168,8 @@ const CacheFields = ({ form }: { form: UseFormMethods }) => {
           />
         </FormGroup>
       ) : null}
-      {_.isEqual(cachePolicyType, ["EVICT_DAILY"]) ||
-      _.isEqual(cachePolicyType, ["EVICT_WEEKLY"]) ? (
+      {isEqual(cachePolicyType, ["EVICT_DAILY"]) ||
+      isEqual(cachePolicyType, ["EVICT_WEEKLY"]) ? (
         <>
           <FormGroup
             label={t("evictionHour")}
@@ -237,7 +237,7 @@ const CacheFields = ({ form }: { form: UseFormMethods }) => {
           </FormGroup>
         </>
       ) : null}
-      {_.isEqual(cachePolicyType, ["MAX_LIFESPAN"]) ? (
+      {isEqual(cachePolicyType, ["MAX_LIFESPAN"]) ? (
         <FormGroup
           label={t("maxLifespan")}
           labelIcon={

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import _ from "lodash";
+import { sortBy } from "lodash-es";
 import {
   AlertVariant,
   Button,
@@ -109,7 +109,7 @@ export const ManageOderDialog = ({
         onDragCancel={onDragCancel}
         itemOrder={order}
       >
-        {_.sortBy(providers, "config.guiOrder").map((provider) => (
+        {sortBy(providers, "config.guiOrder").map((provider) => (
           <DataListItem
             aria-labelledby={provider.alias}
             id={provider.alias}

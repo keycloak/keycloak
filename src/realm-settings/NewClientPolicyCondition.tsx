@@ -17,7 +17,7 @@ import { FormPanel } from "../components/scroll-form/FormPanel";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import type ClientPolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyRepresentation";
-import { camelCase } from "lodash";
+import { camelCase } from "lodash-es";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 import { useHistory, useParams } from "react-router";

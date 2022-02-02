@@ -16,7 +16,7 @@ import { useForm } from "react-hook-form";
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
-import _ from "lodash";
+import { capitalize } from "lodash-es";
 import { useParams } from "react-router-dom";
 import type FederatedIdentityRepresentation from "@keycloak/keycloak-admin-client/lib/defs/federatedIdentityRepresentation";
 import type { UserParams } from "./routes/User";
@@ -60,7 +60,7 @@ export const UserIdpModal = ({
     <Modal
       variant={ModalVariant.small}
       title={t("users:linkAccountTitle", {
-        provider: _.capitalize(federatedId),
+        provider: capitalize(federatedId),
       })}
       isOpen={true}
       onClose={handleModalToggle}
@@ -108,7 +108,7 @@ export const UserIdpModal = ({
             type="text"
             id="link-idp-name"
             name="identityProvider"
-            value={_.capitalize(federatedId)}
+            value={capitalize(federatedId)}
             validated={
               errors.identityProvider
                 ? ValidatedOptions.error

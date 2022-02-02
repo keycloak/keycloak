@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import _ from "lodash";
+import { findIndex } from "lodash-es";
 import {
   Badge,
   Button,
@@ -127,7 +127,7 @@ export const AddRoleMappingModal = ({
   };
 
   const loader = async () => {
-    const realmRolesSelected = _.findIndex(
+    const realmRolesSelected = findIndex(
       selectedClients,
       (client) => client.name === "realmRoles"
     );

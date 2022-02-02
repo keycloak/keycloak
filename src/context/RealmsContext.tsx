@@ -1,5 +1,5 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import { sortBy } from "lodash";
+import { sortBy } from "lodash-es";
 import React, {
   createContext,
   FunctionComponent,

@@ -11,7 +11,7 @@ import {
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import React, { useState } from "react";
-import _ from "lodash";
+import { get, isEqual } from "lodash-es";
 
 import type TestLdapConnectionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/testLdapConnection";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
@@ -46,7 +46,7 @@ const convertFormToSettings = (form: UseFormMethods) => {
   const settings: TestLdapConnectionRepresentation = {};
 
   testLdapProperties.forEach((key) => {
-    const value = _.get(form.getValues(), `config.${key}`);
+    const value = get(form.getValues(), `config.${key}`);
     settings[key] = Array.isArray(value) ? value[0] : "";
   });
 
@@ -285,7 +285,7 @@ export const LdapSettingsConnection = ({
           ></Controller>
         </FormGroup>
 
-        {_.isEqual(ldapBindType, ["simple"]) && (
+        {isEqual(ldapBindType, ["simple"]) && (
           <>
             <FormGroup
               label={t("bindDn")}

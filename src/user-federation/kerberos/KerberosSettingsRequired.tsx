@@ -14,7 +14,7 @@ import { FormAccess } from "../../components/form-access/FormAccess";
 import { useRealm } from "../../context/realm-context/RealmContext";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import _ from "lodash";
+import { isEqual } from "lodash-es";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 
@@ -261,7 +261,7 @@ export const KerberosSettingsRequired = ({
           />
         </FormGroup>
 
-        {_.isEqual(allowPassAuth, ["true"]) ? (
+        {isEqual(allowPassAuth, ["true"]) ? (
           <FormGroup
             label={t("editMode")}
             labelIcon={

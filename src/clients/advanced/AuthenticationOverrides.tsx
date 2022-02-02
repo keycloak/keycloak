@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Control, Controller } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import _ from "lodash";
+import { sortBy } from "lodash-es";
 import {
   ActionGroup,
   Button,
@@ -40,7 +40,7 @@ export const AuthenticationOverrides = ({
       let filteredFlows = [
         ...flows.filter((flow) => flow.providerId !== "client-flow"),
       ];
-      filteredFlows = _.sortBy(filteredFlows, [(f) => f.alias]);
+      filteredFlows = sortBy(filteredFlows, [(f) => f.alias]);
       setFlows([
         <SelectOption key="empty" value="">
           {t("common:choose")}

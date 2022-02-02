@@ -1,7 +1,7 @@
 import React, { Fragment, useState } from "react";
 import { Link, useHistory } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import _ from "lodash";
+import { sortBy, groupBy } from "lodash-es";
 import {
   AlertVariant,
   Badge,
@@ -41,7 +41,7 @@ import helpUrls from "../help-urls";
 
 export default function IdentityProvidersSection() {
   const { t } = useTranslation("identity-providers");
-  const identityProviders = _.groupBy(
+  const identityProviders = groupBy(
     useServerInfo().identityProviders,
     "groupName"
   );
@@ -74,7 +74,7 @@ export default function IdentityProvidersSection() {
     []
   );
 
-  const loader = () => Promise.resolve(_.sortBy(providers, "alias"));
+  const loader = () => Promise.resolve(sortBy(providers, "alias"));
 
   const DetailLink = (identityProvider: IdentityProviderRepresentation) => (
     <Link
@@ -112,7 +112,7 @@ export default function IdentityProvidersSection() {
   const identityProviderOptions = () =>
     Object.keys(identityProviders).map((group) => (
       <DropdownGroup key={group} label={group}>
-        {_.sortBy(identityProviders[group], "name").map((provider) => (
+        {sortBy(identityProviders[group], "name").map((provider) => (
           <DropdownItem
             key={provider.id}
             value={provider.id}
@@ -189,26 +189,24 @@ export default function IdentityProvidersSection() {
                 </TextContent>
                 <hr className="pf-u-mb-lg" />
                 <Gallery hasGutter>
-                  {_.sortBy(identityProviders[group], "name").map(
-                    (provider) => (
-                      <Card
-                        className="keycloak-empty-state-card"
-                        key={provider.id}
-                        isHoverable
-                        data-testid={`${provider.id}-card`}
-                        onClick={() => navigateToCreate(provider.id)}
-                      >
-                        <CardTitle>
-                          <Split hasGutter>
-                            <SplitItem>
-                              <ProviderIconMapper provider={provider} />
-                            </SplitItem>
-                            <SplitItem isFilled>{provider.name}</SplitItem>
-                          </Split>
-                        </CardTitle>
-                      </Card>
-                    )
-                  )}
+                  {sortBy(identityProviders[group], "name").map((provider) => (
+                    <Card
+                      className="keycloak-empty-state-card"
+                      key={provider.id}
+                      isHoverable
+                      data-testid={`${provider.id}-card`}
+                      onClick={() => navigateToCreate(provider.id)}
+                    >
+                      <CardTitle>
+                        <Split hasGutter>
+                          <SplitItem>
+                            <ProviderIconMapper provider={provider} />
+                          </SplitItem>
+                          <SplitItem isFilled>{provider.name}</SplitItem>
+                        </Split>
+                      </CardTitle>
+                    </Card>
+                  ))}
                 </Gallery>
               </Fragment>
             ))}

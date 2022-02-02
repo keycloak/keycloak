@@ -1,6 +1,6 @@
 import React, { ReactNode, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { get } from "lodash";
+import { get } from "lodash-es";
 import {
   TableComposable,
   Tbody,

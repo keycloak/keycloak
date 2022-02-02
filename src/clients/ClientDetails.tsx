@@ -12,7 +12,7 @@ import {
 } from "@patternfly/react-core";
 import { InfoCircleIcon } from "@patternfly/react-icons";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import _, { cloneDeep } from "lodash";
+import { cloneDeep, sortBy } from "lodash-es";
 import React, { useMemo, useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -224,7 +224,7 @@ export default function ClientDetails() {
 
   const loader = async () => {
     const roles = await adminClient.clients.listRoles({ id: clientId });
-    return _.sortBy(roles, (role) => role.name?.toUpperCase());
+    return sortBy(roles, (role) => role.name?.toUpperCase());
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({

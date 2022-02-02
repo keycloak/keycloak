@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { sortedUniq } from "lodash";
+import { sortedUniq } from "lodash-es";
 import {
   FormGroup,
   Select,

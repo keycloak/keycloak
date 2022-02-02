@@ -22,7 +22,7 @@ import {
 } from "@patternfly/react-core";
 import React from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { xor } from "lodash";
+import { xor } from "lodash-es";
 
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";

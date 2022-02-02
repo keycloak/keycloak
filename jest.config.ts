@@ -1,4 +1,4 @@
-import type { InitialOptionsTsJest } from "ts-jest/dist/types";
+import type { InitialOptionsTsJest } from "ts-jest";
 
 const config: InitialOptionsTsJest = {
   preset: "ts-jest",
@@ -11,6 +11,7 @@ const config: InitialOptionsTsJest = {
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   moduleNameMapper: {
     "\\.css$": "<rootDir>/mocks/fileMock.ts",
+    "lodash-es": "lodash",
   },
 };
 

@@ -20,7 +20,7 @@ import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
 
 import "../attribute-form/attribute-form.css";
 import { defaultContextAttributes } from "../../clients/utils";
-import { camelCase } from "lodash";
+import { camelCase } from "lodash-es";
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
 
 export type AttributeType = {

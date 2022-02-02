@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { cloneDeep, isEqual, uniqWith } from "lodash";
+import { cloneDeep, isEqual, uniqWith } from "lodash-es";
 import { Controller, useForm, useFormContext, useWatch } from "react-hook-form";
 import {
   ActionGroup,

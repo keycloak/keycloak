@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { omit, sortBy } from "lodash";
+import { omit, sortBy } from "lodash-es";
 import {
   Button,
   Dropdown,

@@ -4,7 +4,7 @@ import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
-import { merge } from "lodash";
+import { merge } from "lodash-es";
 
 export default class AdminClient {
   private client: KeycloakAdminClient;

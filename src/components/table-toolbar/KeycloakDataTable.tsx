@@ -18,7 +18,7 @@ import {
   TableProps,
   TableVariant,
 } from "@patternfly/react-table";
-import _ from "lodash";
+import { get, cloneDeep, differenceBy } from "lodash-es";
 
 import { PaginatingTableToolbar } from "./PaginatingTableToolbar";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
@@ -208,7 +208,7 @@ export function KeycloakDataTable<T>({
       if (col.cellRenderer) {
         return { title: col.cellRenderer(value) };
       }
-      return _.get(value, col.name);
+      return get(value, col.name);
     });
   };
 
@@ -223,9 +223,7 @@ export function KeycloakDataTable<T>({
             data: value,
             disableSelection: disabledRow,
             disableActions: disabledRow,
-            selected: !!selected.find(
-              (v) => _.get(v, "id") === _.get(value, "id")
-            ),
+            selected: !!selected.find((v) => get(v, "id") === get(value, "id")),
             isOpen: isDetailColumnsEnabled(value) ? false : undefined,
             cells: renderCell(columns, value),
           },
@@ -308,7 +306,7 @@ export function KeycloakDataTable<T>({
 
   const convertAction = () =>
     actions &&
-    _.cloneDeep(actions).map((action: Action<T>, index: number) => {
+    cloneDeep(actions).map((action: Action<T>, index: number) => {
       delete action.onRowClick;
       action.onClick = async (_, rowIndex) => {
         const result = await actions[index].onRowClick!(
@@ -342,7 +340,7 @@ export function KeycloakDataTable<T>({
     }
 
     // Keeps selected items when paginating
-    const difference = _.differenceBy(
+    const difference = differenceBy(
       selected,
       data!.map((row) => row.data),
       "id"

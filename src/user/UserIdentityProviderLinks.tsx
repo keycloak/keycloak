@@ -19,7 +19,7 @@ import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client
 import type FederatedIdentityRepresentation from "@keycloak/keycloak-admin-client/lib/defs/federatedIdentityRepresentation";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import _ from "lodash";
+import { capitalize } from "lodash-es";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useAlerts } from "../components/alert/Alerts";
 import { UserIdpModal } from "./UserIdPModal";
@@ -83,10 +83,10 @@ export const UserIdentityProviderLinks = () => {
 
   const [toggleUnlinkDialog, UnlinkConfirm] = useConfirmDialog({
     titleKey: t("users:unlinkAccountTitle", {
-      provider: _.capitalize(federatedId),
+      provider: capitalize(federatedId),
     }),
     messageKey: t("users:unlinkAccountConfirm", {
-      provider: _.capitalize(federatedId),
+      provider: capitalize(federatedId),
     }),
     continueButtonLabel: "users:unlink",
     continueButtonVariant: ButtonVariant.primary,
@@ -114,7 +114,7 @@ export const UserIdentityProviderLinks = () => {
           tab: "settings",
         })}
       >
-        {_.capitalize(idp.identityProvider)}
+        {capitalize(idp.identityProvider)}
       </Link>
     );
   };

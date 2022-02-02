@@ -16,7 +16,7 @@ import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { emptyFormatter } from "../util";
 import { toAddUser } from "../user/routes/AddUser";
-import _ from "lodash";
+import { differenceBy } from "lodash-es";
 
 type MemberModalProps = {
   groupId: string;
@@ -43,7 +43,7 @@ export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
 
     try {
       const users = await adminClient.users.find({ ...params });
-      return _.differenceBy(users, members, "id").slice(0, max);
+      return differenceBy(users, members, "id").slice(0, max);
     } catch (error) {
       addError("groups:noUsersFoundError", error);
       return [];
