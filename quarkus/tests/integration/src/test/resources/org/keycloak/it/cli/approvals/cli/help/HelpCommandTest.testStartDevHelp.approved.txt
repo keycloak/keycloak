@@ -100,6 +100,17 @@ Vault:
 --vault-dir <dir>    If set, secrets can be obtained by reading the content of files within the
                        given directory.
 
+Logging:
+
+--log-format <format>
+                     The format of log entries. If the format has spaces in it, you need to escape
+                       the value such as "<format>". Default: %d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c]
+                       (%t) %s%e%n.
+--log-level <category:level>
+                     The log level of the root category or a comma-separated list of individual
+                       categories and their levels. For the root category, you don't need to
+                       specify a category. Default: info.
+
 Do NOT start the server using this command when deploying to production.
 
 Use 'kc.sh start-dev --help-all' to list all available options, including build

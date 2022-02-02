@@ -10,6 +10,7 @@ public enum ConfigCategory {
     METRICS("Metrics", 60),
     PROXY("Proxy", 70),
     VAULT("Vault", 80),
+    LOGGING("Logging", 90),
     GENERAL("General", 999);
 
     private final String heading;

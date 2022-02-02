@@ -35,7 +35,7 @@ import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest(reInstall = DistributionTest.ReInstall.NEVER)
-@BeforeStartDistribution(QuarkusPropertiesAutoBuildDistTest.SetDebugLogLevel.class)
+@BeforeStartDistribution(QuarkusPropertiesAutoBuildDistTest.DisableConsoleLogHandler.class)
 @RawDistOnly(reason = "Containers are immutable")
 @TestMethodOrder(OrderAnnotation.class)
 public class QuarkusPropertiesAutoBuildDistTest {
@@ -46,8 +46,7 @@ public class QuarkusPropertiesAutoBuildDistTest {
     void testReAugOnFirstRun(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertBuild();
-        cliResult.assertMessage("DEBUG [");
-        cliResult.assertStarted();
+        assertFalse(cliResult.getOutput().contains("INFO  [io.quarkus]"));
     }
 
     @Test
@@ -56,33 +55,32 @@ public class QuarkusPropertiesAutoBuildDistTest {
     void testSecondStartDoNotTriggerReAug(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertNoBuild();
-        cliResult.assertMessage("DEBUG [");
-        cliResult.assertStarted();
+        assertFalse(cliResult.getOutput().contains("INFO  [io.quarkus]"));
     }
 
     @Test
-    @BeforeStartDistribution(SetInfoLogLevel.class)
+    @BeforeStartDistribution(EnableConsoleLogHandler.class)
     @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(3)
     void testReAugAfterChangingProperty(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertBuild();
-        assertFalse(cliResult.getOutput().contains("DEBUG ["));
+        assertTrue(cliResult.getOutput().contains("INFO  [io.quarkus]"));
     }
 
-    public static class SetDebugLogLevel implements Consumer<KeycloakDistribution> {
+    public static class DisableConsoleLogHandler implements Consumer<KeycloakDistribution> {
 
         @Override
         public void accept(KeycloakDistribution distribution) {
-            distribution.setQuarkusProperty("quarkus.log.level", "DEBUG");
+            distribution.setQuarkusProperty("quarkus.log.console.enable", "false");
         }
     }
 
-    public static class SetInfoLogLevel implements Consumer<KeycloakDistribution> {
+    public static class EnableConsoleLogHandler implements Consumer<KeycloakDistribution> {
 
         @Override
         public void accept(KeycloakDistribution distribution) {
-            distribution.setQuarkusProperty("quarkus.log.level", "INFO");
+            distribution.setQuarkusProperty("quarkus.log.console.enable", "true");
         }
     }
 

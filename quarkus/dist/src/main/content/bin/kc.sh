@@ -23,7 +23,7 @@ fi
 GREP="grep"
 DIRNAME=`dirname "$RESOLVED_NAME"`
 
-SERVER_OPTS="-Dkc.home.dir=$DIRNAME/../ -Djboss.server.config.dir=$DIRNAME/../conf -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+SERVER_OPTS="-Dkc.home.dir=$DIRNAME/../ -Djboss.server.config.dir=$DIRNAME/../conf -Djava.util.logging.manager=org.jboss.logmanager.LogManager -Dquarkus-log-max-startup-records=10000"
 
 DEBUG_MODE="${DEBUG:-false}"
 DEBUG_PORT="${DEBUG_PORT:-8787}"
