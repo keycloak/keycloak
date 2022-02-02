@@ -27,7 +27,6 @@ import org.keycloak.rar.AuthorizationRequestSource;
 
 import java.util.stream.Stream;
 
-
 /**
  * @author <a href="mailto:dgozalob@redhat.com">Daniel Gozalo</a>
  * Util class to unify a way to obtain the {@link AuthorizationRequestContext}.

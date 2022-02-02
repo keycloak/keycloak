@@ -34,6 +34,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
@@ -48,6 +49,7 @@ import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -101,6 +103,7 @@ import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -485,12 +488,18 @@ public class UserResource {
     }
 
     private Map<String, Object> toConsent(UserConsentModel consent, Set<ClientModel> offlineClients) {
-
         UserConsentRepresentation rep = ModelToRepresentation.toRepresentation(consent);
+        Set<String> scopes = new HashSet<>();
+        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+            scopes.addAll(UserConsentManager.getProcessedConsentedScopesWithDynamicParam(session, user, consent.getClient(), UserConsentManager.SHOW_SCOPE_NAME));
+        } else {
+            scopes.addAll(rep.getGrantedClientScopes());
+        }
+
 
         Map<String, Object> currentRep = new HashMap<>();
         currentRep.put("clientId", consent.getClient().getClientId());
-        currentRep.put("grantedClientScopes", rep.getGrantedClientScopes());
+        currentRep.put("grantedClientScopes", scopes);
         currentRep.put("createdDate", rep.getCreatedDate());
         currentRep.put("lastUpdatedDate", rep.getLastUpdatedDate());
 
@@ -503,6 +512,18 @@ public class UserResource {
         }
         currentRep.put("additionalGrants", additionalGrants);
         return currentRep;
+    }
+
+    private String getScopeIdWithParam(UserConsentModel consent, String scopeId) {
+        String id = scopeId;
+        String param = null;
+        if (scopeId.contains(":")) {
+            String[] scopeParts = scopeId.split(":");
+            id = scopeParts[0];
+            param = scopeParts[1];
+        }
+        ClientScopeModel clientScopeModel = KeycloakModelUtils.findClientScopeById(realm, consent.getClient(), id);
+        return param == null ? clientScopeModel.getName() : clientScopeModel.getName() + ":" + param;
     }
 
 

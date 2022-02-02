@@ -75,6 +75,7 @@ import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
+import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.IdentityBrokerService;
@@ -212,9 +213,15 @@ public class TokenManager {
 
         ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, oldTokenScope, session);
 
-        // Check user didn't revoke granted consent
-        if (!verifyConsentStillAvailable(session, user, client, clientSessionCtx.getClientScopesStream())) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "Client no longer has requested consent from user");
+        if(Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+            if(!verifyConsentStillAvailable(session, user, client, clientSessionCtx.getAuthorizationRequestContext())) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "Client no longer has requested consent from user");
+            }
+        } else {
+            // Check user didn't revoke granted consent
+            if (!verifyConsentStillAvailable(session, user, client, clientSessionCtx.getClientScopesStream())) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "Client no longer has requested consent from user");
+            }
         }
 
         clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, oldToken.getNonce());
@@ -549,7 +556,7 @@ public class TokenManager {
 
         Set<String> clientScopeIds;
         if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-            clientScopeIds = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, authSession.getClientNote(OAuth2Constants.SCOPE))
+             clientScopeIds = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, authSession.getClientNote(OAuth2Constants.SCOPE))
                     .map(ClientScopeModel::getId)
                     .collect(Collectors.toSet());
         } else {
@@ -712,6 +719,29 @@ public class TokenManager {
 
     public static Stream<String> parseScopeParameter(String scopeParam) {
         return Arrays.stream(scopeParam.split(" ")).distinct();
+    }
+
+    public static boolean verifyConsentStillAvailable(KeycloakSession session, UserModel user, ClientModel client, AuthorizationRequestContext authorizationRequestContext) {
+        if (!client.isConsentRequired()) {
+            return true;
+        }
+
+        List<AuthorizationDetails> authorizationDetailsList = authorizationRequestContext.getAuthorizationDetailEntries();
+        Set<String> storedConsent = UserConsentManager.getConsentedScopesStream(session, user, client).collect(Collectors.toSet());
+
+        boolean dynamicScopesMatch = authorizationDetailsList.stream()
+                .filter(AuthorizationDetails::isDynamicScope)
+                .filter(authorizationDetails -> authorizationDetails.getClientScope().isDisplayOnConsentScreen())
+                .map(authorizationDetails -> authorizationDetails.getClientScope().getId().concat(":").concat(authorizationDetails.getDynamicScopeParam()))
+                .allMatch(storedConsent::contains);
+
+        boolean staticScopesMatch = authorizationDetailsList.stream()
+                .filter(authorizationDetails -> authorizationDetails.getClientScope().isDisplayOnConsentScreen())
+                .filter(((Predicate<? super AuthorizationDetails>) AuthorizationDetails::isDynamicScope).negate())
+                .map(authorizationDetails -> authorizationDetails.getClientScope().getId())
+                .allMatch(storedConsent::contains);
+
+        return dynamicScopesMatch && staticScopesMatch;
     }
 
     // Check if user still has granted consents to all requested client scopes

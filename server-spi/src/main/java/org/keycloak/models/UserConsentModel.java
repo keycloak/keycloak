@@ -17,7 +17,11 @@
 
 package org.keycloak.models;
 
+import org.keycloak.rar.AuthorizationDetails;
+
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -25,8 +29,10 @@ import java.util.Set;
  */
 public class UserConsentModel {
 
+    private String id;
     private final ClientModel client;
     private Set<ClientScopeModel> clientScopes = new HashSet<>();
+    private List<String> consentedScopesFromAuthorizationDetails = new LinkedList<>();
     private Long createdDate;
     private Long lastUpdatedDate;
 
@@ -42,8 +48,28 @@ public class UserConsentModel {
         clientScopes.add(clientScope);
     }
 
+    public void addConsentedScopeFromAuthorizationDetails(AuthorizationDetails authorizationDetails) {
+        String scopeName = authorizationDetails.getClientScope().getId();
+        if (authorizationDetails.isDynamicScope()) {
+            scopeName = scopeName.concat(":").concat(authorizationDetails.getDynamicScopeParam());
+        }
+        consentedScopesFromAuthorizationDetails.add(scopeName);
+    }
+
     public Set<ClientScopeModel> getGrantedClientScopes() {
         return clientScopes;
+    }
+
+    public List<String> getConsentedScopesFromAuthorizationDetails() {
+        return consentedScopesFromAuthorizationDetails;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public boolean isClientScopeGranted(ClientScopeModel clientScope) {
@@ -52,6 +78,10 @@ public class UserConsentModel {
             if (apprClientScope.getId().equals(clientScope.getId())) return true;
         }
         return false;
+    }
+
+    public boolean isClientScopeGranted(AuthorizationDetails authDetails, List<String> consentedScopes) {
+        return consentedScopes.stream().anyMatch(s -> authDetails.getClientScope().getId().equalsIgnoreCase(s) || (authDetails.getClientScope().getId() + ":" + authDetails.getDynamicScopeParam()).equalsIgnoreCase(s));
     }
 
     public Long getCreatedDate() {

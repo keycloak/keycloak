@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,16 @@ public class AuthorizationDetailsJSONRepresentation implements Serializable {
 
     // The internal Keycloak's type for dynamic scopes as a RAR request object
     public static final String DYNAMIC_SCOPE_RAR_TYPE = "https://keycloak.org/auth-type/dynamic-oauth2-scope";
+
+    public AuthorizationDetailsJSONRepresentation() {
+
+    }
+
+    public AuthorizationDetailsJSONRepresentation(String scope, String param) {
+        this.type = DYNAMIC_SCOPE_RAR_TYPE;
+        this.setLocations(Collections.singletonList(scope));
+        this.setCustomData("scope_parameter", param);
+    }
 
     @JsonProperty("type")
     private String type;

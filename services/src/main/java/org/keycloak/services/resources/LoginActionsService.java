@@ -38,6 +38,7 @@ import org.keycloak.authentication.authenticators.broker.util.SerializedBrokered
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.SignatureProvider;
@@ -71,6 +72,8 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
+import org.keycloak.rar.AuthorizationDetails;
+import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ServicesLogger;
@@ -78,9 +81,10 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
+import org.keycloak.services.util.AuthorizationContextUtil;
 import org.keycloak.services.util.BrowserHistoryHelper;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
@@ -103,7 +107,9 @@ import javax.ws.rs.core.UriBuilderException;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.keycloak.authentication.actiontoken.DefaultActionToken.ACTION_TOKEN_BASIC_CHECKS;
 
@@ -901,21 +907,38 @@ public class LoginActionsService {
 
         // Update may not be required if all clientScopes were already granted (May happen for example with prompt=consent)
         boolean updateConsentRequired = false;
-
-        for (String clientScopeId : authSession.getClientScopes()) {
-            ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(realm, client, clientScopeId);
-            if (clientScope != null) {
-                if (!grantedConsent.isClientScopeGranted(clientScope) && clientScope.isDisplayOnConsentScreen()) {
-                    grantedConsent.addGrantedClientScope(clientScope);
-                    updateConsentRequired = true;
+        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+            AuthorizationRequestContext authorizationRequestContext = AuthorizationContextUtil.getAuthorizationRequestContextFromScopesWithClient(session, authSession.getClientNote(OAuth2Constants.SCOPE));
+            List<String> consentedScopes = UserConsentManager.getConsentedScopesStream(session, user, session.getContext().getClient()).collect(Collectors.toList());
+            for (AuthorizationDetails authorizationDetails : authorizationRequestContext.getAuthorizationDetailEntries()) {
+                ClientScopeModel clientScope = authorizationDetails.getClientScope();
+                if (clientScope != null && clientScope.isDynamicScope() || authSession.getClientScopes().contains(clientScope.getId())) {
+                    if (!grantedConsent.isClientScopeGranted(authorizationDetails, consentedScopes) && clientScope.isDisplayOnConsentScreen()) {
+                        grantedConsent.addGrantedClientScope(clientScope);
+                        grantedConsent.addConsentedScopeFromAuthorizationDetails(authorizationDetails);
+                        updateConsentRequired = true;
+                    }
+                } else {
+                    logger.warnf("Client scope or client with ID '%s' not found", clientScope.getId());
                 }
-            } else {
-                logger.warnf("Client scope or client with ID '%s' not found", clientScopeId);
+            }
+        } else {
+            for (String clientScopeId : authSession.getClientScopes()) {
+                ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(realm, client, clientScopeId);
+                if (clientScope != null) {
+                    if (!grantedConsent.isClientScopeGranted(clientScope) && clientScope.isDisplayOnConsentScreen()) {
+                        grantedConsent.addGrantedClientScope(clientScope);
+                        grantedConsent.addConsentedScopeFromAuthorizationDetails(new AuthorizationDetails(clientScope));
+                        updateConsentRequired = true;
+                    }
+                } else {
+                    logger.warnf("Client scope or client with ID '%s' not found", clientScopeId);
+                }
             }
         }
 
         if (updateConsentRequired) {
-            session.users().updateConsent(realm, user.getId(), grantedConsent);
+            UserConsentManager.storeConsentAsUserAttribute(session, user, grantedConsent);
         }
 
         event.detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);

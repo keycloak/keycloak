@@ -25,16 +25,13 @@ import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.protocol.oidc.rar.model.IntermediaryScopeRepresentation;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
-import org.keycloak.rar.AuthorizationRequestSource;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -113,7 +110,7 @@ public class ClientScopeAuthorizationRequestParser implements AuthorizationReque
             representation.setType(DYNAMIC_SCOPE_RAR_TYPE);
             representation.setCustomData("scope_parameter", intermediaryScopeRepresentation.getParameter());
         }
-        return new AuthorizationDetails(intermediaryScopeRepresentation.getScope(), AuthorizationRequestSource.SCOPE, representation);
+        return new AuthorizationDetails(intermediaryScopeRepresentation.getScope(), representation);
     }
 
     /**

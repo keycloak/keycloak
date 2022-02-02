@@ -1,0 +1,58 @@
+/*
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.keycloak.models;
+
+import java.util.Comparator;
+
+/**
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ */
+public interface OrderedAuthorizationDetails {
+
+    String getGuiOrder();
+
+
+    class OrderedAuthorizationDetailsComparator<OM extends OrderedAuthorizationDetails> implements Comparator<OM> {
+
+        public static final OrderedAuthorizationDetailsComparator INSTANCE = new OrderedAuthorizationDetailsComparator();
+
+        @SuppressWarnings("unchecked")
+        public static <T extends OrderedAuthorizationDetails> OrderedAuthorizationDetailsComparator<T> getInstance() {
+            return INSTANCE;
+        }
+
+        @Override
+        public int compare(OM o1, OM o2) {
+            int o1order = parseOrder(o1);
+            int o2order = parseOrder(o2);
+
+            return o1order - o2order;
+        }
+
+        private int parseOrder(OM model) {
+            if (model != null && model.getGuiOrder() != null) {
+                try {
+                    return Integer.parseInt(model.getGuiOrder());
+                } catch (NumberFormatException e) {
+                    // ignore it and use default
+                }
+            }
+            return 10000;
+        }
+    }
+}

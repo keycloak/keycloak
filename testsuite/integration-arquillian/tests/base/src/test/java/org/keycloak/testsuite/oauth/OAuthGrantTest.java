@@ -364,19 +364,15 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
 
         events.expectLogout(loginEvent.getSessionId()).assertEvent();
 
-        // login again to check whether the Dynamic scope and only the dynamic scope is requested again
+        // login again to check whether the Dynamic scope is NOT requested again.
         oauth.scope("foo-dynamic-scope:withparam");
         oauth.doLogin("test-user@localhost", "password");
-        grantPage.assertCurrent();
-        grants = grantPage.getDisplayedGrants();
-        Assert.assertEquals(1, grants.size());
-        Assert.assertTrue(grants.contains("foo-dynamic-scope: withparam"));
-        grantPage.accept();
-
+        appPage.assertCurrent();
         events.expectLogin()
-                .client(THIRD_PARTY_APP)
-                .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
-                .assertEvent();
+                .detail(Details.AUTH_METHOD, OIDCLoginProtocol.LOGIN_PROTOCOL)
+                .detail(Details.CONSENT, Details.CONSENT_VALUE_PERSISTED_CONSENT)
+                .removeDetail(Details.USERNAME)
+                .client(THIRD_PARTY_APP).assertEvent();
 
         // Revoke
         accountAppsPage.open();

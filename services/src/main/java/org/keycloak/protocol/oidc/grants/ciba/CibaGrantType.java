@@ -23,6 +23,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
 import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.Profile;
@@ -49,18 +50,24 @@ import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.context.BackchannelTo
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.CibaRootEndpoint;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
+import org.keycloak.rar.AuthorizationDetails;
+import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.services.util.AuthorizationContextUtil;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.utils.ProfileHelper;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -203,12 +210,16 @@ public class CibaGrantType {
         // Compute client scopes again from scope parameter. Check if user still has them granted
         // (but in code-to-token request, it could just theoretically happen that they are not available)
         String scopeParam = request.getScope();
-
-        if (!TokenManager
-                .verifyConsentStillAvailable(session,
-                        user, client, TokenManager.getRequestedClientScopes(scopeParam, client))) {
-            event.error(Errors.NOT_ALLOWED);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, "Client no longer has requested consent from user", Response.Status.BAD_REQUEST);
+        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+            if (!TokenManager.verifyConsentStillAvailable(session, user, client, AuthorizationContextUtil.getAuthorizationRequestContextFromScopesWithClient(session, scopeParam))) {
+                event.error(Errors.NOT_ALLOWED);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, "Client no longer has requested consent from user", Response.Status.BAD_REQUEST);
+            }
+        } else {
+            if (!TokenManager.verifyConsentStillAvailable(session, user, client, TokenManager.getRequestedClientScopes(scopeParam, client))) {
+                event.error(Errors.NOT_ALLOWED);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, "Client no longer has requested consent from user", Response.Status.BAD_REQUEST);
+            }
         }
 
         ClientSessionContext clientSessionCtx = DefaultClientSessionContext
@@ -284,17 +295,30 @@ public class CibaGrantType {
         }
 
         boolean updateConsentRequired = false;
-
-        for (String clientScopeId : authSession.getClientScopes()) {
-            ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(realm, client, clientScopeId);
-            if (clientScope != null && !grantedConsent.isClientScopeGranted(clientScope) && clientScope.isDisplayOnConsentScreen()) {
-                grantedConsent.addGrantedClientScope(clientScope);
-                updateConsentRequired = true;
+        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+            AuthorizationRequestContext authorizationRequestContext = AuthorizationContextUtil.getAuthorizationRequestContextFromScopesWithClient(session, authSession.getClientNote(OAuth2Constants.SCOPE));
+            List<String> consentedScopes = UserConsentManager.getConsentedScopesStream(session, user, client).collect(Collectors.toList());
+            for (AuthorizationDetails authorizationDetails : authorizationRequestContext.getAuthorizationDetailEntries()) {
+                ClientScopeModel clientScope = authorizationDetails.getClientScope();
+                if (clientScope != null && !grantedConsent.isClientScopeGranted(authorizationDetails, consentedScopes) && clientScope.isDisplayOnConsentScreen()) {
+                    grantedConsent.addConsentedScopeFromAuthorizationDetails(authorizationDetails);
+                    updateConsentRequired = true;
+                }
+            }
+        } else {
+            for (String clientScopeId : authSession.getClientScopes()) {
+                ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(realm, client, clientScopeId);
+                if (clientScope != null && !grantedConsent.isClientScopeGranted(clientScope) && clientScope.isDisplayOnConsentScreen()) {
+                    grantedConsent.addGrantedClientScope(clientScope);
+                    grantedConsent.addConsentedScopeFromAuthorizationDetails(new AuthorizationDetails(clientScope));
+                    updateConsentRequired = true;
+                }
             }
         }
 
+
         if (updateConsentRequired) {
-            session.users().updateConsent(realm, user.getId(), grantedConsent);
+            UserConsentManager.storeConsentAsUserAttribute(session, user, grantedConsent);
             if (logger.isTraceEnabled()) {
                 grantedConsent.getGrantedClientScopes().forEach(i->logger.tracef("CIBA Grant :: Consent updated. %s", i.getName()));
             }

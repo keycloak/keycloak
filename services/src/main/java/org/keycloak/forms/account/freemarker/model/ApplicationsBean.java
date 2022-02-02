@@ -22,12 +22,12 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.OrderedModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.services.util.ResolveRelative;
@@ -199,18 +199,13 @@ public class ApplicationsBean {
         MultivaluedHashMap<String, ClientRoleEntry> resourceRolesAvailable = new MultivaluedHashMap<>();
         processRoles(availableRoles, realmRolesAvailable, resourceRolesAvailable);
 
-        List<ClientScopeModel> orderedScopes = new LinkedList<>();
+        List<String> clientScopesGranted = new LinkedList<>();
         if (client.isConsentRequired()) {
             UserConsentModel consent = session.users().getConsentByClient(realm, user.getId(), client.getId());
-
             if (consent != null) {
-                orderedScopes.addAll(consent.getGrantedClientScopes());
+                clientScopesGranted = UserConsentManager.getProcessedConsentedScopesWithDynamicParam(session, user, client, UserConsentManager.SHOW_CONSENT_SCREEN_TEXT);
             }
         }
-        List<String> clientScopesGranted = orderedScopes.stream()
-                .sorted(OrderedModel.OrderedModelComparator.getInstance())
-                .map(ClientScopeModel::getConsentScreenText)
-                .collect(Collectors.toList());
 
         List<String> additionalGrants = new ArrayList<>();
         if (offlineClients.contains(client)) {

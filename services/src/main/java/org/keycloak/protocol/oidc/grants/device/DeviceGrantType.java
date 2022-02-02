@@ -21,6 +21,7 @@ import static org.keycloak.protocol.oidc.OIDCLoginProtocolService.tokenServiceBa
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -51,6 +52,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.services.util.AuthorizationContextUtil;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
@@ -286,10 +288,19 @@ public class DeviceGrantType {
         // Compute client scopes again from scope parameter. Check if user still has them granted
         // (but in device_code-to-token request, it could just theoretically happen that they are not available)
         String scopeParam = deviceCodeModel.getScope();
-        if (!TokenManager.verifyConsentStillAvailable(session, user, client, TokenManager.getRequestedClientScopes(scopeParam, client))) {
-            event.error(Errors.NOT_ALLOWED);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE,
-                "Client no longer has requested consent from user", Response.Status.BAD_REQUEST);
+        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+            if (!TokenManager.verifyConsentStillAvailable(session, user, client,
+                    AuthorizationContextUtil.getAuthorizationRequestContextFromScopesWithClient(session, scopeParam))) {
+                event.error(Errors.NOT_ALLOWED);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE,
+                        "Client no longer has requested consent from user", Response.Status.BAD_REQUEST);
+            }
+        } else {
+            if (!TokenManager.verifyConsentStillAvailable(session, user, client, TokenManager.getRequestedClientScopes(scopeParam, client))) {
+                event.error(Errors.NOT_ALLOWED);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE,
+                        "Client no longer has requested consent from user", Response.Status.BAD_REQUEST);
+            }
         }
 
         ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession,

@@ -16,7 +16,9 @@
  */
 package org.keycloak.rar;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.OrderedAuthorizationDetails;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 
 import java.io.Serializable;
@@ -32,7 +34,7 @@ import java.util.Objects;
  *
  * @author <a href="mailto:dgozalob@redhat.com">Daniel Gozalo</a>
  */
-public class AuthorizationDetails implements Serializable {
+public class AuthorizationDetails implements Serializable, OrderedAuthorizationDetails {
 
     private ClientScopeModel clientScope;
 
@@ -40,15 +42,21 @@ public class AuthorizationDetails implements Serializable {
 
     private AuthorizationDetailsJSONRepresentation authorizationDetails;
 
-    public AuthorizationDetails(ClientScopeModel clientScope, AuthorizationRequestSource source, AuthorizationDetailsJSONRepresentation authorizationDetails) {
+    public AuthorizationDetails(ClientScopeModel clientScope, AuthorizationDetailsJSONRepresentation authorizationDetails) {
         this.clientScope = clientScope;
-        this.source = source;
+        this.source = AuthorizationRequestSource.SCOPE;
         this.authorizationDetails = authorizationDetails;
     }
 
     public AuthorizationDetails(ClientScopeModel clientScope) {
         this.clientScope = clientScope;
         this.source = AuthorizationRequestSource.SCOPE;
+    }
+
+    public AuthorizationDetails(ClientScopeModel clientScope, String param) {
+        this.clientScope = clientScope;
+        this.source = AuthorizationRequestSource.SCOPE;
+        this.authorizationDetails = new AuthorizationDetailsJSONRepresentation(clientScope.getName(), param);
     }
 
     public ClientScopeModel getClientScope() {
@@ -94,6 +102,37 @@ public class AuthorizationDetails implements Serializable {
         return null;
     }
 
+    /**
+     * Get the scope consent screen text, and append the dynamic scope param, if set
+     * @return see description
+     */
+    public String getScopeConsentScreenTextWithParamIfSet() {
+        StringBuilder scopeScreenTextBuilder = new StringBuilder();
+        scopeScreenTextBuilder.append(this.clientScope.getConsentScreenText());
+        String param = this.getDynamicScopeParam();
+        if(param != null) {
+            scopeScreenTextBuilder.append(":").append(param);
+        }
+        return scopeScreenTextBuilder.toString();
+    }
+
+    /**
+     * Get the scope name, and append the dynamic scope param, if set
+     * @return see description
+     */
+    public String getScopeNameWithParamIfSet() {
+        if(this.clientScope instanceof ClientModel) {
+            return ((ClientModel) this.clientScope).getClientId();
+        }
+        StringBuilder scopeNameBuilder = new StringBuilder();
+        scopeNameBuilder.append(this.clientScope.getName());
+        String param = this.getDynamicScopeParam();
+        if(param != null) {
+            scopeNameBuilder.append(":").append(param);
+        }
+        return scopeNameBuilder.toString();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -114,5 +153,12 @@ public class AuthorizationDetails implements Serializable {
                 ", source=" + source +
                 ", authorizationDetails=" + authorizationDetails +
                 '}';
+    }
+
+    @Override
+    public String getGuiOrder() {
+        if(this.source == AuthorizationRequestSource.SCOPE)
+            return this.clientScope.getGuiOrder();
+        return "";
     }
 }
