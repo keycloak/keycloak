@@ -8,7 +8,7 @@ bin/kc.[sh|bat]<#if rootParameters?has_content> ${rootParameters}</#if> build<#i
 <#macro start rootParameters="" parameters="">
 [source,bash]
 ----
-bin/kc.[sh|bat] ${rootParameters} start ${parameters}
+bin/kc.[sh|bat]<#if rootParameters?has_content> ${rootParameters}</#if> start<#if parameters?has_content> ${parameters}</#if>
 ----
 </#macro>
 
