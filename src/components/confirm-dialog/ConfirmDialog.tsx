@@ -71,7 +71,7 @@ export const ConfirmDialogModal = ({
       actions={[
         <Button
           id="modal-confirm"
-          data-testid="modalConfirm"
+          data-testid="confirm"
           key="confirm"
           isDisabled={confirmButtonDisabled}
           variant={continueButtonVariant || ButtonVariant.primary}
@@ -85,6 +85,7 @@ export const ConfirmDialogModal = ({
         !noCancelButton && (
           <Button
             id="modal-cancel"
+            data-testid="cancel"
             key="cancel"
             variant={ButtonVariant.link}
             onClick={() => {

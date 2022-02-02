@@ -9,7 +9,6 @@ export default class RoleMappingTab {
   private hideInheritedRolesBtn = "#hideInheritedRoles";
   private assignedRolesTable = "assigned-roles";
   private namesColumn = 'td[data-label="Name"]:visible';
-  private confirmModalBtn = "modalConfirm";
 
   goToServiceAccountTab() {
     cy.findByTestId(this.tab).click();

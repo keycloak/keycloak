@@ -282,7 +282,7 @@ describe("Clients test", () => {
       cy.findByTestId("mappersTab").click();
       cy.findByText("Add predefined mapper").click();
       cy.get("table input").first().click();
-      cy.findByTestId("modalConfirm").click();
+      cy.findByTestId("confirm").click();
       masthead.checkNotificationMessage("Mapping successfully created");
     });
   });

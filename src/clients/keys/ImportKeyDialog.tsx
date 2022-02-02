@@ -61,6 +61,7 @@ export const ImportKeyDialog = ({
       actions={[
         <Button
           id="modal-confirm"
+          data-testid="confirm"
           key="confirm"
           onClick={() => {
             handleSubmit((importFile) => {
@@ -73,6 +74,7 @@ export const ImportKeyDialog = ({
         </Button>,
         <Button
           id="modal-cancel"
+          data-testid="cancel"
           key="cancel"
           variant={ButtonVariant.link}
           onClick={() => {

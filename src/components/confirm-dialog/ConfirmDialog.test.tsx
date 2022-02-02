@@ -30,7 +30,7 @@ describe("ConfirmDialog", () => {
     render(<Test />);
     fireEvent.click(screen.getByTestId("show"));
 
-    const confirmButton = screen.getByTestId("modalConfirm");
+    const confirmButton = screen.getByTestId("confirm");
     expect(confirmButton).toBeInTheDocument();
 
     fireEvent.click(confirmButton);

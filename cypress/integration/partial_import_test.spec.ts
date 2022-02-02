@@ -17,6 +17,7 @@ describe("Partial import test", () => {
   beforeEach(() => {
     keycloakBefore();
     loginPage.logIn();
+    sidebarPage.waitForPageLoad();
 
     // doing this from the UI has the added bonus of putting you in the test realm
     sidebarPage.goToCreateRealm();

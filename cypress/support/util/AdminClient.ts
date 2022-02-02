@@ -52,6 +52,11 @@ export default class AdminClient {
     await this.client.clients.del({ id: client.id! });
   }
 
+  async createGroup(groupName: string) {
+    await this.login();
+    return await this.client.groups.create({ name: groupName });
+  }
+
   async createSubGroups(groups: string[]) {
     await this.login();
     let parentGroup = undefined;

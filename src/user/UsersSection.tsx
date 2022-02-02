@@ -39,9 +39,10 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { emptyFormatter } from "../util";
 import { toUser } from "./routes/User";
 import { toAddUser } from "./routes/AddUser";
+import helpUrls from "../help-urls";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 
 import "./user-section.css";
-import helpUrls from "../help-urls";
 
 type BruteUser = UserRepresentation & {
   brute?: Record<string, object>;
@@ -53,7 +54,7 @@ export default function UsersSection() {
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
   const history = useHistory();
-  const [listUsers, setListUsers] = useState(false);
+  const [userStorage, setUserStorage] = useState<ComponentRepresentation[]>();
   const [searchUser, setSearchUser] = useState<string>();
   const [realm, setRealm] = useState<RealmRepresentation | undefined>();
   const [kebabOpen, setKebabOpen] = useState(false);
@@ -63,27 +64,26 @@ export default function UsersSection() {
   const refresh = () => setKey(`${new Date().getTime()}`);
 
   useFetch(
-    () => {
+    async () => {
       const testParams = {
         type: "org.keycloak.storage.UserStorageProvider",
       };
 
-      return Promise.all([
-        adminClient.components.find(testParams),
-        adminClient.realms.findOne({ realm: realmName }),
-      ]).catch(
-        () =>
-          [[], undefined] as [
-            ComponentRepresentation[],
-            RealmRepresentation | undefined
-          ]
-      );
+      try {
+        return await Promise.all([
+          adminClient.components.find(testParams),
+          adminClient.realms.findOne({ realm: realmName }),
+        ]);
+      } catch {
+        return [[], undefined] as [
+          ComponentRepresentation[],
+          RealmRepresentation | undefined
+        ];
+      }
     },
     ([storageProviders, realm]) => {
-      //should *only* list users when no user federation is configured
-      setListUsers(!(storageProviders.length > 0));
+      setUserStorage(storageProviders);
       setRealm(realm);
-      refresh();
     },
     []
   );
@@ -204,6 +204,13 @@ export default function UsersSection() {
 
   const goToCreate = () => history.push(toAddUser({ realm: realmName }));
 
+  if (!userStorage) {
+    return <KeycloakSpinner />;
+  }
+
+  //should *only* list users when no user federation is configured
+  const listUsers = !(userStorage.length > 0);
+
   const toolbar = (
     <>
       <ToolbarItem>
@@ -256,6 +263,10 @@ export default function UsersSection() {
       )}
     </>
   );
+
+  if (!realm) {
+    return <KeycloakSpinner />;
+  }
 
   return (
     <>

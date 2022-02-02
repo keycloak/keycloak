@@ -128,7 +128,7 @@ describe("Identity provider test", () => {
       listingPage.goToItemDetails("facebook");
       addMapperPage.goToMappersTab();
       listingPage.deleteItem("facebook attribute importer");
-      cy.findByTestId("modalConfirm").click();
+      cy.findByTestId("confirm").click();
     });
 
     it("clean up providers", () => {

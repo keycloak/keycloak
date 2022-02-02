@@ -147,7 +147,7 @@ export const AddScopeDialog = ({
           ? [
               <Button
                 id="modal-add"
-                data-testid="modalConfirm"
+                data-testid="confirm"
                 key="add"
                 variant={ButtonVariant.primary}
                 onClick={() => {
@@ -160,6 +160,7 @@ export const AddScopeDialog = ({
               </Button>,
               <Button
                 id="modal-cancel"
+                data-testid="cancel"
                 key="cancel"
                 variant={ButtonVariant.link}
                 onClick={() => {

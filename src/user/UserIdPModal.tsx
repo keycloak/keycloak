@@ -77,6 +77,7 @@ export const UserIdpModal = ({
         </Button>,
         <Button
           id="modal-cancel"
+          data-testid="cancel"
           key="cancel"
           variant={ButtonVariant.link}
           onClick={() => {

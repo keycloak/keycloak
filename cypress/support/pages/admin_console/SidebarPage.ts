@@ -24,10 +24,9 @@ export default class SidebarPage {
 
   goToRealm(realmName: string) {
     cy.findByTestId(this.realmsList).scrollIntoView().click();
-    cy.findByTestId(this.realmsList)
-      .get("ul")
-      .contains(capitalize(realmName))
-      .click();
+    cy.findByTestId(this.realmsList).within(() => {
+      cy.get("ul").contains(capitalize(realmName)).click();
+    });
 
     return this;
   }

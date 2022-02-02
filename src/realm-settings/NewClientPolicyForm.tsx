@@ -92,9 +92,6 @@ export default function NewClientPolicyForm() {
   const form = useForm<ClientPolicyRepresentation>({ mode: "onChange" });
   const { handleSubmit } = form;
 
-  const [key, setKey] = useState(0);
-  const refresh = () => setKey(new Date().getTime());
-
   const formValues = form.getValues();
 
   type ClientPoliciesHeaderProps = {
@@ -102,7 +99,6 @@ export default function NewClientPolicyForm() {
     value: boolean;
     save: () => void;
     realmName: string;
-    refresh: () => void;
   };
 
   const ClientPoliciesHeader = ({
@@ -192,7 +188,7 @@ export default function NewClientPolicyForm() {
         setShowAddConditionsAndProfilesForm(true);
       }
     },
-    [key]
+    []
   );
 
   const setupForm = (policy: ClientPolicyRepresentation) => {
@@ -252,7 +248,6 @@ export default function NewClientPolicyForm() {
         `/${realm}/realm-settings/clientPolicies/${createdForm.name}/edit-policy`
       );
       setShowAddConditionsAndProfilesForm(true);
-      refresh();
     } catch (error) {
       addError("realm-settings:createClientPolicyError", error);
     }
@@ -306,7 +301,6 @@ export default function NewClientPolicyForm() {
             history.push(
               `/${realm}/realm-settings/clientPolicies/${formValues.name}/edit-policy`
             );
-            refresh();
           } catch (error) {
             addError(t("deleteConditionError"), error);
           }
@@ -383,10 +377,6 @@ export default function NewClientPolicyForm() {
     form.setValue("description", currentPolicy?.description);
   };
 
-  const refreshHeader = () => {
-    setKey(new Date().getTime());
-  };
-
   const toggleModal = () => {
     setProfilesModalOpen(!profilesModalOpen);
   };
@@ -450,7 +440,6 @@ export default function NewClientPolicyForm() {
             value={value}
             onChange={onChange}
             realmName={realm}
-            refresh={refreshHeader}
             save={save}
           />
         )}

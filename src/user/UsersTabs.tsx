@@ -29,6 +29,7 @@ import { UserRoleMapping } from "./UserRoleMapping";
 import { UserAttributes } from "./UserAttributes";
 import { UserCredentials } from "./UserCredentials";
 import { useAccess } from "../context/access/Access";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 
 const UsersTabs = () => {
   const { t } = useTranslation("users");
@@ -141,6 +142,10 @@ const UsersTabs = () => {
       }
     },
   });
+
+  if (id && !user) {
+    return <KeycloakSpinner />;
+  }
 
   return (
     <>

@@ -494,7 +494,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
               {t("save")}
             </Button>,
             <Button
-              data-testid="cancelBtn"
+              data-testid="cancel"
               key={`cancelBtn-${user.id}`}
               variant="link"
               form="userCredentials-form"
@@ -606,7 +606,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
               {isResetPassword ? t("resetPassword") : t("savePassword")}
             </Button>,
             <Button
-              data-testid="cancelSetPasswordBtn"
+              data-testid="cancel"
               key={`cancelConfirmBtn-${user.id}`}
               variant="link"
               form="userCredentials-form"
@@ -653,7 +653,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
               {t("credentialResetConfirm")}
             </Button>,
             <Button
-              data-testid="cancelBtn"
+              data-testid="cancel"
               key={`cancelBtn-${user.id}`}
               variant="link"
               form="userCredentialsReset-form"

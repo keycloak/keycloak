@@ -85,7 +85,7 @@ export default class RealmSettingsPage {
   keyInput = "key-input";
   valueInput = "value-input";
   deleteAction = "delete-action";
-  modalConfirm = "modalConfirm";
+  modalConfirm = "confirm";
   ssoSessionIdleInput = "sso-session-idle-input";
   ssoSessionMaxInput = "sso-session-max-input";
   ssoSessionIdleRememberMeInput = "sso-session-idle-remember-me-input";
@@ -625,7 +625,7 @@ export default class RealmSettingsPage {
     cy.get(this.deleteDialogBodyText).contains(
       "This action will permanently delete the policy Test. This cannot be undone."
     );
-    cy.findByTestId("modalConfirm").contains("Delete");
+    cy.findByTestId(this.modalConfirm).contains("Delete");
     cy.get(this.deleteDialogCancelBtn).contains("Cancel").click();
     cy.get("table").should("be.visible").contains("td", "Test");
   }
@@ -633,7 +633,8 @@ export default class RealmSettingsPage {
   shouldDeleteClientProfileDialog() {
     this.listingPage.searchItem("Test", false);
     this.listingPage.clickRowDetails("Test").clickDetailMenu("Delete");
-    cy.findByTestId("modalConfirm").contains("Delete").click();
+    cy.findByTestId(this.modalConfirm).contains("Delete");
+    cy.findByTestId(this.modalConfirm).click();
     cy.get(this.alertMessage).should("be.visible", "Client profile deleted");
     cy.get("table").should("not.have.text", "Test");
   }
@@ -755,7 +756,7 @@ export default class RealmSettingsPage {
     cy.get(this.deleteDialogBodyText).contains(
       "The action will permanently delete secure-ciba-signed-authn-req. This cannot be undone."
     );
-    cy.findByTestId("modalConfirm").contains("Delete");
+    cy.findByTestId(this.modalConfirm).contains("Delete");
     cy.get(this.deleteDialogCancelBtn).contains("Cancel").click();
     cy.get('ul[class*="pf-c-data-list"]').should(
       "have.text",
@@ -802,7 +803,8 @@ export default class RealmSettingsPage {
     cy.get(this.deleteDialogBodyText).contains(
       "The action will permanently delete secure-ciba-signed-authn-req. This cannot be undone."
     );
-    cy.findByTestId("modalConfirm").contains("Delete").click();
+    cy.findByTestId(this.modalConfirm).contains("Delete");
+    cy.findByTestId(this.modalConfirm).click();
     cy.get('h6[class*="kc-emptyExecutors"]').should(
       "have.text",
       "No executors configured"
@@ -813,12 +815,12 @@ export default class RealmSettingsPage {
     cy.get('[data-label="Name"]')
       .contains("Edit")
       .parentsUntil("tbody")
-      .get(this.moreDrpDwn)
-      .last()
-      .click()
-      .get(this.moreDrpDwnItems)
-      .click();
-    cy.findByTestId("modalConfirm").contains("Delete").click();
+      .within(() => {
+        cy.get(this.moreDrpDwn).click();
+      });
+    cy.get(this.moreDrpDwnItems).click();
+    cy.findByTestId(this.modalConfirm).contains("Delete");
+    cy.findByTestId(this.modalConfirm).click();
     cy.get(this.alertMessage).should("be.visible", "Client profile deleted");
     cy.get("table").should("not.have.text", "Edit");
   }
@@ -843,7 +845,8 @@ export default class RealmSettingsPage {
     );
     cy.get(this.createClientDrpDwn).contains("Action").click();
     cy.findByTestId("deleteClientProfileDropdown").click();
-    cy.findByTestId("modalConfirm").contains("Delete").click();
+    cy.findByTestId(this.modalConfirm).contains("Delete");
+    cy.findByTestId(this.modalConfirm).click();
     cy.get(this.alertMessage).should("be.visible", "Client profile deleted");
     cy.get("table").should("not.have.text", "Test Again Description");
   }
@@ -956,7 +959,7 @@ export default class RealmSettingsPage {
     cy.get(this.deleteDialogBodyText).contains(
       "This action will permanently delete the profile Test. This cannot be undone."
     );
-    cy.findByTestId("modalConfirm").contains("Delete");
+    cy.findByTestId(this.modalConfirm).contains("Delete");
     cy.get(this.deleteDialogCancelBtn).contains("Cancel").click();
     cy.get("table").should("be.visible").contains("td", "Test");
   }
@@ -1008,11 +1011,11 @@ export default class RealmSettingsPage {
 
   addClientScopes() {
     cy.findByTestId(this.selectScopeButton).click();
-    cy.get(".pf-c-table__check > label > input[name=checkrow0]").click();
-    cy.get(".pf-c-table__check > label > input[name=checkrow1]").click();
-    cy.get(".pf-c-table__check > label > input[name=checkrow2]").click();
+    cy.get(".pf-c-table__check > input[name=checkrow0]").click();
+    cy.get(".pf-c-table__check > input[name=checkrow1]").click();
+    cy.get(".pf-c-table__check > input[name=checkrow2]").click();
 
-    cy.findByTestId("modalConfirm").contains("Add").click();
+    cy.findByTestId(this.modalConfirm).contains("Add").click();
   }
 
   shouldAddClientScopesCondition() {
@@ -1079,8 +1082,9 @@ export default class RealmSettingsPage {
     cy.get(this.deleteDialogBodyText).contains(
       "This action will permanently delete client-roles. This cannot be undone."
     );
-    cy.findByTestId("modalConfirm").contains("Delete");
-    cy.get(this.deleteDialogCancelBtn).contains("Cancel").click();
+    cy.findByTestId(this.modalConfirm).contains("Delete");
+    cy.get(this.deleteDialogCancelBtn).contains("Cancel");
+    cy.get(this.deleteDialogCancelBtn).click();
     cy.get('ul[class*="pf-c-data-list"]').contains("client-roles");
   }
 
@@ -1091,7 +1095,8 @@ export default class RealmSettingsPage {
     cy.get(this.deleteDialogBodyText).contains(
       "This action will permanently delete client-roles. This cannot be undone."
     );
-    cy.findByTestId("modalConfirm").contains("Delete").click();
+    cy.findByTestId(this.modalConfirm).contains("Delete");
+    cy.findByTestId(this.modalConfirm).click();
     cy.get('ul[class*="pf-c-data-list"]').contains("client-scopes");
   }
 
@@ -1102,7 +1107,8 @@ export default class RealmSettingsPage {
     cy.get(this.deleteDialogBodyText).contains(
       "This action will permanently delete client-scopes. This cannot be undone."
     );
-    cy.findByTestId("modalConfirm").contains("Delete").click();
+    cy.findByTestId(this.modalConfirm).contains("Delete");
+    cy.findByTestId(this.modalConfirm).click();
     cy.get('h6[class*="kc-emptyConditions"]').should(
       "have.text",
       "No conditions configured"
@@ -1112,7 +1118,7 @@ export default class RealmSettingsPage {
   shouldDeleteClientPolicyDialog() {
     this.listingPage.searchItem("Test", false);
     this.listingPage.clickRowDetails("Test").clickDetailMenu("Delete");
-    cy.findByTestId("modalConfirm").contains("Delete").click();
+    cy.findByTestId(this.modalConfirm).contains("Delete").click();
     cy.get(this.alertMessage).should("be.visible", "Client profile deleted");
     cy.get("table").should("not.have.text", "Test");
   }
@@ -1135,7 +1141,7 @@ export default class RealmSettingsPage {
 
     cy.findByTestId(this.clientPolicyDrpDwn).contains("Action").click();
     cy.findByTestId("deleteClientPolicyDropdown").click();
-    cy.findByTestId("modalConfirm").contains("Delete").click();
+    cy.findByTestId(this.modalConfirm).contains("Delete").click();
     cy.get(this.alertMessage).should("be.visible", "Client profile deleted");
     cy.findByTestId(this.createPolicyEmptyStateBtn).should("exist");
   }

@@ -107,7 +107,7 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
           ? [
               <Button
                 id="modal-confirm"
-                data-testid="modalConfirm"
+                data-testid="confirm"
                 key="confirm"
                 isDisabled={rows.length === 0 || selectedRows.length === 0}
                 onClick={() => {
@@ -119,6 +119,7 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
               </Button>,
               <Button
                 id="modal-cancel"
+                data-testid="cancel"
                 key="cancel"
                 variant={ButtonVariant.link}
                 onClick={() => {

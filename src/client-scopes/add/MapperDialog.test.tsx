@@ -43,7 +43,7 @@ describe("MapperDialog", () => {
 
     fireEvent.click(screen.getByText("Show"));
 
-    expect(screen.getByTestId("modalConfirm")).toHaveClass("pf-m-disabled");
+    expect(screen.getByTestId("confirm")).toHaveClass("pf-m-disabled");
   });
 
   it("returns array with selected build in protocol mapping", () => {
@@ -55,7 +55,7 @@ describe("MapperDialog", () => {
     fireEvent.click(screen.getByText("Show"));
     fireEvent.click(screen.getByLabelText("Select row 0"));
     fireEvent.click(screen.getByLabelText("Select row 1"));
-    fireEvent.click(screen.getByTestId("modalConfirm"));
+    fireEvent.click(screen.getByTestId("confirm"));
 
     expect(onConfirm).toBeCalledWith([
       serverInfo.builtinProtocolMappers[protocol][0],
