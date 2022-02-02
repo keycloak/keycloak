@@ -71,7 +71,7 @@ public class MapRoleProvider implements RoleProvider {
         entity.setRealmId(realm.getId());
         entity.setName(name);
         entity.setClientRole(false);
-        if (tx.read(entity.getId()) != null) {
+        if (entity.getId() != null && tx.read(entity.getId()) != null) {
             throw new ModelDuplicateException("Role exists: " + id);
         }
         entity = tx.create(entity);
@@ -129,7 +129,7 @@ public class MapRoleProvider implements RoleProvider {
         entity.setName(name);
         entity.setClientRole(true);
         entity.setClientId(client.getId());
-        if (tx.read(entity.getId()) != null) {
+        if (entity.getId() != null && tx.read(entity.getId()) != null) {
             throw new ModelDuplicateException("Role exists: " + id);
         }
         entity = tx.create(entity);
@@ -244,7 +244,8 @@ public class MapRoleProvider implements RoleProvider {
 
         MapRoleEntity entity = tx.read(id);
         String realmId = realm.getId();
-        return (entity == null || ! Objects.equals(realmId, entity.getRealmId()))
+        // when a store doesn't store information about all realms, it doesn't have the information about
+        return (entity == null || (entity.getRealmId() != null && !Objects.equals(realmId, entity.getRealmId())))
           ? null
           : entityToAdapterFunc(realm).apply(entity);
     }

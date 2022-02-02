@@ -1,5 +1,6 @@
+<?xml version="1.0"?>
 <!--
-  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ Copyright 2021 Red Hat, Inc. and/or its affiliates
   ~ and other contributors as indicated by the @author tags.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,25 +19,24 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
-        <artifactId>keycloak-parent</artifactId>
+        <artifactId>keycloak-model-pom</artifactId>
         <groupId>org.keycloak</groupId>
         <version>18.0.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
-    <name>Keycloak Model Parent</name>
-    <description/>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-model-pom</artifactId>
-    <packaging>pom</packaging>
-
-    <modules>
-        <module>jpa</module>
-        <module>map-jpa</module>
-        <module>infinispan</module>
-        <module>map</module>
-        <module>build-processor</module>
-        <module>map-hot-rod</module>
-        <module>map-ldap</module>
-    </modules>
+    <artifactId>keycloak-model-map-ldap</artifactId>
+    <name>Keycloak Model Map LDAP</name>
+    <description/>
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-map</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>
