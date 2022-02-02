@@ -1,0 +1,3 @@
+= Client Policies Migration : client-scopes
+
+If you used a policy including client-scopes condition and edited JSON document directly, you will need to change the "scope" field name in a JSON document to "scopes".
