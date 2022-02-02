@@ -16,7 +16,6 @@
  */
 package org.keycloak.models.map.storage.jpa.role.entity;
 
-import java.io.Serializable;
 import java.util.Objects;
 import java.util.UUID;
 import javax.persistence.Column;
@@ -29,11 +28,10 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import org.hibernate.annotations.Nationalized;
 import org.keycloak.models.map.storage.jpa.JpaChildEntity;
-import org.keycloak.models.map.storage.jpa.client.entity.JpaClientEntity;
 
 @Entity
 @Table(name = "role_attribute")
-public class JpaRoleAttributeEntity implements JpaChildEntity<JpaRoleEntity>, Serializable {
+public class JpaRoleAttributeEntity implements JpaChildEntity<JpaRoleEntity> {
 
     @Id
     @Column

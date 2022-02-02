@@ -16,10 +16,12 @@
  */
 package org.keycloak.models.map.storage.jpa;
 
+import java.io.Serializable;
+
 /**
  * Interface for all child entities for JPA map storage.
  */
-public interface JpaChildEntity<R> {
+public interface JpaChildEntity<R> extends Serializable {
 
     /**
      * Parent entity that should get its optimistic locking version updated upon changes in the child
