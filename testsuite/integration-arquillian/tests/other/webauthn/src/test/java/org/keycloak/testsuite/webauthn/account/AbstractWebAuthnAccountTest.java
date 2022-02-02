@@ -30,6 +30,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -44,6 +45,8 @@ import org.keycloak.testsuite.webauthn.authenticators.VirtualAuthenticatorManage
 import org.keycloak.testsuite.webauthn.pages.WebAuthnRegisterPage;
 import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
 
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
@@ -61,6 +64,7 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
     protected SigningInPage.CredentialType webAuthnPwdlessCredentialType;
 
     protected static final String WEBAUTHN_FLOW_ID = "75e2390e-f296-49e6-acf8-6d21071d7e10";
+    protected static final String DEFAULT_FLOW = "browser";
 
     @Override
     @Before
@@ -77,6 +81,11 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
     @Before
     public void navigateBeforeTest() {
         driver.manage().window().maximize();
+
+        RealmRepresentation realm = testRealmResource().toRepresentation();
+        assertThat(realm, notNullValue());
+        realm.setBrowserFlow(DEFAULT_FLOW);
+        testRealmResource().update(realm);
 
         webAuthnCredentialType = signingInPage.getCredentialType(WebAuthnCredentialModel.TYPE_TWOFACTOR);
         webAuthnPwdlessCredentialType = signingInPage.getCredentialType(WebAuthnCredentialModel.TYPE_PASSWORDLESS);
