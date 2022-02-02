@@ -1,7 +1,7 @@
 <#macro build rootParameters="" parameters="">
 [source,bash]
 ----
-bin/kc.[sh|bat] ${rootParameters} build ${parameters}
+bin/kc.[sh|bat]<#if rootParameters?has_content> ${rootParameters}</#if> build<#if parameters?has_content> ${parameters}</#if>
 ----
 </#macro>
 
