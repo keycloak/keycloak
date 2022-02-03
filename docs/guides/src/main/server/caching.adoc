@@ -103,7 +103,7 @@ The following table shows transport stacks that are available without any furthe
 |kubernetes|TCP|DNS_PING
 |===
 
-=== Supported transport stacks
+=== Additional transport stacks
 The following table shows transport stacks that are supported by Keycloak, but need some extra steps to work. Note that all of these are _not_ Kubernetes / OpenShift stacks, so you don't need to enable the "google" stack if you want to run Keycloak on top of Googles Kubernetes engine. In that case, use the `kubernetes` stack.
 Instead, when you have a distributed cache setup running on AWS EC2 instances, you'd need to set the stack to `ec2`, because ec2 does not support a default discovery mechanism such as `UDP`.
 
@@ -121,6 +121,6 @@ To provide the dependencies to Keycloak, put the respective JAR in the `provider
 <@kc.build parameters="--cache-stack=<ec2|google|azure>"/>
 
 === Securing cache communication
-The current Infinispan cache implementation can be secured by various security measures such as RBAC, ACLs and Transport stack encryption. Please refer to the https://infinispan.org/docs/dev/titles/security/security.html#[Infinispan security guide] for more information about securing cache communication.
+The current Infinispan cache implementation should be secured by various security measures such as RBAC, ACLs and Transport stack encryption. Please refer to the https://infinispan.org/docs/dev/titles/security/security.html#[Infinispan security guide] for more information about securing cache communication.
 
 </@tmpl.guide>
