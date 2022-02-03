@@ -1,6 +1,8 @@
 package org.keycloak.authentication.authenticators.sessionlimits;
 
+import java.util.Collections;
 import org.jboss.logging.Logger;
+import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -14,13 +16,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.ws.rs.core.Response;
 import org.keycloak.events.Errors;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.utils.StringUtil;
 
-public class UserSessionLimitsAuthenticator extends AbstractSessionLimitsAuthenticator {
+public class UserSessionLimitsAuthenticator implements Authenticator {
 
     private static Logger logger = Logger.getLogger(UserSessionLimitsAuthenticator.class);
+
+    protected KeycloakSession session;
 
     String behavior;
 
@@ -41,14 +49,14 @@ public class UserSessionLimitsAuthenticator extends AbstractSessionLimitsAuthent
         if (context.getRealm() != null && context.getUser() != null) {
 
             // Get the session count in this realm for this specific user
-            List<UserSessionModel> userSessionsForRealm = session.sessions().getUserSessions(context.getRealm(), context.getUser());
-            int userSessionCountForRealm = userSessionsForRealm.size();
+            Stream<UserSessionModel> userSessionsForRealm = session.sessions().getUserSessionsStream(context.getRealm(), context.getUser());
+            long userSessionCountForRealm = userSessionsForRealm.count();
 
             // Get the session count related to the current client for this user
             ClientModel currentClient = context.getAuthenticationSession().getClient();
             logger.debugf("session-limiter's current keycloak clientId: %s", currentClient.getClientId());
-
-            List<UserSessionModel> userSessionsForClient = userSessionsForRealm.stream().filter(session -> session.getAuthenticatedClientSessionByClient(currentClient.getId()) != null).collect(Collectors.toList());
+            
+            List<UserSessionModel> userSessionsForClient = getUserSessionsForClientIfEnabled(userSessionsForRealm, currentClient, userClientLimit);
             int userSessionCountForClient = userSessionsForClient.size();
             logger.debugf("session-limiter's configured realm session limit: %s", userRealmLimit);
             logger.debugf("session-limiter's configured client session limit: %s", userClientLimit);
@@ -58,7 +66,7 @@ public class UserSessionLimitsAuthenticator extends AbstractSessionLimitsAuthent
             // First check if the user has too many sessions in this realm
             if (exceedsLimit(userSessionCountForRealm, userRealmLimit)) {
                 logger.infof("Too many session in this realm for the current user. Session count: %s", userSessionCountForRealm);
-                handleLimitExceeded(context, userSessionsForRealm);
+                handleLimitExceeded(context, userSessionsForRealm.collect(Collectors.toList()));
             } // otherwise if the user is still allowed to create a new session in the realm, check if this applies for this specific client as well.
             else if (exceedsLimit(userSessionCountForClient, userClientLimit)) {
                 logger.infof("Too many sessions related to the current client for this user. Session count: %s", userSessionCountForRealm);
@@ -69,6 +77,56 @@ public class UserSessionLimitsAuthenticator extends AbstractSessionLimitsAuthent
         } else {
             context.success();
         }
+    }
+
+    private boolean exceedsLimit(long count, long limit) {
+        if (limit <= 0) { // if limit is zero or negative, consider the limit disabled
+            return false;
+        }
+        return count > limit - 1;
+    }
+
+    private int getIntConfigProperty(String key, Map<String, String> config) {
+        String value = config.get(key);
+        if (StringUtil.isBlank(value)) {
+            return -1;
+        }
+        return Integer.parseInt(value);
+    }
+
+    private List<UserSessionModel> getUserSessionsForClientIfEnabled(Stream<UserSessionModel> userSessionsForRealm, ClientModel currentClient, int userClientLimit) {
+        // Only count this users sessions for this client only in case a limit is configured, otherwise skip this costly operation.
+        if (userClientLimit <= 0) {
+            return Collections.EMPTY_LIST;
+        }
+        logger.debugf("total user sessions for this keycloak client will not be counted. Will be logged as 0 (zero)");
+        List<UserSessionModel> userSessionsForClient = userSessionsForRealm.filter(session -> session.getAuthenticatedClientSessionByClient(currentClient.getId()) != null).collect(Collectors.toList());
+        return userSessionsForClient;
+    }
+
+    @Override
+    public void action(AuthenticationFlowContext context) {
+
+    }
+
+    @Override
+    public boolean requiresUser() {
+        return false;
+    }
+
+    @Override
+    public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
+        return true;
+    }
+
+    @Override
+    public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
+
+    }
+
+    @Override
+    public void close() {
+
     }
 
     private void handleLimitExceeded(AuthenticationFlowContext context, List<UserSessionModel> userSessions) {
@@ -96,7 +154,7 @@ public class UserSessionLimitsAuthenticator extends AbstractSessionLimitsAuthent
 
     private void logoutOldestSession(List<UserSessionModel> userSessions) {
         logger.info("Logging out oldest session");
-        Optional<UserSessionModel> oldest = userSessions.stream().sorted(Comparator.comparingInt(UserSessionModel::getStarted)).findFirst();
+        Optional<UserSessionModel> oldest = userSessions.stream().sorted(Comparator.comparingInt(UserSessionModel::getLastSessionRefresh)).findFirst();
         oldest.ifPresent(userSession -> AuthenticationManager.backchannelLogout(session, userSession, true));
     }
 }

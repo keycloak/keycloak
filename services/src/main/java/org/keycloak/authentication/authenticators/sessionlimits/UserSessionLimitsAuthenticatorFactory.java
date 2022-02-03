@@ -59,14 +59,16 @@ public class UserSessionLimitsAuthenticatorFactory implements AuthenticatorFacto
     public List<ProviderConfigProperty> getConfigProperties() {
         ProviderConfigProperty userRealmLimit = new ProviderConfigProperty();
         userRealmLimit.setName(USER_REALM_LIMIT);
-        userRealmLimit.setLabel("Maximum concurrent sessions for each user");
+        userRealmLimit.setLabel("Maximum concurrent sessions for each user. Provide a zero or negative value to disable this limit.");
         userRealmLimit.setType(ProviderConfigProperty.STRING_TYPE);
+        userRealmLimit.setDefaultValue("0");
 
         ProviderConfigProperty userClientLimit = new ProviderConfigProperty();
         userClientLimit.setName(USER_CLIENT_LIMIT);
-        userClientLimit.setLabel("Maximum concurrent sessions for each user per keycloak client");
+        userClientLimit.setLabel("Maximum concurrent sessions for each user per keycloak client. Provide a zero or negative value to disable this limit.");
         userClientLimit.setType(ProviderConfigProperty.STRING_TYPE);
-
+        userRealmLimit.setDefaultValue("3");
+        
         ProviderConfigProperty behaviourProperty = new ProviderConfigProperty();
         behaviourProperty.setName(BEHAVIOR);
         behaviourProperty.setLabel("Behavior when user session limit is exceeded");
