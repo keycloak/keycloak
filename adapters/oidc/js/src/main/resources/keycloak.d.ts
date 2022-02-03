@@ -22,11 +22,16 @@ export as namespace Keycloak;
 
 export = Keycloak;
 
+export interface Keycloak {
+	new (config?: Keycloak.KeycloakConfig | string): Keycloak.KeycloakInstance;
+	(config?: Keycloak.KeycloakConfig | string): Keycloak.KeycloakInstance;
+};
+
 /**
  * Creates a new Keycloak client instance.
  * @param config A configuration object or path to a JSON config file.
  */
-declare function Keycloak(config?: Keycloak.KeycloakConfig | string): Keycloak.KeycloakInstance;
+const Keycloak: Keycloak;
 
 declare namespace Keycloak {
 	type KeycloakOnLoad = 'login-required'|'check-sso';
