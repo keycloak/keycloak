@@ -47,9 +47,9 @@ There are four distributed caches for sessions of authenticated users and servic
 * offlineSessions
 * offlineClientSessions
 
-These caches are used to save data about user sessions, which are valid for the length of a user’s browser session.
+These caches are used to save data about user sessions, and clients attached to the sessions.
 
-.Fraud detection
+.Password brute force detection
 The `loginFailures` distributed cache is used to track data about failed login attempts. This cache is needed for the Brute Force Protection feature to work correctly in a multi-node Keycloak setup.
 
 .Action tokens
