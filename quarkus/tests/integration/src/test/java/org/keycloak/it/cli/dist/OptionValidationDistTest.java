@@ -31,6 +31,6 @@ public class OptionValidationDistTest {
     @Test
     @Launch({"build", "--db=invalid"})
     public void failInvalidOptionValue(LaunchResult result) {
-        Assertions.assertTrue(result.getErrorOutput().contains("Invalid value for option '--db': invalid. Expected values are: h2-file, h2-mem, mariadb, mssql, mysql, oracle, postgres"));
+        Assertions.assertTrue(result.getErrorOutput().contains("Invalid value for option '--db': invalid. Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres"));
     }
 }

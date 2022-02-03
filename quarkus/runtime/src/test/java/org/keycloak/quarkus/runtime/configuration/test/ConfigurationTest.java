@@ -234,16 +234,28 @@ public class ConfigurationTest {
 
     @Test
     public void testDatabaseDefaults() {
-        System.setProperty(CLI_ARGS, "--db=h2-file");
+        System.setProperty(CLI_ARGS, "--db=dev-file");
         SmallRyeConfig config = createConfig();
         assertEquals(QuarkusH2Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
         assertEquals("jdbc:h2:file:~/data/h2/keycloakdb;;AUTO_SERVER=TRUE", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
 
-        System.setProperty(CLI_ARGS, "--db=h2-mem");
+        System.setProperty(CLI_ARGS, "--db=dev-mem");
         config = createConfig();
         assertEquals(QuarkusH2Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
         assertEquals("jdbc:h2:mem:keycloakdb", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
         assertEquals("h2", config.getConfigValue("quarkus.datasource.db-kind").getValue());
+
+        System.setProperty(CLI_ARGS, "--db=dev-mem" + ARG_SEPARATOR + "--db-username=other");
+        config = createConfig();
+        assertEquals("sa", config.getConfigValue("quarkus.datasource.username").getValue());
+
+        System.setProperty(CLI_ARGS, "--db=postgres" + ARG_SEPARATOR + "--db-username=other");
+        config = createConfig();
+        assertEquals("other", config.getConfigValue("quarkus.datasource.username").getValue());
+
+        System.setProperty(CLI_ARGS, "--db=postgres");
+        config = createConfig();
+        assertEquals(null, config.getConfigValue("quarkus.datasource.username").getValue());
     }
 
     @Test
@@ -280,7 +292,7 @@ public class ConfigurationTest {
     public void testDatabaseProperties() {
         System.setProperty("kc.db-url-properties", ";;test=test;test1=test1");
         System.setProperty("kc.db-url-path", "test-dir");
-        System.setProperty(CLI_ARGS, "--db=h2-file");
+        System.setProperty(CLI_ARGS, "--db=dev-file");
         SmallRyeConfig config = createConfig();
         assertEquals(QuarkusH2Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
         assertEquals("jdbc:h2:file:test-dir" + File.separator + "data" + File.separator + "h2" + File.separator + "keycloakdb;;test=test;test1=test1", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
@@ -398,9 +410,6 @@ public class ConfigurationTest {
 
         Environment.setProfile("prod");
         assertEquals("true", createConfig().getConfigValue("kc.hostname-strict").getValue());
-
-        Environment.setProfile("prod");
-        assertEquals("false", createConfig().getConfigValue("kc.spi-sticky-session-encoder-infinispan-should-attach-route").getValue());
     }
 
     private Config.Scope initConfig(String... scope) {

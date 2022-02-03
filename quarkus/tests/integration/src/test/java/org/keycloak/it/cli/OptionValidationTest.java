@@ -32,13 +32,13 @@ public class OptionValidationTest {
     @Test
     @Launch({"build", "--db"})
     public void failMissingOptionValue(LaunchResult result) {
-        assertTrue(result.getErrorOutput().contains("Missing required value for option '--db' (vendor). Expected values are: h2-file, h2-mem, mariadb, mssql, mysql, oracle, postgres"));
+        assertTrue(result.getErrorOutput().contains("Missing required value for option '--db' (vendor). Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres"));
     }
 
     @Test
     @Launch({"build", "--db", "foo", "bar"})
     public void failMultipleOptionValue(LaunchResult result) {
-        assertTrue(result.getErrorOutput().contains("Option '--db' expects a single value (vendor) Expected values are: h2-file, h2-mem, mariadb, mssql, mysql, oracle, postgres"));
+        assertTrue(result.getErrorOutput().contains("Option '--db' expects a single value (vendor) Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres"));
     }
 
     @Test

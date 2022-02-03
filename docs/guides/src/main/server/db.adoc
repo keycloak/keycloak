@@ -27,8 +27,8 @@ The list of supported databases and their corresponding versions are:
 |postgres| 10
 |===
 
-By default, the server uses the `h2-file` database. This is the default database that the server will use to persist data and
-only exists for development use-cases. The `h2-file` database is not suitable for production use-cases, and must be replaced before deploying to production.
+By default, the server uses the `dev-file` database. This is the default database that the server will use to persist data and
+only exists for development use-cases. The `dev-file` database is not suitable for production use-cases, and must be replaced before deploying to production.
 
 == Configuring a database
 

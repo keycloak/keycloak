@@ -51,9 +51,9 @@ public class StartCommandTest {
     }
 
     @Test
-    @Launch({ "-v", "start", "--db=h2-mem" })
+    @Launch({ "-v", "start", "--db=dev-mem" })
     void failBuildPropertyNotAvailable(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertError("Unknown option: '--db=h2-mem'");
+        cliResult.assertError("Unknown option: '--db=dev-mem'");
     }
 }
