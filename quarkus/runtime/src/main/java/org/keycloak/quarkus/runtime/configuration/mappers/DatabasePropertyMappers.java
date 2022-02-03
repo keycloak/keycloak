@@ -1,5 +1,6 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
+import io.quarkus.datasource.common.runtime.DatabaseKind;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import org.keycloak.quarkus.runtime.storage.database.Database;
 
@@ -20,12 +21,12 @@ final class DatabasePropertyMappers {
                         .mapFrom("db")
                         .to("quarkus.hibernate-orm.dialect")
                         .isBuildTimeProperty(true)
-                        .transformer((db, context) -> Database.getDialect(db).orElse(Database.getDialect("h2-file").get()))
+                        .transformer((db, context) -> Database.getDialect(db).orElse(Database.getDialect("dev-file").get()))
                         .hidden(true)
                         .build(),
                 builder().from("db-driver")
                         .mapFrom("db")
-                        .defaultValue(Database.getDriver("h2-file").get())
+                        .defaultValue(Database.getDriver("dev-file").get())
                         .to("quarkus.datasource.jdbc.driver")
                         .transformer((db, context) -> Database.getDriver(db).orElse(db))
                         .hidden(true)
@@ -68,11 +69,15 @@ final class DatabasePropertyMappers {
                         .build(),
                 builder().from("db-username")
                         .to("quarkus.datasource.username")
+                        .mapFrom("db")
+                        .transformer(DatabasePropertyMappers::resolveUsername)
                         .description("The username of the database user.")
                         .paramLabel("username")
                         .build(),
                 builder().from("db-password")
                         .to("quarkus.datasource.password")
+                        .mapFrom("db")
+                        .transformer(DatabasePropertyMappers::resolvePassword)
                         .description("The password of the database user.")
                         .paramLabel("password")
                         .isMasked(true)
@@ -117,5 +122,26 @@ final class DatabasePropertyMappers {
 
     private static PropertyMapper.Builder builder() {
         return PropertyMapper.builder(ConfigCategory.DATABASE);
+    }
+
+    private static String resolveUsername(String value, ConfigSourceInterceptorContext context) {
+        if (isDevModeDatabase(context)) {
+            return "sa";
+        }
+
+        return Database.getDatabaseKind(value).isEmpty() ? value : null;
+    }
+
+    private static String resolvePassword(String value, ConfigSourceInterceptorContext context) {
+        if (isDevModeDatabase(context)) {
+            return "password";
+        }
+
+        return Database.getDatabaseKind(value).isEmpty() ? value : null;
+    }
+
+    private static boolean isDevModeDatabase(ConfigSourceInterceptorContext context) {
+        String db = context.proceed("kc.db").getValue();
+        return Database.getDatabaseKind(db).get().equals(DatabaseKind.H2);
     }
 }

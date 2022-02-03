@@ -99,7 +99,7 @@ public final class Database {
                 new Function<String, String>() {
                     @Override
                     public String apply(String alias) {
-                        if ("h2-file".equalsIgnoreCase(alias)) {
+                        if ("dev-file".equalsIgnoreCase(alias)) {
                             return "jdbc:h2:file:${kc.home.dir:${kc.db-url-path:~}}" + File.separator + "${kc.data.dir:data}"
                                     + File.separator + "h2" + File.separator
                                     + "keycloakdb${kc.db-url-properties:;;AUTO_SERVER=TRUE}";
@@ -108,7 +108,7 @@ public final class Database {
                     }
                 },
                 asList("liquibase.database.core.H2Database"),
-                "h2-mem", "h2-file"
+                "dev-mem", "dev-file"
         ),
         MYSQL("mysql",
                 "com.mysql.cj.jdbc.MysqlXADataSource",

@@ -61,7 +61,7 @@ public class StartAutoBuildDistTest {
     }
 
     @Test
-    @Launch({ "start", "--auto-build", "--db=h2-mem", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--auto-build", "--db=dev-mem", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(3)
     void testShouldReAugIfConfigChanged(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -70,7 +70,7 @@ public class StartAutoBuildDistTest {
     }
 
     @Test
-    @Launch({ "start", "--auto-build", "--db=h2-mem", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--auto-build", "--db=dev-mem", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(4)
     void testShouldNotReAugIfSameDatabase(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
