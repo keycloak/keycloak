@@ -142,6 +142,15 @@ public interface AbstractAuthenticationFlowContext {
      * @param response Response that will be sent back to HTTP client
      */
     void failure(AuthenticationFlowError error, Response response);
+    
+    /**
+     * Aborts the current flow.
+     *
+     * @param error
+     * @param response Response that will be sent back to HTTP client
+     * @param eventDetails Details about the error event
+     */
+    void failure(AuthenticationFlowError error, Response response, String eventDetails);
 
     /**
      * Sends a challenge response back to the HTTP client.  If the current execution requirement is optional, this response will not be
@@ -189,4 +198,11 @@ public interface AbstractAuthenticationFlowContext {
      * @return may return null if there was no error
      */
     AuthenticationFlowError getError();
+    
+    
+    /**
+     * Get details of the event that caused an error
+     * @return may return null if not set
+     */
+    String getEventDetails();
 }
