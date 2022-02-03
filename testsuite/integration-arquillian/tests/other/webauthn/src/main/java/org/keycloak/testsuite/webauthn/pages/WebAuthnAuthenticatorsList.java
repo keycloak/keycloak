@@ -47,7 +47,8 @@ public class WebAuthnAuthenticatorsList {
                 String name = getTextFromElement(auth.findElement(By.id("kc-webauthn-authenticator-label")));
                 String createdAt = getTextFromElement(auth.findElement(By.id("kc-webauthn-authenticator-created")));
                 String createdAtLabel = getTextFromElement(auth.findElement(By.id("kc-webauthn-authenticator-created-label")));
-                items.add(new WebAuthnAuthenticatorItem(name, createdAt, createdAtLabel));
+                String transport = getTextFromElement(auth.findElement(By.id("kc-webauthn-authenticator-transport")));
+                items.add(new WebAuthnAuthenticatorItem(name, createdAt, createdAtLabel, transport));
             }
             return items;
         } catch (NoSuchElementException e) {
@@ -78,11 +79,13 @@ public class WebAuthnAuthenticatorsList {
         private final String name;
         private final String createdAt;
         private final String createdAtLabel;
+        private final String transport;
 
-        public WebAuthnAuthenticatorItem(String name, String createdAt, String createdAtLabel) {
+        public WebAuthnAuthenticatorItem(String name, String createdAt, String createdAtLabel, String transport) {
             this.name = name;
             this.createdAt = createdAt;
             this.createdAtLabel = createdAtLabel;
+            this.transport = transport;
         }
 
         public String getName() {
@@ -95,6 +98,10 @@ public class WebAuthnAuthenticatorsList {
 
         public String getCreatedLabel() {
             return createdAtLabel;
+        }
+
+        public String getTransport() {
+            return transport;
         }
     }
 }

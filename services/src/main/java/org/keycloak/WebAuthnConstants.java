@@ -44,6 +44,8 @@ public interface WebAuthnConstants {
     String ALLOWED_AUTHENTICATORS = "authenticators";
     String IS_USER_IDENTIFIED = "isUserIdentified";
     String USER_VERIFICATION = "userVerification";
+    String TRANSPORTS = "transports";
+
     String IS_SET_RETRY = "isSetRetry";
     String SHOULD_DISPLAY_AUTHENTICATORS = "shouldDisplayAuthenticators";
 

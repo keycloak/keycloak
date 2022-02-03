@@ -27,7 +27,6 @@ import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.testsuite.ui.account2.page.SigningInPage;
-import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnAuthenticatorsList;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnLoginPage;
 import org.keycloak.theme.DateTimeFormatterUtil;
@@ -57,9 +56,6 @@ import static org.keycloak.testsuite.util.UIUtils.refreshPageAndWaitForLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
-
-    @Page
-    protected WebAuthnLoginPage webAuthnLoginPage;
 
     @Test
     public void categoriesTest() {
@@ -450,17 +446,5 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
         assertThat(credentialType.getUserCredentialsCount(), is(2));
 
         testRemoveCredential(webAuthn1);
-    }
-
-    private RealmAttributeUpdater setLocalesUpdater(String defaultLocale, String... supportedLocales) {
-        RealmAttributeUpdater updater = new RealmAttributeUpdater(testRealmResource())
-                .setDefaultLocale(defaultLocale)
-                .setInternationalizationEnabled(true)
-                .addSupportedLocale(defaultLocale);
-
-        for (String locale : supportedLocales) {
-            updater.addSupportedLocale(locale);
-        }
-        return updater;
     }
 }
