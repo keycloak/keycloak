@@ -292,6 +292,7 @@ public class AuthenticationProcessor {
         FormMessage errorMessage;
         FormMessage successMessage;
         List<AuthenticationSelectionOption> authenticationSelections;
+        String eventDetails;
 
         private Result(AuthenticationExecutionModel execution, Authenticator authenticator, List<AuthenticationExecutionModel> currentExecutions) {
             this.execution = execution;
@@ -389,6 +390,14 @@ public class AuthenticationProcessor {
             this.status = FlowStatus.FAILED;
             this.challenge = challenge;
 
+        }
+        
+        @Override
+        public void failure(AuthenticationFlowError error, Response challenge, String eventDetails) {
+            this.error = error;
+            this.status = FlowStatus.FAILED;
+            this.challenge = challenge;
+            this.eventDetails = eventDetails;
         }
 
         @Override
@@ -649,6 +658,11 @@ public class AuthenticationProcessor {
         public FormMessage getSuccessMessage() {
             return successMessage;
         }
+
+        @Override
+        public String getEventDetails() {
+            return eventDetails;
+        }
     }
 
     public void logFailure() {
@@ -788,11 +802,14 @@ public class AuthenticationProcessor {
                 event.error(Errors.INVALID_USER_CREDENTIALS);
                 if (e.getResponse() != null) return e.getResponse();
                 return ErrorPage.error(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.CREDENTIAL_SETUP_REQUIRED);
-            } else if (e.getError() == AuthenticationFlowError.SESSION_LIMIT_EXCEEDED) {
+            } else if (e.getError() == AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR) {
                 ServicesLogger.LOGGER.failedAuthentication(e);
-                event.error(Errors.SESSION_LIMIT_EXCEEDED);
+                if (e.getEventDetails() != null) {
+                    event.detail(Details.AUTHENTICATION_ERROR_DETAIL, e.getEventDetails());
+                }
+                event.error(Errors.GENERIC_AUTHENTICATION_ERROR);
                 if (e.getResponse() != null) return e.getResponse();
-                return ErrorPage.error(session, authenticationSession, Response.Status.FORBIDDEN, Messages.SESSION_LIMIT_EXCEEDED);
+                return ErrorPage.error(session, authenticationSession, Response.Status.BAD_REQUEST, e.getUserErrorMessage());
             } else {
                 ServicesLogger.LOGGER.failedAuthentication(e);
                 event.error(Errors.INVALID_USER_CREDENTIALS);

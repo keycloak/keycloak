@@ -501,7 +501,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 if (result.getChallenge() != null) {
                     return sendChallenge(result, execution);
                 }
-                throw new AuthenticationFlowException(result.getError());
+                throw new AuthenticationFlowException(result.getError(), result.getEventDetails());
             case FORK:
                 logger.debugv("reset browser login from authenticator: {0}", execution.getAuthenticator());
                 processor.getAuthenticationSession().setAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, execution.getId());

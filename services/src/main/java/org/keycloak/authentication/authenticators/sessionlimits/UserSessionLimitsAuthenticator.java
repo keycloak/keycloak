@@ -21,13 +21,12 @@ import javax.ws.rs.core.Response;
 import org.keycloak.events.Errors;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.messages.Messages;
 import org.keycloak.utils.StringUtil;
 
 public class UserSessionLimitsAuthenticator implements Authenticator {
 
     private static Logger logger = Logger.getLogger(UserSessionLimitsAuthenticator.class);
-
+    public static final String SESSION_LIMIT_EXCEEDED = "sessionLimitExceeded";
     protected KeycloakSession session;
 
     String behavior;
@@ -55,7 +54,7 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
             // Get the session count related to the current client for this user
             ClientModel currentClient = context.getAuthenticationSession().getClient();
             logger.debugf("session-limiter's current keycloak clientId: %s", currentClient.getClientId());
-            
+
             List<UserSessionModel> userSessionsForClient = getUserSessionsForClientIfEnabled(userSessionsForRealm, currentClient, userClientLimit);
             int userSessionCountForClient = userSessionsForClient.size();
             logger.debugf("session-limiter's configured realm session limit: %s", userRealmLimit);
@@ -136,13 +135,13 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
                 String errorMessage = Optional.ofNullable(context.getAuthenticatorConfig())
                         .map(AuthenticatorConfigModel::getConfig)
                         .map(f -> f.get(UserSessionLimitsAuthenticatorFactory.ERROR_MESSAGE))
-                        .orElse(Messages.SESSION_LIMIT_EXCEEDED);
+                        .orElse(SESSION_LIMIT_EXCEEDED);
 
-                context.getEvent().error(Errors.SESSION_LIMIT_EXCEEDED);
+                context.getEvent().error(Errors.GENERIC_AUTHENTICATION_ERROR);
                 Response challenge = context.form()
                         .setError(errorMessage)
                         .createErrorPage(Response.Status.FORBIDDEN);
-                context.failure(AuthenticationFlowError.SESSION_LIMIT_EXCEEDED, challenge);
+                context.failure(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR, challenge, errorMessage);
                 break;
             case UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION:
                 logger.info("Terminating oldest session");
