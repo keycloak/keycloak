@@ -36,11 +36,13 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
 import org.keycloak.testsuite.ui.account2.page.SigningInPage;
 import org.keycloak.testsuite.ui.account2.page.utils.SigningInPageUtils;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
 import org.keycloak.testsuite.webauthn.authenticators.UseVirtualAuthenticators;
 import org.keycloak.testsuite.webauthn.authenticators.VirtualAuthenticatorManager;
+import org.keycloak.testsuite.webauthn.pages.WebAuthnLoginPage;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnRegisterPage;
 import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
 
@@ -55,6 +57,9 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
 
     @Page
     protected WebAuthnRegisterPage webAuthnRegisterPage;
+
+    @Page
+    protected WebAuthnLoginPage webAuthnLoginPage;
 
     private VirtualAuthenticatorManager webAuthnManager;
     protected SigningInPage.CredentialType webAuthnCredentialType;
@@ -186,5 +191,17 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
                 )
                 .defineAsBrowserFlow() // Activate this new flow
         );
+    }
+
+    protected RealmAttributeUpdater setLocalesUpdater(String defaultLocale, String... supportedLocales) {
+        RealmAttributeUpdater updater = new RealmAttributeUpdater(testRealmResource())
+                .setDefaultLocale(defaultLocale)
+                .setInternationalizationEnabled(true)
+                .addSupportedLocale(defaultLocale);
+
+        for (String locale : supportedLocales) {
+            updater.addSupportedLocale(locale);
+        }
+        return updater;
     }
 }
