@@ -68,8 +68,8 @@ endif::[]
 :developerguide_jsproviders_link: {developerguide_link}#_script_providers
 :gettingstarted_name: Getting Started Guide
 :gettingstarted_name_short: Getting Started
-:gettingstarted_link: https://www.keycloak.org/getting-started
-:gettingstarted_link_latest: https://www.keycloak.org/getting-started
+:gettingstarted_link: https://www.keycloak.org/guides#getting-started
+:gettingstarted_link_latest: https://www.keycloak.org/guides#getting-started
 :upgradingguide_name: Upgrading Guide
 :upgradingguide_name_short: Upgrading
 :upgradingguide_link: {project_doc_base_url}/upgrading/
