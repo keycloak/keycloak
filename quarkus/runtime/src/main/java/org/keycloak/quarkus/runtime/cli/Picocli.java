@@ -17,7 +17,6 @@
 
 package org.keycloak.quarkus.runtime.cli;
 
-import static java.util.Arrays.asList;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_SHORT;
 import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.hasOptionValue;
@@ -77,15 +76,24 @@ public final class Picocli {
         CommandLine cmd = createCommandLine(cliArgs);
 
         if (Environment.isRebuildCheck()) {
-            runReAugmentationIfNeeded(cliArgs, cmd);
-            Quarkus.asyncExit(cmd.getCommandSpec().exitCodeOnSuccess());
+            int exitCode = runReAugmentationIfNeeded(cliArgs, cmd);
+            exitOnFailure(exitCode, cmd);
             return;
         }
 
-        cmd.execute(cliArgs.toArray(new String[0]));
+        int exitCode = cmd.execute(cliArgs.toArray(new String[0]));
+        exitOnFailure(exitCode, cmd);
     }
 
-    private static void runReAugmentationIfNeeded(List<String> cliArgs, CommandLine cmd) {
+    private static void exitOnFailure(int exitCode, CommandLine cmd) {
+        if (exitCode != cmd.getCommandSpec().exitCodeOnSuccess() && !Environment.isTestLaunchMode()) {
+            // hard exit wanted, as build failed and no subsequent command should be executed. no quarkus involved.
+            System.exit(exitCode);
+        }
+    }
+
+    private static int runReAugmentationIfNeeded(List<String> cliArgs, CommandLine cmd) {
+        int exitCode = 0;
         if (hasAutoBuildOption(cliArgs) && !isHelpCommand(cliArgs)) {
             if (cliArgs.contains(StartDev.NAME)) {
                 String profile = Environment.getProfile();
@@ -96,9 +104,10 @@ public final class Picocli {
                 }
             }
             if (requiresReAugmentation(cmd)) {
-                runReAugmentation(cliArgs, cmd);
+                exitCode = runReAugmentation(cliArgs, cmd);
             }
         }
+        return exitCode;
     }
 
     private static boolean isHelpCommand(List<String> cliArgs) {
@@ -154,7 +163,9 @@ public final class Picocli {
         return properties;
     }
 
-    private static void runReAugmentation(List<String> cliArgs, CommandLine cmd) {
+    private static int runReAugmentation(List<String> cliArgs, CommandLine cmd) {
+        int exitCode = 0;
+
         List<String> configArgsList = new ArrayList<>(cliArgs);
 
         configArgsList.remove(AUTO_BUILD_OPTION_LONG);
@@ -170,11 +181,13 @@ public final class Picocli {
             }
         });
 
-        cmd.execute(configArgsList.toArray(new String[0]));
+        exitCode = cmd.execute(configArgsList.toArray(new String[0]));
 
-        if(!isDevMode()) {
+        if(!isDevMode() && exitCode == cmd.getCommandSpec().exitCodeOnSuccess()) {
             cmd.getOut().printf("Next time you run the server, just run:%n%n\t%s %s %s%n%n", Environment.getCommand(), Start.NAME, String.join(" ", getSanitizedRuntimeCliOptions()));
         }
+
+        return exitCode;
     }
 
     private static boolean hasProviderChanges() {
