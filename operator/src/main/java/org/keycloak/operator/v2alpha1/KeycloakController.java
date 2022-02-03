@@ -18,7 +18,6 @@ package org.keycloak.operator.v2alpha1;
 
 import javax.inject.Inject;
 
-import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
@@ -30,9 +29,9 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
+import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 import io.quarkus.logging.Log;
 import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
@@ -43,11 +42,11 @@ import org.keycloak.operator.v2alpha1.crds.KeycloakStatusBuilder;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
+import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
 
-@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
+@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE, finalizerName = NO_FINALIZER)
 public class KeycloakController implements Reconciler<Keycloak>, EventSourceInitializer<Keycloak>, ErrorStatusHandler<Keycloak> {
 
     @Inject
@@ -59,19 +58,11 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
     @Override
     public List<EventSource> prepareEventSources(EventSourceContext<Keycloak> context) {
         SharedIndexInformer<Deployment> deploymentInformer =
-                client.apps().deployments().inAnyNamespace()
+                client.apps().deployments().inNamespace(context.getConfigurationService().getClientConfiguration().getNamespace())
                         .withLabels(Constants.DEFAULT_LABELS)
                         .runnableInformer(0);
 
-        EventSource deploymentEvent = new InformerEventSource<>(
-                deploymentInformer, d -> {
-                    List<OwnerReference> ownerReferences = d.getMetadata().getOwnerReferences();
-                    if (!ownerReferences.isEmpty()) {
-                        return Set.of(new ResourceID(ownerReferences.get(0).getName(), d.getMetadata().getNamespace()));
-                    } else {
-                        return Collections.emptySet();
-                    }
-        });
+        EventSource deploymentEvent = new InformerEventSource<>(deploymentInformer, Mappers.fromOwnerReference());
 
         return List.of(deploymentEvent);
     }

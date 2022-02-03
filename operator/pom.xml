@@ -32,11 +32,12 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <quarkus.operator.sdk.version>3.0.0-SNAPSHOT</quarkus.operator.sdk.version>
+        <quarkus.operator.sdk.version>3.0.2</quarkus.operator.sdk.version>
         <quarkus.version>2.6.1.Final</quarkus.version>
         <quarkus.container-image.group>keycloak</quarkus.container-image.group>
         <quarkus.jib.base-jvm-image>eclipse-temurin:11</quarkus.jib.base-jvm-image>
         <quarkus.kubernetes.image-pull-policy>Never</quarkus.kubernetes.image-pull-policy>
+        <maven-failsafe-plugin.version>2.22.0</maven-failsafe-plugin.version>
     </properties>
     
     <repositories>
@@ -119,6 +120,30 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-common</artifactId>
         </dependency>
+
+        <!-- Test -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-test-common</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>${assertj-core.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <version>${awaitility.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -159,7 +184,7 @@
                         </goals>
                         <configuration>
                             <outputDirectory>${basedir}/target</outputDirectory>
-                            <resources>          
+                            <resources>
                             <resource>
                                 <directory>src/main/kubernetes</directory>
                                 <filtering>true</filtering>
@@ -175,7 +200,7 @@
                         </goals>
                         <configuration>
                             <outputDirectory>${basedir}/target/keycloak-core</outputDirectory>
-                            <resources>          
+                            <resources>
                             <resource>
                                 <directory>${basedir}/../core/src/main/java</directory>
                                 <filtering>true</filtering>
@@ -221,8 +246,19 @@
                         </configuration>
                     </execution>
                 </executions>
-              </plugin>
-
+            </plugin>
+            <plugin>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${maven-failsafe-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
     
