@@ -26,8 +26,13 @@ import java.security.Security;
  * @version $Revision: 1 $
  */
 public class BouncyIntegration {
+
+    public static String PROVIDER = "BC";
+
     static {
-        if (Security.getProvider("BC") == null) Security.addProvider(new BouncyCastleProvider());
+        if (Security.getProvider(PROVIDER) == null) {
+            Security.insertProviderAt(new BouncyCastleProvider(), 1);
+        }
     }
 
     public static void init() {

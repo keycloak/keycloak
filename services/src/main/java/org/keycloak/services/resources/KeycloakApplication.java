@@ -19,6 +19,7 @@ package org.keycloak.services.resources;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.config.ConfigProviderFactory;
 import org.keycloak.exportimport.ExportImportManager;
@@ -59,7 +60,6 @@ import org.keycloak.util.JsonSerialization;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.ws.rs.core.Application;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -91,6 +91,7 @@ public class KeycloakApplication extends Application {
     protected static KeycloakSessionFactory sessionFactory;
 
     public KeycloakApplication() {
+        BouncyIntegration.init();
 
         try {
 

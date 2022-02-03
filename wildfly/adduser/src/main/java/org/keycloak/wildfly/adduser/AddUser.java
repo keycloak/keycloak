@@ -30,6 +30,7 @@ import org.aesh.command.impl.registry.AeshCommandRegistryBuilder;
 import org.aesh.command.registry.CommandRegistry;
 import org.aesh.command.registry.CommandRegistryException;
 import org.keycloak.common.util.Base64;
+import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.credential.hash.PasswordHashProviderFactory;
@@ -274,6 +275,7 @@ public class AddUser {
     }
 
     private static PasswordHashProviderFactory getHashProviderFactory(String providerId) {
+        BouncyIntegration.init();
         ServiceLoader<PasswordHashProviderFactory> providerFactories = ServiceLoader.load(PasswordHashProviderFactory.class);
         for (PasswordHashProviderFactory f : providerFactories) {
             if (f.getId().equals(providerId)) {
