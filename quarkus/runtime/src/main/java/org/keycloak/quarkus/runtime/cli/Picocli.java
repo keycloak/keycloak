@@ -282,7 +282,7 @@ public final class Picocli {
         CommandLine cmd = new CommandLine(spec);
 
         cmd.setExecutionExceptionHandler(new ExecutionExceptionHandler());
-
+        cmd.setParameterExceptionHandler(new ShortErrorMessageHandler());
         cmd.setHelpFactory(new HelpFactory());
         cmd.getHelpSectionMap().put(SECTION_KEY_COMMAND_LIST, new SubCommandListRenderer());
         cmd.setErr(new PrintWriter(System.err, true));
