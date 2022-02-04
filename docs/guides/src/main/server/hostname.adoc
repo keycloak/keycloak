@@ -3,7 +3,7 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Configure the Hostname"
+title="Configuring the hostname"
 summary="Learn how to configure the frontend and backchannel endpoints exposed by Keycloak."
 includedOptions="hostname-* proxy">
 
