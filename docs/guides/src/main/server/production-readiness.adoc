@@ -24,7 +24,7 @@ Learn in the <@links.server id="hostname"/> guide what the different endpoint ca
 == Configure a reverse proxy
 Apart from <<Setting the hostname for Keycloak>>, production environments usually use a reverse proxy / load balancer component to separate and unify access to the companies network. Using such a component is recommended for Keycloak production deployments.
 
-In the <@links.server id="reverseproxy"/> guide you can find the available proxy communication modes in Keycloak and how to configure them. There's also a recommendation which paths should not be exposed to the public at all, and which Paths need to be exposed for Keycloak to be able to secure your applications.
+In the <@links.server id="reverseproxy"/> guide you can find the available proxy communication modes in Keycloak and how to configure them. There's also a recommendation which paths should not be exposed to the public at all, and which paths need to be exposed for Keycloak to be able to secure your applications.
 
 == Configure a production grade database
 The database used by Keycloak is crucial for the overall performance, availability, reliability and integrity of Keycloak. In the <@links.server id="db"/> guide you can find the supported database vendors and how to configure Keycloak to use them.
