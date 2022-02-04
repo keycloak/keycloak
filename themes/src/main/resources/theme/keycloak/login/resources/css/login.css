@@ -274,6 +274,19 @@ div.kc-logo-text span {
     color: var(--pf-global--Color--300);
 }
 
+#kc-form-webauthn .select-auth-box-icon {
+    flex: 0 0 3em;
+}
+
+#kc-form-webauthn .select-auth-box-icon-properties {
+    margin-top: 10px;
+    font-size: 1.8em;
+}
+
+#kc-form-webauthn .pf-l-stack__item {
+    margin: -1px 0;
+}
+
 #kc-content-wrapper {
     margin-top: 20px;
 }

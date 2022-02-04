@@ -18,6 +18,7 @@
 package org.keycloak.it.cli.dist;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.function.Consumer;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
@@ -34,7 +35,7 @@ import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest(reInstall = DistributionTest.ReInstall.NEVER)
-@BeforeStartDistribution(QuarkusPropertiesDistTest.SetDebugLogLevel.class)
+@BeforeStartDistribution(QuarkusPropertiesDistTest.DisableConsoleLogHandler.class)
 @RawDistOnly(reason = "Containers are immutable")
 @TestMethodOrder(OrderAnnotation.class)
 public class QuarkusPropertiesDistTest {
@@ -44,7 +45,7 @@ public class QuarkusPropertiesDistTest {
     @Order(1)
     void testBuildWithPropertyFromQuarkusProperties(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertMessage("DEBUG [");
+        assertFalse(cliResult.getOutput().contains("INFO"));
         cliResult.assertBuild();
     }
 
@@ -53,52 +54,50 @@ public class QuarkusPropertiesDistTest {
     @Order(2)
     void testPropertyEnabledAtRuntime(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertMessage("DEBUG [");
-        cliResult.assertStarted();
+        assertFalse(cliResult.getOutput().contains("INFO"));
     }
 
     @Test
-    @Launch({ "-Dquarkus.log.level=INFO", "start", "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "-Dquarkus.log.console.enabled=true", "start", "--http-enabled=true", "--hostname-strict=false" })
     @Order(3)
     void testIgnoreQuarkusSystemPropertiesAtStart(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertMessage("DEBUG [");
-        cliResult.assertStarted();
+        assertFalse(cliResult.getOutput().contains("INFO"));
     }
 
     @Test
-    @Launch({ "-Dquarkus.log.level=INFO", "build" })
+    @Launch({ "-Dquarkus.log.console.enabled=true", "build" })
     @Order(4)
     void testIgnoreQuarkusSystemPropertyAtBuild(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertMessage("DEBUG [");
+        assertFalse(cliResult.getOutput().contains("INFO"));
         cliResult.assertBuild();
     }
 
     @Test
-    @BeforeStartDistribution(SetDebugLogLevelInKeycloakConf.class)
+    @BeforeStartDistribution(DisableConsoleLogHandlerInKeycloakConf.class)
     @Launch({ "build" })
     @Order(5)
     void testIgnoreQuarkusPropertyFromKeycloakConf(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertFalse(cliResult.getOutput().contains("DEBUG ["));
+        assertTrue(cliResult.getOutput().contains("INFO"));
         cliResult.assertBuild();
     }
 
-    public static class SetDebugLogLevel implements Consumer<KeycloakDistribution> {
+    public static class DisableConsoleLogHandler implements Consumer<KeycloakDistribution> {
 
         @Override
         public void accept(KeycloakDistribution distribution) {
-            distribution.setQuarkusProperty("quarkus.log.level", "DEBUG");
+            distribution.setQuarkusProperty("quarkus.log.console.enable", "false");
         }
     }
 
-    public static class SetDebugLogLevelInKeycloakConf implements Consumer<KeycloakDistribution> {
+    public static class DisableConsoleLogHandlerInKeycloakConf implements Consumer<KeycloakDistribution> {
 
         @Override
         public void accept(KeycloakDistribution distribution) {
             distribution.deleteQuarkusProperties();
-            distribution.setProperty("quarkus.log.level", "DEBUG");
+            distribution.setProperty("quarkus.log.console.enable", "false");
         }
     }
 }

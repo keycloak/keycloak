@@ -35,7 +35,7 @@ public class StartDevCommandTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--db=h2-mem" })
+    @Launch({ "start-dev", "--db=dev-mem" })
     void testBuildPropertyAvailable(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStartedDevMode();

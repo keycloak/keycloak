@@ -45,9 +45,10 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+
+import io.quarkus.fs.util.ZipUtils;
 import org.apache.commons.io.FileUtils;
 
-import io.quarkus.bootstrap.util.ZipUtils;
 import org.keycloak.common.Version;
 
 public final class RawKeycloakDistribution implements KeycloakDistribution {
@@ -250,7 +251,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         try {
             Path distRootPath = Paths.get(System.getProperty("java.io.tmpdir")).resolve("kc-tests");
             distRootPath.toFile().mkdirs();
-            File distFile = new File("../../../distribution/server-x-dist/target/keycloak.x-" + Version.VERSION_KEYCLOAK + ".zip");
+            File distFile = new File("../../dist/target/keycloak-" + Version.VERSION_KEYCLOAK + ".zip");
             if (!distFile.exists()) {
                 throw new RuntimeException("Distribution archive " + distFile.getAbsolutePath() +" doesn't exists");
             }

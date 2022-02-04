@@ -4,7 +4,7 @@ metadata:
   name: example-kc
 spec:
   instances: 1
-  distConfig:
+  serverConfiguration:
     KC_DB: postgres
     KC_DB_URL_HOST: postgres-db
 #    KC_DB_USERNAME: ${secret:keycloak-db-secret:username}

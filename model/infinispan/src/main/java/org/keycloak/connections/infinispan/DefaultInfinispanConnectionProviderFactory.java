@@ -52,12 +52,12 @@ import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 
-import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory.REALM_CLEAR_CACHE_EVENTS;
-import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory.REALM_INVALIDATION_EVENTS;
 import static org.keycloak.connections.infinispan.InfinispanUtil.configureTransport;
 import static org.keycloak.connections.infinispan.InfinispanUtil.createCacheConfigurationBuilder;
 import static org.keycloak.connections.infinispan.InfinispanUtil.getActionTokenCacheConfig;
 import static org.keycloak.connections.infinispan.InfinispanUtil.setTimeServiceToKeycloakTime;
+import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory.REALM_CLEAR_CACHE_EVENTS;
+import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory.REALM_INVALIDATION_EVENTS;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -85,13 +85,21 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     @Override
     public void close() {
-        if (cacheManager != null && !containerManaged) {
-            cacheManager.stop();
+        /*
+            workaround for Infinispan 12.1.7.Final to prevent a deadlock while
+            DefaultInfinispanConnectionProviderFactory is shutting down PersistenceManagerImpl
+            that acquires a writeLock and this removal that acquires a readLock.
+            https://issues.redhat.com/browse/ISPN-13664
+        */
+        synchronized (DefaultInfinispanConnectionProviderFactory.class) {
+            if (cacheManager != null && !containerManaged) {
+                cacheManager.stop();
+            }
+            if (remoteCacheProvider != null) {
+                remoteCacheProvider.stop();
+            }
+            cacheManager = null;
         }
-        if (remoteCacheProvider != null) {
-            remoteCacheProvider.stop();
-        }
-        cacheManager = null;
     }
 
     @Override

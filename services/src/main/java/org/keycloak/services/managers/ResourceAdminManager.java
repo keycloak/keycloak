@@ -33,6 +33,7 @@ import org.keycloak.constants.AdapterConstants;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.LoginProtocol;
@@ -241,15 +242,18 @@ public class ResourceAdminManager {
 
     public GlobalRequestResult logoutAll(RealmModel realm) {
         realm.setNotBefore(Time.currentTime());
-        Stream<ClientModel> resources = realm.getClientsStream()
-          .filter(c -> { try { c.getClientId(); return true; } catch (Exception ex) { return false; } } );
 
         GlobalRequestResult finalResult = new GlobalRequestResult();
         AtomicInteger counter = new AtomicInteger(0);
-        resources.forEach(r -> {
-            counter.getAndIncrement();
-            GlobalRequestResult currentResult = logoutClient(realm, r, realm.getNotBefore());
-            finalResult.addAll(currentResult);
+        realm.getClientsStream().forEach(c -> {
+            try {
+                counter.getAndIncrement();
+                GlobalRequestResult currentResult = logoutClient(realm, c, realm.getNotBefore());
+                finalResult.addAll(currentResult);
+            } catch (ModelIllegalStateException ex) {
+                // currently, GlobalRequestResult doesn't allow for information about clients that we were unable to retrieve.
+                logger.warn("unable to retrieve client information for logout, skipping resource", ex);
+            }
         });
         logger.debugv("logging out {0} resources ", counter);
 

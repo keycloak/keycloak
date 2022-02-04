@@ -16,7 +16,6 @@
  */
 package org.keycloak.models.map.storage.jpa.client.entity;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,7 +43,8 @@ import org.hibernate.annotations.TypeDefs;
 import org.keycloak.models.map.client.MapClientEntity.AbstractClientEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.common.DeepCloner;
-import static org.keycloak.models.map.storage.jpa.Constants.SUPPORTED_VERSION_CLIENT;
+import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_CLIENT;
+import org.keycloak.models.map.storage.jpa.JpaRootEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
 /**
@@ -60,7 +60,7 @@ import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
             )
 })
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
-public class JpaClientEntity extends AbstractClientEntity implements Serializable {
+public class JpaClientEntity extends AbstractClientEntity implements JpaRootEntity {
 
     @Id
     @Column
@@ -113,9 +113,10 @@ public class JpaClientEntity extends AbstractClientEntity implements Serializabl
      * Used by hibernate when calling cb.construct from read(QueryParameters) method.
      * It is used to select client without metadata(json) field.
      */
-    public JpaClientEntity(UUID id, Integer entityVersion, String realmId, String clientId, 
+    public JpaClientEntity(UUID id, int version, Integer entityVersion,  String realmId, String clientId,
             String protocol, Boolean enabled) {
         this.id = id;
+        this.version = version;
         this.entityVersion = entityVersion;
         this.realmId = realmId;
         this.clientId = clientId;
@@ -134,20 +135,23 @@ public class JpaClientEntity extends AbstractClientEntity implements Serializabl
      */
     private void checkEntityVersionForUpdate() {
         Integer ev = getEntityVersion();
-        if (ev != null && ev < SUPPORTED_VERSION_CLIENT) {
-            setEntityVersion(SUPPORTED_VERSION_CLIENT);
+        if (ev != null && ev < CURRENT_SCHEMA_VERSION_CLIENT) {
+            setEntityVersion(CURRENT_SCHEMA_VERSION_CLIENT);
         }
     }
 
+    @Override
     public Integer getEntityVersion() {
         if (isMetadataInitialized()) return metadata.getEntityVersion();
         return entityVersion;
     }
 
+    @Override
     public void setEntityVersion(Integer entityVersion) {
         metadata.setEntityVersion(entityVersion);
     }
 
+    @Override
     public int getVersion() {
         return version;
     }
@@ -583,7 +587,6 @@ public class JpaClientEntity extends AbstractClientEntity implements Serializabl
             JpaClientAttributeEntity attr = iterator.next();
             if (Objects.equals(attr.getName(), name)) {
                 iterator.remove();
-                attr.setClient(null);
             }
         }
     }
@@ -621,9 +624,7 @@ public class JpaClientEntity extends AbstractClientEntity implements Serializabl
     public void setAttributes(Map<String, List<String>> attributes) {
         checkEntityVersionForUpdate();
         for (Iterator<JpaClientAttributeEntity> iterator = this.attributes.iterator(); iterator.hasNext();) {
-            JpaClientAttributeEntity attr = iterator.next();
             iterator.remove();
-            attr.setClient(null);
         }
         if (attributes != null) {
             for (Map.Entry<String, List<String>> attrEntry : attributes.entrySet()) {

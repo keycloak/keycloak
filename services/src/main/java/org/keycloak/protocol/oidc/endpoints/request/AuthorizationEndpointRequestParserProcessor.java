@@ -28,12 +28,11 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.par.endpoints.request.AuthzEndpointParParser;
-import org.keycloak.protocol.oidc.rar.AuthorizationRequestParserProvider;
-import org.keycloak.protocol.oidc.rar.parsers.ClientScopeAuthorizationRequestParserProviderFactory;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.util.AuthorizationContextUtil;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -100,15 +99,7 @@ public class AuthorizationEndpointRequestParserProcessor {
             }
 
             if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-                AuthorizationRequestParserProvider clientScopeParser = session.getProvider(AuthorizationRequestParserProvider.class,
-                        ClientScopeAuthorizationRequestParserProviderFactory.CLIENT_SCOPE_PARSER_ID);
-
-                if (clientScopeParser == null) {
-                    throw new RuntimeException(String.format("No provider found for authorization requests parser %1s",
-                            ClientScopeAuthorizationRequestParserProviderFactory.CLIENT_SCOPE_PARSER_ID));
-                }
-
-                request.authorizationRequestContext = clientScopeParser.parseScopes(request.getScope());
+                request.authorizationRequestContext = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, request.getScope());
             }
 
             return request;

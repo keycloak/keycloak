@@ -19,10 +19,12 @@ package org.keycloak.credential;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.webauthn4j.WebAuthnAuthenticationManager;
 import com.webauthn4j.converter.util.ObjectConverter;
+import com.webauthn4j.data.AuthenticatorTransport;
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.Base64;
@@ -105,7 +107,22 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
         long counter = webAuthnModel.getCount();
         String attestationStatementFormat = webAuthnModel.getAttestationStatementFormat();
 
-        WebAuthnCredentialModel model = WebAuthnCredentialModel.create(getType(), userLabel, aaguid, credentialId, null, credentialPublicKey, counter, attestationStatementFormat);
+        final Set<String> transports = webAuthnModel.getTransports()
+                .stream()
+                .map(AuthenticatorTransport::getValue)
+                .collect(Collectors.toSet());
+
+        WebAuthnCredentialModel model = WebAuthnCredentialModel.create(
+                getType(),
+                userLabel,
+                aaguid,
+                credentialId,
+                null,
+                credentialPublicKey,
+                counter,
+                attestationStatementFormat,
+                transports
+        );
 
         model.setId(webAuthnModel.getCredentialDBId());
 

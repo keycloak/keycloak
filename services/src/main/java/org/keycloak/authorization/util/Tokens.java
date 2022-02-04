@@ -18,7 +18,6 @@
 
 package org.keycloak.authorization.util;
 
-import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.AppAuthManager;

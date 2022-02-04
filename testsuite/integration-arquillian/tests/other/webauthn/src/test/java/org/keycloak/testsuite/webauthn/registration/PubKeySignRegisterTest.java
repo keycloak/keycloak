@@ -21,6 +21,7 @@ import com.webauthn4j.data.attestation.authenticator.COSEKey;
 import com.webauthn4j.data.attestation.statement.COSEAlgorithmIdentifier;
 import org.junit.Test;
 import org.keycloak.models.credential.dto.WebAuthnCredentialData;
+import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnDataWrapper;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
 
@@ -41,7 +42,7 @@ import static org.keycloak.crypto.Algorithm.RS512;
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
-public class PubKeySignRegisterTest extends AbstractWebAuthnRegisterTest {
+public class PubKeySignRegisterTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void publicKeySignaturesWrong() {
@@ -85,7 +86,7 @@ public class PubKeySignRegisterTest extends AbstractWebAuthnRegisterTest {
                 assertThat(realmData.getSignatureAlgorithms(), is(algorithms));
             }
 
-            registerDefaultWebAuthnUser(shouldSuccess);
+            registerDefaultUser(shouldSuccess);
 
             assertThat(webAuthnErrorPage.isCurrent(), is(!shouldSuccess));
             if (!shouldSuccess) {

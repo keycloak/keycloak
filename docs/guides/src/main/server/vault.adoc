@@ -2,15 +2,15 @@
 <#import "/templates/kc.adoc" as kc>
 
 <@tmpl.guide
-title="Using Kubernetes Secrets"
-summary="Learn how to use Kubernetes / OpenShift secrets in Keycloak"
+title="Using Kubernetes secrets"
+summary="Learn how to use Kubernetes/OpenShift secrets in Keycloak"
 priority=30
 includedOptions="vault vault-*">
 
-Keycloak supports a file based vault implementation for Kubernetes / OpenShift secrets. Mount Kubernetes secrets into the Keycloak Container, and the data fields will be available in the mounted folder with a flat-file structure.
+Keycloak supports a file-based vault implementation for Kubernetes/OpenShift secrets. Mount Kubernetes secrets into the Keycloak Container, and the data fields will be available in the mounted folder with a flat-file structure.
 
 == Available integrations
-You can use Kubernetes / OpenShift secrets for the following use-cases:
+You can use Kubernetes/OpenShift secrets for the following purposes:
 
 * Obtain the SMTP Mail server Password
 * Obtain the LDAP Bind Credential when using LDAP-based User Federation
@@ -22,19 +22,19 @@ Enable the file based vault by building Keycloak using the following build optio
 <@kc.build parameters="--vault=file"/>
 
 == Setting the base directory to lookup secrets
-Kubernetes / OpenShift secrets are basically mounted files, so you have to configure a directory for these files to be mounted in:
+Kubernetes/OpenShift secrets are basically mounted files. To configure a directory where these files should be mounted, enter this command:
 
 <@kc.start parameters="--vault-dir=/my/path"/>
 
 == Realm-specific secret files
-Kubernetes / OpenShift Secrets are used per-realm basis in Keycloak, so there's a naming convention for the file in place:
+Kubernetes/OpenShift Secrets are used on a per-realm basis in Keycloak, which requires a naming convention for the file in place:
 [source, bash]
 ----
 ${r"${vault.<realmname>_<secretname>}"}
 ----
 
 === Using underscores in the Name
-In order to process the secret correctly, it is needed to double all underscores in the <realmname> or the <secretname>, separated by a single underscore.
+To process the secret correctly, you double all underscores in the <realmname> or the <secretname>, separated by a single underscore.
 
 .Example
 * Realm Name: `sso_realm`
@@ -46,14 +46,14 @@ sso__realm_ldap__credential
 ----
 Note the doubled underscores between __sso__ and __realm__ and also between __ldap__ and __credential__.
 
-== Example: Use an LDAP bind credential secret in the admin console
+== Example: Use an LDAP bind credential secret in the Admin Console
 
 .Example setup
 * A realm named `secrettest`
 * A desired Name `ldapBc` for the bind Credential
 * Resulting file name: `secrettest_ldapBc`
 
-.Usage in admin console
-You can then use this secret from the admin console by using  `${r"${vault.ldapBc}"}` as value for the `Bind Credential` when configuring your LDAP User federation.
+.Usage in Admin Console
+You can then use this secret from the Admin Console by using `${r"${vault.ldapBc}"}` as the value for the `Bind Credential` when configuring your LDAP User federation.
 
 </@tmpl.guide>

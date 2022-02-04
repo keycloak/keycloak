@@ -534,6 +534,8 @@
                 <ant.scenario>scenario-crossdc</ant.scenario>
 
                 <h2.jdbc.url>jdbc:h2:tcp://localhost:9092/mem:keycloak-dc-shared;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE</h2.jdbc.url>
+
+                <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>true</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
             </properties>
             <build>
                 <plugins>

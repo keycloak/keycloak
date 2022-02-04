@@ -36,8 +36,8 @@ Cluster:
 
 Database:
 
---db <vendor>        The database vendor. Possible values are: h2-file, h2-mem, mariadb, mssql,
-                       mssql-2012, mysql, oracle, postgres, postgres-95
+--db <vendor>        The database vendor. Possible values are: dev-file, dev-mem, mariadb, mssql,
+                       mysql, oracle, postgres
 
 Feature:
 

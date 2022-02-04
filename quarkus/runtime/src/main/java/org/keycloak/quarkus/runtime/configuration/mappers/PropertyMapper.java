@@ -117,13 +117,7 @@ public class PropertyMapper {
                 }
 
                 if (parentValue != null) {
-                    ConfigValue value = transformValue(parentValue.getValue(), context);
-
-                    if (value != null) {
-                        return value;
-                    }
-
-                    return parentValue;
+                    return transformValue(parentValue.getValue(), context);
                 }
             }
 

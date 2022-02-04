@@ -1,0 +1,180 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Configuring Keycloak"
+summary="An overview of the server configuration">
+
+In this guide, you will learn the core concepts around the server configuration and how to configure the server using the different
+server options available. You will also learn how to properly configure the server to achieve an optimal runtime for faster
+startup and low memory footprint.
+
+== Understanding Server Options
+
+All the server options can be found by using the `help` option for individual commands:
+
+.Listing all build options
+<@kc.build parameters="--help"/>
+
+.Listing all configuration options
+<@kc.start parameters="--help"/>
+
+You can instead look at all the server options at <@links.server id="all-config"/>.
+
+Server options are loaded from different sources in a specific order and they use different formats. If an option is defined in different sources the order of resolution is first in the list of:
+
+|===
+|*Source* | *Format*
+
+|CLI
+|--db-url-host=<value>
+
+|Environment Variable
+|KC_DB_URL_HOST
+
+|`conf/keycloak.conf`
+|db-url-host=<value>
+|===
+
+Given the `db-url-host` option as an example, you would set this property as follows:
+
+.Command-line argument
+<@kc.start parameters="--db-url-host=mykeycloakdb"/>
+
+.Environment variable
+```
+export KC_DB_URL_HOST=mykeycloakdb
+```
+
+.`conf/keycloak.conf`
+```
+db-url-host=mykeycloakdb
+```
+
+The configuration source and the corresponding format you should use is use-case specific. That decision depends on the platform the server is deployed to
+as well as on the optimizations you can get for an optimal runtime. For instance, when deploying the server into Kubernetes you would probably rely
+on environment variables to configure the server. However, you are not limited to use a single configuration source and format.
+
+== Configuring the server
+
+The server options are narrowed to a specific command or configuration stage. This clear separation is one of the key aspects
+of the server configuration and is related to a series of optimizations that are done in order to deliver the best runtime when starting and running the server.
+
+Configuration is basically done in two stages:
+
+* Before starting the server in order to build an optimized server image for an optimal runtime
+* When starting the server
+
+The first stage involves running the `build` command and set any **build option** available from this command to configure the server.
+
+By looking at the individual configuration options at <@links.server id="all-config"/>, you notice
+that some options are marked with an icon to indicate they are a build option. In other words, they can only be set and only take effect when running the `build` command.
+You can also check all the options that require a build by looking at the `help` message of the `build` command:
+
+<@kc.build parameters="--help"/>
+
+The `build` command is responsible for producing an immutable and optimized server image, which is similar to building a container image. In addition to persisting
+any build option you have set, this command also performs a series of optimizations to deliver the best runtime when starting and running the server. As a result,
+a lot of processing that would usually happen when starting and running the server is no longer necessary and the server can start and run faster.
+
+Some optimizations performed by the `build` command are:
+
+* Closed-world assumption about installed providers, which means that no need to re-create the registry every time the server starts
+* Configuration files are pre-parsed to reduce IO when starting the server
+* Database specific resources are configured and prepared to run against a specific database vendor
+* By persisting build options into the server image, the server does not perform any additional step to interpret configuration options and (re)configure itself
+
+Once you run the `build` command, you won't need to set the same **build options** again when starting the server.
+
+.First stage, run the `build` command to set any build option
+<@kc.build parameters="--db=postgres"/>
+
+The second stage involves starting the server using any **configuration option** available from the `start` command.
+
+.Second stage, run the `start` command to set any configuration option when starting the server
+<@kc.start parameters="--db-url-host=keycloak-postgres --db-username=keycloak --db-password=change_me --hostname mykeycloak.acme.com"/>
+
+At this stage, you are free to set any value you want to any of the configuration options.
+
+== Configuring the server for an optimal startup time
+
+In addition to the optimizations performed when you run the `build` command, you might want to avoid using CLI options when running the
+`start` command in favor of using environment variables or configuration options from the `conf/keycloak.conf` file.
+
+.Set any build option
+<@kc.build parameters="--db=postgres"/>
+
+.Set any configuration option to `conf/keycloak.conf`
+```
+db-url-host=keycloak-postgres
+db-username=keycloak
+db-password=change_me
+hostname mykeycloak.acme.com
+```
+
+.Start the server
+<@kc.start/>
+
+By following that approach, the server is going to skip some steps at startup and start faster.
+
+== Using the `auto-build` option when starting the server
+
+The `auto-build` option allows you to perform the two configuration stages using a single command. Under certain circumstances, you might want to sacrifice the server startup time and update the values of build options when starting the server.
+
+For that, you can start the server as follows:
+
+.Using the `auto-build` option
+<@kc.start parameters="--auto-build --db postgres --db-url-host keycloak-postgres --db-username keycloak --db-password change_me --hostname mykeycloak.acme.com"/>
+
+By using this option, the server is going to calculate the build options that have changed and automatically runs the `build` command, if necessary, before starting the server.
+
+== Configuring the server using configuration files
+
+By default, the server is going to always fetch any configuration option you set from the `conf/keycloak.conf` file. When you are using a fresh distribution,
+this file holds only the recommended settings for running in production, which are initially commented out.
+
+You can also specify a different configuration file by using the `[-cf|--config-file] option as follows:
+
+.Running the `build` command using a custom configuration file
+<@kc.build rootParameters="-cf myconfig.conf"/>
+
+.Running the `start` command using a custom configuration file
+<@kc.start rootParameters="-cf myconfig.conf"/>
+
+Changes to any *build option* defined in the `keycloak.conf` file that is targeted for the `build` command are ignored
+if the value differs from the value used to previously run the `build` command. In this case, make sure you run the `build` command again so that
+any build option is updated accordingly.
+
+=== Understanding the development and production modes
+
+By default, the server defines two main operating modes:
+
+* Development
+* Production
+
+The development mode is activated every time you run the `start-dev` command. In this mode, some key configuration options are set to make it possible to start the
+server for development purposes without the burden of having to define additional settings that are mandatory for production.
+
+The production mode is activated by default when you run the `build` or the `start` command. Use this mode to set any configuration option that
+is needed for deploying Keycloak in production.
+
+By default, the configurations options for the production mode are commented out in the `conf/keycloak.conf`. These examples
+ are meant to give you an idea about the main settings that needs to be considered when running in production.
+
+== Using unsupported server options
+
+Most of the time the available options from the server configuration should be enough to configure the server.
+However, you might need to use properties directly from Quarkus in order to enable a specific behavior or capability that is missing from the server configuration.
+
+You should avoid as much as possible using properties directly from Quarkus. If you really need to, consider opening an https://github.com/keycloak/keycloak/issues/new?assignees=&labels=kind%2Fenhancement%2Cstatus%2Ftriage&template=enhancement.yml[issue] first and help us
+to improve the server configuration.
+
+To configure the server using Quarkus properties you should follow these steps:
+
+* Create a `conf/quarkus.properties` file and define any property you need
+* Run the `build` command to apply the settings to the server
+
+For a complete list of Quarkus properties, consider looking at this https://quarkus.io/guides/all-config[documentation] .
+
+</@tmpl.guide>

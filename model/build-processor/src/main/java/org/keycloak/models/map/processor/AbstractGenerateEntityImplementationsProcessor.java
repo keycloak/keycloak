@@ -165,7 +165,10 @@ public abstract class AbstractGenerateEntityImplementationsProcessor extends Abs
     }
 
     protected boolean isImmutableFinalType(TypeMirror fieldType) {
-        return isPrimitiveType(fieldType) || isBoxedPrimitiveType(fieldType) || Objects.equals("java.lang.String", fieldType.toString());
+        return isPrimitiveType(fieldType)
+                || isBoxedPrimitiveType(fieldType)
+                || isEnumType(fieldType)
+                || Objects.equals("java.lang.String", fieldType.toString());
     }
 
     protected boolean isKnownCollectionOfImmutableFinalTypes(TypeMirror fieldType) {
@@ -206,6 +209,10 @@ public abstract class AbstractGenerateEntityImplementationsProcessor extends Abs
                     "))";
         }
         return "deepClone(" + parameterName + ")";
+    }
+
+    protected boolean isEnumType(TypeMirror fieldType) {
+        return types.asElement(fieldType).getKind() == ElementKind.ENUM;
     }
 
     protected boolean isPrimitiveType(TypeMirror fieldType) {

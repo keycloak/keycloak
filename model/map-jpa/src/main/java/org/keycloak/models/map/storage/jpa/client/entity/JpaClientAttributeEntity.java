@@ -16,7 +16,6 @@
  */
 package org.keycloak.models.map.storage.jpa.client.entity;
 
-import java.io.Serializable;
 import java.util.Objects;
 import java.util.UUID;
 import javax.persistence.Column;
@@ -28,10 +27,11 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import org.hibernate.annotations.Nationalized;
+import org.keycloak.models.map.storage.jpa.JpaChildEntity;
 
 @Entity
 @Table(name = "client_attribute")
-public class JpaClientAttributeEntity implements Serializable {
+public class JpaClientAttributeEntity implements JpaChildEntity<JpaClientEntity> {
 
     @Id
     @Column
@@ -99,5 +99,10 @@ public class JpaClientAttributeEntity implements Serializable {
         return Objects.equals(getClient(), that.getClient()) &&
                Objects.equals(getName(), that.getName()) &&
                Objects.equals(getValue(), that.getValue());
+    }
+
+    @Override
+    public JpaClientEntity getParent() {
+        return getClient();
     }
 }

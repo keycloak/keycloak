@@ -1,44 +1,43 @@
 <#import "/templates/guide.adoc" as tmpl>
 <#import "/templates/kc.adoc" as kc>
-<#import "/templates/options.adoc" as opts>
 
 <@tmpl.guide
 title="Enabling and disabling features"
 summary="Understand how to configure Keycloak to use optional features"
 includedOptions="features features-*">
 
-Keycloak has packed some functionality in features, some of them not enabled by default. These features include features that are in tech preview or deprecated features. In addition there are some features that are enabled by default, but can be disabled if you don't need them for your specific usage scenario.
+Keycloak has packed some functionality in features, including some disabled features, such as Technology Preview and deprecated features. Other features are enabled by default, but you can disable them if they do not apply to your use of Keycloak.
 
 == Enabling features
 
-Some supported features, and all preview features, are not enabled by default. To enable a feature use:
+Some supported features, and all preview features, are disabled by default. To enable a feature, enter this command:
 
 <@kc.build parameters="--features=<name>[,<name>]"/>
 
-For example to enable `docker` and `token-exchange` use:
+For example, to enable `docker` and `token-exchange`, enter this command:
 
 <@kc.build parameters="--features=docker,token-exchange"/>
 
-All preview features can be enabled with the special name `preview`:
+To enable all preview features, enter this command:
 
 <@kc.build parameters="--features=preview"/>
 
 == Disabling features
 
-To disable a feature that is enabled by default use:
+To disable a feature that is enabled by default, enter this command:
 
 <@kc.build parameters="--features-disabled=<name>[,<name>]"/>
 
-For example to disable `impersonation` use:
+For example to disable `impersonation`, enter this command:
 
 <@kc.build parameters="--features-disabled=impersonation"/>
 
-It is also possible to disable all default features with:
+You can disable all default features by entering this command:
 
 <@kc.build parameters="--features-disabled=default"/>
 
-This can be used in combination with `features` to explicitly set what features should be available. If a feature is
-added both to the `features-disabled` list and the `features` list it will be enabled.
+This command can be used in combination with `features` to explicitly set what features should be available.
+If a feature is added both to the `features-disabled` list and the `features` list, it will be enabled.
 
 == Supported features
 
@@ -48,20 +47,20 @@ The following list contains supported features that are enabled by default, and 
 
 === Disabled by default
 
-The following list contains supported features that are not enabled by default, and can be enabled if needed.
+The following list contains supported features that are disabled by default, and can be enabled if needed.
 
 <@showFeatures ctx.features.supportedDisabledByDefault/>
 
 == Preview features
 
-Preview features are not enabled by default, and are not recommended for use in production. These features may change, or
-even be removed, in a future release.
+Preview features are disabled by default and are not recommended for use in production.
+These features may change or be removed at a future release.
 
 <@showFeatures ctx.features.preview/>
 
 == Deprecated features
 
-The following list contains deprecated features that will be removed in a future release. These features are not enabled by default.
+The following list contains deprecated features that will be removed in a future release. These features are disabled by default.
 
 <@showFeatures ctx.features.deprecated/>
 

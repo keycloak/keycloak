@@ -20,6 +20,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -30,7 +31,14 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.sql.DataSource;
+
+import org.hibernate.boot.Metadata;
 import org.hibernate.cfg.AvailableSettings;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.event.service.spi.EventListenerRegistry;
+import org.hibernate.event.spi.EventType;
+import org.hibernate.jpa.boot.spi.IntegratorProvider;
+import org.hibernate.service.spi.SessionFactoryServiceRegistry;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
@@ -39,6 +47,7 @@ import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.map.storage.jpa.client.entity.JpaClientEntity;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -51,6 +60,8 @@ import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
 import org.keycloak.models.map.storage.jpa.client.JpaClientMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.clientscope.JpaClientScopeMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.clientscope.entity.JpaClientScopeEntity;
 import org.keycloak.models.map.storage.jpa.role.JpaRoleMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity;
 import org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterProvider;
@@ -73,14 +84,17 @@ public class JpaMapStorageProviderFactory implements
             //client
             .constructor(JpaClientEntity.class,                 JpaClientEntity::new)
             .constructor(MapProtocolMapperEntity.class,         MapProtocolMapperEntityImpl::new)
+            //client-scope
+            .constructor(JpaClientScopeEntity.class,            JpaClientScopeEntity::new)
             //role
             .constructor(JpaRoleEntity.class,                   JpaRoleEntity::new)
             .build();
 
     private static final Map<Class<?>, Function<EntityManager, MapKeycloakTransaction>> MODEL_TO_TX = new HashMap<>();
     static {
-        MODEL_TO_TX.put(ClientModel.class,  JpaClientMapKeycloakTransaction::new);
-        MODEL_TO_TX.put(RoleModel.class,    JpaRoleMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(ClientScopeModel.class,     JpaClientScopeMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(ClientModel.class,          JpaClientMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(RoleModel.class,            JpaRoleMapKeycloakTransaction::new);
     }
 
     public MapKeycloakTransaction createTransaction(Class<?> modelType, EntityManager em) {
@@ -159,6 +173,31 @@ public class JpaMapStorageProviderFactory implements
                     properties.put("hibernate.show_sql", config.getBoolean("showSql", false));
                     properties.put("hibernate.format_sql", config.getBoolean("formatSql", true));
                     properties.put("hibernate.dialect", config.get("driverDialect"));
+
+                    properties.put(
+                            "hibernate.integrator_provider",
+                            (IntegratorProvider) () -> Collections.singletonList(
+                                    new org.hibernate.integrator.spi.Integrator() {
+
+                                        @Override
+                                        public void integrate(Metadata metadata, SessionFactoryImplementor sessionFactoryImplementor,
+                                                              SessionFactoryServiceRegistry sessionFactoryServiceRegistry) {
+                                            final EventListenerRegistry eventListenerRegistry =
+                                                    sessionFactoryServiceRegistry.getService( EventListenerRegistry.class );
+
+                                            eventListenerRegistry.appendListeners(EventType.PRE_INSERT, JpaChildEntityListener.INSTANCE);
+                                            eventListenerRegistry.appendListeners(EventType.PRE_UPDATE, JpaChildEntityListener.INSTANCE);
+                                            eventListenerRegistry.appendListeners(EventType.PRE_DELETE, JpaChildEntityListener.INSTANCE);
+                                        }
+
+                                        @Override
+                                        public void disintegrate(SessionFactoryImplementor sessionFactoryImplementor,
+                                                                 SessionFactoryServiceRegistry sessionFactoryServiceRegistry) {
+
+                                        }
+                                    }
+                            )
+                    );
 
                     Integer isolation = config.getInt("isolation");
                     if (isolation != null) {

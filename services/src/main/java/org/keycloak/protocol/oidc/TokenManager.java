@@ -240,15 +240,10 @@ public class TokenManager {
 
         try {
             TokenVerifier.createWithoutSignature(token)
-                    .withChecks(NotBeforeCheck.forModel(client), TokenVerifier.IS_ACTIVE)
+                    .withChecks(NotBeforeCheck.forModel(client), TokenVerifier.IS_ACTIVE, new TokenRevocationCheck(session))
                     .verify();
         } catch (VerificationException e) {
             logger.debugf("JWT check failed: %s", e.getMessage());
-            return false;
-        }
-
-        TokenRevocationStoreProvider revocationStore = session.getProvider(TokenRevocationStoreProvider.class);
-        if (revocationStore.isRevoked(token.getId())) {
             return false;
         }
 
@@ -645,6 +640,9 @@ public class TokenManager {
      * @return
      */
     public static boolean isValidScope(String scopes, AuthorizationRequestContext authorizationRequestContext, ClientModel client) {
+        if (scopes == null) {
+            return true;
+        }
         if (authorizationRequestContext.getAuthorizationDetailEntries() == null || authorizationRequestContext.getAuthorizationDetailEntries().isEmpty()) {
             return false;
         }
@@ -659,6 +657,11 @@ public class TokenManager {
             requestedScopes.remove(OAuth2Constants.SCOPE_OPENID);
         }
 
+        if (logger.isTraceEnabled()) {
+            logger.tracef("Rar scopes to validate requested scopes against: %1s", String.join(" ", rarScopes));
+            logger.tracef("Requested scopes: %1s", String.join(" ", requestedScopes));
+        }
+
         for (String requestedScope : requestedScopes) {
             // We keep the check to the getDynamicClientScope for the OpenshiftSAClientAdapter
             if (!rarScopes.contains(requestedScope) && client.getDynamicClientScope(requestedScope) == null) {
@@ -667,7 +670,7 @@ public class TokenManager {
         }
         return true;
     }
-    
+
     public static boolean isValidScope(String scopes, ClientModel client) {
         if (scopes == null) {
             return true;
@@ -1338,6 +1341,24 @@ public class TokenManager {
 
         public static NotBeforeCheck forModel(KeycloakSession session, RealmModel realmModel, UserModel userModel) {
             return new NotBeforeCheck(session.users().getNotBeforeOfUser(realmModel, userModel));
+        }
+    }
+
+    /**
+     * Check if access token was revoked with OAuth revocation endpoint
+     */
+    public static class TokenRevocationCheck implements TokenVerifier.Predicate<AccessToken> {
+
+        private final KeycloakSession session;
+
+        public TokenRevocationCheck(KeycloakSession session) {
+            this.session = session;
+        }
+
+        @Override
+        public boolean test(AccessToken token) {
+            TokenRevocationStoreProvider revocationStore = session.getProvider(TokenRevocationStoreProvider.class);
+            return !revocationStore.isRevoked(token.getId());
         }
     }
 

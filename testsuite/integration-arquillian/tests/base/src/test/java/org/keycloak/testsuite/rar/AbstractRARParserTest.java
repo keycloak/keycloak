@@ -19,19 +19,18 @@ package org.keycloak.testsuite.rar;
 
 import org.junit.Before;
 import org.junit.Rule;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.util.DefaultClientSessionContext;
+import org.keycloak.services.util.AuthorizationContextUtil;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -88,7 +87,7 @@ public abstract class AbstractRARParserTest extends AbstractTestRealmKeycloakTes
      * @return the {@link AuthorizationRequestContextHolder} local testsuite representation of the Authorization Request Context
      * with all the parsed authorization_detail objects.
      */
-    protected AuthorizationRequestContextHolder fetchAuthorizationRequestContextHolder() {
+    protected AuthorizationRequestContextHolder fetchAuthorizationRequestContextHolder(String userId) {
         AuthorizationRequestContextHolder authorizationRequestContextHolder = testingClient.server("test").fetch(session -> {
             final RealmModel realm = session.realms().getRealmByName("test");
             final UserModel user = session.users().getUserById(realm, userId);
@@ -96,9 +95,9 @@ public abstract class AbstractRARParserTest extends AbstractTestRealmKeycloakTes
             final ClientModel client = realm.getClientByClientId("test-app");
             String clientUUID = client.getId();
             AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientUUID);
-            ClientSessionContext clientSessionContext = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession, session);
             session.getContext().setClient(client);
-            List<AuthorizationRequestContextHolder.AuthorizationRequestHolder> authorizationRequestHolders = clientSessionContext.getAuthorizationRequestContext().getAuthorizationDetailEntries().stream()
+            List<AuthorizationRequestContextHolder.AuthorizationRequestHolder> authorizationRequestHolders = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, clientSession.getNote(OAuth2Constants.SCOPE))
+                    .getAuthorizationDetailEntries().stream()
                     .map(AuthorizationRequestContextHolder.AuthorizationRequestHolder::new)
                     .collect(Collectors.toList());
             return new AuthorizationRequestContextHolder(authorizationRequestHolders);

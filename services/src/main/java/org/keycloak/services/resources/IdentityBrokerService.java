@@ -451,15 +451,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
             if (authResult != null) {
                 AccessToken token = authResult.getToken();
-                String issuedFor = token.getIssuedFor();
-                ClientModel clientModel = this.realmModel.getClientByClientId(issuedFor);
-
-                if (clientModel == null) {
-                    return badRequest("Invalid client.");
-                }
-                if (!clientModel.isEnabled()) {
-                    return badRequest("Client is disabled");
-                }
+                ClientModel clientModel = authResult.getClient();
 
                 session.getContext().setClient(clientModel);
 

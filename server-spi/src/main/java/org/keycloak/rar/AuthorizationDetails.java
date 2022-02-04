@@ -46,6 +46,11 @@ public class AuthorizationDetails implements Serializable {
         this.authorizationDetails = authorizationDetails;
     }
 
+    public AuthorizationDetails(ClientScopeModel clientScope) {
+        this.clientScope = clientScope;
+        this.source = AuthorizationRequestSource.SCOPE;
+    }
+
     public ClientScopeModel getClientScope() {
         return clientScope;
     }
@@ -68,6 +73,25 @@ public class AuthorizationDetails implements Serializable {
 
     public void setAuthorizationDetails(AuthorizationDetailsJSONRepresentation authorizationDetails) {
         this.authorizationDetails = authorizationDetails;
+    }
+
+    /**
+     * Returns whether the current {@link AuthorizationDetails} object is a dynamic scope
+     * @return see description
+     */
+    public boolean isDynamicScope() {
+        return this.source.equals(AuthorizationRequestSource.SCOPE) && this.getClientScope().isDynamicScope();
+    }
+
+    /**
+     * Returns the Dynamic Scope parameter from the underlying {@link AuthorizationDetailsJSONRepresentation} representation
+     * @return see description
+     */
+    public String getDynamicScopeParam() {
+        if(isDynamicScope()) {
+            return this.authorizationDetails.getDynamicScopeParamFromCustomData();
+        }
+        return null;
     }
 
     @Override
