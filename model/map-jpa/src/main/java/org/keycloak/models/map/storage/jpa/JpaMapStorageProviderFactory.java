@@ -48,6 +48,7 @@ import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.map.storage.jpa.client.entity.JpaClientEntity;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -62,6 +63,8 @@ import org.keycloak.models.map.storage.MapStorageProviderFactory;
 import org.keycloak.models.map.storage.jpa.client.JpaClientMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.clientscope.JpaClientScopeMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.clientscope.entity.JpaClientScopeEntity;
+import org.keycloak.models.map.storage.jpa.group.JpaGroupMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.group.entity.JpaGroupEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaEntityVersionListener;
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaOptimisticLockingListener;
 import org.keycloak.models.map.storage.jpa.role.JpaRoleMapKeycloakTransaction;
@@ -88,6 +91,8 @@ public class JpaMapStorageProviderFactory implements
             .constructor(MapProtocolMapperEntity.class,         MapProtocolMapperEntityImpl::new)
             //client-scope
             .constructor(JpaClientScopeEntity.class,            JpaClientScopeEntity::new)
+            //group
+            .constructor(JpaGroupEntity.class,                  JpaGroupEntity::new)
             //role
             .constructor(JpaRoleEntity.class,                   JpaRoleEntity::new)
             .build();
@@ -96,6 +101,7 @@ public class JpaMapStorageProviderFactory implements
     static {
         MODEL_TO_TX.put(ClientScopeModel.class,     JpaClientScopeMapKeycloakTransaction::new);
         MODEL_TO_TX.put(ClientModel.class,          JpaClientMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(GroupModel.class,           JpaGroupMapKeycloakTransaction::new);
         MODEL_TO_TX.put(RoleModel.class,            JpaRoleMapKeycloakTransaction::new);
     }
 

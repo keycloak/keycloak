@@ -64,7 +64,9 @@ public class JpaClientScopeDelegateProvider extends JpaDelegateProvider<JpaClien
                     default:
                         setDelegate(em.find(JpaClientScopeEntity.class, UUID.fromString(getDelegate().getId())));
                 }
-            } else throw new IllegalStateException("Not a valid client scope field: " + field);
+            } else {
+                throw new IllegalStateException("Not a valid client scope field: " + field);
+            }
         } else {
             setDelegate(em.find(JpaClientScopeEntity.class, UUID.fromString(getDelegate().getId())));
         }

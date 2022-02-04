@@ -66,7 +66,9 @@ public class JpaClientDelegateProvider extends JpaDelegateProvider<JpaClientEnti
                     default:
                         setDelegate(em.find(JpaClientEntity.class, UUID.fromString(getDelegate().getId())));
                 }
-            } else throw new IllegalStateException("Not a valid client field: " + field);
+            } else {
+                throw new IllegalStateException("Not a valid client field: " + field);
+            }
         } else {
             setDelegate(em.find(JpaClientEntity.class, UUID.fromString(getDelegate().getId())));
         }
