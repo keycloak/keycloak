@@ -18,7 +18,6 @@ package org.keycloak.models.map.storage.jpa.role.entity;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -242,9 +241,7 @@ public class JpaRoleEntity extends AbstractRoleEntity implements JpaRootEntity {
 
     @Override
     public void setAttributes(Map<String, List<String>> attributes) {
-        for (Iterator<JpaRoleAttributeEntity> iterator = this.attributes.iterator(); iterator.hasNext();) {
-            iterator.remove();
-        }
+        this.attributes.clear();
         if (attributes != null) {
             for (Map.Entry<String, List<String>> entry : attributes.entrySet()) {
                 setAttribute(entry.getKey(), entry.getValue());
@@ -263,12 +260,7 @@ public class JpaRoleEntity extends AbstractRoleEntity implements JpaRootEntity {
 
     @Override
     public void removeAttribute(String name) {
-        for (Iterator<JpaRoleAttributeEntity> iterator = attributes.iterator(); iterator.hasNext();) {
-            JpaRoleAttributeEntity attr = iterator.next();
-            if (Objects.equals(attr.getName(), name)) {
-                iterator.remove();
-            }
-        }
+        attributes.removeIf(attr -> Objects.equals(attr.getName(), name));
     }
 
     @Override

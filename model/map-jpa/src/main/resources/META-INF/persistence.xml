@@ -7,6 +7,9 @@
     <!--clients-->
     <class>org.keycloak.models.map.storage.jpa.client.entity.JpaClientEntity</class>
     <class>org.keycloak.models.map.storage.jpa.client.entity.JpaClientAttributeEntity</class>
+    <!--groups-->
+    <class>org.keycloak.models.map.storage.jpa.group.entity.JpaGroupEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.group.entity.JpaGroupAttributeEntity</class>
     <!--roles-->
     <class>org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity</class>
     <class>org.keycloak.models.map.storage.jpa.role.entity.JpaRoleAttributeEntity</class>

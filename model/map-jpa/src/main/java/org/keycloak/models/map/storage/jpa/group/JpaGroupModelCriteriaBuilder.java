@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage.jpa.role;
+package org.keycloak.models.map.storage.jpa.group;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,56 +27,64 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaBuilder.In;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.RoleModel.SearchableFields;
-import org.keycloak.models.map.common.StringKeyConvertor.UUIDKey;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.map.common.StringKeyConvertor;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
+import org.keycloak.models.map.storage.jpa.group.entity.JpaGroupEntity;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
-import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity;
+import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 import org.keycloak.storage.SearchableModelField;
 
-public class JpaRoleModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaRoleEntity, RoleModel, JpaRoleModelCriteriaBuilder> {
+public class JpaGroupModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaGroupEntity, GroupModel, JpaGroupModelCriteriaBuilder> {
 
-    public JpaRoleModelCriteriaBuilder() {
-        super(JpaRoleModelCriteriaBuilder::new);
+    public JpaGroupModelCriteriaBuilder() {
+        super(JpaGroupModelCriteriaBuilder::new);
     }
 
-    private JpaRoleModelCriteriaBuilder(BiFunction<CriteriaBuilder, Root<JpaRoleEntity>, Predicate> predicateFunc) {
-        super(JpaRoleModelCriteriaBuilder::new, predicateFunc);
+    private JpaGroupModelCriteriaBuilder(BiFunction<CriteriaBuilder, Root<JpaGroupEntity>, Predicate> predicateFunc) {
+        super(JpaGroupModelCriteriaBuilder::new, predicateFunc);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public JpaRoleModelCriteriaBuilder compare(SearchableModelField<? super RoleModel> modelField, Operator op, Object... value) {
+    public JpaGroupModelCriteriaBuilder compare(SearchableModelField<? super GroupModel> modelField, Operator op, Object... value) {
         switch (op) {
             case EQ:
-                if (modelField.equals(SearchableFields.REALM_ID) ||
-                    modelField.equals(SearchableFields.CLIENT_ID) ||
-                    modelField.equals(SearchableFields.NAME)) {
+                if (modelField.equals(GroupModel.SearchableFields.REALM_ID) ||
+                    modelField.equals(GroupModel.SearchableFields.NAME)) {
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaRoleModelCriteriaBuilder((cb, root) -> 
+                    return new JpaGroupModelCriteriaBuilder((cb, root) -> 
                         cb.equal(root.get(modelField.getName()), value[0])
                     );
-                } else {
-                    throw new CriterionNotSupportedException(modelField, op);
-                }
-            case NE:
-                if (modelField.equals(SearchableFields.IS_CLIENT_ROLE)) {
-                    
-                    validateValue(value, modelField, op, Boolean.class);
+                } else if (modelField.equals(GroupModel.SearchableFields.PARENT_ID)) {
+                    if (value.length == 1 && Objects.isNull(value[0])) {
+                        return new JpaGroupModelCriteriaBuilder((cb, root) -> 
+                            cb.isNull(root.get("parentId"))
+                        );
+                    }
 
-                    return new JpaRoleModelCriteriaBuilder((cb, root) -> 
-                        ((Boolean) value[0]) ? cb.isNull(root.get("clientId")) : cb.isNotNull(root.get("clientId"))
+                    validateValue(value, modelField, op, String.class);
+
+                    return new JpaGroupModelCriteriaBuilder((cb, root) -> 
+                        cb.equal(root.get("parentId"), value[0])
+                    );
+                } else if (modelField.equals(GroupModel.SearchableFields.ASSIGNED_ROLE)) {
+                    validateValue(value, modelField, op, String.class);
+
+                    return new JpaGroupModelCriteriaBuilder((cb, root) -> 
+                        cb.isTrue(cb.function("@>",
+                            Boolean.TYPE,
+                            cb.function("->", JsonbType.class, root.get("metadata"), cb.literal("fGrantedRoles")),
+                            cb.literal(convertToJson(value[0]))))
                     );
                 } else {
                     throw new CriterionNotSupportedException(modelField, op);
                 }
             case IN:
-                if (modelField.equals(SearchableFields.ID)) {
+                if (modelField.equals(GroupModel.SearchableFields.ID)) {
                     if (value == null || value.length == 0) throw new CriterionNotSupportedException(modelField, op);
 
                     final Collection<?> collectionValues;
@@ -99,14 +107,14 @@ public class JpaRoleModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaRole
                     }
 
                     if (collectionValues.isEmpty()) {
-                        return new JpaRoleModelCriteriaBuilder((cb, root) -> cb.or());
+                        return new JpaGroupModelCriteriaBuilder((cb, root) -> cb.or());
                     }
 
-                    return new JpaRoleModelCriteriaBuilder((cb, root) ->  {
-                        In<UUID> in = cb.in(root.get("id"));
+                    return new JpaGroupModelCriteriaBuilder((cb, root) ->  {
+                        CriteriaBuilder.In<UUID> in = cb.in(root.get("id"));
                         for (Object id : collectionValues) {
                             try {
-                                in.value(UUIDKey.INSTANCE.fromString(Objects.toString(id, null)));
+                                in.value(StringKeyConvertor.UUIDKey.INSTANCE.fromString(Objects.toString(id, null)));
                             } catch (IllegalArgumentException e) {
                                 throw new CriterionNotSupportedException(modelField, op, id + " id is not in uuid format.", e);
                             }
@@ -117,13 +125,21 @@ public class JpaRoleModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaRole
                     throw new CriterionNotSupportedException(modelField, op);
                 }
             case ILIKE:
-                if (modelField.equals(SearchableFields.NAME) ||
-                    modelField.equals(SearchableFields.DESCRIPTION)) {
+                if (modelField.equals(GroupModel.SearchableFields.NAME)) {
 
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaRoleModelCriteriaBuilder((cb, root) -> 
+                    return new JpaGroupModelCriteriaBuilder((cb, root) -> 
                         cb.like(cb.lower(root.get(modelField.getName())), value[0].toString().toLowerCase())
+                    );
+                } else {
+                    throw new CriterionNotSupportedException(modelField, op);
+                }
+            case NOT_EXISTS:
+                if (modelField.equals(GroupModel.SearchableFields.PARENT_ID)) {
+
+                    return new JpaGroupModelCriteriaBuilder((cb, root) -> 
+                        cb.isNull(root.get("parentId"))
                     );
                 } else {
                     throw new CriterionNotSupportedException(modelField, op);

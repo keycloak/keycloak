@@ -14,47 +14,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage.jpa.role.delegate;
+package org.keycloak.models.map.storage.jpa.group.delegate;
 
 import java.util.UUID;
+
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Root;
+
 import org.keycloak.models.map.common.EntityField;
 import org.keycloak.models.map.common.delegate.DelegateProvider;
-import org.keycloak.models.map.role.MapRoleEntity;
-import org.keycloak.models.map.role.MapRoleEntityFields;
+import org.keycloak.models.map.group.MapGroupEntity;
+import org.keycloak.models.map.group.MapGroupEntityFields;
 import org.keycloak.models.map.storage.jpa.JpaDelegateProvider;
-import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity;
+import org.keycloak.models.map.storage.jpa.group.entity.JpaGroupEntity;
 
-public class JpaRoleDelegateProvider extends JpaDelegateProvider<JpaRoleEntity> implements DelegateProvider<MapRoleEntity> {
+public class JpaGroupDelegateProvider extends JpaDelegateProvider<JpaGroupEntity> implements DelegateProvider<MapGroupEntity> {
 
     private final EntityManager em;
 
-    public JpaRoleDelegateProvider(JpaRoleEntity delegate, EntityManager em) {
+    public JpaGroupDelegateProvider(JpaGroupEntity delegate, EntityManager em) {
         super(delegate);
         this.em = em;
     }
 
     @Override
-    public JpaRoleEntity getDelegate(boolean isRead, Enum<? extends EntityField<MapRoleEntity>> field, Object... parameters) {
+    public MapGroupEntity getDelegate(boolean isRead, Enum<? extends EntityField<MapGroupEntity>> field, Object... parameters) {
         if (getDelegate().isMetadataInitialized()) return getDelegate();
         if (isRead) {
-            if (field instanceof MapRoleEntityFields) {
-                switch ((MapRoleEntityFields) field) {
+            if (field instanceof MapGroupEntityFields) {
+                switch ((MapGroupEntityFields) field) {
                     case ID:
                     case REALM_ID:
-                    case CLIENT_ID:
                     case NAME:
-                    case DESCRIPTION:
+                    case PARENT_ID:
                         return getDelegate();
 
                     case ATTRIBUTES:
                         CriteriaBuilder cb = em.getCriteriaBuilder();
-                        CriteriaQuery<JpaRoleEntity> query = cb.createQuery(JpaRoleEntity.class);
-                        Root<JpaRoleEntity> root = query.from(JpaRoleEntity.class);
+                        CriteriaQuery<JpaGroupEntity> query = cb.createQuery(JpaGroupEntity.class);
+                        Root<JpaGroupEntity> root = query.from(JpaGroupEntity.class);
                         root.fetch("attributes", JoinType.LEFT);
                         query.select(root).where(cb.equal(root.get("id"), UUID.fromString(getDelegate().getId())));
 
@@ -62,15 +63,14 @@ public class JpaRoleDelegateProvider extends JpaDelegateProvider<JpaRoleEntity> 
                         break;
 
                     default:
-                        setDelegate(em.find(JpaRoleEntity.class, UUID.fromString(getDelegate().getId())));
+                        setDelegate(em.find(JpaGroupEntity.class, UUID.fromString(getDelegate().getId())));
                 }
             } else {
-                throw new IllegalStateException("Not a valid role field: " + field);
+                throw new IllegalStateException("Not a valid group field: " + field);
             }
         } else {
-            setDelegate(em.find(JpaRoleEntity.class, UUID.fromString(getDelegate().getId())));
+            setDelegate(em.find(JpaGroupEntity.class, UUID.fromString(getDelegate().getId())));
         }
         return getDelegate();
     }
-
 }

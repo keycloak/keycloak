@@ -19,7 +19,6 @@ package org.keycloak.models.map.storage.jpa.client.entity;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -536,12 +535,7 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void removeAttribute(String name) {
-        for (Iterator<JpaClientAttributeEntity> iterator = attributes.iterator(); iterator.hasNext();) {
-            JpaClientAttributeEntity attr = iterator.next();
-            if (Objects.equals(attr.getName(), name)) {
-                iterator.remove();
-            }
-        }
+        attributes.removeIf(attr -> Objects.equals(attr.getName(), name));
     }
 
     @Override
@@ -574,9 +568,7 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setAttributes(Map<String, List<String>> attributes) {
-        for (Iterator<JpaClientAttributeEntity> iterator = this.attributes.iterator(); iterator.hasNext();) {
-            iterator.remove();
-        }
+        this.attributes.clear();
         if (attributes != null) {
             for (Map.Entry<String, List<String>> attrEntry : attributes.entrySet()) {
                 setAttribute(attrEntry.getKey(), attrEntry.getValue());

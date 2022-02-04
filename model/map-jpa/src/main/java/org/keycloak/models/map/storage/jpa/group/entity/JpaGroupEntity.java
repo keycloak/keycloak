@@ -14,9 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage.jpa.clientscope.entity;
+package org.keycloak.models.map.storage.jpa.group.entity;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -39,10 +38,9 @@ import javax.persistence.Version;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
 import org.hibernate.annotations.TypeDefs;
-import org.keycloak.models.map.client.MapProtocolMapperEntity;
-import org.keycloak.models.map.clientscope.MapClientScopeEntity.AbstractClientScopeEntity;
 import org.keycloak.models.map.common.DeepCloner;
-import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_CLIENT_SCOPE;
+import org.keycloak.models.map.group.MapGroupEntity.AbstractGroupEntity;
+import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_GROUP;
 import org.keycloak.models.map.storage.jpa.JpaRootEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
@@ -52,9 +50,9 @@ import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
  * therefore marked as non-insertable and non-updatable to instruct hibernate.
  */
 @Entity
-@Table(name = "kc_client_scope", uniqueConstraints = {@UniqueConstraint(columnNames = {"realmId", "name"})})
+@Table(name = "kc_group", uniqueConstraints = {@UniqueConstraint(columnNames = {"realmId", "name", "parentId"})})
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
-public class JpaClientScopeEntity extends AbstractClientScopeEntity implements JpaRootEntity {
+public class JpaGroupEntity extends AbstractGroupEntity implements JpaRootEntity {
 
     @Id
     @Column
@@ -67,7 +65,7 @@ public class JpaClientScopeEntity extends AbstractClientScopeEntity implements J
 
     @Type(type = "jsonb")
     @Column(columnDefinition = "jsonb")
-    private final JpaClientScopeMetadata metadata;
+    private final JpaGroupMetadata metadata;
 
     @Column(insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
@@ -81,30 +79,36 @@ public class JpaClientScopeEntity extends AbstractClientScopeEntity implements J
     @Basic(fetch = FetchType.LAZY)
     private String name;
 
+    @Column(insertable = false, updatable = false)
+    @Basic(fetch = FetchType.LAZY)
+    private String parentId;
+
     @OneToMany(mappedBy = "root", cascade = CascadeType.PERSIST, orphanRemoval = true)
-    private final Set<JpaClientScopeAttributeEntity> attributes = new HashSet<>();
+    private final Set<JpaGroupAttributeEntity> attributes = new HashSet<>();
 
     /**
      * No-argument constructor, used by hibernate to instantiate entities.
      */
-    public JpaClientScopeEntity() {
-        this.metadata = new JpaClientScopeMetadata();
+    public JpaGroupEntity() {
+        this.metadata = new JpaGroupMetadata();
     }
 
-    public JpaClientScopeEntity(DeepCloner cloner) {
-        this.metadata = new JpaClientScopeMetadata(cloner);
+    public JpaGroupEntity(DeepCloner cloner) {
+        this.metadata = new JpaGroupMetadata(cloner);
     }
 
     /**
      * Used by hibernate when calling cb.construct from read(QueryParameters) method.
-     * It is used to select client without metadata(json) field.
+     * It is used to select group without metadata(json) field.
      */
-    public JpaClientScopeEntity(UUID id, int version, Integer entityVersion, String realmId, String name) {
+    public JpaGroupEntity(UUID id, int version, Integer entityVersion, String realmId, 
+            String name, String parentId) {
         this.id = id;
         this.version = version;
         this.entityVersion = entityVersion;
         this.realmId = realmId;
         this.name = name;
+        this.parentId = parentId;
         this.metadata = null;
     }
 
@@ -119,13 +123,13 @@ public class JpaClientScopeEntity extends AbstractClientScopeEntity implements J
     }
 
     @Override
-    public void setEntityVersion(Integer entityVersion) {
-        metadata.setEntityVersion(entityVersion);
+    public Integer getCurrentSchemaVersion() {
+        return CURRENT_SCHEMA_VERSION_GROUP;
     }
 
     @Override
-    public Integer getCurrentSchemaVersion() {
-        return CURRENT_SCHEMA_VERSION_CLIENT_SCOPE;
+    public void setEntityVersion(Integer entityVersion) {
+        metadata.setEntityVersion(entityVersion);
     }
 
     @Override
@@ -155,41 +159,6 @@ public class JpaClientScopeEntity extends AbstractClientScopeEntity implements J
     }
 
     @Override
-    public Set<MapProtocolMapperEntity> getProtocolMappers() {
-        return metadata.getProtocolMappers();
-    }
-
-    @Override
-    public void addProtocolMapper(MapProtocolMapperEntity mapping) {
-        metadata.addProtocolMapper(mapping);
-    }
-
-    @Override
-    public void addScopeMapping(String id) {
-        metadata.addScopeMapping(id);
-    }
-
-    @Override
-    public void removeScopeMapping(String id) {
-        metadata.removeScopeMapping(id);
-    }
-
-    @Override
-    public Collection<String> getScopeMappings() {
-        return metadata.getScopeMappings();
-    }
-
-    @Override
-    public String getDescription() {
-        return metadata.getDescription();
-    }
-
-    @Override
-    public void setDescription(String description) {
-        metadata.setDescription(description);
-    }
-
-    @Override
     public String getName() {
         if (isMetadataInitialized()) return metadata.getName();
         return name;
@@ -201,41 +170,40 @@ public class JpaClientScopeEntity extends AbstractClientScopeEntity implements J
     }
 
     @Override
-    public String getProtocol() {
-        return metadata.getProtocol();
+    public void setParentId(String parentId) {
+        metadata.setParentId(parentId);
     }
 
     @Override
-    public void setProtocol(String protocol) {
-        metadata.setProtocol(protocol);
+    public String getParentId() {
+        if (isMetadataInitialized()) return metadata.getParentId();
+        return parentId;
     }
 
     @Override
-    public void removeAttribute(String name) {
-        attributes.removeIf(attr -> Objects.equals(attr.getName(), name));
+    public Set<String> getGrantedRoles() {
+        return metadata.getGrantedRoles();
     }
 
     @Override
-    public void setAttribute(String name, List<String> values) {
-        removeAttribute(name);
-        for (String value : values) {
-            JpaClientScopeAttributeEntity attribute = new JpaClientScopeAttributeEntity(this, name, value);
-            attributes.add(attribute);
-        }
+    public void setGrantedRoles(Set<String> grantedRoles) {
+        metadata.setGrantedRoles(grantedRoles);
     }
 
     @Override
-    public List<String> getAttribute(String name) {
-        return attributes.stream()
-                .filter(a -> Objects.equals(a.getName(), name))
-                .map(JpaClientScopeAttributeEntity::getValue)
-                .collect(Collectors.toList());
+    public void addGrantedRole(String role) {
+        metadata.addGrantedRole(role);
+    }
+
+    @Override
+    public void removeGrantedRole(String role) {
+        metadata.removeGrantedRole(role);
     }
 
     @Override
     public Map<String, List<String>> getAttributes() {
         Map<String, List<String>> result = new HashMap<>();
-        for (JpaClientScopeAttributeEntity attribute : attributes) {
+        for (JpaGroupAttributeEntity attribute : attributes) {
             List<String> values = result.getOrDefault(attribute.getName(), new LinkedList<>());
             values.add(attribute.getValue());
             result.put(attribute.getName(), values);
@@ -247,10 +215,32 @@ public class JpaClientScopeEntity extends AbstractClientScopeEntity implements J
     public void setAttributes(Map<String, List<String>> attributes) {
         this.attributes.clear();
         if (attributes != null) {
-            for (Map.Entry<String, List<String>> attrEntry : attributes.entrySet()) {
-                setAttribute(attrEntry.getKey(), attrEntry.getValue());
+            for (Map.Entry<String, List<String>> entry : attributes.entrySet()) {
+                setAttribute(entry.getKey(), entry.getValue());
             }
         }
+    }
+
+    @Override
+    public List<String> getAttribute(String name) {
+        return attributes.stream()
+                .filter(a -> Objects.equals(a.getName(), name))
+                .map(JpaGroupAttributeEntity::getValue)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void setAttribute(String name, List<String> values) {
+        removeAttribute(name);
+        for (String value : values) {
+            JpaGroupAttributeEntity attribute = new JpaGroupAttributeEntity(this, name, value);
+            attributes.add(attribute);
+        }
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+        attributes.removeIf(attr -> Objects.equals(attr.getName(), name));
     }
 
     @Override
@@ -261,7 +251,7 @@ public class JpaClientScopeEntity extends AbstractClientScopeEntity implements J
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof JpaClientScopeEntity)) return false;
-        return Objects.equals(getId(), ((JpaClientScopeEntity) obj).getId());
+        if (!(obj instanceof JpaGroupEntity)) return false;
+        return Objects.equals(getId(), ((JpaGroupEntity) obj).getId());
     }
 }
