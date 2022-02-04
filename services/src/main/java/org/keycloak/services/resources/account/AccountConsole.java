@@ -168,10 +168,11 @@ public class AccountConsole {
     }
     
     private String convertPropValue(String propertyValue) {
-        propertyValue = propertyValue.replace("''", "%27");
-        propertyValue = propertyValue.replace("'", "%27");
-        propertyValue = propertyValue.replace("\"", "%22");
-        
+        // this mimics the behavior of java.text.MessageFormat used for the freemarker templates:
+        // To print a single quote one needs to write two single quotes.
+        // Single quotes will be stripped.
+        // Usually single quotes would escape parameters, but this not implemented here.
+        propertyValue = propertyValue.replaceAll("'('?)", "$1");
         propertyValue = putJavaParamsInNgTranslateFormat(propertyValue);
 
         return propertyValue;
