@@ -46,7 +46,7 @@ public class KeyUtils {
 
     public static KeyPair generateRsaKeyPair(int keysize) {
         try {
-            KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+            KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA", BouncyIntegration.PROVIDER);
             generator.initialize(keysize);
             KeyPair keyPair = generator.generateKeyPair();
             return keyPair;

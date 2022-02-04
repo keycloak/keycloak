@@ -31,7 +31,7 @@ public class BouncyIntegration {
 
     static {
         if (Security.getProvider(PROVIDER) == null) {
-            Security.insertProviderAt(new BouncyCastleProvider(), 1);
+            Security.addProvider(new BouncyCastleProvider());
         }
     }
 
