@@ -2,7 +2,7 @@
 <#import "/templates/kc.adoc" as kc>
 
 <@tmpl.guide
-title="Configure outgoing HTTP requests"
+title="Configuring outgoing HTTP requests"
 summary="How to configure the client used for outgoing HTTP requests."
 includedOptions="">
 

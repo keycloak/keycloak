@@ -3,7 +3,7 @@
 <#import "/templates/options.adoc" as opts>
 
 <@tmpl.guide
-title="Configuring a reverse proxy"
+title="Using a reverse proxy"
 summary="Learn how to configure Keycloak together with a reverse proxy, api gateway, or load balancer."
 includedOptions="proxy proxy-*">
 

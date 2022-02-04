@@ -3,7 +3,7 @@
 <#import "/templates/options.adoc" as opts>
 
 <@tmpl.guide
-title="Configure distributed caches"
+title="Configuring distributed caches"
 summary="Understand how to configure the caching layer"
 includedOptions="cache cache-*">
 

@@ -2,7 +2,7 @@
 <#import "/templates/kc.adoc" as kc>
 
 <@tmpl.guide
-title="Using Kubernetes Secrets"
+title="Using Kubernetes secrets"
 summary="Learn how to use Kubernetes/OpenShift secrets in Keycloak"
 priority=30
 includedOptions="vault vault-*">
