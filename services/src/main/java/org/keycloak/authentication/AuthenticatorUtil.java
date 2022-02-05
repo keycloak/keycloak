@@ -20,9 +20,14 @@ package org.keycloak.authentication;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.sessions.CommonClientSessionModel;
+
+import static org.keycloak.services.managers.AuthenticationManager.SSO_AUTH;
 
 public class AuthenticatorUtil {
+
+    public static boolean isSSOAuthentication(AuthenticationSessionModel authSession) {
+        return "true".equals(authSession.getAuthNote(SSO_AUTH));
+    }
 
     public static boolean isLevelOfAuthenticationForced(AuthenticationSessionModel authSession) {
         return Boolean.parseBoolean(authSession.getClientNote(Constants.FORCE_LEVEL_OF_AUTHENTICATION));

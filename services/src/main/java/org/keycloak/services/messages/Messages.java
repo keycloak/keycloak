@@ -243,6 +243,8 @@ public class Messages {
 
     public static final String BROKER_LINKING_SESSION_EXPIRED = "brokerLinkingSessionExpired";
 
+    public static final String ACR_NOT_FULFILLED = "acrNotFulfilled";
+
     public static final String PAGE_NOT_FOUND = "pageNotFound";
 
     public static final String INTERNAL_SERVER_ERROR = "internalServerError";

@@ -25,6 +25,7 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
 
@@ -48,7 +49,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
     private final List<AuthenticationExecutionModel> executions;
     private final AuthenticationProcessor processor;
     private final AuthenticationFlowModel flow;
-    private boolean successful;
+    private boolean successful = false;
     private List<AuthenticationFlowException> afeList = new ArrayList<>();
 
     public DefaultAuthenticationFlow(AuthenticationProcessor processor, AuthenticationFlowModel flow) {
@@ -250,7 +251,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
             AuthenticationExecutionModel required = requiredIListIterator.next();
             //Conditional flows must be considered disabled (non-existent) if their condition evaluates to false.
             //If the flow has been processed before it will not be removed to consider its execution status.
-            if (required.isConditional() && !isProcessed(required) && isConditionalSubflowDisabled(required, true)) {
+            if (required.isConditional() && !isProcessed(required) && isConditionalSubflowDisabled(required)) {
                 requiredIListIterator.remove();
                 continue;
             }
@@ -270,8 +271,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         if (requiredList.isEmpty()) {
             //check if an alternative is already successful, in case we are returning in the flow after an action
             if (alternativeList.stream().anyMatch(alternative -> processor.isSuccessful(alternative) || isSetupRequired(alternative))) {
-                successful = true;
-                return null;
+                return onFlowExecutionsSuccessful();
             }
 
             //handle alternative elements: the first alternative element to be satisfied is enough
@@ -282,8 +282,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                         return response;
                     }
                     if (processor.isSuccessful(alternative) || isSetupRequired(alternative)) {
-                        successful = true;
-                        return null;
+                        return onFlowExecutionsSuccessful();
                     }
                 } catch (AuthenticationFlowException afe) {
                     //consuming the error is not good here from an administrative point of view, but the user, since he has alternatives, should be able to go to another alternative and continue
@@ -292,7 +291,9 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 }
             }
         } else {
-            successful = requiredElementsSuccessful;
+            if (requiredElementsSuccessful) {
+                return onFlowExecutionsSuccessful();
+            }
         }
         return null;
     }
@@ -326,10 +327,9 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
     /**
      * Checks if the conditional subflow passed in parameter is disabled.
      * @param model
-     * @param storeResult whether to store the result of the conditional evaluations
      * @return
      */
-    boolean isConditionalSubflowDisabled(AuthenticationExecutionModel model, boolean storeResult) {
+    boolean isConditionalSubflowDisabled(AuthenticationExecutionModel model) {
         if (model == null || !model.isAuthenticatorFlow() || !model.isConditional()) {
             return false;
         };
@@ -339,8 +339,10 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 .filter(this::isConditionalAuthenticator)
                 .filter(s -> s.isEnabled())
                 .collect(Collectors.toList());
-        return conditionalAuthenticatorList.isEmpty() || conditionalAuthenticatorList.stream()
-                .anyMatch(m -> conditionalNotMatched(m, modelList, storeResult));
+        boolean conditionalSubflowDisabled = conditionalAuthenticatorList.isEmpty() || conditionalAuthenticatorList.stream()
+                .anyMatch(m -> conditionalNotMatched(m, modelList));
+        logger.tracef("Conditional subflow '%s' is %s", logExecutionAlias(model), conditionalSubflowDisabled ? "disabled" : "enabled");
+        return conditionalSubflowDisabled;
     }
 
     private boolean isConditionalAuthenticator(AuthenticationExecutionModel model) {
@@ -355,25 +357,16 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         return factory;
     }
 
-    private boolean conditionalNotMatched(AuthenticationExecutionModel model, List<AuthenticationExecutionModel> executionList, boolean storeResult) {
+    private boolean conditionalNotMatched(AuthenticationExecutionModel model, List<AuthenticationExecutionModel> executionList) {
         AuthenticatorFactory factory = getAuthenticatorFactory(model);
         ConditionalAuthenticator authenticator = (ConditionalAuthenticator) createAuthenticator(factory);
         AuthenticationProcessor.Result context = processor.createAuthenticatorContext(model, authenticator, executionList);
 
-        boolean matchCondition;
-
-        // Retrieve previous evaluation result if any, else evaluate and store result for future re-evaluation
-        if (processor.isEvaluatedTrue(model)) {
-            matchCondition = true;
-        } else if (processor.isEvaluatedFalse(model)) {
-            matchCondition = false;
-        } else {
-            matchCondition = authenticator.matchCondition(context);
-            if (storeResult) {
-                setExecutionStatus(model,
-                        matchCondition ? AuthenticationSessionModel.ExecutionStatus.EVALUATED_TRUE : AuthenticationSessionModel.ExecutionStatus.EVALUATED_FALSE);
-            }
-        }
+        // Always store result for future re-evaluation. It is a chance that some condition is evaluated multiple times during the flow,
+        // but this is expected as "conditions of condition" can be changed during the flow (EG. when acr level is reached or when user is added to the context)
+        boolean matchCondition = authenticator.matchCondition(context);
+        setExecutionStatus(model,
+                matchCondition ? AuthenticationSessionModel.ExecutionStatus.EVALUATED_TRUE : AuthenticationSessionModel.ExecutionStatus.EVALUATED_FALSE);
 
         return !matchCondition;
     }
@@ -547,6 +540,8 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
     private void setExecutionStatus(AuthenticationExecutionModel authExecutionModel, CommonClientSessionModel.ExecutionStatus status) {
         this.processor.getAuthenticationSession().setExecutionStatus(authExecutionModel.getId(), status);
 
+        logger.tracef("Set execution status: Execution: %s, status: %s", logExecutionAlias(authExecutionModel), status);
+
         if (authExecutionModel.isAuthenticatorFlow() && status == CommonClientSessionModel.ExecutionStatus.SUCCESS) {
             // Trigger callbacks after flow was successfully finished
             processor.getRealm().getAuthenticationExecutionsStream(authExecutionModel.getFlowId()).forEach(this::checkAuthCallback);
@@ -566,5 +561,24 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 }
             }
         }
+    }
+
+    // This is triggered when current flow is successful due the fact that it's executions passed.
+    // It is opportunity to do some last "generic" checks before considering whole authentication as successful
+    private Response onFlowExecutionsSuccessful() {
+        if (flow.isTopLevel()) {
+            logger.debugf("Authentication successful of the top flow '%s'", flow.getAlias());
+
+            // Check
+            AuthenticationSessionModel authSession = processor.getAuthenticationSession();
+            if (AuthenticatorUtil.isLevelOfAuthenticationForced(authSession) && !AuthenticatorUtil.isLevelOfAuthenticationSatisfied(authSession) && !AuthenticatorUtil.isSSOAuthentication(authSession)) {
+                String details = String.format("Forced level of authentication did not meet the requirements. Requested level: %d, Fulfilled level: %d",
+                        AuthenticatorUtil.getRequestedLevelOfAuthentication(authSession), AuthenticatorUtil.getCurrentLevelOfAuthentication(authSession));
+                throw new AuthenticationFlowException(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR, details, Messages.ACR_NOT_FULFILLED);
+            }
+        }
+
+        successful = true;
+        return null;
     }
 }

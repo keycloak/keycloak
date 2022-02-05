@@ -1648,10 +1648,14 @@ public class OAuthClient {
     }
 
     public OAuthClient claims(ClaimsRepresentation claims) {
-        try {
-            this.claims = URLEncoder.encode(JsonSerialization.writeValueAsString(claims), "UTF-8");
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
+        if (claims == null) {
+            this.claims = null;
+        } else {
+            try {
+                this.claims = URLEncoder.encode(JsonSerialization.writeValueAsString(claims), "UTF-8");
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
         }
         return this;
     }
