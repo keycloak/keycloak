@@ -342,7 +342,7 @@ claims= {
         }
 ----
 
-NOTE: To request the acr_vale as text (such as `gold`) instead of a numeric value, you have to configure the mapping between the ACR and the LoA at the client level. For configuration see <<_mapping-acr-to-loa,ACR to LoA Mapping>>)
+NOTE: To request the acr_values as text (such as `gold`) instead of a numeric value, you have to configure the mapping between the ACR and the LoA at the client level. For configuration see <<_mapping-acr-to-loa,ACR to LoA Mapping>>)
 
 For more details see the https://openid.net/specs/openid-connect-core-1_0.html#acrSemantics[official OIDC specification].
 
