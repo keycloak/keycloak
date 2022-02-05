@@ -18,26 +18,20 @@
 package org.keycloak.quarkus.runtime.cli.command;
 
 import org.keycloak.quarkus.runtime.KeycloakMain;
+import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
 
 import picocli.CommandLine;
-import picocli.CommandLine.Option;
 
 public abstract class AbstractStartCommand extends AbstractCommand implements Runnable {
 
-    public static final String AUTO_BUILD_OPTION = "--auto-build";
-
-    @Option(names = AUTO_BUILD_OPTION,
-            description = "Automatically detects whether the server configuration changed and a new server image must be built" +
-                    " prior to starting the server. This option provides an alternative to manually running the '" + Build.NAME + "'" +
-                    " prior to starting the server. Use this configuration carefully in production as it might impact the startup time.",
-            order = 1)
-    Boolean autoConfig;
+    public static final String AUTO_BUILD_OPTION_LONG = "--auto-build";
+    public static final String AUTO_BUILD_OPTION_SHORT = "-b";
 
     @Override
     public void run() {
         doBeforeRun();
         CommandLine cmd = spec.commandLine();
-        KeycloakMain.start(cmd.getParseResult().expandedArgs(), cmd.getErr());
+        KeycloakMain.start((ExecutionExceptionHandler) cmd.getExecutionExceptionHandler(), cmd.getErr());
     }
 
     protected void doBeforeRun() {

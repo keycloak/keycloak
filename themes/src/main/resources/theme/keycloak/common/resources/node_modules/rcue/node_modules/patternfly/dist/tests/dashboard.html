@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<!--[if IE 9]><html lang="en-us" class="ie9"><![endif]-->
+<!--[if gt IE 9]><!-->
+<html lang="en-us">
+<!--<![endif]-->
+  <head>
+    <title>Dashboard - PatternFly</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="../img/favicon.ico">
+    <!-- iPad retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../img/apple-touch-icon-precomposed-152.png">
+    <!-- iPad retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="../img/apple-touch-icon-precomposed-144.png">
+    <!-- iPad non-retina icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="76x76" href="../img/apple-touch-icon-precomposed-76.png">
+    <!-- iPad non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="../img/apple-touch-icon-precomposed-72.png">
+    <!-- iPhone 6 Plus icon -->
+    <link rel="apple-touch-icon-precomposed" sizes="120x120" href="../img/apple-touch-icon-precomposed-180.png">
+    <!-- iPhone retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../img/apple-touch-icon-precomposed-114.png">
+    <!-- iPhone non-retina icon (iOS < 7) -->
+    <link rel="apple-touch-icon-precomposed" sizes="57x57" href="../img/apple-touch-icon-precomposed-57.png">
+    <link rel="stylesheet" href="../css/patternfly.min.css" >
+    <link rel="stylesheet" href="../css/patternfly-additions.min.css" >
+      <link href="tests.css" rel="stylesheet" media="screen, print">
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+    <script src="../js/patternfly.min.js"></script>
+  </head>
+  <div class="toast-notifications-list-pf">
+    <div class="toast-pf alert alert-warning alert-dismissable">
+      <button type="button" class="close" data-dismiss="alert" aria-hidden="true">
+        <span class="pficon pficon-close"></span>
+      </button>
+      <span class="pficon pficon-warning-triangle-o"></span>
+      These examples are included for development testing purposes.  For official documentation, see <a href="https://www.patternfly.org" class="alert-link">https://www.patternfly.org</a> and <a href="http://getbootstrap.com" class="alert-link">http://getbootstrap.com</a>.
+    </div>
+  </div>
+
+  <body>
+    <nav class="navbar navbar-default navbar-pf" role="navigation">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse-1">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="/">
+          <img src="..//img/brand.svg" alt="PatternFly Enterprise Application" />
+        </a>
+      </div>
+      <div class="collapse navbar-collapse navbar-collapse-1">
+        <ul class="nav navbar-nav navbar-utility">
+          <li class="dropdown">
+            <button class="btn btn-link nav-item-iconic" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+              <span title="Help" class="fa pficon-help dropdown-title"></span>
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+              <li><a href="#0">Help</a></li>
+              <li><a href="#0">About</a></li>
+            </ul>
+          </li>
+          <li class="dropdown">
+            <button class="btn btn-link dropdown-toggle" data-toggle="dropdown">
+              <span class="pficon pficon-user"></span>
+              <span class="dropdown-title">
+                Brian Johnson <b class="caret"></b>
+              </span>
+            </button>
+            <ul class="dropdown-menu">
+              <li>
+                <a href="#0">Link</a>
+              </li>
+              <li>
+                <a href="#0">Another link</a>
+              </li>
+              <li>
+                <a href="#0">Something else here</a>
+              </li>
+              <li class="divider"></li>
+              <li class="dropdown-submenu">
+                <a tabindex="-1" href="#0">More options</a>
+                <ul class="dropdown-menu">
+                  <li>
+                    <a href="#0">Link</a>
+                  </li>
+                  <li>
+                    <a href="#0">Another link</a>
+                  </li>
+                  <li>
+                    <a href="#0">Something else here</a>
+                  </li>
+                  <li class="divider"></li>
+                  <li class="dropdown-header">Nav header</li>
+                  <li>
+                    <a href="#0">Separated link</a>
+                  </li>
+                  <li class="divider"></li>
+                  <li>
+                    <a href="#0">One more separated link</a>
+                  </li>
+                </ul>
+              </li>
+              <li class="divider"></li>
+              <li>
+                <a href="#0">One more separated link</a>
+              </li>
+            </ul>
+          </li>
+        </ul>
+        <ul class="nav navbar-nav navbar-primary">
+            <li>
+              <a href="basic.html">Basic</a>
+            </li>
+            <li>
+              <a href="bootstrap-treeview-2.html">Tree View</a>
+            </li>
+            <li class="active">
+              <a href="dashboard.html" class="active">Dashboard</a>
+            </li>
+            <li>
+              <a href="form.html">Form</a>
+            </li>
+            <li>
+              <a href="tab.html">Tab</a>
+            </li>
+            <li>
+              <a href="typography-2.html">Typography</a>
+            </li>
+            <li>
+              <a href="card-view-multi-select.html">Card View - Multi Select</a>
+            </li>
+            <li>
+              <a href="card-view-single-select.html">Card View - Single Select</a>
+            </li>
+            <li>
+              <a href="cards.html">Cards</a>
+            </li>
+            <li>
+              <a href="pagination-card-view.html">Pagination - Card View</a>
+            </li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-sm-8 col-md-9">
+          <div class="page-header page-header-bleed-right">
+            <div class="actions pull-right">
+              <a href="#"><span class="pficon pficon-refresh"></span> Refresh Results</a>
+            </div>
+            <h1>Dashboard</h1>
+          </div>
+          <h2 class="h4">Infrastructure Performance</h2>
+          <div id="chart"></div>
+          <hr>
+          <h2 class="h4">Resource Usage</h2>
+          <div class="row">
+            <div class="col-sm-6">
+                <div id="chart2"></div>
+            </div>
+            <div class="col-sm-6">
+              <img src="..//imgdashboard-3.png" alt="Placeholder graph" class="img-responsive" />
+            </div>
+          </div>
+          <hr>
+          <h2 class="h4">Infrastructure Capacity</h2>
+          <div class="row">
+            <div class="col-sm-6">
+              <div id="chart4"></div>
+            </div>
+            <div class="col-sm-6">
+              <table class="table">
+                <tr>
+                  <th>Status</th>
+                  <th>Location Data</th>
+                  <th>Hosts</th>
+                </tr>
+                <tr>
+                  <td><span class="label label-success">New</span></td>
+                  <td><strong>Fusce leo massa</strong><br>Created March 05, 2014 08:34:36 AM</td>
+                  <td><span class="label label-default">11</span></td>
+                </tr>
+                <tr>
+                  <td><span class="label label-success">New</span></td>
+                  <td><strong>Iaculis at dapibus eget</strong><br>Created March 03, 2014 20:32:12 AM</td>
+                  <td><span class="label label-default">9</span></td>
+                </tr>
+                <tr>
+                  <td><span class="label label-default">Disabled</span></td>
+                  <td><strong>Dapibus nec metus</strong><br>Created March 03, 2014 19:11:56 AM</td>
+                  <td><span class="label label-default">25</span></td>
+                </tr>
+              </table>
+              <p><a href="#">See more &raquo;</a></p>
+            </div>
+          </div>
+        </div><!-- /col -->
+        <div class="col-sm-4 col-md-3 sidebar-pf sidebar-pf-right">
+          <div class="sidebar-header sidebar-header-bleed-left sidebar-header-bleed-right">
+            <div class="actions pull-right">
+              <a href="#">Clear Messages</a>
+            </div>
+            <h2 class="h5">Latest Notifications</h2>
+          </div>
+          <ul class="list-group">
+            <li class="list-group-item">
+              <h3 class="list-group-item-heading">Duis eu augue lectus</h3>
+              <p class="list-group-item-text">Donec id elit non mi porta gravida at eget metus.</p>
+            </li>
+            <li class="list-group-item">
+              <h3 class="list-group-item-heading">Donec dictum odio eu turpis rutrum</h3>
+              <p class="list-group-item-text">Etiam sit amet ultricies ligula.</p>
+            </li>
+            <li class="list-group-item">
+              <h3 class="list-group-item-heading">At egestas nibh dictum</h3>
+              <p class="list-group-item-text">Maecenas vitae tempus mauris.</p>
+            </li>
+            <li class="list-group-item">
+              <h3 class="list-group-item-heading">Phasellus dictum posuere ante sit</h3>
+              <p class="list-group-item-text">Pellentesque rutrum justo in congue tristique.</p>
+            </li>
+            <li class="list-group-item">
+              <h3 class="list-group-item-heading">Amet commodo</h3>
+              <p class="list-group-item-text">Pellentesque in leo elit.</p>
+            </li>
+            <li class="list-group-item">
+              <h3 class="list-group-item-heading">Nunc viverra purus libero</h3>
+              <p class="list-group-item-text">Nulla lacinia lorem quis enim posuere dictum.</p>
+            </li>
+            <li class="list-group-item">
+              <h3 class="list-group-item-heading">Non faucibus augue dapibus at</h3>
+              <p class="list-group-item-text">Fusce id rutrum ante, eget vestibulum dolor</p>
+            </li>
+            <li class="list-group-item">
+              <h3 class="list-group-item-heading">Vivamus at semper</h3>
+              <p class="list-group-item-text">Duis sagittis vitae neque at vehicula.</p>
+            </li>
+            <li class="list-group-item">
+              <h3 class="list-group-item-heading">Sed sit amet dolor</h3>
+              <p class="list-group-item-text">Donec id elit non mi porta gravida at eget metus.</p>
+            </li>
+          </ul>
+          <p><a href="#">See all messages</a></p>
+        </div><!-- /col -->
+      </div><!-- /row -->
+    </div><!-- /container -->
+    <script>
+      var c3ChartDefaults = $().c3ChartDefaults();
+
+      var chart = c3.generate({
+        axis: {
+          x: {
+            tick: {
+              format: '%m-%d',
+              outer: false
+            },
+            type: 'timeseries'
+          },
+          y: {
+            tick: {
+              format: function(d) { return d + "%"; },
+              outer: false
+            }
+          }
+        },
+        bindto: '#chart',
+        color: c3ChartDefaults.getDefaultColors(),
+        data: {
+          columns: [
+            ['x', '2015-04-01', '2015-04-02', '2015-04-03', '2015-04-04', '2015-04-05', '2015-04-06', '2015-04-07'],
+            ['data1', 16, 44, 33, 88, 50, 76, 21]
+          ],
+          x: 'x'
+        },
+        grid: {
+          y: {
+            show: true
+          }
+        },
+        legend: {
+          hide: true
+        },
+        point: {
+          r: 4
+        },
+        size: {
+          height: 220
+        }
+      });
+
+      var donutChartConfig = c3ChartDefaults.getDefaultDonutConfig('29,210 Host');
+      donutChartConfig.bindto = '#chart2';
+      donutChartConfig.tooltip = {show: true};
+      donutChartConfig.data = {
+        colors: {
+          Cloud: '#006e9c',
+          Virtual: '#00a8e1',
+          Baremetal: '#969696'
+        },
+        columns: [
+          ['Cloud', 4,828],
+          ['Virtual', 13,258],
+          ['Baremetal', 11,1124]
+        ],
+        type : 'donut',
+        onclick: function (d, i) { console.log("onclick", d, i); },
+        onmouseover: function (d, i) { console.log("onmouseover", d, i); },
+        onmouseout: function (d, i) { console.log("onmouseout", d, i); }
+      };
+      var chart2 = c3.generate(donutChartConfig);
+
+      var chart4 = c3.generate({
+        axis: {
+          rotated: true,
+          x: {
+            categories: ['Location 1', 'Location 2', 'Location 3', 'Location 4'],
+            tick: {
+              outer: false
+            },
+            type: 'category'
+          },
+          y: {
+            tick: {
+              format: function(d) { return d + "%"; },
+              outer: false
+            }
+          }
+        },
+        bindto: '#chart4',
+        color: c3ChartDefaults.getDefaultColors(),
+        data: {
+          columns: [
+            ['Virtual Resources', 25, 35, 18, 78],
+            ['Physical Resources', 60, 40, 48, 8]
+          ],
+          groups: [
+            ['Virtual Resources', 'Physical Resources']
+          ],
+          type: 'bar'
+        },
+        grid: {
+          y: {
+            show: true
+          }
+        },
+        size: {
+          height: 200
+        }
+      });
+    </script>
+
+  </body>
+</html>

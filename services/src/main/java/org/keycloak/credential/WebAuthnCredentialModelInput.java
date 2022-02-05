@@ -16,13 +16,18 @@
 
 package org.keycloak.credential;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.keycloak.common.util.Base64;
 
 import com.webauthn4j.data.AuthenticationParameters;
 import com.webauthn4j.data.AuthenticationRequest;
+import com.webauthn4j.data.AuthenticatorTransport;
 import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
 import com.webauthn4j.data.attestation.authenticator.COSEKey;
 import com.webauthn4j.data.attestation.statement.AttestationStatement;
+
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class WebAuthnCredentialModelInput implements CredentialInput {
 
@@ -34,6 +39,7 @@ public class WebAuthnCredentialModelInput implements CredentialInput {
     private String credentialDBId;
     private final String credentialType;
     private String attestationStatementFormat;
+    private Set<AuthenticatorTransport> transports;
 
     public WebAuthnCredentialModelInput(String credentialType) {
         this.credentialType = credentialType;
@@ -115,6 +121,14 @@ public class WebAuthnCredentialModelInput implements CredentialInput {
         this.attestationStatementFormat = attestationStatementFormat;
     }
 
+    public Set<AuthenticatorTransport> getTransports() {
+        return transports;
+    }
+
+    public void setTransports(Set<AuthenticatorTransport> transports) {
+        this.transports = transports;
+    }
+
     public String toString() {
         StringBuilder sb = new StringBuilder("Credential Type = " + credentialType + ",");
         if (credentialDBId != null)
@@ -155,6 +169,15 @@ public class WebAuthnCredentialModelInput implements CredentialInput {
             sb.append("Credential Id = ")
               .append(Base64.encodeBytes(authenticationRequest.getCredentialId()))
               .append(",");
+        }
+        if (CollectionUtils.isNotEmpty(transports)) {
+            final String transportsString = transports.stream()
+                    .map(AuthenticatorTransport::getValue)
+                    .collect(Collectors.joining(","));
+
+            sb.append("Transports = [")
+              .append(transportsString)
+              .append("],");
         }
         if (sb.length() > 0)
             sb.deleteCharAt(sb.lastIndexOf(","));

@@ -98,7 +98,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
 
     protected void runDefaultDummyHash(AuthenticationFlowContext context) {
         PasswordHashProvider hash = context.getSession().getProvider(PasswordHashProvider.class, PasswordPolicy.HASH_ALGORITHM_DEFAULT);
-        hash.encode("dummypassword", PasswordPolicy.HASH_ITERATIONS_DEFAULT);
+        hash.encode("SlightlyLongerDummyPassword", PasswordPolicy.HASH_ITERATIONS_DEFAULT);
     }
 
     protected void dummyHash(AuthenticationFlowContext context) {
@@ -113,7 +113,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
                 return;
 
             } else {
-                hash.encode("dummypassword", policy.getHashIterations());
+                hash.encode("SlightlyLongerDummyPassword", policy.getHashIterations());
             }
         }
 

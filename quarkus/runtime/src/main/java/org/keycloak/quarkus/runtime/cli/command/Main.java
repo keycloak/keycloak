@@ -17,40 +17,45 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
+import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
 
+import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
+import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
+import org.keycloak.quarkus.runtime.configuration.KeycloakPropertiesConfigSource;
+
+import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
-import picocli.CommandLine.ScopeType;
 
 @Command(name = "keycloak",
         header = {
                 "Keycloak - Open Source Identity and Access Management",
                 "",
-                "Find more information at: https://www.keycloak.org/docs/latest",
-                ""
+                "Find more information at: https://www.keycloak.org/docs/latest"
         },
-        description = "%nUse this command-line tool to manage your Keycloak cluster.%n",
-        footerHeading = "%nExamples:%n%n"
-                + "  Start the server in development mode for local development or testing:%n%n"
+        description = {
+                "%nUse this command-line tool to manage your Keycloak cluster.",
+                "Make sure the command is available on your \"PATH\" or prefix it with \"./\" (e.g.: \"./${COMMAND-NAME}\") to execute from the current folder."
+        },
+        footerHeading = "Examples:",
+        footer = { "  Start the server in development mode for local development or testing:%n%n"
                 + "      $ ${COMMAND-NAME} start-dev%n%n"
                 + "  Building an optimized server runtime:%n%n"
                 + "      $ ${COMMAND-NAME} build <OPTIONS>%n%n"
                 + "  Start the server in production mode:%n%n"
-                + "      $ ${COMMAND-NAME} <OPTIONS>%n%n"
-                + "  Please, take a look at the documentation for more details before deploying in production.%n",
-        footer = {
+                + "      $ ${COMMAND-NAME} start <OPTIONS>%n%n"
+                + "  Enable auto-completion to bash/zsh:%n%n"
+                + "      $ source <(${COMMAND-NAME} tools completion)%n%n"
+                + "  Please, take a look at the documentation for more details before deploying in production.",
                 "",
                 "Use \"${COMMAND-NAME} start --help\" for the available options when starting the server.",
-                "Use \"${COMMAND-NAME} <command> --help\" for more information about other commands.",
-                "",
-                "by Red Hat" },
-        optionListHeading = "Configuration Options%n%n",
-        commandListHeading = "%nCommands%n%n",
+                "Use \"${COMMAND-NAME} <command> --help\" for more information about other commands."
+        },
         version = {
-                "Keycloak ${sys:kc.version}",
-                "JVM: ${java.version} (${java.vendor} ${java.vm.name} ${java.vm.version})",
-                "OS: ${os.name} ${os.version} ${os.arch}"
+            "Keycloak ${sys:kc.version}",
+            "JVM: ${java.version} (${java.vendor} ${java.vm.name} ${java.vm.version})",
+            "OS: ${os.name} ${os.version} ${os.arch}"
         },
         subcommands = {
                 Build.class,
@@ -63,11 +68,13 @@ import picocli.CommandLine.ScopeType;
         })
 public final class Main {
 
-    @Option(names = "-D<key>=<value>",
-            description = "Set a Java system property",
-            scope = ScopeType.INHERIT,
-            order = 0)
-    Boolean sysProps;
+    public static final String PROFILE_SHORT_NAME = "-pf";
+    public static final String PROFILE_LONG_NAME = "--profile";
+    public static final String CONFIG_FILE_SHORT_NAME = "-cf";
+    public static final String CONFIG_FILE_LONG_NAME = "--config-file";
+
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
 
     @Option(names = { "-h", "--help" },
             description = "This help message.",
@@ -80,16 +87,24 @@ public final class Main {
     boolean version;
 
     @Option(names = { "-v", "--verbose" },
-            description = "Print out more details when running this command. Useful for troubleshooting if some unexpected error occurs.",
-            required = false,
-            scope = ScopeType.INHERIT)
-    Boolean verbose;
+            description = "Print out error details when running this command.",
+            paramLabel = NO_PARAM_LABEL)
+    public void setVerbose(boolean verbose) {
+        ExecutionExceptionHandler exceptionHandler = (ExecutionExceptionHandler) spec.commandLine().getExecutionExceptionHandler();
+        exceptionHandler.setVerbose(verbose);
+    }
 
-    @Option(names = { "-cf", "--config-file" },
+    @Option(names = { PROFILE_SHORT_NAME, PROFILE_LONG_NAME },
+            description = "Set the profile. Use 'dev' profile to enable development mode.")
+    public void setProfile(String profile) {
+        Environment.setProfile(profile);
+    }
+
+    @Option(names = { CONFIG_FILE_SHORT_NAME, CONFIG_FILE_LONG_NAME },
             arity = "1",
-            description = "Set the path to a configuration file. By default, configuration properties are read from the \"keycloak.properties\" file in the \"conf\" directory.",
-            paramLabel = "<path>")
+            description = "Set the path to a configuration file. By default, configuration properties are read from the \"keycloak.conf\" file in the \"conf\" directory.",
+            paramLabel = "file")
     public void setConfigFile(String path) {
-        System.setProperty(KeycloakConfigSourceProvider.KEYCLOAK_CONFIG_FILE_PROP, path);
+        System.setProperty(KeycloakPropertiesConfigSource.KEYCLOAK_CONFIG_FILE_PROP, path);
     }
 }

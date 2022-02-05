@@ -1,0 +1,22 @@
+apiVersion: keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  instances: 1
+  serverConfiguration:
+    KC_DB: postgres
+    KC_DB_URL_HOST: postgres-db
+#    KC_DB_USERNAME: ${secret:keycloak-db-secret:username}
+#    KC_DB_PASSWORD: ${secret:keycloak-db-secret:password}
+    KC_DB_USERNAME: postgres
+    KC_DB_PASSWORD: testpassword
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: keycloak-db-secret
+data:
+  username: cG9zdGdyZXM= # postgres
+  password: dGVzdHBhc3N3b3Jk # testpassword
+type: Opaque

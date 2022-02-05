@@ -135,11 +135,18 @@
     },
 
     "mapStorage": {
-        "provider": "${keycloak.mapStorage.provider:}",
         "concurrenthashmap": {
             "dir": "${project.build.directory:target}",
             "keyType.realms": "string",
             "keyType.authz-resource-servers": "string"
+        },
+        "jpa-map-storage": {
+            "url": "${keycloak.map.storage.connectionsJpa.url:}",
+            "user": "${keycloak.map.storage.connectionsJpa.user:}",
+            "password": "${keycloak.map.storage.connectionsJpa.password:}",
+            "driver": "org.postgresql.Driver",
+            "driverDialect": "org.keycloak.models.map.storage.jpa.hibernate.dialect.JsonbPostgreSQL95Dialect",
+            "showSql": "${keycloak.map.storage.connectionsJpa,showSql:false}"
         }
     },
 
@@ -247,9 +254,13 @@
 
     "connectionsHotRod": {
         "default": {
-            "embedded": "${keycloak.connectionsHotRod.embedded:true}",
-            "embeddedPort": "${keycloak.connectionsHotRod.embeddedPort:11444}",
-            "enableSecurity": "${keycloak.connectionsHotRod.enableSecurity:false}"
+            "embedded": "${keycloak.connectionsHotRod.embedded:false}",
+            "port": "${keycloak.connectionsHotRod.port:14232}",
+            "configureRemoteCaches": "${keycloak.connectionsHotRod.configureRemoteCaches:true}",
+            "username": "${keycloak.connectionsHotRod.username:myuser}",
+            "password": "${keycloak.connectionsHotRod.password:qwer1234!}",
+            "enableSecurity": "${keycloak.connectionsHotRod.enableSecurity:true}",
+            "reindexCaches": "${keycloak.connectionsHotRod.reindexCaches:clients,groups}"
         }
     },
 
@@ -280,7 +291,7 @@
     },
 
     "userProfile": {
-        "provider": "${keycloak.userProfile.provider:declarative-user-profile}",
+        "provider": "${keycloak.userProfile.provider:}",
         "declarative-user-profile": {
             "read-only-attributes": [ "deniedFoo", "deniedBar*", "deniedSome/thing", "deniedsome*thing" ],
             "admin-read-only-attributes": [ "deniedSomeAdmin" ]

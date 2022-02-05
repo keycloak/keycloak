@@ -80,7 +80,7 @@ public class CacheExpirationTest extends KeycloakModelTest {
                 InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
                 Cache<String, Object> cache = provider.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
                 do {
-                    try { Thread.sleep(1000); } catch (InterruptedException ex) {}
+                    try { Thread.sleep(1000); } catch (InterruptedException ex) { Thread.currentThread().interrupt(); throw new RuntimeException(ex); }
                 } while (! cache.getAdvancedCache().getDistributionManager().isJoinComplete());
                 cache.keySet().forEach(s -> {});
             });
@@ -102,7 +102,7 @@ public class CacheExpirationTest extends KeycloakModelTest {
 
             // Wait for at most 3 minutes which is much more than 15 seconds expiration set in DefaultInfinispanConnectionProviderFactory
             for (int i = 0; i < 3 * 60; i++) {
-                try { Thread.sleep(1000); } catch (InterruptedException ex) {}
+                try { Thread.sleep(1000); } catch (InterruptedException ex) { Thread.currentThread().interrupt(); throw new RuntimeException(ex); }
                 if (getNumberOfInstancesOfClass(AuthenticationSessionAuthNoteUpdateEvent.class) == 0) {
                     break;
                 }

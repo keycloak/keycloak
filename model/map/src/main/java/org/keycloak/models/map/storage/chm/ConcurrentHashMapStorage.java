@@ -23,8 +23,8 @@ import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.QueryParameters;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.storage.SearchableModelField;
 
 import java.util.Comparator;
@@ -49,11 +49,11 @@ import static org.keycloak.utils.StreamsUtil.paginatedStream;
  *
  * @author hmlnarik
  */
-public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEntity, M> implements MapStorage<V, M> {
+public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEntity, M> implements MapStorage<V, M>, ConcurrentHashMapCrudOperations<V, M> {
 
     protected final ConcurrentMap<K, V> store = new ConcurrentHashMap<>();
 
-    protected final Map<SearchableModelField<M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates;
+    protected final Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates;
     protected final StringKeyConvertor<K> keyConvertor;
     protected final DeepCloner cloner;
 
@@ -64,15 +64,7 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
         this.cloner = cloner;
     }
 
-    /**
-     * Creates an object in the store. ID of the {@code value} may be prescribed in id of the {@code value}.
-     * If the id is {@code null} or its format is not matching the store internal format for ID, then
-     * the {@code value}'s ID will be generated and returned in the id of the return value.
-     * @param value Entity to create in the store
-     * @throws NullPointerException if {@code value} is {@code null}
-     * @see AbstractEntity#getId()
-     * @return Entity representing the {@code value} in the store. It may or may not be the same instance as {@code value}
-     */
+    @Override
     public V create(V value) {
         K key = keyConvertor.fromStringSafe(value.getId());
         if (key == null) {
@@ -83,51 +75,28 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
         return value;
     }
 
-    /**
-     * Returns object with the given {@code key} from the storage or {@code null} if object does not exist.
-     * <br>
-     * TODO: Consider returning {@code Optional<V>} instead.
-     * @param key Key of the object. Must not be {@code null}.
-     * @return See description
-     * @throws NullPointerException if the {@code key} is {@code null}
-     */
+    @Override
     public V read(String key) {
         Objects.requireNonNull(key, "Key must be non-null");
         K k = keyConvertor.fromStringSafe(key);
         return store.get(k);
     }
 
-    /**
-     * Updates the object with the key of the {@code value}'s ID in the storage if it already exists.
-     *
-     * @param value Updated value
-     * @throws NullPointerException if the object or its {@code id} is {@code null}
-     * @see AbstractEntity#getId()
-     */
+    @Override
     public V update(V value) {
         K key = getKeyConvertor().fromStringSafe(value.getId());
         return store.replace(key, value);
     }
 
-    /**
-     * Deletes object with the given {@code key} from the storage, if exists, no-op otherwise.
-     * @param key
-     * @return Returns {@code true} if the object has been deleted or result cannot be determined, {@code false} otherwise.
-     */
+    @Override
     public boolean delete(String key) {
         K k = getKeyConvertor().fromStringSafe(key);
         return store.remove(k) != null;
     }
 
-    /**
-     * Deletes objects that match the given criteria.
-     * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
-     * @return Number of removed objects (might return {@code -1} if not supported)
-     * @throws IllegalStateException If {@code criteria} is not compatible, i.e. has not been originally created
-     *   by the {@link #createCriteriaBuilder()} method of this object.
-     */
+    @Override
     public long delete(QueryParameters<M> queryParameters) {
-        ModelCriteriaBuilder<M> criteria = queryParameters.getModelCriteriaBuilder();
+        DefaultModelCriteria<M> criteria = queryParameters.getModelCriteriaBuilder();
 
         if (criteria == null) {
             long res = store.size();
@@ -136,12 +105,9 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
         }
 
         @SuppressWarnings("unchecked")
-        MapModelCriteriaBuilder<K, V, M> b = criteria.unwrap(MapModelCriteriaBuilder.class);
-        if (b == null) {
-            throw new IllegalStateException("Incompatible class: " + criteria.getClass());
-        }
-        Predicate<? super K> keyFilter = b.getKeyFilter();
-        Predicate<? super V> entityFilter = b.getEntityFilter();
+        MapModelCriteriaBuilder<K,V,M> mcb = criteria.flashToModelCriteriaBuilder(createCriteriaBuilder());
+        Predicate<? super K> keyFilter = mcb.getKeyFilter();
+        Predicate<? super V> entityFilter = mcb.getEntityFilter();
         Stream<Entry<K, V>> storeStream = store.entrySet().stream();
         final AtomicLong res = new AtomicLong(0);
 
@@ -160,59 +126,44 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
     }
 
     @Override
-    public ModelCriteriaBuilder<M> createCriteriaBuilder() {
-        return new MapModelCriteriaBuilder<>(keyConvertor, fieldPredicates);
-    }
-
-    @Override
     @SuppressWarnings("unchecked")
     public MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session) {
         MapKeycloakTransaction<V, M> sessionTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
-        return sessionTransaction == null ? new ConcurrentHashMapKeycloakTransaction<>(this, keyConvertor, cloner) : sessionTransaction;
+        return sessionTransaction == null ? new ConcurrentHashMapKeycloakTransaction<>(this, keyConvertor, cloner, fieldPredicates) : sessionTransaction;
+    }
+
+    public MapModelCriteriaBuilder<K, V, M> createCriteriaBuilder() {
+        return new MapModelCriteriaBuilder<>(keyConvertor, fieldPredicates);
     }
 
     public StringKeyConvertor<K> getKeyConvertor() {
         return keyConvertor;
     }
 
-    /**
-     * Returns stream of objects satisfying given {@code criteria} from the storage.
-     * The criteria are specified in the given criteria builder based on model properties.
-     *
-     * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
-     * @return Stream of objects. Never returns {@code null}.
-     * @throws IllegalStateException If {@code criteria} is not compatible, i.e. has not been originally created
-     *   by the {@link #createCriteriaBuilder()} method of this object.
-     */
+    @Override
     public Stream<V> read(QueryParameters<M> queryParameters) {
-        ModelCriteriaBuilder<M> criteria = queryParameters.getModelCriteriaBuilder();
+        DefaultModelCriteria<M> criteria = queryParameters.getModelCriteriaBuilder();
 
         if (criteria == null) {
             return Stream.empty();
         }
+
+        MapModelCriteriaBuilder<K,V,M> mcb = criteria.flashToModelCriteriaBuilder(createCriteriaBuilder());
         Stream<Entry<K, V>> stream = store.entrySet().stream();
 
-        @SuppressWarnings("unchecked")
-        MapModelCriteriaBuilder<K, V, M> b = criteria.unwrap(MapModelCriteriaBuilder.class);
-        if (b == null) {
-            throw new IllegalStateException("Incompatible class: " + criteria.getClass());
-        }
-        Predicate<? super K> keyFilter = b.getKeyFilter();
-        Predicate<? super V> entityFilter = b.getEntityFilter();
-        stream = stream.filter(me -> keyFilter.test(me.getKey()) && entityFilter.test(me.getValue()));
+        Predicate<? super K> keyFilter = mcb.getKeyFilter();
+        Predicate<? super V> entityFilter = mcb.getEntityFilter();
+        Stream<V> valueStream = stream.filter(me -> keyFilter.test(me.getKey()) && entityFilter.test(me.getValue()))
+                .map(Map.Entry::getValue);
 
-        return stream.map(Map.Entry::getValue);
+        if (!queryParameters.getOrderBy().isEmpty()) {
+            valueStream = valueStream.sorted(MapFieldPredicates.getComparator(queryParameters.getOrderBy().stream()));
+        }
+
+        return paginatedStream(valueStream, queryParameters.getOffset(), queryParameters.getLimit());
     }
 
-    /**
-     * Returns the number of objects satisfying given {@code criteria} from the storage.
-     * The criteria are specified in the given criteria builder based on model properties.
-     *
-     * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
-     * @return Number of objects. Never returns {@code null}.
-     * @throws IllegalStateException If {@code criteria} is not compatible, i.e. has not been originally created
-     *   by the {@link #createCriteriaBuilder()} method of this object.
-     */
+    @Override
     public long getCount(QueryParameters<M> queryParameters) {
         return read(queryParameters).count();
     }

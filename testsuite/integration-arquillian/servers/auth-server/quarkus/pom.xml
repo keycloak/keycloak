@@ -5,7 +5,7 @@
     <parent>
         <artifactId>integration-arquillian-servers-auth-server</artifactId>
         <groupId>org.keycloak.testsuite</groupId>
-        <version>16.0.0-SNAPSHOT</version>
+        <version>17.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -13,7 +13,7 @@
     <artifactId>integration-arquillian-servers-auth-server-quarkus</artifactId>
 
     <properties>
-        <auth.server.home>${project.build.directory}/unpacked/keycloak.x-${project.version}</auth.server.home>
+        <auth.server.home>${project.build.directory}/unpacked/keycloak-${project.version}</auth.server.home>
         <common.resources>${basedir}/../jboss/common</common.resources>
         <session.cache.owners>2</session.cache.owners>
         <offline.session.cache.owners>2</offline.session.cache.owners>
@@ -26,7 +26,7 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-server-x-dist</artifactId>
+            <artifactId>keycloak-quarkus-dist</artifactId>
             <type>zip</type>
         </dependency>
     </dependencies>
@@ -105,8 +105,27 @@
                                         <include>client.crt</include>
                                         <include>client.key</include>
                                         <include>*.crl</include>
-                                        <!-- KEYCLOAK-6771 Certificate Bound Token -->
                                         <include>other_client.jks</include>
+                                        <include>test-user-obb.jks</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                            <overwrite>true</overwrite>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-vault-secrets</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${auth.server.home}/secrets</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${common.resources}/vault</directory>
+                                    <includes>
+                                        <include>**</include>
                                     </includes>
                                 </resource>
                             </resources>
@@ -158,7 +177,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-server-x-dist</artifactId>
+                                    <artifactId>keycloak-quarkus-dist</artifactId>
                                     <version>${project.version}</version>
                                     <type>zip</type>
                                     <outputDirectory>${project.build.directory}/unpacked</outputDirectory>

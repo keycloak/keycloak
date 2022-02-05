@@ -17,6 +17,24 @@
                 </div>
                 <kc-tooltip>{{:: 'client-scope.name.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix block" data-ng-show="serverInfo.featureEnabled('DYNAMIC_SCOPES') && protocol === 'openid-connect'">
+                <label class="col-md-2 control-label" for="isDynamicScope">{{:: 'client-scope.is-dynamic-scope' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="isDynamicScope" ng-click="switchChange()" name="isDynamicScope" id="isDynamicScope" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'client-scope.is-dynamic-scope.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="protocol === 'openid-connect' && isDynamicScope && serverInfo.featureEnabled('DYNAMIC_SCOPES')">
+                <label class="col-md-2 control-label" for="dynamicScopeRegExp">{{:: 'client-scope.dynamic-scope-regexp' | translate}} <span class="required">*</span></label>
+                <div class="col-sm-6">
+                    <input class="form-control" ng-readonly="true" type="text"
+                           ng-value="(isDynamicScope && serverInfo.featureEnabled('DYNAMIC_SCOPES')) ? clientScope.attributes['dynamic.scope.regexp'] = clientScope.name+':*' : ''"
+                           id="dynamicScopeRegExp" name="dynamicScopeRegExp"
+                           data-ng-model="clientScope.attributes['dynamic.scope.regexp']" autofocus ng-disabled="!isDynamicScope"
+                           ng-required="isDynamicScope">
+                </div>
+                <kc-tooltip>{{:: 'client-scope.dynamic-scope-regexp.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="description">{{:: 'description' | translate}} </label>
                 <div class="col-sm-6">

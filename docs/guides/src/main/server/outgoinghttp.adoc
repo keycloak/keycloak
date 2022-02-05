@@ -1,0 +1,147 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+
+<@tmpl.guide
+title="Configuring outgoing HTTP requests"
+summary="How to configure the client used for outgoing HTTP requests."
+includedOptions="">
+
+Keycloak often needs to make requests to the applications and services it secures. Keycloak manages these outgoing connections using an HTTP client. This guide shows how to configure the client, it's connection pool, proxy environment settings, timeouts and more.
+
+== Usage
+To configure Keycloak's outgoing Http client, use:
+
+<@kc.start parameters="--spi-connections-http-client-default-<configurationoption>=<value>"/>
+
+Please see <<Outgoing Http Client Configuration Options>> for the available configuration options.
+
+== Outgoing Http Client Configuration Options
+
+The HTTP client Keycloak uses for outgoing communication is highly configurable. The available options are:
+
+*establish-connection-timeout-millis*::
+Maximum time in milliseconds until establishing a connection times out. Default: Not set.
+
+*socket-timeout-millis*::
+Maximum time of inactivity between two data packets until a socket connection times out, in milliseconds. Default: 5000ms
+
+*connection-pool-size*::
+Size of the connection pool for outgoing connections. Default: 128.
+
+*max-pooled-per-route*::
+How many connections can be pooled per host. Default: 64.
+
+*connection-ttl-millis*::
+Maximum connection time to live in milliseconds. Default: Not set.
+
+*max-connection-idle-time-millis*::
+Maximum time an idle connection stays in the connection pool, in milliseconds. Idle connections will be removed from the pool by a background cleaner thread. Set to -1 to disable this check. Default: 900000.
+
+*disable-cookies*::
+Enable or disable caching of cookies. Default: true.
+
+*client-keystore*::
+File path to a Java keystore file. This keystore contains client certificates for two-way SSL.
+
+*client-keystore-password*::
+Password for the client keystore. REQUIRED, when `client-keystore` ist set.
+
+*client-key-password*::
+Password for the client's private key. REQUIRED, when client-keystore is set.
+
+*proxy-mappings*::
+Specify proxy configurations for outgoing HTTP requests. See the section on Proxy Mappings for Outgoing HTTP Requests for more details.
+
+*disable-trust-manager*::
+If an outgoing request requires HTTPS and this config option is set to true you do not have to specify a truststore. This setting should only be used during development and *never in production* as it will disable verification of SSL certificates. Default: false.
+
+== Proxy mappings for outgoing HTTP requests
+To configure outgoing requests to use a proxy, you can use the following standard proxy environment variables to configure the proxy mappings: `HTTP_PROXY`, `HTTPS_PROXY` and `NO_PROXY`.
+
+The `HTTP_PROXY` and `HTTPS_PROXY` variables represent the proxy server that will be used for outgoing HTTP requests. Keycloak does not differ between the two. If both are specified, `HTTPS_PROXY` takes precedence regardless of the actual scheme the proxy server uses.
+
+The `NO_PROXY` variable is used to define a comma separated list of hostnames that should not use the proxy. If a hostname is specified, all its subdomains are also excluded from using proxy.
+
+The environment variables can be lowercase or uppercase. Lowercase takes precedence. For example if both `HTTP_PROXY` and `http_proxy` are defined, `http_proxy` will be used.
+
+=== Example
+[source]
+----
+HTTPS_PROXY=https://www-proxy.acme.com:8080
+NO_PROXY=google.com,login.facebook.com
+----
+In this example, all outgoing requests will use the proxy `https://www-proxy.acme.com:8080` except for requests to google.com, any subdomain of google.com (e.g. auth.google.com). Also, login.facebook.com and all its subdomains will not use the defined Proxy, but e.g. groups.facebook.com will use the proxy.
+
+== Using the outgoing HTTP client configuration to define proxy mappings
+
+Alternatively, outgoing requests sent by Keycloak can use a proxy server by configuring a comma delimited list of proxy-mappings. A proxy-mapping consists of a regex-based hostname pattern and a proxy-uri, using the scheme `hostname-pattern;proxy-uri`, e.g. you can apply the regex
+
+[source]
+----
+*\.(google|googleapis)\.com
+----
+
+by running:
+<@kc.start parameters="--spi-connections-http-client-default-proxy-mappings=\"\'*\\\\\\.(google|googleapis)\\\\\\.com;http://www-proxy.acme.com:8080\'\""/>
+
+To determine the proxy for an outgoing HTTP request, the target hostname is matched against all configured hostname patterns. The proxy-uri of the first matching pattern will be used. If none of the configured patterns match for the hostname, no proxy is used.
+
+When your proxy server requires authentication, include the proxy user’s credentials in the format `username:password@`. For example:
+
+[source]
+----
+.*\.(google|googleapis)\.com;http://proxyuser:password@www-proxy.acme.com:8080
+----
+
+
+The special value NO_PROXY for the proxy-uri can be used to indicate that no proxy should be used for hosts matching the associated hostname pattern. It is possible to specify a catch-all pattern at the end of the proxy-mappings to define a default proxy for all outgoing requests.
+
+.Example regular expressions for proxy-mapping:
+[source]
+----
+# All requests to Google APIs use http://www-proxy.acme.com:8080 as proxy
+.*\.(google|googleapis)\.com;http://www-proxy.acme.com:8080
+
+# All requests to internal systems use no proxy
+.*\.acme\.com;NO_PROXY
+
+# All other requests use http://fallback:8080 as proxy
+.*;http://fallback:8080
+----
+
+== Outgoing HTTPS request truststore
+When Keycloak calls remote HTTPS endpoints, it has to validate the remote server's certificate in order to ensure it is connecting to a trusted server. This is necessary in order to prevent man-in-the-middle attacks.  The certificates of these remote servers or the CA that signed these certificates must be put in a truststore.
+
+This truststore is used to securely connect e.g. to identity brokers, LDAP identity providers, when sending emails, and for backchannel communication with client applications.
+
+When no truststore is configured, outgoing https connection will use the standard java truststore configuration by default. When no trust can be established, outgoing HTTPS requests will fail.
+
+You can add your truststore configuration by using:
+
+<@kc.start parameters="--spi-truststore-file-file=myTrustStore.jks --spi-truststore-file-password=password --spi-truststore-file-hostname-verification-policy=ANY"/>
+
+Possible configuration options for this setting are:
+
+file::
+The path to a Java keystore file.
+HTTPS requests need a way to verify the host of the server they are talking to.
+This is what the trustore does.
+The keystore contains one or more trusted host certificates or certificate authorities.
+This truststore file should only contain public certificates of your secured hosts.
+This is _REQUIRED_ if any of these properties are defined.
+
+password::
+Password of the keystore.
+This is _REQUIRED_ if any of these properties are defined.
+
+hostname-verification-policy::
+For HTTPS requests, this verifies the hostname of the server's certificate.
+`ANY` means that the hostname is not verified. `WILDCARD` Allows wildcards in subdomain names, e.g.
+*.foo.com. When using `STRICT`, the Common Name (CN) must match the hostname exactly. Default: `WILDCARD`
+
+.Example
+An example configuration for a truststore that allows you to create trustful connections to all `mycompany.org` domains and it's subdomains is shown below:
+
+<kc.start parameters="--spi-truststore-file-file=path/to/truststore.jks --spi-truststore-file-password=change_me --spi-truststore-file-hostname-verification-policy=WILDCARD"/>
+
+</@tmpl.guide>

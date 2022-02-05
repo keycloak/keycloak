@@ -1,0 +1,123 @@
+Start the server.
+
+Usage:
+
+kc.sh start [OPTIONS]
+
+Use this command to run the server in production.
+
+Options:
+
+-b, --auto-build     Automatically detects whether the server configuration changed and a new
+                       server image must be built prior to starting the server. This option
+                       provides an alternative to manually running the 'build' prior to starting
+                       the server. Use this configuration carefully in production as it might
+                       impact the startup time.
+-h, --help           This help message.
+
+Database:
+
+--db-password <password>
+                     The password of the database user.
+--db-pool-initial-size <size>
+                     The initial size of the connection pool.
+--db-pool-max-size <size>
+                     The maximum size of the connection pool. Default: 100.
+--db-pool-min-size <size>
+                     The minimal size of the connection pool.
+--db-schema <schema> The database schema to be used.
+--db-url <jdbc-url>  The full database JDBC URL. If not provided, a default URL is set based on the
+                       selected database vendor. For instance, if using 'postgres', the default
+                       JDBC URL would be 'jdbc:postgresql://localhost/keycloak'.
+--db-url-database <dbname>
+                     Sets the database name of the default JDBC URL of the chosen vendor. If the
+                       `db-url` option is set, this option is ignored.
+--db-url-host <hostname>
+                     Sets the hostname of the default JDBC URL of the chosen vendor. If the
+                       `db-url` option is set, this option is ignored.
+--db-url-properties <properties>
+                     Sets the properties of the default JDBC URL of the chosen vendor. If the
+                       `db-url` option is set, this option is ignored.
+--db-username <username>
+                     The username of the database user.
+
+Hostname:
+
+--hostname <hostname>
+                     Hostname for the Keycloak server.
+--hostname-admin <url>
+                     Overrides the hostname for the admin console and APIs.
+--hostname-path <path>
+                     This should be set if proxy uses a different context-path for Keycloak.
+--hostname-strict <true|false>
+                     Disables dynamically resolving the hostname from request headers. Should
+                       always be set to true in production, unless proxy verifies the Host header.
+                       Default: true.
+--hostname-strict-backchannel <true|false>
+                     By default backchannel URLs are dynamically resolved from request headers to
+                       allow internal an external applications. If all applications use the public
+                       URL this option should be enabled. Default: false.
+
+HTTP/TLS:
+
+--http-enabled <true|false>
+                     Enables the HTTP listener. Default: false.
+--http-host <host>   The used HTTP Host. Default: 0.0.0.0.
+--http-port <port>   The used HTTP port. Default: 8080.
+--https-certificate-file <file>
+                     The file path to a server certificate or certificate chain in PEM format.
+--https-certificate-key-file <file>
+                     The file path to a private key in PEM format.
+--https-cipher-suites <ciphers>
+                     The cipher suites to use. If none is given, a reasonable default is selected.
+--https-client-auth <auth>
+                     Configures the server to require/request client authentication. Possible
+                       Values: none, request, required. Default: none.
+--https-key-store-file <file>
+                     The key store which holds the certificate information instead of specifying
+                       separate files.
+--https-key-store-password <password>
+                     The password of the key store file. Default: password.
+--https-key-store-type <type>
+                     The type of the key store file. If not given, the type is automatically
+                       detected based on the file name.
+--https-port <port>  The used HTTPS port. Default: 8443.
+--https-protocols <protocols>
+                     The list of protocols to explicitly enable. Default: TLSv1.3.
+--https-trust-store-file <file>
+                     The trust store which holds the certificate information of the certificates to
+                       trust.
+--https-trust-store-password <password>
+                     The password of the trust store file.
+--https-trust-store-type <type>
+                     The type of the trust store file. If not given, the type is automatically
+                       detected based on the file name.
+
+Proxy:
+
+--proxy <mode>       The proxy address forwarding mode if the server is behind a reverse proxy.
+                       Possible values are: none,edge,reencrypt,passthrough Default: none.
+
+Vault:
+
+--vault-dir <dir>    If set, secrets can be obtained by reading the content of files within the
+                       given directory.
+
+Logging:
+
+--log-format <format>
+                     The format of log entries. If the format has spaces in it, you need to escape
+                       the value such as "<format>". Default: %d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c]
+                       (%t) %s%e%n.
+--log-level <category:level>
+                     The log level of the root category or a comma-separated list of individual
+                       categories and their levels. For the root category, you don't need to
+                       specify a category. Default: info.
+
+You may use the "--auto-build" option when starting the server to avoid running
+the "build" command everytime you need to change a static property:
+
+      $ kc.sh start --auto-build <OPTIONS>
+
+By doing that you have an additional overhead when the server is starting. Run
+"kc.sh build -h" for more details.

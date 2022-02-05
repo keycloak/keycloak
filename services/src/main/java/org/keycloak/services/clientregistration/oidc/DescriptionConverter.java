@@ -22,6 +22,7 @@ import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
+import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
@@ -150,6 +151,9 @@ public class DescriptionConverter {
 
         if (clientOIDC.getTlsClientAuthSubjectDn() != null) {
             configWrapper.setTlsClientAuthSubjectDn(clientOIDC.getTlsClientAuthSubjectDn());
+
+            // According to specification, attribute tls_client_auth_subject_dn has subject DN in the exact expected format. There is no reason for support regex comparisons
+            configWrapper.setAllowRegexPatternComparison(false);
         }
 
         if (clientOIDC.getIdTokenSignedResponseAlg() != null) {
@@ -186,6 +190,18 @@ public class DescriptionConverter {
             configWrapper.setBackchannelLogoutRevokeOfflineTokens(false);
         } else {
             configWrapper.setBackchannelLogoutRevokeOfflineTokens(clientOIDC.getBackchannelLogoutRevokeOfflineTokens());
+        }
+
+        if (clientOIDC.getLogoUri() != null) {
+            configWrapper.setLogoUri(clientOIDC.getLogoUri());
+        }
+
+        if (clientOIDC.getPolicyUri() != null) {
+            configWrapper.setPolicyUri(clientOIDC.getPolicyUri());
+        }
+
+        if (clientOIDC.getTosUri() != null) {
+            configWrapper.setTosUri(clientOIDC.getTosUri());
         }
 
         // CIBA

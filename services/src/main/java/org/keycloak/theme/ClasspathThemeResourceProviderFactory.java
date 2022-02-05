@@ -22,6 +22,10 @@ public class ClasspathThemeResourceProviderFactory implements ThemeResourceProvi
     private final String id;
     private final ClassLoader classLoader;
 
+    public ClasspathThemeResourceProviderFactory() {
+        this("classpath", Thread.currentThread().getContextClassLoader());
+    }
+
     public ClasspathThemeResourceProviderFactory(String id, ClassLoader classLoader) {
         this.id = id;
         this.classLoader = classLoader;

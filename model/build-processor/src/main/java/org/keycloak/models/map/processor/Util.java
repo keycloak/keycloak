@@ -18,14 +18,20 @@ package org.keycloak.models.map.processor;
 
 import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -40,6 +46,7 @@ import javax.lang.model.util.SimpleTypeVisitor8;
 public class Util {
 
     private static final HashSet<String> SET_TYPES = new HashSet<>(Arrays.asList(Set.class.getCanonicalName(), TreeSet.class.getCanonicalName(), HashSet.class.getCanonicalName(), LinkedHashSet.class.getCanonicalName()));
+    private static final HashSet<String> MAP_TYPES = new HashSet<>(Arrays.asList(Map.class.getCanonicalName(), HashMap.class.getCanonicalName()));
 
     public static List<TypeMirror> getGenericsDeclaration(TypeMirror fieldType) {
         List<TypeMirror> res = new LinkedList<>();
@@ -67,6 +74,11 @@ public class Util {
         return SET_TYPES.contains(name.toString());
     }
 
+    public static boolean isMapType(TypeElement typeElement) {
+        Name name = typeElement.getQualifiedName();
+        return MAP_TYPES.contains(name.toString());
+    }
+
     public static boolean isNotIgnored(Element el) {
         do {
             IgnoreForEntityImplementationGenerator a = el.getAnnotation(IgnoreForEntityImplementationGenerator.class);
@@ -78,4 +90,20 @@ public class Util {
         return true;
     }
 
+    protected static Optional<ExecutableElement> findParentMethodImplementation(List<? extends Element> allParentMembers, ExecutableElement method) {
+        return allParentMembers.stream()
+          .filter(ExecutableElement.class::isInstance)
+          .map(ExecutableElement.class::cast)
+          .filter(ee -> Objects.equals(ee.toString(), method.toString()))
+          .filter((ExecutableElement ee) ->  ! ee.getModifiers().contains(Modifier.ABSTRACT))
+          .findAny();
+    }
+
+    public static String singularToPlural(String word) {
+        return word.endsWith("y") ? word.substring(0, word.length() -1) + "ies" : word + "s";
+    }
+
+    public static String pluralToSingular(String word) {
+        return word.endsWith("ies") ? word.substring(0, word.length() - 3) + "y" : word.endsWith("s") ? word.substring(0, word.length() - 1) : word;
+    }
 }

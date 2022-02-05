@@ -20,8 +20,8 @@ echo ** Adding max-detail-length to eventsStore spi **
 echo ** Adding spi=userProfile with default provider and legacy-user-profile configuration of read-only attributes **
 /subsystem=keycloak-server/spi=userProfile/:add(default-provider="declarative-user-profile")
 /subsystem=keycloak-server/spi=userProfile/provider=declarative-user-profile/:add(properties={},enabled=true)
-/subsystem=keycloak-server/spi=userProfile/provider=declarative-user-profile/:map-put(name=properties,key=read-only-attributes,value=[deniedFoo,deniedBar*,deniedSome/thing,deniedsome*thing])
-/subsystem=keycloak-server/spi=userProfile/provider=declarative-user-profile/:map-put(name=properties,key=admin-read-only-attributes,value=[deniedSomeAdmin])
+/subsystem=keycloak-server/spi=userProfile/provider=declarative-user-profile/:map-put(name=properties,key=read-only-attributes,value="[\"deniedFoo\",\"deniedBar*\",\"deniedSome/thing\",\"deniedsome*thing\"]")
+/subsystem=keycloak-server/spi=userProfile/provider=declarative-user-profile/:map-put(name=properties,key=admin-read-only-attributes,value="[\"deniedSomeAdmin\"]")
 
 echo ** Do not reuse connections for HttpClientProvider within testsuite **
 /subsystem=keycloak-server/spi=connectionsHttpClient/provider=default/:map-put(name=properties,key=reuse-connections,value=false)

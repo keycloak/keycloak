@@ -95,7 +95,7 @@ class BackchannelAuthenticationEndpointSignedRequestParser extends BackchannelAu
     @Override
     protected Integer getIntParameter(String paramName) {
         Object val = this.requestParams.get(paramName);
-        return val==null ? null : Integer.parseInt(getParameter(paramName));
+        return val==null ? null : Integer.valueOf(getParameter(paramName));
     }
 
     @Override

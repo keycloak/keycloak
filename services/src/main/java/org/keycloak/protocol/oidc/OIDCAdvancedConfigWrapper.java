@@ -17,6 +17,8 @@
 
 package org.keycloak.protocol.oidc;
 
+import static org.keycloak.protocol.oidc.OIDCConfigAttributes.USE_LOWER_CASE_IN_TOKEN_RESPONSE;
+
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.ClientModel;
@@ -176,6 +178,14 @@ public class OIDCAdvancedConfigWrapper {
         setAttribute(OIDCConfigAttributes.USE_REFRESH_TOKEN, val);
     }
 
+    public boolean isUseLowerCaseInTokenResponse() {
+        return Boolean.parseBoolean(getAttribute(USE_LOWER_CASE_IN_TOKEN_RESPONSE, "false"));
+    }
+
+    public void setUseLowerCaseInTokenResponse(boolean useRefreshToken) {
+        setAttribute(USE_LOWER_CASE_IN_TOKEN_RESPONSE, String.valueOf(useRefreshToken));
+    }
+
     /**
      * If true, then Client Credentials Grant generates refresh token and creates user session. This is not per specs, so it is false by default
      * For the details @see https://tools.ietf.org/html/rfc6749#section-4.4.3
@@ -196,6 +206,16 @@ public class OIDCAdvancedConfigWrapper {
 
     public void setTlsClientAuthSubjectDn(String tls_client_auth_subject_dn) {
         setAttribute(X509ClientAuthenticator.ATTR_SUBJECT_DN, tls_client_auth_subject_dn);
+    }
+
+    public boolean getAllowRegexPatternComparison() {
+        String attrVal = getAttribute(X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON);
+        // Allow Regex Pattern Comparison by default due the backwards compatibility
+        return attrVal == null || Boolean.parseBoolean(attrVal);
+    }
+
+    public void setAllowRegexPatternComparison(boolean allowRegexPatternComparison) {
+        setAttribute(X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON, String.valueOf(allowRegexPatternComparison));
     }
 
     public String getPkceCodeChallengeMethod() {
@@ -304,6 +324,18 @@ public class OIDCAdvancedConfigWrapper {
 
     public String getFrontChannelLogoutUrl() {
         return getAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI);
+    }
+
+    public void setLogoUri(String logoUri) {
+        setAttribute(ClientModel.LOGO_URI, logoUri);
+    }
+
+    public void setPolicyUri(String policyUri) {
+        setAttribute(ClientModel.POLICY_URI, policyUri);
+    }
+
+    public void setTosUri(String tosUri) {
+        setAttribute(ClientModel.TOS_URI, tosUri);
     }
 
     private String getAttribute(String attrKey) {

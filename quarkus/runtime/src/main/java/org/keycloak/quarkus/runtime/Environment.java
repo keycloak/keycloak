@@ -17,6 +17,9 @@
 
 package org.keycloak.quarkus.runtime;
 
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuildTimeProperty;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfig;
+
 import java.io.File;
 import java.io.FilenameFilter;
 import java.nio.file.Path;
@@ -28,22 +31,29 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import io.quarkus.bootstrap.runner.RunnerClassLoader;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.configuration.ProfileManager;
 import org.apache.commons.lang3.SystemUtils;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 public final class Environment {
 
     public static final String IMPORT_EXPORT_MODE = "import_export";
-    public static final String CLI_ARGS = "kc.config.args";
     public static final String PROFILE ="kc.profile";
     public static final String ENV_PROFILE ="KC_PROFILE";
+    public static final String DATA_PATH = "/data";
+    public static final String DEFAULT_THEMES_PATH = "/themes";
+    public static final String DEV_PROFILE_VALUE = "dev";
+    public static final String LAUNCH_MODE = "kc.launch.mode";
 
     private Environment() {}
 
     public static Boolean isRebuild() {
-        return Boolean.getBoolean("quarkus.launch.rebuild");
+        return !isRuntimeMode();
+    }
+
+    public static Boolean isRuntimeMode() {
+        return Thread.currentThread().getContextClassLoader() instanceof RunnerClassLoader;
     }
 
     public static String getHomeDir() {
@@ -60,6 +70,14 @@ public final class Environment {
         return null;
     }
 
+    public static String getDataDir() {
+        return getHomeDir() + DATA_PATH;
+    }
+
+    public static String getDefaultThemeRootDir() {
+        return getHomeDir() + DEFAULT_THEMES_PATH;
+    }
+
     public static Path getProvidersPath() {
         Path homePath = Environment.getHomePath();
 
@@ -71,20 +89,11 @@ public final class Environment {
     }
 
     public static String getCommand() {
-        String homeDir = getHomeDir();
-
-        if (homeDir == null) {
-            return "java -jar $KEYCLOAK_HOME/lib/quarkus-run.jar";
-        }
-
         if (isWindows()) {
-            return "./kc.bat";
+            return "kc.bat";
         }
-        return "./kc.sh";
-    }
-    
-    public static String getConfigArgs() {
-        return System.getProperty(CLI_ARGS, "");
+
+        return "kc.sh";
     }
 
     public static String getProfile() {
@@ -99,7 +108,18 @@ public final class Environment {
 
     public static void setProfile(String profile) {
         System.setProperty(PROFILE, profile);
-        System.setProperty("quarkus.profile", profile);
+        System.setProperty(ProfileManager.QUARKUS_PROFILE_PROP, profile);
+        if (isTestLaunchMode()) {
+            System.setProperty("mp.config.profile", profile);
+        }
+    }
+
+    public static String getCurrentOrPersistedProfile() {
+        String profile = getProfile();
+        if(profile == null) {
+            profile = getConfig().getRawValue(PROFILE);
+        }
+        return profile;
     }
 
     public static String getProfileOrDefault(String defaultProfile) {
@@ -112,27 +132,16 @@ public final class Environment {
         return profile;
     }
 
-    public static Optional<String> getBuiltTimeProperty(String name) {
-        String value = Configuration.getBuiltTimeProperty(name);
-
-        if (value == null) {
-            return Optional.empty();
+    public static boolean isDevMode() {
+        if (DEV_PROFILE_VALUE.equalsIgnoreCase(getProfile())) {
+            return true;
         }
-        
-        return Optional.of(value);
+
+        return DEV_PROFILE_VALUE.equals(getBuildTimeProperty(PROFILE).orElse(null));
     }
 
-    public static boolean isDevMode() {
-        if ("dev".equalsIgnoreCase(getProfile())) {
-            return true;
-        }
-
-        // if running in quarkus:dev mode
-        if (ProfileManager.getLaunchMode() == LaunchMode.DEVELOPMENT) {
-            return true;
-        }
-
-        return "dev".equals(getBuiltTimeProperty(PROFILE).orElse(null));
+    public static boolean isDevProfile(){
+        return Optional.ofNullable(getProfile()).orElse("").equalsIgnoreCase(DEV_PROFILE_VALUE);
     }
 
     public static boolean isImportExportMode() {
@@ -144,7 +153,7 @@ public final class Environment {
     }
 
     public static void forceDevProfile() {
-        setProfile("dev");
+        setProfile(DEV_PROFILE_VALUE);
     }
 
     public static Map<String, File> getProviderFiles() {
@@ -166,5 +175,25 @@ public final class Environment {
                 return name.endsWith(".jar");
             }
         })).collect(Collectors.toMap(File::getName, Function.identity()));
+    }
+
+    public static boolean isQuarkusDevMode() {
+        return ProfileManager.getLaunchMode().equals(LaunchMode.DEVELOPMENT);
+    }
+
+    public static boolean isTestLaunchMode() {
+        return "test".equals(System.getProperty(LAUNCH_MODE));
+    }
+
+    public static void forceTestLaunchMode() {
+        System.setProperty(LAUNCH_MODE, "test");
+    }
+
+    public static boolean isDistribution() {
+        return getHomeDir() != null;
+    }
+
+    public static boolean isRebuildCheck() {
+        return Boolean.getBoolean("kc.config.rebuild-and-exit");
     }
 }

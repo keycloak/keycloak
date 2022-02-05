@@ -73,6 +73,7 @@ import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentatio
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AuthorizationResponseToken;
+import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
@@ -92,6 +93,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
@@ -174,6 +176,10 @@ public class OAuthClient {
 
     private String requestUri;
 
+    private String claims;
+
+    private Map<String, String> requestHeaders;
+
     private Map<String, JSONWebKeySet> publicKeys = new HashMap<>();
 
     // https://tools.ietf.org/html/rfc7636#section-4
@@ -254,6 +260,7 @@ public class OAuthClient {
         nonce = null;
         request = null;
         requestUri = null;
+        claims = null;
         // https://tools.ietf.org/html/rfc7636#section-4
         codeVerifier = null;
         codeChallenge = null;
@@ -492,6 +499,12 @@ public class OAuthClient {
     public String introspectTokenWithClientCredential(String clientId, String clientSecret, String tokenType, String tokenToIntrospect, CloseableHttpClient client) {
         HttpPost post = new HttpPost(getTokenIntrospectionUrl());
 
+        if (requestHeaders != null) {
+            for (Map.Entry<String, String> header : requestHeaders.entrySet()) {
+                post.addHeader(header.getKey(), header.getValue());
+            }
+        }
+
         String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
         post.setHeader("Authorization", authorization);
 
@@ -545,6 +558,12 @@ public class OAuthClient {
                                                          String clientId, String clientSecret, String userAgent) throws Exception {
         try (CloseableHttpClient client = httpClient.get()) {
             HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
+
+            if (requestHeaders != null) {
+                for (Map.Entry<String, String> header : requestHeaders.entrySet()) {
+                    post.addHeader(header.getKey(), header.getValue());
+                }
+            }
 
             List<NameValuePair> parameters = new LinkedList<>();
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD));
@@ -740,6 +759,9 @@ public class OAuthClient {
             }
             if (request != null) {
                 parameters.add(new BasicNameValuePair(OIDCLoginProtocol.REQUEST_PARAM, request));
+            }
+            if (claims != null) {
+                parameters.add(new BasicNameValuePair(OIDCLoginProtocol.CLAIMS_PARAM, claims));
             }
             if (additionalParams != null) {
                 for (Map.Entry<String, String> entry : additionalParams.entrySet()) {
@@ -982,6 +1004,12 @@ public class OAuthClient {
             if (nonce != null) {
                 parameters.add(new BasicNameValuePair(OIDCLoginProtocol.NONCE_PARAM, scope));
             }
+            if (codeChallenge != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_CHALLENGE, codeChallenge));
+            }
+            if (codeChallengeMethod != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod));
+            }
 
             UrlEncodedFormEntity formEntity;
             try {
@@ -1012,6 +1040,10 @@ public class OAuthClient {
             if (origin != null) {
                 post.addHeader("Origin", origin);
             }
+            // https://tools.ietf.org/html/rfc7636#section-4.5
+            if (codeVerifier != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, codeVerifier));
+            }
 
             UrlEncodedFormEntity formEntity;
             try {
@@ -1027,7 +1059,14 @@ public class OAuthClient {
 
     public OIDCConfigurationRepresentation doWellKnownRequest(String realm) {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            return SimpleHttp.doGet(baseUrl + "/realms/" + realm + "/.well-known/openid-configuration", client).asJson(OIDCConfigurationRepresentation.class);
+            SimpleHttp request = SimpleHttp.doGet(baseUrl + "/realms/" + realm + "/.well-known/openid-configuration",
+                    client);
+            if (requestHeaders != null) {
+                for (Map.Entry<String, String> entry : requestHeaders.entrySet()) {
+                    request.header(entry.getKey(), entry.getValue());
+                }
+            }
+            return request.asJson(OIDCConfigurationRepresentation.class);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
@@ -1099,6 +1138,9 @@ public class OAuthClient {
             }
             if (requestUri != null) {
                 parameters.add(new BasicNameValuePair(OIDCLoginProtocol.REQUEST_URI_PARAM, requestUri));
+            }
+            if (claims != null) {
+                parameters.add(new BasicNameValuePair(OIDCLoginProtocol.CLAIMS_PARAM, claims));
             }
             if (codeChallenge != null) {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_CHALLENGE, codeChallenge));
@@ -1303,6 +1345,10 @@ public class OAuthClient {
         driver.navigate().to(getLoginFormUrl());
     }
 
+    public void openRegistrationForm() {
+        driver.navigate().to(getRegistrationFormUrl());
+    }
+
     public void openOAuth2DeviceVerificationForm(String verificationUri) {
         driver.navigate().to(verificationUri);
     }
@@ -1378,6 +1424,9 @@ public class OAuthClient {
         if (requestUri != null) {
             b.queryParam(OIDCLoginProtocol.REQUEST_URI_PARAM, requestUri);
         }
+        if (claims != null) {
+            b.queryParam(OIDCLoginProtocol.CLAIMS_PARAM, claims);
+        }
         // https://tools.ietf.org/html/rfc7636#section-4.3
         if (codeChallenge != null) {
             b.queryParam(OAuth2Constants.CODE_CHALLENGE, codeChallenge);
@@ -1385,6 +1434,30 @@ public class OAuthClient {
         if (codeChallengeMethod != null) {
             b.queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod);
         }
+        if (customParameters != null) {
+            customParameters.keySet().stream().forEach(i -> b.queryParam(i, customParameters.get(i)));
+        }
+
+        return b.build(realm).toString();
+    }
+
+    private String getRegistrationFormUrl() {
+        UriBuilder b = OIDCLoginProtocolService.registrationsUrl(UriBuilder.fromUri(baseUrl));
+        if (responseType != null) {
+            b.queryParam(OAuth2Constants.RESPONSE_TYPE, responseType);
+        }
+        if (clientId != null) {
+            b.queryParam(OAuth2Constants.CLIENT_ID, clientId);
+        }
+        if (redirectUri != null) {
+            b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
+        }
+
+        String scopeParam = openid ? TokenUtil.attachOIDCScope(scope) : scope;
+        if (scopeParam != null && !scopeParam.isEmpty()) {
+            b.queryParam(OAuth2Constants.SCOPE, scopeParam);
+        }
+
         if (customParameters != null) {
             customParameters.keySet().stream().forEach(i -> b.queryParam(i, customParameters.get(i)));
         }
@@ -1574,6 +1647,15 @@ public class OAuthClient {
         return this;
     }
 
+    public OAuthClient claims(ClaimsRepresentation claims) {
+        try {
+            this.claims = URLEncoder.encode(JsonSerialization.writeValueAsString(claims), "UTF-8");
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+        return this;
+    }
+
     public String getRealm() {
         return realm;
     }
@@ -1608,6 +1690,11 @@ public class OAuthClient {
         if (customParameters != null) {
             customParameters.remove(key);
         }
+        return this;
+    }
+
+    public OAuthClient requestHeaders(Map<String, String> headers) {
+        this.requestHeaders = headers;
         return this;
     }
 

@@ -26,6 +26,7 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.TokenVerifier;
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -73,6 +74,7 @@ import org.keycloak.testsuite.pages.PageUtils;
 import org.keycloak.testsuite.pages.ProceedPage;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.updaters.Creator;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GreenMailRule;
@@ -118,6 +120,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.Assert.assertNames;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -718,7 +721,7 @@ public class UserTest extends AbstractAdminTest {
 
         createUser(user);
 
-        List<UserRepresentation> users = realm.users().search("wit", null, null);
+        List<UserRepresentation> users = realm.users().search("*wit*", null, null);
         assertEquals(1, users.size());
     }
 
@@ -920,25 +923,131 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    public void search() {
-        createUsers();
+    public void infixSearch() {
+        List<String> userIds = createUsers();
 
-        List<UserRepresentation> users = realm.users().search("username1", null, null);
-        assertEquals(1, users.size());
+        // Username search
+        List<UserRepresentation> users = realm.users().search("*1*", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
 
-        users = realm.users().search("first1", null, null);
-        assertEquals(1, users.size());
+        users = realm.users().search("*y*", null, null);
+        assertThat(users.size(), is(0));
 
-        users = realm.users().search("last", null, null);
-        assertEquals(9, users.size());
+        users = realm.users().search("*name*", null, null);
+        assertThat(users, hasSize(9));
+
+        users = realm.users().search("**", null, null);
+        assertThat(users, hasSize(9));
+
+        // First/Last name search
+        users = realm.users().search("*first1*", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+
+        users = realm.users().search("*last*", null, null);
+        assertThat(users, hasSize(9));
+
+        // Email search
+        users = realm.users().search("*@localhost*", null, null);
+        assertThat(users, hasSize(9));
+
+        users = realm.users().search("*1@local*", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
     }
 
     @Test
-    public void count() {
+    public void prefixSearch() {
+        List<String> userIds = createUsers();
+
+        // Username search
+        List<UserRepresentation> users = realm.users().search("user", null, null);
+        assertThat(users, hasSize(9));
+
+        users = realm.users().search("user*", null, null);
+        assertThat(users, hasSize(9));
+
+        users = realm.users().search("name", null, null);
+        assertThat(users, hasSize(0));
+
+        users = realm.users().search("name*", null, null);
+        assertThat(users, hasSize(0));
+
+        users = realm.users().search("username1", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+
+        users = realm.users().search("username1*", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+
+        users = realm.users().search(null, null, null);
+        assertThat(users, hasSize(9));
+
+        users = realm.users().search("", null, null);
+        assertThat(users, hasSize(9));
+
+        users = realm.users().search("*", null, null);
+        assertThat(users, hasSize(9));
+
+        // First/Last name search
+        users = realm.users().search("first1", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+
+        users = realm.users().search("first1*", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+
+        users = realm.users().search("last", null, null);
+        assertThat(users, hasSize(9));
+
+        users = realm.users().search("last*", null, null);
+        assertThat(users, hasSize(9));
+
+        // Email search
+        users = realm.users().search("user1@local", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+
+        users = realm.users().search("user1@local*", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+    }
+
+    @Test
+    public void circumfixSearchNotSupported() {
         createUsers();
 
-        Integer count = realm.users().count();
-        assertEquals(9, count.intValue());
+        List<UserRepresentation> users = realm.users().search("u*name", null, null);
+        assertThat(users, hasSize(0));
+    }
+
+    @Test
+    public void exactSearch() {
+        List<String> userIds = createUsers();
+
+        // Username search
+        List<UserRepresentation> users = realm.users().search("\"username1\"", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+
+        users = realm.users().search("\"user\"", null, null);
+        assertThat(users, hasSize(0));
+
+        users = realm.users().search("\"\"", null, null);
+        assertThat(users, hasSize(0));
+
+        // First/Last name search
+        users = realm.users().search("\"first1\"", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+
+        // Email search
+        users = realm.users().search("\"user1@localhost\"", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
     }
 
     @Test
@@ -2645,5 +2754,43 @@ public class UserTest extends AbstractAdminTest {
         // Set ID to the original rep
         group.setId(groupId);
         return group;
+    }
+
+    @Test
+    public void failCreateUserUsingRegularUser() throws Exception {
+        String regularUserId = ApiUtil.getCreatedId(
+                testRealm().users().create(UserBuilder.create().username("regular-user").password("password").build()));
+        UserResource regularUser = testRealm().users().get(regularUserId);
+        UserRepresentation regularUserRep = regularUser.toRepresentation();
+
+        try (Keycloak adminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
+                TEST, regularUserRep.getUsername(), "password", Constants.ADMIN_CLI_CLIENT_ID, null)) {
+            UserRepresentation invalidUser = UserBuilder.create().username("do-not-create-me").build();
+
+            Response response = adminClient.realm(TEST).users().create(invalidUser);
+            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
+
+            invalidUser.setGroups(Collections.emptyList());
+            response = adminClient.realm(TEST).users().create(invalidUser);
+
+            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
+    public void testCreateUserDoNotGrantRole() {
+        testRealm().roles().create(RoleBuilder.create().name("realm-role").build());
+
+        try {
+            UserRepresentation userRep = UserBuilder.create().username("alice").password("password").addRoles("realm-role")
+                    .build();
+            String userId = ApiUtil.getCreatedId(testRealm().users().create(userRep));
+            UserResource user = testRealm().users().get(userId);
+            List<RoleRepresentation> realmMappings = user.roles().getAll().getRealmMappings();
+
+            assertFalse(realmMappings.stream().map(RoleRepresentation::getName).anyMatch("realm-role"::equals));
+        } finally {
+            testRealm().roles().get("realm-role").remove();
+        }
     }
 }

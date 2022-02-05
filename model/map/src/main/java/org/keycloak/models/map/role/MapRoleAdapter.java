@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.jboss.logging.Logger;
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
@@ -65,21 +66,23 @@ public class MapRoleAdapter extends AbstractRoleModel<MapRoleEntity> implements 
 
     @Override
     public boolean isComposite() {
-        return ! entity.getCompositeRoles().isEmpty();
+        return ! (entity.getCompositeRoles() == null || entity.getCompositeRoles().isEmpty());
     }
 
     @Override
     public Stream<RoleModel> getCompositesStream() {
-        LOG.tracef("%% %s(%s).getCompositesStream():%d - %s", entity.getName(), entity.getId(), entity.getCompositeRoles().size(), getShortStackTrace());
-        return entity.getCompositeRoles().stream()
+        Set<String> compositeRoles = entity.getCompositeRoles() == null ? Collections.emptySet() : entity.getCompositeRoles();
+        LOG.tracef("%% %s(%s).getCompositesStream():%d - %s", entity.getName(), entity.getId(), compositeRoles.size(), getShortStackTrace());
+        return compositeRoles.stream()
                 .map(uuid -> session.roles().getRoleById(realm, uuid))
                 .filter(Objects::nonNull);
     }
 
     @Override
     public Stream<RoleModel> getCompositesStream(String search, Integer first, Integer max) {
-        LOG.tracef("%% (%s).getCompositesStream(%s, %d, %d):%d - %s", this, search, first, max, entity.getCompositeRoles().size(), getShortStackTrace());
-        return session.roles().getRolesStream(realm, entity.getCompositeRoles().stream(), search, first, max);
+        Set<String> compositeRoles = entity.getCompositeRoles() == null ? Collections.emptySet() : entity.getCompositeRoles();
+        LOG.tracef("%% (%s).getCompositesStream(%s, %d, %d):%d - %s", this, search, first, max, compositeRoles.size(), getShortStackTrace());
+        return session.roles().getRolesStream(realm, compositeRoles.stream(), search, first, max);
     }
 
     @Override
@@ -96,7 +99,8 @@ public class MapRoleAdapter extends AbstractRoleModel<MapRoleEntity> implements 
 
     @Override
     public boolean isClientRole() {
-        return entity.isClientRole();
+        final Boolean clientRole = entity.isClientRole();
+        return clientRole == null ? false : clientRole;
     }
 
     @Override
@@ -126,7 +130,8 @@ public class MapRoleAdapter extends AbstractRoleModel<MapRoleEntity> implements 
 
     @Override
     public Map<String, List<String>> getAttributes() {
-        return entity.getAttributes();
+        Map<String, List<String>> attributes = entity.getAttributes();
+        return attributes == null ? Collections.emptyMap() : attributes;
     }
 
     @Override

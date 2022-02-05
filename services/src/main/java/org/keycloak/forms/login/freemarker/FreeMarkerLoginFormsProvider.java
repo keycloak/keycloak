@@ -19,6 +19,7 @@ package org.keycloak.forms.login.freemarker;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticator;
 import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
 import org.keycloak.authentication.requiredactions.util.UserUpdateProfileContext;
@@ -45,13 +46,14 @@ import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.forms.login.freemarker.model.VerifyProfileBean;
 import org.keycloak.forms.login.freemarker.model.X509ConfirmBean;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
@@ -69,6 +71,7 @@ import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.MediaType;
 
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -97,7 +100,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     protected String accessCode;
     protected Response.Status status;
     protected javax.ws.rs.core.MediaType contentType;
-    protected List<ClientScopeModel> clientScopesRequested;
+    protected List<AuthorizationDetails> clientScopesRequested;
     protected Map<String, String> httpResponseHeaders = new HashMap<>();
     protected URI actionUri;
     protected String execution;
@@ -534,6 +537,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     @Override
     public Response createPasswordReset() {
+        String loginHint = authenticationSession.getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
+        if (loginHint != null && !loginHint.isEmpty()) {
+            authenticationSession.setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, loginHint);
+        }
         return createResponse(LoginFormsPages.LOGIN_RESET_PASSWORD);
     }
 
@@ -549,6 +556,16 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     @Override
     public Response createRegistration() {
+        String loginHint = authenticationSession.getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
+        if (loginHint != null && !loginHint.isEmpty()) {
+            this.formData = new MultivaluedHashMap<>();
+            if(this.realm.isRegistrationEmailAsUsername()) {
+                this.formData.putSingle("email", loginHint);
+            } else {
+                this.formData.putSingle("username", loginHint);
+            }
+        }
+
         return createResponse(LoginFormsPages.REGISTER);
     }
 
@@ -750,7 +767,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     @Override
-    public LoginFormsProvider setAccessRequest(List<ClientScopeModel> clientScopesRequested) {
+    public LoginFormsProvider setAccessRequest(List<AuthorizationDetails> clientScopesRequested) {
         this.clientScopesRequested = clientScopesRequested;
         return this;
     }

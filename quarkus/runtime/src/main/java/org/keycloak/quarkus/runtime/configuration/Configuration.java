@@ -17,42 +17,60 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
+import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
+import static org.keycloak.quarkus.runtime.Environment.getProfileOrDefault;
+import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
+
 import java.util.Optional;
 import java.util.function.Function;
 
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
-import io.smallrye.config.SmallRyeConfigProviderResolver;
+
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 /**
  * The entry point for accessing the server configuration
  */
 public final class Configuration {
 
-    private static volatile SmallRyeConfig CONFIG;
+    public static final char OPTION_PART_SEPARATOR_CHAR = '-';
+    public static final String OPTION_PART_SEPARATOR = String.valueOf(OPTION_PART_SEPARATOR_CHAR);
 
-    public static synchronized SmallRyeConfig getConfig() {
-        if (CONFIG == null) {
-            CONFIG = (SmallRyeConfig) SmallRyeConfigProviderResolver.instance().getConfig();
-        }
-        return CONFIG;
+    private Configuration() {
+
     }
 
-    public static String getBuiltTimeProperty(String name) {
-        String value = KeycloakConfigSourceProvider.PERSISTED_CONFIG_SOURCE.getValue(name);
+    public static synchronized SmallRyeConfig getConfig() {
+        return (SmallRyeConfig) ConfigProviderResolver.instance().getConfig();
+    }
 
-        if (value == null) {
+    public static Optional<String> getBuildTimeProperty(String name) {
+        Optional<String> value = getRawPersistedProperty(name);
+
+        if (value.isEmpty()) {
+            value = getRawPersistedProperty(getMappedPropertyName(name));
+        }
+
+        if (value.isEmpty()) {
             String profile = Environment.getProfile();
 
             if (profile == null) {
                 profile = getConfig().getRawValue(Environment.PROFILE);
             }
 
-            value = KeycloakConfigSourceProvider.PERSISTED_CONFIG_SOURCE.getValue("%" + profile + "." + name);
+            value = getRawPersistedProperty("%" + profile + "." + name);
         }
 
         return value;
+    }
+
+    public static Optional<String> getRawPersistedProperty(String name) {
+        return Optional.ofNullable(PersistedConfigSource.getInstance().getValue(name));
     }
 
     public static String getRawValue(String propertyName) {
@@ -78,5 +96,54 @@ public final class Configuration {
                 return Boolean.parseBoolean(s);
             }
         });
+    }
+
+    public static String getMappedPropertyName(String key) {
+        PropertyMapper mapper = PropertyMappers.getMapper(key);
+
+        if (mapper == null) {
+            return key;
+        }
+
+        // we also need to make sure the target property is available when defined such as when defining alias for provider config (no spi-prefix).
+        return mapper.getTo() == null ? mapper.getFrom() : mapper.getTo();
+    }
+
+    public static Optional<String> getRuntimeProperty(String name) {
+        for (ConfigSource configSource : getConfig().getConfigSources()) {
+            if (PersistedConfigSource.NAME.equals(configSource.getName())) {
+                continue;
+            }
+
+            String value = getValue(configSource, name);
+
+            if (value == null) {
+                value = getValue(configSource, getMappedPropertyName(name));
+            }
+
+            if (value != null) {
+                return Optional.of(value);
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    public static String toEnvVarFormat(String key) {
+        return replaceNonAlphanumericByUnderscores(key).toUpperCase();
+    }
+
+    public static String toCliFormat(String key) {
+        return ARG_PREFIX + key;
+    }
+
+    private static String getValue(ConfigSource configSource, String name) {
+        String value = configSource.getValue(name);
+
+        if (value == null) {
+            value = configSource.getValue("%".concat(getProfileOrDefault("prod").concat(".").concat(name)));
+        }
+
+        return value;
     }
 }

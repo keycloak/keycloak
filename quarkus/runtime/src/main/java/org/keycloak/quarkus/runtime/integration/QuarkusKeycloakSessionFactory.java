@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
@@ -31,8 +30,6 @@ import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 
 public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionFactory {
-
-    private static final Logger logger = Logger.getLogger(QuarkusKeycloakSessionFactory.class);
 
     public static QuarkusKeycloakSessionFactory getInstance() {
         if (INSTANCE == null) {
@@ -60,15 +57,6 @@ public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionF
         this.factories = factories;
         this.preConfiguredProviders = preConfiguredProviders;
         this.reaugmented = reaugmented;
-    }
-
-    private QuarkusKeycloakSessionFactory() {
-        reaugmented = false;
-        factories = Collections.emptyMap();
-    }
-
-    @Override
-    public void init() {
         serverStartupTimestamp = System.currentTimeMillis();
         spis = factories.keySet();
 
@@ -88,7 +76,15 @@ public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionF
                 }
             }
         }
+    }
 
+    private QuarkusKeycloakSessionFactory() {
+        reaugmented = false;
+        factories = Collections.emptyMap();
+    }
+
+    @Override
+    public void init() {
         // Component factory must be initialized first, so that postInit in other factories can use component factories
         updateComponentFactoryProviderFactory();
         if (componentFactoryPF != null) {

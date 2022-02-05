@@ -17,22 +17,27 @@
 
 package org.keycloak.quarkus.runtime;
 
-import static org.keycloak.quarkus.runtime.Environment.isDevMode;
-import static org.keycloak.quarkus.runtime.cli.Picocli.error;
-import static org.keycloak.quarkus.runtime.cli.Picocli.parseAndRun;
+import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
 import static org.keycloak.quarkus.runtime.Environment.getProfileOrDefault;
+import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
+import static org.keycloak.quarkus.runtime.cli.Picocli.parseAndRun;
+import static org.keycloak.quarkus.runtime.cli.command.Start.isDevProfileNotAllowed;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.enterprise.context.ApplicationScoped;
+
 import io.quarkus.runtime.ApplicationLifecycleManager;
 import io.quarkus.runtime.Quarkus;
 
 import org.jboss.logging.Logger;
+import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.common.Version;
+import org.keycloak.quarkus.runtime.cli.command.Start;
 
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
@@ -41,18 +46,31 @@ import io.quarkus.runtime.annotations.QuarkusMain;
  * <p>The main entry point, responsible for initialize and run the CLI as well as start the server.
  */
 @QuarkusMain(name = "keycloak")
+@ApplicationScoped
 public class KeycloakMain implements QuarkusApplication {
 
     private static final Logger LOGGER = Logger.getLogger(KeycloakMain.class);
 
     public static void main(String[] args) {
         System.setProperty("kc.version", Version.VERSION_KEYCLOAK);
-        List<String> cliArgs = new ArrayList<>(Arrays.asList(args));
-        System.setProperty(Environment.CLI_ARGS, Picocli.parseConfigArgs(cliArgs));
+        List<String> cliArgs = Picocli.parseArgs(args);
 
         if (cliArgs.isEmpty()) {
-            // no arguments, just start the server without running picocli
-            start(cliArgs, new PrintWriter(System.err));
+            cliArgs = new ArrayList<>(cliArgs);
+            // default to show help message
+            cliArgs.add("-h");
+        } else if (cliArgs.contains(Start.NAME) && cliArgs.size() == 1) {
+            // fast path for starting the server without bootstrapping CLI
+            ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
+            PrintWriter errStream = new PrintWriter(System.err, true);
+
+            if (isDevProfileNotAllowed(Arrays.asList(args))) {
+                errorHandler.error(errStream, Messages.devProfileNotAllowedError(Start.NAME), null);
+                return;
+            }
+
+            start(errorHandler, errStream);
+
             return;
         }
 
@@ -60,17 +78,23 @@ public class KeycloakMain implements QuarkusApplication {
         parseAndRun(cliArgs);
     }
 
-    public static void start(List<String> cliArgs, PrintWriter errorWriter) {
+    public static void start(ExecutionExceptionHandler errorHandler, PrintWriter errStream) {
         try {
-            Quarkus.run(KeycloakMain.class, (integer, cause) -> {
+            Quarkus.run(KeycloakMain.class, (exitCode, cause) -> {
                 if (cause != null) {
-                    error(cliArgs, errorWriter,
+                    errorHandler.error(errStream,
                             String.format("Failed to start server using profile (%s)", getProfileOrDefault("prod")),
                             cause.getCause());
                 }
+
+                if (Environment.isDistribution()) {
+                    // assume that it is running the distribution
+                    // as we are replacing the default exit handler, we need to force exit
+                    System.exit(exitCode);
+                }
             });
         } catch (Throwable cause) {
-            error(cliArgs, errorWriter,
+            errorHandler.error(errStream,
                     String.format("Unexpected error when starting the server using profile (%s)", getProfileOrDefault("prod")),
                     cause.getCause());
         }
@@ -81,10 +105,20 @@ public class KeycloakMain implements QuarkusApplication {
      */
     @Override
     public int run(String... args) throws Exception {
-        if (isDevMode()) {
+        if (isDevProfile()) {
             LOGGER.warnf("Running the server in dev mode. DO NOT use this configuration in production.");
         }
-        Quarkus.waitForExit();
-        return ApplicationLifecycleManager.getExitCode();
+
+        int exitCode = ApplicationLifecycleManager.getExitCode();
+
+        if (isTestLaunchMode()) {
+            // in test mode we exit immediately
+            // we should be managing this behavior more dynamically depending on the tests requirements (short/long lived)
+            Quarkus.asyncExit(exitCode);
+        } else {
+            Quarkus.waitForExit();
+        }
+
+        return exitCode;
     }
 }

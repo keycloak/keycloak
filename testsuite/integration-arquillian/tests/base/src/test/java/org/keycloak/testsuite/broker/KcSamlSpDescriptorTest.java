@@ -4,7 +4,9 @@ import com.google.common.collect.ImmutableMap;
 
 import org.apache.tools.ant.filters.StringInputStream;
 import org.junit.Test;
+import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
+import org.keycloak.broker.saml.mappers.AttributeToRoleMapper;
 import org.keycloak.broker.saml.mappers.UserAttributeMapper;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
@@ -120,4 +122,38 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
         }
     }
 
+    @Test
+    public void testAttributeConsumingServiceAttributeRoleMapperInSpMetadataWithServiceName() throws IOException, ParsingException, URISyntaxException {
+        try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
+            .setAttribute(SAMLIdentityProviderConfig.ATTRIBUTE_CONSUMING_SERVICE_INDEX, "9").setAttribute(SAMLIdentityProviderConfig.ATTRIBUTE_CONSUMING_SERVICE_NAME, "My Attribute Set")
+            .update())
+        {
+            IdentityProviderMapperRepresentation attrMapperRole = new IdentityProviderMapperRepresentation();
+            attrMapperRole.setName("attribute-mapper-someroleattribute");
+            attrMapperRole.setIdentityProviderMapper(AttributeToRoleMapper.PROVIDER_ID);
+            attrMapperRole.setConfig(ImmutableMap.<String,String>builder()
+              .put(IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.INHERIT.toString())
+              .put(AttributeToRoleMapper.ATTRIBUTE_NAME, "role_attr_name")
+              .put(AttributeToRoleMapper.ATTRIBUTE_FRIENDLY_NAME, "role_attr_friendlyname")
+              .put(ConfigConstants.ROLE, "somerole")
+              .build());
+            attrMapperRole.setIdentityProviderAlias(bc.getIDPAlias());
+
+            identityProviderResource.addMapper(attrMapperRole);
+
+            String spDescriptorString = identityProviderResource.export(null).readEntity(String.class);
+            SAMLParser parser = SAMLParser.getInstance();
+            EntityDescriptorType o = (EntityDescriptorType) parser.parse(new StringInputStream(spDescriptorString));
+            SPSSODescriptorType spDescriptor = o.getChoiceType().get(0).getDescriptors().get(0).getSpDescriptor();
+
+            assertThat(spDescriptor.getAttributeConsumingService(), not(empty()));
+            assertThat(spDescriptor.getAttributeConsumingService().get(0).getIndex(), is(9));
+            assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute(), notNullValue());
+            assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute(), not(empty()));
+            assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute().get(0).getName(), is("role_attr_name"));
+            assertThat(spDescriptor.getAttributeConsumingService().get(0).getRequestedAttribute().get(0).getFriendlyName(), is("role_attr_friendlyname"));
+            assertThat(spDescriptor.getAttributeConsumingService().get(0).getServiceName(), notNullValue());
+            assertThat(spDescriptor.getAttributeConsumingService().get(0).getServiceName().get(0).getValue(), is("My Attribute Set"));
+        }
+    }
 }

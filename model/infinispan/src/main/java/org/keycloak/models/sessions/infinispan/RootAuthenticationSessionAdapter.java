@@ -20,6 +20,7 @@ package org.keycloak.models.sessions.infinispan;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import org.infinispan.Cache;
@@ -117,6 +118,8 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
 
     @Override
     public AuthenticationSessionModel createAuthenticationSession(ClientModel client) {
+        Objects.requireNonNull(client, "client");
+
         Map<String, AuthenticationSessionEntity> authenticationSessions = entity.getAuthenticationSessions();
         if (authenticationSessions.size() >= authSessionsLimit) {
             String tabId = authenticationSessions.entrySet().stream().min(TIMESTAMP_COMPARATOR).map(Map.Entry::getKey).orElse(null);

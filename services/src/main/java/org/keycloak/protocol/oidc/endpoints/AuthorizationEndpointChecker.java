@@ -27,6 +27,7 @@ import javax.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -206,7 +207,13 @@ public class AuthorizationEndpointChecker {
     }
 
     public void checkValidScope() throws AuthorizationCheckException {
-        if (!TokenManager.isValidScope(request.getScope(), client)) {
+        boolean validScopes;
+        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+            validScopes = TokenManager.isValidScope(request.getScope(), request.getAuthorizationRequestContext(), client);
+        } else {
+            validScopes = TokenManager.isValidScope(request.getScope(), client);
+        }
+        if (!validScopes) {
             ServicesLogger.LOGGER.invalidParameter(OIDCLoginProtocol.SCOPE_PARAM);
             event.error(Errors.INVALID_REQUEST);
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_SCOPE, "Invalid scopes: " + request.getScope());
@@ -237,7 +244,7 @@ public class AuthorizationEndpointChecker {
         // PKCE not adopted to OAuth2 Implicit Grant and OIDC Implicit Flow,
         // adopted to OAuth2 Authorization Code Grant and OIDC Authorization Code Flow, Hybrid Flow
         // Namely, flows using authorization code.
-        if (parsedResponseType.isImplicitFlow()) return;
+        if (parsedResponseType != null && parsedResponseType.isImplicitFlow()) return;
 
         String pkceCodeChallengeMethod = OIDCAdvancedConfigWrapper.fromClientModel(client).getPkceCodeChallengeMethod();
 

@@ -250,7 +250,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
 
            { this.isDeleteAccountAllowed && 
             <div id="delete-account" style={{marginTop:"30px"}}>
-             <Expandable toggleText="Delete Account">
+              <Expandable toggleText={Msg.localize('deleteAccount')}>
                  <Grid gutter={"sm"}>
                         <GridItem span={6}>
                              <p>

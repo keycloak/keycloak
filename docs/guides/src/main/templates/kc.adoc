@@ -1,0 +1,20 @@
+<#macro build rootParameters="" parameters="">
+[source,bash]
+----
+bin/kc.[sh|bat]<#if rootParameters?has_content> ${rootParameters}</#if> build<#if parameters?has_content> ${parameters}</#if>
+----
+</#macro>
+
+<#macro start rootParameters="" parameters="">
+[source,bash]
+----
+bin/kc.[sh|bat]<#if rootParameters?has_content> ${rootParameters}</#if> start<#if parameters?has_content> ${parameters}</#if>
+----
+</#macro>
+
+<#macro startdev parameters>
+[source,bash]
+----
+bin/kc.[sh|bat] start-dev ${parameters}
+----
+</#macro>

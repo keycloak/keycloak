@@ -1,0 +1,64 @@
+---
+categories: [Layouts]
+css-extra: false
+layout: cards
+resource: true
+cardview: true
+title: Pagination - Card View
+full-page: true
+url-js-extra: ['https://cdnjs.cloudflare.com/ajax/libs/jquery.matchHeight/0.7.2/jquery.matchHeight-min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/js/bootstrap-select.min.js']
+weight: 8
+---
+{% include widgets/layouts/navbar-primary.html %}
+{% include widgets/layouts/toolbar.html %}
+<div class="container-fluid container-cards-pf">
+  <div class="row row-cards-pf">
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+      {% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-multi-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+      {% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-multi-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+      {% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-multi-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+      {% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-multi-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+      {% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-multi-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+      {% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-multi-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+      {% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-multi-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+      {% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-multi-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+      {% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-multi-select" %}
+    </div>
+    <div class="col-xs-12 col-sm-4 col-md-3 col-lg-2">
+      {% include widgets/cards/object-status.html class1="card-pf-view-select card-pf-view-multi-select" %}
+    </div>
+  </div>
+  {% include widgets/pagination/pagination.html class1="card-view-pf-pagination" pagesize=10  %}
+</div>
+<script>
+  $(function() {
+    // matchHeight the contents of each .card-pf and then the .card-pf itself
+    $(".row-cards-pf > [class*='col'] > .card-pf > .card-pf-body").matchHeight();
+  });
+  $(document).ready(function() {
+    // Card Multi Select
+    $('input[type=checkbox]').click(function() {
+      if ($(this).parent().parent().hasClass('active'))
+      { $(this).parent().parent().removeClass('active'); }
+      else
+      { $(this).parent().parent().addClass('active'); }
+    });
+  });
+</script>

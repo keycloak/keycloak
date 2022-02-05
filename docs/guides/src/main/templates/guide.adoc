@@ -1,0 +1,19 @@
+<#import "/templates/options.adoc" as opts>
+
+<#macro guide title summary priority=999 includedOptions="">
+:guide-id: ${id}
+:guide-title: ${title}
+:guide-summary: ${summary}
+:guide-priority: ${priority}
+
+[[${id}]]
+= ${title}
+
+<#nested>
+
+<#if includedOptions?has_content>
+== Relevant options
+
+<@opts.list options=ctx.options.getOptions(includedOptions)></@opts.list>
+</#if>
+</#macro>

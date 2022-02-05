@@ -45,7 +45,6 @@ import javax.transaction.Transaction;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.quarkus.runtime.Quarkus;
 
-import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.internal.SessionFactoryImpl;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
@@ -66,6 +65,7 @@ import org.keycloak.models.dblock.DBLockManager;
 import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ServicesLogger;
@@ -82,7 +82,7 @@ public final class QuarkusJpaConnectionProviderFactory implements JpaConnectionP
 
     public static final String QUERY_PROPERTY_PREFIX = "kc.query.";
     private static final Logger logger = Logger.getLogger(QuarkusJpaConnectionProviderFactory.class);
-    private static final String SQL_GET_LATEST_VERSION = "SELECT VERSION FROM %sMIGRATION_MODEL";
+    private static final String SQL_GET_LATEST_VERSION = "SELECT VERSION FROM %sMIGRATION_MODEL ORDER BY UPDATE_TIME DESC";
 
     enum MigrationStrategy {
         UPDATE, VALIDATE, MANUAL
@@ -117,7 +117,6 @@ public final class QuarkusJpaConnectionProviderFactory implements JpaConnectionP
     }
 
     private void addSpecificNamedQueries(KeycloakSession session, Connection connection) {
-        SessionFactoryImplementor sfi = emf.unwrap(SessionFactoryImplementor.class);
         EntityManager em = createEntityManager(session);
 
         try {
@@ -177,7 +176,7 @@ public final class QuarkusJpaConnectionProviderFactory implements JpaConnectionP
 
     @Override
     public String getSchema() {
-        return config.get("schema");
+        return Configuration.getRawValue("kc.db-schema");
     }
 
     @Override

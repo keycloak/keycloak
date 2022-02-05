@@ -29,6 +29,16 @@
                 </div>
             </div>
         </div>
+        <div class="col-md-6" data-ng-if="option.type == 'Group'">
+            <div class="row">
+                <div class="col-md-8">
+                    <input class="form-control" type="text" data-ng-model="config[ option.name ]" >
+                </div>
+                <div class="col-md-2">
+                    <button type="button" data-ng-click="openGroupSelector(option.name, config)" class="btn btn-default" tooltip-placement="top" tooltip-trigger="mouseover mouseout" tooltip="{{:: 'selectGroup.tooltip' | translate}}">{{:: 'selectGroup.label' | translate}}</button>
+                </div>
+            </div>
+        </div>
         <div class="col-md-4" data-ng-if="option.type == 'ClientList'">
             <input type="hidden" ui-select2="clientsUiSelect" id="clients" data-ng-init="initSelectedClient(option.name, config)" data-ng-model="selectedClient" data-ng-change="changeClient(option.name, config, selectedClient, false);" data-placeholder="{{:: 'selectOne' | translate}}...">
             </input>

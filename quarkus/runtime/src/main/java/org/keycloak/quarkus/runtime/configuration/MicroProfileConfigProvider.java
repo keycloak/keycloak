@@ -17,17 +17,25 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
+import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.toEnvVarFormat;
+
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.microprofile.config.ConfigProvider;
 
 import org.keycloak.Config;
+import org.keycloak.quarkus.runtime.cli.Picocli;
 
 public class MicroProfileConfigProvider implements Config.ConfigProvider {
 
     public static final String NS_KEYCLOAK = "kc";
     public static final String NS_KEYCLOAK_PREFIX = NS_KEYCLOAK + ".";
     public static final String NS_QUARKUS = "quarkus";
-    public static final String NS_QUARKUS_PREFIX = NS_QUARKUS + ".";
+    public static final String NS_QUARKUS_PREFIX = "quarkus" + ".";
 
     private final org.eclipse.microprofile.config.Config config;
 
@@ -56,7 +64,7 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
 
         public MicroProfileScope(String... scope) {
             this.scope = scope;
-            this.prefix = String.join(".", ArrayUtils.insert(0, scope, NS_KEYCLOAK, "spi"));
+            this.prefix = NS_KEYCLOAK_PREFIX + String.join(OPTION_PART_SEPARATOR, ArrayUtils.insert(0, scope, "spi"));
         }
 
         @Override
@@ -109,8 +117,20 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
             return new MicroProfileScope(ArrayUtils.addAll(this.scope, scope));
         }
 
+        @Override
+        public Set<String> getPropertyNames() {
+            return StreamSupport.stream(config.getPropertyNames().spliterator(), false)
+                    .filter(new Predicate<String>() {
+                        @Override
+                        public boolean test(String key) {
+                            return key.startsWith(prefix) || key.startsWith(toEnvVarFormat(prefix));
+                        }
+                    })
+                    .collect(Collectors.toSet());
+        }
+
         private <T> T getValue(String key, Class<T> clazz, T defaultValue) {
-            return config.getOptionalValue(toDashCase(prefix.concat(".").concat(key)), clazz).orElse(defaultValue);
+            return config.getOptionalValue(toDashCase(prefix.concat(OPTION_PART_SEPARATOR).concat(key)), clazz).orElse(defaultValue);
         }
     }
 

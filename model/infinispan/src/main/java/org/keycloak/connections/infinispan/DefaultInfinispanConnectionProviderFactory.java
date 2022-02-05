@@ -52,12 +52,12 @@ import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 
-import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory.REALM_CLEAR_CACHE_EVENTS;
-import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory.REALM_INVALIDATION_EVENTS;
 import static org.keycloak.connections.infinispan.InfinispanUtil.configureTransport;
 import static org.keycloak.connections.infinispan.InfinispanUtil.createCacheConfigurationBuilder;
 import static org.keycloak.connections.infinispan.InfinispanUtil.getActionTokenCacheConfig;
 import static org.keycloak.connections.infinispan.InfinispanUtil.setTimeServiceToKeycloakTime;
+import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory.REALM_CLEAR_CACHE_EVENTS;
+import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory.REALM_INVALIDATION_EVENTS;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -85,13 +85,21 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     @Override
     public void close() {
-        if (cacheManager != null && !containerManaged) {
-            cacheManager.stop();
+        /*
+            workaround for Infinispan 12.1.7.Final to prevent a deadlock while
+            DefaultInfinispanConnectionProviderFactory is shutting down PersistenceManagerImpl
+            that acquires a writeLock and this removal that acquires a readLock.
+            https://issues.redhat.com/browse/ISPN-13664
+        */
+        synchronized (DefaultInfinispanConnectionProviderFactory.class) {
+            if (cacheManager != null && !containerManaged) {
+                cacheManager.stop();
+            }
+            if (remoteCacheProvider != null) {
+                remoteCacheProvider.stop();
+            }
+            cacheManager = null;
         }
-        if (remoteCacheProvider != null) {
-            remoteCacheProvider.stop();
-        }
-        cacheManager = null;
     }
 
     @Override
@@ -384,6 +392,10 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         String jdgServer = config.get("remoteStoreHost", "localhost");
         Integer jdgPort = config.getInt("remoteStorePort", 11222);
 
+        // After upgrade to Infinispan 12.1.7.Final it's required that both remote store and embedded cache use
+        // the same key media type to allow segmentation. Also, the number of segments in an embedded cache needs to match number of segments in the remote store.
+        boolean segmented = config.getBoolean("segmented", false);
+
         builder.persistence()
                 .passivation(false)
                 .addStore(RemoteStoreConfigurationBuilder.class)
@@ -393,6 +405,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                 .preload(false)
                 .shared(true)
                 .remoteCacheName(cacheName)
+                .segmented(segmented)
                 .rawValues(true)
                 .forceReturnValues(false)
                 .marshaller(KeycloakHotRodMarshallerFactory.class.getName())
@@ -408,6 +421,10 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         String jdgServer = config.get("remoteStoreHost", "localhost");
         Integer jdgPort = config.getInt("remoteStorePort", 11222);
 
+        // After upgrade to Infinispan 12.1.7.Final it's required that both remote store and embedded cache use
+        // the same key media type to allow segmentation. Also, the number of segments in an embedded cache needs to match number of segments in the remote store.
+        boolean segmented = config.getBoolean("segmented", false);
+
         builder.persistence()
                 .passivation(false)
                 .addStore(RemoteStoreConfigurationBuilder.class)
@@ -417,6 +434,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     .preload(true)
                     .shared(true)
                     .remoteCacheName(InfinispanConnectionProvider.ACTION_TOKEN_CACHE)
+                    .segmented(segmented)
                     .rawValues(true)
                     .forceReturnValues(false)
                     .marshaller(KeycloakHotRodMarshallerFactory.class.getName())

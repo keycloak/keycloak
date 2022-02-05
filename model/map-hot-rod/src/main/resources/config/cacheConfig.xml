@@ -1,0 +1,24 @@
+<!-- Used for configuration of remote caches on the Infinispan server if the configureRemoteCaches option is set to true
+ in DefaultHotRodConnectionProviderFactory configuration. -->
+<infinispan>
+    <cache-container>
+       <!-- Specify all remote caches that should be created on the Infinispan server. -->
+        <distributed-cache name="clients" mode="SYNC">
+            <indexing>
+                <indexed-entities>
+                    <indexed-entity>kc.HotRodClientEntity</indexed-entity>
+                    <indexed-entity>kc.HotRodAttributeEntity</indexed-entity>
+                </indexed-entities>
+            </indexing>
+            <encoding media-type="application/x-protostream"/>
+        </distributed-cache>
+        <distributed-cache name="groups" mode="SYNC">
+            <indexing>
+                <indexed-entities>
+                    <indexed-entity>kc.HotRodGroupEntity</indexed-entity>
+                </indexed-entities>
+            </indexing>
+            <encoding media-type="application/x-protostream"/>
+        </distributed-cache>
+    </cache-container>
+</infinispan>

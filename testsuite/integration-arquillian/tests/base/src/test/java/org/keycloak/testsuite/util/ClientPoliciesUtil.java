@@ -331,7 +331,7 @@ public final class ClientPoliciesUtil {
     public static ClientScopesCondition.Configuration createClientScopesConditionConfig(String type, List<String> scopes) {
         ClientScopesCondition.Configuration config = new ClientScopesCondition.Configuration();
         config.setType(type);
-        config.setScope(scopes);
+        config.setScopes(scopes);
         return config;
     }
 

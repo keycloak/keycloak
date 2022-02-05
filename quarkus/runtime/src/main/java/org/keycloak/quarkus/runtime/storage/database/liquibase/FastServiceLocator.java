@@ -79,6 +79,15 @@ public class FastServiceLocator extends ServiceLocator {
         getPackages().remove("liquibase.parser.core.json");
         getPackages().remove("liquibase.serializer.core.json");
 
+        // register only the implementations related to the chosen db
+        for (String databaseImpl : services.get(Database.class.getName())) {
+            try {
+                register((Database) getClass().getClassLoader().loadClass(databaseImpl).getDeclaredConstructor().newInstance());
+            } catch (Exception cause) {
+                throw new RuntimeException("Failed to load database implementation", cause);
+            }
+        }
+
         this.services = services;
     }
 

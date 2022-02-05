@@ -1,0 +1,39 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Configuring Keycloak for production"
+summary="Learn how to make Keycloak ready for production."
+includedOptions="">
+
+Keycloak is used in various production environments, from on-premise deployments spanning only a few thousand users to deployments serving millions of users with secure authentication and authorization.
+
+This guide walks you through the general aspects of setting up a production ready Keycloak environment. It focusses on the main concepts and aspects instead of the actual implementation, which depends on your actual environment, be it containerized, on-premise, GitOps or Ansible. The key aspects covered in this guide apply to all of these environments.
+
+== Enabling TLS
+Keycloak exchanges sensitive data all the time, so all communication from and to Keycloak needs to be done through a secure communication channel. For that, you must enable HTTP over TLS, or HTTPS, to prevent several attack vectors.
+
+The <@links.server id="enabletls"/> and <@links.server id="outgoinghttp"/> guides will show you the appropriate configuration to set up secure communication channels for Keycloak.
+
+== Setting the hostname for Keycloak
+Keycloak instances in production usually run in a private network, but Keycloak needs to expose different public facing endpoints to communicate with applications that will be secured.
+
+Learn in the <@links.server id="hostname"/> guide what the different endpoint categories are and how to configure the public hostname for them, depending on your specific environment.
+
+== Configure a reverse proxy
+Apart from <<Setting the hostname for Keycloak>>, production environments usually use a reverse proxy / load balancer component to separate and unify access to the companies network. Using such a component is recommended for Keycloak production deployments.
+
+In the <@links.server id="reverseproxy"/> guide you can find the available proxy communication modes in Keycloak and how to configure them. There's also a recommendation which paths should not be exposed to the public at all, and which paths need to be exposed for Keycloak to be able to secure your applications.
+
+== Configure a production grade database
+The database used by Keycloak is crucial for the overall performance, availability, reliability and integrity of Keycloak. In the <@links.server id="db"/> guide you can find the supported database vendors and how to configure Keycloak to use them.
+
+== Run Keycloak in a cluster
+You'd not want every login to fail when your Keycloak instance goes down, so typical production deployments consist of two or more Keycloak instances.
+
+Keycloak uses JGroups and Infinispan under the covers to provide a reliable, HA-ready stack to run in a clustered scenario. When deployed to a cluster the embedded Infinispan server communication should be secured. Either by enabling authentication and encryption, or through isolating the network used for cluster communication.
+
+To find out more about using multiple nodes, the different caches and the right stack for your environment, see the <@links.server id="caching"/> guide.
+
+</@tmpl.guide>

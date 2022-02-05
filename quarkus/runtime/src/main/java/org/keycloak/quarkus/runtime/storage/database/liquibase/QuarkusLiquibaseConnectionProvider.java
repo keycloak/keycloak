@@ -29,9 +29,6 @@ import org.keycloak.Config;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.updater.liquibase.MySQL8VarcharType;
-import org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase;
-import org.keycloak.connections.jpa.updater.liquibase.UpdatedMariaDBDatabase;
-import org.keycloak.connections.jpa.updater.liquibase.UpdatedMySqlDatabase;
 import org.keycloak.connections.jpa.updater.liquibase.conn.CustomChangeLogHistoryService;
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProviderFactory;
@@ -79,11 +76,6 @@ public class QuarkusLiquibaseConnectionProvider implements LiquibaseConnectionPr
         JpaConnectionProviderFactory jpaConnectionProvider = (JpaConnectionProviderFactory) session
                 .getKeycloakSessionFactory().getProviderFactory(JpaConnectionProvider.class);
 
-        // register our custom databases
-        locator.register(new PostgresPlusDatabase());
-        locator.register(new UpdatedMySqlDatabase());
-        locator.register(new UpdatedMariaDBDatabase());
-        
         // registers only the database we are using
         try (Connection connection = jpaConnectionProvider.getConnection()) {
             Database database = DatabaseFactory.getInstance()

@@ -1,3 +1,10 @@
+/* Patternfly CSS places a "bg-login.jpg" as the background on this ".login-pf" class.
+   This clashes with the "keycloak-bg.png' background defined on the body below.
+   Therefore the Patternfly background must be set to none. */
+.login-pf {
+    background: none;
+}
+
 .login-pf body {
     background: url("../img/keycloak-bg.png") no-repeat center center fixed;
     background-size: cover;
@@ -172,8 +179,12 @@ h1#kc-page-title {
     padding: 0;
 }
 
-#kc-locale:hover ul {
-    display: block;
+#kc-locale-dropdown{
+    display: inline-block;
+}
+
+#kc-locale-dropdown:hover ul {
+    display:block;
 }
 
 /* IE compatibility */
@@ -202,14 +213,6 @@ a#kc-current-locale-link::after {
 
 #kc-logo {
     width: 100%;
-}
-
-#kc-logo-wrapper {
-    background-image: url(../img/keycloak-logo-2.png);
-    background-repeat: no-repeat;
-    height: 63px;
-    width: 300px;
-    margin: 62px auto 0;
 }
 
 div.kc-logo-text {
@@ -257,6 +260,31 @@ div.kc-logo-text span {
 
 #kc-webauthn-settings-form {
     padding-top: 8px;
+}
+
+#kc-form-webauthn .select-auth-box-parent {
+    pointer-events: none;
+}
+
+#kc-form-webauthn .select-auth-box-desc {
+    color: var(--pf-global--palette--black-600);
+}
+
+#kc-form-webauthn .select-auth-box-headline {
+    color: var(--pf-global--Color--300);
+}
+
+#kc-form-webauthn .select-auth-box-icon {
+    flex: 0 0 3em;
+}
+
+#kc-form-webauthn .select-auth-box-icon-properties {
+    margin-top: 10px;
+    font-size: 1.8em;
+}
+
+#kc-form-webauthn .pf-l-stack__item {
+    margin: -1px 0;
 }
 
 #kc-content-wrapper {
@@ -522,14 +550,6 @@ ul#kc-totp-supported-apps {
         text-align: right;
         z-index: 9999;
     }
-
-    #kc-logo-wrapper {
-        background-size: 100px 21px;
-        height: 21px;
-        width: 100px;
-        margin: 20px 0 0 20px;
-    }
-
 }
 
 @media (min-height: 646px) {
@@ -623,6 +643,12 @@ ul#kc-totp-supported-apps {
 
 .select-auth-box-desc {
     font-size: var(--pf-global--FontSize--sm);
+}
+
+.select-auth-box-paragraph {
+    text-align: center;
+    font-size: var(--pf-global--FontSize--md);
+    margin-bottom: 5px;
 }
 
 .card-pf {

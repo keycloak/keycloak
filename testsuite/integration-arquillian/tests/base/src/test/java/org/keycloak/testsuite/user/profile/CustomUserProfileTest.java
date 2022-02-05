@@ -43,7 +43,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:joerg.matysiak@bosch.io">Jörg Matysiak</a>
  */
-@SetDefaultProvider(spi="userProfile", providerId="custom-user-profile", onlyUpdateDefault = true)
+@SetDefaultProvider(spi="userProfile", providerId="custom-user-profile", defaultProvider="declarative-user-profile", onlyUpdateDefault = true)
 public class CustomUserProfileTest extends AbstractUserProfileTest {
     
     @Test

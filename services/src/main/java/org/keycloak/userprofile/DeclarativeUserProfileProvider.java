@@ -74,6 +74,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         implements AmphibianProviderFactory<UserProfileProvider> {
 
     public static final String ID = "declarative-user-profile";
+    public static final int PROVIDER_PRIORITY = 1;
     public static final String UP_PIECES_COUNT_COMPONENT_CONFIG_KEY = "config-pieces-count";
     public static final String REALM_USER_PROFILE_ENABLED = "userProfileEnabled";
     private static final String PARSED_CONFIG_COMPONENT_KEY = "kc.user.profile.metadata";
@@ -246,6 +247,11 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     public void init(Config.Scope config) {
         super.init(config);
         isDeclarativeConfigurationEnabled = Profile.isFeatureEnabled(Profile.Feature.DECLARATIVE_USER_PROFILE);
+    }
+
+    @Override
+    public int order() {
+        return PROVIDER_PRIORITY;
     }
 
     public ComponentModel getComponentModel() {
