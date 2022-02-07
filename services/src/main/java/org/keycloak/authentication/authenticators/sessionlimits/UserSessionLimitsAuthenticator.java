@@ -27,6 +27,8 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
 
     private static Logger logger = Logger.getLogger(UserSessionLimitsAuthenticator.class);
     public static final String SESSION_LIMIT_EXCEEDED = "sessionLimitExceeded";
+    private static String realmEventDetailsTemplate = "Realm session limit exceeded. Realm: %s, Realm limit: %s. Session count: %s, User id: %s";
+    private static String clientEventDetailsTemplate = "Client session limit exceeded. Realm: %s, Client limit: %s. Session count: %s, User id: %s";
     protected KeycloakSession session;
 
     String behavior;
@@ -65,11 +67,13 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
             // First check if the user has too many sessions in this realm
             if (exceedsLimit(userSessionCountForRealm, userRealmLimit)) {
                 logger.infof("Too many session in this realm for the current user. Session count: %s", userSessionCountForRealm);
-                handleLimitExceeded(context, userSessionsForRealm.collect(Collectors.toList()));
+                String eventDetails = String.format(realmEventDetailsTemplate, context.getRealm().getName(), userRealmLimit, userSessionCountForRealm, context.getUser().getId());
+                handleLimitExceeded(context, userSessionsForRealm.collect(Collectors.toList()), eventDetails);
             } // otherwise if the user is still allowed to create a new session in the realm, check if this applies for this specific client as well.
             else if (exceedsLimit(userSessionCountForClient, userClientLimit)) {
                 logger.infof("Too many sessions related to the current client for this user. Session count: %s", userSessionCountForRealm);
-                handleLimitExceeded(context, userSessionsForClient);
+                String eventDetails = String.format(clientEventDetailsTemplate, context.getRealm().getName(), userClientLimit, userSessionCountForClient, context.getUser().getId());
+                handleLimitExceeded(context, userSessionsForClient, eventDetails);
             } else {
                 context.success();
             }
@@ -128,7 +132,7 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
 
     }
 
-    private void handleLimitExceeded(AuthenticationFlowContext context, List<UserSessionModel> userSessions) {
+    private void handleLimitExceeded(AuthenticationFlowContext context, List<UserSessionModel> userSessions, String eventDetails) {
         switch (behavior) {
             case UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION:
                 logger.info("Denying new session");
@@ -141,8 +145,9 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
                 Response challenge = context.form()
                         .setError(errorMessage)
                         .createErrorPage(Response.Status.FORBIDDEN);
-                context.failure(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR, challenge, errorMessage);
+                context.failure(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR, challenge, eventDetails, errorMessage);
                 break;
+
             case UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION:
                 logger.info("Terminating oldest session");
                 logoutOldestSession(userSessions);

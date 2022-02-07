@@ -293,6 +293,7 @@ public class AuthenticationProcessor {
         FormMessage successMessage;
         List<AuthenticationSelectionOption> authenticationSelections;
         String eventDetails;
+        String userErrorMessage;
 
         private Result(AuthenticationExecutionModel execution, Authenticator authenticator, List<AuthenticationExecutionModel> currentExecutions) {
             this.execution = execution;
@@ -393,11 +394,12 @@ public class AuthenticationProcessor {
         }
         
         @Override
-        public void failure(AuthenticationFlowError error, Response challenge, String eventDetails) {
+        public void failure(AuthenticationFlowError error, Response challenge, String eventDetails, String userErrorMessage) {
             this.error = error;
             this.status = FlowStatus.FAILED;
             this.challenge = challenge;
             this.eventDetails = eventDetails;
+            this.userErrorMessage = userErrorMessage;
         }
 
         @Override
@@ -662,6 +664,11 @@ public class AuthenticationProcessor {
         @Override
         public String getEventDetails() {
             return eventDetails;
+        }
+
+        @Override
+        public String getUserErrorMessage() {
+            return userErrorMessage;
         }
     }
 
