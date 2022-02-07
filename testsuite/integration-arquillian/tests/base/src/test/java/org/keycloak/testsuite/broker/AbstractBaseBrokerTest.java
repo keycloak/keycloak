@@ -226,6 +226,21 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         logInWithBroker(bc);
     }
 
+    // We are re-authenticating to the IDP. Hence it is assumed that "username" field is not visible on the login form on the IDP side
+    protected void logInAsUserInIDPWithReAuthenticate() {
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+
+        waitForPage(driver, "sign in to", true);
+        log.debug("Clicking social " + bc.getIDPAlias());
+        loginPage.clickSocial(bc.getIDPAlias());
+        waitForPage(driver, "sign in to", true);
+
+        // We are re-authenticating. Username field not visible
+        log.debug("Reauthenticating");
+        Assert.assertFalse(loginPage.isUsernameInputPresent());
+        loginPage.login(bc.getUserPassword());
+    }
+
     protected void logInWithBroker(BrokerConfiguration bc) {
         logInWithIdp(bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
     }

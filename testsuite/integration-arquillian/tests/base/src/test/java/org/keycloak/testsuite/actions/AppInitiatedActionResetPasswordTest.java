@@ -19,6 +19,7 @@ package org.keycloak.testsuite.actions;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
@@ -114,7 +115,8 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         doAIA();
 
         loginPage.assertCurrent();
-        loginPage.login("test-user@localhost", "password");
+        Assert.assertEquals("test-user@localhost", loginPage.getAttemptedUsername());
+        loginPage.login("password");
 
         changePasswordPage.assertCurrent();
         assertTrue(changePasswordPage.isCancelDisplayed());

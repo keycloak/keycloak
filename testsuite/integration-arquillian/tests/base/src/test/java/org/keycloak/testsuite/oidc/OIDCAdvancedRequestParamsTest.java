@@ -101,6 +101,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -222,8 +223,11 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         // Now open login form with maxAge=1
         oauth.maxAge("1");
 
-        // Assert I need to login again through the login form
-        oauth.doLogin("test-user@localhost", "password");
+        // Assert I need to login again through the login form. But username field is not present
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
+        Assert.assertThat(false, is(loginPage.isUsernameInputPresent()));
+        loginPage.login("password");
         loginEvent = events.expectLogin().assertEvent();
 
         idToken = sendTokenRequestAndGetIDToken(loginEvent);
@@ -399,9 +403,9 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         // Assert need to re-authenticate with prompt=login
         driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=login");
-
         loginPage.assertCurrent();
-        loginPage.login("test-user@localhost", "password");
+        Assert.assertThat(false, is(loginPage.isUsernameInputPresent()));
+        loginPage.login("password");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
@@ -413,31 +417,6 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         // Assert userSession didn't change
         Assert.assertEquals(oldIdToken.getSessionState(), newIdToken.getSessionState());
-    }
-
-
-    @Test
-    public void promptLoginDifferentUser() throws Exception {
-        String sss = oauth.getLoginFormUrl();
-        System.out.println(sss);
-
-        // Login user
-        loginPage.open();
-        loginPage.login("test-user@localhost", "password");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-
-        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
-        IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
-
-        // Assert need to re-authenticate with prompt=login
-        driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=login");
-
-        // Authenticate as different user
-        loginPage.assertCurrent();
-        loginPage.login("john-doh@localhost", "password");
-
-        errorPage.assertCurrent();
-        Assert.assertTrue(errorPage.getError().startsWith("You are already authenticated as different user"));
     }
 
 

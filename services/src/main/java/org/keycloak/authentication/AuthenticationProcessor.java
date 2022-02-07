@@ -105,6 +105,11 @@ public class AuthenticationProcessor {
      */
     protected ForwardedFormMessageStore forwardedSuccessMessageStore = new ForwardedFormMessageStore(ForwardedFormMessageType.SUCCESS);
 
+    /**
+     * This could be an success message forwarded from another authenticator
+     */
+    protected ForwardedFormMessageStore forwardedInfoMessageStore = new ForwardedFormMessageStore(ForwardedFormMessageType.INFO);
+
     // Used for client authentication
     protected ClientModel client;
     protected Map<String, String> clientAuthAttributes = new HashMap<>();
@@ -229,6 +234,11 @@ public class AuthenticationProcessor {
 
     public AuthenticationProcessor setForwardedSuccessMessage(FormMessage forwardedSuccessMessage) {
         this.forwardedSuccessMessageStore.setForwardedMessage(forwardedSuccessMessage);
+        return this;
+    }
+
+    public AuthenticationProcessor setForwardedInfoMessage(FormMessage forwardedInfoMessage) {
+        this.forwardedInfoMessageStore.setForwardedMessage(forwardedInfoMessage);
         return this;
     }
 
@@ -528,6 +538,9 @@ public class AuthenticationProcessor {
             } else if (getForwardedSuccessMessage() != null) {
                 provider.addSuccess(getForwardedSuccessMessage());
                 forwardedSuccessMessageStore.removeForwardedMessage();
+            } else if (getForwardedInfoMessage() != null) {
+                provider.setInfo(getForwardedInfoMessage().getMessage(), getForwardedInfoMessage().getParameters());
+                forwardedInfoMessageStore.removeForwardedMessage();
             }
             return provider;
         }
@@ -640,6 +653,16 @@ public class AuthenticationProcessor {
         @Override
         public FormMessage getForwardedSuccessMessage() {
             return AuthenticationProcessor.this.forwardedSuccessMessageStore.getForwardedMessage();
+        }
+
+        @Override
+        public void setForwardedInfoMessage(String message, Object... parameters) {
+            AuthenticationProcessor.this.setForwardedInfoMessage(new FormMessage(message, parameters));
+        }
+
+        @Override
+        public FormMessage getForwardedInfoMessage() {
+            return AuthenticationProcessor.this.forwardedInfoMessageStore.getForwardedMessage();
         }
 
         public FormMessage getErrorMessage() {
@@ -1139,7 +1162,7 @@ public class AuthenticationProcessor {
     }
 
     private enum ForwardedFormMessageType {
-        SUCCESS("fwMessageSuccess"), ERROR("fwMessageError");
+        SUCCESS("fwMessageSuccess"), ERROR("fwMessageError"), INFO("fwMessageInfo");
 
         private final String key;
 
