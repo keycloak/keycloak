@@ -114,7 +114,7 @@
         <xmlsec.version>2.2.3</xmlsec.version>
         <glassfish.json.version>1.1.6</glassfish.json.version>
         <wildfly.common.version>1.5.4.Final</wildfly.common.version>
-        <ua-parser.version>1.4.3</ua-parser.version>
+        <ua-parser.version>1.5.2</ua-parser.version>
         <picketbox.version>5.0.3.Final-redhat-00007</picketbox.version>
         <google.guava.version>30.1-jre</google.guava.version>
 
