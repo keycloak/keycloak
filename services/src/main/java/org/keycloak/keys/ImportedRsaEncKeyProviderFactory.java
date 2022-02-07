@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,32 +18,29 @@
 package org.keycloak.keys;
 
 import org.keycloak.component.ComponentModel;
-import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
+import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.List;
 
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * @author <a href="mailto:f.b.rissi@gmail.com">Filipe Bojikian Rissi</a>
  */
-public class ImportedRsaKeyProviderFactory extends AbstractImportedRsaKeyProviderFactory {
+public class ImportedRsaEncKeyProviderFactory extends AbstractImportedRsaKeyProviderFactory {
 
-    public static final String ID = "rsa";
+    public static final String ID = "rsa-enc";
 
-    private static final String HELP_TEXT = "RSA signature key provider that can optionally generated a self-signed certificate";
+    private static final String HELP_TEXT = "RSA for key encryption provider that can optionally generated a self-signed certificate";
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = AbstractImportedRsaKeyProviderFactory.rsaKeyConfigurationBuilder()
-            .property(Attributes.RS_ALGORITHM_PROPERTY)
+            .property(Attributes.RS_ENC_ALGORITHM_PROPERTY)
             .build();
 
     @Override
     public KeyProvider create(KeycloakSession session, ComponentModel model) {
-        if (model.getConfig().get(Attributes.KEY_USE) == null) {
-            // for backward compatibility : it allows "enc" key use for "rsa" provider
-            model.put(Attributes.KEY_USE, KeyUse.SIG.name());
-        }
+        model.put(Attributes.KEY_USE, KeyUse.ENC.name());
         return new ImportedRsaKeyProvider(session.getContext().getRealm(), model);
     }
 
@@ -59,17 +56,14 @@ public class ImportedRsaKeyProviderFactory extends AbstractImportedRsaKeyProvide
 
     @Override
     protected boolean isValidKeyUse(KeyUse keyUse) {
-        return keyUse.equals(KeyUse.SIG);
+        return keyUse.equals(KeyUse.ENC);
     }
 
     @Override
     protected boolean isSupportedRsaAlgorithm(String algorithm) {
-        return algorithm.equals(Algorithm.RS256)
-                || algorithm.equals(Algorithm.PS256)
-                || algorithm.equals(Algorithm.RS384)
-                || algorithm.equals(Algorithm.PS384)
-                || algorithm.equals(Algorithm.RS512)
-                || algorithm.equals(Algorithm.PS512);
+        return algorithm.equals(JWEConstants.RSA1_5)
+                || algorithm.equals(JWEConstants.RSA_OAEP)
+                || algorithm.equals(JWEConstants.RSA_OAEP_256);
     }
 
     @Override
