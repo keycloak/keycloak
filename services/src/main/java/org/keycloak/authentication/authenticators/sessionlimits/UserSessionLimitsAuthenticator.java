@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.ws.rs.core.Response;
 import org.keycloak.events.Errors;
 import org.keycloak.models.RealmModel;
@@ -50,8 +49,8 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
         if (context.getRealm() != null && context.getUser() != null) {
 
             // Get the session count in this realm for this specific user
-            Stream<UserSessionModel> userSessionsForRealm = session.sessions().getUserSessionsStream(context.getRealm(), context.getUser());
-            long userSessionCountForRealm = userSessionsForRealm.count();
+            List<UserSessionModel> userSessionsForRealm = session.sessions().getUserSessionsStream(context.getRealm(), context.getUser()).collect(Collectors.toList());
+            int userSessionCountForRealm = userSessionsForRealm.size();
 
             // Get the session count related to the current client for this user
             ClientModel currentClient = context.getAuthenticationSession().getClient();
@@ -68,7 +67,7 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
             if (exceedsLimit(userSessionCountForRealm, userRealmLimit)) {
                 logger.infof("Too many session in this realm for the current user. Session count: %s", userSessionCountForRealm);
                 String eventDetails = String.format(realmEventDetailsTemplate, context.getRealm().getName(), userRealmLimit, userSessionCountForRealm, context.getUser().getId());
-                handleLimitExceeded(context, userSessionsForRealm.collect(Collectors.toList()), eventDetails);
+                handleLimitExceeded(context, userSessionsForRealm, eventDetails);
             } // otherwise if the user is still allowed to create a new session in the realm, check if this applies for this specific client as well.
             else if (exceedsLimit(userSessionCountForClient, userClientLimit)) {
                 logger.infof("Too many sessions related to the current client for this user. Session count: %s", userSessionCountForRealm);
@@ -97,13 +96,13 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
         return Integer.parseInt(value);
     }
 
-    private List<UserSessionModel> getUserSessionsForClientIfEnabled(Stream<UserSessionModel> userSessionsForRealm, ClientModel currentClient, int userClientLimit) {
+    private List<UserSessionModel> getUserSessionsForClientIfEnabled(List<UserSessionModel> userSessionsForRealm, ClientModel currentClient, int userClientLimit) {
         // Only count this users sessions for this client only in case a limit is configured, otherwise skip this costly operation.
         if (userClientLimit <= 0) {
             return Collections.EMPTY_LIST;
         }
         logger.debugf("total user sessions for this keycloak client will not be counted. Will be logged as 0 (zero)");
-        List<UserSessionModel> userSessionsForClient = userSessionsForRealm.filter(session -> session.getAuthenticatedClientSessionByClient(currentClient.getId()) != null).collect(Collectors.toList());
+        List<UserSessionModel> userSessionsForClient = userSessionsForRealm.stream().filter(session -> session.getAuthenticatedClientSessionByClient(currentClient.getId()) != null).collect(Collectors.toList());
         return userSessionsForClient;
     }
 

@@ -127,7 +127,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
     protected ErrorPage errorPage;
 
     @Test
-    public void testSessionCountExceededAndNewSessionDenied() {
+    public void testSessionCountExceededAndNewSessionDenied() throws InterruptedException {
         // Login and verify login was succesfull
         loginPage.open();
         loginPage.login(LOGINTEST1, PASSWORD1);

@@ -59,15 +59,17 @@ public class UserSessionLimitsAuthenticatorFactory implements AuthenticatorFacto
     public List<ProviderConfigProperty> getConfigProperties() {
         ProviderConfigProperty userRealmLimit = new ProviderConfigProperty();
         userRealmLimit.setName(USER_REALM_LIMIT);
-        userRealmLimit.setLabel("Maximum concurrent sessions for each user. Provide a zero or negative value to disable this limit.");
+        userRealmLimit.setLabel("Maximum concurrent sessions for each user within this realm.");
+        userRealmLimit.setHelpText("Provide a zero or negative value to disable this limit.");
         userRealmLimit.setType(ProviderConfigProperty.STRING_TYPE);
         userRealmLimit.setDefaultValue("3");
 
         ProviderConfigProperty userClientLimit = new ProviderConfigProperty();
         userClientLimit.setName(USER_CLIENT_LIMIT);
-        userClientLimit.setLabel("Maximum concurrent sessions for each user per keycloak client. Provide a zero or negative value to disable this limit. This value should always be less than User Realm Limit.");
+        userClientLimit.setLabel("Maximum concurrent sessions for each user per keycloak client.");
+        userClientLimit.setHelpText("Provide a zero or negative value to disable this limit. In case a limit for the realm is enabled, specify this value below the total realm limit.");
         userClientLimit.setType(ProviderConfigProperty.STRING_TYPE);
-        userRealmLimit.setDefaultValue("0");
+        userClientLimit.setDefaultValue("0");
         
         ProviderConfigProperty behaviourProperty = new ProviderConfigProperty();
         behaviourProperty.setName(BEHAVIOR);
@@ -79,6 +81,7 @@ public class UserSessionLimitsAuthenticatorFactory implements AuthenticatorFacto
         ProviderConfigProperty customErrorMessage = new ProviderConfigProperty();
         customErrorMessage.setName(ERROR_MESSAGE);
         customErrorMessage.setLabel("Optional custom error message");
+        customErrorMessage.setHelpText("If left empty a default error message is shown");
         customErrorMessage.setType(ProviderConfigProperty.STRING_TYPE);
 
         return Arrays.asList(userRealmLimit, userClientLimit, behaviourProperty, customErrorMessage);
