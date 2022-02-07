@@ -17,19 +17,22 @@
 
 package org.keycloak.it.cli.dist;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Path;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
-import org.keycloak.it.cli.StartCommandTest;
+import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest
+@RawDistOnly(reason = "Not possible to mount files using docker.")
 public class ClusterConfigDistTest {
 
     @Test
@@ -66,11 +69,12 @@ public class ClusterConfigDistTest {
     }
 
     @Test
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict false" })
+    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict false" })
     void testStartDefaultsToClustering(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStarted();
         cliResult.assertClusteredCache();
+        assertTrue(cliResult.getOutput().contains("org.jgroups.protocols.UDP"));
     }
 
     @Test
@@ -79,5 +83,21 @@ public class ClusterConfigDistTest {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStartedDevMode();
         cliResult.assertLocalCache();
+    }
+
+    @Test
+    @BeforeStartDistribution(ConfigureCacheUsingAsyncEncryption.class)
+    @Launch({ "start-dev", "--cache-config-file=cache-ispn-asym-enc.xml" })
+    void testCustomCacheStackInConfigFile(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        assertTrue(cliResult.getOutput().contains("ERROR: server.jks"));
+    }
+
+    public static class ConfigureCacheUsingAsyncEncryption implements Consumer<KeycloakDistribution> {
+
+        @Override
+        public void accept(KeycloakDistribution distribution) {
+            distribution.copyOrReplaceFileFromClasspath("/cache-ispn-asym-enc.xml", Path.of("conf", "cache-ispn-asym-enc.xml"));
+        }
     }
 }
