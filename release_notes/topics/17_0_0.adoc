@@ -1,6 +1,20 @@
 = Highlights
 
-== Improved User Search
+== Quarkus distribution is now fully supported
+
+The default Keycloak distribution is now based on Quarkus. The new distribution is faster, leaner, and a lot easier to configure!
+
+We appreciate migrating from the WildFly distribution is not going to be straightforward for everyone, since how you start and configure Keycloak has radically changed. With that in mind, we will continue to support the WildFly distribution until June 2022.
+
+Check out the Upgrading Guide for more information on how to migrate from the WildFly distribution, as well as some minor changes you have to do to remain on the WildFly distribution for the time being.
+
+== Other improvements
+
+== Quarkus updated to 2.7.0.Final
+
+Keycloak distribution was upgraded to Quarkus 2.7.0.
+
+=== Improved User Search
 
 {project_name} now supports a glob-like syntax for the user search when listing users in the Admin Console,
 which allows for three different types of searches: prefix (`foo*` which became the default search), infix (`\*foo*`), and exact `"foo"`)
