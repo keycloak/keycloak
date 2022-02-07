@@ -104,10 +104,13 @@
                         $("#attestationObject").val(base64url.encode(new Uint8Array(attestationObject), {pad: false}));
                         $("#publicKeyCredentialId").val(base64url.encode(new Uint8Array(publicKeyCredentialId), {pad: false}));
 
-
-                        let transports = result.response.getTransports();
-                        if (transports) {
-                            $("#transports").val(getTransportsAsString(transports));
+                        if (typeof result.response.getTransports === "function") {
+                            let transports = result.response.getTransports();
+                            if (transports) {
+                                $("#transports").val(getTransportsAsString(transports));
+                            }
+                        } else {
+                            console.log("Your browser is not able to recognize supported transport media for the authenticator.");
                         }
 
                         let initLabel = "WebAuthn Authenticator (Default Label)";

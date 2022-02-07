@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.oauth;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -37,6 +38,7 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.*;
 
 import java.util.List;
@@ -61,6 +63,9 @@ public class LogoutTest extends AbstractKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
+
+    @Page
+    protected LoginPage loginPage;
 
     @Override
     public void beforeAbstractKeycloakTest() throws Exception {
@@ -160,7 +165,8 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         setTimeOffset(2);
 
-        oauth.fillLoginForm("test-user@localhost", "password");
+        WaitUtils.waitForPageToLoad();
+        loginPage.login("password");
 
         Assert.assertFalse(loginPage.isCurrent());
 

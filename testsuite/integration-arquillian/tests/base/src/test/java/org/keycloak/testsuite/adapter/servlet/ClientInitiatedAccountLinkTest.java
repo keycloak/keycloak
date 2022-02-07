@@ -540,52 +540,6 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
 
     @Test
     @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
-    public void testAccountNotLinkedAutomatically() throws Exception {
-        RealmResource realm = adminClient.realms().realm(CHILD_IDP);
-        List<FederatedIdentityRepresentation> links = realm.users().get(childUserId).getFederatedIdentity();
-        Assert.assertTrue(links.isEmpty());
-
-        // Login to account mgmt first
-        profilePage.open(CHILD_IDP);
-        WaitUtils.waitForPageToLoad();
-
-        Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
-        loginPage.login("child", "password");
-        profilePage.assertCurrent();
-
-        // Now in another tab, open login screen with "prompt=login" . Login screen will be displayed even if I have SSO cookie
-        UriBuilder linkBuilder = UriBuilder.fromUri(appPage.getInjectedUrl().toString())
-                .path("nosuch");
-        String linkUrl = linkBuilder.clone()
-                .queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN)
-                .build().toString();
-
-        navigateTo(linkUrl);
-        Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
-        loginPage.clickSocial(PARENT_IDP);
-        Assert.assertTrue(loginPage.isCurrent(PARENT_IDP));
-        loginPage.login(PARENT_USERNAME, "password");
-
-        // Test I was not automatically linked.
-        links = realm.users().get(childUserId).getFederatedIdentity();
-        Assert.assertTrue(links.isEmpty());
-
-        loginUpdateProfilePage.assertCurrent();
-        loginUpdateProfilePage.update("Joe", "Doe", "joe@parent.com");
-
-        errorPage.assertCurrent();
-        Assert.assertEquals("You are already authenticated as different user 'child' in this session. Please sign out first.", errorPage.getError());
-
-        logoutAll();
-
-        // Remove newly created user
-        String newUserId = ApiUtil.findUserByUsername(realm, "parent").getId();
-        getCleanup("child").addUserId(newUserId);
-    }
-
-
-    @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void testAccountLinkingExpired() throws Exception {
         RealmResource realm = adminClient.realms().realm(CHILD_IDP);
         List<FederatedIdentityRepresentation> links = realm.users().get(childUserId).getFederatedIdentity();

@@ -62,6 +62,8 @@ import org.keycloak.models.map.storage.MapStorageProviderFactory;
 import org.keycloak.models.map.storage.jpa.client.JpaClientMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.clientscope.JpaClientScopeMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.clientscope.entity.JpaClientScopeEntity;
+import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaEntityVersionListener;
+import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaOptimisticLockingListener;
 import org.keycloak.models.map.storage.jpa.role.JpaRoleMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity;
 import org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterProvider;
@@ -185,9 +187,13 @@ public class JpaMapStorageProviderFactory implements
                                             final EventListenerRegistry eventListenerRegistry =
                                                     sessionFactoryServiceRegistry.getService( EventListenerRegistry.class );
 
-                                            eventListenerRegistry.appendListeners(EventType.PRE_INSERT, JpaChildEntityListener.INSTANCE);
-                                            eventListenerRegistry.appendListeners(EventType.PRE_UPDATE, JpaChildEntityListener.INSTANCE);
-                                            eventListenerRegistry.appendListeners(EventType.PRE_DELETE, JpaChildEntityListener.INSTANCE);
+                                            eventListenerRegistry.appendListeners(EventType.PRE_INSERT, JpaOptimisticLockingListener.INSTANCE);
+                                            eventListenerRegistry.appendListeners(EventType.PRE_UPDATE, JpaOptimisticLockingListener.INSTANCE);
+                                            eventListenerRegistry.appendListeners(EventType.PRE_DELETE, JpaOptimisticLockingListener.INSTANCE);
+
+                                            eventListenerRegistry.appendListeners(EventType.PRE_INSERT, JpaEntityVersionListener.INSTANCE);
+                                            eventListenerRegistry.appendListeners(EventType.PRE_UPDATE, JpaEntityVersionListener.INSTANCE);
+                                            eventListenerRegistry.appendListeners(EventType.PRE_DELETE, JpaEntityVersionListener.INSTANCE);
                                         }
 
                                         @Override

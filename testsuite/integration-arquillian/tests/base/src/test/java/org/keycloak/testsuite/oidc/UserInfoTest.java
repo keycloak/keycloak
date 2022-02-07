@@ -18,6 +18,7 @@ package org.keycloak.testsuite.oidc;
 
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matchers;
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -41,6 +42,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -59,6 +61,7 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
@@ -94,6 +97,9 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
+
+    @Page
+    protected LoginPage loginPage;
 
     @Override
     public void beforeAbstractKeycloakTest() throws Exception {
@@ -380,7 +386,8 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
         setTimeOffset(2);
 
-        oauth.fillLoginForm("test-user@localhost", "password");
+        WaitUtils.waitForPageToLoad();
+        loginPage.login("password");
         events.expectLogin().assertEvent();
 
         Assert.assertFalse(loginPage.isCurrent());

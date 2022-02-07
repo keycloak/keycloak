@@ -26,6 +26,7 @@ import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
 import com.webauthn4j.data.attestation.authenticator.COSEKey;
 import com.webauthn4j.data.attestation.statement.AttestationStatement;
 
+import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -122,7 +123,7 @@ public class WebAuthnCredentialModelInput implements CredentialInput {
     }
 
     public Set<AuthenticatorTransport> getTransports() {
-        return transports;
+        return transports != null ? transports : Collections.emptySet();
     }
 
     public void setTransports(Set<AuthenticatorTransport> transports) {
@@ -170,8 +171,8 @@ public class WebAuthnCredentialModelInput implements CredentialInput {
               .append(Base64.encodeBytes(authenticationRequest.getCredentialId()))
               .append(",");
         }
-        if (CollectionUtils.isNotEmpty(transports)) {
-            final String transportsString = transports.stream()
+        if (CollectionUtils.isNotEmpty(getTransports())) {
+            final String transportsString = getTransports().stream()
                     .map(AuthenticatorTransport::getValue)
                     .collect(Collectors.joining(","));
 

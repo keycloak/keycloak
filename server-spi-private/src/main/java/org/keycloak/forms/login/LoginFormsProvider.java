@@ -38,7 +38,7 @@ public interface LoginFormsProvider extends Provider {
 
     String IDENTITY_PROVIDER_BROKER_CONTEXT = "identityProviderBrokerCtx";
 
-    String USERNAME_EDIT_DISABLED = "usernameEditDisabled";
+    String USERNAME_HIDDEN = "usernameHidden";
 
     String REGISTRATION_DISABLED = "registrationDisabled";
 
