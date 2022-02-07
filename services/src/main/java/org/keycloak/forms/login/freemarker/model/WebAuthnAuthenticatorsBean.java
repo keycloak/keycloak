@@ -16,8 +16,8 @@
 package org.keycloak.forms.login.freemarker.model;
 
 import com.webauthn4j.data.AuthenticatorTransport;
-import org.apache.commons.collections4.CollectionUtils;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -117,7 +117,7 @@ public class WebAuthnAuthenticatorsBean {
              * @return TransportBean
              */
             public static TransportsBean convertFromSet(Set<String> transports) {
-                if (CollectionUtils.isEmpty(transports)) {
+                if (CollectionUtil.isEmpty(transports)) {
                     return new TransportsBean(Transport.UNKNOWN);
                 }
 
