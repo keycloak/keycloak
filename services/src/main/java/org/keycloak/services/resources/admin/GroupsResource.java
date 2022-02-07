@@ -67,7 +67,7 @@ public class GroupsResource {
     }
 
     /**
-     * Get group hierarchy.  Only name and ids are returned.
+     * Get group hierarchy. Only name and ids are returned.
      *
      * @return
      */
@@ -75,14 +75,14 @@ public class GroupsResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Stream<GroupRepresentation> getGroups(@QueryParam("search") String search,
-                                                 @QueryParam("first") Integer firstResult,
-                                                 @QueryParam("max") Integer maxResults,
-                                                 @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
+            @QueryParam("first") Integer firstResult,
+            @QueryParam("max") Integer maxResults,
+            @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         auth.groups().requireList();
 
         if (Objects.nonNull(search)) {
             return ModelToRepresentation.searchForGroupByName(realm, !briefRepresentation, search.trim(), firstResult, maxResults);
-        } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
+        } else if (Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
             return ModelToRepresentation.toGroupHierarchy(realm, !briefRepresentation, firstResult, maxResults);
         } else {
             return ModelToRepresentation.toGroupHierarchy(realm, !briefRepresentation);
@@ -90,7 +90,7 @@ public class GroupsResource {
     }
 
     /**
-     * Does not expand hierarchy.  Subgroups will not be set.
+     * Does not expand hierarchy. Subgroups will not be set.
      *
      * @param id
      * @return
@@ -101,7 +101,7 @@ public class GroupsResource {
         if (group == null) {
             throw new NotFoundException("Could not find group by id");
         }
-        GroupResource resource =  new GroupResource(realm, group, session, this.auth, adminEvent);
+        GroupResource resource = new GroupResource(realm, group, session, this.auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
     }
@@ -115,22 +115,19 @@ public class GroupsResource {
     @NoCache
     @Path("count")
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, Long> getGroupCount(@QueryParam("search") String search,
-                                           @QueryParam("top") @DefaultValue("false") boolean onlyTopGroups) {
-        Long results;
-        Map<String, Long> map = new HashMap<>();
+    public Long getGroupCount(@QueryParam("search") String search,
+            @QueryParam("top") @DefaultValue("false") boolean onlyTopGroups) {
         if (Objects.nonNull(search)) {
-            results = realm.getGroupsCountByNameContaining(search);
+            return realm.getGroupsCountByNameContaining(search);
         } else {
-            results = realm.getGroupsCount(onlyTopGroups);
+            return realm.getGroupsCount(onlyTopGroups);
         }
-        map.put("count", results);
-        return map;
     }
 
     /**
-     * create or add a top level realm groupSet or create child.  This will update the group and set the parent if it exists.  Create it and set the parent
-     * if the group doesn't exist.
+     * create or add a top level realm groupSet or create child. This will
+     * update the group and set the parent if it exists. Create it and set the
+     * parent if the group doesn't exist.
      *
      * @param rep
      */

@@ -47,6 +47,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -54,12 +55,18 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
+import javax.ws.rs.PathParam;
+import org.keycloak.models.UserModel;
+import org.keycloak.services.ForbiddenException;
+import org.keycloak.utils.SearchQueryUtils;
 
 /**
  * @resource Groups
  * @author Bill Burke
  */
 public class GroupResource {
+
+    private static final String SEARCH_ID_PARAMETER = "id:";
 
     private final RealmModel realm;
     private final KeycloakSession session;
@@ -75,7 +82,7 @@ public class GroupResource {
         this.group = group;
     }
 
-     /**
+    /**
      *
      *
      * @return
@@ -115,13 +122,13 @@ public class GroupResource {
                 return ErrorResponse.exists("Sibling group named '" + groupName + "' already exists.");
             }
         }
-        
+
         updateGroup(rep, group);
         adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
-        
+
         return Response.noContent().build();
     }
-    
+
     private Stream<GroupModel> siblings() {
         if (group.getParentId() == null) {
             return realm.getTopLevelGroupsStream();
@@ -139,7 +146,7 @@ public class GroupResource {
     }
 
     /**
-     * Get group children.  Only name and ids are returned.
+     * Get group children. Only name and ids are returned.
      *
      * @return
      */
@@ -148,14 +155,14 @@ public class GroupResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Stream<GroupRepresentation> getChildren(@QueryParam("search") String search,
-                                                   @QueryParam("first") Integer firstResult,
-                                                   @QueryParam("max") Integer maxResults,
-                                                   @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
+            @QueryParam("first") Integer firstResult,
+            @QueryParam("max") Integer maxResults,
+            @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         auth.groups().requireView(group);
 
         if (Objects.nonNull(search)) {
             return ModelToRepresentation.searchForSubGroupByName(group, !briefRepresentation, search.trim(), firstResult, maxResults);
-        } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
+        } else if (Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
             return ModelToRepresentation.toSubGroupHierarchy(group, !briefRepresentation, firstResult, maxResults);
         } else {
             return ModelToRepresentation.toSubGroupHierarchy(group, !briefRepresentation);
@@ -166,24 +173,19 @@ public class GroupResource {
     @NoCache
     @Path("children/count")
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, Long> getChildrenCount(@QueryParam("search") String search) {
+    public Long getChildrenCount(@QueryParam("search") String search) {
         auth.groups().requireView(group);
 
-        Long results;
-
         if (Objects.nonNull(search)) {
-            results = group.getSubGroupsCountByNameContaining(search);
+            return group.getSubGroupsCountByNameContaining(search);
         } else {
-            results = group.getSubGroupsCount();
+            return group.getSubGroupsCount();
         }
-        Map<String, Long> map = new HashMap<>();
-        map.put("count", results);
-        return map;
     }
 
     /**
-     * Set or create child.  This will just set the parent if it exists.  Create it and set the parent
-     * if the group doesn't exist.
+     * Set or create child. This will just set the parent if it exists. Create
+     * it and set the parent if the group doesn't exist.
      *
      * @param rep
      */
@@ -213,8 +215,8 @@ public class GroupResource {
             child = realm.createGroup(groupName, group);
             updateGroup(rep, child);
             URI uri = session.getContext().getUri().getBaseUriBuilder()
-                                           .path(session.getContext().getUri().getMatchedURIs().get(2))
-                                           .path(child.getId()).build();
+                    .path(session.getContext().getUri().getMatchedURIs().get(2))
+                    .path(child.getId()).build();
             builder.status(201).location(uri);
             rep.setId(child.getId());
             adminEvent.operation(OperationType.CREATE);
@@ -227,7 +229,9 @@ public class GroupResource {
     }
 
     public static void updateGroup(GroupRepresentation rep, GroupModel model) {
-        if (rep.getName() != null) model.setName(rep.getName());
+        if (rep.getName() != null) {
+            model.setName(rep.getName());
+        }
 
         if (rep.getAttributes() != null) {
             Set<String> attrsToRemove = new HashSet<>(model.getAttributes().keySet());
@@ -246,10 +250,33 @@ public class GroupResource {
     public RoleMapperResource getRoleMappings() {
         AdminPermissionEvaluator.RequirePermissionCheck manageCheck = () -> auth.groups().requireManage(group);
         AdminPermissionEvaluator.RequirePermissionCheck viewCheck = () -> auth.groups().requireView(group);
-        RoleMapperResource resource =  new RoleMapperResource(realm, auth, group, adminEvent, manageCheck, viewCheck);
+        RoleMapperResource resource = new RoleMapperResource(realm, auth, group, adminEvent, manageCheck, viewCheck);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
 
+    }
+
+    /**
+     * Get representation of the user
+     *
+     * @param id User id
+     * @return
+     */
+    @GET
+    @NoCache
+    @Path("members/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public UserRepresentation getMember(final @PathParam("id") String id) {
+        this.auth.groups().requireViewMembers(group);
+
+        UserModel user = session.users().getUserById(realm, id);
+        if (user.isMemberOf(group)) {
+            return ModelToRepresentation.toRepresentation(session, realm, user);
+        } else if (auth.users().canQuery()) {
+            throw new NotFoundException("User not found");
+        } else {
+            throw new ForbiddenException();
+        }
     }
 
     /**
@@ -259,46 +286,156 @@ public class GroupResource {
      *
      * @param firstResult Pagination offset
      * @param maxResults Maximum results size (defaults to 100)
-     * @param briefRepresentation Only return basic information (only guaranteed to return id, username, created, first and last name,
-     *  email, enabled state, email verification state, federation link, and access.
-     *  Note that it means that namely user attributes, required actions, and not before are not returned.)
+     * @param briefRepresentation Only return basic information (only guaranteed
+     * to return id, username, created, first and last name, email, enabled
+     * state, email verification state, federation link, and access. Note that
+     * it means that namely user attributes, required actions, and not before
+     * are not returned.)
      * @return a non-null {@code Stream} of users
      */
     @GET
     @NoCache
     @Path("members")
     @Produces(MediaType.APPLICATION_JSON)
-    public Stream<UserRepresentation> getMembers(@QueryParam("first") Integer firstResult,
-                                               @QueryParam("max") Integer maxResults,
-                                               @QueryParam("briefRepresentation") Boolean briefRepresentation) {
+    public Stream<UserRepresentation> getMembers(@QueryParam("search") String search,
+            @QueryParam("lastName") String last,
+            @QueryParam("firstName") String first,
+            @QueryParam("email") String email,
+            @QueryParam("emailVerified") Boolean emailVerified,
+            @QueryParam("idpAlias") String idpAlias,
+            @QueryParam("idpUserId") String idpUserId,
+            @QueryParam("username") String username,
+            @QueryParam("first") Integer firstResult,
+            @QueryParam("max") Integer maxResults,
+            @QueryParam("enabled") Boolean enabled,
+            @QueryParam("briefRepresentation") Boolean briefRepresentation,
+            @QueryParam("exact") Boolean exact,
+            @QueryParam("q") String searchQuery) {
         this.auth.groups().requireViewMembers(group);
-        
+
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
-        boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
 
-        return session.users().getGroupMembersStream(realm, group, firstResult, maxResults)
-                .map(user -> briefRepresentationB
-                        ? ModelToRepresentation.toBriefRepresentation(user)
-                        : ModelToRepresentation.toRepresentation(session, realm, user));
+        Map<String, String> searchAttributes = searchQuery == null
+                ? Collections.emptyMap()
+                : SearchQueryUtils.getFields(searchQuery);
+
+        session.setAttribute(UserModel.GROUPS, Collections.singleton(group.getId()));
+
+        Stream<UserModel> userModels = Stream.empty();
+
+        if (search != null) {
+            if (search.startsWith(SEARCH_ID_PARAMETER)) {
+                UserModel userModel = session.users().getUserById(realm,
+                        search.substring(SEARCH_ID_PARAMETER.length()).trim());
+                if (userModel != null) {
+                    userModels = Stream.of(userModel);
+                }
+            } else {
+                Map<String, String> attributes = new HashMap<>();
+                attributes.put(UserModel.SEARCH, search.trim());
+                if (enabled != null) {
+                    attributes.put(UserModel.ENABLED, enabled.toString());
+                }
+
+                userModels = session.users().searchForUserStream(realm, attributes, firstResult, maxResults);;
+            }
+        } else if (last != null || first != null || email != null || username != null || emailVerified != null
+                || idpAlias != null || idpUserId != null || enabled != null || exact != null
+                || !searchAttributes.isEmpty()) {
+            Map<String, String> attributes = new HashMap<>();
+            if (last != null) {
+                attributes.put(UserModel.LAST_NAME, last);
+            }
+            if (first != null) {
+                attributes.put(UserModel.FIRST_NAME, first);
+            }
+            if (email != null) {
+                attributes.put(UserModel.EMAIL, email);
+            }
+            if (username != null) {
+                attributes.put(UserModel.USERNAME, username);
+            }
+            if (emailVerified != null) {
+                attributes.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
+            }
+            if (idpAlias != null) {
+                attributes.put(UserModel.IDP_ALIAS, idpAlias);
+            }
+            if (idpUserId != null) {
+                attributes.put(UserModel.IDP_USER_ID, idpUserId);
+            }
+            if (enabled != null) {
+                attributes.put(UserModel.ENABLED, enabled.toString());
+            }
+            if (exact != null) {
+                attributes.put(UserModel.EXACT, exact.toString());
+            }
+
+            attributes.putAll(searchAttributes);
+
+            userModels = session.users().searchForUserStream(realm, attributes, firstResult, maxResults);;
+        } else {
+            userModels = session.users().getGroupMembersStream(realm, group, firstResult, maxResults);
+        }
+
+        if (briefRepresentation != null && briefRepresentation) {
+            return userModels.map(user -> ModelToRepresentation.toBriefRepresentation(user));
+        } else {
+            return userModels.map(user -> ModelToRepresentation.toRepresentation(session, realm, user));
+        }
     }
 
     @GET
     @NoCache
     @Path("members/count")
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, Long> getMemberCount() {
+    public Long getMemberCount(@QueryParam("search") String search,
+            @QueryParam("lastName") String last,
+            @QueryParam("firstName") String first,
+            @QueryParam("email") String email,
+            @QueryParam("emailVerified") Boolean emailVerified,
+            @QueryParam("username") String username,
+            @QueryParam("enabled") Boolean enabled) {
         this.auth.groups().requireViewMembers(group);
 
-        Long results = session.users().getGroupMembersStream(realm, group).count();
+        if (search != null) {
+            if (search.startsWith(SEARCH_ID_PARAMETER)) {
+                UserModel userModel = session.users().getUserById(realm, search.substring(SEARCH_ID_PARAMETER.length()).trim());
+                return userModel != null && userModel.isMemberOf(group) ? 1L : 0L;
+            } else {
+                return Long.valueOf(session.users().getUsersCount(realm, search.trim(), Collections.singleton(group.getId())));
+            }
+        } else if (last != null || first != null || email != null || username != null || emailVerified != null || enabled != null) {
+            Map<String, String> parameters = new HashMap<>();
+            if (last != null) {
+                parameters.put(UserModel.LAST_NAME, last);
+            }
+            if (first != null) {
+                parameters.put(UserModel.FIRST_NAME, first);
+            }
+            if (email != null) {
+                parameters.put(UserModel.EMAIL, email);
+            }
+            if (username != null) {
+                parameters.put(UserModel.USERNAME, username);
+            }
+            if (emailVerified != null) {
+                parameters.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
+            }
+            if (enabled != null) {
+                parameters.put(UserModel.ENABLED, enabled.toString());
+            }
 
-        Map<String, Long> map = new HashMap<>();
-        map.put("count", results);
-        return map;
+            return Long.valueOf(session.users().getUsersCount(realm, parameters, Collections.singleton(group.getId())));
+        } else {
+            return Long.valueOf(session.users().getUsersCount(realm, Collections.singleton(group.getId())));
+        }
     }
 
     /**
-     * Return object stating whether client Authorization permissions have been initialized or not and a reference
+     * Return object stating whether client Authorization permissions have been
+     * initialized or not and a reference
      *
      * @return
      */
@@ -324,9 +461,9 @@ public class GroupResource {
         return ref;
     }
 
-
     /**
-     * Return object stating whether client Authorization permissions have been initialized or not and a reference
+     * Return object stating whether client Authorization permissions have been
+     * initialized or not and a reference
      *
      *
      * @return initialized manage permissions reference
@@ -348,4 +485,3 @@ public class GroupResource {
     }
 
 }
-
