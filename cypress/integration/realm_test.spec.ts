@@ -3,7 +3,6 @@ import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import CreateRealmPage from "../support/pages/admin_console/CreateRealmPage";
 import Masthead from "../support/pages/admin_console/Masthead";
 import AdminClient from "../support/util/AdminClient";
-import RealmSelector from "../support/pages/admin_console/RealmSelector";
 import {
   keycloakBefore,
   keycloakBeforeEach,
@@ -13,7 +12,6 @@ const masthead = new Masthead();
 const loginPage = new LoginPage();
 const sidebarPage = new SidebarPage();
 const createRealmPage = new CreateRealmPage();
-const realmSelector = new RealmSelector();
 const adminClient = new AdminClient();
 
 describe("Realms test", () => {
@@ -76,25 +74,6 @@ describe("Realms test", () => {
         .goToRealm(testRealmName)
         .getCurrentRealm()
         .should("eq", testRealmName);
-    });
-  });
-
-  describe("More then 5 realms", () => {
-    const realmNames = ["One", "Two", "Three", "Four", "Five"];
-    before(() => {
-      keycloakBefore();
-      loginPage.logIn();
-      realmNames.map((realm) => adminClient.createRealm(realm));
-    });
-
-    after(() => {
-      for (const realmName of realmNames) {
-        adminClient.deleteRealm(realmName);
-      }
-    });
-
-    it("switch to searchable realm selector", () => {
-      realmSelector.openRealmContextSelector().shouldContainAll(realmNames);
     });
   });
 });
