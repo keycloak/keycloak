@@ -37,11 +37,10 @@ import org.keycloak.testsuite.util.UserBuilder;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Assert;
-import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
-import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
-import org.keycloak.authentication.authenticators.conditional.ConditionalUserConfiguredAuthenticatorFactory;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 @AuthServerContainerExclude(REMOTE)
 public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
@@ -69,23 +68,6 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
         if (testContext.isInitialized()) {
             return;
         }
-        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
-                testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
-                .selectFlow(newFlowAlias)
-                .inForms(forms -> forms
-                        .clear()
-                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, UsernameFormFactory.PROVIDER_ID)
-                        .addSubFlowExecution(AuthenticationExecutionModel.Requirement.CONDITIONAL, subFlow -> {
-                            if (conditionFlowHasConditionalAuthenticator) {
-                                // Add authenticators to this flow: 1 conditional authenticator and a basic authenticator executions
-                                subFlow.addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, ConditionalUserConfiguredAuthenticatorFactory.PROVIDER_ID);
-                            }
-                            // Update the browser forms only with a UsernameForm
-                            subFlow.addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, PasswordFormFactory.PROVIDER_ID);
-                        }))
-                .defineAsBrowserFlow()
-        );
-        
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
 
