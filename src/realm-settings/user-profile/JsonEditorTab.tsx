@@ -1,4 +1,3 @@
-import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import { ActionGroup, Button, Form, PageSection } from "@patternfly/react-core";
 import type { editor } from "monaco-editor";
@@ -6,19 +5,10 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAlerts } from "../../components/alert/Alerts";
 import { prettyPrintJSON } from "../../util";
-import type { OnSaveCallback } from "./UserProfileTab";
+import { useUserProfile } from "./UserProfileContext";
 
-type JsonEditorTabProps = {
-  config?: UserProfileConfig;
-  onSave: OnSaveCallback;
-  isSaving: boolean;
-};
-
-export const JsonEditorTab = ({
-  config,
-  onSave,
-  isSaving,
-}: JsonEditorTabProps) => {
+export const JsonEditorTab = () => {
+  const { config, save, isSaving } = useUserProfile();
   const { t } = useTranslation();
   const { addError } = useAlerts();
   const [editor, setEditor] = useState<editor.IStandaloneCodeEditor>();
@@ -29,7 +19,7 @@ export const JsonEditorTab = ({
     editor?.setValue(config ? prettyPrintJSON(config) : "");
   }
 
-  function save() {
+  function handleSave() {
     const value = editor?.getValue();
 
     if (!value) {
@@ -37,7 +27,7 @@ export const JsonEditorTab = ({
     }
 
     try {
-      onSave(JSON.parse(value));
+      save(JSON.parse(value));
     } catch (error) {
       addError("realm-settings:invalidJsonError", error);
       return;
@@ -54,7 +44,7 @@ export const JsonEditorTab = ({
       />
       <Form>
         <ActionGroup>
-          <Button variant="primary" onClick={save} isDisabled={isSaving}>
+          <Button variant="primary" onClick={handleSave} isDisabled={isSaving}>
             {t("common:save")}
           </Button>
           <Button variant="link" onClick={resetCode} isDisabled={isSaving}>

@@ -1,4 +1,3 @@
-import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import type { UserProfileGroup } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import {
   Button,
@@ -12,17 +11,10 @@ import { Link, useHistory } from "react-router-dom";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
-import type { OnSaveCallback } from "./UserProfileTab";
+import { useUserProfile } from "./UserProfileContext";
 
-type AttributesGroupTabProps = {
-  config?: UserProfileConfig;
-  onSave: OnSaveCallback;
-};
-
-export const AttributesGroupTab = ({
-  config,
-  onSave,
-}: AttributesGroupTabProps) => {
+export const AttributesGroupTab = () => {
+  const { config, save } = useUserProfile();
   const { t } = useTranslation();
   const history = useHistory();
   const [key, setKey] = useState(0);
@@ -50,7 +42,7 @@ export const AttributesGroupTab = ({
         (group) => group !== groupToDelete
       );
 
-      onSave(
+      save(
         { ...config, groups },
         {
           successMessageKey: "attributes-group:deleteSuccess",
