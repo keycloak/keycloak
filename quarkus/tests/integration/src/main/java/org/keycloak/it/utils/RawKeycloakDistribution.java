@@ -26,8 +26,10 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -335,6 +337,17 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
         if (file.exists()) {
             file.delete();
+        }
+    }
+
+    @Override
+    public void copyOrReplaceFileFromClasspath(String file, Path targetFile) {
+        File targetDir = distPath.resolve(targetFile).toFile();
+
+        try {
+            Files.copy(getClass().getResourceAsStream(file), targetDir.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException cause) {
+            throw new RuntimeException("Failed to copy file", cause);
         }
     }
 
