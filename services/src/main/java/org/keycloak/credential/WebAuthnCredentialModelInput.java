@@ -16,7 +16,6 @@
 
 package org.keycloak.credential;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.keycloak.common.util.Base64;
 
 import com.webauthn4j.data.AuthenticationParameters;
@@ -25,6 +24,7 @@ import com.webauthn4j.data.AuthenticatorTransport;
 import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
 import com.webauthn4j.data.attestation.authenticator.COSEKey;
 import com.webauthn4j.data.attestation.statement.AttestationStatement;
+import org.keycloak.common.util.CollectionUtil;
 
 import java.util.Collections;
 import java.util.Set;
@@ -171,7 +171,7 @@ public class WebAuthnCredentialModelInput implements CredentialInput {
               .append(Base64.encodeBytes(authenticationRequest.getCredentialId()))
               .append(",");
         }
-        if (CollectionUtils.isNotEmpty(getTransports())) {
+        if (CollectionUtil.isNotEmpty(getTransports())) {
             final String transportsString = getTransports().stream()
                     .map(AuthenticatorTransport::getValue)
                     .collect(Collectors.joining(","));

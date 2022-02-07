@@ -55,4 +55,12 @@ public class CollectionUtil {
 
         return true;
     }
+
+    public static boolean isEmpty(Collection<?> collection) {
+        return collection == null || collection.isEmpty();
+    }
+
+    public static boolean isNotEmpty(Collection<?> collection) {
+        return !isEmpty(collection);
+    }
 }
