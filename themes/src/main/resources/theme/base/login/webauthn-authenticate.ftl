@@ -40,7 +40,7 @@
                                             ${kcSanitize(msg('${authenticator.label}'))?no_esc}
                                         </div>
 
-                                        <#if authenticator.transports??>
+                                        <#if authenticator.transports?? && authenticator.transports.displayNameProperties?has_content>
                                             <div id="kc-webauthn-authenticator-transport"
                                                  class="${properties.kcSelectAuthListItemDescriptionClass!}">
                                                 <#list authenticator.transports.displayNameProperties as nameProperty>
@@ -51,6 +51,7 @@
                                                 </#list>
                                             </div>
                                         </#if>
+
                                         <div class="${properties.kcSelectAuthListItemDescriptionClass!}">
                                             <span id="kc-webauthn-authenticator-created-label">
                                                 ${kcSanitize(msg('webauthn-createdAt-label'))?no_esc}
