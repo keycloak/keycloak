@@ -1,9 +1,9 @@
+import React, { createContext, FunctionComponent, useState } from "react";
+
 import type { ServerInfoRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
-import React, { createContext, FunctionComponent } from "react";
-import { DataLoader } from "../../components/data-loader/DataLoader";
 import { sortProviders } from "../../util";
 import useRequiredContext from "../../utils/useRequiredContext";
-import { useAdminClient } from "../auth/AdminClient";
+import { useAdminClient, useFetch } from "../auth/AdminClient";
 
 export const ServerInfoContext = createContext<
   ServerInfoRepresentation | undefined
@@ -17,16 +17,23 @@ export const useLoginProviders = () => {
 
 export const ServerInfoProvider: FunctionComponent = ({ children }) => {
   const adminClient = useAdminClient();
-  const loader = async () => {
-    return await adminClient.serverInfo.find();
-  };
+  const [serverInfo, setServerInfo] = useState<ServerInfoRepresentation>({});
+
+  useFetch(
+    async () => {
+      try {
+        return await adminClient.serverInfo.find();
+      } catch (error) {
+        return {};
+      }
+    },
+    setServerInfo,
+    []
+  );
+
   return (
-    <DataLoader loader={loader}>
-      {(serverInfo) => (
-        <ServerInfoContext.Provider value={serverInfo}>
-          {children}
-        </ServerInfoContext.Provider>
-      )}
-    </DataLoader>
+    <ServerInfoContext.Provider value={serverInfo}>
+      {children}
+    </ServerInfoContext.Provider>
   );
 };

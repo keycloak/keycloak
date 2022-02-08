@@ -30,6 +30,10 @@ export default class GroupModal {
     return cy.findByTestId("cancel-button");
   }
 
+  closeButton() {
+    return cy.findByTestId("close-button");
+  }
+
   usersCheckbox() {
     return cy.findByTestId("users-checkbox");
   }

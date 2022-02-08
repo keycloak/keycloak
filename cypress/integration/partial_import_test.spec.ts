@@ -3,7 +3,10 @@ import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
 import PartialImportModal from "../support/pages/admin_console/configure/realm_settings/PartialImportModal";
 import RealmSettings from "../support/pages/admin_console/configure/realm_settings/RealmSettings";
-import { keycloakBefore } from "../support/util/keycloak_hooks";
+import {
+  keycloakBefore,
+  keycloakBeforeEach,
+} from "../support/util/keycloak_hooks";
 import AdminClient from "../support/util/AdminClient";
 
 describe("Partial import test", () => {
@@ -14,11 +17,13 @@ describe("Partial import test", () => {
   const modal = new PartialImportModal();
   const realmSettings = new RealmSettings();
 
-  beforeEach(() => {
+  before(() => {
     keycloakBefore();
     loginPage.logIn();
-    sidebarPage.waitForPageLoad();
+  });
 
+  beforeEach(() => {
+    keycloakBeforeEach();
     // doing this from the UI has the added bonus of putting you in the test realm
     sidebarPage.goToCreateRealm();
     createRealmPage.fillRealmName(TEST_REALM).createRealm();
@@ -43,6 +48,7 @@ describe("Partial import test", () => {
     modal.open();
     cy.get(".pf-c-code-editor__code textarea").type("{}");
     modal.importButton().should("be.disabled");
+    modal.cancelButton().click();
   });
 
   it("Displays user options after multi-realm import", () => {
@@ -81,6 +87,7 @@ describe("Partial import test", () => {
     cy.contains("2 records added");
     cy.contains("customer-portal");
     cy.contains("customer-portal2");
+    modal.closeButton().click();
   });
 
   it("Displays user options after realmless import and does the import", () => {

@@ -7,6 +7,8 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import axios from "axios";
+
 import { RecentUsed } from "../components/realm-selector/recent-used";
 import useRequiredContext from "../utils/useRequiredContext";
 import { useAdminClient, useFetch } from "./auth/AdminClient";
@@ -33,7 +35,21 @@ export const RealmsProvider: FunctionComponent = ({ children }) => {
   }
 
   useFetch(
-    () => adminClient.realms.find({ briefRepresentation: true }),
+    async () => {
+      try {
+        return await adminClient.realms.find({ briefRepresentation: true });
+      } catch (error) {
+        if (
+          axios.isAxiosError(error) &&
+          error.response &&
+          error.response.status < 500
+        ) {
+          return [];
+        }
+
+        throw error;
+      }
+    },
     (realms) => updateRealms(realms),
     []
   );

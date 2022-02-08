@@ -26,11 +26,12 @@ import { xor } from "lodash-es";
 
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-
-import "./dashboard.css";
 import { toUpperCase } from "../util";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import environment from "../environment";
+
+import "./dashboard.css";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 
 const EmptyDashboard = () => {
   const { t } = useTranslation("dashboard");
@@ -73,6 +74,10 @@ const Dashboard = () => {
   const isPreviewFeature = (feature: string) => {
     return serverInfo.profileInfo?.previewFeatures?.includes(feature);
   };
+
+  if (Object.keys(serverInfo).length === 0) {
+    return <KeycloakSpinner />;
+  }
 
   return (
     <>
