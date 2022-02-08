@@ -42,7 +42,7 @@ export const UserIdentityProviderLinks = () => {
     setIsLinkIdPModalOpen(!isLinkIdPModalOpen);
   };
 
-  type withProviderId = FederatedIdentityRepresentation & {
+  type WithProviderId = FederatedIdentityRepresentation & {
     providerId: string;
   };
 
@@ -53,7 +53,7 @@ export const UserIdentityProviderLinks = () => {
 
     const allFedIds = (await adminClient.users.listFederatedIdentities({
       id,
-    })) as unknown as withProviderId[];
+    })) as WithProviderId[];
     for (const element of allFedIds) {
       element.providerId = allProviders.find(
         (item) => item.alias === element.identityProvider
@@ -104,7 +104,7 @@ export const UserIdentityProviderLinks = () => {
     },
   });
 
-  const idpLinkRenderer = (idp: withProviderId) => {
+  const idpLinkRenderer = (idp: WithProviderId) => {
     return (
       <Link
         to={toIdentityProvider({

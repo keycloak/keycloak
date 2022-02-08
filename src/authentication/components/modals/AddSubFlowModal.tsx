@@ -49,10 +49,7 @@ export const AddSubFlowModal = ({
 
   useFetch(
     () => adminClient.authenticationManagement.getFormProviders(),
-    (providers) =>
-      setFormProviders(
-        providers as unknown as AuthenticationProviderRepresentation[]
-      ),
+    (providers) => setFormProviders(providers),
     []
   );
 

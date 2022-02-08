@@ -116,9 +116,9 @@ export const RevocationModal = ({
   };
 
   const push = async () => {
-    const result = adminClient.realms.pushRevocation({
+    const result = await adminClient.realms.pushRevocation({
       realm: realmName,
-    }) as unknown as GlobalRequestResult;
+    });
     parseResult(result, "notBeforePush");
 
     refresh();

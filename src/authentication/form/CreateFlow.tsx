@@ -34,9 +34,9 @@ export default function CreateFlow() {
 
   const save = async (flow: AuthenticationFlowRepresentation) => {
     try {
-      const { id } = (await adminClient.authenticationManagement.createFlow(
+      const { id } = await adminClient.authenticationManagement.createFlow(
         flow
-      )) as unknown as AuthenticationFlowRepresentation;
+      );
       addAlert(t("flowCreatedSuccess"), AlertVariant.success);
       history.push(
         toFlow({

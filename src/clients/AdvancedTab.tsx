@@ -110,9 +110,9 @@ export const AdvancedTab = ({
   };
 
   const push = async () => {
-    const result = (await adminClient.clients.pushRevocation({
+    const result = await adminClient.clients.pushRevocation({
       id: id!,
-    })) as unknown as GlobalRequestResult;
+    });
     parseResult(result, "notBeforePush");
   };
 
