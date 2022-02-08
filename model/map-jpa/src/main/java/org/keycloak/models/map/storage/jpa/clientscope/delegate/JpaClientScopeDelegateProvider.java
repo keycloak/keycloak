@@ -55,7 +55,7 @@ public class JpaClientScopeDelegateProvider extends JpaDelegateProvider<JpaClien
                         CriteriaBuilder cb = em.getCriteriaBuilder();
                         CriteriaQuery<JpaClientScopeEntity> query = cb.createQuery(JpaClientScopeEntity.class);
                         Root<JpaClientScopeEntity> root = query.from(JpaClientScopeEntity.class);
-                        root.fetch("attributes", JoinType.INNER);
+                        root.fetch("attributes", JoinType.LEFT);
                         query.select(root).where(cb.equal(root.get("id"), UUID.fromString(getDelegate().getId())));
 
                         setDelegate(em.createQuery(query).getSingleResult());
