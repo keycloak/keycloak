@@ -30,6 +30,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
@@ -76,7 +77,7 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
     private void printRunTimeConfig(Map<String, Set<String>> properties, String profile) {
         Set<String> uniqueNames = new HashSet<>();
 
-        spec.commandLine().getOut().printf("Current Profile: %s%n", profile == null ? "none" : profile);
+        spec.commandLine().getOut().printf("Current Mode: %s%n", Environment.getKeycloakModeFromProfile(profile));
 
         spec.commandLine().getOut().println("Runtime Configuration:");
 

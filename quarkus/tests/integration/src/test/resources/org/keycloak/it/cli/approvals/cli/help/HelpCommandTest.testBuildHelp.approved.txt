@@ -63,10 +63,6 @@ Vault:
 
 Examples:
 
-  Optimize the server based on a profile configuration:
-
-      $ kc.sh --profile=prod build
-
   Change the database vendor:
 
       $ kc.sh build --db=postgres
