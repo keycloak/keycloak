@@ -72,24 +72,42 @@
 
     "authenticationSessions": {
         "provider": "${keycloak.authSession.provider:infinispan}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.authSession.map.storage.provider:concurrenthashmap}"
+            }
+        },
         "infinispan": {
             "authSessionsLimit": "${keycloak.authSessions.limit:300}"
         }
     },
 
     "userSessions": {
-        "provider": "${keycloak.userSession.provider:infinispan}"
+        "provider": "${keycloak.userSession.provider:infinispan}",
+        "map": {
+            "storage-user-sessions": {
+                "provider": "${keycloak.userSession.map.storage.provider:concurrenthashmap}"
+            },
+            "storage-client-sessions": {
+                "provider": "${keycloak.userSession.map.storage.provider:concurrenthashmap}"
+            }
+        }
     },
 
     "loginFailure": {
-        "provider": "${keycloak.loginFailure.provider:infinispan}"
+        "provider": "${keycloak.loginFailure.provider:infinispan}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.loginFailure.map.storage.provider:concurrenthashmap}"
+            }
+        }
     },
 
     "mapStorage": {
         "provider": "${keycloak.mapStorage.provider:}",
         "concurrenthashmap": {
             "dir": "${project.build.directory:target/map}",
-            "keyType.realms": "string", 
+            "keyType.realms": "string",
             "keyType.authz-resource-servers": "string"
         },
         "jpa-map-storage": {
@@ -120,7 +138,12 @@
     },
 
     "authorizationPersister": {
-        "provider": "${keycloak.authorization.provider:jpa}"
+        "provider": "${keycloak.authorization.provider:jpa}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.authorization.map.storage.provider:concurrenthashmap}"
+            }
+        }
     },
 
     "theme": {
