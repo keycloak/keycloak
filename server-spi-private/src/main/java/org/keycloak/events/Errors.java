@@ -110,4 +110,6 @@ public interface Errors {
     String EXPIRED_OAUTH2_DEVICE_CODE = "expired_oauth2_device_code";
     String INVALID_OAUTH2_USER_CODE = "invalid_oauth2_user_code";
     String SLOW_DOWN = "slow_down";
+    String GENERIC_AUTHENTICATION_ERROR= "generic_authentication_error";
+
 }
