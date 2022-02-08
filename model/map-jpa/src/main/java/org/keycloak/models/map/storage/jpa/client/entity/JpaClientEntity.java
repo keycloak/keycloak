@@ -95,7 +95,7 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
     @Basic(fetch = FetchType.LAZY)
     private Boolean enabled;
 
-    @OneToMany(mappedBy = "client", cascade = CascadeType.PERSIST, orphanRemoval = true)
+    @OneToMany(mappedBy = "root", cascade = CascadeType.PERSIST, orphanRemoval = true)
     private final Set<JpaClientAttributeEntity> attributes = new HashSet<>();
 
     /**

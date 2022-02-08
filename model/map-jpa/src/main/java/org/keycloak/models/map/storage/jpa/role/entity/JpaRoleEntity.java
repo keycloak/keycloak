@@ -88,7 +88,7 @@ public class JpaRoleEntity extends AbstractRoleEntity implements JpaRootEntity {
     @Basic(fetch = FetchType.LAZY)
     private String description;
 
-    @OneToMany(mappedBy = "role", cascade = CascadeType.PERSIST, orphanRemoval = true)
+    @OneToMany(mappedBy = "root", cascade = CascadeType.PERSIST, orphanRemoval = true)
     private final Set<JpaRoleAttributeEntity> attributes = new HashSet<>();
 
     /**
