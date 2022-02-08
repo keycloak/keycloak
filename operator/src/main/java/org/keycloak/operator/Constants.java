@@ -33,7 +33,9 @@ public final class Constants {
     );
 
     public static final Map<String, String> DEFAULT_DIST_CONFIG = Map.of(
-        "KC_HEALTH_ENABLED", "true"
+        "KC_HEALTH_ENABLED","true",
+        "KC_CACHE", "ispn",
+        "KC_CACHE_STACK", "kubernetes"
     );
 
     // Init container
@@ -42,4 +44,10 @@ public final class Constants {
     public static final String INIT_CONTAINER_NAME = "keycloak-extensions";
     public static final String INIT_CONTAINER_EXTENSIONS_FOLDER = "/opt/extensions";
     public static final String INIT_CONTAINER_EXTENSIONS_ENV_VAR = "KEYCLOAK_EXTENSIONS";
+
+    public static final Integer KEYCLOAK_SERVICE_PORT = 8080;
+    public static final String KEYCLOAK_SERVICE_PROTOCOL = "TCP";
+    public static final String KEYCLOAK_SERVICE_SUFFIX = "-service";
+    public static final Integer KEYCLOAK_DISCOVERY_SERVICE_PORT = 7800;
+    public static final String KEYCLOAK_DISCOVERY_SERVICE_SUFFIX = "-discovery";
 }

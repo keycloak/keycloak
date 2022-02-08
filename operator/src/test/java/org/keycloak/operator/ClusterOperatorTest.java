@@ -108,7 +108,7 @@ public abstract class ClusterOperatorTest {
     k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER +deploymentTarget+".yml"))
             .inNamespace(namespace).delete();
   }
-  private static void createCRDs() throws FileNotFoundException {
+  private static void createCRDs() {
     Log.info("Creating CRDs");
     try {
       var deploymentCRD = k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaks.keycloak.org-v1.yml"));
@@ -152,7 +152,7 @@ public abstract class ClusterOperatorTest {
   protected static void deployDB() {
     // DB
     Log.info("Creating new PostgreSQL deployment");
-    k8sclient.load(KeycloakDeploymentE2EIT.class.getResourceAsStream("/example-postgres.yaml")).inNamespace(namespace).createOrReplace();
+    k8sclient.load(ClusterOperatorTest.class.getResourceAsStream("/example-postgres.yaml")).inNamespace(namespace).createOrReplace();
 
     // Check DB has deployed and ready
     Log.info("Checking Postgres is running");
@@ -181,7 +181,7 @@ public abstract class ClusterOperatorTest {
 
   private static void setDefaultAwaitilityTimings() {
     Awaitility.setDefaultPollInterval(Duration.ofSeconds(1));
-    Awaitility.setDefaultTimeout(Duration.ofSeconds(180));
+    Awaitility.setDefaultTimeout(Duration.ofSeconds(240));
   }
 
   @AfterEach
