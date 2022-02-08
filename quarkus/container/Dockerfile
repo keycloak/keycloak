@@ -15,16 +15,16 @@ RUN (cd /tmp/keycloak && \
 
 RUN mv /tmp/keycloak/keycloak-* /opt/keycloak
 
+RUN chmod -R g+rwX /opt/keycloak
+
 FROM registry.access.redhat.com/ubi8-minimal
 
-COPY --from=build-env /opt/keycloak /opt/keycloak
+COPY --from=build-env --chown=1000:0 /opt/keycloak /opt/keycloak
 
 RUN microdnf update -y && \
     microdnf install -y java-11-openjdk-headless && microdnf clean all && rm -rf /var/cache/yum/* && \
     echo "keycloak:x:0:root" >> /etc/group && \
-    echo "keycloak:x:1000:0:keycloak user:/opt/keycloak:/sbin/nologin" >> /etc/passwd && \
-    chown -R keycloak:root /opt/keycloak && \
-    chmod -R g+rwX /opt/keycloak
+    echo "keycloak:x:1000:0:keycloak user:/opt/keycloak:/sbin/nologin" >> /etc/passwd
 
 USER 1000
 
