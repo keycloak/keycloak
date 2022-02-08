@@ -194,9 +194,7 @@ export default function NewClientPolicyCondition() {
         policies: updatedPolicies,
       });
       setPolicies(updatedPolicies);
-      history.push(
-        `/${realm}/realm-settings/clientPolicies/${policyName}/edit-policy`
-      );
+      history.push(toEditClientPolicy({ realm, policyName }));
       addAlert(
         conditionName
           ? t("realm-settings:updateClientConditionSuccess")

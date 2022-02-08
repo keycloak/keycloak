@@ -284,7 +284,7 @@ export default function ClientProfileForm() {
                 component={(props) => (
                   <Link
                     {...props}
-                    to={`/${realm}/realm-settings/clientPolicies`}
+                    to={toClientPolicies({ realm, tab: "profiles" })}
                   />
                 )}
                 data-testid={"cancelCreateProfile"}
@@ -466,7 +466,7 @@ export default function ClientProfileForm() {
                     component={(props) => (
                       <Link
                         {...props}
-                        to={`/${realm}/realm-settings/clientPolicies`}
+                        to={toClientPolicies({ realm, tab: "profiles" })}
                       />
                     )}
                     variant="primary"

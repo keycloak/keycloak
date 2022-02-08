@@ -36,7 +36,10 @@ import type ClientPolicyRepresentation from "@keycloak/keycloak-admin-client/lib
 import { toNewClientPolicyCondition } from "./routes/AddCondition";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { toEditClientPolicyCondition } from "./routes/EditCondition";
-import type { EditClientPolicyParams } from "./routes/EditClientPolicy";
+import {
+  EditClientPolicyParams,
+  toEditClientPolicy,
+} from "./routes/EditClientPolicy";
 import { AddClientProfileModal } from "./AddClientProfileModal";
 import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
 import { toClientPolicies } from "./routes/ClientPolicies";
@@ -245,7 +248,7 @@ export default function NewClientPolicyForm() {
         AlertVariant.success
       );
       history.push(
-        `/${realm}/realm-settings/clientPolicies/${createdForm.name}/edit-policy`
+        toEditClientPolicy({ realm, policyName: createdForm.name! })
       );
       setShowAddConditionsAndProfilesForm(true);
     } catch (error) {
@@ -299,7 +302,7 @@ export default function NewClientPolicyForm() {
             });
             addAlert(t("deleteConditionSuccess"), AlertVariant.success);
             history.push(
-              `/${realm}/realm-settings/clientPolicies/${formValues.name}/edit-policy`
+              toEditClientPolicy({ realm, policyName: formValues.name! })
             );
           } catch (error) {
             addError(t("deleteConditionError"), error);
@@ -344,7 +347,7 @@ export default function NewClientPolicyForm() {
           });
           addAlert(t("deleteClientPolicyProfileSuccess"), AlertVariant.success);
           history.push(
-            `/${realm}/realm-settings/clientPolicies/${formValues.name}/edit-policy`
+            toEditClientPolicy({ realm, policyName: formValues.name! })
           );
         } catch (error) {
           addError(t("deleteClientPolicyProfileError"), error);
@@ -407,9 +410,7 @@ export default function NewClientPolicyForm() {
         policies: newPolicies,
       });
       setPolicies(newPolicies);
-      history.push(
-        `/${realm}/realm-settings/clientPolicies/${formValues.name}/edit-policy`
-      );
+      history.push(toEditClientPolicy({ realm, policyName: formValues.name! }));
       addAlert(
         t("realm-settings:addClientProfileSuccess"),
         AlertVariant.success
