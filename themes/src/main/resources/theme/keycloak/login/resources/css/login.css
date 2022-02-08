@@ -283,6 +283,10 @@ div.kc-logo-text span {
     font-size: 1.8em;
 }
 
+#kc-form-webauthn .select-auth-box-icon-properties.unknown-transport-class {
+    margin-top: 3px;
+}
+
 #kc-form-webauthn .pf-l-stack__item {
     margin: -1px 0;
 }
