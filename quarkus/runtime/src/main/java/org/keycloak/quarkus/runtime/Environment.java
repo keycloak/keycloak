@@ -189,6 +189,36 @@ public final class Environment {
         System.setProperty(LAUNCH_MODE, "test");
     }
 
+    /**
+     * We want to hide the "profiles" from Quarkus to not make things unnecessarily complicated for users,
+     * so this method returns the equivalent launch mode instead. For use in e.g. CLI Output.
+     *
+     * @param profile the internal profile string used
+     * @return the mapped launch mode, none when nothing is given or the profile as is when its
+     * neither null/empty nor matching the quarkus default profiles we use.
+     */
+    public static String getKeycloakModeFromProfile(String profile) {
+
+        if(profile == null || profile.isEmpty()) {
+            return "none";
+        }
+
+        if(profile.equals(LaunchMode.DEVELOPMENT.getDefaultProfile())) {
+            return "development";
+        }
+
+        if(profile.equals(LaunchMode.TEST.getDefaultProfile())) {
+            return "test";
+        }
+
+        if(profile.equals(LaunchMode.NORMAL.getDefaultProfile())) {
+            return "production";
+        }
+
+        //when no profile is matched and not empty, just return the profile name.
+        return profile;
+    }
+
     public static boolean isDistribution() {
         return getHomeDir() != null;
     }

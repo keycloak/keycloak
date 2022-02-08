@@ -95,6 +95,7 @@ public final class Main {
     }
 
     @Option(names = { PROFILE_SHORT_NAME, PROFILE_LONG_NAME },
+            hidden = true,
             description = "Set the profile. Use 'dev' profile to enable development mode.")
     public void setProfile(String profile) {
         Environment.setProfile(profile);

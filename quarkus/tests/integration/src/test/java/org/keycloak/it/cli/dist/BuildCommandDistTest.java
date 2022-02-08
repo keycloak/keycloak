@@ -48,7 +48,7 @@ class BuildCommandDistTest {
     void failIfDevProfile(LaunchResult result) {
         assertTrue(result.getErrorOutput().contains("ERROR: Failed to run 'build' command."),
                 () -> "The Error Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
-        assertTrue(result.getErrorOutput().contains("ERROR: You can not 'build' the server using the 'dev' configuration profile. Please re-build the server first, using 'kc.sh build' for the default production profile, or using 'kc.sh build --profile=<profile>' with a profile more suitable for production."),
+        assertTrue(result.getErrorOutput().contains("You can not 'build' the server in development mode. Please re-build the server first, using 'kc.sh build' for the default production mode."),
                 () -> "The Error Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
         assertTrue(result.getErrorOutput().contains("For more details run the same command passing the '--verbose' option. Also you can use '--help' to see the details about the usage of the particular command."),
                 () -> "The Error Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");

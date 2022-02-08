@@ -17,6 +17,7 @@
 
 package org.keycloak.quarkus.runtime;
 
+import static org.keycloak.quarkus.runtime.Environment.getKeycloakModeFromProfile;
 import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
 import static org.keycloak.quarkus.runtime.Environment.getProfileOrDefault;
 import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
@@ -83,7 +84,7 @@ public class KeycloakMain implements QuarkusApplication {
             Quarkus.run(KeycloakMain.class, (exitCode, cause) -> {
                 if (cause != null) {
                     errorHandler.error(errStream,
-                            String.format("Failed to start server using profile (%s)", getProfileOrDefault("prod")),
+                            String.format("Failed to start server in (%s) mode", getKeycloakModeFromProfile(getProfileOrDefault("prod"))),
                             cause.getCause());
                 }
 
@@ -95,7 +96,7 @@ public class KeycloakMain implements QuarkusApplication {
             });
         } catch (Throwable cause) {
             errorHandler.error(errStream,
-                    String.format("Unexpected error when starting the server using profile (%s)", getProfileOrDefault("prod")),
+                    String.format("Unexpected error when starting the server in (%s) mode", getKeycloakModeFromProfile(getProfileOrDefault("prod"))),
                     cause.getCause());
         }
     }
@@ -106,7 +107,7 @@ public class KeycloakMain implements QuarkusApplication {
     @Override
     public int run(String... args) throws Exception {
         if (isDevProfile()) {
-            LOGGER.warnf("Running the server in dev mode. DO NOT use this configuration in production.");
+            LOGGER.warnf("Running the server in development mode. DO NOT use this configuration in production.");
         }
 
         int exitCode = ApplicationLifecycleManager.getExitCode();

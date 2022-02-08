@@ -52,12 +52,12 @@ public interface CLIResult extends LaunchResult {
     }
 
     default void assertNotDevMode() {
-        assertFalse(getOutput().contains("Running the server in dev mode."),
+        assertFalse(getOutput().contains("Running the server in development mode."),
                 () -> "The standard output:\n" + getOutput() + "\ndoes include the Start Dev output");
     }
 
     default void assertStartedDevMode() {
-        assertTrue(getOutput().contains("Running the server in dev mode."),
+        assertTrue(getOutput().contains("Running the server in development mode."),
                 () -> "The standard output:\n" + getOutput() + "\ndoesn't include the Start Dev output");
     }
 
