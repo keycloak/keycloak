@@ -23,14 +23,15 @@ In some situations, client applications may want to start an asynchronous author
 being requested decide whether or not access should be granted. For that, clients can use the `submit_request` request parameter along
 with an authorization request to the token endpoint:
 
-```bash
+[source,bash,subs="attributes+"]
+----
 curl -X POST \
-  http://${host}:${port}/auth/realms/${realm}/protocol/openid-connect/token \
+  http://${host}:${port}{kc_realms_path}/${realm}/protocol/openid-connect/token \
   -H "Authorization: Bearer ${access_token}" \
   --data "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket" \
   --data "ticket=${permission_ticket} \
   --data "submit_request=true"
-```
+----
 
 When using the `submit_request` parameter, {project_name} will persist a permission request for each resource to which access was denied.
 Once created, resource owners can check their account and manage their permissions requests.

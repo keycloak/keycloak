@@ -36,6 +36,6 @@ Enhanced Client or Proxy (ECP) is a SAML v.2.0 profile which allows the exchange
 
 {project_name} has one endpoint for all SAML requests.
 
-`http(s)://authserver.host/auth/realms/{realm-name}/protocol/saml`
+`http(s)://authserver.host{kc_realms_path}/{realm-name}/protocol/saml`
 
 All bindings use this endpoint.

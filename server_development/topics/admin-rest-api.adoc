@@ -20,14 +20,14 @@ A token can be obtained by enabling authenticating to your application with {pro
 
 . Obtain an access token for user in the realm `master` with username `admin` and password `password`:
 +
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
 curl \
   -d "client_id=admin-cli" \
   -d "username=admin" \
   -d "password=password" \
   -d "grant_type=password" \
-  "http://localhost:8080/auth/realms/master/protocol/openid-connect/token"
+  "http://localhost:8080{kc_realms_path}/master/protocol/openid-connect/token"
 ----
 +
 NOTE: By default this token expires in 1 minute
@@ -40,11 +40,11 @@ The result will be a JSON document.
 +
 The following example shows how to get the details of the master realm:
 +
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
 curl \
   -H "Authorization: bearer eyJhbGciOiJSUz..." \
-  "http://localhost:8080/auth/admin/realms/master"
+  "http://localhost:8080{kc_admins_path}/realms/master"
 ----
 
 ==== Authenticate with a service account
@@ -60,13 +60,13 @@ Finally, check that `client_id` has the role 'admin' assigned in the "Service Ac
 
 After that, you will be able to obtain an access token for the Admin REST API using `client_id` and `client_secret`:
 
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
 curl \
   -d "client_id=<YOUR_CLIENT_ID>" \
   -d "client_secret=<YOUR_CLIENT_SECRET>" \
   -d "grant_type=client_credentials" \
-  "http://localhost:8080/auth/realms/master/protocol/openid-connect/token"
+  "http://localhost:8080{kc_realms_path}/master/protocol/openid-connect/token"
 ----
 
 ifeval::[{project_community}==true]
@@ -77,7 +77,7 @@ There's a Java client library for the Admin REST API that makes it easy to use f
 
 The following example shows how to use the Java client library to get the details of the master realm:
 
-[source,java]
+[source,java,subs="attributes+"]
 ----
 
 import org.keycloak.admin.client.Keycloak;
@@ -85,7 +85,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 ...
 
 Keycloak keycloak = Keycloak.getInstance(
-    "http://localhost:8080/auth",
+    "http://localhost:8080{kc_base_path}",
     "master",
     "admin",
     "password",

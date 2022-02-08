@@ -9,7 +9,7 @@ You can use this method if you have a servlet class inside your OSGI bundled pro
 . {project_name} provides `org.keycloak.adapters.osgi.undertow.PaxWebIntegrationService`, which allows configuring authentication method and security constraints for your application. You need to declare such services in the `OSGI-INF/blueprint/blueprint.xml` file inside your application. Note that your servlet needs to depend on it.
 An example configuration:
 +
-[source,xml]
+[source,xml,subs="attributes+"]
 ----
 <?xml version="1.0" encoding="UTF-8"?>
 <blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"

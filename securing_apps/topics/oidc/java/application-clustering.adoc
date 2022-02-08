@@ -49,7 +49,7 @@ convenient to use relative URI options in your client configuration.
 
 With relative URIs the URI is resolved as relative to the URL used to access {project_name}.
 
-For example if the URL to your application is `$$https://acme.org/myapp$$` and the URL to {project_name} is `$$https://acme.org/auth$$`, then you can use
+For example if the URL to your application is `$$https://acme.org/myapp$$` and the URL to {project_name} is `\https://acme.org{kc_base_path}`, then you can use
 the redirect-uri `/myapp` instead of `$$https://acme.org/myapp$$`.
 
 ===== Admin URL configuration

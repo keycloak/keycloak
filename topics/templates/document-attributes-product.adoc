@@ -29,6 +29,12 @@
 :create_cmd: oc create
 :create_cmd_brief: oc
 
+:kc_dist: wildfly
+:kc_realms_path: /auth/realms
+:kc_admins_path: /auth/admin
+:kc_js_path: /auth/js
+:kc_base_path: /auth
+
 :project_dirref: RHSSO_HOME
 
 :quickstartRepo_name: {project_name} Quickstarts Repository

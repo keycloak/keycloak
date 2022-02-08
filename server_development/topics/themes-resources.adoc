@@ -8,7 +8,7 @@ An example use-case would be a <<_auth_spi,custom authenticator>> that requires 
 endif::[]
 
 The easiest way to load additional theme resources is to create a JAR with templates in `theme-resources/templates`
-resources in `theme-resources/resources` and messages bundles in `theme-resources/messages` and drop it into the `standalone/deployments/` directory of {project_name}.
+resources in `theme-resources/resources` and messages bundles in `theme-resources/messages`.
 
 If you want a more flexible way to load templates and resources that can be achieved through the ThemeResourceSPI.
 By implementing `ThemeResourceProviderFactory` and `ThemeResourceProvider` you can decide exactly how to load templates

@@ -8,8 +8,8 @@ If a client accesses this endpoint using a `HTTP GET` request, {project_name} re
 
 As an example, given the realm `master` and the client-id `account`: 
 
-[source]
+[source,subs=+attributes]
 ----
-http://host:port/auth/realms/master/clients/account/redirect
+http://host:port{kc_realms_path}/master/clients/account/redirect
 ----               
-This URL temporarily redirects to: http://host:port/auth/realms/master/account
+This URL temporarily redirects to: http://host:port{kc_realms_path}/master/account

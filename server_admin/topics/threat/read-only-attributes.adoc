@@ -28,6 +28,17 @@ This is the list of the read-only attributes, which are used internally by the {
 * For administrators: `KERBEROS_PRINCIPAL`, `LDAP_ID`, `LDAP_ENTRY_DN`, `CREATED_TIMESTAMP`, `createTimestamp`, `modifyTimestamp`
 
 System administrators have a way to add additional attributes to this list. The configuration is currently available at the server level.
+
+ifeval::["{kc_dist}" == "quarkus"]
+You can add this configuration by using the `spi-user-profile-legacy-user-profile-read-only-attributes` and ``spi-user-profile-legacy-user-profile-admin-read-only-attributes` options. For example:
+
+[source,bash,options="nowrap"]
+----
+kc.[sh|bat] start --spi-user-profile-legacy-user-profile-read-only-attributes=foo,bar*
+----
+endif::[]
+
+ifeval::["{kc_dist}" == "wildfly"]
 You can add this configuration to your `standalone(-*).xml` files to the configuration of the {project_name} server subsystem:
 
 [options="nowrap"]
@@ -52,6 +63,7 @@ The same can be configured with the usage of the JBoss CLI with the commands:
 /subsystem=keycloak-server/spi=userProfile/provider=legacy-user-profile/:map-put(name=properties,key=read-only-attributes,value=[foo,bar*])
 /subsystem=keycloak-server/spi=userProfile/provider=legacy-user-profile/:map-put(name=properties,key=admin-read-only-attributes,value=[foo])
 ----
+endif::[]
 
 For this example, users and administrators would not be able to update attribute `foo`. Users would not be able to edit any attributes starting with the `bar`.
 So for example `bar` or `barrier`. Configuration is case insensitive, so attributes like `FOO` or `BarRier` will be denied as well for this example. The wildcard character `\*` is supported

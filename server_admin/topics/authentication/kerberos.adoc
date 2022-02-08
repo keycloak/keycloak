@@ -206,5 +206,5 @@ When using the Kerberos user storage provider, there cannot be conflicting users
 If you have issues, enable additional logging to debug the problem:
 
 * Enable `Debug` flag in the Admin Console for Kerberos or LDAP federation providers
-* Enable TRACE logging for category `org.keycloak` in the logging section of `standalone/configuration/standalone.xml` to receive more information in `standalone/log/server.log`
+* Enable TRACE logging for category `org.keycloak` to receive more information in server logs
 * Add system properties `-Dsun.security.krb5.debug=true` and `-Dsun.security.spnego.debug=true`

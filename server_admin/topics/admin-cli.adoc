@@ -48,9 +48,9 @@ For example:
 
 * Linux:
 +
-[options="nowrap"]
+[options="nowrap",subs="attributes+"]
 ----
-$ kcadm.sh config credentials --server http://localhost:8080/auth --realm demo --user admin --client admin
+$ kcadm.sh config credentials --server http://localhost:8080{kc_base_path} --realm demo --user admin --client admin
 $ kcadm.sh create realms -s realm=demorealm -s enabled=true -o
 $ CID=$(kcadm.sh create clients -r demorealm -s clientId=my_client -s 'redirectUris=["http://localhost:8980/myapp/*"]' -i)
 $ kcadm.sh get clients/$CID/installation/providers/keycloak-oidc-keycloak-json
@@ -58,9 +58,9 @@ $ kcadm.sh get clients/$CID/installation/providers/keycloak-oidc-keycloak-json
 +
 * Windows:
 +
-[options="nowrap"]
+[options="nowrap",subs="attributes+"]
 ----
-c:\> kcadm config credentials --server http://localhost:8080/auth --realm demo --user admin --client admin
+c:\> kcadm config credentials --server http://localhost:8080{kc_base_path} --realm demo --user admin --client admin
 c:\> kcadm create realms -s realm=demorealm -s enabled=true -o
 c:\> kcadm create clients -r demorealm -s clientId=my_client -s "redirectUris=[\"http://localhost:8980/myapp/*\"]" -i > clientid.txt
 c:\> set /p CID=<clientid.txt
@@ -102,9 +102,9 @@ Ensure the account used for the session has the proper permissions to invoke Adm
 
 Two primary mechanisms are available for authentication. One mechanism uses `kcadm config credentials` to start an authenticated session.
 
-[options="nowrap"]
+[options="nowrap",subs="attributes+"]
 ----
-$ kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user admin --password admin
+$ kcadm.sh config credentials --server http://localhost:8080{kc_base_path} --realm master --user admin --password admin
 ----
 
 This mechanism maintains an authenticated session between the `kcadm` command invocations by saving the obtained access token and its associated refresh token. It can maintain other secrets in a private configuration file. See the <<_working_with_alternative_configurations, next chapter>> for more information.
@@ -112,9 +112,9 @@ This mechanism maintains an authenticated session between the `kcadm` command in
 The second mechanism authenticates each command invocation for the duration of the invocation. This mechanism increases the load on the server and the time spent on round trips obtaining tokens. The benefit of this approach is that it is unnecessary to save tokens between invocations, so nothing is saved to disk. {project_name} uses this mode when the `--no-config` argument is specified.
 
 For example, when performing an operation, specify all the information required for authentication.
-[options="nowrap"]
+[options="nowrap",subs="attributes+"]
 ----
-$ kcadm.sh get realms --no-config --server http://localhost:8080/auth --realm master --user admin --password admin
+$ kcadm.sh get realms --no-config --server http://localhost:8080{kc_base_path} --realm master --user admin --password admin
 ----
 
 Run the `kcadm.sh help` command for more information on using the Admin CLI.
@@ -161,9 +161,9 @@ ENDPOINT is a target resource URI and can be absolute (starting with `http:` or 
 SERVER_URI/admin/realms/REALM/ENDPOINT
 ----
 
-For example, if you authenticate against the server http://localhost:8080/auth and realm is `master`, using `users` as ENDPOINT creates the http://localhost:8080/auth/admin/realms/master/users resource URL.
+For example, if you authenticate against the server http://localhost:8080{kc_base_path} and realm is `master`, using `users` as ENDPOINT creates the http://localhost:8080{kc_admins_path}/realms/master/users resource URL.
 
-If you set ENDPOINT to `clients`, the effective resource URI is http://localhost:8080/auth/admin/realms/master/clients.
+If you set ENDPOINT to `clients`, the effective resource URI is http://localhost:8080{kc_admins_path}/realms/master/clients.
 
 {project_name} has a `realms` endpoint that is the container for realms. It resolves to:
 [options="nowrap"]
@@ -181,13 +181,13 @@ SERVER_URI/admin/realms/TARGET_REALM/ENDPOINT
 ----
 
 For example:
-[options="nowrap"]
+[options="nowrap",subs="attributes+"]
 ----
-$ kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user admin --password admin
+$ kcadm.sh config credentials --server http://localhost:8080{kc_base_path} --realm master --user admin --password admin
 $ kcadm.sh create users -s username=testuser -s enabled=true -r demorealm
 ----
 
-In this example, you start a session authenticated as the `admin` user in the `master` realm. You then perform a POST call against the resource URL `http://localhost:8080/auth/admin/realms/demorealm/users`.
+In this example, you start a session authenticated as the `admin` user in the `master` realm. You then perform a POST call against the resource URL `http://localhost:8080{kc_admins_path}/realms/demorealm/users`.
 
 The `create` and `update` commands send a JSON body to the server. You can use `-f FILENAME` to read a pre-made document from a file. When you can use the `-f -` option, {project_name} reads the message body from the standard input. You can specify individual attributes and their values, as seen in the `create users` example. {project_name} composes the attributes into a JSON body and sends them to the server.
 
@@ -946,9 +946,9 @@ Use the client ID to construct an endpoint URI that targets a specific client, s
 The response is in `.zip` format.
 
 For example:
-[options="nowrap"]
+[options="nowrap",subs="attributes+"]
 ----
-$ kcadm.sh get http://localhost:8080/auth/admin/realms/demorealm/clients/8f271c35-44e3-446f-8953-b0893810ebe7/installation/providers/docker-v2-compose-yaml -r demorealm > keycloak-docker-compose-yaml.zip
+$ kcadm.sh get http://localhost:8080{kc_admins_path}/realms/demorealm/clients/8f271c35-44e3-446f-8953-b0893810ebe7/installation/providers/docker-v2-compose-yaml -r demorealm > keycloak-docker-compose-yaml.zip
 ----
 
 [discrete]
@@ -1468,9 +1468,9 @@ $ kcadm.sh delete identity-provider/instances/facebook -r demorealm
 +
 For example:
 +
-[options="nowrap"]
+[options="nowrap",subs=+attributes]
 ----
-$ kcadm.sh create identity-provider/instances -r demorealm -s alias=keycloak-oidc -s providerId=keycloak-oidc -s enabled=true -s 'config.useJwksUrl="true"' -s config.authorizationUrl=http://localhost:8180/auth/realms/demorealm/protocol/openid-connect/auth -s config.tokenUrl=http://localhost:8180/auth/realms/demorealm/protocol/openid-connect/token -s config.clientId=demo-oidc-provider -s config.clientSecret=secret
+$ kcadm.sh create identity-provider/instances -r demorealm -s alias=keycloak-oidc -s providerId=keycloak-oidc -s enabled=true -s 'config.useJwksUrl="true"' -s config.authorizationUrl=http://localhost:8180{kc_realms_path}/demorealm/protocol/openid-connect/auth -s config.tokenUrl=http://localhost:8180{kc_realms_path}/demorealm/protocol/openid-connect/token -s config.clientId=demo-oidc-provider -s config.clientSecret=secret
 ----
 
 [discrete]
@@ -1485,9 +1485,9 @@ Configure the generic OpenID Connect provider the same way you configure the Key
 . Provide the `config` attributes: `singleSignOnServiceUrl`, `nameIDPolicyFormat`, and `signatureAlgorithm`.
 
 For example:
-[options="nowrap"]
+[options="nowrap",subs=+attributes]
 ----
-$ kcadm.sh create identity-provider/instances -r demorealm -s alias=saml -s providerId=saml -s enabled=true -s 'config.useJwksUrl="true"' -s config.singleSignOnServiceUrl=http://localhost:8180/auth/realms/saml-broker-realm/protocol/saml -s config.nameIDPolicyFormat=urn:oasis:names:tc:SAML:2.0:nameid-format:persistent -s config.signatureAlgorithm=RSA_SHA256
+$ kcadm.sh create identity-provider/instances -r demorealm -s alias=saml -s providerId=saml -s enabled=true -s 'config.useJwksUrl="true"' -s config.singleSignOnServiceUrl=http://localhost:8180{kc_realms_path}/saml-broker-realm/protocol/saml -s config.nameIDPolicyFormat=urn:oasis:names:tc:SAML:2.0:nameid-format:persistent -s config.signatureAlgorithm=RSA_SHA256
 ----
 
 [discrete]

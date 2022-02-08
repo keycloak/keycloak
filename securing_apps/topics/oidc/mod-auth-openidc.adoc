@@ -15,7 +15,7 @@ To configure _mod_auth_openidc_ you'll need
 
 An example configuration would look like the following.
 
-[source]
+[source,subs="attributes+"]
 ----
 LoadModule auth_openidc_module modules/mod_auth_openidc.so
 
@@ -29,7 +29,7 @@ ServerName ${HOSTIP}
     #this is required by mod_auth_openidc
     OIDCCryptoPassphrase a-random-secret-used-by-apache-oidc-and-balancer
 
-    OIDCProviderMetadataURL ${KC_ADDR}/auth/realms/${KC_REALM}/.well-known/openid-configuration
+    OIDCProviderMetadataURL ${KC_ADDR}{kc_realms_path}/${KC_REALM}/.well-known/openid-configuration
 
     OIDCClientID ${CLIENT_ID}
     OIDCClientSecret ${CLIENT_SECRET}

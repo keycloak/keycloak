@@ -65,7 +65,7 @@ You will have to define all adapter settings within the `jetty-web.xml` file as 
 Instead of using keycloak.json, you can define everything within the `jetty-web.xml`.
 You'll just have to figure out how the json settings match to the `org.keycloak.representations.adapters.config.AdapterConfig` class.
 +
-[source]
+[source,subs="attributes+"]
 ----
 <?xml version="1.0"?>
 <!DOCTYPE Configure PUBLIC "-//Mort Bay Consulting//DTD Configure//EN" "http://www.eclipse.org/jetty/configure_9_0.dtd">
@@ -77,7 +77,7 @@ You'll just have to figure out how the json settings match to the `org.keycloak.
                 <New class="org.keycloak.representations.adapters.config.AdapterConfig">
                     <Set name="realm">tomcat</Set>
                     <Set name="resource">customer-portal</Set>
-                    <Set name="authServerUrl">http://localhost:8081/auth</Set>
+                    <Set name="authServerUrl">http://localhost:8081{kc_base_path}</Set>
                     <Set name="sslRequired">external</Set>
                     <Set name="credentials">
                         <Map>

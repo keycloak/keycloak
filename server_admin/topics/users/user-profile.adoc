@@ -36,6 +36,7 @@ In the future, the legacy behavior will no longer be supported in {project_name}
 
 :tech_feature_name: Declarative User Profile
 :tech_feature_setting: -Dkeycloak.profile.feature.declarative_user_profile=enabled
+:tech_feature_id: declarative-user-profile
 include::../templates/techpreview.adoc[]
 
 In addition to enabling the `declarative_user_profile` feature, you should enable User Profile for a realm. To do that, click on the `Realm Settings` link on

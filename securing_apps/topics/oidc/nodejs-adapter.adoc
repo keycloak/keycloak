@@ -67,12 +67,12 @@ Instantiation with this method results in all of the reasonable defaults
 being used. As alternative, it's also possible to provide a configuration
 object, rather than the `keycloak.json` file:
 
-[source,javascript]
+[source,javascript,subs="attributes+"]
 ----
     let kcConfig = {
         clientId: 'myclient',
         bearerOnly: true,
-        serverUrl: 'http://localhost:8080/auth',
+        serverUrl: 'http://localhost:8080{kc_base_path}',
         realm: 'myrealm',
         realmPublicKey: 'MIIBIjANB...'
     };

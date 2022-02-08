@@ -67,7 +67,7 @@ If the user is unauthenticated in the IDP, the client still receives a `login_re
 |This switch is applicable if `Validate Signatures` is *ON*. If *Use JWKS URL* is *ON*, {project_name} downloads the IDP's public keys from the JWKS URL. New keys download when the identity provider generates a new keypair. If *OFF*, {project_name} uses the public key (or certificate) from its database, so when the IDP keypair changes, import the new key to the {project_name} database as well.
 
 |JWKS URL
-|The URL pointing to the location of the IDP JWK keys. For more information, see the https://self-issued.info/docs/draft-ietf-jose-json-web-key.html[JWK specification]. If you use an external {project_name} as an IDP, you can use a URL such as http://broker-keycloak:8180/auth/realms/test/protocol/openid-connect/certs if your brokered {project_name} is running on http://broker-keycloak:8180 and its realm is `test`.
+|The URL pointing to the location of the IDP JWK keys. For more information, see the https://self-issued.info/docs/draft-ietf-jose-json-web-key.html[JWK specification]. If you use an external {project_name} as an IDP, you can use a URL such as http://broker-keycloak:8180{kc_realms_path}/test/protocol/openid-connect/certs if your brokered {project_name} is running on http://broker-keycloak:8180 and its realm is `test`.
 
 |Validating Public Key
 |The public key in PEM format that {project_name} uses to verify external IDP signatures. This key applies if `Use JWKS URL` is *OFF*. 
@@ -77,4 +77,4 @@ If the user is unauthenticated in the IDP, the client still receives a `login_re
 
 |===
 
-You can import all this configuration data by providing a URL or file that points to OpenID Provider Metadata. If you connect to a {project_name} external IDP, you can import the IDP settings from `<root>/auth/realms/{realm-name}/.well-known/openid-configuration`. This link is a JSON document describing metadata about the IDP.
+You can import all this configuration data by providing a URL or file that points to OpenID Provider Metadata. If you connect to a {project_name} external IDP, you can import the IDP settings from `<root>{kc_realms_path}/{realm-name}/.well-known/openid-configuration`. This link is a JSON document describing metadata about the IDP.

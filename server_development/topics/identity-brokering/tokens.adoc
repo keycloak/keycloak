@@ -8,9 +8,9 @@ Application code can retrieve these tokens and responses to pull in extra user i
 For example, an application might want to use the Google token to invoke on other Google services and REST APIs.
 To retrieve a token for a particular identity provider you need to send a request as follows:
 
-[source]
+[source,subs="attributes+"]
 ----
-GET /auth/realms/{realm}/broker/{provider_alias}/token HTTP/1.1
+GET {kc_realms_path}/{realm}/broker/{provider_alias}/token HTTP/1.1
 Host: localhost:8080
 Authorization: Bearer <KEYCLOAK ACCESS TOKEN>
 ----

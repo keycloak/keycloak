@@ -94,36 +94,39 @@ If the authorization request does not map to any permission, a `403` HTTP status
 
 Example of a authorization request when a client is seeking access to two resources protected by a resource server.
 
-```bash
+[source,bash,subs="attributes+"]
+----
 curl -X POST \
-  http://${host}:${port}/auth/realms/${realm}/protocol/openid-connect/token \
+  http://${host}:${port}{kc_realms_path}/${realm}/protocol/openid-connect/token \
   -H "Authorization: Bearer ${access_token}" \
   --data "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket" \
   --data "audience={resource_server_client_id}" \
   --data "permission=Resource A#Scope A" \
   --data "permission=Resource B#Scope B"
-```
+----
 
 Example of a authorization request when a client is seeking access to any resource and scope protected by a resource server.
 
-```bash
+[source,bash,subs="attributes+"]
+----
 curl -X POST \
-  http://${host}:${port}/auth/realms/${realm}/protocol/openid-connect/token \
+  http://${host}:${port}{kc_realms_path}/${realm}/protocol/openid-connect/token \
   -H "Authorization: Bearer ${access_token}" \
   --data "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket" \
   --data "audience={resource_server_client_id}"
-```
+----
 
 Example of an authorization request when a client is seeking access to a UMA protected resource after receiving a permission ticket from
 the resource server as part of the authorization process:
 
-```bash
+[source,bash,subs="attributes+"]
+----
 curl -X POST \
-  http://${host}:${port}/auth/realms/${realm}/protocol/openid-connect/token \
+  http://${host}:${port}{kc_realms_path}/${realm}/protocol/openid-connect/token \
   -H "Authorization: Bearer ${access_token}" \
   --data "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket" \
   --data "ticket=${permission_ticket}
-```
+----
 
 If {project_name} assessment process results in issuance of permissions, it issues the RPT with which it has associated
 the permissions:

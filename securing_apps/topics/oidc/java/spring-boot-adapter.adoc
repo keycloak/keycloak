@@ -62,10 +62,10 @@ Use the procedure to configure your Spring Boot app to use {project_name}.
 
 . Instead of a `keycloak.json` file, you configure the realm for the Spring Boot  adapter via the normal Spring Boot configuration. For example:
 +
-[source]
+[source,subs="attributes+"]
 ----
 keycloak.realm = demorealm
-keycloak.auth-server-url = http://127.0.0.1:8080/auth
+keycloak.auth-server-url = http://127.0.0.1:8080{kc_base_path}
 keycloak.ssl-required = external
 keycloak.resource = demoapp
 keycloak.credentials.secret = 11111111-1111-1111-1111-111111111111

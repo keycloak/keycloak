@@ -24,13 +24,13 @@ sshRealm=keycloak
 
 . Add the `$FUSE_HOME/etc/keycloak-direct-access.json` file with content similar to the following (based on your environment and {project_name} client settings):
 +
-[source,json]
+[source,json,subs="attributes+"]
 ----
 {
     "realm": "demo",
     "resource": "ssh-jmx-admin-client",
     "ssl-required" : "external",
-    "auth-server-url" : "http://localhost:8080/auth",
+    "auth-server-url" : "http://localhost:8080{kc_base_path}",
     "credentials": {
         "secret": "password"
     }

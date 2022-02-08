@@ -155,13 +155,13 @@ The CIBA grant uses the following two providers.
 
 {project_name} has both default providers. However, the administrator needs to set up Authentication Channel Provider like this:
 
-[source,xml]
+[source,xml,subs="attributes+"]
 ----
 <spi name="ciba-auth-channel">
     <default-provider>ciba-http-auth-channel</default-provider>
     <provider name="ciba-http-auth-channel" enabled="true">
         <properties>
-            <property name="httpAuthenticationChannelUri" value="https://backend.internal.example.com/auth"/>
+            <property name="httpAuthenticationChannelUri" value="https://backend.internal.example.com{kc_base_path}"/>
         </properties>
     </provider>
 </spi>
@@ -261,8 +261,9 @@ Authentication Result Notification/ACK consists of the following messaging.
 
 Authentication Result Notification:: The authentication entity sends the result of the authentication request to {project_name}.
 
+[source,subs=+attributes]
 ----
-POST /auth/realms/[realm]/protocol/openid-connect/ext/ciba/auth/callback
+POST {kc_realms_path}/[realm]/protocol/openid-connect/ext/ciba/auth/callback
 ----
 
 * Headers
@@ -376,7 +377,7 @@ requests are sent to a registered backchannel logout URLs at {project_name} and 
 
 Here's a list of OIDC endpoints that the {project_name} publishes.  These URLs are useful if you are using a non-{project_name} client adapter to
 talk OIDC with the auth server.  These are all relative URLs and the root of the URL being the HTTP(S) protocol, hostname, and usually path prefixed with
-_/auth_, for example $$https://localhost:8080/auth$$. 
+_/auth_, for example \https://localhost:8080{kc_base_path}.
 
 You can also find these endpoints under "OpenID Endpoint Configuration" in your realm settings.
 

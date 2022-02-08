@@ -14,7 +14,7 @@ If your server is accessible from `localhost`, perform these steps.
 
 .Procedure
 
-. In a web browser, go to the http://localhost:8080/auth URL.
+. In a web browser, go to the http://localhost:8080{kc_base_path} URL.
 
 . Supply a username and password that you can recall.
 +
@@ -23,6 +23,20 @@ image:{project_images}/initial-welcome-page.png[Welcome Page]
 
 === Creating the account remotely
 
+ifeval::["{kc_dist}" == "quarkus"]
+If you cannot access the server from a `localhost` address, or just want to start {project_name} from the command line, use the `KEYCLOAK_ADMIN` and `KEYCLOAK_ADMIN_PASSWORD` environment variables to create an initial admin account.
+
+For example:
+[source,bash]
+----
+export KEYCLOAK_ADMIN=<username>
+export KEYCLOAK_ADMIN_PASSWORD=<password>
+
+bin/kc.[sh|bat] start
+----
+endif::[]
+
+ifeval::["{kc_dist}" == "wildfly"]
 If you cannot access the server from a `localhost` address, or just want to start {project_name} from the command line, use the `.../bin/add-user-keycloak` script.
 
 .Add-user-keycloak script
@@ -55,8 +69,7 @@ $ .../bin/add-user-keycloak.sh --sc domain/servers/server-one/configuration -r m
 ----
 > ...\bin\add-user-keycloak.bat --sc domain/servers/server-one/configuration -r master -u <username> -p <password>
 ----
-
-
+endif::[]
 
 
 

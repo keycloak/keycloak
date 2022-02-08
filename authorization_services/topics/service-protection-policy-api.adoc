@@ -7,9 +7,10 @@ servers on behalf of their users.
 
 The Policy API is available at:
 
-```
-http://${host}:${port}/auth/realms/${realm_name}/authz/protection/uma-policy/{resource_id}
-```
+[source,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm_name}/authz/protection/uma-policy/{resource_id}
+----
 
 This API is protected by a bearer token that must represent a consent granted by the user to the resource server to manage permissions on his behalf. The bearer token can be a regular access token obtained from the
 token endpoint using:
@@ -22,9 +23,10 @@ where audience is the resource server
 
 To associate a permission with a specific resource you must send a HTTP POST request as follows:
 
-```bash
+[source,bash,subs="attributes+"]
+----
 curl -X POST \
-  http://localhost:8180/auth/realms/photoz/authz/protection/uma-policy/{resource_id} \
+  http://localhost:8180{kc_realms_path}/photoz/authz/protection/uma-policy/{resource_id} \
   -H 'Authorization: Bearer '$access_token \
   -H 'Cache-Control: no-cache' \
   -H 'Content-Type: application/json' \
@@ -34,16 +36,17 @@ curl -X POST \
 	"scopes": ["read"],
 	"roles": ["people-manager"]
 }'
-```
+----
 
 In the example above we are creating and associating a new permission to a resource represented by `resource_id` where
 any user with a role `people-manager` should be granted with the `read` scope.
 
 You can also create policies using other access control mechanisms, such as using groups:
 
-```bash
+[source,bash,subs="attributes+"]
+----
 curl -X POST \
-  http://localhost:8180/auth/realms/photoz/authz/protection/uma-policy/{resource_id} \
+  http://localhost:8180{kc_realms_path}/photoz/authz/protection/uma-policy/{resource_id} \
   -H 'Authorization: Bearer '$access_token \
   -H 'Cache-Control: no-cache' \
   -H 'Content-Type: application/json' \
@@ -53,13 +56,14 @@ curl -X POST \
 	"scopes": ["read"],
 	"groups": ["/Managers/People Managers"]
 }'
-```
+----
 
 Or a specific client:
 
-```bash
+[source,bash,subs="attributes+"]
+----
 curl -X POST \
-  http://localhost:8180/auth/realms/photoz/authz/protection/uma-policy/{resource_id} \
+  http://localhost:8180{kc_realms_path}/photoz/authz/protection/uma-policy/{resource_id} \
   -H 'Authorization: Bearer '$access_token \
   -H 'Cache-Control: no-cache' \
   -H 'Content-Type: application/json' \
@@ -69,7 +73,7 @@ curl -X POST \
 	"scopes": ["read"],
 	"clients": ["my-client"]
 }'
-```
+----
 
 Or even using a custom policy using JavaScript:
 
@@ -77,9 +81,10 @@ Or even using a custom policy using JavaScript:
 :tech_feature_setting: -Dkeycloak.profile.feature.upload_scripts=enabled
 include::./templates/deprecated.adoc[]
 
-```bash
+[source,bash,subs="attributes+"]
+----
 curl -X POST \
-  http://localhost:8180/auth/realms/photoz/authz/protection/uma-policy/{resource_id} \
+  http://localhost:8180{kc_realms_path}/photoz/authz/protection/uma-policy/{resource_id} \
   -H 'Authorization: Bearer '$access_token \
   -H 'Cache-Control: no-cache' \
   -H 'Content-Type: application/json' \
@@ -89,15 +94,16 @@ curl -X POST \
 	"scopes": ["read"],
 	"condition": "if (isPeopleManager()) {$evaluation.grant()}"
 }'
-```
+----
 
 It is also possible to set any combination of these access control mechanisms.
 
 To update an existing permission, send an HTTP PUT request as follows:
 
-```bash
+[source,bash,subs="attributes+"]
+----
 curl -X PUT \
-  http://localhost:8180/auth/realms/photoz/authz/protection/uma-policy/{permission_id} \
+  http://localhost:8180{kc_realms_path}/photoz/authz/protection/uma-policy/{permission_id} \
   -H 'Authorization: Bearer '$access_token \
   -H 'Content-Type: application/json' \
   -d '{
@@ -115,41 +121,46 @@ curl -X PUT \
         "user"
     ]
 }'
-```
+----
 == Removing a Permission
 
 To remove a permission associated with a resource, send an HTTP DELETE request as follows:
 
-```bash
+[source,bash,subs="attributes+"]
+----
 curl -X DELETE \
-  http://localhost:8180/auth/realms/photoz/authz/protection/uma-policy/{permission_id} \
+  http://localhost:8180{kc_realms_path}/photoz/authz/protection/uma-policy/{permission_id} \
   -H 'Authorization: Bearer '$access_token
-```
+----
 
 == Querying Permission
 
 To query the permissions associated with a resource, send an HTTP GET request as follows:
 
-```bash
-http://${host}:${port}/auth/realms/${realm}/authz/protection/uma-policy?resource={resource_id}
-```
+[source,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm}/authz/protection/uma-policy?resource={resource_id}
+----
 
 To query the permissions given its name, send an HTTP GET request as follows:
 
-```bash
-http://${host}:${port}/auth/realms/${realm}/authz/protection/uma-policy?name=Any people manager
-```
+[source,bash,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm}/authz/protection/uma-policy?name=Any people manager
+----
 
 To query the permissions associated with a specific scope, send an HTTP GET request as follows:
 
-```bash
-http://${host}:${port}/auth/realms/${realm}/authz/protection/uma-policy?scope=read
-```
+[source,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm}/authz/protection/uma-policy?scope=read
+----
 
 To query all permissions, send an HTTP GET request as follows:
 
-```bash
-http://${host}:${port}/auth/realms/${realm}/authz/protection/uma-policy
-```
+[source,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm}/authz/protection/uma-policy
+----
 
 When querying the server for permissions use parameters `first` and `max` results to limit the result.

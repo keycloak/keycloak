@@ -26,7 +26,14 @@ The maximum number of `AuthenticationSessionEntity` per `RootAuthenticationSessi
 
 The following example shows how to limit the number of active `AuthenticationSessionEntity` per a `RootAuthenticationSessionEntity` to 100.
 
+ifeval::["{kc_dist}" == "quarkus"]
+[source,bash]
+----
+bin/kc.[sh|bat] start --spi-authentication-sessions-infinispan-auth-sessions-limit=100
+----
+endif::[]
 
+ifeval::["{kc_dist}" == "wildfly"]
 [source,xml]
 ----
 <subsystem xmlns="urn:jboss:domain:keycloak-server:1.1">
@@ -50,3 +57,4 @@ Equivalent configuration using CLI commands:
 /subsystem=keycloak-server/spi=authenticationSessions:add(default-provider=infinispan)
 /subsystem=keycloak-server/spi=authenticationSessions/provider=infinispan:add(properties={authSessionsLimit => "100"},enabled=true)
 ----
+endif::[]

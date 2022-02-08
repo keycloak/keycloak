@@ -7,6 +7,7 @@
 ifeval::[{project_product}==true]
 :tech_feature_name: WebAuthn
 :tech_feature_setting: -Dkeycloak.profile.feature.web_authn=enabled
+:tech_feature_id: web-authn
 include::../templates/techpreview.adoc[]
 endif::[]
 

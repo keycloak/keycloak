@@ -17,7 +17,7 @@ Any user can access the Account Console.
 
 . Make note of the realm name and IP address for the {project_name} server where your account exists.
 
-. In a web browser, enter a URL in this format: `<server-root>/auth/realms/{realm-name}/account`.
+. In a web browser, enter a URL in this format: `<server-root>{kc_realms_path}/{realm-name}/account`.
 
 . Enter your login name and password.
 

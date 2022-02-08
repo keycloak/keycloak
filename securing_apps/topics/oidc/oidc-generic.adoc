@@ -12,7 +12,7 @@ The most important endpoint to understand is the `well-known` configuration endp
 
 To obtain the full URL, add the base URL for {project_name} and replace `{realm-name}` with the name of your realm. For example:
 
-$$http://localhost:8080/auth/realms/master/.well-known/openid-configuration$$
+\http://localhost:8080{kc_realms_path}/master/.well-known/openid-configuration
 
 Some RP libraries retrieve all required endpoints from this endpoint, but for others you might need to list the endpoints individually.
 
@@ -96,7 +96,7 @@ For more details on how to invoke on this endpoint, see https://datatracker.ietf
 
 ===== Device Authorization endpoint
 ....
-/realms/{realm-name}/protocol/openid-connect/auth/device
+/realms/{realm-name}/protocol/openid-connectauth/device
 ....
 
 The device authorization endpoint is used to obtain a device code and a user code. It can be invoked by confidential or public clients.
@@ -179,7 +179,7 @@ For more details refer to the https://datatracker.ietf.org/doc/html/rfc6749#sect
 The following example shows how to obtain an access token for a user in the realm `master` with username `user` and password `password`. The example is using
 the confidential client `myclient`:
 
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
 curl \
   -d "client_id=myclient" \
@@ -187,7 +187,7 @@ curl \
   -d "username=user" \
   -d "password=password" \
   -d "grant_type=password" \
-  "http://localhost:8080/auth/realms/master/protocol/openid-connect/token"
+  "http://localhost:8080{kc_realms_path}/master/protocol/openid-connect/token"
 ----
 
 ===== Client credentials

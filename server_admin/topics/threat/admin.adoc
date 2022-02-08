@@ -3,7 +3,7 @@
 
 {project_name} exposes the administrative REST API and the web console on the same port as non-administrative usage by default. Do not expose administrative endpoints externally if external access is not necessary. If you need to expose administrative endpoints externally, you can expose them directly in {project_name} or use a proxy.
 
-To expose endpoints by using a proxy, consult the documentation for the proxy. You need to control access to requests to the `/auth/admin` endpoint.
+To expose endpoints by using a proxy, consult the documentation for the proxy. You need to control access to requests to the `{kc_admins_path}` endpoint.
 
 Two options are available in {project_name} to expose endpoints directly, IP restriction and separate ports.
 
@@ -11,7 +11,7 @@ When the Admin Console becomes inaccessible on the frontend URL of {project_name
 
 ==== IP restriction
 
-You can restrict access to `/auth/admin` to only specific IP addresses. For example, restrict access to `/auth/admin` to IP addresses in the range `10.0.0.1` to `10.0.0.255`.
+You can restrict access to `{kc_admins_path}` to only specific IP addresses. For example, restrict access to `{kc_admins_path}` to IP addresses in the range `10.0.0.1` to `10.0.0.255`.
 
 [source,xml,subs="attributes+"]
 ----
@@ -25,7 +25,7 @@ You can restrict access to `/auth/admin` to only specific IP addresses. For exam
         </host>
     </server>
     <filters>
-        <expression-filter name="ipAccess" expression="path-prefix('/auth/admin') -> ip-access-control(acl={'10.0.0.0/24 allow'})"/>
+        <expression-filter name="ipAccess" expression="path-prefix('{kc_admins_path}') -> ip-access-control(acl={'10.0.0.0/24 allow'})"/>
     </filters>
     ...
 </subsystem>
@@ -33,9 +33,9 @@ You can restrict access to `/auth/admin` to only specific IP addresses. For exam
 
 You can also restrict access to specific IP addresses by using these CLI commands.:
 
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
-/subsystem=undertow/configuration=filter/expression-filter=ipAccess:add(,expression="path-prefix[/auth/admin] -> ip-access-control(acl={'10.0.0.0/24 allow'})")
+/subsystem=undertow/configuration=filter/expression-filter=ipAccess:add(,expression="path-prefix[{kc_admins_path}] -> ip-access-control(acl={'10.0.0.0/24 allow'})")
 /subsystem=undertow/server=default-server/host=default-host/filter-ref=ipAccess:add()
 ----
 
@@ -46,7 +46,7 @@ For IP restriction using a proxy, configure the proxy to ensure {project_name} r
 
 ==== Port restriction
 
-You can expose `/auth/admin` to a different unexposed port. For example, expose `/auth/admin` on port `8444` and prevent access to the default port `8443`.
+You can expose `{kc_admins_path}` to a different unexposed port. For example, expose `{kc_admins_path}` on port `8444` and prevent access to the default port `8443`.
 
 [source,xml,subs="attributes+"]
 ----
@@ -62,7 +62,7 @@ You can expose `/auth/admin` to a different unexposed port. For example, expose 
         </host>
     </server>
     <filters>
-        <expression-filter name="portAccess" expression="path-prefix('/auth/admin') and not equals(%p, 8444) -> response-code(403)"/>
+        <expression-filter name="portAccess" expression="path-prefix('{kc_admins_path}') and not equals(%p, 8444) -> response-code(403)"/>
     </filters>
     ...
 </subsystem>
@@ -77,14 +77,14 @@ You can expose `/auth/admin` to a different unexposed port. For example, expose 
 </socket-binding-group>
 ----
 
-You can expose `/auth/admin` on port `8444` and prevent access to the default port `8443` by using CLI commands:
+You can expose `{kc_admins_path}` on port `8444` and prevent access to the default port `8443` by using CLI commands:
 
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
 /socket-binding-group=standard-sockets/socket-binding=https-admin/:add(port=8444)
 
 /subsystem=undertow/server=default-server/https-listener=https-admin:add(socket-binding=https-admin, security-realm=ApplicationRealm, enable-http2=true)
 
-/subsystem=undertow/configuration=filter/expression-filter=portAccess:add(,expression="path-prefix('/auth/admin') and not equals(%p, 8444) -> response-code(403)")
+/subsystem=undertow/configuration=filter/expression-filter=portAccess:add(,expression="path-prefix('{kc_admins_path}') and not equals(%p, 8444) -> response-code(403)")
 /subsystem=undertow/server=default-server/host=default-host/filter-ref=portAccess:add()
 ----

@@ -20,12 +20,12 @@ hawtio.rolePrincipalClasses=org.keycloak.adapters.jaas.RolePrincipal,org.apache.
 
 . Create the `keycloak-hawtio-client.json` file in the `$FUSE_HOME/etc` directory using content similar to that shown in the example below. Change the `realm`, `resource`, and `auth-server-url` properties according to your {project_name} environment. The `resource` property must point to the client created in the previous step. This file is used by the client (Hawtio JavaScript application) side.
 
-[source,json]
+[source,json,subs="attributes+"]
 ----
 {
   "realm" : "demo",
   "resource" : "hawtio-client",
-  "auth-server-url" : "http://localhost:8080/auth",
+  "auth-server-url" : "http://localhost:8080{kc_base_path}",
   "ssl-required" : "external",
   "public-client" : true
 }
@@ -33,13 +33,13 @@ hawtio.rolePrincipalClasses=org.keycloak.adapters.jaas.RolePrincipal,org.apache.
 
 . Create the `keycloak-hawtio.json` file in the `$FUSE_HOME/etc` dicrectory using content similar to that shown in the example below. Change the `realm` and `auth-server-url` properties according to your {project_name} environment. This file is used by the adapters on the server (JAAS Login module) side.
 +
-[source,json]
+[source,json,subs="attributes+"]
 ----
 {
   "realm" : "demo",
   "resource" : "jaas",
   "bearer-only" : true,
-  "auth-server-url" : "http://localhost:8080/auth",
+  "auth-server-url" : "http://localhost:8080{kc_base_path}",
   "ssl-required" : "external",
   "use-resource-role-mappings": false,
   "principal-attribute": "preferred_username"

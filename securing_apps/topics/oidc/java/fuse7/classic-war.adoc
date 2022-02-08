@@ -53,12 +53,12 @@ For example:
 +
 For example:
 +
-[source,json]
+[source,json,subs="attributes+"]
 ----
 {
     "realm": "demo",
     "resource": "customer-portal",
-    "auth-server-url": "http://localhost:8080/auth",
+    "auth-server-url": "http://localhost:8080{kc_base_path}",
     "ssl-required" : "external",
     "credentials": {
         "secret": "password"

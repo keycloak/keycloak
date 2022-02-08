@@ -10,7 +10,7 @@ You configure realms and perform most administrative tasks in the {project_name}
 
 . Go the the URL for the Admin Console.
 +
-For example, for localhost, use this URL: http://localhost:8080/auth/admin/
+For example, for localhost, use this URL: http://localhost:8080{kc_admins_path}/
 +
 .Login page
 image:{project_images}/login-page.png[Login page]

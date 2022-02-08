@@ -82,6 +82,18 @@ Example service configuration file (`META-INF/services/org.keycloak.theme.ThemeS
 org.acme.provider.MyThemeSelectorProviderFactory
 ----
 
+ifeval::["{kc_dist}" == "quarkus"]
+You can configure your provider through server configuring.
+
+For example by adding starting the server with the following arguments:
+
+[source,bash]
+----
+bin/kc.[sh|bat] --spi-theme-selector-my-theme-selector-enabled=true --spi-theme-selector-my-theme-selector-theme=my-theme
+----
+endif::[]
+
+ifeval::["{kc_dist}" == "wildfly"]
 You can configure your provider through `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.
 
 For example by adding the following to `standalone.xml`:
@@ -96,6 +108,7 @@ For example by adding the following to `standalone.xml`:
     </provider>
 </spi>
 ----
+endif::[]
 
 Then you can retrieve the config in the `ProviderFactory` init method:
 
@@ -165,7 +178,18 @@ usage of the `KeycloakSession`, which is available to your provider as described
 * *Single-implementation provider types* - There can be only a single active implementation of the particular provider type in {project_name} runtime.
 For example `HostnameProvider` specifies the hostname to be used by {project_name} and that is shared for the whole {project_name} server.
 Hence there can be only single implementation of this provider active for the {project_name} server. If there are multiple provider implementations available to the server runtime,
-one of them needs to be specified in the keycloak subsystem configuration in the `standalone.xml` as the default one. For example such as:
+one of them needs to be specified as the default one.
+
+ifeval::["{kc_dist}" == "quarkus"]
+For example such as:
+[source,bash]
+----
+bin/kc.[sh|bat] build --spi-hostname-provider=default
+----
+endif::[]
+
+ifeval::["{kc_dist}" == "wildfly"]
+For example such as:
 [source,xml]
 ----
 <spi name="hostname">
@@ -173,6 +197,8 @@ one of them needs to be specified in the keycloak subsystem configuration in the
     ...
 </spi>
 ----
+endif::[]
+
 The value `default` used as the value of `default-provider` must match the ID returned by the `ProviderFactory.getId()` of the particular provider factory implementation.
 In the code, you can obtain the provider such as `keycloakSession.getProvider(HostnameProvider.class)`
 
@@ -184,7 +210,27 @@ as there can be multiple instances of this provider type as described above. The
 particular provider factory implementation. Some provider types can be retrieved with the usage of `ComponentModel` as the second argument and some (for example `Authenticator`) even
 need to be retrieved with the usage of `KeycloakSessionFactory`. It is not recommended to implement your own providers this way as it may be deprecated in the future.
 
+ifeval::["{kc_dist}" == "quarkus"]
+=== Registering provider implementations
 
+Providers are registered with the server by simply copying them to the `providers` directory.
+
+If your provider needs additional dependencies not already provided by Keycloak copy these to the `providers` directory.
+
+After registering new providers or dependencies Keycloak needs to be re-built with the `kc.[sh|bat] build` command.
+
+==== Disabling a provider
+
+You can disable a provider by setting the enabled attribute for the provider to false.
+For example to disable the Infinispan user cache provider use:
+
+[source,bash]
+----
+bin/kc.[sh|bat] build --spi-user-cache-infinispan-enabled=false
+----
+endif::[]
+
+ifeval::["{kc_dist}" == "wildfly"]
 === Registering provider implementations
 
 There are two ways to register provider implementations. In most cases the simplest way is to use the {project_name} deployer
@@ -335,6 +381,7 @@ public class EjbExampleUserStorageProviderFactory
         }
     }
 ----
+endif::[]
 
 [[_script_providers]]
 === JavaScript providers
@@ -466,7 +513,13 @@ The name of the script file. This property is *mandatory* and should map to a fi
 
 ==== Deploy the script JAR
 
+ifeval::["{kc_dist}" == "quarkus"]
+Once you have a JAR file with a descriptor and the scripts you want to deploy, you just need to copy the JAR to the {project_name} `providers/` directory, then run `bin/kc.[sh|bat] build`.
+endif::[]
+
+ifeval::["{kc_dist}" == "wildfly"]
 Once you have a JAR file with a descriptor and the scripts you want to deploy, you just need to copy the JAR to the {project_name} `standalone/deployments/` directory.
+endif::[]
 
 ==== Using the {project_name} Admin Console to upload scripts
 

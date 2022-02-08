@@ -68,12 +68,12 @@ through the `KeycloakInstalled` constructor.
 In the example below, the client configuration for `desktop-app`
 uses the following `keycloak.json`:
 
-[source,json]
+[source,json,subs="attributes+"]
 ----
 
 {
   "realm": "desktop-app-auth",
-  "auth-server-url": "http://localhost:8081/auth",
+  "auth-server-url": "http://localhost:8081{kc_base_path}",
   "ssl-required": "external",
   "resource": "desktop-app",
   "public-client": true,

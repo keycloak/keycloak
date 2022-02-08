@@ -3,7 +3,7 @@
 
 {project_name} comes with a client-side JavaScript library that can be used to secure HTML5/JavaScript applications. The JavaScript adapter has built-in support for Cordova applications.
 
-The library can be retrieved directly from the {project_name} server at `/auth/js/keycloak.js` and is also distributed as a ZIP archive.
+The library can be retrieved directly from the {project_name} server at `{kc_js_path}/keycloak.js` and is also distributed as a ZIP archive.
 
 A best practice is to load the JavaScript adapter directly from {project_name} Server as it will automatically be updated when you upgrade the server. If you copy the adapter to your web application instead, make sure you upgrade the adapter only after you have upgraded the server.
 
@@ -55,10 +55,10 @@ var keycloak = new Keycloak('http://localhost:8080/myapp/keycloak.json');
 
 Alternatively, you can pass in a JavaScript object with the required configuration instead:
 
-[source,javascript]
+[source,javascript,subs="attributes+"]
 ----
 var keycloak = new Keycloak({
-    url: 'http://keycloak-server/auth',
+    url: 'http://keycloak-server${kc_base_path}',
     realm: 'myrealm',
     clientId: 'myapp'
 });
@@ -358,11 +358,11 @@ An affected browser is for example Safari starting with version 13.1.
 
 ===== Constructor
 
-[source,javascript]
+[source,javascript,subs="attributes+"]
 ----
 new Keycloak();
 new Keycloak('http://localhost/keycloak.json');
-new Keycloak({ url: 'http://localhost/auth', realm: 'myrealm', clientId: 'myApp' });
+new Keycloak({ url: 'http://localhost{kc_base_path}', realm: 'myrealm', clientId: 'myApp' });
 ----
 
 ===== Properties

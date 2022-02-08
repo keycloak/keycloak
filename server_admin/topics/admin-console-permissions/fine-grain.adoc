@@ -4,6 +4,7 @@
 
 :tech_feature_name: Fine Grain Admin Permissions
 :tech_feature_setting: -Dkeycloak.profile.feature.admin_fine_grained_authz=enabled
+:tech_feature_id: admin-fine-grained-authz
 include::../templates/techpreview.adoc[]
 
 Sometimes roles like `manage-realm` or `manage-users` are too coarse grain and you want to create
@@ -101,7 +102,7 @@ IMPORTANT If you do not set the `query-clients` role, restricted admins like `sa
 ===== Testing it out
 
 Next, we log out of the master realm and re-login to the <<_per_realm_admin_permissions, dedicated admin console>> for the `test` realm
-using the `sales-admin` as a username.  This is located under `/auth/admin/test/console`.
+using the `sales-admin` as a username.  This is located under `{kc_admins_path}/test/console`.
 
 .Sales admin login
 image:{project_images}/fine-grain-sales-admin-login.png[]
@@ -165,7 +166,7 @@ image:{project_images}/fine-grain-add-view-users.png[]
 ===== Testing it out
 
 Next, we log out of the master realm and re-login to the <<_per_realm_admin_permissions, dedicated admin console>> for the `test` realm
-using the `sales-admin` as a username.  This is located under `/auth/admin/test/console`.
+using the `sales-admin` as a username.  This is located under `{kc_admins_path}/test/console`.
 
 You will see that now the `sales-admin` can view users in the system.  If you select one of the
 users you'll see that each user detail page is read only, except for the `Role Mappings` tab.

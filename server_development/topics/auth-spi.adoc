@@ -849,7 +849,13 @@ org.keycloak.examples.authenticator.SecretQuestionRequiredActionFactory
 
 This services/ file is used by {project_name} to scan the providers it has to load into the system.
 
-To deploy this jar, just copy it to the `standalone/deployments` directory.
+ifeval::["{kc_dist}" == "quarkus"]
+To deploy this jar, copy it to the `providers/` directory, then run `bin/kc.[sh|bat] build`.
+endif::[]
+
+ifeval::["{kc_dist}" == "wildfly"]
+To deploy this jar, just copy it to the `standalone/deployments/` directory.
+endif::[]
 
 ==== Implement the RequiredActionProvider
 
@@ -1121,7 +1127,13 @@ org.keycloak.authentication.forms.RegistrationRecaptcha
 
 This services/ file is used by {project_name} to scan the providers it has to load into the system.
 
-To deploy this jar, just copy it to the `standalone/deployments` directory.
+ifeval::["{kc_dist}" == "quarkus"]
+To deploy this jar, copy it to the `providers/` directory, then run `bin/kc.[sh|bat] build`.
+endif::[]
+
+ifeval::["{kc_dist}" == "wildfly"]
+To deploy this jar, just copy it to the `standalone/deployments/` directory.
+endif::[]
 
 ==== Adding FormAction to the registration flow
 

@@ -31,6 +31,12 @@ endif::[]
 :create_cmd: kubectl apply
 :create_cmd_brief: kubectl
 
+:kc_dist: quarkus
+:kc_realms_path: /realms
+:kc_admins_path: /admin
+:kc_js_path: /js
+:kc_base_path:
+
 :quickstartRepo_link: https://github.com/keycloak/keycloak-quickstarts
 :quickstartRepo_name: Keycloak Quickstarts Repository
 :quickstartRepo_dir: keycloak-quickstarts

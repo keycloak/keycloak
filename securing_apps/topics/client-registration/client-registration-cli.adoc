@@ -15,7 +15,7 @@ To allow a particular user to use `Client Registration CLI` the {project_name} a
 
 .Procedure
 
-. Log in to the Admin Console (for example, http://localhost:8080/auth/admin) as [command]`admin`.
+. Log in to the Admin Console (for example, http://localhost:8080{kc_admins_path}) as [command]`admin`.
 . Select a realm to administer.
 . If you want to use an existing user, select that user to edit; otherwise, create a new user.
 . Select *Role Mappings > Client Roles > realm-management*. If you are in the master realm, select *NAME-realm*, where `NAME` is the name of the target realm. You can grant access to any other realm to users in the master realm.
@@ -92,17 +92,17 @@ For example, on:
 
 * Linux:
 +
-[options="npwrap"]
+[options="npwrap",subs="attributes+"]
 ----
-$ kcreg.sh config credentials --server http://localhost:8080/auth --realm demo --user user --client reg-cli
+$ kcreg.sh config credentials --server http://localhost:8080{kc_base_path} --realm demo --user user --client reg-cli
 $ kcreg.sh create -s clientId=my_client -s 'redirectUris=["http://localhost:8980/myapp/*"]'
 $ kcreg.sh get my_client
 ----
 * Windows:
 +
-[options="npwrap"]
+[options="npwrap",subs="attributes+"]
 ----
-c:\> kcreg config credentials --server http://localhost:8080/auth --realm demo --user user --client reg-cli
+c:\> kcreg config credentials --server http://localhost:8080{kc_base_path} --realm demo --user user --client reg-cli
 c:\> kcreg create -s clientId=my_client -s "redirectUris=[\"http://localhost:8980/myapp/*\"]"
 c:\> kcreg get my_client
 ----

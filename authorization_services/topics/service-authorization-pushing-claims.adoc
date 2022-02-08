@@ -7,16 +7,17 @@ claims available to your policies when evaluating permissions.
 If you are obtaining permissions from the server *without* using a permission ticket (UMA flow), you can send
 an authorization request to the token endpoint as follows:
 
-```bash
+[source,bash,subs="attributes+"]
+----
 curl -X POST \
-  http://${host}:${port}/auth/realms/${realm}/protocol/openid-connect/token \
+  http://${host}:${port}{kc_realms_path}/${realm}/protocol/openid-connect/token \
   --data "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket" \
   --data "claim_token=ewogICAib3JnYW5pemF0aW9uIjogWyJhY21lIl0KfQ==" \
   --data "claim_token_format=urn:ietf:params:oauth:token-type:jwt" \
   --data "client_id={resource_server_client_id}" \
   --data "client_secret={resource_server_client_secret}" \
   --data "audience={resource_server_client_id}"
-```
+----
 
 The `claim_token` parameter expects a BASE64 encoded JSON with a format similar to the example below:
 

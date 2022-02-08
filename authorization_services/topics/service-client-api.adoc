@@ -22,16 +22,17 @@ It is targeted for resource servers that want to access the different endpoints 
 
 The client configuration is defined in a ``keycloak.json`` file as follows:
 
-```json
+[source,json,subs="attributes+"]
+----
 {
   "realm": "hello-world-authz",
-  "auth-server-url" : "http://localhost:8080/auth",
+  "auth-server-url" : "http://localhost:8080{kc_base_path}",
   "resource" : "hello-world-authz-service",
   "credentials": {
     "secret": "secret"
   }
 }
-```
+----
 
 * *realm* (required)
 +
@@ -39,7 +40,7 @@ The name of the realm.
 
 * *auth-server-url* (required)
 +
-The base URL of the {project_name} server. All other {project_name} pages and REST service endpoints are derived from this. It is usually in the form https://host:port/auth.
+The base URL of the {project_name} server. All other {project_name} pages and REST service endpoints are derived from this. It is usually in the form https://host:port{kc_base_path}.
 
 * *resource* (required)
 +

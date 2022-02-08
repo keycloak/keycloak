@@ -6,10 +6,12 @@ When you click _Advanced Settings_, additional fields are displayed.
 [[_mtls-client-certificate-bound-tokens]]
 *OAuth 2.0 Mutual TLS Certificate Bound Access Tokens Enabled*
 
+ifeval::["{kc_dist}" == "wildfly"]
 [NOTE]
 ====
 To enable mutual TLS in {project_name}, see <<_enable-mtls-wildfly, Enable mutual SSL in WildFly>>.
 ====
+endif::[]
 
 Mutual TLS binds an access token and a refresh token together with a client certificate, which is exchanged during a TLS handshake. This binding prevents an attacker from using stolen tokens.
 

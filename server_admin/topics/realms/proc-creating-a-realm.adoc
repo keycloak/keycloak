@@ -26,9 +26,3 @@ image:{project_images}/add-realm-menu.png[Add realm menu]
 image:{project_images}/create-realm.png[Create realm]
 
 The current realm is now set to the realm you just created.  You can switch between managing different realms by pointing to the top left corner to click *Select Realm*.
-
-ifdef::standalone[]
-[role="_additional-resources"]
-.Additional resources
-* Alternatively you can import a JSON document that defines your new realm. For more detail, see the xref:assembly-exporting-importing_{context}[Export and Import] chapter.
-endif::[]

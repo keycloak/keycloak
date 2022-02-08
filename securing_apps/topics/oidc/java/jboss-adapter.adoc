@@ -238,7 +238,7 @@ While you don't have to specify KEYCLOAK as an `auth-method`, you still have to 
 You do not, however, have to create a `WEB-INF/keycloak.json` file.
 The metadata is instead defined within server configuration (`standalone.xml`) in the {project_name} subsystem definition.
 
-[source,xml]
+[source,xml,subs="attributes+"]
 ----
 <extensions>
   <extension module="org.keycloak.keycloak-adapter-subsystem"/>
@@ -248,7 +248,7 @@ The metadata is instead defined within server configuration (`standalone.xml`) i
   <subsystem xmlns="urn:jboss:domain:keycloak:1.1">
      <secure-deployment name="WAR MODULE NAME.war">
         <realm>demo</realm>
-        <auth-server-url>http://localhost:8081/auth</auth-server-url>
+        <auth-server-url>http://localhost:8081{kc_base_path}</auth-server-url>
         <ssl-required>external</ssl-required>
         <resource>customer-portal</resource>
         <credential name="secret">password</credential>
@@ -267,11 +267,11 @@ It provides an example XML file you can cut and paste.
 
 If you have multiple deployments secured by the same realm you can share the realm configuration in a separate element. For example:
 
-[source,xml]
+[source,xml,subs="attributes+"]
 ----
 <subsystem xmlns="urn:jboss:domain:keycloak:1.1">
     <realm name="demo">
-        <auth-server-url>http://localhost:8080/auth</auth-server-url>
+        <auth-server-url>http://localhost:8080{kc_base_path}</auth-server-url>
         <ssl-required>external</ssl-required>
     </realm>
     <secure-deployment name="customer-portal.war">

@@ -6,7 +6,7 @@ You can secure Apache Camel endpoints implemented with the https://camel.apache.
 
 For example:
 
-[source,xml]
+[source,xml,subs="attributes+"]
 ----
 <?xml version="1.0" encoding="UTF-8"?>
 
@@ -21,7 +21,7 @@ For example:
         <property name="realm" value="demo"/>
         <property name="resource" value="admin-camel-endpoint"/>
         <property name="bearerOnly" value="true"/>
-        <property name="authServerUrl" value="http://localhost:8080/auth" />
+        <property name="authServerUrl" value="http://localhost:8080{kc_base_path}" />
         <property name="sslRequired" value="EXTERNAL"/>
     </bean>
 

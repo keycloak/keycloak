@@ -20,9 +20,9 @@ There are some preconditions that must be met by the client application before i
 
 To initiate the login, the application must fabricate a URL and redirect the user's browser to this URL.  The URL looks like this:
 
-[source]
+[source,subs="attributes+"]
 ----
-/{auth-server-root}/auth/realms/{realm}/broker/{provider}/link?client_id={id}&redirect_uri={uri}&nonce={nonce}&hash={hash}
+/{auth-server-root}{kc_realms_path}/{realm}/broker/{provider}/link?client_id={id}&redirect_uri={uri}&nonce={nonce}&hash={hash}
 ----
 
 Here's a description of each path and query param:
@@ -50,7 +50,7 @@ hash::
 Here's an example of Java Servlet code that generates the URL to establish the account link.
 
 
-[source,java]
+[source,java,subs="attributes+"]
 ----
    KeycloakSecurityContext session = (KeycloakSecurityContext) httpServletRequest.getAttribute(KeycloakSecurityContext.class.getName());
    AccessToken token = session.getToken();
@@ -68,7 +68,7 @@ Here's an example of Java Servlet code that generates the URL to establish the a
    request.getSession().setAttribute("hash", hash);
    String redirectUri = ...;
    String accountLinkUrl = KeycloakUriBuilder.fromUri(authServerRootUrl)
-                    .path("/auth/realms/{realm}/broker/{provider}/link")
+                    .path("{kc_realms_path}/{realm}/broker/{provider}/link")
                     .queryParam("nonce", nonce)
                     .queryParam("hash", hash)
                     .queryParam("client_id", clientId)

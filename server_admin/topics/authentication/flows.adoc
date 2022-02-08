@@ -324,9 +324,9 @@ image:images/authentication-step-up-flow.png[]
 .Request a certain authentication level
 To use the step-up mechanism, you have to specify a requested level of authentication (LoA) in your authentication request. The claims parameter is used for this purpose:
 
-[source]
+[source,subs=+attributes]
 ----
-https://{DOMAIN}/auth/realms/{REALMNAME}/protocol/openid-connect/auth?client_id={CLIENT-ID}&redirect_uri={REDIRECT-URI}&scope=openid&response_type=code&response_mode=query&nonce=exg16fxdjcu&claims=%7B%22id_token%22%3A%7B%22acr%22%3A%7B%22essential%22%3Atrue%2C%22values%22%3A%5B%22gold%22%5D%7D%7D%7D
+https://{DOMAIN}{kc_realms_path}/{REALMNAME}/protocol/openid-connect/auth?client_id={CLIENT-ID}&redirect_uri={REDIRECT-URI}&scope=openid&response_type=code&response_mode=query&nonce=exg16fxdjcu&claims=%7B%22id_token%22%3A%7B%22acr%22%3A%7B%22essential%22%3Atrue%2C%22values%22%3A%5B%22gold%22%5D%7D%7D%7D
 ----
 
 The claims parameter is specified in a JSON representation:

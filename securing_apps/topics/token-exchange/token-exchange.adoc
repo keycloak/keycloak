@@ -29,8 +29,9 @@ Token exchange in {project_name} is a very loose implementation of the link:http
 We have extended it a little, ignored some of it, and loosely interpreted other parts of the specification.  It is
 a simple grant type invocation on a realm's OpenID Connect token endpoint.
 
+[source,subs="attributes+"]
 ----
-/auth/realms/{realm}/protocol/openid-connect/token
+{kc_realms_path}/{realm}/protocol/openid-connect/token
 ----
 
 It accepts form parameters (`application/x-www-form-urlencoded`) as input and the output depends on the type of token you requested an exchange for.
@@ -181,7 +182,7 @@ try to make an exchange.
 When your client is exchanging an existing token for a token targeting another client, you use the `audience` parameter.
 This parameter must be the client identifier for the target client that you configured in the Admin Console.
 
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
 curl -X POST \
     -d "client_id=starting-client" \
@@ -190,7 +191,7 @@ curl -X POST \
     -d "subject_token=...." \
     --data-urlencode "requested_token_type=urn:ietf:params:oauth:token-type:refresh_token" \
     -d "audience=target-client" \
-    http://localhost:8080/auth/realms/myrealm/protocol/openid-connect/token
+    http://localhost:8080{kc_realms_path}/myrealm/protocol/openid-connect/token
 ----
 
 
@@ -268,7 +269,7 @@ Your client now has permission to invoke.  If you do not do this correctly, you 
 
 When your client is exchanging an existing internal token to an external one, you provide the `requested_issuer` parameter.  The parameter must be the alias of a configured identity provider.
 
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
 curl -X POST \
     -d "client_id=starting-client" \
@@ -277,7 +278,7 @@ curl -X POST \
     -d "subject_token=...." \
     --data-urlencode "requested_token_type=urn:ietf:params:oauth:token-type:access_token" \
     -d "requested_issuer=google" \
-    http://localhost:8080/auth/realms/myrealm/protocol/openid-connect/token
+    http://localhost:8080{kc_realms_path}/myrealm/protocol/openid-connect/token
 ----
 
 The `subject_token` parameter must be an access token for the target realm.  The `requested_token_type` parameter
@@ -354,7 +355,7 @@ By default, the internal token minted will use the calling client to determine w
 mappers defined for the calling client.  Alternatively, you can specify a different target client using the `audience`
 parameter.
 
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
 curl -X POST \
     -d "client_id=starting-client" \
@@ -364,7 +365,7 @@ curl -X POST \
     -d "subject_issuer=myOidcProvider" \
     --data-urlencode "subject_token_type=urn:ietf:params:oauth:token-type:access_token" \
     -d "audience=target-client" \
-    http://localhost:8080/auth/realms/myrealm/protocol/openid-connect/token
+    http://localhost:8080{kc_realms_path}/myrealm/protocol/openid-connect/token
 ----
 
 
@@ -401,7 +402,7 @@ fine grain admin permissions.
 Make the request as described in other chapters except additionally specify the `requested_subject` parameter.  The
 value of this parameter must be a username or user id.
 
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
 curl -X POST \
     -d "client_id=starting-client" \
@@ -411,7 +412,7 @@ curl -X POST \
     --data-urlencode "requested_token_type=urn:ietf:params:oauth:token-type:access_token" \
     -d "audience=target-client" \
     -d "requested_subject=wburke" \
-    http://localhost:8080/auth/realms/myrealm/protocol/openid-connect/token
+    http://localhost:8080{kc_realms_path}/myrealm/protocol/openid-connect/token
 ----
 
 === Direct Naked Impersonation
@@ -481,14 +482,14 @@ NOTE: Public clients are not allowed to do direct naked impersonations.
 To make the request, simply specify the `requested_subject` parameter.  This must be the username or user id of
 a valid user.  You can also specify an `audience` parameter if you wish.
 
-[source,bash]
+[source,bash,subs="attributes+"]
 ----
 curl -X POST \
     -d "client_id=starting-client" \
     -d "client_secret=the client secret" \
     --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:token-exchange" \
     -d "requested_subject=wburke" \
-    http://localhost:8080/auth/realms/myrealm/protocol/openid-connect/token
+    http://localhost:8080{kc_realms_path}/myrealm/protocol/openid-connect/token
 ----
 
 === Expand permission model with service accounts

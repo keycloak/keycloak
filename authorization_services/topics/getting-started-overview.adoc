@@ -6,6 +6,21 @@ There is one caveat to this. You have to run a separate {appserver_name} instanc
 
 To boot {project_name} Server:
 
+ifeval::["{kc_dist}" == "quarkus"]
+.Linux/Unix
+[source]
+----
+$ .../bin/kc.sh start-dev --http-port 8180
+----
+
+.Windows
+[source]
+----
+> ...\bin\kc.bat start-dev --http-port 8180
+----
+endif::[]
+
+ifeval::["{kc_dist}" == "wildfly"]
 .Linux/Unix
 [source]
 ----
@@ -17,8 +32,9 @@ $ .../bin/standalone.sh -Djboss.socket.binding.port-offset=100
 ----
 > ...\bin\standalone.bat -Djboss.socket.binding.port-offset=100
 ----
+endif::[]
 
 For more details about how to install and configure a {appserver_name}, please follow the steps on the link:{adapterguide_link}[{adapterguide_name}] tutorial.
 
-After installing and booting both servers you should be able to access {project_name} Admin Console at http://localhost:8180/auth/admin/ and also the {appserver_name} instance at
+After installing and booting both servers you should be able to access {project_name} Admin Console at http://localhost:8180{kc_admins_path}/ and also the {appserver_name} instance at
 http://localhost:8080.

@@ -239,10 +239,10 @@ Use this procedure to retrieve that file from the IdP.
 
 . Use this command, substituting with the correct value for $idp_host:
 +
-[source]
+[source,subs="attributes+"]
 ----
 curl -k -o /etc/httpd/saml2/idp_metadata.xml \
-https://$idp_host/auth/realms/test_realm/protocol/saml/descriptor
+https://$idp_host{kc_realms_path}/test_realm/protocol/saml/descriptor
 ----
 +
 Mellon is now fully configured.

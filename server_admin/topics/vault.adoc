@@ -24,13 +24,16 @@ In the <<_ldap,LDAP settings>> of LDAP-based user federation.
 OIDC identity provider secret::
 In the _Client Secret_ inside identity provider <<_identity_broker_oidc,OpenID Connect Config>>
 
+ifeval::["{kc_dist}" == "wildfly"]
 To use a vault, register a vault provider in {project_name}. You can use the providers described <<_providers, here>> or implement your provider. See the link:{developerguide_link}[{developerguide_name}] for more information.
 
 [NOTE]
 ====
 {project_name} permits a maximum of one active vault provider per {project_name} instance at a time. Configure the vault provider in each instance within the cluster consistently.
 ====
+endif::[]
 
+ifeval::["{kc_dist}" == "wildfly"]
 [[_providers]]
 
 === Kubernetes / OpenShift files plain-text vault provider
@@ -116,11 +119,19 @@ For more information about creating and managing elytron credential stores and m
 ====
 {project_name} implements the `elytron-cs-keystore` vault provider as a WildFly extension and is available if the {project_name} server runs on WildFly/JBoss EAP only.
 ====
+endif::[]
 
 === Key resolvers
 
 All built-in providers support the configuration of key resolvers. A key resolver implements the algorithm or strategy for combining the realm name with the key, obtained from the `${vault.key}` expression, into the final entry name used to retrieve the secret from the vault. {project_name} uses the `keyResolvers` property to configure the resolvers that the provider uses. The value is a comma-separated list of resolver names. An example of the configuration for the `files-plaintext` provider follows:
 
+ifeval::["{kc_dist}" == "quarkus"]
+[source,bash]
+----
+kc.[sh.bat] start --spi-vault-file-key-resolvers=REALM_UNDERSCORE_KEY,KEY_ONLY
+----
+endif::[]
+ifeval::["{kc_dist}" == "wildfly"]
 [source, xml]
 ----
 <spi name="vault">
@@ -133,6 +144,7 @@ All built-in providers support the configuration of key resolvers. A key resolve
     </provider>
 </spi>
 ----
+endif::[]
 
 The resolvers run in the same order you declare them in the configuration. For each resolver, {project_name} uses the last entry name the resolver produces, which combines the realm with the vault key to search for the vault's secret. If {project_name} finds a secret, it returns the secret. If not, {project_name} uses the next resolver. This search continues until {project_name} finds a non-empty secret or runs out of resolvers. If {project_name} finds no secret, {project_name} returns an empty secret.
 
@@ -161,6 +173,7 @@ endif::[]
 
 If you have not configured a resolver for the built-in providers, {project_name} selects the `REALM_UNDERSCORE_KEY`.
 
+ifeval::["{kc_dist}" == "wildfly"]
 ifeval::[{project_community}==true]
 The `FACTORY_PROVIDED` resolver provides a hook that you can use to implement a custom resolver by extending the provider factory of choice and overriding the `getFactoryResolver` method, so it returns the custom resolver. For example, if you want to use the `elytron-cs-keystore` provider but the built-in resolvers do not match the format used in your keystore, you can extend the `ElytronCSKeystoreProvider` and implement the `getFactoryResolver` method:
 
@@ -208,7 +221,9 @@ To install and use the previous custom provider, the configuration would look si
 
 This configuration makes {project_name} set up the custom Elytron provider and use the key resolver that the custom factory creates.
 endif::[]
+endif::[]
 
+ifeval::["{kc_dist}" == "wildfly"]
 === Sample Configuration
 
 The following is an example of configuring a vault and credential store.  The procedure involves two parts:
@@ -371,3 +386,4 @@ The vault and credential store are now masked:
 .Additional resources
 
 For more information about the Elytron tool, see link:https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/7.3/html/how_to_configure_server_security/securely_storing_credentials#cred_store_elytron_client[Using Credential Stores with Elytron Client].
+endif::[]

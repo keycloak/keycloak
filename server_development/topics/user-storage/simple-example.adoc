@@ -207,8 +207,18 @@ The `UserStorageProviderFactory` interface has an optional `init()` method you c
 
 In our `init()` method implementation, we find the property file containing our user declarations from the classpath. We then load the `properties` field with the username and password combinations stored there.
 
-The `Config.Scope` parameter is factory configuration that can be set up within `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.
+The `Config.Scope` parameter is factory configuration that configured through server configuration.
 
+ifeval::["{kc_dist}" == "quarkus"]
+For example, by running the server with the following argument:
+
+[source,bash]
+----
+kc.[sh|bat] start --spi-storage-readonly-property-file-path=/other-users.properties
+----
+endif::[]
+
+ifeval::["{kc_dist}" == "wildfly"]
 For example, by adding the following to `standalone.xml`:
 
 [source,xml]
@@ -221,6 +231,7 @@ For example, by adding the following to `standalone.xml`:
     </provider>
 </spi>
 ----
+endif::[]
 
 We can specify the classpath of the user property file instead of hardcoding it. Then you can retrieve the configuration in the `PropertyFileUserStorageProviderFactory.init()`:
 
@@ -256,7 +267,13 @@ The class files for our provider implementation should be placed in a jar.  You 
 org.keycloak.examples.federation.properties.FilePropertiesStorageFactory
 ----
 
-Once you create the jar you can deploy it using regular {appserver_name} means: copy the jar into the `standalone/deployments/` directory or using the JBoss CLI.
+ifeval::["{kc_dist}" == "quarkus"]
+To deploy this jar, copy it to the `providers/` directory, then run `bin/kc.[sh|bat] build`.
+endif::[]
+
+ifeval::["{kc_dist}" == "wildfly"]
+To deploy this jar, just copy it to the `standalone/deployments/` directory.
+endif::[]
 
 ==== Enabling the provider in the Admin Console
 

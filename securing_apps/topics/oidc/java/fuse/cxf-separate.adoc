@@ -8,7 +8,7 @@ To run your CXF endpoints secured by {project_name} on separate Jetty engines, p
 
 . Add `META-INF/spring/beans.xml` to your application, and in it,  declare `httpj:engine-factory` with Jetty SecurityHandler with injected `KeycloakJettyAuthenticator`. The configuration for a CFX JAX-WS application might resemble this one:
 +
-[source,xml]
+[source,xml,subs="attributes+"]
 ----
 <?xml version="1.0" encoding="UTF-8"?>
 
@@ -28,7 +28,7 @@ To run your CXF endpoints secured by {project_name} on separate Jetty engines, p
         <property name="realm" value="demo"/>
         <property name="resource" value="custom-cxf-endpoint"/>
         <property name="bearerOnly" value="true"/>
-        <property name="authServerUrl" value="http://localhost:8080/auth" />
+        <property name="authServerUrl" value="http://localhost:8080{kc_base_path}" />
         <property name="sslRequired" value="EXTERNAL"/>
     </bean>
 

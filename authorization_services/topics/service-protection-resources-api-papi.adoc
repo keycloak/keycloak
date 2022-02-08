@@ -3,9 +3,10 @@
 
 Resource servers can manage their resources remotely using a UMA-compliant endpoint.
 
-```
-http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set
-```
+[source,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm_name}/authz/protection/resource_set
+----
 
 This endpoint provides operations outlined as follows (entire path omitted for clarity):
 
@@ -21,9 +22,10 @@ For more information about the contract for each of these operations, see https:
 
 To create a resource you must send an HTTP POST request as follows:
 
-```bash
+[source,bash,subs="attributes+"]
+----
 curl -v -X POST \
-  http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set \
+  http://${host}:${port}{kc_realms_path}/${realm_name}/authz/protection/resource_set \
   -H 'Authorization: Bearer '$pat \
   -H 'Content-Type: application/json' \
   -d '{
@@ -37,21 +39,22 @@ curl -v -X POST \
          "http://www.example.com/scopes/all"
       ]
   }'
-```
+----
 
 By default, the owner of a resource is the resource server. If you want to define a different owner, such as an
 specific user, you can send a request as follows:
 
-```bash
+[source,bash,subs="attributes+"]
+----
 curl -v -X POST \
-  http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set \
+  http://${host}:${port}{kc_realms_path}/${realm_name}/authz/protection/resource_set \
   -H 'Authorization: Bearer '$pat \
   -H 'Content-Type: application/json' \
   -d '{
      "name":"Alice Resource",
      "owner": "alice"
   }'
-```
+----
 
 Where the property `owner` can be set with the username or the identifier of the user.
 
@@ -61,9 +64,10 @@ By default, resources created via Protection API can not be managed by resource 
 
 To create resources and allow resource owners to manage these resources, you must set `ownerManagedAccess` property as follows:
 
-```bash
+[source,bash,subs="attributes+"]
+----
 curl -v -X POST \
-  http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set \
+  http://${host}:${port}{kc_realms_path}/${realm_name}/authz/protection/resource_set \
   -H 'Authorization: Bearer '$pat \
   -H 'Content-Type: application/json' \
   -d '{
@@ -71,15 +75,16 @@ curl -v -X POST \
      "owner": "alice",
      "ownerManagedAccess": true
   }'
-```
+----
 
 == Updating Resources
 
 To update an existing resource, send an HTTP PUT request as follows:
 
-```bash
+[source,bash,subs="attributes+"]
+----
 curl -v -X PUT \
-  http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set/{resource_id} \
+  http://${host}:${port}{kc_realms_path}/${realm_name}/authz/protection/resource_set/{resource_id} \
   -H 'Authorization: Bearer '$pat \
   -H 'Content-Type: application/json' \
   -d '{
@@ -89,60 +94,68 @@ curl -v -X PUT \
         "read"
      ]
   }'
-```
+----
 
 == Deleting Resources
 
 To delete an existing resource, send an HTTP DELETE request as follows:
 
-```bash
+[source,bash,subs="attributes+"]
+----
 curl -v -X DELETE \
-  http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set/{resource_id} \
+  http://${host}:${port}{kc_realms_path}/${realm_name}/authz/protection/resource_set/{resource_id} \
   -H 'Authorization: Bearer '$pat
-```
+----
 
 == Querying Resources
 
 To query the resources by `id`, send an HTTP GET request as follows:
 
-```bash
-http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set/{resource_id}
-```
+[source,bash,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm_name}/authz/protection/resource_set/{resource_id}
+----
 
 To query resources given a `name`, send an HTTP GET request as follows:
 
-```bash
-http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set?name=Alice Resource
-```
+[source,bash,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm_name}/authz/protection/resource_set?name=Alice Resource
+----
 
 By default, the `name` filter will match any resource with the given pattern. To restrict the query to only return resources with an exact match, use:
 
-```bash
-http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set?name=Alice Resource&exactName=true
-```
+[source,bash,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm_name}/authz/protection/resource_set?name=Alice Resource&exactName=true
+----
 
 To query resources given an `uri`, send an HTTP GET request as follows:
 
-```bash
-http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set?uri=/api/alice
-```
+[source,bash,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm_name}/authz/protection/resource_set?uri=/api/alice
+----
 
 To query resources given an `owner`, send an HTTP GET request as follows:
 
-```bash
-http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set?owner=alice
-```
+[source,bash,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm_name}/authz/protection/resource_set?owner=alice
+----
 
 To query resources given an `type`, send an HTTP GET request as follows:
 
-```bash
-http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set?type=albums
-```
+[source,bash,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm_name}/authz/protection/resource_set?type=albums
+----
 
 To query resources given an `scope`, send an HTTP GET request as follows:
 
-```bash
-http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set?scope=read
-```
+[source,bash,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm_name}/authz/protection/resource_set?scope=read
+----
 
 When querying the server for permissions use parameters `first` and `max` results to limit the result.

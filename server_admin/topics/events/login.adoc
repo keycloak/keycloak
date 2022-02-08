@@ -126,6 +126,21 @@ The Logging Event Listener logs events to the `org.keycloak.events` log category
 
 To include debug log events in server logs:
 
+ifeval::["{kc_dist}" == "quarkus"]
+. Change the log level for the `org.keycloak.events` category
+. Change the log level used by the Logging Event listener.
+
+To change the log level used by the Logging Event listener, add the following:
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --spi-events-listener-jboss-logging-success-level=info --spi-events-listener-jboss-logging-error-level=error
+----
+
+The valid values for log levels are `debug`, `info`, `warn`, `error`, and `fatal`.
+endif::[]
+
+ifeval::["{kc_dist}" == "wildfly"]
 . Edit the `standalone.xml` file.
 . Change the log level used by the Logging Event listener.
 
@@ -161,6 +176,7 @@ To change the log level used by the Logging Event listener, add the following:
 ----
 
 The valid values for log levels are `debug`, `info`, `warn`, `error`, and `fatal`.
+endif::[]
 
 ===== The Email Event Listener
 
@@ -180,6 +196,23 @@ To enable the Email Listener:
 . Click the *Event Listeners* field.
 . Select `email`.
 
+ifeval::["{kc_dist}" == "quarkus"]
+You can exclude events by using the `--spi-events-listener-email-exclude-events` argument. For example:
+
+[source,bash]
+----
+kc.[sh|bat] --spi-events-listener-email-exclude-events=UPDATE_TOTP,REMOVE_TOTP
+----
+
+You can set a maximum length of the Event detail in the database by using the `--spi-events-listener-email-exclude-events` argument. This setting is useful if a field (for example, redirect_uri) is long. For example:
+
+[source,bash]
+----
+kc.[sh|bat] --spi-events-listener-email-max-detail-length=1000
+----
+endif::[]
+
+ifeval::["{kc_dist}" == "wildfly"]
 You can exclude events by editing the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` configuration files included in your distribution. For example:
 
 [source,xml]
@@ -207,3 +240,4 @@ You can set a maximum length of the Event detail in the database by editing the 
 ----
 
 See the link:{installguide_link}[{installguide_name}] for more details on the location of the `standalone.xml`, `standalone-ha.xml`, or `domain.xml` files.
+endif::[]

@@ -12,19 +12,21 @@ There are two main use cases where token introspection can help you:
 
 The token introspection is essentially a https://datatracker.ietf.org/doc/html/rfc7662[OAuth2 token introspection]-compliant endpoint from which you can obtain information about an RPT.
 
-```
-http://${host}:${port}/auth/realms/${realm_name}/protocol/openid-connect/token/introspect
-```
+[source,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm_name}/protocol/openid-connect/token/introspect
+----
 
 To introspect an RPT using this endpoint, you can send a request to the server as follows:
 
-```bash
+[source,bash,subs="attributes+"]
+----
 curl -X POST \
     -H "Authorization: Basic aGVsbG8td29ybGQtYXV0aHotc2VydmljZTpzZWNyZXQ=" \
     -H "Content-Type: application/x-www-form-urlencoded" \
     -d 'token_type_hint=requesting_party_token&token=${RPT}' \
-    "http://localhost:8080/auth/realms/hello-world-authz/protocol/openid-connect/token/introspect"
-```
+    "http://localhost:8080{kc_realms_path}/hello-world-authz/protocol/openid-connect/token/introspect"
+----
 
 [NOTE]
 The request above is using HTTP BASIC and passing the client's credentials (client ID and secret) to authenticate the client attempting to introspect the token, but you can use any other client authentication method supported by {project_name}.
