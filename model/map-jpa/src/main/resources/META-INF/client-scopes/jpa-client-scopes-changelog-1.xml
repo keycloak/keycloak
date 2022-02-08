@@ -51,14 +51,14 @@ limitations under the License.
             <column name="id" type="UUID">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
-            <column name="fk_client_scope" type="UUID">
-                <constraints foreignKeyName="client_scope_attr_fk_client_scope_fkey" references="client_scope(id)" deleteCascade="true"/>
+            <column name="fk_root" type="UUID">
+                <constraints foreignKeyName="client_scope_attr_fk_root_fkey" references="client_scope(id)" deleteCascade="true"/>
             </column>
             <column name="name" type="VARCHAR(255)"/>
             <column name="value" type="text"/>
         </createTable>
-        <createIndex tableName="client_scope_attribute" indexName="client_scope_attr_fk_client_scope">
-            <column name="fk_client_scope"/>
+        <createIndex tableName="client_scope_attribute" indexName="client_scope_attr_fk_root">
+            <column name="fk_root"/>
         </createIndex>
         <createIndex tableName="client_scope_attribute" indexName="client_scope_attr_name_value">
             <column name="name"/>

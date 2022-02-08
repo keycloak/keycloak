@@ -82,7 +82,7 @@ public class JpaClientScopeEntity extends AbstractClientScopeEntity implements J
     @Basic(fetch = FetchType.LAZY)
     private String name;
 
-    @OneToMany(mappedBy = "clientScope", cascade = CascadeType.PERSIST, orphanRemoval = true)
+    @OneToMany(mappedBy = "root", cascade = CascadeType.PERSIST, orphanRemoval = true)
     private final Set<JpaClientScopeAttributeEntity> attributes = new HashSet<>();
 
     /**

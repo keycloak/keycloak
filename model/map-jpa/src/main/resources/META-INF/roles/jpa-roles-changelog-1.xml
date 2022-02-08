@@ -60,14 +60,14 @@ limitations under the License.
             <column name="id" type="UUID">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
-            <column name="fk_role" type="UUID">
-                <constraints foreignKeyName="role_attr_fk_role_fkey" references="role(id)" deleteCascade="true"/>
+            <column name="fk_root" type="UUID">
+                <constraints foreignKeyName="role_attr_fk_root_fkey" references="role(id)" deleteCascade="true"/>
             </column>
             <column name="name" type="VARCHAR(255)"/>
             <column name="value" type="text"/>
         </createTable>
-        <createIndex tableName="role_attribute" indexName="role_attr_fk_role">
-            <column name="fk_role"/>
+        <createIndex tableName="role_attribute" indexName="role_attr_fk_root">
+            <column name="fk_root"/>
         </createIndex>
         <createIndex tableName="role_attribute" indexName="role_attr_name_value">
             <column name="name"/>

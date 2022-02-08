@@ -58,14 +58,14 @@ limitations under the License.
             <column name="id" type="UUID">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
-            <column name="fk_client" type="UUID">
-                <constraints foreignKeyName="client_attr_fk_client_fkey" references="client(id)" deleteCascade="true"/>
+            <column name="fk_root" type="UUID">
+                <constraints foreignKeyName="client_attr_fk_root_fkey" references="client(id)" deleteCascade="true"/>
             </column>
             <column name="name" type="VARCHAR(255)"/>
             <column name="value" type="text"/>
         </createTable>
-        <createIndex tableName="client_attribute" indexName="client_attr_fk_client">
-            <column name="fk_client"/>
+        <createIndex tableName="client_attribute" indexName="client_attr_fk_root">
+            <column name="fk_root"/>
         </createIndex>
         <createIndex tableName="client_attribute" indexName="client_attr_name_value">
             <column name="name"/>

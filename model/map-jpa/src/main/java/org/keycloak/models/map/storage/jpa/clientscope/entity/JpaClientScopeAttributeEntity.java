@@ -16,93 +16,18 @@
  */
 package org.keycloak.models.map.storage.jpa.clientscope.entity;
 
-import java.util.Objects;
-import java.util.UUID;
-import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
-import org.hibernate.annotations.Nationalized;
-import org.keycloak.models.map.storage.jpa.JpaChildEntity;
+import org.keycloak.models.map.storage.jpa.JpaAttributeEntity;
 
 @Entity
 @Table(name = "client_scope_attribute")
-public class JpaClientScopeAttributeEntity implements JpaChildEntity<JpaClientScopeEntity> {
-
-    @Id
-    @Column
-    @GeneratedValue
-    private UUID id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="fk_client_scope")
-    private JpaClientScopeEntity clientScope;
-
-    @Column
-    private String name;
-
-    @Nationalized
-    @Column
-    private String value;
+public class JpaClientScopeAttributeEntity extends JpaAttributeEntity<JpaClientScopeEntity> {
 
     public JpaClientScopeAttributeEntity() {
     }
 
-    public JpaClientScopeAttributeEntity(JpaClientScopeEntity clientScope, String name, String value) {
-        this.clientScope = clientScope;
-        this.name = name;
-        this.value = value;
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public JpaClientScopeEntity getClientScope() {
-        return clientScope;
-    }
-
-    public void setClientScope(JpaClientScopeEntity clientScope) {
-        this.clientScope = clientScope;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public void setValue(String value) {
-        this.value = value;
-    }
- 
-    @Override
-    public int hashCode() {
-        return getClass().hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (!(obj instanceof JpaClientScopeAttributeEntity)) return false;
-        JpaClientScopeAttributeEntity that = (JpaClientScopeAttributeEntity) obj;
-        return Objects.equals(getClientScope(), that.getClientScope()) &&
-               Objects.equals(getName(), that.getName()) &&
-               Objects.equals(getValue(), that.getValue());
-    }
-
-    @Override
-    public JpaClientScopeEntity getParent() {
-        return getClientScope();
+    public JpaClientScopeAttributeEntity(JpaClientScopeEntity root, String name, String value) {
+        super(root, name, value);
     }
 }
