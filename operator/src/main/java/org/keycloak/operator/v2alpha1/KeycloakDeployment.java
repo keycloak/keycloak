@@ -18,6 +18,7 @@ package org.keycloak.operator.v2alpha1;
 
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
@@ -32,6 +33,7 @@ import io.quarkus.logging.Log;
 import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.OperatorManagedResource;
+import org.keycloak.operator.StatusUpdater;
 import org.keycloak.operator.v2alpha1.crds.Keycloak;
 import org.keycloak.operator.v2alpha1.crds.KeycloakStatusBuilder;
 
@@ -44,7 +46,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class KeycloakDeployment extends OperatorManagedResource {
+public class KeycloakDeployment extends OperatorManagedResource implements StatusUpdater<KeycloakStatusBuilder> {
 
 //    public static final Pattern CONFIG_SECRET_PATTERN = Pattern.compile("^\\$\\{secret:([^:]+):(.+)}$");
 
@@ -365,17 +367,9 @@ public class KeycloakDeployment extends OperatorManagedResource {
 
         Container container = baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0);
         container.setImage(Optional.ofNullable(keycloakCR.getSpec().getImage()).orElse(config.keycloak().image()));
-
-        var serverConfig = new HashMap<>(Constants.DEFAULT_DIST_CONFIG);
-        if (keycloakCR.getSpec().getServerConfiguration() != null) {
-            serverConfig.putAll(keycloakCR.getSpec().getServerConfiguration());
-        }
-
         container.setImagePullPolicy(config.keycloak().imagePullPolicy());
 
-        container.setEnv(serverConfig.entrySet().stream()
-                .map(e -> new EnvVarBuilder().withName(e.getKey()).withValue(e.getValue()).build())
-                .collect(Collectors.toList()));
+        container.setEnv(getEnvVars());
 
         addInitContainer(baseDeployment, keycloakCR.getSpec().getExtensions());
         mergePodTemplate(baseDeployment.getSpec().getTemplate());
@@ -406,6 +400,20 @@ public class KeycloakDeployment extends OperatorManagedResource {
         return baseDeployment;
     }
 
+    private List<EnvVar> getEnvVars() {
+        var serverConfig = new HashMap<>(Constants.DEFAULT_DIST_CONFIG);
+        serverConfig.put("jgroups.dns.query", getName() + Constants.KEYCLOAK_DISCOVERY_SERVICE_SUFFIX +"." + getNamespace());
+        if (keycloakCR.getSpec().getServerConfiguration() != null) {
+            serverConfig.putAll(keycloakCR.getSpec().getServerConfiguration());
+        }
+        return serverConfig.entrySet().stream()
+                .map(e -> new EnvVarBuilder()
+                        .withName(e.getKey())
+                        .withValue(e.getValue())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
     public void updateStatus(KeycloakStatusBuilder status) {
         validatePodTemplate(status);
         if (existingDeployment == null) {
@@ -432,12 +440,9 @@ public class KeycloakDeployment extends OperatorManagedResource {
 //        return configSecretsNames;
 //    }
 
+    @Override
     public String getName() {
         return keycloakCR.getMetadata().getName();
-    }
-
-    public String getNamespace() {
-        return keycloakCR.getMetadata().getNamespace();
     }
 
     public void rollingRestart() {
