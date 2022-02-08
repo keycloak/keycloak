@@ -134,7 +134,7 @@ public class AccountRestService {
      *
      * @return
      */
-    @Path("/")
+    @Path("/{userProfileMetadata}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
