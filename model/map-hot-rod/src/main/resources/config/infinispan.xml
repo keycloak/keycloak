@@ -22,6 +22,14 @@
             </indexing>
             <encoding media-type="application/x-protostream"/>
         </distributed-cache>
+        <distributed-cache name="roles" mode="SYNC">
+            <indexing>
+                <indexed-entities>
+                    <indexed-entity>kc.HotRodRoleEntity</indexed-entity>
+                </indexed-entities>
+            </indexing>
+            <encoding media-type="application/x-protostream"/>
+        </distributed-cache>
         <distributed-cache name="users" mode="SYNC">
             <indexing>
                 <indexed-entities>
