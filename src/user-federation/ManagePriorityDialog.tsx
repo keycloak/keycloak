@@ -17,36 +17,36 @@ import {
   TextContent,
   Text,
 } from "@patternfly/react-core";
-import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 
-type ManageOrderDialogProps = {
-  providers: IdentityProviderRepresentation[];
+type ManagePriorityDialogProps = {
+  components: ComponentRepresentation[];
   onClose: () => void;
 };
 
-export const ManageOrderDialog = ({
-  providers,
+export const ManagePriorityDialog = ({
+  components,
   onClose,
-}: ManageOrderDialogProps) => {
-  const { t } = useTranslation("identity-providers");
+}: ManagePriorityDialogProps) => {
+  const { t } = useTranslation("user-federation");
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
-  const [alias, setAlias] = useState("");
+  const [id, setId] = useState("");
   const [liveText, setLiveText] = useState("");
   const [order, setOrder] = useState(
-    providers.map((provider) => provider.alias!)
+    components.map((component) => component.name!)
   );
 
   const onDragStart = (id: string) => {
-    setAlias(id);
+    setId(id);
     setLiveText(t("common:onDragStart", { item: id }));
   };
 
   const onDragMove = () => {
-    setLiveText(t("common:onDragMove", { item: alias }));
+    setLiveText(t("common:onDragMove", { item: id }));
   };
 
   const onDragCancel = () => {
@@ -61,23 +61,23 @@ export const ManageOrderDialog = ({
   return (
     <Modal
       variant={ModalVariant.small}
-      title={t("manageDisplayOrder")}
+      title={t("managePriorityOrder")}
       isOpen={true}
       onClose={onClose}
       actions={[
         <Button
           id="modal-confirm"
-          data-testid="confirm"
           key="confirm"
           onClick={() => {
-            order.map(async (alias, index) => {
-              const provider = providers.find((p) => p.alias === alias)!;
-              provider.config!.guiOrder = index;
+            order.map(async (name, index) => {
+              const component = components!.find((c) => c.name === name)!;
+              component.config!.priority = [index.toString()];
               try {
-                await adminClient.identityProviders.update({ alias }, provider);
+                const id = component.id!;
+                await adminClient.components.update({ id }, component);
                 addAlert(t("orderChangeSuccess"), AlertVariant.success);
               } catch (error) {
-                addError("identity-providers:orderChangeError", error);
+                addError("orderChangeError", error);
               }
             });
 
@@ -88,7 +88,6 @@ export const ManageOrderDialog = ({
         </Button>,
         <Button
           id="modal-cancel"
-          data-testid="cancel"
           key="cancel"
           variant={ButtonVariant.link}
           onClick={onClose}
@@ -98,7 +97,7 @@ export const ManageOrderDialog = ({
       ]}
     >
       <TextContent className="pf-u-pb-lg">
-        <Text>{t("orderDialogIntro")}</Text>
+        <Text>{t("managePriorityInfo")}</Text>
       </TextContent>
 
       <DataList
@@ -111,17 +110,17 @@ export const ManageOrderDialog = ({
         onDragCancel={onDragCancel}
         itemOrder={order}
       >
-        {sortBy(providers, "config.guiOrder").map((provider) => (
+        {sortBy(components, "config.priority").map((component) => (
           <DataListItem
-            aria-labelledby={provider.alias}
-            id={provider.alias}
-            key={provider.alias}
+            aria-labelledby={component.name}
+            id={component.name}
+            key={component.name}
           >
             <DataListItemRow>
               <DataListControl>
                 <DataListDragButton
                   aria-label="Reorder"
-                  aria-labelledby={provider.alias}
+                  aria-labelledby={component.name}
                   aria-describedby={t("manageOrderItemAria")}
                   aria-pressed="false"
                 />
@@ -129,10 +128,10 @@ export const ManageOrderDialog = ({
               <DataListItemCells
                 dataListCells={[
                   <DataListCell
-                    key={`${provider.alias}-cell`}
-                    data-testid={provider.alias}
+                    key={`${component.name}-cell`}
+                    data-testid={component.name}
                   >
-                    <span id={provider.alias}>{provider.alias}</span>
+                    <span id={component.name}>{component.name}</span>
                   </DataListCell>,
                 ]}
               />

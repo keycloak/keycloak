@@ -1,5 +1,6 @@
 import {
   Badge,
+  Button,
   Divider,
   Dropdown,
   DropdownPosition,
@@ -38,6 +39,7 @@ export type ViewHeaderProps = {
   dropdownItems?: ReactElement[];
   lowerDropdownItems?: any;
   lowerDropdownMenuTitle?: any;
+  lowerButton?: any;
   isEnabled?: boolean;
   onToggle?: (value: boolean) => void;
   divider?: boolean;
@@ -61,6 +63,7 @@ export const ViewHeader = ({
   dropdownItems,
   lowerDropdownMenuTitle,
   lowerDropdownItems,
+  lowerButton,
   isEnabled = true,
   onToggle,
   divider = true,
@@ -190,6 +193,15 @@ export const ViewHeader = ({
             isOpen={isLowerDropdownOpen}
             dropdownItems={lowerDropdownItems}
           />
+        )}
+        {lowerButton && (
+          <Button
+            variant={lowerButton.variant}
+            onClick={lowerButton.onClick}
+            data-testid="viewHeader-lower-btn"
+          >
+            {lowerButton.lowerButtonTitle}
+          </Button>
         )}
       </PageSection>
       {divider && <Divider component="div" />}

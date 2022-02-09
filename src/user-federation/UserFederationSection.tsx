@@ -20,6 +20,7 @@ import { useTranslation } from "react-i18next";
 import { useHistory } from "react-router-dom";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { ManagePriorityDialog } from "./ManagePriorityDialog";
 import { KeycloakCard } from "../components/keycloak-card/KeycloakCard";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
@@ -42,6 +43,8 @@ export default function UserFederationSection() {
   const refresh = () => setKey(new Date().getTime());
 
   const history = useHistory();
+
+  const [manageDisplayDialog, setManageDisplayDialog] = useState(false);
 
   const providers =
     useServerInfo().componentTypes?.[
@@ -80,10 +83,11 @@ export default function UserFederationSection() {
     []
   );
 
-  // const learnMoreLinkProps = {
-  //   title: t("common:learnMore"),
-  //   href: "https://www.keycloak.org/docs/latest/server_admin/index.html#_user-storage-federation",
-  // };
+  const lowerButtonProps = {
+    variant: "link",
+    onClick: () => setManageDisplayDialog(true),
+    lowerButtonTitle: t("managePriorities"),
+  };
 
   let cards;
 
@@ -109,8 +113,14 @@ export default function UserFederationSection() {
     toggleDeleteDialog();
   };
 
+  const cardSorter = (card1: any, card2: any) => {
+    const a = `${card1.name}`;
+    const b = `${card2.name}`;
+    return a < b ? -1 : 1;
+  };
+
   if (userFederations) {
-    cards = userFederations.map((userFederation, index) => {
+    cards = userFederations.sort(cardSorter).map((userFederation, index) => {
       const ufCardDropdownItems = [
         <DropdownItem
           key={`${index}-cardDelete`}
@@ -149,6 +159,13 @@ export default function UserFederationSection() {
 
   return (
     <>
+      <DeleteConfirm />
+      {manageDisplayDialog && userFederations && (
+        <ManagePriorityDialog
+          onClose={() => setManageDisplayDialog(false)}
+          components={userFederations.filter((p) => p.config?.enabled)}
+        />
+      )}
       <ViewHeader
         titleKey="userFederation"
         subKey="user-federation:userFederationExplain"
@@ -157,15 +174,13 @@ export default function UserFederationSection() {
           ? {
               lowerDropdownItems: ufAddProviderDropdownItems,
               lowerDropdownMenuTitle: "user-federation:addNewProvider",
+              lowerButton: lowerButtonProps,
             }
           : {})}
       />
       <PageSection>
         {userFederations && userFederations.length > 0 ? (
-          <>
-            <DeleteConfirm />
-            <Gallery hasGutter>{cards}</Gallery>
-          </>
+          <Gallery hasGutter>{cards}</Gallery>
         ) : (
           <>
             <TextContent>

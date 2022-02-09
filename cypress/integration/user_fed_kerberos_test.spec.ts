@@ -4,6 +4,7 @@ import ProviderPage from "../support/pages/admin_console/manage/providers/Provid
 import Masthead from "../support/pages/admin_console/Masthead";
 import ModalUtils from "../support/util/ModalUtils";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
+import PriorityDialog from "../support/pages/admin_console/manage/providers/PriorityDialog";
 
 const loginPage = new LoginPage();
 const masthead = new Masthead();
@@ -14,15 +15,20 @@ const modalUtils = new ModalUtils();
 const provider = "kerberos";
 const initCapProvider = provider.charAt(0).toUpperCase() + provider.slice(1);
 
-const firstKerberosName = "my-kerberos";
-const firstKerberosRealm = "my-realm";
-const firstKerberosPrincipal = "my-principal";
-const firstKerberosKeytab = "my-keytab";
+const kerberosName = "my-kerberos";
+const kerberosRealm = "my-realm";
+const kerberosPrincipal = "my-principal";
+const kerberosKeytab = "my-keytab";
 
-const secondKerberosName = `${firstKerberosName}-2`;
-const secondKerberosRealm = `${firstKerberosRealm}-2`;
-const secondKerberosPrincipal = `${firstKerberosPrincipal}-2`;
-const secondKerberosKeytab = `${firstKerberosKeytab}-2`;
+const firstKerberosName = `${kerberosName}-1`;
+const firstKerberosRealm = `${kerberosRealm}-1`;
+const firstKerberosPrincipal = `${kerberosPrincipal}-1`;
+const firstKerberosKeytab = `${kerberosKeytab}-1`;
+
+const secondKerberosName = `${kerberosName}-2`;
+const secondKerberosRealm = `${kerberosRealm}-2`;
+const secondKerberosPrincipal = `${kerberosPrincipal}-2`;
+const secondKerberosKeytab = `${kerberosKeytab}-2`;
 
 const defaultPolicy = "DEFAULT";
 const newPolicy = "EVICT_WEEKLY";
@@ -39,6 +45,8 @@ const savedSuccessMessage = "User federation provider successfully saved";
 const deletedSuccessMessage = "The user federation provider has been deleted.";
 const deleteModalTitle = "Delete user federation provider?";
 const disableModalTitle = "Disable user federation provider?";
+const changeSuccessMsg =
+  "Successfully changed the priority order of user federation providers";
 
 describe("User Fed Kerberos tests", () => {
   beforeEach(() => {
@@ -142,16 +150,27 @@ describe("User Fed Kerberos tests", () => {
     sidebarPage.goToUserFederation();
   });
 
+  it("Change the priority order of Kerberos providers", () => {
+    const priorityDialog = new PriorityDialog();
+    const providers = [firstKerberosName, secondKerberosName];
+
+    sidebarPage.goToUserFederation();
+    providersPage.clickMenuCommand(addProviderMenu, initCapProvider);
+
+    sidebarPage.goToUserFederation();
+    priorityDialog.openDialog().checkOrder(providers);
+    priorityDialog.clickSave();
+    masthead.checkNotificationMessage(changeSuccessMsg, true);
+  });
+
   it("Delete a Kerberos provider from card view using the card's menu", () => {
     providersPage.deleteCardFromCard(secondKerberosName);
-
     modalUtils.checkModalTitle(deleteModalTitle).confirmModal();
     masthead.checkNotificationMessage(deletedSuccessMessage);
   });
 
   it("Delete a Kerberos provider using the Settings view's Action menu", () => {
     providersPage.deleteCardFromMenu(firstKerberosName);
-
     modalUtils.checkModalTitle(deleteModalTitle).confirmModal();
     masthead.checkNotificationMessage(deletedSuccessMessage);
   });

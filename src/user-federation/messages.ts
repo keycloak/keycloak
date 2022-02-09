@@ -95,6 +95,14 @@ export default {
       "Error when trying to connect to LDAP. See server.log for details. {{error}}",
 
     learnMore: "Learn more",
+    managePriorities: "Manage priorities",
+    managePriorityOrder: "Manage priority order",
+    managePriorityInfo:
+      "Priority is the order of providers when doing a user lookup. You can drag the row handlers to change the priorities.",
+    orderChangeSuccess:
+      "Successfully changed the priority order of user federation providers",
+    orderChangeError:
+      "Could not change the priority order of user federation providers {{error}}",
     addNewProvider: "Add new provider",
     addCustomProvider: "Add custom provider",
     providerDetails: "Provider details",

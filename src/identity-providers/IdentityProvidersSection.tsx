@@ -34,7 +34,7 @@ import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { upperCaseFormatter } from "../util";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ProviderIconMapper } from "./ProviderIconMapper";
-import { ManageOderDialog } from "./ManageOrderDialog";
+import { ManageOrderDialog } from "./ManageOrderDialog";
 import { toIdentityProvider } from "./routes/IdentityProvider";
 import { toIdentityProviderCreate } from "./routes/IdentityProviderCreate";
 import helpUrls from "../help-urls";
@@ -161,7 +161,7 @@ export default function IdentityProvidersSection() {
     <>
       <DeleteConfirm />
       {manageDisplayDialog && (
-        <ManageOderDialog
+        <ManageOrderDialog
           onClose={() => setManageDisplayDialog(false)}
           providers={providers.filter((p) => p.enabled)}
         />

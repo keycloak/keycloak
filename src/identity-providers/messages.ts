@@ -41,7 +41,7 @@ export default {
     displayOrder: "Display order",
     createSuccess: "Identity provider successfully created",
     createError: "Could not create the identity provider: {{error}}",
-    oderDialogIntro:
+    orderDialogIntro:
       "The order that the providers are listed in the login page or the account console. You can drag the row handles to change the order.",
     manageOrderTableAria:
       "List of identity providers in the order listed on the login page",
