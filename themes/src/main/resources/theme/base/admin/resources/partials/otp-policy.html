@@ -50,7 +50,7 @@
         </div>
 
         <div class="form-group" data-ng-if="realm.otpPolicyType == 'totp'">
-            <label class="col-md-2 control-label" for="lookAhead">{{:: 'look-around-window' | translate}}</label>
+            <label class="col-md-2 control-label" for="lookAround">{{:: 'look-around-window' | translate}}</label>
             <div class="col-md-6">
                 <input class="form-control" type="number" data-ng-required="realm.otpPolicyType == 'totp'" min="0" max="120" id="lookAround" name="lookAround" data-ng-model="realm.otpPolicyLookAheadWindow">
             </div>
