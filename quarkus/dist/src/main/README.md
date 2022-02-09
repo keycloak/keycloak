@@ -1,5 +1,5 @@
 Keycloak
-==========
+========
 
 To get help configuring Keycloak via the CLI, run:
 
