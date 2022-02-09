@@ -1,5 +1,6 @@
 <#import "/templates/guide.adoc" as tmpl>
 <#import "/templates/kc.adoc" as kc>
+<#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
 title="Configuring TLS"
@@ -63,5 +64,13 @@ If no password is set, the default password `password` is used.
 Avoid setting a password in plaintext by using the CLI or adding it to `conf/keycloak.conf` file.
 Instead use good practices such as using a vault / mounted secret. For more detail, see the Vault Guide / Production deployment guide.
 
+== Enabling mutual TLS
+Authentication using mTLS is disabled by default. To enable mTLS certificate handling when Keycloak is the server and needs to validate certificates from requests made to Keycloaks endpoints, put the appropriate certificates in Keycloaks truststore and use the following command to enable mTLS:
+
+<@kc.start parameters="--https-client-auth=<none|request|required>"/>
+
+Using the value `required` sets up Keycloak to always ask for certificates and fail if no certificate is provided in a request. By setting the value to `request`, Keycloak will also accept requests without a certificate and only validate the correctness of a certificate if it exists.
+
+Be aware that this is the basic certificate configuration for mTLS use cases where Keycloak acts as server. When Keycloak acts as client instead, e.g. when Keycloak tries to get a token from a token endpoint of a brokered identity provider that is secured by mTLS, you need to set up the HttpClient to provide the right certificates in the keystore for the outgoing request. To configure mTLS in these scenarios, see the <@links.server id="outgoinghttp"/> guide.
 
 </@tmpl.guide>
