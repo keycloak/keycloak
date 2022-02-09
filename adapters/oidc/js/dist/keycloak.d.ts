@@ -39,6 +39,19 @@ export interface KeycloakConfig {
 	clientId: string;
 }
 
+export interface Acr {
+	/**
+	 * Array of values, which will be used inside ID Token `acr` claim sent inside the `claims` parameter to Keycloak server during login.
+	 * Values should correspond to the ACR levels defined in the ACR to Loa mapping for realm or client or to the numbers (levels) inside defined
+	 * Keycloak authentication flow. See section 5.5.1 of OIDC 1.0 specification for the details.
+	 */
+	values: string[];
+	/**
+	 * This parameter specifies if ACR claims is considered essential or not.
+	 */
+	essential: boolean;
+}
+
 export interface KeycloakInitOptions {
 	/**
 	 * Adds a [cryptographic nonce](https://en.wikipedia.org/wiki/Cryptographic_nonce)
@@ -216,6 +229,11 @@ export interface KeycloakLoginOptions {
 	 * Used to pre-fill the username/email field on the login form.
 	 */
 	loginHint?: string;
+
+	/**
+	 * Sets the `acr` claim of the ID token sent inside the `claims` parameter. See section 5.5.1 of the OIDC 1.0 specification.
+	 */
+	acr?: Acr;
 
 	/**
 	 * Used to tell Keycloak which IDP the user wants to authenticate with.
