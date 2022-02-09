@@ -22,6 +22,16 @@ A number of things have changed since the preview Quarkus distribution was relea
 * Features are now enabled/disabled with `--features` and `--features-disabled` replacing the previous approach that had an separate config key for each feature.
 * Runtime configuration can no longer be passed to `kc.[sh|bat] build` and is no longer persisted in the build
 * Logging level and format is now configured with `--log-level` and `--log-format`, while in the past these had to be configured using unsupported Quarkus properties.
+
 = Client Policies Migration : client-scopes
 
 If you used a policy including client-scopes condition and edited JSON document directly, you will need to change the "scope" field name in a JSON document to "scopes".
+
+= Liquibase upgraded to version 4.6.2
+
+Liquibase was updated from version 3.5.5 to 4.6.2, which includes, among other things, several bug fixes, and a new way of registering custom extensions
+using `ServiceLoader`.
+
+Migration from previous Keycloak versions to Keycloak 17.0.0 has been extensively tested with all currently supported databases,
+but we would like to stress the importance of closely following the <<_upgrading,Upgrading Guide>>, specifically of *backing up
+existing database before upgrade*. While we did our best to test the consequences of the Liquibase upgrade, some installations could be using specific setup unknown to us.
