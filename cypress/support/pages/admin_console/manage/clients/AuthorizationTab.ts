@@ -10,6 +10,9 @@ export default class AuthorizationTab {
   private scopeTabName = "authorizationScopes";
   private policyTabName = "authorizationPolicies";
   private permissionsTabName = "authorizationPermissions";
+  private exportTabName = "authorizationExport";
+  private exportDownloadButton = "authorization-export-download";
+  private exportCopyButton = "authorization-export-copy";
   private nameColumnPrefix = "name-column-";
   private emptyPolicyCreateButton = "no-policies-empty-action";
   private createPolicyButton = "createPolicy";
@@ -40,6 +43,11 @@ export default class AuthorizationTab {
 
   goToPermissionsSubTab() {
     cy.findByTestId(this.permissionsTabName).click();
+    return this;
+  }
+
+  goToExportSubTab() {
+    cy.findByTestId(this.exportTabName).click();
     return this;
   }
 
@@ -121,6 +129,16 @@ export default class AuthorizationTab {
 
   setPolicy(policyName: string) {
     cy.findByTestId(policyName).click();
+    return this;
+  }
+
+  copy() {
+    cy.findByTestId(this.exportCopyButton).click();
+    return this;
+  }
+
+  export() {
+    cy.findByTestId(this.exportDownloadButton).click();
     return this;
   }
 

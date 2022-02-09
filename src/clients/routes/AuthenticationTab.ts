@@ -9,7 +9,8 @@ export type AuthorizationTab =
   | "scopes"
   | "policies"
   | "permissions"
-  | "evaluate";
+  | "evaluate"
+  | "export";
 
 export type AuthorizationParams = {
   realm: string;

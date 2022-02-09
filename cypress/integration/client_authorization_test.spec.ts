@@ -146,5 +146,22 @@ describe("Client authentication subtab", () => {
       .save();
 
     masthead.checkNotificationMessage("Successfully created the permission");
+    authenticationTab.cancel();
+  });
+
+  it("Should copy auth details", () => {
+    authenticationTab.goToExportSubTab();
+    authenticationTab.copy();
+
+    masthead.checkNotificationMessage("Authorization details copied.");
+  });
+
+  it("Should export auth details", () => {
+    authenticationTab.goToExportSubTab();
+    authenticationTab.export();
+
+    masthead.checkNotificationMessage(
+      "Successfully exported authorization details."
+    );
   });
 });

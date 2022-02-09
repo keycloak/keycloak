@@ -70,6 +70,7 @@ import {
   toAuthorizationTab,
 } from "./routes/AuthenticationTab";
 import { toClientScopesTab } from "./routes/ClientScopeTab";
+import { AuthorizationExport } from "./authorization/AuthorizationExport";
 
 type ClientDetailHeaderProps = {
   onChange: (value: boolean) => void;
@@ -586,7 +587,7 @@ export default function ClientDetails() {
                     <AuthorizationPermissions clientId={clientId} />
                   </Tab>
                   <Tab
-                    id="Evaluate"
+                    id="evaluate"
                     data-testid="authorizationEvaluate"
                     title={<TabTitleText>{t("evaluate")}</TabTitleText>}
                     {...authenticationRoute("evaluate")}
@@ -599,6 +600,14 @@ export default function ClientDetails() {
                       save={save}
                       reset={() => setupForm(client)}
                     />
+                  </Tab>
+                  <Tab
+                    id="export"
+                    data-testid="authorizationExport"
+                    title={<TabTitleText>{t("common:export")}</TabTitleText>}
+                    {...authenticationRoute("export")}
+                  >
+                    <AuthorizationExport />
                   </Tab>
                 </RoutableTabs>
               </Tab>
