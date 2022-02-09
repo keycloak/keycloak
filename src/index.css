@@ -59,3 +59,9 @@ td.pf-c-table__check > input[type="checkbox"] {
 .kc-time-select-dropdown {
   min-width: 170px;
 }
+
+.keycloak__section_intro__help {
+  padding: var(--pf-global--spacer--md) 0 var(--pf-global--spacer--lg);
+  color: var(--pf-global--primary-color--100);
+  width: fit-content;
+}

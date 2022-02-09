@@ -7,6 +7,7 @@ import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { AssociatedRolesTab } from "../realm-roles/AssociatedRolesTab";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { DefaultsGroupsTab } from "./DefaultGroupsTab";
 
 export const UserRegistration = () => {
   const { t } = useTranslation("realm-settings");
@@ -29,11 +30,11 @@ export const UserRegistration = () => {
 
   return (
     <Tabs
-      key={key}
       activeKey={activeTab}
       onSelect={(_, key) => setActiveTab(key as number)}
     >
       <Tab
+        key={key}
         id="roles"
         eventKey={10}
         title={<TabTitleText>{t("defaultRoles")}</TabTitleText>}
@@ -48,7 +49,7 @@ export const UserRegistration = () => {
         eventKey={20}
         title={<TabTitleText>{t("defaultGroups")}</TabTitleText>}
       >
-        <h1>Work in progress</h1>
+        <DefaultsGroupsTab />
       </Tab>
     </Tabs>
   );

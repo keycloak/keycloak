@@ -200,7 +200,7 @@ export const WebauthnPolicy = ({
     <PageSection variant="light">
       {enabled && (
         <Popover bodyContent={t(`authentication-help:${namePrefix}FormHelp`)}>
-          <TextContent className="keycloak__webauthn_policies__intro">
+          <TextContent className="keycloak__section_intro__help">
             <Text>
               <QuestionCircleIcon /> {t("authentication-help:webauthnIntro")}
             </Text>

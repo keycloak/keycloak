@@ -1,9 +1,3 @@
-.keycloak__webauthn_policies__intro {
-  padding: var(--pf-global--spacer--md) 0 var(--pf-global--spacer--lg);
-  color: var(--pf-global--primary-color--100);
-  width: fit-content;
-}
-
 @media (min-width: 768px) {
   .keycloak__webauthn_policies_authentication__form .pf-c-form__group {
     --pf-c-form--m-horizontal__group-label--md--GridColumnWidth: 10rem;

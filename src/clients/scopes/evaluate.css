@@ -1,7 +1,3 @@
-.keycloak__scopes_evaluate__intro {
-  padding: var(--pf-global--spacer--md) 0 var(--pf-global--spacer--lg);
-  color: var(--pf-global--primary-color--100);
-}
 .keycloak__scopes_evaluate__clipboard-copy input {
   display: none;
 }
