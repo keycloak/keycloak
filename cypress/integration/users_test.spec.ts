@@ -197,8 +197,9 @@ describe("User creation", () => {
       .goToCredentialsTab()
       .clickEmptyStateResetBtn()
       .fillResetCredentialForm();
-    masthead.checkNotificationMessage("Failed to send email to user.");
-    modalUtils.cancelModal();
+    masthead.checkNotificationMessage(
+      "Failed: Failed to send execute actions email"
+    );
   });
 
   it("Reset credential of User with existing credentials", () => {
@@ -208,8 +209,9 @@ describe("User creation", () => {
       .clickResetBtn()
       .fillResetCredentialForm();
 
-    masthead.checkNotificationMessage("Failed to send email to user.");
-    modalUtils.cancelModal();
+    masthead.checkNotificationMessage(
+      "Failed: Failed to send execute actions email"
+    );
   });
 
   it("Delete user test", () => {

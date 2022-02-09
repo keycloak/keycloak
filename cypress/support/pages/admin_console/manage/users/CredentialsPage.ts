@@ -3,7 +3,7 @@ export default class CredentialsPage {
   private readonly emptyStatePasswordBtn = "no-credentials-empty-action";
   private readonly emptyStateResetBtn = "credential-reset-empty-action";
   private readonly resetBtn = "credentialResetBtn";
-  private readonly setPasswordBtn = "setPasswordBtn";
+  private readonly setPasswordBtn = "confirm";
   private readonly credentialResetModal = "credential-reset-modal";
   private readonly resetModalActionsToggleBtn =
     "[data-testid=credential-reset-modal] #actions";
@@ -16,7 +16,7 @@ export default class CredentialsPage {
     "UPDATE_PASSWORD-option",
     "terms_and_conditions-option",
   ];
-  private readonly confirmationButton = "okBtn";
+  private readonly confirmationButton = "confirm";
 
   goToCredentialsTab() {
     cy.findByTestId(this.credentialsTab).click();

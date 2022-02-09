@@ -126,19 +126,17 @@ export default {
     cancel: "Cancel",
     savePasswordSuccess: "The password has been set successfully.",
     savePasswordError: "Error saving password: {{error}}",
-    savePasswordNotMatchError:
-      "Error saving password: Password and confirmation does not match.",
+    confirmPasswordDoesNotMatch: "Password and confirmation does not match.",
     credentialType: "Type",
     credentialUserLabel: "User Label",
     credentialData: "Data",
     credentialsList: "Credentials List",
     setPasswordConfirm: "Set password?",
     setPasswordConfirmText:
-      "Are you sure you want to set the password for the user",
+      "Are you sure you want to set the password for the user {{username}}?",
     password: "Password",
     passwordConfirmation: "Password confirmation",
     resetPasswordConfirmation: "New password confirmation",
-    questionMark: "?",
     savePassword: "Save password",
     deleteCredentialsConfirmTitle: "Delete credentials?",
     deleteCredentialsConfirm:
@@ -149,12 +147,10 @@ export default {
     resetPasswordFor: "Reset password for {{username}}",
     resetPasswordConfirm: "Reset password?",
     resetPasswordConfirmText:
-      "Are you sure you want to reset the password for the user",
+      "Are you sure you want to reset the password for the user {{username}}?",
     resetPassword: "Reset password",
     resetCredentialsSuccess: "The password has been reset successfully.",
     resetCredentialsError: "Error resetting users credentials: {{error}}",
-    resetPasswordNotMatchError:
-      "Error resetting password: Password and confirmation does not match.",
     resetPasswordError: "Error resetting password: {{error}}",
     resetPasswordBtn: "Reset password",
     showPasswordDataName: "Name",
@@ -185,6 +181,6 @@ export default {
     credentialResetConfirm: "Send Email",
     credentialResetConfirmText: "Are you sure you want to send email to user",
     credentialResetEmailSuccess: "Email sent to user.",
-    credentialResetEmailError: "Failed to send email to user.",
+    credentialResetEmailError: "Failed: {{error}}",
   },
 };
