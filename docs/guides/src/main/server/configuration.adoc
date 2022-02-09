@@ -97,6 +97,8 @@ The second stage involves starting the server using any **configuration option**
 
 At this stage, you are free to set any value you want to any of the configuration options.
 
+Be aware that you need to escape characters when invoking commands containing special shell characters such as `;` using the CLI, so you might want to set it in the configuration file instead.
+
 == Configuring the server for an optimal startup time
 
 In addition to the optimizations performed when you run the `build` command, you might want to avoid using CLI options when running the
