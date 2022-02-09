@@ -31,7 +31,7 @@ import liquibase.sqlgenerator.core.AbstractSqlGenerator;
 import liquibase.statement.core.CreateIndexStatement;
 import liquibase.structure.core.Index;
 import liquibase.structure.core.Table;
-import liquibase.util.StringUtils;
+import liquibase.util.StringUtil;
 
 /**
  * A {@link SqlGenerator} implementation that supports {@link CreateJsonIndexStatement}s. It generates the SQL required
@@ -88,7 +88,7 @@ public class CreateJsonIndexGenerator extends AbstractSqlGenerator<CreateJsonInd
         builder.append("ON ").append(database.escapeTableName(statement.getTableCatalogName(), statement.getTableSchemaName(),
                 statement.getTableName()));
         this.handleJsonIndex(statement, database, builder);
-        if (StringUtils.trimToNull(statement.getTablespace()) != null && database.supportsTablespaces()) {
+        if (StringUtil.trimToNull(statement.getTablespace()) != null && database.supportsTablespaces()) {
             builder.append(" TABLESPACE ").append(statement.getTablespace());
         }
 

@@ -15,17 +15,13 @@ import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
-import org.keycloak.connections.jpa.updater.liquibase.lock.CustomInsertLockRecordGenerator;
-import org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockDatabaseChangeLogGenerator;
 import org.keycloak.connections.jpa.updater.liquibase.lock.DummyLockService;
-import org.keycloak.quarkus.runtime.storage.database.liquibase.KeycloakLogger;
 
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;
 import io.quarkus.deployment.annotations.Record;
 import liquibase.database.Database;
 import liquibase.lockservice.LockService;
-import liquibase.logging.Logger;
 import liquibase.parser.ChangeLogParser;
 import liquibase.parser.core.xml.XMLChangeLogSAXParser;
 import liquibase.servicelocator.LiquibaseService;
@@ -47,13 +43,11 @@ class LiquibaseProcessor {
                 liquibase.parser.NamespaceDetails.class,
                 liquibase.precondition.Precondition.class,
                 Database.class,
-                ChangeLogParser.class,
                 liquibase.change.Change.class,
                 liquibase.snapshot.SnapshotGenerator.class,
                 liquibase.changelog.ChangeLogHistoryService.class,
                 liquibase.datatype.LiquibaseDataType.class,
                 liquibase.executor.Executor.class,
-                LockService.class,
                 SqlGenerator.class)) {
             List<String> impls = new ArrayList<>();
             services.put(c.getName(), impls);
@@ -78,11 +72,8 @@ class LiquibaseProcessor {
             }
         }
 
-        services.put(Logger.class.getName(), Arrays.asList(KeycloakLogger.class.getName()));
         services.put(LockService.class.getName(), Arrays.asList(DummyLockService.class.getName()));
         services.put(ChangeLogParser.class.getName(), Arrays.asList(XMLChangeLogSAXParser.class.getName()));
-        services.get(SqlGenerator.class.getName()).add(CustomInsertLockRecordGenerator.class.getName());
-        services.get(SqlGenerator.class.getName()).add(CustomLockDatabaseChangeLogGenerator.class.getName());
 
         recorder.configureLiquibase(services);
     }

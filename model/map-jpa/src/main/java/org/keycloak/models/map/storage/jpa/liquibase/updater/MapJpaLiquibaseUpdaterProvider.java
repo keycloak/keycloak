@@ -22,7 +22,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
-import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
@@ -33,7 +32,6 @@ import liquibase.changelog.ChangeSet;
 import liquibase.changelog.RanChangeSet;
 import liquibase.exception.LiquibaseException;
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.connections.jpa.updater.liquibase.ThreadLocalSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.storage.ModelEntityUtil;
@@ -72,7 +70,7 @@ public class MapJpaLiquibaseUpdaterProvider implements MapJpaUpdaterProvider {
                 exportWriter = new FileWriter(file);
             }
 
-            updateChangeSet(liquibase, connection);
+            updateChangeSet(liquibase);
 
         } catch (LiquibaseException | IOException | SQLException e) {
             logger.error("Error has occurred while updating the database", e);
@@ -89,9 +87,9 @@ public class MapJpaLiquibaseUpdaterProvider implements MapJpaUpdaterProvider {
         }
     }
 
-    protected void updateChangeSet(Liquibase liquibase, Connection connection) throws LiquibaseException, SQLException {
+    protected void updateChangeSet(Liquibase liquibase) throws LiquibaseException, SQLException {
         String changelog = liquibase.getChangeLogFile();
-        List<ChangeSet> changeSets = getLiquibaseUnrunChangeSets(liquibase);
+        List<ChangeSet> changeSets = this.getLiquibaseUnrunChangeSets(liquibase);
         if (!changeSets.isEmpty()) {
             List<RanChangeSet> ranChangeSets = liquibase.getDatabase().getRanChangeSetList();
             if (ranChangeSets.isEmpty()) {
@@ -135,7 +133,7 @@ public class MapJpaLiquibaseUpdaterProvider implements MapJpaUpdaterProvider {
 
     protected Status validateChangeSet(Liquibase liquibase, String changelog) throws LiquibaseException {
         final Status result;
-        List<ChangeSet> changeSets = getLiquibaseUnrunChangeSets(liquibase);
+        List<ChangeSet> changeSets = this.getLiquibaseUnrunChangeSets(liquibase);
 
         if (!changeSets.isEmpty()) {
             if (changeSets.size() == liquibase.getDatabaseChangeLog().getChangeSets().size()) {
@@ -152,13 +150,8 @@ public class MapJpaLiquibaseUpdaterProvider implements MapJpaUpdaterProvider {
         return result;
     }
 
-    @SuppressWarnings("unchecked")
-    private List<ChangeSet> getLiquibaseUnrunChangeSets(Liquibase liquibase) {
-        // TODO tracked as: https://issues.jboss.org/browse/KEYCLOAK-3730
-        // TODO: When https://liquibase.jira.com/browse/CORE-2919 is resolved, replace the following two lines with:
-        // List<ChangeSet> changeSets = liquibase.listUnrunChangeSets((Contexts) null, new LabelExpression(), false);
-        Method listUnrunChangeSets = Reflections.findDeclaredMethod(Liquibase.class, "listUnrunChangeSets", Contexts.class, LabelExpression.class, boolean.class);
-        return Reflections.invokeMethod(true, listUnrunChangeSets, List.class, liquibase, (Contexts) null, new LabelExpression(), false);
+    private List<ChangeSet> getLiquibaseUnrunChangeSets(Liquibase liquibase) throws LiquibaseException {
+        return liquibase.listUnrunChangeSets(null, new LabelExpression(), false);
     }
 
     private Liquibase getLiquibase(Class modelType, Connection connection, String defaultSchema) throws LiquibaseException {

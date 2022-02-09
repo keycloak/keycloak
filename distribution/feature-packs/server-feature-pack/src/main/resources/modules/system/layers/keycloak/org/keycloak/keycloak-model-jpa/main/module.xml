@@ -32,7 +32,7 @@
         <module name="org.keycloak.keycloak-server-spi-private"/>
         <module name="javax.persistence.api"/>
         <module name="org.jboss.logging"/>
-        <module name="org.liquibase"/>
+        <module name="org.liquibase" services="import"/>
         <module name="org.javassist"/>
         <module name="org.hibernate" services="import"/>
         <module name="org.bouncycastle" />
