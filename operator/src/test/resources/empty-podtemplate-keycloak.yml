@@ -1,0 +1,13 @@
+apiVersion: keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-podtemplate
+spec:
+  instances: 1
+  serverConfiguration:
+    KC_DB: postgres
+    KC_DB_URL_HOST: postgres-db
+    KC_DB_USERNAME: postgres
+    KC_DB_PASSWORD: testpassword
+  unsupported:
+    podTemplate:
