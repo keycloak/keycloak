@@ -378,6 +378,15 @@ function Keycloak (config) {
         }
     }
 
+    function buildClaimsParameter(requestedAcr){
+        var claims = {
+            id_token: {
+                acr: requestedAcr
+            }
+        }
+        return JSON.stringify(claims);
+    }
+
     kc.createLoginUrl = function(options) {
         var state = createUUID();
         var nonce = createUUID();
@@ -443,6 +452,11 @@ function Keycloak (config) {
 
         if (options && options.locale) {
             url += '&ui_locales=' + encodeURIComponent(options.locale);
+        }
+
+        if (options && options.acr) {
+            var claimsParameter = buildClaimsParameter(options.acr);
+            url += '&claims=' + encodeURIComponent(claimsParameter);
         }
 
         if (kc.pkceMethod) {
