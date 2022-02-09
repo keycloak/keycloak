@@ -55,6 +55,7 @@ The server uses JDBC as the underlying technology to communicate with the relati
 
 .Starting the server
 <@kc.start parameters="--db-url jdbc:postgresql://mypostgres/mydatabase"/>
+Be aware that you need to escape characters when invoking commands containing special shell characters such as `;` using the CLI, so you might want to set it in the configuration file instead.
 
 == Configuring the database for Unicode
 

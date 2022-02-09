@@ -80,7 +80,7 @@ The format string supports the following symbols:
 === Set the logging format
 To set the logging format for a logged line, build your desired format template using the table above and run the following command:
 <@kc.start parameters="--log-format=\"\'<format>\'\""/>
-Be aware that you need to escape characters when invoking the command using the CLI, so you might want to set it in the configuration file instead.
+Be aware that you need to escape characters when invoking commands containing special shell characters such as `;` using the CLI, so you might want to set it in the configuration file instead.
 
 .Example: Abbreviate the fully qualified category name
 <@kc.start parameters="\"\'%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{3.}] (%t) %s%e%n\'\""/>
