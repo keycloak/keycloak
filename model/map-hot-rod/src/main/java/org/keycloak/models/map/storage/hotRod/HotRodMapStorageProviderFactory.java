@@ -25,8 +25,12 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.map.group.MapGroupEntity;
+import org.keycloak.models.map.role.MapRoleEntity;
+import org.keycloak.models.map.storage.hotRod.role.HotRodRoleEntity;
+import org.keycloak.models.map.storage.hotRod.role.HotRodRoleEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.client.HotRodClientEntity;
 import org.keycloak.models.map.storage.hotRod.client.HotRodClientEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.client.HotRodProtocolMapperEntityDelegate;
@@ -62,6 +66,7 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
             .constructor(MapClientEntity.class,                     HotRodClientEntityDelegate::new)
             .constructor(MapProtocolMapperEntity.class,             HotRodProtocolMapperEntityDelegate::new)
             .constructor(MapGroupEntity.class,                      HotRodGroupEntityDelegate::new)
+            .constructor(MapRoleEntity.class,                       HotRodRoleEntityDelegate::new)
             .constructor(MapUserEntity.class,                       HotRodUserEntityDelegate::new)
             .constructor(MapUserCredentialEntity.class,             HotRodUserCredentialEntityDelegate::new)
             .constructor(MapUserFederatedIdentityEntity.class,      HotRodUserFederatedIdentityEntityDelegate::new)
@@ -81,6 +86,13 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
                 new HotRodEntityDescriptor<>(GroupModel.class,
                         HotRodGroupEntity.class,
                         HotRodGroupEntityDelegate::new));
+
+        // Roles descriptor
+        ENTITY_DESCRIPTOR_MAP.put(RoleModel.class,
+                new HotRodEntityDescriptor<>(RoleModel.class,
+                        HotRodRoleEntity.class,
+                        HotRodRoleEntityDelegate::new));
+
         // Users descriptor
         ENTITY_DESCRIPTOR_MAP.put(UserModel.class,
                 new HotRodEntityDescriptor<>(UserModel.class,
