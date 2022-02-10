@@ -50,8 +50,6 @@ import io.quarkus.runtime.annotations.QuarkusMain;
 @ApplicationScoped
 public class KeycloakMain implements QuarkusApplication {
 
-    private static final Logger LOGGER = Logger.getLogger(KeycloakMain.class);
-
     public static void main(String[] args) {
         System.setProperty("kc.version", Version.VERSION_KEYCLOAK);
         List<String> cliArgs = Picocli.parseArgs(args);
@@ -80,7 +78,11 @@ public class KeycloakMain implements QuarkusApplication {
     }
 
     public static void start(ExecutionExceptionHandler errorHandler, PrintWriter errStream) {
+        ClassLoader originalCl = Thread.currentThread().getContextClassLoader();
+
         try {
+            Thread.currentThread().setContextClassLoader(new KeycloakClassLoader());
+
             Quarkus.run(KeycloakMain.class, (exitCode, cause) -> {
                 if (cause != null) {
                     errorHandler.error(errStream,
@@ -98,6 +100,8 @@ public class KeycloakMain implements QuarkusApplication {
             errorHandler.error(errStream,
                     String.format("Unexpected error when starting the server in (%s) mode", getKeycloakModeFromProfile(getProfileOrDefault("prod"))),
                     cause.getCause());
+        } finally {
+            Thread.currentThread().setContextClassLoader(originalCl);
         }
     }
 
@@ -107,7 +111,7 @@ public class KeycloakMain implements QuarkusApplication {
     @Override
     public int run(String... args) throws Exception {
         if (isDevProfile()) {
-            LOGGER.warnf("Running the server in development mode. DO NOT use this configuration in production.");
+            Logger.getLogger(KeycloakMain.class).warnf("Running the server in development mode. DO NOT use this configuration in production.");
         }
 
         int exitCode = ApplicationLifecycleManager.getExitCode();

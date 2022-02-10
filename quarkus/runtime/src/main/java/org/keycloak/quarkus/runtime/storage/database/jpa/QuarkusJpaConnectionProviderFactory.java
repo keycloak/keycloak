@@ -122,9 +122,11 @@ public final class QuarkusJpaConnectionProviderFactory implements JpaConnectionP
         try {
             Map<String, Object> unitProperties = emf.getProperties();
 
-            unitProperties.entrySet().stream()
-                    .filter(entry -> entry.getKey().startsWith(QUERY_PROPERTY_PREFIX))
-                    .forEach(entry -> configureNamedQuery(entry.getKey().substring(QUERY_PROPERTY_PREFIX.length()), entry.getValue().toString(), em));
+            for (Map.Entry<String, Object> entry : unitProperties.entrySet()) {
+                if (entry.getKey().startsWith(QUERY_PROPERTY_PREFIX)) {
+                    configureNamedQuery(entry.getKey().substring(QUERY_PROPERTY_PREFIX.length()), entry.getValue().toString(), em);
+                }
+            }
         } finally {
             JpaUtils.closeEntityManager(em);
         }
