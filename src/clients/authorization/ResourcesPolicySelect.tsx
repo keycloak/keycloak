@@ -11,12 +11,14 @@ type ResourcesPolicySelectProps = {
   name: string;
   clientId: string;
   searchFunction: keyof Pick<Clients, "listPolicies" | "listResources">;
+  variant?: SelectVariant;
 };
 
 export const ResourcesPolicySelect = ({
   name,
   searchFunction,
   clientId,
+  variant = SelectVariant.typeaheadMulti,
 }: ResourcesPolicySelectProps) => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
@@ -58,7 +60,7 @@ export const ResourcesPolicySelect = ({
       render={({ onChange, value }) => (
         <Select
           toggleId={name}
-          variant={SelectVariant.typeaheadMulti}
+          variant={variant}
           onToggle={setOpen}
           onFilter={(_, filter) => {
             setSearch(filter);
@@ -78,7 +80,7 @@ export const ResourcesPolicySelect = ({
             setSearch("");
           }}
           isOpen={open}
-          aria-labelledby={t("policies")}
+          aria-labelledby={t(name)}
         >
           {items}
         </Select>
