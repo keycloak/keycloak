@@ -22,7 +22,7 @@ limitations under the License.
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd
                     http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
 
-    <!-- format of id of changeSet: client-scopes-${org.keycloak.models.map.storage.jpa.Constants.SUPPORTED_VERSION_CLIENT_SCOPE} -->
+    <!-- format of id of changeSet: client-scopes-${org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_CLIENT_SCOPE} -->
     <changeSet author="keycloak" id="client-scopes-1">
 
         <createTable tableName="client_scope">
@@ -64,7 +64,7 @@ limitations under the License.
             <column name="name"/>
             <column name="VALUE(255)" valueComputed="VALUE(255)"/>
         </createIndex>
-        <modifySql dbms="postgresql">
+        <modifySql dbms="postgresql,cockroachdb">
             <replace replace="VALUE(255)" with="(value::varchar(250))"/>
         </modifySql>
     </changeSet>

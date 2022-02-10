@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 import liquibase.database.Database;
+import liquibase.database.core.CockroachDatabase;
 import liquibase.database.core.PostgresDatabase;
 import liquibase.exception.ValidationErrors;
 import liquibase.sql.Sql;
@@ -96,8 +97,14 @@ public class CreateJsonIndexGenerator extends AbstractSqlGenerator<CreateJsonInd
     }
 
     protected void handleJsonIndex(final CreateJsonIndexStatement statement, final Database database, final StringBuilder builder) {
-        if (database instanceof PostgresDatabase) {
+        if (database instanceof CockroachDatabase) {
             builder.append(" USING gin (");
+            builder.append(Arrays.stream(statement.getColumns()).map(JsonEnabledColumnConfig.class::cast)
+                    .map(c -> "(" + c.getJsonColumn() + "->'" + c.getJsonProperty() + "')")
+                    .collect(Collectors.joining(", ")))
+                    .append(")");
+        }
+        else if (database instanceof PostgresDatabase) {            builder.append(" USING gin (");
             builder.append(Arrays.stream(statement.getColumns()).map(JsonEnabledColumnConfig.class::cast)
                     .map(c -> "(" + c.getJsonColumn() + "->'" + c.getJsonProperty() + "') jsonb_path_ops")
                     .collect(Collectors.joining(", ")))

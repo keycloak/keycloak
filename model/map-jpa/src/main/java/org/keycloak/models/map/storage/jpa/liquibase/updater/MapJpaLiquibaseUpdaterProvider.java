@@ -49,15 +49,19 @@ public class MapJpaLiquibaseUpdaterProvider implements MapJpaUpdaterProvider {
 
     @Override
     public void update(Class modelType, Connection connection, String defaultSchema) {
-        update(modelType, connection, null, defaultSchema);
+        synchronized (MapJpaLiquibaseUpdaterProvider.class) {
+            this.updateSynch(modelType, connection, null, defaultSchema);
+        }
     }
 
     @Override
     public void export(Class modelType, Connection connection, String defaultSchema, File file) {
-        update(modelType, connection, file, defaultSchema);
+        synchronized (MapJpaLiquibaseUpdaterProvider.class) {
+            this.updateSynch(modelType, connection, file, defaultSchema);
+        }
     }
 
-    private void update(Class modelType, Connection connection, File file, String defaultSchema) {
+    protected void updateSynch(Class modelType, Connection connection, File file, String defaultSchema) {
         logger.debug("Starting database update");
 
         // Need ThreadLocal as liquibase doesn't seem to have API to inject custom objects into tasks
@@ -113,6 +117,12 @@ public class MapJpaLiquibaseUpdaterProvider implements MapJpaUpdaterProvider {
 
     @Override
     public Status validate(Class modelType, Connection connection, String defaultSchema) {
+        synchronized (MapJpaLiquibaseUpdaterProvider.class) {
+            return this.validateSynch(modelType, connection, defaultSchema);
+        }
+    }
+
+    protected Status validateSynch(final Class modelType, final Connection connection, final String defaultSchema) {
         logger.debug("Validating if database is updated");
         ThreadLocalSessionContext.setCurrentSession(session);
 
