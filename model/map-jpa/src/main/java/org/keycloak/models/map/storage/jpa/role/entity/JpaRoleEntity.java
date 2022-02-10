@@ -51,7 +51,7 @@ import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
  * therefore marked as non-insertable and non-updatable to instruct hibernate.
  */
 @Entity
-@Table(name = "role", uniqueConstraints = {@UniqueConstraint(columnNames = {"realmId", "clientId", "name"})})
+@Table(name = "kc_role", uniqueConstraints = {@UniqueConstraint(columnNames = {"realmId", "clientId", "name"})})
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
 public class JpaRoleEntity extends AbstractRoleEntity implements JpaRootEntity {
 

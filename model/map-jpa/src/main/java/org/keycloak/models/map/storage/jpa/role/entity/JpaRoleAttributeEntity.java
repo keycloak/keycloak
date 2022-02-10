@@ -21,7 +21,7 @@ import javax.persistence.Table;
 import org.keycloak.models.map.storage.jpa.JpaAttributeEntity;
 
 @Entity
-@Table(name = "role_attribute")
+@Table(name = "kc_role_attribute")
 public class JpaRoleAttributeEntity extends JpaAttributeEntity<JpaRoleEntity> {
 
     public JpaRoleAttributeEntity() {

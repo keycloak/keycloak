@@ -53,7 +53,7 @@ import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
  * therefore marked as non-insertable and non-updatable to instruct hibernate.
  */
 @Entity
-@Table(name = "client",
+@Table(name = "kc_client",
     uniqueConstraints = {
             @UniqueConstraint(
                     columnNames = {"realmId", "clientId"}

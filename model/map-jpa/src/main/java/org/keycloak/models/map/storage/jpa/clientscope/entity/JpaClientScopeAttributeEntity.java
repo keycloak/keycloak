@@ -21,7 +21,7 @@ import javax.persistence.Table;
 import org.keycloak.models.map.storage.jpa.JpaAttributeEntity;
 
 @Entity
-@Table(name = "client_scope_attribute")
+@Table(name = "kc_client_scope_attribute")
 public class JpaClientScopeAttributeEntity extends JpaAttributeEntity<JpaClientScopeEntity> {
 
     public JpaClientScopeAttributeEntity() {
