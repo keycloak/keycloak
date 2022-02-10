@@ -42,6 +42,9 @@ import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.group.MapGroupEntityImpl;
+import org.keycloak.models.map.realm.MapRealmEntity;
+import org.keycloak.models.map.realm.MapRealmEntityImpl;
+import org.keycloak.models.map.realm.entity.*;
 import org.keycloak.models.map.role.MapRoleEntityImpl;
 import com.fasterxml.jackson.databind.JavaType;
 import java.io.File;
@@ -107,6 +110,18 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
       .constructor(MapScopeEntity.class,                            MapScopeEntityImpl::new)
       .constructor(MapPolicyEntity.class,                           MapPolicyEntityImpl::new)
       .constructor(MapPermissionTicketEntity.class,                 MapPermissionTicketEntityImpl::new)
+      .constructor(MapRealmEntity.class,                            MapRealmEntityImpl::new)
+      .constructor(MapAuthenticationExecutionEntity.class,          MapAuthenticationExecutionEntityImpl::new)
+      .constructor(MapAuthenticationFlowEntity.class,               MapAuthenticationFlowEntityImpl::new)
+      .constructor(MapAuthenticatorConfigEntity.class,              MapAuthenticatorConfigEntityImpl::new)
+      .constructor(MapClientInitialAccessEntity.class,              MapClientInitialAccessEntityImpl::new)
+      .constructor(MapComponentEntity.class,                        MapComponentEntityImpl::new)
+      .constructor(MapIdentityProviderEntity.class,                 MapIdentityProviderEntityImpl::new)
+      .constructor(MapIdentityProviderMapperEntity.class,           MapIdentityProviderMapperEntityImpl::new)
+      .constructor(MapOTPPolicyEntity.class,                        MapOTPPolicyEntityImpl::new)
+      .constructor(MapRequiredActionProviderEntity.class,           MapRequiredActionProviderEntityImpl::new)
+      .constructor(MapRequiredCredentialEntity.class,               MapRequiredCredentialEntityImpl::new)
+      .constructor(MapWebAuthnPolicyEntity.class,                   MapWebAuthnPolicyEntityImpl::new)
       .build();
 
     private static final Map<String, StringKeyConvertor> KEY_CONVERTORS = new HashMap<>();

@@ -74,7 +74,8 @@ public class MapRealmProvider implements RealmProvider {
 
         LOG.tracef("createRealm(%s, %s)%s", id, name, getShortStackTrace());
 
-        MapRealmEntity entity = new MapRealmEntity(id);
+        MapRealmEntity entity = new MapRealmEntityImpl();
+        entity.setId(id);
         entity.setName(name);
 
         entity = tx.create(entity);
@@ -170,12 +171,10 @@ public class MapRealmProvider implements RealmProvider {
     //TODO move the following method to adapter
     @Override
     public void saveLocalizationText(RealmModel realm, String locale, String key, String text) {
-        // implemented according to behaviour in JpaRealmProvider (as java-doc was not added)
-        if (! updateLocalizationText(realm, locale, key, text)) {
-            Map<String, String> texts = new HashMap<>();
-            texts.put(key, text);
-            realm.createOrUpdateRealmLocalizationTexts(locale, texts);
-        }
+        if (locale == null || key == null || text == null) return;
+        Map<String, String> texts = new HashMap<>();
+        texts.put(key, text);
+        realm.createOrUpdateRealmLocalizationTexts(locale, texts);
     }
 
     //TODO move the following method to adapter
@@ -189,9 +188,7 @@ public class MapRealmProvider implements RealmProvider {
     @Override
     public boolean updateLocalizationText(RealmModel realm, String locale, String key, String text) {
         if (locale == null || key == null || text == null || (! realm.getRealmLocalizationTextsByLocale(locale).containsKey(key))) return false;
-        Map<String, String> texts = new HashMap<>(realm.getRealmLocalizationTextsByLocale(locale));
-        texts.replace(key, text);
-        realm.createOrUpdateRealmLocalizationTexts(locale, texts);
+        saveLocalizationText(realm, locale, key, text);
         return true;
     }
 

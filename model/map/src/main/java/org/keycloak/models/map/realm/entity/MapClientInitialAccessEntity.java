@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,27 +17,21 @@
 
 package org.keycloak.models.map.realm.entity;
 
-import java.util.Objects;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientInitialAccessModel;
+import org.keycloak.models.map.annotations.GenerateEntityImplementations;
+import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-public class MapClientInitialAccessEntity extends UpdatableEntity.Impl {
-
-    private String id;
-    private Integer timestamp = 0;
-    private Integer expiration = 0;
-    private Integer count = 0;
-    private Integer remainingCount = 0;
-
-
-    private MapClientInitialAccessEntity() {}
-
-    public static MapClientInitialAccessEntity createEntity(int expiration, int count) {
+@GenerateEntityImplementations
+@DeepCloner.Root
+public interface MapClientInitialAccessEntity extends UpdatableEntity, AbstractEntity {
+    static MapClientInitialAccessEntity createEntity(int expiration, int count) {
         int currentTime = Time.currentTime();
 
-        MapClientInitialAccessEntity entity = new MapClientInitialAccessEntity();
+        MapClientInitialAccessEntity entity = new MapClientInitialAccessEntityImpl();
         entity.setId(KeycloakModelUtils.generateId());
         entity.setTimestamp(currentTime);
         entity.setExpiration(expiration);
@@ -46,72 +40,30 @@ public class MapClientInitialAccessEntity extends UpdatableEntity.Impl {
         return entity;
     }
 
-    public static ClientInitialAccessModel toModel(MapClientInitialAccessEntity entity) {
+    static ClientInitialAccessModel toModel(MapClientInitialAccessEntity entity) {
         if (entity == null) return null;
         ClientInitialAccessModel model = new ClientInitialAccessModel();
         model.setId(entity.getId());
-        model.setTimestamp(entity.getTimestamp());
-        model.setExpiration(entity.getExpiration());
-        model.setCount(entity.getCount());
-        model.setRemainingCount(entity.getRemainingCount());
+        Integer timestamp = entity.getTimestamp();
+        model.setTimestamp(timestamp == null ? 0 : timestamp);
+        Integer expiration = entity.getExpiration();
+        model.setExpiration(expiration == null ? 0 : expiration);
+        Integer count = entity.getCount();
+        model.setCount(count == null ? 0 : count);
+        Integer remainingCount = entity.getRemainingCount();
+        model.setRemainingCount(remainingCount == null ? 0 : remainingCount);
         return model;
     }
 
-    public String getId() {
-        return id;
-    }
+    Integer getTimestamp();
+    void setTimestamp(Integer timestamp);
 
-    public void setId(String id) {
-        this.updated = !Objects.equals(this.id, id);
-        this.id = id;
-    }
+    Integer getExpiration();
+    void setExpiration(Integer expiration);
 
-    public Integer getTimestamp() {
-        return timestamp;
-    }
+    Integer getCount();
+    void setCount(Integer count);
 
-    public void setTimestamp(int timestamp) {
-        this.updated = !Objects.equals(this.timestamp, timestamp);
-        this.timestamp = timestamp;
-    }
-
-    public Integer getExpiration() {
-        return expiration;
-    }
-
-    public void setExpiration(int expiration) {
-        this.updated = !Objects.equals(this.expiration, expiration);
-        this.expiration = expiration;
-    }
-
-    public Integer getCount() {
-        return count;
-    }
-
-    public void setCount(int count) {
-        this.updated = !Objects.equals(this.count, count);
-        this.count = count;
-    }
-
-    public Integer getRemainingCount() {
-        return remainingCount;
-    }
-
-    public void setRemainingCount(int remainingCount) {
-        this.updated = !Objects.equals(this.remainingCount, remainingCount);
-        this.remainingCount = remainingCount;
-    }
-
-    @Override
-    public int hashCode() {
-        return getId().hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (!(obj instanceof MapClientInitialAccessEntity)) return false;
-        final MapClientInitialAccessEntity other = (MapClientInitialAccessEntity) obj;
-        return Objects.equals(other.getId(), getId());
-    }
+    Integer getRemainingCount();
+    void setRemainingCount(Integer remainingCount);
 }
