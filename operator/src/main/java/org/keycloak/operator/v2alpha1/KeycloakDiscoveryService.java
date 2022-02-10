@@ -29,9 +29,9 @@ import org.keycloak.operator.v2alpha1.crds.Keycloak;
 
 import java.util.Optional;
 
-public class KeycloakService extends OperatorManagedResource {
+public class KeycloakDiscoveryService extends OperatorManagedResource {
 
-    public KeycloakService(KubernetesClient client, Keycloak keycloakCR) {
+    public KeycloakDiscoveryService(KubernetesClient client, Keycloak keycloakCR) {
         super(client, keycloakCR);
     }
 
@@ -39,11 +39,10 @@ public class KeycloakService extends OperatorManagedResource {
       return new ServiceSpecBuilder()
               .withSelector(Constants.DEFAULT_LABELS)
               .addNewPort()
-                .withName(getName())
-                .withTargetPort(new IntOrString(Constants.KEYCLOAK_SERVICE_PORT))
-                .withPort(Constants.KEYCLOAK_SERVICE_PORT)
-                .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
+                .withTargetPort(new IntOrString(Constants.KEYCLOAK_DISCOVERY_SERVICE_PORT))
+                .withPort(Constants.KEYCLOAK_DISCOVERY_SERVICE_PORT)
               .endPort()
+              .withClusterIP("None")
               .build();
     }
 
@@ -76,7 +75,8 @@ public class KeycloakService extends OperatorManagedResource {
                 .get());
     }
 
+    @Override
     public String getName() {
-        return cr.getMetadata().getName()+"-service";
+        return cr.getMetadata().getName() + "-discovery";
     }
 }

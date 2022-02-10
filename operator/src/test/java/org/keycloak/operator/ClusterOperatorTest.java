@@ -111,6 +111,11 @@ public abstract class ClusterOperatorTest {
     k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloakrealmimports.keycloak.org-v1.yml")).createOrReplace();
   }
 
+  private static void cleanCRD() throws FileNotFoundException {
+    Log.info("Cleaning CRD ");
+    k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaks.keycloak.org-v1.yml")).delete();
+  }
+
   private static void registerReconcilers() {
     Log.info("Registering reconcilers for operator : " + operator + " [" + operatorDeployment + "]");
 
@@ -185,6 +190,8 @@ public abstract class ClusterOperatorTest {
     } else {
       cleanRBACresourcesAndOperatorDeployment();
     }
+
+    cleanCRD();
 
     Log.info("Deleting namespace : " + namespace);
     assertThat(k8sclient.namespaces().withName(namespace).delete()).isTrue();

@@ -17,6 +17,7 @@
 package org.keycloak.operator.v2alpha1;
 
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -31,6 +32,7 @@ import org.keycloak.operator.v2alpha1.crds.KeycloakStatusBuilder;
 
 import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -99,17 +101,9 @@ public class KeycloakDeployment extends OperatorManagedResource {
 
         Container container = baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0);
         container.setImage(Optional.ofNullable(keycloakCR.getSpec().getImage()).orElse(config.keycloak().image()));
-
-        var serverConfig = new HashMap<>(Constants.DEFAULT_DIST_CONFIG);
-        if (keycloakCR.getSpec().getServerConfiguration() != null) {
-            serverConfig.putAll(keycloakCR.getSpec().getServerConfiguration());
-        }
-
         container.setImagePullPolicy(config.keycloak().imagePullPolicy());
 
-        container.setEnv(serverConfig.entrySet().stream()
-                .map(e -> new EnvVarBuilder().withName(e.getKey()).withValue(e.getValue()).build())
-                .collect(Collectors.toList()));
+        container.setEnv(getEnvVars());
 
 //        Set<String> configSecretsNames = new HashSet<>();
 //        List<EnvVar> configEnvVars = serverConfig.entrySet().stream()
@@ -137,6 +131,20 @@ public class KeycloakDeployment extends OperatorManagedResource {
         return baseDeployment;
     }
 
+    private List<EnvVar> getEnvVars() {
+        var serverConfig = new HashMap<>(Constants.DEFAULT_DIST_CONFIG);
+        serverConfig.put("JGROUPS_DISCOVERY_PROPERTIES", "dns_query=" + getName() + "-discovery." + getNamespace());
+        if (keycloakCR.getSpec().getServerConfiguration() != null) {
+            serverConfig.putAll(keycloakCR.getSpec().getServerConfiguration());
+        }
+        return serverConfig.entrySet().stream()
+                .map(e -> new EnvVarBuilder()
+                        .withName(e.getKey())
+                        .withValue(e.getValue())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
     public void updateStatus(KeycloakStatusBuilder status) {
         if (existingDeployment == null) {
             status.addNotReadyMessage("No existing Deployment found, waiting for creating a new one");
@@ -162,12 +170,9 @@ public class KeycloakDeployment extends OperatorManagedResource {
 //        return configSecretsNames;
 //    }
 
+    @Override
     public String getName() {
         return keycloakCR.getMetadata().getName();
-    }
-
-    public String getNamespace() {
-        return keycloakCR.getMetadata().getNamespace();
     }
 
     public void rollingRestart() {
