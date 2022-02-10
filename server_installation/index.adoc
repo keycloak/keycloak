@@ -14,6 +14,13 @@ include::topics/templates/document-attributes-community.adoc[]
 :release_header_latest_link: {installguide_link_latest}
 include::topics/templates/release-header.adoc[]
 
+[WARNING]
+====
+This guide is for the legacy WildFly distribution of Keycloak.
+
+For the new Quarkus powered distribution check out the new https://www.keycloak.org/guides#server[Server Guides].
+====
+
 include::topics.adoc[]
 
 :context:
