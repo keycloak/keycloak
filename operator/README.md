@@ -17,6 +17,20 @@ Build the Docker image with:
 mvn clean package -Doperator -Dquarkus.container-image.build=true
 ```
 
+## Configuration
+
+The Keycloak image can be configured, when starting the operator, using the Java property:
+
+```
+operator.keycloak.image
+```
+
+And the imagePullPolicy with:
+
+```
+operator.keycloak.image-pull-policy
+```
+
 ## Contributing
 
 ### Quick start on Minikube

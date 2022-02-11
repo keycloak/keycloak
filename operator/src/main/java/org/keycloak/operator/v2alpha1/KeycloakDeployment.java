@@ -105,6 +105,8 @@ public class KeycloakDeployment extends OperatorManagedResource {
             serverConfig.putAll(keycloakCR.getSpec().getServerConfiguration());
         }
 
+        container.setImagePullPolicy(config.keycloak().imagePullPolicy());
+
         container.setEnv(serverConfig.entrySet().stream()
                 .map(e -> new EnvVarBuilder().withName(e.getKey()).withValue(e.getValue()).build())
                 .collect(Collectors.toList()));
