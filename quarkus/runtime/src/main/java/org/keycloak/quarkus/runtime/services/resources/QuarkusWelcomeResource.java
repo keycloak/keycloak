@@ -65,8 +65,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Path("/")
 public class QuarkusWelcomeResource {
 
-    protected static final Logger logger = Logger.getLogger(WelcomeResource.class);
-
+    private static final Logger logger = Logger.getLogger(QuarkusWelcomeResource.class);
     private static final String KEYCLOAK_STATE_CHECKER = "WELCOME_STATE_CHECKER";
 
     private AtomicBoolean shouldBootstrap;
