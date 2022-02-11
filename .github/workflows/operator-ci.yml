@@ -50,9 +50,17 @@ jobs:
           eval $(minikube -p minikube docker-env)
           docker build --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${GITHUB_SHA}
 
-      - name: Build , deploy and test operator in minikube
+      - name: Test operator running locally
+        working-directory: operator
         run: |
-          cd operator
+          mvn clean verify \
+              -Dquarkus.kubernetes.deployment-target=kubernetes \
+              -Doperator.keycloak.image=keycloak:${GITHUB_SHA} \
+              -Doperator.keycloak.image-pull-policy=Never
+
+      - name: Test operator running in cluster
+        working-directory: operator
+        run: |
           eval $(minikube -p minikube docker-env) 
           mvn clean verify \
               -Dquarkus.container-image.build=true -Dquarkus.container-image.tag=test \
