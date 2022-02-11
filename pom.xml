@@ -184,6 +184,7 @@
         <surefire.memory.metaspace>96m</surefire.memory.metaspace>
         <surefire.memory.metaspace.max>512m</surefire.memory.metaspace.max>
         <surefire.memory.settings>-Xms${surefire.memory.Xms} -Xmx${surefire.memory.Xmx} -XX:MetaspaceSize=${surefire.memory.metaspace} -XX:MaxMetaspaceSize=${surefire.memory.metaspace.max}</surefire.memory.settings>
+        <surefire.system.args></surefire.system.args>
 
         <!-- Tomcat versions -->
         <tomcat7.version>7.0.92</tomcat7.version>
@@ -1788,7 +1789,7 @@
                     <configuration>
                         <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                         <forkMode>once</forkMode>
-                        <argLine>-Djava.awt.headless=true ${surefire.memory.settings} -Duser.language=en -Duser.region=US</argLine>
+                        <argLine>-Djava.awt.headless=true ${surefire.memory.settings} ${surefire.system.args} -Duser.language=en -Duser.region=US</argLine>
                         <runOrder>alphabetical</runOrder>
                     </configuration>
                 </plugin>
@@ -1939,6 +1940,18 @@
                 <ee.maven.groupId>org.wildfly</ee.maven.groupId>
                 <ee.maven.version>${wildfly.version}</ee.maven.version>
                 <product.filename.version>${project.version}</product.filename.version>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>jdk9</id>
+            <activation>
+                <jdk>[9,)</jdk>
+            </activation>
+            <properties>
+                <surefire.system.args>
+                    --add-opens=java.base/java.lang=ALL-UNNAMED
+                </surefire.system.args>
             </properties>
         </profile>
 

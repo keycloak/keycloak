@@ -161,7 +161,7 @@
         ~ * add-opens=java.naming/javax.naming=ALL-UNNAMED              InitialContext proxy generation requires deep reflection in javax.naming
         ~ * add-modules=java.se                                         Needed for backward compatibility with jboss-modules older than jboss-modules 1.9.1.Final
         -->
-        <default.modular.jvm.options>--add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.security=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.management/javax.management=ALL-UNNAMED --add-opens=java.naming/javax.naming=ALL-UNNAMED --add-modules=java.se</default.modular.jvm.options>
+        <default.modular.jvm.options>--add-exports=java.base/sun.security.validator=ALL-UNNAMED --add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED --add-exports=java.base/com.sun.crypto.provider=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.security=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.management/javax.management=ALL-UNNAMED --add-opens=java.naming/javax.naming=ALL-UNNAMED --add-modules=java.se</default.modular.jvm.options>
 
         <dependency.keystore.root>${project.build.directory}/dependency/keystore</dependency.keystore.root>
         <dependency.truststore>${dependency.keystore.root}/keycloak.truststore</dependency.truststore>
@@ -2195,6 +2195,9 @@
 
         <profile>
             <id>java11-auth-server</id>
+            <activation>
+                <jdk>[11,)</jdk>
+            </activation>
             <properties>
                 <auth.server.jvm.args.extra>${default.modular.jvm.options}</auth.server.jvm.args.extra>
             </properties>
@@ -2202,6 +2205,9 @@
 
         <profile>
             <id>java11-app-server</id>
+            <activation>
+                <jdk>[11,)</jdk>
+            </activation>
             <properties>
                 <app.server.jvm.args.extra>${default.modular.jvm.options}</app.server.jvm.args.extra>
             </properties>
