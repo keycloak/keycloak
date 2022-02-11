@@ -21,6 +21,7 @@ import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserConsentEntity;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserFederatedIdentityEntity;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -38,7 +39,7 @@ public class HotRodTypesUtils {
     }
 
     public static <MapKey, MapValue, SetValue> Map<MapKey, MapValue> migrateSetToMap(Set<SetValue> set, Function<SetValue, MapKey> keyProducer, Function<SetValue, MapValue> valueProducer) {
-        return set == null ? null : set.stream().collect(Collectors.toMap(keyProducer, valueProducer));
+        return set == null ? null : set.stream().collect(HashMap::new, (m, v) -> m.put(keyProducer.apply(v), valueProducer.apply(v)), HashMap::putAll);
     }
 
     public static <T, V> HotRodPair<T, V> createHotRodPairFromMapEntry(Map.Entry<T, V> entry) {
