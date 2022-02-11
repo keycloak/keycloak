@@ -76,7 +76,7 @@ public class KeycloakDiscoveryService extends OperatorManagedResource {
     }
 
     @Override
-    public String getName() {
+    protected String getName() {
         return cr.getMetadata().getName() + "-discovery";
     }
 }

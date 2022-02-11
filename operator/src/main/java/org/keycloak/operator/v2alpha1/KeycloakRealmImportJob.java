@@ -192,12 +192,9 @@ public class KeycloakRealmImportJob extends OperatorManagedResource {
         }
     }
 
-    private String getName() {
+    @Override
+    protected String getName() {
         return realmCR.getMetadata().getName();
-    }
-
-    private String getNamespace() {
-        return realmCR.getMetadata().getNamespace();
     }
 
     private String getKeycloakName() { return realmCR.getSpec().getKeycloakCRName(); }
