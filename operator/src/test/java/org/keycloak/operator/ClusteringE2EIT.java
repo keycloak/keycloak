@@ -7,7 +7,9 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.keycloak.operator.v2alpha1.crds.Keycloak;
 import org.keycloak.operator.v2alpha1.crds.Keycloak;
 
 import java.io.IOException;
@@ -100,7 +102,7 @@ public class ClusteringE2EIT extends ClusterOperatorTest {
         keycloak.getSpec().setInstances(2);
         k8sclient.resources(Keycloak.class).inNamespace(namespace).createOrReplace(keycloak);
         Awaitility.await()
-                .atMost(Duration.ofSeconds(180))
+                .atMost(Duration.ofSeconds(5))
                 .untilAsserted(() -> assertThat(k8sclient.pods().inNamespace(namespace).withLabel("app", "keycloak").list().getItems().size()).isEqualTo(2));
 
         // get the service
@@ -122,8 +124,5 @@ public class ClusteringE2EIT extends ClusterOperatorTest {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        // can we check infinispan ?
-    }
 
 }
