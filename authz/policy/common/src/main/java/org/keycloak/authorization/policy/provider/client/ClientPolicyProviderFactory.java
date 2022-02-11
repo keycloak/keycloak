@@ -109,7 +109,7 @@ public class ClientPolicyProviderFactory implements PolicyProviderFactory<Client
                 PolicyStore policyStore = storeFactory.getPolicyStore();
                 ClientModel removedClient = ((ClientRemovedEvent) event).getClient();
                 ResourceServerStore resourceServerStore = storeFactory.getResourceServerStore();
-                ResourceServer resourceServer = resourceServerStore.findById(removedClient.getId());
+                ResourceServer resourceServer = resourceServerStore.findByClient(removedClient);
 
                 if (resourceServer != null) {
                     policyStore.findByType(getId(), resourceServer.getId()).forEach(policy -> {

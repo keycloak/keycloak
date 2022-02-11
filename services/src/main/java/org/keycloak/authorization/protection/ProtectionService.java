@@ -142,7 +142,7 @@ public class ProtectionService {
             }
         }
 
-        ResourceServer resourceServer = this.authorization.getStoreFactory().getResourceServerStore().findById(clientModel.getId());
+        ResourceServer resourceServer = this.authorization.getStoreFactory().getResourceServerStore().findByClient(clientModel);
 
         if (resourceServer == null) {
             throw new ErrorResponseException("invalid_clientId", "Client application [" + clientModel.getClientId() + "] is not registered as a resource server.", Status.FORBIDDEN);

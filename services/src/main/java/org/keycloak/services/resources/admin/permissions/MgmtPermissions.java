@@ -256,7 +256,7 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         ClientModel client = getRealmManagementClient();
         if (client == null) return null;
         ResourceServerStore resourceServerStore = authz.getStoreFactory().getResourceServerStore();
-        realmResourceServer = resourceServerStore.findById(client.getId());
+        realmResourceServer = resourceServerStore.findByClient(client);
         return realmResourceServer;
 
     }
@@ -265,9 +265,9 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         if (!Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) return null;
         if (realmResourceServer != null) return realmResourceServer;
         ClientModel client = getRealmManagementClient();
-        realmResourceServer = authz.getStoreFactory().getResourceServerStore().findById(client.getId());
+        realmResourceServer = authz.getStoreFactory().getResourceServerStore().findByClient(client);
         if (realmResourceServer == null) {
-            realmResourceServer = authz.getStoreFactory().getResourceServerStore().create(client.getId());
+            realmResourceServer = authz.getStoreFactory().getResourceServerStore().create(client);
         }
         return realmResourceServer;
     }

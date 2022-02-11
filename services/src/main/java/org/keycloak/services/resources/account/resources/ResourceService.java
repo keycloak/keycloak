@@ -58,7 +58,7 @@ public class ResourceService extends AbstractResourceService {
             Auth auth, HttpRequest request) {
         super(session, user, auth, request);
         this.resource = resource;
-        this.resourceServer = provider.getStoreFactory().getResourceServerStore().findById(resource.getResourceServer());
+        this.resourceServer = provider.getStoreFactory().getResourceServerStore().findByClient(provider.getRealm().getClientById(resource.getResourceServer()));
     }
 
     /**
