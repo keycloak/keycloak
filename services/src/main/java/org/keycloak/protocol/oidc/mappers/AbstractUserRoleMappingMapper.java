@@ -72,7 +72,9 @@ abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper 
 
         boolean multiValued = "true".equals(mappingModel.getConfig().get(ProtocolMapperUtils.MULTIVALUED));
         if (!multiValued) {
-            claimValue = realmRoleNames.toString();
+            // When multivalued is false, the user expects a clean string value, not an array
+            // If no roles are assigned, the claimValue is assigned an empty string
+            claimValue = realmRoleNames.length > 0 ? realmRoleNames[0].toString() : '';
         }
 
         //OIDCAttributeMapperHelper.mapClaim(token, mappingModel, claimValue);
