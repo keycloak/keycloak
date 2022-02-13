@@ -14,6 +14,6 @@ export default {
     infoEnabledFeatures: "Something about what enabled features are.",
     infoDisabledFeatures: "Something about what disabled features are.",
     disabledFeatures: "Disabled features",
-    adminUiVersion: '<0 class="pf-u-mr-md">Admin UI version</0>{{version}}',
+    adminUiVersion: '<0 className="pf-u-mr-md">Admin UI version</0>{{version}}',
   },
 };
