@@ -25,6 +25,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransactionManager;
 
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -64,7 +67,7 @@ public class QuarkusRequestFilter implements Handler<RoutingContext> {
             try {
                 tx.begin();
                 context.next();
-                promise.complete();
+                promise.tryComplete();
             } catch (Throwable cause) {
                 promise.fail(cause);
                 // re-throw so that the any exception is handled from parent
@@ -90,6 +93,10 @@ public class QuarkusRequestFilter implements Handler<RoutingContext> {
                 close(session);
             } catch (Throwable cause) {
                 promise.fail(cause);
+                context.response().headers().clear();
+                context.response().putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.TEXT_PLAIN);
+                context.response().putHeader(HttpHeaderNames.CONTENT_LENGTH, "0");
+                context.response().setStatusCode(HttpResponseStatus.INTERNAL_SERVER_ERROR.code());
             }
         });
     }
@@ -105,14 +112,18 @@ public class QuarkusRequestFilter implements Handler<RoutingContext> {
 
     protected void close(KeycloakSession session) {
         KeycloakTransactionManager tx = session.getTransactionManager();
-        if (tx.isActive()) {
-            if (tx.getRollbackOnly()) {
-                tx.rollback();
-            } else {
-                tx.commit();
+
+        try {
+            if (tx.isActive()) {
+                if (tx.getRollbackOnly()) {
+                    tx.rollback();
+                } else {
+                    tx.commit();
+                }
             }
+        } finally {
+            session.close();
         }
-        session.close();
     }
 
     private ClientConnection createClientConnection(HttpServerRequest request) {
