@@ -31,7 +31,7 @@ import java.util.List;
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
 public class CustomAuthenticationFlowCallbackFactory implements AuthenticationFlowCallbackFactory {
-    public static final String PROVIDER_ID = "custom-conditional-authenticator";
+    public static final String PROVIDER_ID = "custom-callback-authenticator";
 
     private static final CustomAuthenticationFlowCallback SINGLETON = new CustomAuthenticationFlowCallback();
 
