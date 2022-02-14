@@ -31,7 +31,6 @@ jobs:
         uses: actions/delete-package-versions@v2
         with:
           package-name: org.keycloak.keycloak-admin-ui
-          num-old-versions-to-delete: 100
           delete-only-pre-release-versions: true
 
       - name: Publish Admin UI
