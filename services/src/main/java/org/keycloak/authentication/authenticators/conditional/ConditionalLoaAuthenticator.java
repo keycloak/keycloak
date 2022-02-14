@@ -20,19 +20,27 @@ package org.keycloak.authentication.authenticators.conditional;
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowCallback;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 public class ConditionalLoaAuthenticator implements ConditionalAuthenticator, AuthenticationFlowCallback {
-
     public static final String LEVEL = "loa-condition-level";
     public static final String STORE_IN_USER_SESSION = "loa-store-in-user-session";
 
     private static final Logger logger = Logger.getLogger(ConditionalLoaAuthenticator.class);
+
+    private final KeycloakSession session;
+
+    public ConditionalLoaAuthenticator(KeycloakSession session) {
+        this.session = session;
+    }
 
     @Override
     public boolean matchCondition(AuthenticationFlowContext context) {
@@ -60,6 +68,17 @@ public class ConditionalLoaAuthenticator implements ConditionalAuthenticator, Au
         authSession.setAuthNote(Constants.LEVEL_OF_AUTHENTICATION, String.valueOf(newLoa));
         if (isStoreInUserSession(context)) {
             authSession.setUserSessionNote(Constants.LEVEL_OF_AUTHENTICATION, String.valueOf(newLoa));
+        }
+    }
+
+    @Override
+    public void onTopFlowSuccess() {
+        AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
+
+        if (AuthenticatorUtil.isLevelOfAuthenticationForced(authSession) && !AuthenticatorUtil.isLevelOfAuthenticationSatisfied(authSession) && !AuthenticatorUtil.isSSOAuthentication(authSession)) {
+            String details = String.format("Forced level of authentication did not meet the requirements. Requested level: %d, Fulfilled level: %d",
+                    AuthenticatorUtil.getRequestedLevelOfAuthentication(authSession), AuthenticatorUtil.getCurrentLevelOfAuthentication(authSession));
+            throw new AuthenticationFlowException(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR, details, Messages.ACR_NOT_FULFILLED);
         }
     }
 

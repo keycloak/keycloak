@@ -49,6 +49,7 @@ import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.pages.PushTheButtonPage;
 import org.keycloak.testsuite.util.FlowUtil;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -285,7 +286,11 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         assertLoggedInWithAcr("gold");
     }
 
-    private void openLoginFormWithAcrClaim(boolean essential, String... acrValues) {
+    public void openLoginFormWithAcrClaim(boolean essential, String... acrValues) {
+        openLoginFormWithAcrClaim(oauth, essential, acrValues);
+    }
+
+    public static void openLoginFormWithAcrClaim(OAuthClient oauth, boolean essential, String... acrValues) {
         ClaimsRepresentation.ClaimValue<String> acrClaim = new ClaimsRepresentation.ClaimValue<>();
         acrClaim.setEssential(essential);
         acrClaim.setValues(Arrays.asList(acrValues));

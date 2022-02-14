@@ -36,4 +36,11 @@ public interface AuthenticationFlowCallback extends Authenticator {
      */
     void onParentFlowSuccess(AuthenticationFlowContext context);
 
+
+    /**
+     * Triggered after the top authentication flow is successfully finished.
+     * It is really suitable for last verification of successful authentication
+     */
+    default void onTopFlowSuccess() {
+    }
 }

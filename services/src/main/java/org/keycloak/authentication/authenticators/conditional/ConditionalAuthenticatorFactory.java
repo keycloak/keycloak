@@ -15,9 +15,9 @@ public interface ConditionalAuthenticatorFactory extends AuthenticatorFactory, D
 
     @Override
     default Authenticator createDisplay(KeycloakSession session, String displayType) {
-        if (displayType == null) return getSingleton();
+        if (displayType == null) return create(session);
         if (!OAuth2Constants.DISPLAY_CONSOLE.equalsIgnoreCase(displayType)) return null;
-        return getSingleton();
+        return create(session);
     }
 
     ConditionalAuthenticator getSingleton();

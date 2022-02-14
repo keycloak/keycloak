@@ -25,9 +25,9 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
+import org.keycloak.utils.StringUtil;
 
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.core.MultivaluedMap;
@@ -36,6 +36,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -158,6 +160,10 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         Authenticator authenticator = createAuthenticator(factory);
         AuthenticationProcessor.Result result = processor.createAuthenticatorContext(model, authenticator, executions);
         result.setAuthenticationSelections(createAuthenticationSelectionList(model));
+
+        if (factory instanceof AuthenticationFlowCallbackFactory) {
+            AuthenticatorUtil.setAuthCallbacksFactoryIds(processor.getAuthenticationSession(), factory.getId());
+        }
 
         logger.debugv("action: {0}", model.getAuthenticator());
         authenticator.action(result);
@@ -558,6 +564,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                     AuthenticationFlowCallback authCallback = (AuthenticationFlowCallback) createAuthenticator(authFactory);
                     logger.tracef("Will trigger callback '%s' after successful finish of the flow '%s'", authFactory.getId(), execution.getParentFlow());
                     authCallback.onParentFlowSuccess(processor.createAuthenticatorContext(execution, authCallback, null)); // no need to have executions filled
+                    AuthenticatorUtil.setAuthCallbacksFactoryIds(processor.getAuthenticationSession(), authFactory.getId());
                 }
             }
         }
@@ -568,17 +575,26 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
     private Response onFlowExecutionsSuccessful() {
         if (flow.isTopLevel()) {
             logger.debugf("Authentication successful of the top flow '%s'", flow.getAlias());
-
-            // Check
-            AuthenticationSessionModel authSession = processor.getAuthenticationSession();
-            if (AuthenticatorUtil.isLevelOfAuthenticationForced(authSession) && !AuthenticatorUtil.isLevelOfAuthenticationSatisfied(authSession) && !AuthenticatorUtil.isSSOAuthentication(authSession)) {
-                String details = String.format("Forced level of authentication did not meet the requirements. Requested level: %d, Fulfilled level: %d",
-                        AuthenticatorUtil.getRequestedLevelOfAuthentication(authSession), AuthenticatorUtil.getCurrentLevelOfAuthentication(authSession));
-                throw new AuthenticationFlowException(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR, details, Messages.ACR_NOT_FULFILLED);
-            }
+            executeTopFlowSuccessCallbacks();
         }
 
         successful = true;
         return null;
+    }
+
+    /**
+     * Execute callbacks defined for each {@see AuthenticationFlowCallbackFactory} class in top authentication flow if success
+     */
+    private void executeTopFlowSuccessCallbacks() {
+        final AuthenticationSessionModel authSession = processor.getAuthenticationSession();
+        final Set<String> factoryProviderIDs = AuthenticatorUtil.getAuthCallbacksFactoryIds(authSession);
+
+        factoryProviderIDs.stream()
+                .filter(StringUtil::isNotBlank)
+                .map(id -> processor.getSession().getProvider(Authenticator.class, id))
+                .filter(Objects::nonNull)
+                .filter(AuthenticationFlowCallback.class::isInstance)
+                .map(AuthenticationFlowCallback.class::cast)
+                .forEach(AuthenticationFlowCallback::onTopFlowSuccess);
     }
 }
