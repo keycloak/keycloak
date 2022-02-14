@@ -79,7 +79,7 @@
     "fork-ts-checker-webpack-plugin": "^7.2.1",
     "http2-proxy": "^5.0.53",
     "husky": "^7.0.4",
-    "jest": "^27.5.0",
+    "jest": "^27.5.1",
     "lint-staged": "^12.3.4",
     "postcss": "^8.4.6",
     "postcss-import": "^14.0.2",
