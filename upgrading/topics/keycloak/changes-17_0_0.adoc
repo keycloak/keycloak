@@ -1,6 +1,6 @@
 = Default distribution is now powered by Quarkus
 
-The default distribution of Keycloak is now powered by Quarkus, which brings a number of breaking changes to you configure Keycloak and deploy custom providers. For more information check out the migration/migrating-to-quarkus[Quarkus Migration Guide].
+The default distribution of Keycloak is now powered by Quarkus, which brings a number of breaking changes to you configure Keycloak and deploy custom providers. For more information check out the https://www.keycloak.org/migration/migrating-to-quarkus[Quarkus Migration Guide].
 
 The WildFly distribution of Keycloak is now deprecated, with support ending June 2022. We recommend migrating to the Quarkus distribution as soon as possible. However, if you need to remain on the legacy WildFly distribution for some time, there are some changes to consider:
 
