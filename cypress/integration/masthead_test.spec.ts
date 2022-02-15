@@ -31,7 +31,7 @@ const goToAcctMgtTest = () => {
 };
 
 describe("Masthead tests in desktop mode", () => {
-  before(() => {
+  beforeEach(() => {
     keycloakBefore();
     loginPage.logIn();
   });
@@ -59,7 +59,7 @@ describe("Masthead tests in desktop mode", () => {
 });
 
 describe("Masthead tests with kebab menu", () => {
-  before(() => {
+  beforeEach(() => {
     keycloakBefore();
     loginPage.logIn();
     masthead.setMobileMode(true);

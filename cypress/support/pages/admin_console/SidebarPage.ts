@@ -40,7 +40,7 @@ export default class SidebarPage {
   }
 
   goToClients() {
-    cy.get(this.clientsBtn).scrollIntoView().click();
+    cy.get(this.clientsBtn).scrollIntoView().click({ force: true });
 
     return this;
   }
@@ -82,7 +82,7 @@ export default class SidebarPage {
   }
 
   goToRealmSettings() {
-    cy.get(this.realmSettingsBtn).click();
+    cy.get(this.realmSettingsBtn).click({ force: true });
 
     return this;
   }

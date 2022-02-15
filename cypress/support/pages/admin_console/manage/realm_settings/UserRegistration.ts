@@ -7,7 +7,7 @@ export default class UserRegistration {
   private addBtn = "add-associated-roles-button";
 
   goToTab() {
-    cy.findByTestId(this.userRegistrationTab).click();
+    cy.findByTestId(this.userRegistrationTab).click({ force: true });
     return this;
   }
 
@@ -17,7 +17,7 @@ export default class UserRegistration {
   }
 
   addRoleButtonClick() {
-    cy.findByTestId(this.addRoleButton).click();
+    cy.findByTestId(this.addRoleButton).click({ force: true });
     return this;
   }
 
