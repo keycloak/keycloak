@@ -77,4 +77,12 @@ public class LoggingDistTest {
         assertFalse(cliResult.getOutput().contains("(keycloak-cache-init)"));
         cliResult.assertStartedDevMode();
     }
+
+    @Test
+    @Launch({"start-dev", "--log-json=true"})
+    void testEnableJsonLogging(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertJsonLogDefaultsApplied();
+        cliResult.assertStartedDevMode();
+    }
 }

@@ -79,6 +79,11 @@
             <artifactId>quarkus-smallrye-metrics-deployment</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.quarkiverse.loggingjson</groupId>
+            <artifactId>quarkus-logging-json-deployment</artifactId>
+            <version>1.1.1</version>
+        </dependency>
+        <dependency>
             <groupId>io.quarkiverse.vault</groupId>
             <artifactId>quarkus-vault-deployment</artifactId>
             <version>1.0.1</version>

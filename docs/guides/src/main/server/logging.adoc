@@ -7,7 +7,7 @@ title="Configuring logging"
 summary="Learn how to configure Logging"
 includedOptions="log-*">
 
-Logging is done on a per-category basis in Keycloak. You can configure logging for the root log level, or for more specific categories like `org.hibernate` or `org.keycloak`. In this guide, you will learn how to configure the log level and format.
+Keycloak uses unstructured console logging per default. You can configure Keycloak to use structured JSON output format instead. Logging is done on a per-category basis, so can configure logging for the root log level, or for more specific categories like `org.hibernate` or `org.keycloak`. In this guide, you will learn how to configure the logging capabilities of Keycloak.
 
 == Log level
 The available log levels are listed in the following Table:
@@ -92,5 +92,57 @@ At the time of writing, the logging features of the quarkus based Keycloak are b
 When you need a temporary solution, e.g. for logging to a file or using syslog isntead of console, you can check out the https://github.com/keycloak/keycloak/discussions/8870[Quarkus logging guide]. It is possible to use all properties mentioned there, as long as no other than the base logging dependency is involved. For example it is possible to set the log handler to file, but not to use json output, yet, as you would need to provide another dependency for json output to work.
 
 To use raw quarkus properties, please refer to the <@links.server id="configuration"/> guide at section _Using unsupported server options_.
+
+== Json Logging
+Keycloak provides support to log in JSON format instead of plain console format.
+
+=== Configuring JSON logging
+To enable logging messages in JSON format, run the following command:
+
+<@kc.start parameters="log-json=true"/>
+
+This results in log messages shown in json format instead of plain text.
+
+=== JSON Fields
+The following table provides an overview about the available JSON fields:
+
+|===
+|Field|Description|Default|Example output
+|hostName|the internal hostname||"hostName":"my-host"
+|level|The log level of the entry|x|"level":"INFO"
+|loggerClassName|Fully qualified name of the logger class||"loggerClassName":"org.keycloak.services.ServicesLogger_$logger"
+|loggerName|Fully qualified name of the log category|x|"loggerName":"org.keycloak.services"
+|message|The log content|x|"message":"KC-SERVICES0050: Initializing master realm"
+|processId|ID of the process Keycloak runs in||5678
+|processName|Name of the Keycloak Process||"QuarkusEntryPoint"
+|sequence|Ascending number of log entry||"sequence":8438
+|threadName|Thread the log message is created from||"threadName":"main"
+|threadId|Thread ID of the thread the log message is created from||"threadId":1
+|timestamp|Timestamp of the log entry|x|"timestamp":"2022-02-15T11:39:33.951+01:00"
+|===
+
+.Example Log Message
+[source, json]
+----
+{"timestamp":"2022-02-15T12:27:32.697+01:00","sequence":8441,"loggerClassName":"org.keycloak.services.ServicesLogger_$logger","loggerName":"org.keycloak.services","level":"INFO","message":"KC-SERVICES0009: Added user 'admin' to realm 'master'","threadName":"main","threadId":1,"mdc":{},"ndc":"","hostName":"my-host","processName":"QuarkusEntryPoint","processId":9973}
+----
+
+=== Formatting the JSON output
+Enabling JSON output replaces the default format configuration, so the `--log-format` string and colors will not get picked up.
+
+.Configuring the JSON timestamp Date format
+To set the format for the timestamp used in JSON Logs, ...
+
+.Configuring the JSON timestamp timezone
+To set the timezone for the timestamp, ... (default: system)
+
+.Configuring the JSON exception details
+You can log exceptions on different detail levels by ...
+
+.Configuring more detailed logging
+On cost of performance, you can configure more detailed logging, including source class name, source file name, source method name and source line number, by...
+
+.Pretty Print JSON
+To pretty print the JSON output, ...
 
 </@tmpl.guide>

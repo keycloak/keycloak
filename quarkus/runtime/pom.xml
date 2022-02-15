@@ -88,6 +88,11 @@
             <artifactId>quarkus-vault</artifactId>
             <version>1.0.1</version>
         </dependency>
+        <dependency>
+            <groupId>io.quarkiverse.loggingjson</groupId>
+            <artifactId>quarkus-logging-json</artifactId>
+            <version>1.1.1</version>
+        </dependency>
 
         <!-- CLI -->
         <dependency>

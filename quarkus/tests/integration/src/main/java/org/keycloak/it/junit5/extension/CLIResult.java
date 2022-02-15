@@ -97,4 +97,10 @@ public interface CLIResult extends LaunchResult {
     default void assertClusteredCache() {
         assertTrue(isClustered());
     }
+
+    default void assertJsonLogDefaultsApplied() {
+        assertTrue(getOutput().contains("{\"timestamp\""));
+        assertFalse(getOutput().contains("\"mdc\""));
+        assertFalse(getOutput().contains("\"ndc\""));
+    }
 }
