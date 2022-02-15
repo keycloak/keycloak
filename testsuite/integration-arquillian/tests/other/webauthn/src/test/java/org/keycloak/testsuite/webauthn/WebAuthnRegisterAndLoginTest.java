@@ -54,6 +54,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
@@ -413,13 +414,16 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         final CredentialRepresentation credentialRep = userResource.credentials()
                 .stream()
+                .filter(Objects::nonNull)
                 .filter(credential -> credentialType.equals(credential.getType()))
-                .findFirst().orElse(null);
+                .findFirst()
+                .orElse(null);
 
-        assertThat(credentialRep, notNullValue());
-        if (assertUserLabel != null) {
-            assertThat(credentialRep.getUserLabel(), is(assertUserLabel));
+        if (credentialRep != null) {
+            if (assertUserLabel != null) {
+                assertThat(credentialRep.getUserLabel(), is(assertUserLabel));
+            }
+            userResource.removeCredential(credentialRep.getId());
         }
-        userResource.removeCredential(credentialRep.getId());
     }
 }
