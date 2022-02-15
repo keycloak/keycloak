@@ -1,5 +1,5 @@
 # Keycloak Image
-For more information, see the [Running Keycloak in a container guide](https://www.keycloak.org/guides/server/containers).
+For more information, see the [Running Keycloak in a container guide](https://www.keycloak.org/server/containers).
 
 ## Build the image
 
