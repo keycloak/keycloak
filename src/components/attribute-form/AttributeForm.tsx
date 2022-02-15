@@ -5,7 +5,10 @@ import { ActionGroup, Button } from "@patternfly/react-core";
 
 import type { RoleRepresentation } from "../../model/role-model";
 import type { KeyValueType } from "./attribute-convert";
-import { AttributeInput } from "../attribute-input/AttributeInput";
+import {
+  AttributeInput,
+  AttributeType,
+} from "../attribute-input/AttributeInput";
 import { FormAccess } from "../form-access/FormAccess";
 
 export type AttributeForm = Omit<RoleRepresentation, "attributes"> & {
@@ -15,7 +18,7 @@ export type AttributeForm = Omit<RoleRepresentation, "attributes"> & {
 export type AttributesFormProps = {
   form: UseFormMethods<AttributeForm>;
   isKeySelectable?: boolean;
-  selectableValues?: string[];
+  selectableValues?: AttributeType[];
   save?: (model: AttributeForm) => void;
   reset?: () => void;
 };

@@ -28,6 +28,18 @@ import { defaultContextAttributes } from "../utils";
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
 import { useParams } from "react-router-dom";
 import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
+import type { KeyValueType } from "../../components/attribute-form/attribute-convert";
+
+interface EvaluateFormInputs
+  extends Omit<ResourceEvaluation, "context" | "resources"> {
+  applyToResource: boolean;
+  alias: string;
+  authScopes: string[];
+  context: {
+    attributes: Record<string, string>[];
+  };
+  resources: Record<string, string>[];
+}
 
 export type AttributeType = {
   key: string;
@@ -42,9 +54,18 @@ type ClientSettingsProps = {
   clients: ClientRepresentation[];
   clientName?: string;
   save: () => void;
-  reset: () => void;
   users: UserRepresentation[];
   clientRoles: RoleRepresentation[];
+};
+
+export type AttributeForm = Omit<
+  EvaluateFormInputs,
+  "context" | "resources"
+> & {
+  context: {
+    attributes?: KeyValueType[];
+  };
+  resources?: KeyValueType[];
 };
 
 export const AuthorizationEvaluate = ({
@@ -52,10 +73,9 @@ export const AuthorizationEvaluate = ({
   clientRoles,
   clientName,
   users,
-  reset,
 }: ClientSettingsProps) => {
-  const form = useFormContext<ResourceEvaluation>();
-  const { control } = form;
+  const form = useFormContext<EvaluateFormInputs>();
+  const { control, reset, trigger } = form;
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
   const realm = useRealm();
@@ -90,15 +110,27 @@ export const AuthorizationEvaluate = ({
     []
   );
 
-  const evaluate = (formValues: ResourceEvaluation) => {
+  const evaluate = async () => {
+    if (!(await trigger())) {
+      return;
+    }
+    const formValues = form.getValues();
+    const keys = formValues.resources.map(({ key }) => key);
     const resEval: ResourceEvaluation = {
       roleIds: formValues.roleIds ?? [],
+      clientId: selectedClient ? selectedClient.id! : clientId,
       userId: selectedUser?.id!,
+      resources: resources.filter((resource) => keys.includes(resource.name!)),
       entitlements: false,
-      context: formValues.context,
-      resources: formValues.resources,
-      clientId: selectedClient?.id!,
+      context: {
+        attributes: Object.fromEntries(
+          formValues.context.attributes
+            .filter((item) => item.key || item.value !== "")
+            .map(({ key, value }) => [key, value])
+        ),
+      },
     };
+
     return adminClient.clients.evaluateResource(
       { id: clientId!, realm: realm.realm },
       resEval
@@ -128,7 +160,10 @@ export const AuthorizationEvaluate = ({
             fieldId="client"
           >
             <Controller
-              name="client"
+              name="clientId"
+              rules={{
+                validate: (value) => value.length > 0,
+              }}
               defaultValue={clientName}
               control={control}
               render={({ onChange, value }) => (
@@ -140,7 +175,7 @@ export const AuthorizationEvaluate = ({
                     onChange((value as ClientRepresentation).clientId);
                     setClientsDropdownOpen(false);
                   }}
-                  selections={value}
+                  selections={selectedClient === value ? value : clientName}
                   variant={SelectVariant.typeahead}
                   aria-label={t("client")}
                   isOpen={clientsDropdownOpen}
@@ -171,6 +206,9 @@ export const AuthorizationEvaluate = ({
           >
             <Controller
               name="userId"
+              rules={{
+                validate: (value) => value.length > 0,
+              }}
               defaultValue=""
               control={control}
               render={({ onChange, value }) => (
@@ -212,7 +250,7 @@ export const AuthorizationEvaluate = ({
             fieldId="realmRole"
           >
             <Controller
-              name="rolesIds"
+              name="roleIds"
               placeholderText={t("selectARole")}
               control={control}
               defaultValue={[]}
@@ -297,7 +335,10 @@ export const AuthorizationEvaluate = ({
               fieldId={name!}
             >
               <AttributeInput
-                selectableValues={resources.map((item) => item.name!)}
+                selectableValues={resources.map<AttributeType>((item) => ({
+                  name: item.name!,
+                  key: item._id!,
+                }))}
                 resources={resources}
                 isKeySelectable
                 name="resources"
@@ -390,35 +431,33 @@ export const AuthorizationEvaluate = ({
               fieldId={name!}
             >
               <AttributeInput
-                selectableValues={defaultContextAttributes.map(
-                  (item) => item.name
-                )}
+                selectableValues={defaultContextAttributes}
                 isKeySelectable
-                name="context"
+                name="context.attributes"
               />
             </FormGroup>
           </ExpandableSection>
-          <ActionGroup>
-            <Button data-testid="authorization-eval" type="submit">
-              {t("evaluate")}
-            </Button>
-            <Button
-              data-testid="authorization-revert"
-              variant="link"
-              onClick={reset}
-            >
-              {t("common:revert")}
-            </Button>
-            <Button
-              data-testid="authorization-revert"
-              variant="primary"
-              onClick={reset}
-              isDisabled
-            >
-              {t("lastEvaluation")}
-            </Button>
-          </ActionGroup>
         </FormAccess>
+        <ActionGroup>
+          <Button data-testid="authorization-eval" onClick={() => evaluate()}>
+            {t("evaluate")}
+          </Button>
+          <Button
+            data-testid="authorization-revert"
+            variant="link"
+            onClick={() => reset()}
+          >
+            {t("common:revert")}
+          </Button>
+          <Button
+            data-testid="authorization-revert"
+            variant="primary"
+            onClick={() => reset()}
+            isDisabled
+          >
+            {t("lastEvaluation")}
+          </Button>
+        </ActionGroup>
       </FormPanel>
     </PageSection>
   );

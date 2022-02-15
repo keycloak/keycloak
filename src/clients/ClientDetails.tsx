@@ -598,7 +598,6 @@ export default function ClientDetails() {
                       clientRoles={clientRoles}
                       users={users}
                       save={save}
-                      reset={() => setupForm(client)}
                     />
                   </Tab>
                   <Tab

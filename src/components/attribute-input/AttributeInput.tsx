@@ -24,7 +24,7 @@ import { camelCase } from "lodash-es";
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
 
 export type AttributeType = {
-  key: string;
+  key?: string;
   name: string;
   custom?: boolean;
   values?: {
@@ -34,7 +34,7 @@ export type AttributeType = {
 
 type AttributeInputProps = {
   name: string;
-  selectableValues?: string[];
+  selectableValues?: AttributeType[];
   isKeySelectable?: boolean;
   resources?: ResourceRepresentation[];
 };
@@ -56,7 +56,7 @@ export const AttributeInput = ({
     if (!fields.length) {
       append({ key: "", value: "" });
     }
-  }, []);
+  }, [fields]);
 
   const [isKeyOpenArray, setIsKeyOpenArray] = useState([false]);
   const watchLastKey = watch(`${name}[${fields.length - 1}].key`, "");
@@ -84,16 +84,32 @@ export const AttributeInput = ({
 
     if (selectableValues) {
       attributeValues = defaultContextAttributes.find(
-        (attr) => attr.name === getValues().context[rowIndex]?.key
+        (attr) => attr.key === getValues().context[rowIndex]?.key
       )?.values;
     }
+
+    const renderSelectOptionType = () => {
+      if (attributeValues?.length && !resources) {
+        return attributeValues.map((attr) => (
+          <SelectOption key={attr.key} value={attr.key}>
+            {attr.name}
+          </SelectOption>
+        ));
+      } else if (scopeValues?.length) {
+        return scopeValues.map((scope) => (
+          <SelectOption key={scope.name} value={scope.name}>
+            {scope.name}
+          </SelectOption>
+        ));
+      }
+    };
 
     const getMessageBundleKey = (attributeName: string) =>
       camelCase(attributeName).replace(/\W/g, "");
 
     return (
       <Td>
-        {scopeValues?.length || attributeValues?.length ? (
+        {resources || attributeValues?.length ? (
           <Controller
             name={`${name}[${rowIndex}].value`}
             defaultValue={[]}
@@ -111,31 +127,17 @@ export const AttributeInput = ({
                 toggleId={`group-${name}`}
                 onToggle={(open) => toggleValueSelect(rowIndex, open)}
                 isOpen={isValueOpenArray[rowIndex]}
-                variant={
-                  resources
-                    ? SelectVariant.typeaheadMulti
-                    : SelectVariant.typeahead
-                }
+                variant={SelectVariant.typeahead}
                 typeAheadAriaLabel={t("clients:selectOrTypeAKey")}
                 placeholderText={t("clients:selectOrTypeAKey")}
                 selections={value}
                 onSelect={(_, v) => {
-                  if (resources) {
-                    const option = v.toString();
-                    if (value.includes(option)) {
-                      onChange(value.filter((item: string) => item !== option));
-                    } else {
-                      onChange([...value, option]);
-                    }
-                  } else {
-                    onChange(v);
-                  }
+                  onChange(v);
+
                   toggleValueSelect(rowIndex, false);
                 }}
               >
-                {(scopeValues || attributeValues)?.map((scope) => (
-                  <SelectOption key={scope.name} value={scope.name} />
-                ))}
+                {renderSelectOptionType()}
               </Select>
             )}
           />
@@ -192,18 +194,18 @@ export const AttributeInput = ({
                       placeholderText={t("clients:selectOrTypeAKey")}
                       selections={value}
                       onSelect={(_, v) => {
-                        onChange(v);
+                        onChange(v.toString());
 
                         toggleKeySelect(rowIndex, false);
                       }}
                     >
                       {selectableValues?.map((attribute) => (
                         <SelectOption
-                          selected={attribute === value}
-                          key={attribute}
-                          value={attribute}
+                          selected={attribute.name === value}
+                          key={attribute.key}
+                          value={resources ? attribute.name : attribute.key}
                         >
-                          {attribute}
+                          {attribute.name}
                         </SelectOption>
                       ))}
                     </Select>
