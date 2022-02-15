@@ -228,6 +228,9 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         addProviderInfo(result, "user-session-limits", "User session count limiter",
                 "Configures how many concurrent sessions a single user is allowed to create for this realm and/or client");
 
+        addProviderInfo(result, "custom-callback-authenticator", "Custom callback Factory",
+                "Used for testing purposes of Callback factory");
+
         return result;
     }
 

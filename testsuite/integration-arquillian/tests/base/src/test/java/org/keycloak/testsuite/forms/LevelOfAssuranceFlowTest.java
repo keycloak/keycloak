@@ -49,8 +49,10 @@ import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.pages.PushTheButtonPage;
 import org.keycloak.testsuite.util.FlowUtil;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
@@ -179,7 +181,6 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         // doing step-up authentication to level 2
         openLoginFormWithAcrClaim(true, "gold");
         authenticateWithPassword();
-        authenticateWithButton();
         assertLoggedInWithAcr("gold");
         // step-up to level 3 needs password authentication because level 2 is not stored in user session
         openLoginFormWithAcrClaim(true, "3");
@@ -189,10 +190,21 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void stepupToUnknownEssentialAcrFails() {
+        openLoginFormWithAcrClaim(true, "silver");
+        authenticateWithUsername();
+        assertLoggedInWithAcr("silver");
+        // step-up to unknown acr
+        openLoginFormWithAcrClaim(true, "uranium");
+        assertErrorPage("Invalid parameter: claims");
+    }
+
+    @Test
     public void reauthenticationWithNoAcr() {
         openLoginFormWithAcrClaim(true, "silver");
         authenticateWithUsername();
         assertLoggedInWithAcr("silver");
+        oauth.claims(null);
         oauth.openLoginForm();
         assertLoggedInWithAcr("0");
     }
@@ -216,6 +228,15 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void essentialClaimNotReachedFails() {
+        openLoginFormWithAcrClaim(true, "4");
+        authenticateWithUsername();
+        authenticateWithPassword();
+        authenticateWithButton();
+        assertErrorPage("Authentication requirements not fulfilled");
+    }
+
+    @Test
     public void optionalClaimNotReachedSucceeds() {
         openLoginFormWithAcrClaim(false, "4");
         authenticateWithUsername();
@@ -224,6 +245,12 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         // the reached loa is 3, but there is no mapping for it, and it was not explicitly
         // requested, so the highest known and reached ACR is returned
         assertLoggedInWithAcr("gold");
+    }
+
+    @Test
+    public void essentialUnknownClaimFails() {
+        openLoginFormWithAcrClaim(true, "uranium");
+        assertErrorPage("Invalid parameter: claims");
     }
 
     @Test
@@ -259,13 +286,17 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         assertLoggedInWithAcr("gold");
     }
 
-    private void openLoginFormWithAcrClaim(boolean essential, String... acrValues) {
+    public void openLoginFormWithAcrClaim(boolean essential, String... acrValues) {
+        openLoginFormWithAcrClaim(oauth, essential, acrValues);
+    }
+
+    public static void openLoginFormWithAcrClaim(OAuthClient oauth, boolean essential, String... acrValues) {
         ClaimsRepresentation.ClaimValue<String> acrClaim = new ClaimsRepresentation.ClaimValue<>();
         acrClaim.setEssential(essential);
         acrClaim.setValues(Arrays.asList(acrValues));
 
         ClaimsRepresentation claims = new ClaimsRepresentation();
-        claims.setIdTokenClaims(Collections.singletonMap("acr", acrClaim));
+        claims.setIdTokenClaims(Collections.singletonMap(IDToken.ACR, acrClaim));
 
         oauth.claims(claims);
         oauth.openLoginForm();
@@ -290,5 +321,10 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
         IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
         Assert.assertEquals(acr, idToken.getAcr());
+    }
+
+    private void assertErrorPage(String expectedError) {
+        Assert.assertThat(true, is(errorPage.isCurrent()));
+        Assert.assertEquals(expectedError, errorPage.getError());
     }
 }

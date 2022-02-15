@@ -20,7 +20,9 @@ package org.keycloak.authentication.authenticators.conditional;
 import java.util.List;
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationFlowCallbackFactory;
+import org.keycloak.authentication.Authenticator;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -28,7 +30,6 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 public class ConditionalLoaAuthenticatorFactory implements ConditionalAuthenticatorFactory, AuthenticationFlowCallbackFactory {
 
     public static final String PROVIDER_ID = "conditional-level-of-authentication";
-    private static final ConditionalLoaAuthenticator SINGLETON = new ConditionalLoaAuthenticator();
     private static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = new AuthenticationExecutionModel.Requirement[]{
             AuthenticationExecutionModel.Requirement.REQUIRED,
             AuthenticationExecutionModel.Requirement.DISABLED
@@ -49,6 +50,11 @@ public class ConditionalLoaAuthenticatorFactory implements ConditionalAuthentica
             .defaultValue("true")
             .add()
             .build();
+
+    @Override
+    public Authenticator create(KeycloakSession session) {
+        return new ConditionalLoaAuthenticator(session);
+    }
 
     @Override
     public void init(Config.Scope config) { }
@@ -101,6 +107,7 @@ public class ConditionalLoaAuthenticatorFactory implements ConditionalAuthentica
 
     @Override
     public ConditionalAuthenticator getSingleton() {
-        return SINGLETON;
+        // NOP - instance created in create() method
+        return null;
     }
 }
