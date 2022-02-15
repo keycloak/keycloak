@@ -80,8 +80,8 @@
             <artifactId>quarkus-smallrye-metrics</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-infinispan-client</artifactId>
+            <groupId>org.wildfly.security</groupId>
+            <artifactId>wildfly-elytron</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkiverse.vault</groupId>
