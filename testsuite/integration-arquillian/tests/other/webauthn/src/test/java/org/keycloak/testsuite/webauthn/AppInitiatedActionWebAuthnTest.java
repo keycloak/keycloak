@@ -53,6 +53,7 @@ import static org.keycloak.common.Profile.Feature.WEB_AUTHN;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.ALTERNATIVE;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
+import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverFirefox;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 /**
@@ -80,13 +81,17 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
     @Before
     @Override
     public void setUpVirtualAuthenticator() {
-        virtualManager = AbstractWebAuthnVirtualTest.createDefaultVirtualManager(driver, DefaultVirtualAuthOptions.DEFAULT.getOptions());
+        if (!isDriverFirefox(driver)) {
+            virtualManager = AbstractWebAuthnVirtualTest.createDefaultVirtualManager(driver, DefaultVirtualAuthOptions.DEFAULT.getOptions());
+        }
     }
 
     @After
     @Override
     public void removeVirtualAuthenticator() {
-        virtualManager.removeAuthenticator();
+        if (!isDriverFirefox(driver)) {
+            virtualManager.removeAuthenticator();
+        }
     }
 
     @Override
@@ -166,8 +171,6 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
         webAuthnRegisterPage.assertCurrent();
         webAuthnRegisterPage.clickRegister();
         webAuthnRegisterPage.registerWebAuthnCredential("authenticator1");
-
-        waitForPageToLoad();
 
         assertKcActionStatus(SUCCESS);
 

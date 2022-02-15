@@ -55,19 +55,26 @@ import org.keycloak.testsuite.webauthn.updaters.AbstractWebAuthnRealmUpdater;
 import org.keycloak.testsuite.webauthn.updaters.PasswordLessRealmAttributeUpdater;
 import org.keycloak.testsuite.webauthn.updaters.WebAuthnRealmAttributeUpdater;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.virtualauthenticator.Credential;
 import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
 
 import javax.ws.rs.core.Response;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
+import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverFirefox;
+import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverInstanceOf;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 /**
@@ -118,14 +125,18 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractTestRealmKeycl
     @Before
     @Override
     public void setUpVirtualAuthenticator() {
-        this.virtualAuthenticatorManager = createDefaultVirtualManager(driver, getDefaultAuthenticatorOptions());
+        if (!isDriverFirefox(driver)) {
+            this.virtualAuthenticatorManager = createDefaultVirtualManager(driver, getDefaultAuthenticatorOptions());
+        }
         clearEventQueue();
     }
 
     @After
     @Override
     public void removeVirtualAuthenticator() {
-        virtualAuthenticatorManager.removeAuthenticator();
+        if (!isDriverFirefox(driver)) {
+            virtualAuthenticatorManager.removeAuthenticator();
+        }
         clearEventQueue();
     }
 
@@ -163,6 +174,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractTestRealmKeycl
         return DefaultVirtualAuthOptions.DEFAULT.getOptions();
     }
 
+    // Warning: The virtual authenticator manager is not initialized for Firefox Browser !!
     public VirtualAuthenticatorManager getVirtualAuthManager() {
         return virtualAuthenticatorManager;
     }
@@ -228,6 +240,8 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractTestRealmKeycl
             events.clear();
             tryRegisterAuthenticator(authenticatorLabel);
         }
+
+        waitForPageToLoad();
     }
 
     private void tryRegisterAuthenticator(String authenticatorLabel) {
@@ -241,7 +255,8 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractTestRealmKeycl
      * Manual testing with Google Chrome authenticators works as expected
      */
     private void tryRegisterAuthenticator(String authenticatorLabel, int numberOfAllowedRetries) {
-        final boolean hasResidentKey = Optional.ofNullable(getVirtualAuthManager().getCurrent())
+        final boolean hasResidentKey = Optional.ofNullable(getVirtualAuthManager())
+                .map(VirtualAuthenticatorManager::getCurrent)
                 .map(KcVirtualAuthenticator::getOptions)
                 .map(KcVirtualAuthenticator.Options::hasResidentKey)
                 .orElse(false);
@@ -368,11 +383,33 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractTestRealmKeycl
 
     protected void logout() {
         try {
+            waitForPageToLoad();
             appPage.open();
             appPage.assertCurrent();
             appPage.logout();
+            waitForPageToLoad();
         } catch (Exception e) {
             throw new RuntimeException("Cannot logout user", e);
         }
+    }
+
+    protected String getExpectedMessageByDriver(Map<Class<? extends WebDriver>, String> values) {
+        if (values == null || values.isEmpty()) return "";
+
+        return values.entrySet()
+                .stream()
+                .filter(Objects::nonNull)
+                .filter(f -> isDriverInstanceOf(driver, f.getKey()))
+                .findFirst()
+                .map(Map.Entry::getValue)
+                .orElse("");
+    }
+
+    protected String getExpectedMessageByDriver(String firefoxMessage, String chromeMessage) {
+        final Map<Class<? extends WebDriver>, String> map = new HashMap<>();
+        map.put(FirefoxDriver.class, firefoxMessage);
+        map.put(ChromeDriver.class, chromeMessage);
+
+        return getExpectedMessageByDriver(map);
     }
 }

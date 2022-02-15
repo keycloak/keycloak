@@ -50,6 +50,7 @@ import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
+import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverFirefox;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 @EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
@@ -74,13 +75,17 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
     @Override
     @Before
     public void setUpVirtualAuthenticator() {
-        webAuthnManager = AbstractWebAuthnVirtualTest.createDefaultVirtualManager(driver, getDefaultOptions());
+        if (!isDriverFirefox(driver)) {
+            webAuthnManager = AbstractWebAuthnVirtualTest.createDefaultVirtualManager(driver, getDefaultOptions());
+        }
     }
 
     @Override
     @After
     public void removeVirtualAuthenticator() {
-        webAuthnManager.removeAuthenticator();
+        if (!isDriverFirefox(driver)) {
+            webAuthnManager.removeAuthenticator();
+        }
     }
 
     @Before
