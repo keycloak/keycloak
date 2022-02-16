@@ -1,5 +1,5 @@
 import ListingPage from "../support/pages/admin_console/ListingPage";
-import RealmSettingsPage from "../support/pages/admin_console/manage/realm_settings/RealmSettingsPage";
+import UserProfile from "../support/pages/admin_console/manage/realm_settings/UserProfile";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
 import AdminClient from "../support/util/AdminClient";
@@ -8,15 +8,18 @@ import ModalUtils from "../support/util/ModalUtils";
 
 const loginPage = new LoginPage();
 const sidebarPage = new SidebarPage();
-const realmSettingsPage = new RealmSettingsPage();
+const userProfileTab = new UserProfile();
 const adminClient = new AdminClient();
 const listingPage = new ListingPage();
 const modalUtils = new ModalUtils();
 
 // Selectors
-const getUserProfileTab = () =>
-  cy.findByTestId(realmSettingsPage.userProfileTab);
-const getAttributesGroupTab = () => cy.findByTestId("attributesGroupTab");
+const getUserProfileTab = () => userProfileTab.goToTab();
+const getAttributesTab = () => userProfileTab.goToAttributesTab();
+const getAttributesGroupTab = () => userProfileTab.goToAttributesGroupTab();
+const getJsonEditorTab = () => userProfileTab.goToJsonEditorTab();
+const clickCreateAttributeButton = () =>
+  userProfileTab.createAttributeButtonClick();
 
 describe("User profile tabs", () => {
   const realmName = "Realm_" + (Math.random() + 1).toString(36).substring(7);
@@ -36,19 +39,35 @@ describe("User profile tabs", () => {
     sidebarPage.goToRealmSettings();
   });
 
-  describe("Attribute groups", () => {
-    it("deletes an attributes group", () => {
+  describe("Attributes sub tab tests", () => {
+    it("Goes to create attribute page", () => {
+      getUserProfileTab();
+      getAttributesTab();
+      clickCreateAttributeButton();
+      cy.get("p").should("have.text", "Create attribute");
+    });
+  });
+
+  describe("Attribute groups sub tab tests", () => {
+    it("Deletes an attributes group", () => {
       cy.wrap(null).then(() =>
         adminClient.patchUserProfile(realmName, {
           groups: [{ name: "Test" }],
         })
       );
 
-      getUserProfileTab().click();
-      getAttributesGroupTab().click();
+      getUserProfileTab();
+      getAttributesGroupTab();
       listingPage.deleteItem("Test");
       modalUtils.confirmModal();
       listingPage.itemExist("Test", false);
+    });
+  });
+
+  describe("Json Editor sub tab tests", () => {
+    it("Goes to Json Editor tab", () => {
+      getUserProfileTab();
+      getJsonEditorTab();
     });
   });
 });

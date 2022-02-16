@@ -21,7 +21,7 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { emailRegexPattern } from "../util";
 import { AddUserEmailModal } from "./AddUserEmailModal";
-import "./RealmSettingsSection.css";
+import "./realm-settings-section.css";
 
 type RealmSettingsEmailTabProps = {
   realm: RealmRepresentation;

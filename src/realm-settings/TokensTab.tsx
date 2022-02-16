@@ -23,7 +23,7 @@ import { TimeSelector } from "../components/time-selector/TimeSelector";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { forHumans, interpolateTimespan } from "../util";
 
-import "./RealmSettingsSection.css";
+import "./realm-settings-section.css";
 
 type RealmSettingsSessionsTabProps = {
   realm: RealmRepresentation;

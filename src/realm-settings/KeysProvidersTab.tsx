@@ -31,7 +31,7 @@ import type { KeyMetadataRepresentation } from "@keycloak/keycloak-admin-client/
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
 
-import "./RealmSettingsSection.css";
+import "./realm-settings-section.css";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
@@ -450,7 +450,7 @@ export const KeysProvidersTab = ({
 }: KeysProps) => {
   return (
     <KeysTabInner
-      components={realmComponents?.map((component) => {
+      components={realmComponents.map((component) => {
         const provider = keyProviderComponentTypes.find(
           (componentType: ComponentTypeRepresentation) =>
             component.providerId === componentType.id

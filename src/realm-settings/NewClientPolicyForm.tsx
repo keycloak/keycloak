@@ -44,7 +44,7 @@ import { AddClientProfileModal } from "./AddClientProfileModal";
 import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
 import { toClientPolicies } from "./routes/ClientPolicies";
 
-import "./RealmSettingsSection.css";
+import "./realm-settings-section.css";
 
 type NewClientPolicyForm = Required<ClientPolicyRepresentation>;
 

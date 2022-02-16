@@ -31,7 +31,7 @@ import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { PlusCircleIcon, TrashIcon } from "@patternfly/react-icons";
-import "./RealmSettingsSection.css";
+import "./realm-settings-section.css";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { toAddExecutor } from "./routes/AddExecutor";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";

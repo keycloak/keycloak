@@ -15,7 +15,7 @@ import { HelpItem } from "../components/help-enabler/HelpItem";
 import { FormPanel } from "../components/scroll-form/FormPanel";
 import { TimeSelector } from "../components/time-selector/TimeSelector";
 
-import "./RealmSettingsSection.css";
+import "./realm-settings-section.css";
 
 type RealmSettingsSessionsTabProps = {
   realm: RealmRepresentation;

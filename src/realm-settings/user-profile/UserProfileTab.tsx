@@ -9,6 +9,7 @@ import {
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toUserProfile } from "../routes/UserProfile";
 import { AttributesGroupTab } from "./AttributesGroupTab";
+import { AttributesTab } from "./AttributesTab";
 import { JsonEditorTab } from "./JsonEditorTab";
 import { UserProfileProvider } from "./UserProfileContext";
 
@@ -25,11 +26,14 @@ export const UserProfileTab = () => {
       >
         <Tab
           title={<TabTitleText>{t("attributes")}</TabTitleText>}
+          data-testid="attributesTab"
           {...routableTab({
             to: toUserProfile({ realm, tab: "attributes" }),
             history,
           })}
-        ></Tab>
+        >
+          <AttributesTab />
+        </Tab>
         <Tab
           title={<TabTitleText>{t("attributesGroup")}</TabTitleText>}
           data-testid="attributesGroupTab"
@@ -42,6 +46,7 @@ export const UserProfileTab = () => {
         </Tab>
         <Tab
           title={<TabTitleText>{t("jsonEditor")}</TabTitleText>}
+          data-testid="jsonEditorTab"
           {...routableTab({
             to: toUserProfile({ realm, tab: "jsonEditor" }),
             history,

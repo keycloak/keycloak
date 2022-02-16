@@ -16,6 +16,7 @@ import { EditClientPolicyRoute } from "./routes/EditClientPolicy";
 import { NewClientPolicyConditionRoute } from "./routes/AddCondition";
 import { EditClientPolicyConditionRoute } from "./routes/EditCondition";
 import { UserProfileRoute } from "./routes/UserProfile";
+import { AddAttributeRoute } from "./routes/AddAttribute";
 import { KeysRoute } from "./routes/KeysTab";
 
 const routes: RouteDef[] = [
@@ -37,6 +38,7 @@ const routes: RouteDef[] = [
   NewClientPolicyConditionRoute,
   EditClientPolicyConditionRoute,
   UserProfileRoute,
+  AddAttributeRoute,
 ];
 
 export default routes;

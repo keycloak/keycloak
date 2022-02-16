@@ -24,7 +24,7 @@ import type ClientPolicyRepresentation from "@keycloak/keycloak-admin-client/lib
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useAlerts } from "../components/alert/Alerts";
 
-import "./RealmSettingsSection.css";
+import "./realm-settings-section.css";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toAddClientPolicy } from "./routes/AddClientPolicy";
 import { toEditClientPolicy } from "./routes/EditClientPolicy";
