@@ -114,7 +114,7 @@ public abstract class ClusterOperatorTest {
   private static void cleanCRDs() throws FileNotFoundException {
     Log.info("Cleaning CRDs ");
     k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaks.keycloak.org-v1.yml")).delete();
-    k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloakrealmimports.keycloak.org-v1.yml")).createOrReplace();
+    k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloakrealmimports.keycloak.org-v1.yml")).delete();
   }
 
   private static void registerReconcilers() {

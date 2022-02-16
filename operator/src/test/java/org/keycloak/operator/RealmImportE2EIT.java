@@ -7,6 +7,7 @@ import io.fabric8.kubernetes.client.extended.run.RunConfigBuilder;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImport;
 import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImportStatusCondition;

@@ -6,6 +6,7 @@ import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.v2alpha1.crds.Keycloak;
 

@@ -5,6 +5,7 @@ import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.v2alpha1.crds.Keycloak;
 
