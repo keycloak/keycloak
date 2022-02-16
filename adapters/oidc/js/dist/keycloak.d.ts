@@ -327,10 +327,15 @@ export interface KeycloakRoles {
 export type KeycloakInstance = Keycloak;
 
 /**
+ * @deprecated Construct a Keycloak instance using the `new` keyword instead.
+ */
+declare function Keycloak(config?: KeycloakConfig | string): Keycloak;
+
+/**
  * A client for the Keycloak authentication server.
  * @see {@link https://keycloak.gitbooks.io/securing-client-applications-guide/content/topics/oidc/javascript-adapter.html|Keycloak JS adapter documentation}
  */
-export default class Keycloak {
+declare class Keycloak {
 	/**
 	 * Creates a new Keycloak client instance.
 	 * @param config A configuration object or path to a JSON config file.
@@ -614,6 +619,8 @@ export default class Keycloak {
 	*/
 	loadUserInfo(): KeycloakPromise<{}, void>;
 }
+
+export default Keycloak;
 
 /**
  * @deprecated The 'Keycloak' namespace is deprecated, use named imports instead.

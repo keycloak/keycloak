@@ -87,7 +87,12 @@ export interface ResourcePermission {
  */
 export type KeycloakAuthorizationInstance = KeycloakAuthorization;
 
-export default class KeycloakAuthorization {
+/**
+ * @deprecated Construct a KeycloakAuthorization instance using the `new` keyword instead.
+ */
+declare function KeycloakAuthorization(keycloak: Keycloak): KeycloakAuthorization;
+
+declare class KeycloakAuthorization {
 	/**
 	 * Creates a new Keycloak client instance.
 	 * @param config Path to a JSON config file or a plain config object.
@@ -119,6 +124,8 @@ export default class KeycloakAuthorization {
 	 */
 	entitlement(resourceServerId: string, authorizationRequest?: AuthorizationRequest): KeycloakAuthorizationPromise;
 }
+
+export default KeycloakAuthorization;
 
 /**
  * @deprecated The 'KeycloakAuthorization' namespace is deprecated, use named imports instead.
