@@ -82,6 +82,11 @@ export interface ResourcePermission {
 	scopes?:string[]
 }
 
+/**
+ * @deprecated Instead of importing 'KeycloakAuthorizationInstance' you can import 'KeycloakAuthorization' directly as a type.
+ */
+export type KeycloakAuthorizationInstance = KeycloakAuthorization;
+
 export default class KeycloakAuthorization {
 	/**
 	 * Creates a new Keycloak client instance.
