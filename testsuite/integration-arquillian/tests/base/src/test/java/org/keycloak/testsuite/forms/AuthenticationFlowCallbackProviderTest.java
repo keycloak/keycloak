@@ -23,6 +23,7 @@ import org.keycloak.authentication.authenticators.access.AllowAccessAuthenticato
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticator;
 import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticatorFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
@@ -35,6 +36,7 @@ import org.keycloak.testsuite.util.FlowUtil;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assume.assumeThat;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
@@ -67,6 +69,9 @@ public class AuthenticationFlowCallbackProviderTest extends AbstractTestRealmKey
 
     @Test
     public void errorWithCustomProvider() {
+        // Ignore test case for Map Storage - GitHub Issue #10225
+        assumeThat("This test case does not work properly with Map Storage", Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE), is(false));
+
         setBrowserFlow();
         LevelOfAssuranceFlowTest.openLoginFormWithAcrClaim(oauth, true, "1");
 
