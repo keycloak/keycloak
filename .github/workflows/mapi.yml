@@ -1,0 +1,149 @@
+name: 'Mayhem for API'
+
+on: [push, pull_request]
+
+env:
+  DEFAULT_JDK_VERSION: 11
+
+jobs:
+  build:
+    ##################################################
+    # Build
+    #
+    # Start by building a Quarkus Docker image to run
+    # against with Mayhem.
+    ##################################################
+    name: Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v1
+        with:
+          java-version: ${{ env.DEFAULT_JDK_VERSION }}
+      - name: Update maven settings
+        run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
+      - name: Cache Maven packages
+        id: cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.m2/repository
+          key: cache-2-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: cache-1-${{ runner.os }}-m2
+
+      - name: Build Keycloak
+        run: |
+           mvn clean install -nsu -B -e -DskipTests -Pdistribution
+
+      - name: Build Quarkus Docker Image
+        run: |
+           cd quarkus
+           mvn clean install -DskipTests
+           docker build --build-arg KEYCLOAK_DIST=`ls dist/target/*.tar.gz` -t keycloak-quarkus -f container/Dockerfile .
+
+      ##################################################
+      # Launch
+      #
+      # Launch the newly built image in dev mode using
+      # H2 database. This will be the target of the
+      # Mayhem Run.
+      #
+      # WARNING: The KEYCLOAK_IMPORT env var is not
+      #          working as of time of writing. See:
+      #  https://github.com/keycloak/keycloak/issues/10216
+      #
+      #          The more data we prime the target API
+      #          with, the more interesting the Mayhem
+      #          results tend to be. Find another way to
+      #          run the import.
+      ##################################################
+      - name: Run API
+        run: |
+            docker run -p 8080:8080 \
+              -v $(pwd)/.github/test-fixtures/test-realm.json:/realms/test-realm.json \
+              -e KEYCLOAK_ADMIN=admin \
+              -e KEYCLOAK_ADMIN_PASSWORD=admin \
+              -e KEYCLOAK_IMPORT=/realms/test-realm.json \
+              keycloak-quarkus \
+              start-dev & \
+              timeout 60 bash -c 'until curl --fail localhost:8080; do sleep 2; done'
+
+      # !! The bearer token is only valid for 60 seconds. Can this be
+      # extended via the admin rest API or perhaps some other toggle
+      # at launch time?
+      - name: Get admin Bearer Token on master realm
+        run: |
+          token=$( curl -X POST \
+            -H 'Content-Type: application/x-www-form-urlencoded' \
+            -d 'username=admin&password=admin&client_id=admin-cli&grant_type=password' \
+            http://localhost:8080/realms/master/protocol/openid-connect/token | jq -j ".access_token")
+          echo "AUTH_TOKEN=$token" >> "$GITHUB_ENV"
+
+      ##################################################
+      # Mayhem
+      #
+      # Run Mayhem for API. This will start a new run
+      # against the REST API actively running on the
+      # container launched earlier.
+      #
+      # Results will be collected in SAIRF formatted and
+      # submitted to the codeql--action in order to report
+      # API issues that are discovered.
+      ##################################################
+      - name: Run Mayhem for API to check for vulnerabilities
+        uses: ForAllSecure/mapi-action@v1
+        continue-on-error: true
+        with:
+          mapi-token: ${{ secrets.MAPI_TOKEN }}
+          api-url: http://localhost:8080/admin/realms
+          api-spec: .github/api/openapi_16.0.yml
+          target: makesoftwaresafe/keycloak-quarkus
+          duration: 1min
+          sarif-report: mapi.sarif
+          html-report: mapi.html
+          #
+          # Keycloak REST APIs are generated from HTML and then manually
+          # adjusted for each version. This means that the specification
+          # will not be as accurate as one generated from source or maintained
+          # by hand. The InvalidResponseSpec rule is ignored in order to
+          # reduce the number of warnings raised against this generated
+          # specification.
+          #
+          # https://github.com/ccouzens/keycloak-openapi
+          #
+          run-args: |
+            --concurrency
+            4
+            --header-auth
+            Authorization:Bearer ${{ env.AUTH_TOKEN }}
+            --ignore-rule
+            InvalidResponseSpec
+            --ignore-endpoint
+            .*logout.*
+
+      ##################################################
+      # Report
+      #
+      # An HTML report containing the the results of the
+      # run are archived for later viewing, and a SARIF
+      # (Static Analysis Results Interchange Format)
+      # report produced and passed to codeQL. codeQL will
+      # report any issues discovered in your Action results
+      ##################################################
+      - name: Archive Mayhem for API report
+        uses: actions/upload-artifact@v2
+        with:
+          name: mapi-report
+          path: mapi.html
+
+      - name: Archive Mayhem for API SARIF report
+        uses: actions/upload-artifact@v2
+        with:
+          name: sarif-report
+          path: mapi.sarif
+
+      # Upload SARIF file (only available on public repos or github enterprise)
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: mapi.sarif
