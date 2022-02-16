@@ -102,7 +102,7 @@ public class ClusteringE2EIT extends ClusterOperatorTest {
         keycloak.getSpec().setInstances(2);
         k8sclient.resources(Keycloak.class).inNamespace(namespace).createOrReplace(keycloak);
         Awaitility.await()
-                .atMost(Duration.ofSeconds(5))
+                .atMost(Duration.ofSeconds(180))
                 .untilAsserted(() -> assertThat(k8sclient.pods().inNamespace(namespace).withLabel("app", "keycloak").list().getItems().size()).isEqualTo(2));
 
         // get the service
@@ -124,5 +124,8 @@ public class ClusteringE2EIT extends ClusterOperatorTest {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        // can we check infinispan ?
+    }
 
 }

@@ -38,7 +38,7 @@ public final class Constants {
         "CACHE_OWNERS_COUNT", "2",
         "CACHE_OWNERS_AUTH_SESSIONS_COUNT","2"
     );
-    public static final Integer KEYCLOAK_SERVICE_PORT = 8443;
+    public static final Integer KEYCLOAK_SERVICE_PORT = 8080;
     public static final String KEYCLOAK_SERVICE_PROTOCOL = "TCP";
     public static final Integer KEYCLOAK_DISCOVERY_SERVICE_PORT = 8080;
 }
