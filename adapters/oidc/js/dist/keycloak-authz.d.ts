@@ -119,3 +119,8 @@ export default class KeycloakAuthorization {
 	 */
 	entitlement(resourceServerId: string, authorizationRequest?: AuthorizationRequest): KeycloakAuthorizationPromise;
 }
+
+/**
+ * @deprecated The 'KeycloakAuthorization' namespace is deprecated, use named imports instead.
+ */
+export as namespace KeycloakAuthorization;

@@ -614,3 +614,8 @@ export default class Keycloak {
 	*/
 	loadUserInfo(): KeycloakPromise<{}, void>;
 }
+
+/**
+ * @deprecated The 'Keycloak' namespace is deprecated, use named imports instead.
+ */
+export as namespace Keycloak;
