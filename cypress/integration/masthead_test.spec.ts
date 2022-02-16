@@ -13,21 +13,18 @@ const listingPage = new ListingPage();
 const sidebarPage = new SidebarPage();
 
 const logOutTest = () => {
-  it("logs out", () => {
-    sidebarPage.waitForPageLoad();
-    masthead.signOut();
-    loginPage.isLogInPage();
-  });
+  sidebarPage.waitForPageLoad();
+  masthead.signOut();
+  sidebarPage.waitForPageLoad();
+  loginPage.isLogInPage();
 };
 
 const goToAcctMgtTest = () => {
-  it("opens manage account and returns to admin console", () => {
-    sidebarPage.waitForPageLoad();
-    masthead.accountManagement();
-    cy.contains("Welcome to Keycloak Account Management");
-    cy.get("#landingReferrerLink").click({ force: true });
-    masthead.checkIsAdminConsole();
-  });
+  sidebarPage.waitForPageLoad();
+  masthead.accountManagement();
+  cy.contains("Welcome to Keycloak Account Management");
+  cy.get("#landingReferrerLink").click({ force: true });
+  masthead.checkIsAdminConsole();
 };
 
 describe("Masthead tests in desktop mode", () => {
@@ -40,9 +37,9 @@ describe("Masthead tests in desktop mode", () => {
     keycloakBeforeEach();
   });
 
-  goToAcctMgtTest();
+  it("Test dropdown in desktop mode", () => {
+    goToAcctMgtTest();
 
-  it("disables header help and form field help", () => {
     sidebarPage.goToClientScopes();
     listingPage.goToItemDetails("address");
 
@@ -53,9 +50,9 @@ describe("Masthead tests in desktop mode", () => {
 
     cy.get("#view-header-subkey").should("not.exist");
     cy.findByTestId("help-label-name").should("not.exist");
-  });
 
-  logOutTest();
+    logOutTest();
+  });
 });
 
 describe("Masthead tests with kebab menu", () => {
@@ -69,13 +66,12 @@ describe("Masthead tests with kebab menu", () => {
     keycloakBeforeEach();
   });
 
-  it("shows kabab and hides regular menu", () => {
+  it("Test dropdown in mobile mode", () => {
     masthead.checkKebabShown();
+    goToAcctMgtTest();
+    logOutTest();
   });
 
   // TODO: Add test for help when using kebab menu.
   //       Feature not yet implemented for kebab.
-
-  goToAcctMgtTest();
-  logOutTest();
 });

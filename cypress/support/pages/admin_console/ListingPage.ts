@@ -1,14 +1,17 @@
 export default class ListingPage {
   private searchInput = '.pf-c-toolbar__item [type="search"]:visible';
   private itemsRows = "table:visible";
+  private emptyListImg =
+    '[role="tabpanel"]:not([hidden]) [data-testid="empty-state"]';
+  private progressBar = '[role="progressbar"]';
   private itemRowDrpDwn = ".pf-c-dropdown__toggle";
   public exportBtn = '[role="menuitem"]:nth-child(1)';
   public deleteBtn = '[role="menuitem"]:nth-child(2)';
   private searchBtn =
     ".pf-c-page__main .pf-c-toolbar__content-section button.pf-m-control:visible";
-  private createBtn =
+  private listHeaderPrimaryBtn =
     ".pf-c-page__main .pf-c-toolbar__content-section .pf-m-primary:visible";
-  private importBtn =
+  private listHeaderSecondaryBtn =
     ".pf-c-page__main .pf-c-toolbar__content-section .pf-m-link";
   private previousPageBtn =
     "div[class=pf-c-pagination__nav-control] button[data-action=previous]:visible";
@@ -29,13 +32,13 @@ export default class ListingPage {
   }
 
   goToCreateItem() {
-    cy.get(this.createBtn).click();
+    cy.get(this.listHeaderPrimaryBtn).click();
 
     return this;
   }
 
   goToImportItem() {
-    cy.get(this.importBtn).click();
+    cy.get(this.listHeaderSecondaryBtn).click();
 
     return this;
   }
@@ -45,11 +48,17 @@ export default class ListingPage {
       const searchUrl = `/auth/admin/realms/master/*${searchValue}*`;
       cy.intercept(searchUrl).as("search");
     }
-    cy.get(this.searchInput).clear().type(searchValue);
+
+    cy.get(this.searchInput).clear();
+    if (searchValue) {
+      cy.get(this.searchInput).type(searchValue);
+    }
     cy.get(this.searchBtn).click();
+
     if (wait) {
       cy.wait(["@search"]);
     }
+
     return this;
   }
 
@@ -59,6 +68,29 @@ export default class ListingPage {
       .parentsUntil("tbody")
       .find(this.itemRowDrpDwn)
       .click();
+    return this;
+  }
+
+  markItemRow(itemName: string) {
+    cy.get(this.itemsRows)
+      .contains(itemName)
+      .parentsUntil("tbody")
+      .find('input[name*="checkrow"]')
+      .click();
+    return this;
+  }
+
+  removeMarkedItems() {
+    cy.get(this.listHeaderSecondaryBtn).contains("Remove").click();
+    return this;
+  }
+
+  checkRowColumnValue(itemName: string, column: number, value: string) {
+    cy.get(this.itemsRows)
+      .contains(itemName)
+      .parentsUntil("tbody")
+      .find("td:nth-child(" + column + ")")
+      .should("have.text", value);
     return this;
   }
 
@@ -77,6 +109,12 @@ export default class ListingPage {
 
   goToItemDetails(itemName: string) {
     cy.get(this.itemsRows).contains(itemName).click();
+
+    return this;
+  }
+
+  checkEmptyList() {
+    cy.get(this.emptyListImg).should("be.visible");
 
     return this;
   }

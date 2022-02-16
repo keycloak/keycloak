@@ -293,7 +293,7 @@ export default {
     tokenDeleteConfirm:
       "Are you sure you want to permanently delete the initial access token {{id}}",
     tokenDeleteConfirmTitle: "Delete initial access token?",
-    tokenDeleteSuccess: "initial access token created successfully",
+    tokenDeleteSuccess: "Initial access token deleted successfully",
     tokenDeleteError: "Could not delete initial access token: '{{error}}'",
     timestamp: "Created date",
     created: "Created",

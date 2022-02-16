@@ -5,6 +5,7 @@ export default class InitialAccessTokenTab {
 
   private expirationInput = "expiration";
   private countInput = "count";
+  private countPlusBtn = '[data-testid="count"] [aria-label="Plus"]';
   private saveBtn = "save";
 
   goToInitialAccessTokenTab() {
@@ -22,8 +23,8 @@ export default class InitialAccessTokenTab {
     return this;
   }
 
-  getFistId(callback: (id: string) => void) {
-    cy.get('tbody > tr > [data-label="ID"]')
+  getFirstId(callback: (id: string) => void) {
+    cy.get('tbody > tr:first-child > [data-label="ID"]')
       .invoke("text")
       .then((text) => {
         callback(text);
@@ -31,10 +32,19 @@ export default class InitialAccessTokenTab {
     return this;
   }
 
-  createNewToken(expiration: number, count: number) {
+  goToCreateFromEmptyList() {
     cy.findByTestId(this.emptyAction).click();
-    cy.findByTestId(this.expirationInput).type(`${expiration}`);
-    cy.findByTestId(this.countInput).type(`${count}`);
+    return this;
+  }
+
+  fillNewTokenData(expiration: number, count: number) {
+    cy.findByTestId(this.expirationInput).clear().type(`${expiration}`);
+    cy.findByTestId(this.countInput).clear();
+
+    for (let i = 0; i < count; i++) {
+      cy.get(this.countPlusBtn).click();
+    }
+
     return this;
   }
 

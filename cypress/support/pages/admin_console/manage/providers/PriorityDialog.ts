@@ -22,7 +22,7 @@ export default class PriorityDialog {
   }
 
   clickSave() {
-    cy.get("#modal-confirm").click();
+    cy.get("#modal-confirm").click({ force: true });
     return this;
   }
 

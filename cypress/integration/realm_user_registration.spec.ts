@@ -10,10 +10,12 @@ import {
   keycloakBefore,
   keycloakBeforeEach,
 } from "../support/util/keycloak_hooks";
+import ModalUtils from "../support/util/ModalUtils";
 
 describe("Realm settings - User registration tab", () => {
   const loginPage = new LoginPage();
   const sidebarPage = new SidebarPage();
+  const modalUtils = new ModalUtils();
   const masthead = new Masthead();
   const adminClient = new AdminClient();
 
@@ -37,16 +39,31 @@ describe("Realm settings - User registration tab", () => {
 
   after(() => adminClient.deleteGroups());
 
-  it("add default role", () => {
+  it("Add admin role", () => {
     const role = "admin";
-    userRegistration.addRoleButtonClick();
+    userRegistration.addRole();
+    sidebarPage.waitForPageLoad();
     userRegistration.selectRow(role).assign();
     masthead.checkNotificationMessage("Associated roles have been added");
     listingPage.searchItem(role, false).itemExist(role);
   });
 
-  it("add default role", () => {
-    userRegistration.goToDefaultGroupTab().addDefaultGroupClick();
+  it("Remove admin role", () => {
+    const role = "admin";
+    listingPage.markItemRow(role).removeMarkedItems();
+    sidebarPage.waitForPageLoad();
+    modalUtils
+      .checkModalTitle("Remove associated roles?")
+      .checkModalMessage(
+        "This action will remove the associated roles of default-roles-master. Users who have permission to default-roles-master will no longer have access to these roles."
+      )
+      .checkConfirmButtonText("Remove")
+      .confirmModal();
+    masthead.checkNotificationMessage("Associated roles have been removed");
+  });
+
+  it("Add default group", () => {
+    userRegistration.goToDefaultGroupTab().addDefaultGroup();
     groupPicker.checkTitle("Add default groups").clickRow(groupName).clickAdd();
     masthead.checkNotificationMessage("New group added to the default groups");
     listingPage.itemExist(groupName);

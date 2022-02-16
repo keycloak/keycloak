@@ -1,8 +1,6 @@
-import { capitalize } from "lodash-es";
-
 export default class SidebarPage {
-  private realmsDrpDwn = "realmSelectorToggle";
-  private realmsList = "realmSelector";
+  private realmsDrpDwn = "#realm-select button.pf-c-dropdown__toggle";
+  private realmsList = '#realm-select ul[role="menu"]';
   private createRealmBtn = "add-realm";
 
   private clientsBtn = "#nav-item-clients";
@@ -19,95 +17,117 @@ export default class SidebarPage {
   private userFederationBtn = "#nav-item-user-federation";
 
   getCurrentRealm() {
-    return cy.findByTestId(this.realmsDrpDwn).scrollIntoView().invoke("text");
+    return cy.get(this.realmsDrpDwn).scrollIntoView().invoke("text");
   }
 
   goToRealm(realmName: string) {
-    cy.findByTestId(this.realmsList).scrollIntoView().click();
-    cy.findByTestId(this.realmsList).within(() => {
-      cy.get("ul").contains(capitalize(realmName)).click();
-    });
+    this.waitForPageLoad();
+    cy.get(this.realmsDrpDwn).scrollIntoView().click({ force: true });
+    cy.get(this.realmsList).contains(realmName).click({ force: true });
+    this.waitForPageLoad();
 
     return this;
   }
 
   goToCreateRealm() {
-    cy.findByTestId(this.realmsDrpDwn).scrollIntoView();
-    cy.findByTestId(this.realmsDrpDwn).click();
-    cy.findByTestId(this.createRealmBtn).click();
+    this.waitForPageLoad();
+    cy.get(this.realmsDrpDwn).scrollIntoView().click({ force: true });
+    cy.findByTestId(this.createRealmBtn).click({ force: true });
+    this.waitForPageLoad();
 
     return this;
   }
 
   goToClients() {
+    this.waitForPageLoad();
     cy.get(this.clientsBtn).scrollIntoView().click({ force: true });
+    this.waitForPageLoad();
 
     return this;
   }
 
   goToClientScopes() {
+    this.waitForPageLoad();
     cy.get(this.clientScopesBtn).scrollIntoView().click();
+    this.waitForPageLoad();
 
     return this;
   }
 
   goToRealmRoles() {
+    this.waitForPageLoad();
     cy.get(this.realmRolesBtn).click();
+    this.waitForPageLoad();
 
     return this;
   }
 
   goToUsers() {
+    this.waitForPageLoad();
     cy.get(this.usersBtn).click();
+    this.waitForPageLoad();
 
     return this;
   }
 
   goToGroups() {
+    this.waitForPageLoad();
     cy.get(this.groupsBtn).click();
+    this.waitForPageLoad();
 
     return this;
   }
 
   goToSessions() {
+    this.waitForPageLoad();
     cy.get(this.sessionsBtn).click();
+    this.waitForPageLoad();
 
     return this;
   }
 
   goToEvents() {
+    this.waitForPageLoad();
     cy.get(this.eventsBtn).click();
+    this.waitForPageLoad();
 
     return this;
   }
 
   goToRealmSettings() {
+    this.waitForPageLoad();
     cy.get(this.realmSettingsBtn).click({ force: true });
+    this.waitForPageLoad();
 
     return this;
   }
 
   goToAuthentication() {
+    this.waitForPageLoad();
     cy.get(this.authenticationBtn).click();
+    this.waitForPageLoad();
 
     return this;
   }
 
   goToIdentityProviders() {
+    this.waitForPageLoad();
     cy.get(this.identityProvidersBtn).click();
+    this.waitForPageLoad();
 
     return this;
   }
 
   goToUserFederation() {
+    this.waitForPageLoad();
     cy.get(this.userFederationBtn).click();
-    cy.wait(1000);
+    this.waitForPageLoad();
 
     return this;
   }
 
   waitForPageLoad() {
-    cy.get(".pf-c-spinner__tail-ball").should("not.exist");
+    cy.get('[role="progressbar"]').should("not.exist");
     return this;
   }
 }

@@ -5,21 +5,40 @@ export default class ModalUtils {
   private confirmModalBtn = "confirm";
   private cancelModalBtn = "cancel";
   private closeModalBtn = ".pf-c-modal-box .pf-m-plain";
+  private copyToClipboardBtn = '[id*="copy-button"]';
 
-  confirmModal(force = false) {
-    cy.findByTestId(this.confirmModalBtn).click({ force });
+  confirmModal() {
+    cy.findByTestId(this.confirmModalBtn).click({ force: true });
+
+    return this;
+  }
+
+  checkConfirmButtonText(text: string) {
+    cy.findByTestId(this.confirmModalBtn).contains(text);
 
     return this;
   }
 
   cancelModal() {
-    cy.findByTestId(this.cancelModalBtn).click();
+    cy.findByTestId(this.cancelModalBtn).click({ force: true });
+
+    return this;
+  }
+
+  cancelButtonContains(text: string) {
+    cy.findByTestId(this.cancelModalBtn).contains(text);
+
+    return this;
+  }
+
+  copyToClipboard() {
+    cy.get(this.copyToClipboardBtn).click();
 
     return this;
   }
 
   closeModal() {
-    cy.get(this.closeModalBtn).click();
+    cy.get(this.closeModalBtn).click({ force: true });
 
     return this;
   }

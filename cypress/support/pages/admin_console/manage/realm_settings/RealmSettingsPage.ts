@@ -178,7 +178,8 @@ export default class RealmSettingsPage {
   private jsonEditorReloadBtn = "jsonEditor-reloadBtn";
   private jsonEditor = ".monaco-scrollable-element.editor-scrollable.vs";
   private createClientDrpDwn = ".pf-c-dropdown.pf-m-align-right";
-  private clientPolicyDrpDwn = "action-dropdown";
+  private clientPolicyDrpDwn = '[data-testid="action-dropdown"] button';
+  private deleteclientPolicyDrpDwn = "deleteClientPolicyDropdown";
   private searchFld = "[id^=realm-settings][id$=profilesinput]";
   private searchFldPolicies = "[id^=realm-settings][id$=clientPoliciesinput]";
   private clientProfileOne =
@@ -191,10 +192,12 @@ export default class RealmSettingsPage {
   private addExecutor = "addExecutor";
   private addExecutorDrpDwn = ".pf-c-select__toggle";
   private addExecutorDrpDwnOption = "executorType-select";
-  private addExecutorCancelBtn = "addExecutor-cancelBtn";
+  private addExecutorCancelBtn = ".pf-c-form__actions a";
   private addExecutorSaveBtn = "addExecutor-saveBtn";
   private availablePeriodExecutorFld = "available-period";
-  private editExecutor = "editExecutor";
+  private editExecutorBtn =
+    '[aria-label="Executors"] > li > div:first-child [data-testid="editExecutor"]';
+  private executorAvailablePeriodInput = "#available-period";
 
   private listingPage = new ListingPage();
   private addCondition = "addCondition";
@@ -217,8 +220,8 @@ export default class RealmSettingsPage {
   private eventListenerRemove = '[data-ouia-component-id="Remove"]';
   private roleSelect = ".pf-c-select.kc-role-select";
   private selectScopeButton = "select-scope-button";
-  private deleteClientRolesCondition = "delete-client-roles-condition";
-  private deleteClientScopesCondition = "delete-client-scopes-condition";
+  private deleteClientRolesConditionBtn = "delete-client-roles-condition";
+  private deleteClientScopesConditionBtn = "delete-client-scopes-condition";
 
   private realmName?: string;
   constructor(realmName?: string) {
@@ -551,13 +554,13 @@ export default class RealmSettingsPage {
   }
 
   shouldRemoveEventFromEventListener() {
-    cy.get(this.eventListenerRemove).first().click();
+    cy.get(this.eventListenerRemove).last().click();
     cy.findByTestId(this.eventListenersSaveBtn).click();
     cy.get(this.alertMessage).should(
       "be.visible",
       "Event listener has been updated."
     );
-    cy.get(this.eventListenersDrpDwn).should("not.have.text", "jboss-logging");
+    cy.get(this.eventListenersDrpDwn).should("not.have.text", "email");
   }
 
   shouldRemoveAllEventListeners() {
@@ -589,56 +592,42 @@ export default class RealmSettingsPage {
     cy.findByTestId(this.cancelNewClientProfile).should("exist");
   }
 
-  shouldCompleteAndCancelCreateNewClientProfile() {
+  createClientProfile(name: string, description: string) {
     cy.findByTestId(this.createProfileBtn).click();
-    cy.findByTestId(this.newClientProfileNameInput).type("Test");
-    cy.findByTestId(this.newClientProfileDescriptionInput).type(
-      "Test Description"
-    );
-    cy.findByTestId(this.cancelNewClientProfile).click();
-    cy.get("table").should("not.have.text", "Test");
+    cy.findByTestId(this.newClientProfileNameInput).type(name);
+    cy.findByTestId(this.newClientProfileDescriptionInput).type(description);
+    return this;
   }
 
-  shouldCompleteAndCreateNewClientProfile() {
-    cy.findByTestId(this.createProfileBtn).click();
-    cy.findByTestId(this.newClientProfileNameInput).type("Test");
-    cy.findByTestId(this.newClientProfileDescriptionInput).type(
-      "Test Description"
-    );
+  saveClientProfileCreation() {
     cy.findByTestId(this.saveNewClientProfileBtn).click();
-    cy.get(this.alertMessage).should(
-      "be.visible",
-      "New client profile created"
-    );
+    return this;
+  }
+
+  cancelClientProfileCreation() {
+    cy.findByTestId(this.cancelNewClientProfile).click();
+    return this;
   }
 
   shouldSearchClientProfile() {
     cy.get(this.searchFld).click({ force: true }).type("Test").click();
     cy.get("table").should("be.visible").contains("td", "Test");
     cy.get(this.searchFld).click({ force: true }).clear();
+    return this;
   }
 
-  shouldDisplayDeleteClientPolicyDialog() {
-    this.listingPage.searchItem("Test", false);
-    this.listingPage.clickRowDetails("Test").clickDetailMenu("Delete");
-    cy.get(this.deleteDialogTitle).contains("Delete policy?");
-    cy.get(this.deleteDialogBodyText).contains(
-      "This action will permanently delete the policy Test. This cannot be undone."
-    );
-    cy.findByTestId(this.modalConfirm).contains("Delete");
+  cancelDeleteClientPolicy() {
     cy.get(this.deleteDialogCancelBtn)
       .contains("Cancel")
       .click({ force: true });
     cy.get("table").should("be.visible").contains("td", "Test");
+    return this;
   }
 
-  shouldDeleteClientProfileDialog() {
-    this.listingPage.searchItem("Test", false);
-    this.listingPage.clickRowDetails("Test").clickDetailMenu("Delete");
-    cy.findByTestId(this.modalConfirm).contains("Delete");
-    cy.findByTestId(this.modalConfirm).click({ force: true });
-    cy.get(this.alertMessage).should("be.visible", "Client profile deleted");
-    cy.get("table").should("not.have.text", "Test");
+  deleteClientPolicyItemFromTable(name: string) {
+    this.listingPage.searchItem(name, false);
+    this.listingPage.clickRowDetails(name).clickDetailMenu("Delete");
+    return this;
   }
 
   shouldNavigateBetweenFormAndJSONView() {
@@ -664,13 +653,6 @@ export default class RealmSettingsPage {
     );
     cy.findByTestId(this.formViewProfilesView).check();
     cy.get("table").should("be.visible").contains("td", "Test");
-  }
-
-  shouldNotCreateDuplicateClientProfile() {
-    cy.get(this.alertMessage).should(
-      "be.visible",
-      "Could not create client profile: 'proposed client profile name duplicated.'"
-    );
   }
 
   shouldEditClientProfile() {
@@ -726,7 +708,7 @@ export default class RealmSettingsPage {
     cy.findByTestId(this.addExecutorDrpDwnOption)
       .contains("secure-ciba-signed-authn-req")
       .click();
-    cy.findByTestId(this.addExecutorCancelBtn).click();
+    cy.get(this.addExecutorCancelBtn).click();
     cy.get('h6[class*="kc-emptyExecutors"]').should(
       "have.text",
       "No executors configured"
@@ -766,30 +748,60 @@ export default class RealmSettingsPage {
     );
   }
 
-  shouldCancelEditingExecutor() {
-    cy.get(this.clientProfileTwo).click();
-
+  openProfileDetails(name: string) {
     cy.intercept(
       `/auth/admin/realms/${this.realmName}/client-policies/profiles*`
     ).as("profilesFetch");
-    cy.findByTestId(this.editExecutor).first().click();
+    cy.get(
+      'a[href*="realm-settings/clientPolicies/' + name + '/edit-profile"]'
+    ).click();
     cy.wait("@profilesFetch");
+    return this;
+  }
 
-    cy.findByTestId(this.addExecutorCancelBtn).click();
+  editExecutor(availablePeriod?: number) {
+    cy.intercept(
+      `/auth/admin/realms/${this.realmName}/client-policies/profiles*`
+    ).as("profilesFetch");
+    cy.get(this.editExecutorBtn).click();
+    cy.wait("@profilesFetch");
+    if (availablePeriod) {
+      cy.get(this.executorAvailablePeriodInput)
+        .clear()
+        .type(availablePeriod.toString());
+    }
+    return this;
+  }
+
+  saveExecutor() {
+    cy.findByTestId(this.addExecutorSaveBtn).click();
+    return this;
+  }
+
+  cancelEditingExecutor() {
+    cy.get(this.addExecutorCancelBtn).contains("Cancel").click({ force: true });
+    return this;
+  }
+
+  checkExecutorNotInList() {
     cy.get('ul[class*="pf-c-data-list"]').should(
       "have.text",
       "secure-ciba-signed-authn-req"
     );
-    cy.findByTestId(this.editExecutor).first().click();
+    return this;
+  }
+
+  checkAvailablePeriodExecutor(value: number) {
     cy.findByTestId(this.availablePeriodExecutorFld).should(
       "have.value",
-      "3600"
+      value
     );
+    return this;
   }
 
   shouldEditExecutor() {
     cy.get(this.clientProfileTwo).click();
-    cy.findByTestId(this.editExecutor).first().click();
+    cy.get(this.editExecutorBtn).click();
     cy.findByTestId(this.availablePeriodExecutorFld).clear().type("4000");
     cy.findByTestId(this.addExecutorSaveBtn).click();
     cy.get(this.alertMessage).should(
@@ -811,46 +823,6 @@ export default class RealmSettingsPage {
       "have.text",
       "No executors configured"
     );
-  }
-
-  shouldDeleteEditedProfile() {
-    cy.get('[data-label="Name"]')
-      .contains("Edit")
-      .parentsUntil("tbody")
-      .within(() => {
-        cy.get(this.moreDrpDwn).click();
-      });
-    cy.get(this.moreDrpDwnItems).click();
-    cy.findByTestId(this.modalConfirm).contains("Delete");
-    cy.findByTestId(this.modalConfirm).click({ force: true });
-    cy.get(this.alertMessage).should("be.visible", "Client profile deleted");
-    cy.get("table").should("not.have.text", "Edit");
-  }
-
-  shouldNotCreateDuplicateClientPolicy() {
-    cy.get(this.alertMessage).should(
-      "be.visible",
-      "Could not create client policy: 'proposed client policy name duplicated.'"
-    );
-  }
-
-  shouldRemoveClientFromCreateView() {
-    cy.findByTestId(this.createProfileBtn).click();
-    cy.findByTestId(this.newClientProfileNameInput).type("Test again");
-    cy.findByTestId(this.newClientProfileDescriptionInput).type(
-      "Test Again Description"
-    );
-    cy.findByTestId(this.saveNewClientProfileBtn).click();
-    cy.get(this.alertMessage).should(
-      "be.visible",
-      "New client profile created"
-    );
-    cy.get(this.createClientDrpDwn).contains("Action").click();
-    cy.findByTestId("deleteClientProfileDropdown").click();
-    cy.findByTestId(this.modalConfirm).contains("Delete");
-    cy.findByTestId(this.modalConfirm).click();
-    cy.get(this.alertMessage).should("be.visible", "Client profile deleted");
-    cy.get("table").should("not.have.text", "Test Again Description");
   }
 
   shouldReloadJSONProfiles() {
@@ -898,72 +870,52 @@ export default class RealmSettingsPage {
     );
   }
 
-  shouldDisplayPoliciesTab() {
+  checkDisplayPoliciesTab() {
     cy.findByTestId(this.createPolicyEmptyStateBtn).should("exist");
     cy.findByTestId(this.formViewSelectPolicies).should("exist");
     cy.findByTestId(this.jsonEditorSelectPolicies).should("exist");
+    return this;
   }
 
-  shouldDisplayNewClientPolicyForm() {
-    cy.findByTestId(this.createPolicyEmptyStateBtn).click();
+  checkNewClientPolicyForm() {
     cy.findByTestId(this.newClientPolicyNameInput).should("exist");
     cy.findByTestId(this.newClientPolicyDescriptionInput).should("exist");
     cy.findByTestId(this.saveNewClientPolicyBtn).should("exist");
     cy.findByTestId(this.cancelNewClientPolicyBtn).should("exist");
+    return this;
   }
 
-  shouldCompleteAndCancelCreateNewClientPolicy() {
-    cy.findByTestId(this.createPolicyEmptyStateBtn).click();
-    cy.findByTestId(this.newClientPolicyNameInput).type("Test");
-    cy.findByTestId(this.newClientPolicyDescriptionInput).type(
-      "Test Description"
-    );
+  cancelNewClientPolicyCreation() {
     cy.findByTestId(this.cancelNewClientPolicyBtn).click();
-    cy.findByTestId(this.createPolicyEmptyStateBtn).should("exist");
+    return this;
   }
 
-  shouldCompleteAndCreateNewClientPolicy() {
+  createNewClientPolicyFromList(
+    name: string,
+    description: string,
+    cancel?: boolean
+  ) {
     cy.findByTestId(this.createPolicyBtn).click();
-    cy.findByTestId(this.newClientPolicyNameInput).type("Test");
-    cy.findByTestId(this.newClientPolicyDescriptionInput).type(
-      "Test Description"
-    );
-    cy.findByTestId(this.saveNewClientPolicyBtn).click();
-    cy.get(this.alertMessage).should(
-      "be.visible",
-      "New client profile created"
-    );
+    cy.findByTestId(this.newClientPolicyNameInput).type(name);
+    cy.findByTestId(this.newClientPolicyDescriptionInput).type(description);
+    if (!cancel) {
+      cy.findByTestId(this.saveNewClientPolicyBtn).click();
+    }
+    return this;
   }
 
-  shouldCompleteAndCreateNewClientPolicyFromEmptyState() {
-    cy.findByTestId(this.createPolicyEmptyStateBtn).click();
-    cy.findByTestId(this.newClientPolicyNameInput).type("Test");
-    cy.findByTestId(this.newClientPolicyDescriptionInput).type(
-      "Test Description"
-    );
-    cy.findByTestId(this.saveNewClientPolicyBtn).click();
-    cy.get(this.alertMessage).should(
-      "be.visible",
-      "New client profile created"
-    );
-  }
-
-  shouldSearchClientPolicy() {
-    cy.get(this.searchFldPolicies).click({ force: true }).type("Test").click();
-    cy.get("table").should("be.visible").contains("td", "Test");
+  searchClientPolicy(name: string) {
+    cy.get(this.searchFldPolicies).click({ force: true }).type(name).click();
+    cy.get("table").should("be.visible").contains("td", name);
     cy.get(this.searchFldPolicies).click({ force: true }).clear();
+    return this;
   }
 
-  shouldDisplayDeleteClientProfileDialog() {
-    this.listingPage.searchItem("Test", false);
-    this.listingPage.clickRowDetails("Test").clickDetailMenu("Delete");
-    cy.get(this.deleteDialogTitle).contains("Delete profile?");
-    cy.get(this.deleteDialogBodyText).contains(
-      "This action will permanently delete the profile Test. This cannot be undone."
-    );
-    cy.findByTestId(this.modalConfirm).contains("Delete");
-    cy.get(this.deleteDialogCancelBtn).contains("Cancel").click();
-    cy.get("table").should("be.visible").contains("td", "Test");
+  searchClientProfile(name: string) {
+    cy.get(this.searchFld).click({ force: true }).type(name).click();
+    cy.get("table").should("be.visible").contains("td", name);
+    cy.get(this.searchFld).click({ force: true }).clear();
+    return this;
   }
 
   shouldNotHaveConditionsConfigured() {
@@ -1013,9 +965,9 @@ export default class RealmSettingsPage {
 
   addClientScopes() {
     cy.findByTestId(this.selectScopeButton).click();
-    cy.get("input[name=checkrow0]").click();
-    cy.get("input[name=checkrow1]").click();
-    cy.get("input[name=checkrow2]").click();
+    cy.get(".pf-c-table__check input[name=checkrow0]").click();
+    cy.get(".pf-c-table__check input[name=checkrow1]").click();
+    cy.get(".pf-c-table__check input[name=checkrow2]").click();
 
     cy.findByTestId(this.modalConfirm).contains("Add").click();
   }
@@ -1024,7 +976,6 @@ export default class RealmSettingsPage {
     cy.intercept(`/auth/admin/realms/${this.realmName}/client-scopes`).as(
       "clientScopes"
     );
-
     cy.get(this.clientPolicy).click();
     cy.findByTestId(this.addCondition).click();
     cy.get(this.addConditionDrpDwn).click();
@@ -1065,6 +1016,7 @@ export default class RealmSettingsPage {
       "clientScopes"
     );
     cy.get(this.clientPolicy).click();
+
     cy.findByTestId(this.clientScopesConditionLink).click();
 
     cy.wait("@clientScopes");
@@ -1077,34 +1029,20 @@ export default class RealmSettingsPage {
     );
   }
 
-  shouldCancelDeletingCondition() {
-    cy.get(this.clientPolicy).click();
-    cy.findByTestId(this.deleteClientRolesCondition).click();
-    cy.get(this.deleteDialogTitle).contains("Delete condition?");
-    cy.get(this.deleteDialogBodyText).contains(
-      "This action will permanently delete client-roles. This cannot be undone."
-    );
-    cy.findByTestId(this.modalConfirm).contains("Delete");
-    cy.get(this.deleteDialogCancelBtn).contains("Cancel");
-    cy.get(this.deleteDialogCancelBtn).click();
-    cy.get('ul[class*="pf-c-data-list"]').contains("client-roles");
+  checkConditionsListContains(name: string) {
+    cy.get('ul[class*="pf-c-data-list"]').contains(name);
+    return this;
   }
 
-  shouldDeleteClientRolesCondition() {
+  deleteClientRolesCondition() {
     cy.get(this.clientPolicy).click();
-    cy.findByTestId(this.deleteClientRolesCondition).click();
-    cy.get(this.deleteDialogTitle).contains("Delete condition?");
-    cy.get(this.deleteDialogBodyText).contains(
-      "This action will permanently delete client-roles. This cannot be undone."
-    );
-    cy.findByTestId(this.modalConfirm).contains("Delete");
-    cy.findByTestId(this.modalConfirm).click();
-    cy.get('ul[class*="pf-c-data-list"]').contains("client-scopes");
+    cy.findByTestId(this.deleteClientRolesConditionBtn).click();
+    return this;
   }
 
   shouldDeleteClientScopesCondition() {
     cy.get(this.clientPolicy).click();
-    cy.findByTestId(this.deleteClientScopesCondition).click();
+    cy.findByTestId(this.deleteClientScopesConditionBtn).click();
     cy.get(this.deleteDialogTitle).contains("Delete condition?");
     cy.get(this.deleteDialogBodyText).contains(
       "This action will permanently delete client-scopes. This cannot be undone."
@@ -1117,35 +1055,59 @@ export default class RealmSettingsPage {
     );
   }
 
-  shouldDeleteClientPolicyDialog() {
-    this.listingPage.searchItem("Test", false);
-    this.listingPage.clickRowDetails("Test").clickDetailMenu("Delete");
-    cy.findByTestId(this.modalConfirm).contains("Delete").click();
-    cy.get(this.alertMessage).should("be.visible", "Client profile deleted");
-    cy.get("table").should("not.have.text", "Test");
+  goToClientPoliciesTab() {
+    cy.findByTestId("rs-clientPolicies-tab").click();
+    return this;
   }
 
-  shouldRemoveClientPolicyFromCreateView() {
+  goToClientPoliciesList() {
+    cy.findByTestId("rs-policies-clientPolicies-tab").click();
+    return this;
+  }
+
+  goToClientProfilesList() {
+    cy.findByTestId("rs-policies-clientProfiles-tab").click();
+    return this;
+  }
+
+  createNewClientPolicyFromEmptyState(
+    name: string,
+    description: string,
+    cancel?: boolean
+  ) {
     cy.findByTestId(this.createPolicyEmptyStateBtn).click();
-    cy.findByTestId(this.newClientPolicyNameInput).type("Test again");
-    cy.findByTestId(this.newClientPolicyDescriptionInput).type(
-      "Test Again Description"
-    );
-    cy.intercept(
-      "PUT",
-      `/auth/admin/realms/${this.realmName}/client-policies/policies`
-    ).as("save");
+    cy.findByTestId(this.newClientPolicyNameInput).type(name);
+    cy.findByTestId(this.newClientPolicyDescriptionInput).type(description);
+    if (!cancel) {
+      cy.findByTestId(this.saveNewClientPolicyBtn).click();
+    }
+    return this;
+  }
 
-    cy.findByTestId(this.saveNewClientPolicyBtn).click();
-    cy.get(this.alertMessage).should("be.visible", "New client policy created");
-    cy.wait("@save");
-    cy.get(".pf-c-alert").should("not.exist");
-
-    cy.findByTestId(this.clientPolicyDrpDwn).contains("Action").click();
-    cy.findByTestId("deleteClientPolicyDropdown").click();
-    cy.findByTestId(this.modalConfirm).contains("Delete").click();
-    cy.get(this.alertMessage).should("be.visible", "Client profile deleted");
+  checkEmptyPolicyList() {
     cy.findByTestId(this.createPolicyEmptyStateBtn).should("exist");
+    return this;
+  }
+
+  checkElementNotInList(name: string) {
+    cy.get('tbody [data-label="Name"]').should("not.contain.text", name);
+    return this;
+  }
+
+  checkElementInList(name: string) {
+    cy.get('tbody [data-label="Name"]').should("contain.text", name);
+    return this;
+  }
+
+  deleteClientPolicyFromDetails() {
+    cy.get(this.clientPolicyDrpDwn).click({ force: true });
+    cy.findByTestId(this.deleteclientPolicyDrpDwn).click({ force: true });
+    return this;
+  }
+
+  checkTextIsNotInTable(text: string) {
+    cy.get("table").should("not.have.text", text);
+    return this;
   }
 
   shouldReloadJSONPolicies() {

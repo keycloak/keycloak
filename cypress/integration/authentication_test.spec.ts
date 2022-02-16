@@ -20,6 +20,7 @@ describe("Authentication test", () => {
   beforeEach(() => {
     keycloakBefore();
     loginPage.logIn();
+    sidebarPage.waitForPageLoad();
     sidebarPage.goToAuthentication();
   });
 

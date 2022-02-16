@@ -91,7 +91,7 @@ describe("Clients test", () => {
       sidebarPage.goToClients();
     });
 
-    it("should fail creating client", () => {
+    it("Should fail creating client", () => {
       listingPage.goToCreateItem();
 
       createClientPage.continue().checkClientIdRequiredMessage();
@@ -126,10 +126,13 @@ describe("Clients test", () => {
 
       sidebarPage.goToClients();
 
+      listingPage.searchItem("John Doe", false).checkEmptyList();
+      listingPage.searchItem("").itemExist("account");
       listingPage.searchItem(itemId).itemExist(itemId);
 
       // Delete
       listingPage.deleteItem(itemId);
+      sidebarPage.waitForPageLoad();
       modalUtils.checkModalTitle(`Delete ${itemId} ?`).confirmModal();
 
       masthead.checkNotificationMessage("The client has been deleted");
@@ -139,22 +142,57 @@ describe("Clients test", () => {
 
     it("Initial access token", () => {
       const initialAccessTokenTab = new InitialAccessTokenTab();
-      initialAccessTokenTab.goToInitialAccessTokenTab().shouldBeEmpty();
-      initialAccessTokenTab.createNewToken(1, 1).save();
+      initialAccessTokenTab
+        .goToInitialAccessTokenTab()
+        .shouldBeEmpty()
+        .goToCreateFromEmptyList()
+        .fillNewTokenData(1, 3)
+        .save();
 
       modalUtils.checkModalTitle("Initial access token details").closeModal();
 
+      masthead.checkNotificationMessage(
+        "New initial access token has been created"
+      );
+
       initialAccessTokenTab.shouldNotBeEmpty();
 
-      initialAccessTokenTab.getFistId((id) => {
+      listingPage
+        .searchItem("John Doe", false)
+        .checkEmptyList()
+        .searchItem("", false);
+
+      initialAccessTokenTab.getFirstId((id) => {
+        listingPage
+          .checkRowColumnValue(id, 4, "3")
+          .checkRowColumnValue(id, 5, "3")
+          .itemExist(id);
+      });
+
+      listingPage.goToCreateItem();
+      initialAccessTokenTab.fillNewTokenData(1, 3).save();
+
+      modalUtils.closeModal();
+
+      initialAccessTokenTab.getFirstId((id) => {
         listingPage.deleteItem(id);
+        sidebarPage.waitForPageLoad();
         modalUtils
           .checkModalTitle("Delete initial access token?")
           .confirmModal();
-        masthead.checkNotificationMessage(
-          "initial access token created successfully"
-        );
       });
+
+      masthead.checkNotificationMessage(
+        "Initial access token deleted successfully"
+      );
+      initialAccessTokenTab.shouldNotBeEmpty();
+
+      initialAccessTokenTab.getFirstId((id) => {
+        listingPage.deleteItem(id);
+        sidebarPage.waitForPageLoad();
+        modalUtils.confirmModal();
+      });
+      initialAccessTokenTab.shouldBeEmpty();
     });
   });
 
@@ -234,7 +272,7 @@ describe("Clients test", () => {
       new AdminClient().deleteClient(serviceAccountName);
     });
 
-    it("list", () => {
+    it("List", () => {
       listingPage
         .searchItem(serviceAccountName)
         .goToItemDetails(serviceAccountName);
@@ -243,7 +281,7 @@ describe("Clients test", () => {
         .checkRoles(["manage-account", "offline_access", "uma_authorization"]);
     });
 
-    it("assign", () => {
+    it("Assign", () => {
       listingPage.goToItemDetails(serviceAccountName);
       serviceAccountTab
         .goToServiceAccountTab()
@@ -252,6 +290,7 @@ describe("Clients test", () => {
         .assign();
       masthead.checkNotificationMessage("Role mapping updated");
       serviceAccountTab.selectRow("create-realm").unAssign();
+      sidebarPage.waitForPageLoad();
       modalUtils.checkModalTitle("Remove mapping?").confirmModal();
       masthead.checkNotificationMessage("Scope mapping successfully removed");
     });
@@ -278,7 +317,7 @@ describe("Clients test", () => {
       new AdminClient().deleteClient(mappingClient);
     });
 
-    it("add mapping to openid client", () => {
+    it("Add mapping to openid client", () => {
       cy.findByTestId("mappersTab").click();
       cy.findByText("Add predefined mapper").click();
       cy.get("table input").first().click();
@@ -289,12 +328,6 @@ describe("Clients test", () => {
 
   describe("Keys tab test", () => {
     const keysName = "keys-client";
-    beforeEach(() => {
-      keycloakBeforeEach();
-      sidebarPage.goToClients();
-      listingPage.searchItem(keysName).goToItemDetails(keysName);
-    });
-
     before(() => {
       keycloakBefore();
       loginPage.logIn();
@@ -305,17 +338,23 @@ describe("Clients test", () => {
       });
     });
 
+    beforeEach(() => {
+      keycloakBeforeEach();
+      sidebarPage.goToClients();
+      listingPage.searchItem(keysName).goToItemDetails(keysName);
+    });
+
     after(() => {
       new AdminClient().deleteClient(keysName);
     });
 
-    it("change use JWKS Url", () => {
+    it("Change use JWKS Url", () => {
       const keysTab = new KeysTab();
       keysTab.goToTab().checkSaveDisabled();
       keysTab.toggleUseJwksUrl().checkSaveDisabled(false);
     });
 
-    it("generate new keys", () => {
+    it("Generate new keys", () => {
       const keysTab = new KeysTab();
       keysTab.goToTab().clickGenerate();
 
@@ -341,7 +380,7 @@ describe("Clients test", () => {
       keycloakBeforeEach();
     });
 
-    it("displays the correct tabs", () => {
+    it("Displays the correct tabs", () => {
       cy.findByTestId("client-tabs")
         .findByTestId("clientSettingsTab")
         .should("exist");
@@ -355,7 +394,7 @@ describe("Clients test", () => {
       cy.findByTestId("client-tabs").find("li").should("have.length", 3);
     });
 
-    it("hides the delete action", () => {
+    it("Hides the delete action", () => {
       cy.findByTestId("action-dropdown").click();
       cy.findByTestId("delete-client").should("not.exist");
     });
@@ -387,12 +426,12 @@ describe("Clients test", () => {
       keycloakBeforeEach();
     });
 
-    it("shows an explainer text for bearer only clients", () => {
+    it("Shows an explainer text for bearer only clients", () => {
       cy.findByTestId("bearer-only-explainer-label").trigger("mouseenter");
       cy.findByTestId("bearer-only-explainer-tooltip").should("exist");
     });
 
-    it("hides the capability config section", () => {
+    it("Hides the capability config section", () => {
       cy.findByTestId("capability-config-form").should("not.exist");
       cy.findByTestId("jump-link-capability-config").should("not.exist");
     });

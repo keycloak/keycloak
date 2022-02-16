@@ -15,7 +15,12 @@ const createRealmPage = new CreateRealmPage();
 const adminClient = new AdminClient();
 
 describe("Realms test", () => {
-  const testRealmName = "Test realm";
+  const testRealmName =
+    "Test realm " + (Math.random() + 1).toString(36).substring(7);
+  const newRealmName =
+    "New Test realm " + (Math.random() + 1).toString(36).substring(7);
+  const editedRealmName =
+    "Edited Test realm " + (Math.random() + 1).toString(36).substring(7);
   describe("Realm creation", () => {
     before(() => {
       keycloakBefore();
@@ -27,7 +32,7 @@ describe("Realms test", () => {
     });
 
     after(() => {
-      [testRealmName, "one", "two"].map((realm) =>
+      [testRealmName, newRealmName, editedRealmName].map((realm) =>
         adminClient.deleteRealm(realm)
       );
     });
@@ -39,6 +44,8 @@ describe("Realms test", () => {
       masthead.checkNotificationMessage(
         "Could not create realm Conflict detected. See logs for details"
       );
+      createRealmPage.cancelRealmCreation();
+      cy.reload();
     });
 
     it("should create Test realm", () => {
@@ -50,7 +57,7 @@ describe("Realms test", () => {
 
     it("should create realm from new a realm", () => {
       sidebarPage.goToCreateRealm();
-      createRealmPage.fillRealmName("one").createRealm();
+      createRealmPage.fillRealmName(newRealmName).createRealm();
 
       const fetchUrl = "/auth/admin/realms?briefRepresentation=true";
       cy.intercept(fetchUrl).as("fetch");
@@ -60,7 +67,7 @@ describe("Realms test", () => {
       cy.wait(["@fetch"]);
 
       sidebarPage.goToCreateRealm();
-      createRealmPage.fillRealmName("two").createRealm();
+      createRealmPage.fillRealmName(editedRealmName).createRealm();
 
       masthead.checkNotificationMessage("Realm created");
 
@@ -68,7 +75,7 @@ describe("Realms test", () => {
     });
 
     it("should change to Test realm", () => {
-      sidebarPage.getCurrentRealm().should("eq", "Two");
+      sidebarPage.getCurrentRealm().should("eq", editedRealmName);
 
       sidebarPage
         .goToRealm(testRealmName)

@@ -1,9 +1,9 @@
 export default class UserRegistration {
   private userRegistrationTab = "rs-userRegistration-tab";
   private defaultGroupTab = "#pf-tab-20-groups";
-  private addRoleButton = "add-role-button";
-  private addDefaultGroup = "no-default-groups-empty-action";
-  private namesColumn = 'td[data-label="Role name"]:visible';
+  private addRoleBtn = "add-role-button";
+  private addDefaultGroupBtn = "no-default-groups-empty-action";
+  private namesColumn = 'tbody td[data-label="Role name"]:visible';
   private addBtn = "add-associated-roles-button";
 
   goToTab() {
@@ -16,13 +16,13 @@ export default class UserRegistration {
     return this;
   }
 
-  addRoleButtonClick() {
-    cy.findByTestId(this.addRoleButton).click({ force: true });
+  addRole() {
+    cy.findByTestId(this.addRoleBtn).click({ force: true });
     return this;
   }
 
-  addDefaultGroupClick() {
-    cy.findByTestId(this.addDefaultGroup).click();
+  addDefaultGroup() {
+    cy.findByTestId(this.addDefaultGroupBtn).click();
     return this;
   }
 

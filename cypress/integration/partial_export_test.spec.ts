@@ -6,7 +6,7 @@ import AdminClient from "../support/util/AdminClient";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
 
 describe("Partial realm export", () => {
-  const REALM_NAME = "partial-export-test-realm";
+  const REALM_NAME = "Partial-export-test-realm";
   const client = new AdminClient();
 
   before(() => client.createRealm(REALM_NAME));
@@ -20,18 +20,17 @@ describe("Partial realm export", () => {
   beforeEach(() => {
     keycloakBefore();
     loginPage.logIn();
-    sidebarPage.goToRealm(REALM_NAME);
-    sidebarPage.goToRealmSettings();
+    sidebarPage.goToRealm(REALM_NAME).goToRealmSettings();
     realmSettings.clickActionMenu();
     modal.open();
   });
 
-  it("closes the dialog", () => {
+  it("Closes the dialog", () => {
     modal.cancelButton().click();
     modal.exportButton().should("not.exist");
   });
 
-  it("shows a warning message", () => {
+  it("Shows a warning message", () => {
     modal.warningMessage().should("not.exist");
 
     modal.includeGroupsAndRolesSwitch().click({ force: true });
@@ -45,7 +44,7 @@ describe("Partial realm export", () => {
     modal.warningMessage().should("not.exist");
   });
 
-  it("exports the realm", () => {
+  it("Exports the realm", () => {
     modal.includeGroupsAndRolesSwitch().click({ force: true });
     modal.includeGroupsAndRolesSwitch().click({ force: true });
     modal.exportButton().click();

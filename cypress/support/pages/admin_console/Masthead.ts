@@ -2,7 +2,11 @@ export default class Masthead {
   private menuBtn = "#nav-toggle";
   private logoBtn = "#masthead-logo";
   private helpBtn = "#help";
+  private closeAlertMessageBtn = ".pf-c-alert__action button";
+  private closeLastAlertMessageBtn =
+    ".pf-c-alert-group > li:first-child .pf-c-alert__action button";
 
+  private alertMessage = ".pf-c-alert__title";
   private userDrpDwn = "#user-dropdown";
   private userDrpDwnKebab = "#user-dropdown-kebab";
 
@@ -49,15 +53,25 @@ export default class Masthead {
   }
 
   checkNotificationMessage(message: string, closeNotification?: boolean) {
-    cy.contains(message).should("exist");
+    cy.get(this.alertMessage).should("contain.text", message);
     if (closeNotification) {
-      cy.get(".pf-c-alert__action").click();
+      this.closeLastAlertMessage();
     }
     return this;
   }
 
+  closeLastAlertMessage() {
+    cy.get(this.closeLastAlertMessageBtn).click();
+    return this;
+  }
+
+  closeAllAlertMessages() {
+    cy.get(this.closeAlertMessageBtn).click({ multiple: true });
+    return this;
+  }
+
   checkKebabShown() {
-    cy.get(this.userDrpDwn).should("not.exist");
+    cy.get(this.userDrpDwn).should("not.be.visible");
     cy.get(this.userDrpDwnKebab).should("exist");
 
     return this;

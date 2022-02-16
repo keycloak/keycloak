@@ -16,6 +16,7 @@ export default class LoginPage {
   }
 
   logIn(userName = "admin", password = "admin") {
+    cy.get('[role="progressbar"]').should("not.exist");
     cy.get(this.oldLoadContainer).should("not.exist");
     cy.get(this.loadContainer).should("not.exist");
 
@@ -29,6 +30,7 @@ export default class LoginPage {
           cy.get(this.submitBtn).click();
         }
       });
+    cy.get('[role="progressbar"]').should("not.exist");
   }
 
   checkErrorIsDisplayed() {
