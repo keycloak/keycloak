@@ -18,6 +18,7 @@ export const ClientSelectComponent = ({
   label,
   helpText,
   defaultValue,
+  isDisabled = false,
 }: ComponentProps) => {
   const { t } = useTranslation("dynamic");
   const { control } = useFormContext();
@@ -66,6 +67,7 @@ export const ClientSelectComponent = ({
             variant={SelectVariant.typeahead}
             onToggle={(open) => setOpen(open)}
             isOpen={open}
+            isDisabled={isDisabled}
             selections={value}
             onFilter={(_, value) => {
               setSearch(value);

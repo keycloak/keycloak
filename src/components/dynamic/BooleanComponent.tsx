@@ -11,6 +11,7 @@ export const BooleanComponent = ({
   label,
   helpText,
   defaultValue,
+  isDisabled = false,
 }: ComponentProps) => {
   const { t } = useTranslation("dynamic");
   const { control } = useFormContext();
@@ -32,6 +33,7 @@ export const BooleanComponent = ({
         render={({ onChange, value }) => (
           <Switch
             id={name!}
+            isDisabled={isDisabled}
             label={t("common:on")}
             labelOff={t("common:off")}
             isChecked={value === "true" || value === true}

@@ -9,13 +9,16 @@ type DynamicComponentProps = {
   parentCallback?: (data: string[]) => void;
 };
 
-export const DynamicComponents = ({ properties }: DynamicComponentProps) => (
+export const DynamicComponents = ({
+  properties,
+  ...rest
+}: DynamicComponentProps) => (
   <>
     {properties.map((property) => {
       const componentType = property.type!;
       if (isValidComponentType(componentType) && property.name !== "scopes") {
         const Component = COMPONENTS[componentType];
-        return <Component key={property.name} {...property} />;
+        return <Component key={property.name} {...property} {...rest} />;
       } else {
         console.warn(`There is no editor registered for ${componentType}`);
       }

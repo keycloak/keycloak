@@ -12,6 +12,7 @@ export const ScriptComponent = ({
   label,
   helpText,
   defaultValue,
+  isDisabled = false,
 }: ComponentProps) => {
   const { t } = useTranslation("dynamic");
   const { control } = useFormContext();
@@ -35,6 +36,7 @@ export const ScriptComponent = ({
           <CodeEditor
             id={name!}
             data-testid={name}
+            isReadOnly={isDisabled}
             type="text"
             onChange={onChange}
             code={value}

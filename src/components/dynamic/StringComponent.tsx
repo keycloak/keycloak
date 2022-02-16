@@ -11,6 +11,7 @@ export const StringComponent = ({
   label,
   helpText,
   defaultValue,
+  isDisabled = false,
 }: ComponentProps) => {
   const { t } = useTranslation("dynamic");
   const { register } = useFormContext();
@@ -26,6 +27,7 @@ export const StringComponent = ({
       <TextInput
         id={name!}
         data-testid={name}
+        isDisabled={isDisabled}
         ref={register()}
         type="text"
         name={`config.${name}`}

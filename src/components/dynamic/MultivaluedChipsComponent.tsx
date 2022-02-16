@@ -23,6 +23,7 @@ export const MultivaluedChipsComponent = ({
   name,
   label,
   helpText,
+  isDisabled = false,
 }: ComponentProps) => {
   const { t } = useTranslation("dynamic");
   const { control } = useFormContext();
@@ -126,6 +127,7 @@ export const MultivaluedChipsComponent = ({
               ))}
             </ChipGroup>
             <Button
+              isDisabled={isDisabled}
               data-testid="select-scope-button"
               variant="secondary"
               onClick={() => {

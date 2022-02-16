@@ -24,7 +24,12 @@ const RealmClient = (realm: string): ClientRepresentation => ({
   clientId: realm,
 });
 
-export const RoleComponent = ({ name, label, helpText }: ComponentProps) => {
+export const RoleComponent = ({
+  name,
+  label,
+  helpText,
+  isDisabled = false,
+}: ComponentProps) => {
   const { t } = useTranslation("dynamic");
 
   const adminClient = useAdminClient();
@@ -143,6 +148,7 @@ export const RoleComponent = ({ name, label, helpText }: ComponentProps) => {
               {clients && (
                 <Select
                   toggleId={`group-${name}`}
+                  isDisabled={isDisabled}
                   onToggle={() => setClientsOpen(!clientsOpen)}
                   isOpen={clientsOpen}
                   variant={SelectVariant.typeahead}

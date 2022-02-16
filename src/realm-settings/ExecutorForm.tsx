@@ -24,7 +24,6 @@ import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/li
 import { ClientProfileParams, toClientProfile } from "./routes/ClientProfile";
 import { DynamicComponents } from "../components/dynamic/DynamicComponents";
 import type { ExecutorParams } from "./routes/Executor";
-import { convertToFormValues } from "../util";
 
 type ExecutorForm = {
   config: object;
@@ -57,28 +56,27 @@ export default function ExecutorForm() {
     ClientProfileRepresentation[]
   >([]);
   const [profiles, setProfiles] = useState<ClientProfileRepresentation[]>([]);
-  const form = useForm({ defaultValues });
-  const { control, setValue, handleSubmit } = form;
+  const form = useForm({ defaultValues, shouldUnregister: false });
+  const { control, reset, handleSubmit } = form;
   const editMode = !!executorName;
+
+  const setupForm = (profiles: ClientProfileRepresentation[]) => {
+    const profile = profiles.find((profile) => profile.name === profileName);
+    const executor = profile?.executors?.find(
+      (executor) => executor.executor === executorName
+    );
+    if (executor) reset({ config: executor.configuration });
+  };
 
   useFetch(
     () =>
       adminClient.clientPolicies.listProfiles({ includeGlobalProfiles: true }),
     (profiles) => {
-      setGlobalProfiles(profiles.globalProfiles ?? []);
-      setProfiles(profiles.profiles ?? []);
+      setGlobalProfiles(profiles.globalProfiles!);
+      setProfiles(profiles.profiles!);
 
-      const profile = profiles.profiles!.find(
-        (profile) => profile.name === profileName
-      );
-
-      const profileExecutor = profile?.executors!.find(
-        (executor) => executor.executor === executorName
-      );
-
-      if (profileExecutor) {
-        convertToFormValues(profileExecutor, setValue);
-      }
+      setupForm(profiles.profiles!);
+      setupForm(profiles.globalProfiles!);
     },
     []
   );
@@ -163,7 +161,12 @@ export default function ExecutorForm() {
         divider
       />
       <PageSection variant="light">
-        <FormAccess isHorizontal role="manage-realm" className="pf-u-mt-lg">
+        <FormAccess
+          isHorizontal
+          role="manage-realm"
+          className="pf-u-mt-lg"
+          isReadOnly={!!globalProfile}
+        >
           <FormGroup
             label={t("executorType")}
             fieldId="kc-executorType"

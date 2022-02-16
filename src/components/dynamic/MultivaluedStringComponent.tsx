@@ -10,6 +10,7 @@ export const MultiValuedStringComponent = ({
   name,
   label,
   helpText,
+  isDisabled = false,
 }: ComponentProps) => {
   const { t } = useTranslation("dynamic");
 
@@ -24,6 +25,7 @@ export const MultiValuedStringComponent = ({
       <MultiLineInput
         name={`config.${name}`}
         aria-label={name}
+        isDisabled={isDisabled}
         addButtonLabel={t("addMultivaluedLabel", {
           fieldLabel: t(label!).toLowerCase(),
         })}

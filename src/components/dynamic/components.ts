@@ -12,7 +12,10 @@ import { MultiValuedStringComponent } from "./MultivaluedStringComponent";
 import { MultiValuedListComponent } from "./MultivaluedListComponent";
 import { GroupComponent } from "./GroupComponent";
 
-export type ComponentProps = Omit<ConfigPropertyRepresentation, "type">;
+export type ComponentProps = Omit<ConfigPropertyRepresentation, "type"> & {
+  isDisabled?: boolean;
+};
+
 const ComponentTypes = [
   "String",
   "boolean",

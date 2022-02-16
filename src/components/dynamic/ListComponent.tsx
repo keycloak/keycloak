@@ -17,6 +17,7 @@ export const ListComponent = ({
   helpText,
   defaultValue,
   options,
+  isDisabled = false,
 }: ComponentProps) => {
   const { t } = useTranslation("dynamic");
   const { control } = useFormContext();
@@ -38,6 +39,7 @@ export const ListComponent = ({
         render={({ onChange, value }) => (
           <Select
             toggleId={name}
+            isDisabled={isDisabled}
             onToggle={(toggle) => setOpen(toggle)}
             onSelect={(_, value) => {
               onChange(value as string);

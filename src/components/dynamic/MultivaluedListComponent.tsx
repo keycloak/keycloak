@@ -17,6 +17,7 @@ export const MultiValuedListComponent = ({
   helpText,
   defaultValue,
   options,
+  isDisabled = false,
 }: ComponentProps) => {
   const { t } = useTranslation("dynamic");
   const { control } = useFormContext();
@@ -38,6 +39,7 @@ export const MultiValuedListComponent = ({
           <Select
             toggleId={name}
             data-testid={name}
+            isDisabled={isDisabled}
             chipGroupProps={{
               numChips: 3,
               expandedText: t("common:hide"),

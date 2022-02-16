@@ -20,6 +20,7 @@ export const MultivaluedRoleComponent = ({
   name,
   label,
   helpText,
+  isDisabled = false,
 }: ComponentProps) => {
   const { t } = useTranslation("dynamic");
   const { whoAmI } = useWhoAmI();
@@ -73,6 +74,7 @@ export const MultivaluedRoleComponent = ({
         rules={{ required: true }}
         render={({ onChange, value }) => (
           <Select
+            isDisabled={isDisabled}
             onToggle={(isExpanded) => setOpen(isExpanded)}
             isOpen={open}
             className="kc-role-select"

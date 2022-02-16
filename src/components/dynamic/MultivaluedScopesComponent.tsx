@@ -20,6 +20,7 @@ import type { EditClientPolicyConditionParams } from "../../realm-settings/route
 export const MultivaluedScopesComponent = ({
   defaultValue,
   name,
+  isDisabled = false,
 }: ComponentProps) => {
   const { t } = useTranslation("dynamic");
   const { control } = useFormContext();
@@ -111,6 +112,7 @@ export const MultivaluedScopesComponent = ({
                 ))}
               </ChipGroup>
               <Button
+                isDisabled={isDisabled}
                 data-testid="select-scope-button"
                 variant="secondary"
                 onClick={() => {
