@@ -322,6 +322,11 @@ export interface KeycloakRoles {
 }
 
 /**
+ * @deprecated Instead of importing 'KeycloakInstance' you can import 'Keycloak' directly as a type.
+ */
+export type KeycloakInstance = Keycloak;
+
+/**
  * A client for the Keycloak authentication server.
  * @see {@link https://keycloak.gitbooks.io/securing-client-applications-guide/content/topics/oidc/javascript-adapter.html|Keycloak JS adapter documentation}
  */
