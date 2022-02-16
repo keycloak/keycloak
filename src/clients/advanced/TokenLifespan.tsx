@@ -42,7 +42,9 @@ export const TokenLifespan = ({
   const onBlur = () => setFocused(false);
 
   const isExpireSet = (value: string | number) =>
-    (typeof value === "number" && value !== -1) || focused;
+    (typeof value === "number" && value !== -1) ||
+    (typeof value === "string" && value !== "" && value !== "-1") ||
+    focused;
 
   return (
     <FormGroup
