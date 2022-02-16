@@ -132,7 +132,7 @@ SetLocal EnableDelayedExpansion
 set "AUTO_BUILD_OPTION=auto-build"
 
 if not "!CONFIG_ARGS:%AUTO_BUILD_OPTION%=!"=="!CONFIG_ARGS!" (
-  %JAVA% -Dkc.config.rebuild-and-exit=true %JAVA_RUN_OPTS%
+  "%JAVA%" -Dkc.config.rebuild-and-exit=true %JAVA_RUN_OPTS%
 )
 
 "%JAVA%" %JAVA_RUN_OPTS%
