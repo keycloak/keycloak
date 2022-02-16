@@ -12,6 +12,11 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-adapter-core</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-tomcat-adapter</artifactId>
             <scope>compile</scope>
         </dependency>
@@ -56,6 +61,14 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <includeDependencySources>true</includeDependencySources>
+                    <dependencySourceIncludes>org.keycloak:keycloak-adapter-core</dependencySourceIncludes>
+                </configuration>
             </plugin>
         </plugins>
     </build>
