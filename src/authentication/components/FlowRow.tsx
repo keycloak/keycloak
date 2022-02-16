@@ -35,7 +35,7 @@ type FlowRowProps = {
     type: AuthenticationProviderRepresentation
   ) => void;
   onAddFlow: (flow: Flow) => void;
-  onDelete: () => void;
+  onDelete: (execution: ExpandableExecution) => void;
 };
 
 export const FlowRow = ({
@@ -114,7 +114,7 @@ export const FlowRow = ({
                   <Button
                     variant="plain"
                     aria-label={t("common:delete")}
-                    onClick={onDelete}
+                    onClick={() => onDelete(execution)}
                   >
                     <TrashIcon />
                   </Button>
@@ -135,7 +135,7 @@ export const FlowRow = ({
             onRowChange={onRowChange}
             onAddExecution={onAddExecution}
             onAddFlow={onAddFlow}
-            onDelete={onDelete}
+            onDelete={() => onDelete(execution)}
           />
         ))}
     </>

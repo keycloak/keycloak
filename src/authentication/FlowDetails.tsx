@@ -396,7 +396,7 @@ export default function FlowDetails() {
                       addExecution(execution.displayName!, type)
                     }
                     onAddFlow={(flow) => addFlow(execution.displayName!, flow)}
-                    onDelete={() => {
+                    onDelete={(execution) => {
                       setSelectedExecution(execution);
                       toggleDeleteDialog();
                     }}
