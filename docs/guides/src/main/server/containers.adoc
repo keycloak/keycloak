@@ -19,14 +19,14 @@ The following `Dockerfile` creates a pre-configured Keycloak image that enables 
 .Dockerfile:
 [source, dockerfile]
 ----
-FROM quay.io/keycloak/keycloak-x:latest as builder
+FROM quay.io/keycloak/keycloak:latest as builder
 
 ENV KC_METRICS_ENABLED=true
 ENV KC_FEATURES=token-exchange
 ENV KC_DB=postgres
 RUN /opt/keycloak/bin/kc.sh build
 
-FROM quay.io/keycloak/keycloak-x:latest
+FROM quay.io/keycloak/keycloak:latest
 COPY --from=builder /opt/keycloak/lib/quarkus/ /opt/keycloak/lib/quarkus/
 WORKDIR /opt/keycloak
 # for demonstration purposes only, please make sure to use proper certificates in production instead
@@ -81,7 +81,7 @@ You use the `start-dev` command:
 ----
 podman|docker run --name keycloak_test -p 8080:8080 \
         -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=change_me \
-        quay.io/keycloak/keycloak-x:latest \
+        quay.io/keycloak/keycloak:latest \
         start-dev
 ----
 
@@ -100,7 +100,7 @@ For example:
 ----
 podman|docker run --name keycloak_auto_build -p 8080:8080 \
         -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=change_me \
-        quay.io/keycloak/keycloak-x:latest \
+        quay.io/keycloak/keycloak:latest \
         start \
         --auto-build \
         --db=postgres --features=token-exchange \
