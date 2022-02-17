@@ -862,6 +862,80 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         setEditUsernameAllowed(false);
     }
 
+    // KEYCLOAK-8893
+    @Test
+    public void caseInsensitiveSearchWorksWithoutForcingLowercaseOnEmailAttribute() throws Exception {
+        setEditUsernameAllowed(true);
+        setRegistrationEmailAsUsername(true);
+
+        profilePage.open();
+        loginPage.login("test-user@localhost", "password");
+        assertFalse(driver.findElements(By.id("username")).size() > 0);
+
+        profilePage.updateProfile("New First", "New Last", "New-Email@email");
+
+        Assert.assertEquals("Your account has been updated.", profilePage.getSuccess());
+        Assert.assertEquals("New First", profilePage.getFirstName());
+        Assert.assertEquals("New Last", profilePage.getLastName());
+        Assert.assertEquals("new-email@email", profilePage.getEmail()); // verify attribute is lower case after save
+
+        List<UserRepresentation> list = adminClient.realm("test").users().search(null, null, null, "nEw-emAil@eMail", null, null);
+        assertEquals(1, list.size());
+
+        UserRepresentation user = list.get(0);
+
+        assertEquals("new-email@email", user.getUsername());
+
+        list = adminClient.realm("test").users().search("nEw-emAil@eMail", null, null, null, null, null);
+        assertEquals(1, list.size());
+
+        user = list.get(0);
+
+        assertEquals("new-email@email", user.getUsername());
+
+        list = adminClient.realm("test").users().search(null, "new fIrSt", null, null, null, null);
+        assertEquals(1, list.size());
+
+        user = list.get(0);
+
+        assertEquals("new-email@email", user.getUsername());
+
+        list = adminClient.realm("test").users().search(null, null, "NEw LaST", null, null, null);
+        assertEquals(1, list.size());
+
+        user = list.get(0);
+
+        assertEquals("new-email@email", user.getUsername());
+
+        assertEquals("New First", user.getFirstName());
+        assertEquals("New Last", user.getLastName());
+
+        list = adminClient.realm("test").users().search("nEw-emAil@eMail", 0, 1);
+        assertEquals(1, list.size());
+
+        user = list.get(0);
+
+        assertEquals("new-email@email", user.getUsername());
+
+        list = adminClient.realm("test").users().search("nEw", 0, 1);
+        assertEquals(1, list.size());
+
+        user = list.get(0);
+
+        assertEquals("new-email@email", user.getUsername());
+
+        // Revert
+
+        user.setUsername("test-user@localhost");
+        user.setFirstName("Tom");
+        user.setLastName("Brady");
+        user.setEmail("test-user@localhost");
+        adminClient.realm("test").users().get(user.getId()).update(user);
+
+        setRegistrationEmailAsUsername(false);
+        setEditUsernameAllowed(false);
+    }
+
     private void setEditUsernameAllowed(boolean allowed) {
         RealmRepresentation testRealm = testRealm().toRepresentation();
         testRealm.setEditUsernameAllowed(allowed);

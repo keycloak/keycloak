@@ -812,14 +812,20 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
                         predicates.add(builder.or(getSearchOptionPredicateArray(stringToSearch, builder, root)));
                     }
                     break;
-                case USERNAME:
                 case FIRST_NAME:
                 case LAST_NAME:
-                case EMAIL:
                     if (Boolean.valueOf(attributes.getOrDefault(UserModel.EXACT, Boolean.FALSE.toString()))) {
                         predicates.add(builder.equal(builder.lower(root.get(key)), value.toLowerCase()));
                     } else {
                         predicates.add(builder.like(builder.lower(root.get(key)), "%" + value.toLowerCase() + "%"));
+                    }
+                    break;
+                case USERNAME:
+                case EMAIL:
+                    if (Boolean.valueOf(attributes.getOrDefault(UserModel.EXACT, Boolean.FALSE.toString()))) {
+                        predicates.add(builder.equal(root.get(key), value.toLowerCase()));
+                    } else {
+                        predicates.add(builder.like(root.get(key), "%" + value.toLowerCase() + "%"));
                     }
                     break;
                 case EMAIL_VERIFIED:
@@ -1050,8 +1056,8 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
             // exact search
             value = value.substring(1, value.length() - 1);
 
-            orPredicates.add(builder.equal(builder.lower(from.get(USERNAME)), value));
-            orPredicates.add(builder.equal(builder.lower(from.get(EMAIL)), value));
+            orPredicates.add(builder.equal(from.get(USERNAME), value));
+            orPredicates.add(builder.equal(from.get(EMAIL), value));
             orPredicates.add(builder.equal(builder.lower(from.get(FIRST_NAME)), value));
             orPredicates.add(builder.equal(builder.lower(from.get(LAST_NAME)), value));
         } else {
@@ -1066,8 +1072,8 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
                 value += "%";
             }
 
-            orPredicates.add(builder.like(builder.lower(from.get(USERNAME)), value));
-            orPredicates.add(builder.like(builder.lower(from.get(EMAIL)), value));
+            orPredicates.add(builder.like(from.get(USERNAME), value));
+            orPredicates.add(builder.like(from.get(EMAIL), value));
             orPredicates.add(builder.like(builder.lower(from.get(FIRST_NAME)), value));
             orPredicates.add(builder.like(builder.lower(from.get(LAST_NAME)), value));
         }
