@@ -30,14 +30,14 @@ spec:
           httpGet:
             path: /health/live
             port: 8080
-          initialDelaySeconds: 15
+          initialDelaySeconds: 20
           periodSeconds: 2
           failureThreshold: 100
         readinessProbe:
           httpGet:
             path: /health/ready
             port: 8080
-          initialDelaySeconds: 15
+          initialDelaySeconds: 20
           periodSeconds: 2
           failureThreshold: 200
       dnsPolicy: ClusterFirst

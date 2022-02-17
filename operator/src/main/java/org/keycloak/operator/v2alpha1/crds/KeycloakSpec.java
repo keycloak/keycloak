@@ -16,6 +16,9 @@
  */
 package org.keycloak.operator.v2alpha1.crds;
 
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+
+import java.util.List;
 import java.util.Map;
 
 public class KeycloakSpec {
@@ -23,6 +26,17 @@ public class KeycloakSpec {
     private int instances = 1;
     private String image;
     private Map<String, String> serverConfiguration;
+
+    @JsonPropertyDescription("List of URLs to download Keycloak extensions.")
+    private List<String> extensions;
+
+    public List<String> getExtensions() {
+        return extensions;
+    }
+
+    public void setExtensions(List<String> extensions) {
+        this.extensions = extensions;
+    }
 
     public int getInstances() {
         return instances;
