@@ -36,7 +36,7 @@ public class MSSQLStartDatabaseTest extends AbstractStartDabataseTest {
      */
     @Override
     @Test
-    @Launch({ "-Dkc.db-tx-type=enabled", "-Dkc.db-driver=com.microsoft.sqlserver.jdbc.SQLServerDriver", "start-dev" })
+    @Launch({ "--transaction-xa-enabled=false", "start-dev" })
     void testSuccessful(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStartedDevMode();
