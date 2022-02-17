@@ -124,6 +124,10 @@ export default {
       "This section is used to configure settings for backward compatibility with older OpenID Connect / OAuth 2 adaptors. It's useful especially if your client uses older version of Keycloak / RH-SSO adapter.",
     excludeSessionStateFromAuthenticationResponse:
       "If this is on, the parameter 'session_state' will not be included in OpenID Connect Authentication Response. It is useful if your client uses older OIDC / OAuth2 adapter, which does not support 'session_state' parameter.",
+    useRefreshTokens:
+      "If this is on, a refresh_token will be created and added to the token response. If this is off then no refresh_token will be generated.",
+    useRefreshTokenForClientCredentialsGrant:
+      "If this is on, a refresh_token will be created and added to the token response if the client_credentials grant is used. The OAuth 2.0 RFC6749 Section 4.4.3 states that a refresh_token should not be generated when client_credentials grant is used. If this is off then no refresh_token will be generated and the associated user session will be removed.",
     "advancedSettingsOpenid-connect":
       "This section is used to configure advanced settings of this client related to OpenID Connect protocol",
     advancedSettingsSaml:

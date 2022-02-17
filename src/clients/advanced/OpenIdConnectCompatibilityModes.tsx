@@ -23,6 +23,7 @@ export const OpenIdConnectCompatibilityModes = ({
       <FormGroup
         label={t("excludeSessionStateFromAuthenticationResponse")}
         fieldId="excludeSessionStateFromAuthenticationResponse"
+        hasNoPaddingTop
         labelIcon={
           <HelpItem
             helpText="clients-help:excludeSessionStateFromAuthenticationResponse"
@@ -31,7 +32,7 @@ export const OpenIdConnectCompatibilityModes = ({
         }
       >
         <Controller
-          name="attributes.exclude-session-state-from-auth-response"
+          name="attributes.exclude.session.state.from.auth.response"
           defaultValue=""
           control={control}
           render={({ onChange, value }) => (
@@ -40,11 +41,64 @@ export const OpenIdConnectCompatibilityModes = ({
               label={t("common:on")}
               labelOff={t("common:off")}
               isChecked={value === "true"}
-              onChange={(value) => onChange("" + value)}
+              onChange={(value) => onChange(value.toString())}
             />
           )}
         />
       </FormGroup>
+      <FormGroup
+        label={t("useRefreshTokens")}
+        fieldId="useRefreshTokens"
+        hasNoPaddingTop
+        labelIcon={
+          <HelpItem
+            helpText="clients-help:useRefreshTokens"
+            fieldLabelId="clients:useRefreshTokens"
+          />
+        }
+      >
+        <Controller
+          name="attributes.use.refresh.tokens"
+          defaultValue="true"
+          control={control}
+          render={({ onChange, value }) => (
+            <Switch
+              id="useRefreshTokens"
+              label={t("common:on")}
+              labelOff={t("common:off")}
+              isChecked={value === "true"}
+              onChange={(value) => onChange(value.toString())}
+            />
+          )}
+        />
+      </FormGroup>
+      <FormGroup
+        label={t("useRefreshTokenForClientCredentialsGrant")}
+        fieldId="useRefreshTokenForClientCredentialsGrant"
+        hasNoPaddingTop
+        labelIcon={
+          <HelpItem
+            helpText="clients-help:useRefreshTokenForClientCredentialsGrant"
+            fieldLabelId="clients:useRefreshTokenForClientCredentialsGrant"
+          />
+        }
+      >
+        <Controller
+          name="attributes.client_credentials.use_refresh_token"
+          defaultValue="false"
+          control={control}
+          render={({ onChange, value }) => (
+            <Switch
+              id="useRefreshTokenForClientCredentialsGrant"
+              label={t("common:on")}
+              labelOff={t("common:off")}
+              isChecked={value === "true"}
+              onChange={(value) => onChange(value.toString())}
+            />
+          )}
+        />
+      </FormGroup>
+
       <ActionGroup>
         <Button variant="secondary" onClick={save}>
           {t("common:save")}

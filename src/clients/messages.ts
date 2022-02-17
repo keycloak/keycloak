@@ -464,6 +464,9 @@ export default {
     openIdConnectCompatibilityModes: "Open ID Connect Compatibly Modes",
     excludeSessionStateFromAuthenticationResponse:
       "Exclude Session State From Authentication Response",
+    useRefreshTokens: "Use refresh tokens",
+    useRefreshTokenForClientCredentialsGrant:
+      "Use refresh tokens for client credentials grant",
     assertionConsumerServicePostBindingURL:
       "Assertion Consumer Service POST Binding URL",
     assertionConsumerServiceRedirectBindingURL:
