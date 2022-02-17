@@ -5,7 +5,7 @@
 <@tmpl.guide
     title="Configuring the database"
     summary="An overview about how to configure relational databases"
-    includedOptions="db db-*">
+    includedOptions="db db-* transaction-xa-enabled">
 
 In this guide, you are going to understand how to configure the server to store data using different relational databases. You should also learn
 You will also learn what databases are supported by the server.
@@ -118,5 +118,12 @@ Cluster nodes are allowed to boot concurrently. When the server instance boots u
 By default, the maximum timeout for this lock is 900 seconds. If a node is waiting on this lock for more than the timeout it will fail to boot. Typically you won’t need to increase/decrease the default value, but just in case it’s possible to configure it as follows:
 
 <@kc.start parameters="--spi-dblock-jpa-lock-wait-timeout 900"/>
+
+== Using Database Vendors without XA transaction support
+Keycloak uses XA transactions and the appropriate database drivers by default. There are vendors like Azure SQL and MariaDB Galera, that do not support or rely on the XA transaction mechanism. To use Keycloak without XA transaction support using the appropriate jdbc driver, invoke the following command:
+
+<@kc.build parameters="--db=<vendor> --transaction-xa-enabled=false"/>
+
+Keycloak will automatically choose the appropriate jdbc driver for your vendor.
 
 </@tmpl.guide>
