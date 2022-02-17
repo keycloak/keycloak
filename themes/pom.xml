@@ -89,11 +89,10 @@
         <profile>
             <id>account2</id>
             <activation>
-                <!-- 'activeByDefault' will not work here as other profiles in this POM are always active, so we need to have a workaround to activate this profile. -->
-                <file>
-                    <exists>.</exists>
-                </file>
-           </activation>
+                <property>
+                    <name>!skipAccount2</name>
+                </property>
+            </activation>
             <build>
                 <plugins>
                     <plugin>
