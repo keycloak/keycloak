@@ -1,0 +1,23 @@
+td#permit {
+  color: var(--pf-global--success-color--100);
+  font-weight: bold;;
+}
+
+td#deny {
+  color: var(--pf-global--danger-color--100);
+  font-weight: bold;
+}
+
+.kc-evaluated-options {
+    padding-top: 300px
+}
+
+button#back-btn {
+  margin-right: var(--pf-global--spacer--md);
+}
+
+button#reevaluate-btn {
+  margin-right: var(--pf-global--spacer--md);
+}
+
+

@@ -12,6 +12,11 @@ import {
   Switch,
   ExpandableSection,
   TextInput,
+  ButtonVariant,
+  InputGroup,
+  Toolbar,
+  ToolbarGroup,
+  ToolbarItem,
 } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 
@@ -25,10 +30,16 @@ import type ResourceEvaluation from "@keycloak/keycloak-admin-client/lib/defs/re
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { AttributeInput } from "../../components/attribute-input/AttributeInput";
 import { defaultContextAttributes } from "../utils";
+import type EvaluationResultRepresentation from "@keycloak/keycloak-admin-client/lib/defs/evaluationResultRepresentation";
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
 import { useParams } from "react-router-dom";
 import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
 import type { KeyValueType } from "../../components/attribute-form/attribute-convert";
+import { TableComposable, Th, Thead, Tr } from "@patternfly/react-table";
+import "./auth-evaluate.css";
+import { AuthorizationEvaluateResource } from "./AuthorizationEvaluateResource";
+import { SearchIcon } from "@patternfly/react-icons";
+import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 
 interface EvaluateFormInputs
   extends Omit<ResourceEvaluation, "context" | "resources"> {
@@ -68,12 +79,14 @@ export type AttributeForm = Omit<
   resources?: KeyValueType[];
 };
 
+type Props = ClientSettingsProps & EvaluationResultRepresentation;
+
 export const AuthorizationEvaluate = ({
   clients,
   clientRoles,
   clientName,
   users,
-}: ClientSettingsProps) => {
+}: Props) => {
   const form = useFormContext<EvaluateFormInputs>();
   const { control, reset, trigger } = form;
   const { t } = useTranslation("clients");
@@ -92,6 +105,28 @@ export const AuthorizationEvaluate = ({
   const [scopes, setScopes] = useState<ScopeRepresentation[]>([]);
   const [selectedClient, setSelectedClient] = useState<ClientRepresentation>();
   const [selectedUser, setSelectedUser] = useState<UserRepresentation>();
+  const [evaluateResults, setEvaluateResults] = useState<
+    EvaluationResultRepresentation[]
+  >([]);
+  const [showEvaluateResults, setShowEvaluateResults] = useState(false);
+  const [searchVal, setSearchVal] = useState("");
+  const [filteredResources, setFilteredResources] = useState<
+    EvaluationResultRepresentation[]
+  >([]);
+  const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
+  const [key, setKey] = useState(0);
+
+  const refresh = () => {
+    setKey(new Date().getTime());
+  };
+
+  const FilterType = {
+    allResults: t("allResults"),
+    resultPermit: t("resultPermit"),
+    resultDeny: t("resultDeny"),
+  };
+
+  const [filterType, setFilterType] = useState(FilterType.allResults);
 
   useFetch(
     async () =>
@@ -107,7 +142,7 @@ export const AuthorizationEvaluate = ({
       setResources(resources);
       setScopes(scopes);
     },
-    []
+    [key, filterType]
   );
 
   const evaluate = async () => {
@@ -131,13 +166,175 @@ export const AuthorizationEvaluate = ({
       },
     };
 
-    return adminClient.clients.evaluateResource(
+    const evaluation = await adminClient.clients.evaluateResource(
       { id: clientId!, realm: realm.realm },
       resEval
     );
+
+    setEvaluateResults(evaluation.results);
+    setShowEvaluateResults(true);
+    return evaluateResults;
   };
 
-  return (
+  const onSearch = () => {
+    if (searchVal !== "") {
+      setSearchVal(searchVal);
+      const filtered = evaluateResults.filter((resource) =>
+        resource.resource?.name?.includes(searchVal)
+      );
+      setFilteredResources(filtered);
+    } else {
+      setSearchVal("");
+      setFilteredResources(evaluateResults);
+    }
+  };
+
+  const handleKeyDown = (e: any) => {
+    if (e.key === "Enter") {
+      onSearch();
+    }
+  };
+
+  const handleInputChange = (value: string) => {
+    setSearchVal(value);
+  };
+
+  const noEvaluatedData = evaluateResults.length === 0;
+  const noFilteredData = filteredResources.length === 0;
+
+  const options = [
+    <SelectOption
+      key={1}
+      data-testid="all-results-option"
+      value={FilterType.allResults}
+      isPlaceholder
+    />,
+    <SelectOption
+      data-testid="result-permit-option"
+      key={2}
+      value={FilterType.resultPermit}
+    />,
+    <SelectOption
+      data-testid="result-deny-option"
+      key={3}
+      value={FilterType.resultDeny}
+    />,
+  ];
+
+  return showEvaluateResults ? (
+    <PageSection>
+      <Toolbar>
+        <ToolbarGroup className="providers-toolbar">
+          <ToolbarItem>
+            <InputGroup>
+              <TextInput
+                name={"inputGroupName"}
+                id={"inputGroupName"}
+                type="search"
+                aria-label={t("common:search")}
+                placeholder={t("common:search")}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+              />
+              <Button
+                variant={ButtonVariant.control}
+                aria-label={t("common:search")}
+                onClick={() => onSearch()}
+              >
+                <SearchIcon />
+              </Button>
+            </InputGroup>
+          </ToolbarItem>
+          <ToolbarItem>
+            <Select
+              width={300}
+              data-testid="filter-type-select"
+              isOpen={filterDropdownOpen}
+              className="kc-filter-type-select"
+              variant={SelectVariant.single}
+              onToggle={() => setFilterDropdownOpen(!filterDropdownOpen)}
+              onSelect={(_, value) => {
+                if (value === FilterType.allResults) {
+                  setFilterType(FilterType.allResults);
+                } else if (value === FilterType.resultPermit) {
+                  const filterPermit = evaluateResults.filter(
+                    (resource) => resource.status === "PERMIT"
+                  );
+                  setFilteredResources(filterPermit);
+                  setFilterType(FilterType.resultPermit);
+
+                  refresh();
+                } else if (value === FilterType.resultDeny) {
+                  const filterDeny = evaluateResults.filter(
+                    (resource) => resource.status === "DENY"
+                  );
+                  setFilterType(FilterType.resultDeny);
+                  setFilteredResources(filterDeny);
+                  refresh();
+                }
+                setFilterDropdownOpen(false);
+              }}
+              selections={filterType}
+            >
+              {options}
+            </Select>
+          </ToolbarItem>
+        </ToolbarGroup>
+      </Toolbar>
+      {!noEvaluatedData && !noFilteredData && (
+        <TableComposable aria-label={t("evaluationResults")}>
+          <Thead>
+            <Tr>
+              <Th />
+              <Th>{t("resource")}</Th>
+              <Th>{t("overallResults")}</Th>
+              <Th>{t("scopes")}</Th>
+              <Th />
+            </Tr>
+          </Thead>
+          {(filterType == FilterType.allResults
+            ? evaluateResults
+            : filteredResources
+          ).map((resource, rowIndex) => (
+            <AuthorizationEvaluateResource
+              key={rowIndex}
+              rowIndex={rowIndex}
+              resource={resource}
+              evaluateResults={evaluateResults}
+            />
+          ))}
+        </TableComposable>
+      )}
+      {noEvaluatedData ||
+        (noFilteredData && (
+          <ListEmptyState
+            isSearchVariant
+            message={t("common:noSearchResults")}
+            instructions={t("common:noSearchResultsInstructions")}
+          />
+        ))}
+      <ActionGroup className="kc-evaluated-options">
+        <Button
+          data-testid="authorization-eval"
+          id="back-btn"
+          onClick={() => setShowEvaluateResults(false)}
+        >
+          {t("common:back")}
+        </Button>
+        <Button
+          data-testid="authorization-reevaluate"
+          id="reevaluate-btn"
+          variant="secondary"
+          onClick={() => evaluate()}
+        >
+          {t("clients:reevaluate")}
+        </Button>
+        <Button data-testid="authorization-revert" variant="secondary">
+          {t("showAuthData")}
+        </Button>
+      </ActionGroup>
+    </PageSection>
+  ) : (
     <PageSection>
       <FormPanel
         className="kc-identity-information"
@@ -332,7 +529,7 @@ export const AuthorizationEvaluate = ({
                 />
               }
               helperTextInvalid={t("common:required")}
-              fieldId={name!}
+              fieldId="resourcesAndAuthScopes"
             >
               <AttributeInput
                 selectableValues={resources.map<AttributeType>((item) => ({
@@ -428,7 +625,7 @@ export const AuthorizationEvaluate = ({
                 />
               }
               helperTextInvalid={t("common:required")}
-              fieldId={name!}
+              fieldId="contextualAttributes"
             >
               <AttributeInput
                 selectableValues={defaultContextAttributes}
@@ -439,7 +636,12 @@ export const AuthorizationEvaluate = ({
           </ExpandableSection>
         </FormAccess>
         <ActionGroup>
-          <Button data-testid="authorization-eval" onClick={() => evaluate()}>
+          <Button
+            data-testid="authorization-eval"
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+            isDisabled={form.getValues().resources?.every((e) => e.key === "")}
+            onClick={() => evaluate()}
+          >
             {t("evaluate")}
           </Button>
           <Button
