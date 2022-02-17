@@ -64,8 +64,8 @@ export const KerberosSettingsRequired = ({
           label={t("consoleDisplayName")}
           labelIcon={
             <HelpItem
-              helpText="users-federation-help:consoleDisplayNameHelp"
-              fieldLabelId="users-federation:consoleDisplayName"
+              helpText="user-federation-help:consoleDisplayNameHelp"
+              fieldLabelId="user-federation:consoleDisplayName"
             />
           }
           fieldId="kc-console-display-name"
@@ -119,8 +119,8 @@ export const KerberosSettingsRequired = ({
           label={t("kerberosRealm")}
           labelIcon={
             <HelpItem
-              helpText="users-federation-help:kerberosRealmHelp"
-              fieldLabelId="users-federation:kc-kerberos-realm"
+              helpText="user-federation-help:kerberosRealmHelp"
+              fieldLabelId="user-federation:kc-kerberos-realm"
             />
           }
           fieldId="kc-kerberos-realm"
@@ -150,8 +150,8 @@ export const KerberosSettingsRequired = ({
           label={t("serverPrincipal")}
           labelIcon={
             <HelpItem
-              helpText="users-federation-help:serverPrincipalHelp"
-              fieldLabelId="users-federation:serverPrincipal"
+              helpText="user-federation-help:serverPrincipalHelp"
+              fieldLabelId="user-federation:serverPrincipal"
             />
           }
           fieldId="kc-server-principal"
@@ -181,8 +181,8 @@ export const KerberosSettingsRequired = ({
           label={t("keyTab")}
           labelIcon={
             <HelpItem
-              helpText="users-federation-help:keyTabHelp"
-              fieldLabelId="users-federation:keyTab"
+              helpText="user-federation-help:keyTabHelp"
+              fieldLabelId="user-federation:keyTab"
             />
           }
           fieldId="kc-key-tab"
@@ -210,8 +210,8 @@ export const KerberosSettingsRequired = ({
           label={t("debug")}
           labelIcon={
             <HelpItem
-              helpText="users-federation-help:debugHelp"
-              fieldLabelId="users-federation:debug"
+              helpText="user-federation-help:debugHelp"
+              fieldLabelId="user-federation:debug"
             />
           }
           fieldId="kc-debug"
@@ -238,8 +238,8 @@ export const KerberosSettingsRequired = ({
           label={t("allowPasswordAuthentication")}
           labelIcon={
             <HelpItem
-              helpText="users-federation-help:allowPasswordAuthenticationHelp"
-              fieldLabelId="users-federation:allowPasswordAuthentication"
+              helpText="user-federation-help:allowPasswordAuthenticationHelp"
+              fieldLabelId="user-federation:allowPasswordAuthentication"
             />
           }
           fieldId="kc-allow-password-authentication"
@@ -266,8 +266,8 @@ export const KerberosSettingsRequired = ({
             label={t("editMode")}
             labelIcon={
               <HelpItem
-                helpText="users-federation-help:editModeKerberosHelp"
-                fieldLabelId="users-federation:editMode"
+                helpText="user-federation-help:editModeKerberosHelp"
+                fieldLabelId="user-federation:editMode"
               />
             }
             isRequired
@@ -306,8 +306,8 @@ export const KerberosSettingsRequired = ({
           label={t("updateFirstLogin")}
           labelIcon={
             <HelpItem
-              helpText="users-federation-help:updateFirstLoginHelp"
-              fieldLabelId="users-federation:updateFirstLogin"
+              helpText="user-federation-help:updateFirstLoginHelp"
+              fieldLabelId="user-federation:updateFirstLogin"
             />
           }
           fieldId="kc-update-first-login"

@@ -50,6 +50,8 @@ const convertFormToSettings = (form: UseFormMethods) => {
     settings[key] = Array.isArray(value) ? value[0] : "";
   });
 
+  settings["componentId"] = get(form.getValues(), "id");
+
   return settings;
 };
 
@@ -105,8 +107,8 @@ export const LdapSettingsConnection = ({
           label={t("connectionURL")}
           labelIcon={
             <HelpItem
-              helpText="users-federation-help:consoleDisplayConnectionUrlHelp"
-              fieldLabelId="users-federation:connectionURL"
+              helpText="user-federation-help:consoleDisplayConnectionUrlHelp"
+              fieldLabelId="user-federation:connectionURL"
             />
           }
           fieldId="kc-console-connection-url"
@@ -135,8 +137,8 @@ export const LdapSettingsConnection = ({
           label={t("enableStartTls")}
           labelIcon={
             <HelpItem
-              helpText="users-federation-help:enableStartTlsHelp"
-              fieldLabelId="users-federation:enableStartTls"
+              helpText="user-federation-help:enableStartTlsHelp"
+              fieldLabelId="user-federation:enableStartTls"
             />
           }
           fieldId="kc-enable-start-tls"
@@ -163,8 +165,8 @@ export const LdapSettingsConnection = ({
           label={t("useTruststoreSpi")}
           labelIcon={
             <HelpItem
-              helpText="users-federation-help:useTruststoreSpiHelp"
-              fieldLabelId="users-federation:useTruststoreSpi"
+              helpText="user-federation-help:useTruststoreSpiHelp"
+              fieldLabelId="user-federation:useTruststoreSpi"
             />
           }
           fieldId="kc-use-truststore-spi"
@@ -197,8 +199,8 @@ export const LdapSettingsConnection = ({
           label={t("connectionPooling")}
           labelIcon={
             <HelpItem
-              helpText="users-federation-help:connectionPoolingHelp"
-              fieldLabelId="users-federation:connectionPooling"
+              helpText="user-federation-help:connectionPoolingHelp"
+              fieldLabelId="user-federation:connectionPooling"
             />
           }
           fieldId="kc-connection-pooling"
@@ -224,8 +226,8 @@ export const LdapSettingsConnection = ({
           label={t("connectionTimeout")}
           labelIcon={
             <HelpItem
-              helpText="users-federation-help:connectionTimeoutHelp"
-              fieldLabelId="users-federation:consoleTimeout"
+              helpText="user-federation-help:connectionTimeoutHelp"
+              fieldLabelId="user-federation:consoleTimeout"
             />
           }
           fieldId="kc-console-connection-timeout"
@@ -251,8 +253,8 @@ export const LdapSettingsConnection = ({
           label={t("bindType")}
           labelIcon={
             <HelpItem
-              helpText="users-federation-help:bindTypeHelp"
-              fieldLabelId="users-federation:bindType"
+              helpText="user-federation-help:bindTypeHelp"
+              fieldLabelId="user-federation:bindType"
             />
           }
           fieldId="kc-bind-type"
@@ -291,8 +293,8 @@ export const LdapSettingsConnection = ({
               label={t("bindDn")}
               labelIcon={
                 <HelpItem
-                  helpText="users-federation-help:bindDnHelp"
-                  fieldLabelId="users-federation:bindDn"
+                  helpText="user-federation-help:bindDnHelp"
+                  fieldLabelId="user-federation:bindDn"
                 />
               }
               fieldId="kc-console-bind-dn"
@@ -316,8 +318,8 @@ export const LdapSettingsConnection = ({
               label={t("bindCredentials")}
               labelIcon={
                 <HelpItem
-                  helpText="users-federation-help:bindCredentialsHelp"
-                  fieldLabelId="users-federation:bindCredentials"
+                  helpText="user-federation-help:bindCredentialsHelp"
+                  fieldLabelId="user-federation:bindCredentials"
                 />
               }
               fieldId="kc-console-bind-credentials"

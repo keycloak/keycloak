@@ -35,8 +35,8 @@ export const LdapSettingsAdvanced = ({
           label={t("enableLdapv3Password")}
           labelIcon={
             <HelpItem
-              helpText="users-federation-help:enableLdapv3PasswordHelp"
-              fieldLabelId="users-federation:enableLdapv3Password"
+              helpText="user-federation-help:enableLdapv3PasswordHelp"
+              fieldLabelId="user-federation:enableLdapv3Password"
             />
           }
           fieldId="kc-enable-ldapv3-password"
@@ -63,8 +63,8 @@ export const LdapSettingsAdvanced = ({
           label={t("validatePasswordPolicy")}
           labelIcon={
             <HelpItem
-              helpText="users-federation-help:validatePasswordPolicyHelp"
-              fieldLabelId="users-federation:validatePasswordPolicy"
+              helpText="user-federation-help:validatePasswordPolicyHelp"
+              fieldLabelId="user-federation:validatePasswordPolicy"
             />
           }
           fieldId="kc-validate-password-policy"
@@ -91,8 +91,8 @@ export const LdapSettingsAdvanced = ({
           label={t("trustEmail")}
           labelIcon={
             <HelpItem
-              helpText="users-federation-help:trustEmailHelp"
-              fieldLabelId="users-federation:trustEmail"
+              helpText="user-federation-help:trustEmailHelp"
+              fieldLabelId="user-federation:trustEmail"
             />
           }
           fieldId="kc-trust-email"

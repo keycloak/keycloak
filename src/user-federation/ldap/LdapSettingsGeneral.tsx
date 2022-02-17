@@ -107,14 +107,15 @@ export const LdapSettingsGeneral = ({
           label={t("consoleDisplayName")}
           labelIcon={
             <HelpItem
-              helpText="users-federation-help:consoleDisplayNameHelp"
-              fieldLabelId="users-federation:consoleDisplayName"
+              helpText="user-federation-help:consoleDisplayNameHelp"
+              fieldLabelId="user-federation:consoleDisplayName"
             />
           }
           fieldId="kc-console-display-name"
           isRequired
         >
           {/* These hidden fields are required so data object written back matches data retrieved */}
+          <TextInput hidden type="text" id="kc-console-id" name="id" />
           <TextInput
             hidden
             type="text"
@@ -161,8 +162,8 @@ export const LdapSettingsGeneral = ({
           label={t("vendor")}
           labelIcon={
             <HelpItem
-              helpText="users-federation-help:vendorHelp"
-              fieldLabelId="users-federation:vendor"
+              helpText="user-federation-help:vendorHelp"
+              fieldLabelId="user-federation:vendor"
             />
           }
           fieldId="kc-vendor"

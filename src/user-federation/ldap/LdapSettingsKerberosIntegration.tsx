@@ -41,8 +41,8 @@ export const LdapSettingsKerberosIntegration = ({
           label={t("allowKerberosAuthentication")}
           labelIcon={
             <HelpItem
-              helpText="users-federation-help:allowKerberosAuthenticationHelp"
-              fieldLabelId="users-federation:allowKerberosAuthentication"
+              helpText="user-federation-help:allowKerberosAuthenticationHelp"
+              fieldLabelId="user-federation:allowKerberosAuthentication"
             />
           }
           fieldId="kc-allow-kerberos-authentication"
@@ -71,8 +71,8 @@ export const LdapSettingsKerberosIntegration = ({
               label={t("kerberosRealm")}
               labelIcon={
                 <HelpItem
-                  helpText="users-federation-help:kerberosRealmHelp"
-                  fieldLabelId="users-federation:kerberosRealm"
+                  helpText="user-federation-help:kerberosRealmHelp"
+                  fieldLabelId="user-federation:kerberosRealm"
                 />
               }
               fieldId="kc-kerberos-realm"
@@ -102,8 +102,8 @@ export const LdapSettingsKerberosIntegration = ({
               label={t("serverPrincipal")}
               labelIcon={
                 <HelpItem
-                  helpText="users-federation-help:serverPrincipalHelp"
-                  fieldLabelId="users-federation:serverPrincipal"
+                  helpText="user-federation-help:serverPrincipalHelp"
+                  fieldLabelId="user-federation:serverPrincipal"
                 />
               }
               fieldId="kc-server-principal"
@@ -133,8 +133,8 @@ export const LdapSettingsKerberosIntegration = ({
               label={t("keyTab")}
               labelIcon={
                 <HelpItem
-                  helpText="users-federation-help:keyTabHelp"
-                  fieldLabelId="users-federation:keyTab"
+                  helpText="user-federation-help:keyTabHelp"
+                  fieldLabelId="user-federation:keyTab"
                 />
               }
               fieldId="kc-key-tab"
@@ -164,8 +164,8 @@ export const LdapSettingsKerberosIntegration = ({
               label={t("debug")}
               labelIcon={
                 <HelpItem
-                  helpText="users-federation-help:debugHelp"
-                  fieldLabelId="users-federation:debug"
+                  helpText="user-federation-help:debugHelp"
+                  fieldLabelId="user-federation:debug"
                 />
               }
               fieldId="kc-debug"
@@ -194,8 +194,8 @@ export const LdapSettingsKerberosIntegration = ({
           label={t("useKerberosForPasswordAuthentication")}
           labelIcon={
             <HelpItem
-              helpText="users-federation-help:useKerberosForPasswordAuthenticationHelp"
-              fieldLabelId="users-federation:useKerberosForPasswordAuthentication"
+              helpText="user-federation-help:useKerberosForPasswordAuthenticationHelp"
+              fieldLabelId="user-federation:useKerberosForPasswordAuthentication"
             />
           }
           fieldId="kc-use-kerberos-password-authentication"
