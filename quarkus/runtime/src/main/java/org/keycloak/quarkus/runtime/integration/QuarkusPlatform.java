@@ -150,7 +150,7 @@ public class QuarkusPlatform implements PlatformProvider {
                 this.tmpDir = tmpDir;
                 log.debugf("Using server tmp directory: %s", tmpDir.getAbsolutePath());
             } else {
-                throw new RuntimeException("Temporary directory " + tmpDir.getAbsolutePath() + " does not exists and it was not possible to create it.");
+                throw new RuntimeException("Temporary directory " + tmpDir.getAbsolutePath() + " does not exist and it was not possible to create it.");
             }
         }
         return tmpDir;

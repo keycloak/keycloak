@@ -19,6 +19,7 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
      <changeSet author="bburke@redhat.com" id="2.5.1">
+         <validCheckSum>7:37fc1781855ac5388c494f1442b3f717</validCheckSum>
          <addColumn tableName="FED_USER_CONSENT">
              <column name="CREATED_DATE" type="BIGINT"/>
              <column name="LAST_UPDATED_DATE" type="BIGINT"/>

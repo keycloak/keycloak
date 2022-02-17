@@ -99,66 +99,49 @@ public final class Database {
                 new Function<String, String>() {
                     @Override
                     public String apply(String alias) {
-                        if ("h2-file".equalsIgnoreCase(alias)) {
-                            return "jdbc:h2:file:${kc.home.dir:${kc.db.url.path:~}}" + File.separator + "${kc.data.dir:data}"
+                        if ("dev-file".equalsIgnoreCase(alias)) {
+                            return "jdbc:h2:file:${kc.home.dir:${kc.db-url-path:~}}" + File.separator + "${kc.data.dir:data}"
                                     + File.separator + "h2" + File.separator
-                                    + "keycloakdb${kc.db.url.properties:;;AUTO_SERVER=TRUE}";
+                                    + "keycloakdb${kc.db-url-properties:;;AUTO_SERVER=TRUE}";
                         }
-                        return "jdbc:h2:mem:keycloakdb${kc.db.url.properties:}";
+                        return "jdbc:h2:mem:keycloakdb${kc.db-url-properties:}";
                     }
                 },
                 asList("liquibase.database.core.H2Database"),
-                "h2-mem", "h2-file"
+                "dev-mem", "dev-file"
         ),
         MYSQL("mysql",
                 "com.mysql.cj.jdbc.MysqlXADataSource",
                 "org.hibernate.dialect.MySQL8Dialect",
 
-                "jdbc:mysql://${kc.db.url.host:localhost}/${kc.db.url.database:keycloak}${kc.db.url.properties:}",
+                "jdbc:mysql://${kc.db-url-host:localhost}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",
                 asList("org.keycloak.connections.jpa.updater.liquibase.UpdatedMySqlDatabase")
         ),
         MARIADB("mariadb",
                 "org.mariadb.jdbc.MySQLDataSource",
                 "org.hibernate.dialect.MariaDBDialect",
-                "jdbc:mariadb://${kc.db.url.host:localhost}/${kc.db.url.database:keycloak}${kc.db.url.properties:}",
+                "jdbc:mariadb://${kc.db-url-host:localhost}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",
                 asList("org.keycloak.connections.jpa.updater.liquibase.UpdatedMariaDBDatabase")
         ),
         POSTGRES("postgresql",
                 "org.postgresql.xa.PGXADataSource",
-                new Function<String, String>() {
-                    @Override
-                    public String apply(String alias) {
-                        if ("postgres-95".equalsIgnoreCase(alias)) {
-                            return "io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL95Dialect";
-                        }
-                        return "io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL10Dialect";
-                    }
-                },
-                "jdbc:postgresql://${kc.db.url.host:localhost}/${kc.db.url.database:keycloak}${kc.db.url.properties:}",
+                "io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL10Dialect",
+                "jdbc:postgresql://${kc.db-url-host:localhost}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",
                 asList("liquibase.database.core.PostgresDatabase",
                         "org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase"),
-                "postgres", "postgres-95"
+                "postgres"
         ),
         MSSQL("mssql",
                 "com.microsoft.sqlserver.jdbc.SQLServerXADataSource",
-                new Function<String, String>() {
-                    @Override
-                    public String apply(String alias) {
-                        if ("mssql-12".equals(alias)) {
-                            return "org.hibernate.dialect.SQLServer2012Dialect";
-                        }
-                        // quarkus latest/default
-                        return "org.hibernate.dialect.SQLServer2016Dialect";
-                    }
-                },
-                "jdbc:sqlserver://${kc.db.url.host:localhost}:1433;databaseName=${kc.db.url.database:keycloak}${kc.db.url.properties:}",
+                "org.hibernate.dialect.SQLServer2016Dialect",
+                "jdbc:sqlserver://${kc.db-url-host:localhost}:1433;databaseName=${kc.db-url-database:keycloak}${kc.db-url-properties:}",
                 asList("org.keycloak.quarkus.runtime.storage.database.liquibase.database.CustomMSSQLDatabase"),
-                "mssql", "mssql-2012"
+                "mssql"
         ),
         ORACLE("oracle",
                 "oracle.jdbc.xa.client.OracleXADataSource",
                 "org.hibernate.dialect.Oracle12cDialect",
-                "jdbc:oracle:thin:@//${kc.db.url.host:localhost}:1521/${kc.db.url.database:keycloak}",
+                "jdbc:oracle:thin:@//${kc.db-url-host:localhost}:1521/${kc.db-url-database:keycloak}",
                 asList("liquibase.database.core.OracleDatabase")
         );
 

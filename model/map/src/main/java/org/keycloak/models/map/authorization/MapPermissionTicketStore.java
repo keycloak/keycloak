@@ -29,6 +29,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.map.authorization.adapter.MapPermissionTicketAdapter;
 import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntity;
+import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntityImpl;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 
@@ -108,7 +109,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
                     + ", Resource: " + resourceId + ", owner: " + owner + ", scopeId: " + scopeId + " already exists.");
         }
 
-        MapPermissionTicketEntity entity = new MapPermissionTicketEntity();
+        MapPermissionTicketEntity entity = new MapPermissionTicketEntityImpl();
         entity.setResourceId(resourceId);
         entity.setRequester(requester);
         entity.setCreatedTimestamp(System.currentTimeMillis());

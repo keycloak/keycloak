@@ -20,10 +20,18 @@ package org.keycloak.it.junit5.extension;
 import static org.keycloak.it.junit5.extension.DistributionTest.ReInstall.BEFORE_ALL;
 import static org.keycloak.it.junit5.extension.DistributionType.RAW;
 import static org.keycloak.quarkus.runtime.Environment.forceTestLaunchMode;
+import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
+import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_SHORT_NAME;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.regex.Pattern;
+
+import io.quarkus.dev.console.QuarkusConsole;
+import io.quarkus.runtime.configuration.QuarkusConfigFactory;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
@@ -35,27 +43,66 @@ import org.keycloak.quarkus.runtime.cli.command.StartDev;
 import io.quarkus.test.junit.QuarkusMainTestExtension;
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
+import org.keycloak.quarkus.runtime.configuration.KeycloakPropertiesConfigSource;
+import org.keycloak.quarkus.runtime.configuration.test.TestConfigArgsConfigSource;
 
 public class CLITestExtension extends QuarkusMainTestExtension {
 
+    private static final String KEY_VALUE_SEPARATOR = "[= ]";
     private KeycloakDistribution dist;
+    private final Set<String> testSysProps = new HashSet<>();
 
     @Override
     public void beforeEach(ExtensionContext context) throws Exception {
         DistributionTest distConfig = getDistributionConfig(context);
+        Launch launch = context.getRequiredTestMethod().getAnnotation(Launch.class);
+
+        if (launch != null) {
+            for (String arg : launch.value()) {
+                if (arg.contains(CONFIG_FILE_SHORT_NAME) || arg.contains(CONFIG_FILE_LONG_NAME)) {
+                    Pattern kvSeparator = Pattern.compile(KEY_VALUE_SEPARATOR);
+                    String[] cfKeyValue = kvSeparator.split(arg);
+                    setProperty(KeycloakPropertiesConfigSource.KEYCLOAK_CONFIG_FILE_PROP, cfKeyValue[1]);
+                } else if (distConfig == null && arg.startsWith("-D")) {
+                    // allow setting system properties from JVM tests
+                    int keyValueSeparator = arg.indexOf('=');
+
+                    if (keyValueSeparator == -1) {
+                        continue;
+                    }
+
+                    String name = arg.substring(2, keyValueSeparator);
+                    String value = arg.substring(keyValueSeparator + 1);
+                    setProperty(name, value);
+                }
+            }
+        }
 
         if (distConfig != null) {
-            Launch launch = context.getRequiredTestMethod().getAnnotation(Launch.class);
-
             if (launch != null) {
                 if (dist == null) {
                     dist = createDistribution(distConfig);
                 }
+
+                onBeforeStartDistribution(context.getRequiredTestClass().getAnnotation(BeforeStartDistribution.class));
+                onBeforeStartDistribution(context.getRequiredTestMethod().getAnnotation(BeforeStartDistribution.class));
+
                 dist.start(Arrays.asList(launch.value()));
             }
         } else {
             configureProfile(context);
+            configureDatabase(context);
             super.beforeEach(context);
+        }
+    }
+
+    private void onBeforeStartDistribution(BeforeStartDistribution annotation) {
+        if (annotation != null) {
+            try {
+                annotation.value().getDeclaredConstructor().newInstance().accept(dist);
+            } catch (Exception cause) {
+                throw new RuntimeException("Error when invoking " + annotation.value() + " instance before starting distribution", cause);
+            }
         }
     }
 
@@ -70,19 +117,18 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         }
 
         super.afterEach(context);
+        reset();
     }
 
-    @Override
-    public void afterAll(ExtensionContext context) throws Exception {
-        if (dist != null) {
-            // just to make sure the server is stopped after all tests
-            dist.stop();
+    private void reset() {
+        QuarkusConfigFactory.setConfig(null);
+        //remove the config file property if set, and also the profile, to not have side effects in other tests.
+        System.getProperties().remove(Environment.PROFILE);
+        System.getProperties().remove("quarkus.profile");
+        TestConfigArgsConfigSource.setCliArgs(new String[0]);
+        for (String property : testSysProps) {
+            System.getProperties().remove(property);
         }
-        super.afterAll(context);
-    }
-
-    private KeycloakDistribution createDistribution(DistributionTest config) {
-        return DistributionType.getCurrent().orElse(RAW).newInstance(config);
     }
 
     @Override
@@ -98,6 +144,19 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         }
 
         super.beforeAll(context);
+    }
+
+    @Override
+    public void afterAll(ExtensionContext context) throws Exception {
+        if (dist != null) {
+            // just to make sure the server is stopped after all tests
+            dist.stop();
+        }
+        super.afterAll(context);
+    }
+
+    private KeycloakDistribution createDistribution(DistributionTest config) {
+        return DistributionType.getCurrent().orElse(RAW).newInstance(config);
     }
 
     @Override
@@ -123,10 +182,10 @@ public class CLITestExtension extends QuarkusMainTestExtension {
                 exitCode = result.exitCode();
             }
 
-            return CLIResult.create(outputStream, errStream, exitCode, isDistribution);
+            return CLIResult.create(outputStream, errStream, exitCode);
         }
 
-        // for now, not support for manual launching using QuarkusMainLauncher
+        // for now, no support for manual launching using QuarkusMainLauncher
         throw new RuntimeException("Parameter type [" + type + "] not supported");
     }
 
@@ -148,6 +207,28 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         } else if (cliArgs.contains(StartDev.NAME)) {
             Environment.forceDevProfile();
         }
+    }
+
+    private void configureDatabase(ExtensionContext context) {
+        WithDatabase database = context.getTestClass().orElse(Object.class).getDeclaredAnnotation(WithDatabase.class);
+
+        if (database != null) {
+            configureDevServices();
+            setProperty("kc.db", database.alias());
+            // databases like mssql are very strict about password policy
+            setProperty("kc.db-password", "Password1!");
+        }
+    }
+
+    private void configureDevServices() {
+        setProperty("quarkus.vault.devservices.enabled", Boolean.FALSE.toString());
+        setProperty("quarkus.datasource.devservices.enabled", Boolean.TRUE.toString());
+        setProperty("quarkus.devservices.enabled", Boolean.TRUE.toString());
+    }
+
+    private void setProperty(String name, String value) {
+        System.setProperty(name, value);
+        testSysProps.add(name);
     }
 
     private List<String> getCliArgs(ExtensionContext context) {

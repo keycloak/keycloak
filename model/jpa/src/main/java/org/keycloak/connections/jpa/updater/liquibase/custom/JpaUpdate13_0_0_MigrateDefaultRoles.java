@@ -48,26 +48,26 @@ public class JpaUpdate13_0_0_MigrateDefaultRoles extends CustomKeycloakTask {
                 // create new default role
                 new InsertStatement(null, null, database.correctObjectName("KEYCLOAK_ROLE", Table.class))
                     .addColumnValue("ID", id)
-                    .addColumnValue("CLIENT_REALM_CONSTRAINT", entry.getValue())
+                    .addColumnValue("CLIENT_REALM_CONSTRAINT", entry.getKey())
                     .addColumnValue("CLIENT_ROLE", Boolean.FALSE)
                     .addColumnValue("DESCRIPTION", "${role_" + roleName + "}")
                     .addColumnValue("NAME", roleName)
-                    .addColumnValue("REALM_ID", entry.getValue())
-                    .addColumnValue("REALM", entry.getValue())
+                    .addColumnValue("REALM_ID", entry.getKey())
+                    .addColumnValue("REALM", entry.getKey())
             );
             statements.add(
                 // assign the role to the realm
                 new UpdateStatement(null, null, database.correctObjectName("REALM", Table.class))
                     .addNewColumnValue("DEFAULT_ROLE", id)
                     .setWhereClause("REALM.ID=?")
-                    .addWhereParameter(entry.getValue())
+                    .addWhereParameter(entry.getKey())
             );
 
             statements.add(
                 // copy data from REALM_DEFAULT_ROLES to COMPOSITE_ROLE
                 new RawSqlStatement("INSERT INTO " + compositeRoleTable + " (COMPOSITE, CHILD_ROLE) " +
                         "SELECT '" + id + "', ROLE_ID FROM " + getTableName("REALM_DEFAULT_ROLES") +
-                        " WHERE REALM_ID = '" + database.escapeStringForDatabase(entry.getValue()) + "'")
+                        " WHERE REALM_ID = '" + database.escapeStringForDatabase(entry.getKey()) + "'")
             );
             statements.add(
                 // copy data from CLIENT_DEFAULT_ROLES to COMPOSITE_ROLE
@@ -75,7 +75,7 @@ public class JpaUpdate13_0_0_MigrateDefaultRoles extends CustomKeycloakTask {
                         "SELECT '" + id + "', " + clientDefaultRolesTable + ".ROLE_ID FROM " + 
                         clientDefaultRolesTable + " INNER JOIN " + clientTable + " ON " + 
                         clientTable + ".ID = " + clientDefaultRolesTable + ".CLIENT_ID AND " +
-                        clientTable + ".REALM_ID = '" + database.escapeStringForDatabase(entry.getValue()) + "'")
+                        clientTable + ".REALM_ID = '" + database.escapeStringForDatabase(entry.getKey()) + "'")
             );
         }
     }

@@ -66,6 +66,7 @@ public class RoleModelTest extends KeycloakModelTest {
         rolesSubset = IntStream.range(0, 10)
                 .boxed()
                 .map(i -> session.roles().addRealmRole(realm, "main-role-composite-" + i))
+                .peek(role -> role.setDescription("This is a description for " + role.getName() + " realm role."))
                 .peek(mainRole::addCompositeRole)
                 .map(RoleModel::getId)
                 .collect(Collectors.toList());
@@ -74,6 +75,7 @@ public class RoleModelTest extends KeycloakModelTest {
         rolesSubset.addAll(IntStream.range(10, 20)
                 .boxed()
                 .map(i -> session.roles().addClientRole(clientModel, "main-role-composite-" + i))
+                .peek(role -> role.setDescription("This is a description for " + role.getName() + " client role."))
                 .peek(mainRole::addCompositeRole)
                 .map(RoleModel::getId)
                 .collect(Collectors.toList()));
@@ -200,6 +202,29 @@ public class RoleModelTest extends KeycloakModelTest {
     @Test
     public void testCompositeRolesPaginationSearchQueries() {
         testRolesWithIdsPaginationSearchQueries(this::getModelResult);
+    }
+
+    @Test
+    public void testSearchRolesByDescription() {
+        withRealm(realmId, (session, realm) -> {
+            List<RoleModel> realmRolesByDescription = session.roles().searchForRolesStream(realm, "This is a", null, null).collect(Collectors.toList());
+            assertThat(realmRolesByDescription, hasSize(10));
+            realmRolesByDescription = session.roles().searchForRolesStream(realm, "realm role.", 5, null).collect(Collectors.toList());
+            assertThat(realmRolesByDescription, hasSize(5));
+            realmRolesByDescription = session.roles().searchForRolesStream(realm, "DESCRIPTION FOR", 3, 9).collect(Collectors.toList());
+            assertThat(realmRolesByDescription, hasSize(7));
+
+            ClientModel client = session.clients().getClientByClientId(realm, "client-with-roles");
+
+            List<RoleModel> clientRolesByDescription = session.roles().searchForClientRolesStream(client, "this is a", 0, 10).collect(Collectors.toList());
+            assertThat(clientRolesByDescription, hasSize(10));
+
+            clientRolesByDescription = session.roles().searchForClientRolesStream(client, "role-composite-13 client role", null, null).collect(Collectors.toList());
+            assertThat(clientRolesByDescription, hasSize(1));
+            assertThat(clientRolesByDescription.get(0).getDescription(), is("This is a description for main-role-composite-13 client role."));
+
+            return null;
+        });
     }
 
     public void testRolesWithIdsPaginationSearchQueries(GetResult resultProvider) {

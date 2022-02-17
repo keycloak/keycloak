@@ -5,7 +5,7 @@
     <parent>
         <artifactId>keycloak-quarkus-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>16.0.0-SNAPSHOT</version>
+        <version>18.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -25,7 +25,7 @@
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-vertx-web</artifactId>
+            <artifactId>quarkus-reactive-routes</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -80,8 +80,13 @@
             <artifactId>quarkus-smallrye-metrics</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.quarkus</groupId>
+            <groupId>org.wildfly.security</groupId>
+            <artifactId>wildfly-elytron</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkiverse.vault</groupId>
             <artifactId>quarkus-vault</artifactId>
+            <version>1.0.1</version>
         </dependency>
 
         <!-- CLI -->

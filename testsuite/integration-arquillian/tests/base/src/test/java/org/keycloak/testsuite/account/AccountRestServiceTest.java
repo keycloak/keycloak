@@ -106,7 +106,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertUserProfileAttributeMetadata(user, "firstName", "${firstName}", true, false);
         assertUserProfileAttributeMetadata(user, "lastName", "${lastName}", true, false);
     }
-    
+
+    @Test
+    public void testGetUserProfileWithoutMetadata() throws IOException {
+        UserRepresentation user = getUser(false);
+        assertNull(user.getUserProfileMetadata());
+    }
+
     @Test
     public void testGetUserProfileMetadata_EditUsernameDisallowed() throws IOException {
         
@@ -462,7 +468,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     }
 
     protected UserRepresentation getUser() throws IOException {
-        SimpleHttp a = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken());
+        return getUser(true);
+    }
+
+    protected UserRepresentation getUser(boolean fetchMetadata) throws IOException {
+        String accountUrl = getAccountUrl(null) + "?userProfileMetadata=" + fetchMetadata;
+        SimpleHttp a = SimpleHttp.doGet(accountUrl, httpClient).auth(tokenUtil.getToken());
+
         try {
             return a.asJson(UserRepresentation.class);
         } catch (IOException e) {

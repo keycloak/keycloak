@@ -47,7 +47,7 @@ public class HotRodMapStorageProvider implements MapStorageProvider {
     }
 
     @SuppressWarnings("unchecked")
-    public <E extends AbstractHotRodEntity, V extends HotRodEntityDelegate<E>, M> HotRodMapStorage<String, E, V, M> getHotRodStorage(Class<M> modelType, MapStorageProviderFactory.Flag... flags) {
+    public <E extends AbstractHotRodEntity, V extends HotRodEntityDelegate<E> & AbstractEntity, M> HotRodMapStorage<String, E, V, M> getHotRodStorage(Class<M> modelType, MapStorageProviderFactory.Flag... flags) {
         HotRodEntityDescriptor<E, V> entityDescriptor = (HotRodEntityDescriptor<E, V>) factory.getEntityDescriptor(modelType);
         return new HotRodMapStorage<>(connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), StringKeyConvertor.StringKey.INSTANCE, entityDescriptor, cloner);
     }

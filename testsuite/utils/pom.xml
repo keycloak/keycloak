@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-testsuite-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>16.0.0-SNAPSHOT</version>
+        <version>18.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -293,7 +293,7 @@
                                 <systemProperty><key>keycloak.group.provider</key><value>map</value></systemProperty>
                                 <systemProperty><key>keycloak.role.provider</key><value>map</value></systemProperty>
                                 <systemProperty><key>keycloak.user.provider</key><value>map</value></systemProperty>
-                                <systemProperty><key>keycloak.serverInfo.provider</key><value>map</value></systemProperty>
+                                <systemProperty><key>keycloak.deploymentState.provider</key><value>map</value></systemProperty>
                                 <systemProperty><key>keycloak.authSession.provider</key><value>map</value></systemProperty>
                                 <systemProperty><key>keycloak.userSession.provider</key><value>map</value></systemProperty>
                                 <systemProperty><key>keycloak.loginFailure.provider</key><value>map</value></systemProperty>

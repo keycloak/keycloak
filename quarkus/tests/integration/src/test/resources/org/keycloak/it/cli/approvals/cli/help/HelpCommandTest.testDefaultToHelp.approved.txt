@@ -1,0 +1,55 @@
+Keycloak - Open Source Identity and Access Management
+
+Find more information at: https://www.keycloak.org/docs/latest
+
+Usage:
+
+kc.sh [OPTIONS] [COMMAND]
+
+Use this command-line tool to manage your Keycloak cluster.
+Make sure the command is available on your "PATH" or prefix it with "./" (e.g.:
+"./kc.sh") to execute from the current folder.
+
+Options:
+
+-cf, --config-file <file>
+                     Set the path to a configuration file. By default, configuration properties are
+                       read from the "keycloak.conf" file in the "conf" directory.
+-h, --help           This help message.
+-v, --verbose        Print out error details when running this command.
+-V, --version        Show version information
+
+Commands:
+
+  build                   Creates a new and optimized server image.
+  start                   Start the server.
+  start-dev               Start the server in development mode.
+  export                  Export data from realms to a file or directory.
+  import                  Import data from a directory or a file.
+  show-config             Print out the current configuration.
+  tools                   Utilities for use and interaction with the server.
+    completion            Generate bash/zsh completion script for kc.sh.
+
+Examples:
+
+  Start the server in development mode for local development or testing:
+
+      $ kc.sh start-dev
+
+  Building an optimized server runtime:
+
+      $ kc.sh build <OPTIONS>
+
+  Start the server in production mode:
+
+      $ kc.sh start <OPTIONS>
+
+  Enable auto-completion to bash/zsh:
+
+      $ source <(kc.sh tools completion)
+
+  Please, take a look at the documentation for more details before deploying in
+production.
+
+Use "kc.sh start --help" for the available options when starting the server.
+Use "kc.sh <command> --help" for more information about other commands.

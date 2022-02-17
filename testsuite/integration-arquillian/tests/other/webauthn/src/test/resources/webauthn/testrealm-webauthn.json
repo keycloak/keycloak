@@ -22,10 +22,18 @@
   "webAuthnPolicyRpEntityName": "keycloak-webauthn-2FA",
   "webAuthnPolicyCreateTimeout": 60,
   "webAuthnPolicyAvoidSameAuthenticatorRegister": true,
-  "webAuthnPolicyAcceptableAaguids": [
-    "00000000-0000-0000-0000-000000000000",
-    "6d44ba9b-f6ec-2e49-b930-0c8fe920cb73"
+  "webAuthnPolicyPasswordlessSignatureAlgorithms": [
+    "ES256",
+    "RS256",
+    "RS1"
   ],
+  "webAuthnPolicyPasswordlessAttestationConveyancePreference": "not specified",
+  "webAuthnPolicyPasswordlessAuthenticatorAttachment": "not specified",
+  "webAuthnPolicyPasswordlessRequireResidentKey": "not specified",
+  "webAuthnPolicyPasswordlessUserVerificationRequirement": "not specified",
+  "webAuthnPolicyPasswordlessRpEntityName": "keycloak-webauthn-passwordless-2FA",
+  "webAuthnPolicyPasswordlessCreateTimeout": 60,
+  "webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister": true,
   "smtpServer": {
     "from": "auto@keycloak.org",
     "host": "localhost",

@@ -44,6 +44,7 @@ import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntity;
 import org.keycloak.models.map.realm.MapRealmEntity;
 import org.keycloak.models.map.role.MapRoleEntity;
 import org.keycloak.models.map.storage.QueryParameters;
+import org.keycloak.models.map.user.MapUserConsentEntity;
 import org.keycloak.storage.SearchableModelField;
 
 import java.util.Comparator;
@@ -52,7 +53,6 @@ import java.util.Map;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder.UpdatePredicatesFunc;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.user.MapUserEntity;
-import org.keycloak.models.map.user.UserConsentEntity;
 import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity;
 import org.keycloak.models.map.userSession.MapUserSessionEntity;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -122,7 +122,6 @@ public class MapFieldPredicates {
         put(ROLE_PREDICATES, RoleModel.SearchableFields.DESCRIPTION,              MapRoleEntity::getDescription);
         put(ROLE_PREDICATES, RoleModel.SearchableFields.NAME,                     MapRoleEntity::getName);
         put(ROLE_PREDICATES, RoleModel.SearchableFields.IS_CLIENT_ROLE,           MapRoleEntity::isClientRole);
-        put(ROLE_PREDICATES, RoleModel.SearchableFields.IS_COMPOSITE_ROLE,        MapRoleEntity::isComposite);
 
         put(USER_PREDICATES, UserModel.SearchableFields.REALM_ID,                 MapUserEntity::getRealmId);
         put(USER_PREDICATES, UserModel.SearchableFields.USERNAME,                 MapUserEntity::getUsername);
@@ -279,7 +278,7 @@ public class MapFieldPredicates {
         String providerId = ensureEqSingleValue(UserModel.SearchableFields.CONSENT_CLIENT_FEDERATION_LINK, "provider_id", op, values);
         String providerIdS = new StorageId((String) providerId, "").getId();
         Function<MapUserEntity, ?> getter;
-        getter = ue -> ue.getUserConsents().map(UserConsentEntity::getClientId).anyMatch(v -> v != null && v.startsWith(providerIdS));
+        getter = ue -> Optional.ofNullable(ue.getUserConsents()).orElseGet(Collections::emptySet).stream().map(MapUserConsentEntity::getClientId).anyMatch(v -> v != null && v.startsWith(providerIdS));
 
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
     }
@@ -330,7 +329,7 @@ public class MapFieldPredicates {
     private static MapModelCriteriaBuilder<Object, MapUserEntity, UserModel> checkGrantedUserRole(MapModelCriteriaBuilder<Object, MapUserEntity, UserModel> mcb, Operator op, Object[] values) {
         String roleIdS = ensureEqSingleValue(UserModel.SearchableFields.ASSIGNED_ROLE, "role_id", op, values);
         Function<MapUserEntity, ?> getter;
-        getter = ue -> ue.getRolesMembership().contains(roleIdS);
+        getter = ue -> Optional.ofNullable(ue.getRolesMembership()).orElseGet(Collections::emptySet).contains(roleIdS);
 
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
     }
@@ -342,10 +341,10 @@ public class MapFieldPredicates {
             getter = re -> re.getUris() != null && !re.getUris().isEmpty();
         } else if (op == Operator.IN && values != null && values.length == 1 && (values[0] instanceof Collection)) {
             Collection<?> c = (Collection<?>) values[0];
-            getter = re -> re.getUris().stream().anyMatch(c::contains);
+            getter = re -> Optional.ofNullable(re.getUris()).orElseGet(Collections::emptySet).stream().anyMatch(c::contains);
         } else {
             String uri = ensureEqSingleValue(Resource.SearchableFields.URI, "uri", op, values);
-            getter = re -> re.getUris().contains(uri);
+            getter = re -> Optional.ofNullable(re.getUris()).orElseGet(Collections::emptySet).contains(uri);
         }
 
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
@@ -356,10 +355,10 @@ public class MapFieldPredicates {
 
         if (op == Operator.IN && values != null && values.length == 1 && (values[0] instanceof Collection)) {
             Collection<?> c = (Collection<?>) values[0];
-            getter = re -> re.getScopeIds().stream().map(Object::toString).anyMatch(c::contains);
+            getter = re -> Optional.ofNullable(re.getScopeIds()).orElseGet(Collections::emptySet).stream().map(Object::toString).anyMatch(c::contains);
         } else {
             String scope = ensureEqSingleValue(Resource.SearchableFields.URI, "scope_id", op, values);
-            getter = re -> re.getScopeIds().stream().map(Object::toString).anyMatch(scope::equals);
+            getter = re -> Optional.ofNullable(re.getScopeIds()).orElseGet(Collections::emptySet).stream().map(Object::toString).anyMatch(scope::equals);
         }
 
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
@@ -369,13 +368,13 @@ public class MapFieldPredicates {
         Function<MapPolicyEntity, ?> getter;
 
         if (op == Operator.NOT_EXISTS) {
-            getter = re -> re.getResourceIds().isEmpty();
+            getter = re -> re.getResourceIds() == null || re.getResourceIds().isEmpty();
         } else if (op == Operator.IN && values != null && values.length == 1 && (values[0] instanceof Collection)) {
             Collection<?> c = (Collection<?>) values[0];
-            getter = re -> re.getResourceIds().stream().map(Object::toString).anyMatch(c::contains);
+            getter = re -> Optional.ofNullable(re.getResourceIds()).orElseGet(Collections::emptySet).stream().map(Object::toString).anyMatch(c::contains);
         } else {
             String scope = ensureEqSingleValue(Policy.SearchableFields.RESOURCE_ID, "resource_id", op, values, String.class);
-            getter = re -> re.getResourceIds().stream().map(Object::toString).anyMatch(scope::equals);
+            getter = re -> Optional.ofNullable(re.getResourceIds()).orElseGet(Collections::emptySet).stream().map(Object::toString).anyMatch(scope::equals);
         }
 
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
@@ -386,10 +385,10 @@ public class MapFieldPredicates {
 
         if (op == Operator.IN && values != null && values.length == 1 && (values[0] instanceof Collection)) {
             Collection<?> c = (Collection<?>) values[0];
-            getter = re -> re.getScopeIds().stream().map(Object::toString).anyMatch(c::contains); // TODO: Use KeyConverter
+            getter = re -> Optional.ofNullable(re.getScopeIds()).orElseGet(Collections::emptySet).stream().map(Object::toString).anyMatch(c::contains); // TODO: Use KeyConverter
         } else {
             String scope = ensureEqSingleValue(Policy.SearchableFields.CONFIG, "scope_id", op, values);
-            getter = re -> re.getScopeIds().stream().map(Object::toString).anyMatch(scope::equals);
+            getter = re -> Optional.ofNullable(re.getScopeIds()).orElseGet(Collections::emptySet).stream().map(Object::toString).anyMatch(scope::equals);
         }
 
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
@@ -408,7 +407,7 @@ public class MapFieldPredicates {
         System.arraycopy(values, 1, realValues, 0, values.length - 1);
         Predicate<Object> valueComparator = CriteriaOperator.predicateFor(op, realValues);
         getter = pe -> {
-            final String configValue = pe.getConfigValue(attrNameS);
+            final String configValue = pe.getConfig(attrNameS);
             return valueComparator.test(configValue);
         };
 
@@ -420,10 +419,10 @@ public class MapFieldPredicates {
 
         if (op == Operator.IN && values != null && values.length == 1 && (values[0] instanceof Collection)) {
             Collection<?> c = (Collection<?>) values[0];
-            getter = re -> re.getAssociatedPoliciesIds().stream().map(Object::toString).anyMatch(c::contains);
+            getter = re -> Optional.ofNullable(re.getAssociatedPolicyIds()).orElseGet(Collections::emptySet).stream().map(Object::toString).anyMatch(c::contains);
         } else {
             String policyId = ensureEqSingleValue(Policy.SearchableFields.ASSOCIATED_POLICY_ID, "associated_policy_id", op, values);
-            getter = re -> re.getAssociatedPoliciesIds().stream().map(Object::toString).anyMatch(policyId::equals);
+            getter = re -> Optional.ofNullable(re.getAssociatedPolicyIds()).orElseGet(Collections::emptySet).stream().map(Object::toString).anyMatch(policyId::equals);
         }
 
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
@@ -433,10 +432,10 @@ public class MapFieldPredicates {
         Function<MapUserEntity, ?> getter;
         if (op == Operator.IN && values != null && values.length == 1 && (values[0] instanceof Collection)) {
             Collection<?> c = (Collection<?>) values[0];
-            getter = ue -> ue.getGroupsMembership().stream().anyMatch(c::contains);
+            getter = ue -> Optional.ofNullable(ue.getGroupsMembership()).orElseGet(Collections::emptySet).stream().anyMatch(c::contains);
         } else {
             String groupIdS = ensureEqSingleValue(UserModel.SearchableFields.ASSIGNED_GROUP, "group_id", op, values);
-            getter = ue -> ue.getGroupsMembership().contains(groupIdS);
+            getter = ue -> Optional.ofNullable(ue.getGroupsMembership()).orElseGet(Collections::emptySet).contains(groupIdS);
         }
 
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
@@ -445,7 +444,7 @@ public class MapFieldPredicates {
     private static MapModelCriteriaBuilder<Object, MapUserEntity, UserModel> checkUserClientConsent(MapModelCriteriaBuilder<Object, MapUserEntity, UserModel> mcb, Operator op, Object[] values) {
         String clientIdS = ensureEqSingleValue(UserModel.SearchableFields.CONSENT_FOR_CLIENT, "client_id", op, values);
         Function<MapUserEntity, ?> getter;
-        getter = ue -> ue.getUserConsent(clientIdS);
+        getter = ue -> ue.getUserConsent(clientIdS).orElse(null);
 
         return mcb.fieldCompare(Operator.EXISTS, getter, null);
     }
@@ -453,7 +452,7 @@ public class MapFieldPredicates {
     private static MapModelCriteriaBuilder<Object, MapUserEntity, UserModel> checkUserConsentsWithClientScope(MapModelCriteriaBuilder<Object, MapUserEntity, UserModel> mcb, Operator op, Object[] values) {
         String clientScopeIdS = ensureEqSingleValue(UserModel.SearchableFields.CONSENT_FOR_CLIENT, "client_scope_id", op, values);
         Function<MapUserEntity, ?> getter;
-        getter = ue -> ue.getUserConsents().anyMatch(consent -> consent.getGrantedClientScopesIds().contains(clientScopeIdS));
+        getter = ue -> Optional.ofNullable(ue.getUserConsents()).orElseGet(Collections::emptySet).stream().anyMatch(consent -> Optional.ofNullable(consent.getGrantedClientScopesIds()).orElseGet(Collections::emptySet).contains(clientScopeIdS));
 
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
     }
@@ -469,15 +468,15 @@ public class MapFieldPredicates {
         final Object idpAlias = values[0];
         Function<MapUserEntity, ?> getter;
         if (values.length == 1) {
-            getter = ue -> ue.getFederatedIdentities()
+            getter = ue -> Optional.ofNullable(ue.getFederatedIdentities()).orElseGet(Collections::emptySet).stream()
               .anyMatch(aue -> Objects.equals(idpAlias, aue.getIdentityProvider()));
         } else if (idpAlias == null) {
             final Object idpUserId = values[1];
-            getter = ue -> ue.getFederatedIdentities()
+            getter = ue -> Optional.ofNullable(ue.getFederatedIdentities()).orElseGet(Collections::emptySet).stream()
               .anyMatch(aue -> Objects.equals(idpUserId, aue.getUserId()));
         } else {
             final Object idpUserId = values[1];
-            getter = ue -> ue.getFederatedIdentities()
+            getter = ue -> Optional.ofNullable(ue.getFederatedIdentities()).orElseGet(Collections::emptySet).stream()
               .anyMatch(aue -> Objects.equals(idpAlias, aue.getIdentityProvider()) && Objects.equals(idpUserId, aue.getUserId()));
         }
 

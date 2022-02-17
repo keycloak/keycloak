@@ -24,10 +24,14 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -86,4 +90,20 @@ public class Util {
         return true;
     }
 
+    protected static Optional<ExecutableElement> findParentMethodImplementation(List<? extends Element> allParentMembers, ExecutableElement method) {
+        return allParentMembers.stream()
+          .filter(ExecutableElement.class::isInstance)
+          .map(ExecutableElement.class::cast)
+          .filter(ee -> Objects.equals(ee.toString(), method.toString()))
+          .filter((ExecutableElement ee) ->  ! ee.getModifiers().contains(Modifier.ABSTRACT))
+          .findAny();
+    }
+
+    public static String singularToPlural(String word) {
+        return word.endsWith("y") ? word.substring(0, word.length() -1) + "ies" : word + "s";
+    }
+
+    public static String pluralToSingular(String word) {
+        return word.endsWith("ies") ? word.substring(0, word.length() - 3) + "y" : word.endsWith("s") ? word.substring(0, word.length() - 1) : word;
+    }
 }

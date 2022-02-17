@@ -73,6 +73,7 @@ import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentatio
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AuthorizationResponseToken;
+import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
@@ -92,6 +93,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
@@ -173,6 +175,8 @@ public class OAuthClient {
     private String request;
 
     private String requestUri;
+
+    private String claims;
 
     private Map<String, String> requestHeaders;
 
@@ -256,6 +260,7 @@ public class OAuthClient {
         nonce = null;
         request = null;
         requestUri = null;
+        claims = null;
         // https://tools.ietf.org/html/rfc7636#section-4
         codeVerifier = null;
         codeChallenge = null;
@@ -755,6 +760,9 @@ public class OAuthClient {
             if (request != null) {
                 parameters.add(new BasicNameValuePair(OIDCLoginProtocol.REQUEST_PARAM, request));
             }
+            if (claims != null) {
+                parameters.add(new BasicNameValuePair(OIDCLoginProtocol.CLAIMS_PARAM, claims));
+            }
             if (additionalParams != null) {
                 for (Map.Entry<String, String> entry : additionalParams.entrySet()) {
                     parameters.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
@@ -996,6 +1004,12 @@ public class OAuthClient {
             if (nonce != null) {
                 parameters.add(new BasicNameValuePair(OIDCLoginProtocol.NONCE_PARAM, scope));
             }
+            if (codeChallenge != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_CHALLENGE, codeChallenge));
+            }
+            if (codeChallengeMethod != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod));
+            }
 
             UrlEncodedFormEntity formEntity;
             try {
@@ -1025,6 +1039,10 @@ public class OAuthClient {
 
             if (origin != null) {
                 post.addHeader("Origin", origin);
+            }
+            // https://tools.ietf.org/html/rfc7636#section-4.5
+            if (codeVerifier != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, codeVerifier));
             }
 
             UrlEncodedFormEntity formEntity;
@@ -1120,6 +1138,9 @@ public class OAuthClient {
             }
             if (requestUri != null) {
                 parameters.add(new BasicNameValuePair(OIDCLoginProtocol.REQUEST_URI_PARAM, requestUri));
+            }
+            if (claims != null) {
+                parameters.add(new BasicNameValuePair(OIDCLoginProtocol.CLAIMS_PARAM, claims));
             }
             if (codeChallenge != null) {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_CHALLENGE, codeChallenge));
@@ -1403,6 +1424,9 @@ public class OAuthClient {
         if (requestUri != null) {
             b.queryParam(OIDCLoginProtocol.REQUEST_URI_PARAM, requestUri);
         }
+        if (claims != null) {
+            b.queryParam(OIDCLoginProtocol.CLAIMS_PARAM, claims);
+        }
         // https://tools.ietf.org/html/rfc7636#section-4.3
         if (codeChallenge != null) {
             b.queryParam(OAuth2Constants.CODE_CHALLENGE, codeChallenge);
@@ -1620,6 +1644,19 @@ public class OAuthClient {
 
     public OAuthClient requestUri(String requestUri) {
         this.requestUri = requestUri;
+        return this;
+    }
+
+    public OAuthClient claims(ClaimsRepresentation claims) {
+        if (claims == null) {
+            this.claims = null;
+        } else {
+            try {
+                this.claims = URLEncoder.encode(JsonSerialization.writeValueAsString(claims), "UTF-8");
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
+        }
         return this;
     }
 

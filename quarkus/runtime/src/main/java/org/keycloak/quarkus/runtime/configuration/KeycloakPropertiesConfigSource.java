@@ -33,6 +33,8 @@ import java.util.regex.Pattern;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import io.smallrye.config.AbstractLocationConfigSourceLoader;
 import io.smallrye.config.PropertiesConfigSource;
@@ -45,30 +47,30 @@ import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvi
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS;
 
 /**
- * A configuration source for {@code keycloak.properties}.
+ * A configuration source for {@code keycloak.conf}.
  */
 public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSourceLoader {
 
     private static final Pattern DOT_SPLIT = Pattern.compile("\\.");
     private static final String KEYCLOAK_CONFIG_FILE_ENV = "KC_CONFIG_FILE";
-    private static final String KEYCLOAK_PROPERTIES = "keycloak.properties";
+    private static final String KEYCLOAK_CONF_FILE = "keycloak.conf";
     public static final String KEYCLOAK_CONFIG_FILE_PROP = NS_KEYCLOAK_PREFIX + "config.file";
 
     @Override
     protected String[] getFileExtensions() {
-        return new String[] { "properties" };
+        return new String[] { "conf" };
     }
 
     @Override
     protected ConfigSource loadConfigSource(URL url, int ordinal) throws IOException {
-        return new PropertiesConfigSource(transform(ConfigSourceUtil.urlToMap(url)), KEYCLOAK_PROPERTIES, ordinal);
+        return new PropertiesConfigSource(transform(ConfigSourceUtil.urlToMap(url)), url.toString(), ordinal);
     }
 
     public static class InClassPath extends KeycloakPropertiesConfigSource implements ConfigSourceProvider {
 
         @Override
         public List<ConfigSource> getConfigSources(final ClassLoader classLoader) {
-            return loadConfigSources("META-INF/keycloak.properties", 240, classLoader);
+            return loadConfigSources("META-INF/" + KEYCLOAK_CONF_FILE, 150, classLoader);
         }
 
         @Override
@@ -104,7 +106,7 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
                 return Collections.emptyList();
             }
 
-            return loadConfigSources(configFile.toUri().toString(), 250, classLoader);
+            return loadConfigSources(configFile.toUri().toString(), 450, classLoader);
         }
 
         @Override
@@ -122,7 +124,7 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
                 String homeDir = Environment.getHomeDir();
 
                 if (homeDir != null) {
-                    File file = Paths.get(homeDir, "conf", KeycloakPropertiesConfigSource.KEYCLOAK_PROPERTIES).toFile();
+                    File file = Paths.get(homeDir, "conf", KeycloakPropertiesConfigSource.KEYCLOAK_CONF_FILE).toFile();
 
                     if (file.exists()) {
                         filePath = file.getAbsolutePath();
@@ -142,11 +144,22 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
         Map<String, String> result = new HashMap<>(properties.size());
         properties.keySet().forEach(k -> {
             String key = transformKey(k);
-            String value = replaceProperties(properties.get(k));
+            PropertyMapper mapper = PropertyMappers.getMapper(key);
 
-            result.put(key, value);
-            result.put(getMappedPropertyName(key), value);
+            //TODO: remove explicit checks for spi and feature options once we have proper support in our config mappers
+            if (mapper != null
+                    || key.contains(NS_KEYCLOAK_PREFIX + "spi")
+                    || key.contains(NS_KEYCLOAK_PREFIX + "feature")) {
+                String value = replaceProperties(properties.get(k));
+
+                result.put(key, value);
+
+                if (mapper != null && key.charAt(0) != '%') {
+                    result.put(getMappedPropertyName(key), value);
+                }
+            }
         });
+
         return result;
     }
 

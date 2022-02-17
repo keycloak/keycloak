@@ -753,7 +753,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         setTimeOffset(2);
 
         // Continue with login
-        oauth.fillLoginForm("test-user@localhost", "password");
+        WaitUtils.waitForPageToLoad();
+        loginPage.login("password");
 
         assertFalse(loginPage.isCurrent());
 
@@ -786,7 +787,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         setTimeOffset(2);
 
         // Continue with login
-        oauth.fillLoginForm("test-user@localhost", "password");
+        WaitUtils.waitForPageToLoad();
+        loginPage.login("password");
 
         assertFalse(loginPage.isCurrent());
 
@@ -822,7 +824,8 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             setTimeOffset(2);
 
             // Continue with login
-            oauth.fillLoginForm("test-user@localhost", "password");
+            WaitUtils.waitForPageToLoad();
+            loginPage.login("password");
 
             assertFalse(loginPage.isCurrent());
 
@@ -1500,6 +1503,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         driver.navigate().to(loginFormUri);
 
         loginPage.assertCurrent();
+        Assert.assertEquals("test-user@localhost", loginPage.getAttemptedUsername());
 
         return refreshToken;
     }

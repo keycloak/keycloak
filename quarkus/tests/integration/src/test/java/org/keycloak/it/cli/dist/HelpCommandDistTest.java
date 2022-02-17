@@ -19,7 +19,9 @@ package org.keycloak.it.cli.dist;
 
 import org.keycloak.it.cli.HelpCommandTest;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.RawDistOnly;
 
 @DistributionTest
+@RawDistOnly(reason = "Verifying the help message output doesn't need long spin-up of docker dist tests.")
 public class HelpCommandDistTest extends HelpCommandTest {
 }

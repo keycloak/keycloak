@@ -20,6 +20,7 @@ package org.keycloak.protocol.oidc.endpoints;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
@@ -96,12 +97,16 @@ public class LogoutEndpoint {
     private RealmModel realm;
     private EventBuilder event;
 
+    // When enabled we cannot search offline sessions by brokerSessionId. We need to search by federated userId and then filter by brokerSessionId.
+    private boolean offlineSessionsLazyLoadingEnabled;
+
     private Cors cors;
 
     public LogoutEndpoint(TokenManager tokenManager, RealmModel realm, EventBuilder event) {
         this.tokenManager = tokenManager;
         this.realm = realm;
         this.event = event;
+        this.offlineSessionsLazyLoadingEnabled = !Config.scope("userSessions").scope("infinispan").getBoolean("preloadOfflineSessionsFromDatabase", false);
     }
 
     @Path("/")
@@ -318,7 +323,7 @@ public class LogoutEndpoint {
 
         if (logoutToken.getSid() != null) {
             backchannelLogoutResponse = backchannelLogoutWithSessionId(logoutToken.getSid(), identityProviderAliases,
-                    logoutOfflineSessions);
+                    logoutOfflineSessions, logoutToken.getSubject());
         } else {
             backchannelLogoutResponse = backchannelLogoutFederatedUserId(logoutToken.getSubject(),
                     identityProviderAliases, logoutOfflineSessions);
@@ -349,7 +354,7 @@ public class LogoutEndpoint {
     }
 
     private BackchannelLogoutResponse backchannelLogoutWithSessionId(String sessionId,
-            Stream<String> identityProviderAliases, boolean logoutOfflineSessions) {
+            Stream<String> identityProviderAliases, boolean logoutOfflineSessions, String federatedUserId) {
         AtomicReference<BackchannelLogoutResponse> backchannelLogoutResponse = new AtomicReference<>(new BackchannelLogoutResponse());
         backchannelLogoutResponse.get().setLocalLogoutSucceeded(true);
         identityProviderAliases.forEach(identityProviderAlias -> {
@@ -357,7 +362,11 @@ public class LogoutEndpoint {
                     identityProviderAlias + "." + sessionId);
 
             if (logoutOfflineSessions) {
-                logoutOfflineUserSession(identityProviderAlias + "." + sessionId);
+                if (offlineSessionsLazyLoadingEnabled) {
+                    logoutOfflineUserSessionByBrokerUserId(identityProviderAlias + "." + federatedUserId, identityProviderAlias + "." + sessionId);
+                } else {
+                    logoutOfflineUserSession(identityProviderAlias + "." + sessionId);
+                }
             }
 
             if (userSession != null) {
@@ -405,6 +414,15 @@ public class LogoutEndpoint {
         UserSessionManager userSessionManager = new UserSessionManager(session);
         session.sessions().getOfflineUserSessionByBrokerUserIdStream(realm, brokerUserId).collect(Collectors.toList())
                 .forEach(userSessionManager::revokeOfflineUserSession);
+    }
+
+    private void logoutOfflineUserSessionByBrokerUserId(String brokerUserId, String brokerSessionId) {
+        UserSessionManager userSessionManager = new UserSessionManager(session);
+        if (brokerUserId != null && brokerSessionId != null) {
+            session.sessions().getOfflineUserSessionByBrokerUserIdStream(realm, brokerUserId)
+                    .filter(userSession -> brokerSessionId.equals(userSession.getBrokerSessionId()))
+                    .forEach(userSessionManager::revokeOfflineUserSession);
+        }
     }
 
     private BackchannelLogoutResponse logoutUserSession(UserSessionModel userSession) {

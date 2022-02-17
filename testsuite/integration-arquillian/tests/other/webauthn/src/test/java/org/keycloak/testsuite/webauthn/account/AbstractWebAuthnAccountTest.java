@@ -20,27 +20,35 @@ package org.keycloak.testsuite.webauthn.account;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Before;
+import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAuthenticatorFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.Profile;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
 import org.keycloak.testsuite.ui.account2.page.SigningInPage;
 import org.keycloak.testsuite.ui.account2.page.utils.SigningInPageUtils;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
+import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
 import org.keycloak.testsuite.webauthn.authenticators.UseVirtualAuthenticators;
 import org.keycloak.testsuite.webauthn.authenticators.VirtualAuthenticatorManager;
+import org.keycloak.testsuite.webauthn.pages.WebAuthnLoginPage;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnRegisterPage;
 import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
 
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
@@ -53,11 +61,15 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
     @Page
     protected WebAuthnRegisterPage webAuthnRegisterPage;
 
+    @Page
+    protected WebAuthnLoginPage webAuthnLoginPage;
+
     private VirtualAuthenticatorManager webAuthnManager;
     protected SigningInPage.CredentialType webAuthnCredentialType;
     protected SigningInPage.CredentialType webAuthnPwdlessCredentialType;
 
     protected static final String WEBAUTHN_FLOW_ID = "75e2390e-f296-49e6-acf8-6d21071d7e10";
+    protected static final String DEFAULT_FLOW = "browser";
 
     @Override
     @Before
@@ -74,6 +86,11 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
     @Before
     public void navigateBeforeTest() {
         driver.manage().window().maximize();
+
+        RealmRepresentation realm = testRealmResource().toRepresentation();
+        assertThat(realm, notNullValue());
+        realm.setBrowserFlow(DEFAULT_FLOW);
+        testRealmResource().update(realm);
 
         webAuthnCredentialType = signingInPage.getCredentialType(WebAuthnCredentialModel.TYPE_TWOFACTOR);
         webAuthnPwdlessCredentialType = signingInPage.getCredentialType(WebAuthnCredentialModel.TYPE_PASSWORDLESS);
@@ -164,5 +181,36 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
 
     protected SigningInPage.UserCredential getNewestUserCredential(SigningInPage.CredentialType credentialType) {
         return SigningInPageUtils.getNewestUserCredential(testUserResource(), credentialType);
+    }
+
+    protected void setUpWebAuthnFlow(String newFlowAlias) {
+        setUpWebAuthnFlow(newFlowAlias, false);
+    }
+
+    protected void setUpWebAuthnFlow(String newFlowAlias, boolean passwordless) {
+        final String providerID = passwordless ? WebAuthnPasswordlessAuthenticatorFactory.PROVIDER_ID : WebAuthnAuthenticatorFactory.PROVIDER_ID;
+
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
+                .selectFlow(newFlowAlias)
+                .inForms(forms -> forms
+                        .clear()
+                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, UsernamePasswordFormFactory.PROVIDER_ID)
+                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, providerID)
+                )
+                .defineAsBrowserFlow() // Activate this new flow
+        );
+    }
+
+    protected RealmAttributeUpdater setLocalesUpdater(String defaultLocale, String... supportedLocales) {
+        RealmAttributeUpdater updater = new RealmAttributeUpdater(testRealmResource())
+                .setDefaultLocale(defaultLocale)
+                .setInternationalizationEnabled(true)
+                .addSupportedLocale(defaultLocale);
+
+        for (String locale : supportedLocales) {
+            updater.addSupportedLocale(locale);
+        }
+        return updater;
     }
 }

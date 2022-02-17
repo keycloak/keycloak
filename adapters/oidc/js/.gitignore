@@ -1,0 +1,4 @@
+node
+node_modules
+dist/*
+!dist/*.d.ts

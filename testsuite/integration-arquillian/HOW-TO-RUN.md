@@ -472,18 +472,18 @@ mvn -f testsuite/integration-arquillian/tests/other/console/pom.xml \
 
 ## Spring Boot adapter tests
 
-Currently we are testing Spring Boot with three different containers `Tomcat 8`, `Undertow` and `Jetty [9.2, 9.3, 9.4]`. We are testing two versions of Spring Boot 1.5.x and 2.1.x. All versions are specified in [root pom.xml](../../pom.xml) (see properties `spring-boot15.version` and `spring-boot21.version`).
-
-To run tests execute following command. Default version of Spring Boot is 1.5.x, to run tests with version 2.1.x add profile `-Pspringboot21`
+Currently, we are testing Spring Boot with three different containers `Tomcat 8`, `Undertow` and `Jetty 9.4`. 
+We are testing various versions of Spring Boot 2.x. All versions are specified in [root pom.xml](../../pom.xml) (i.e. see properties `spring-boot24.version` and `spring-boot26.version`).
+To run tests execute following command. Default version of Spring Boot is 2.4.x, to run tests with version 2.6.x add profile `-Pspringboot26`.
 
 ```
 mvn -f testsuite/integration-arquillian/tests/other/springboot-tests/pom.xml \
     clean test \
-    -Dadapter.container=[tomcat|undertow|jetty92|jetty93|jetty94] \
-    [-Pspringboot21]
+    -Dadapter.container=[tomcat|undertow|jetty94] \
+    [-Pspringboot26]
 ```
 
-Note: Spring Boot 21 doesn't work with jetty92 and jetty93, only jetty94 is tested.
+ **Note:** Spring Boot 2.x doesn't work with `jetty92` and `jetty93`, only `jetty94` is tested.
 
 ## Base UI tests
 Similarly to Admin Console tests, these tests are focused on UI, specifically on the parts of the server that are accessed by an end user (like Login page, or Account Console).
@@ -512,6 +512,8 @@ The support for the Virtual Authenticators came from Selenium 4.
 mvn -f testsuite/integration-arquillian/tests/other/pom.xml clean test \
     -Dbrowser=chrome -Pwebauthn
 ```
+
+**Note:** You can also execute those tests with `chromeHeadless` browser in order to not open a new window.
 
 #### Troubleshooting
 
@@ -711,7 +713,7 @@ Alternatively, you can perform both steps using the following command:
 
 Right now, tests are using a H2 database.
 
-To run tests using a different database such as PostgreSQL, add the following properties into the `testsuite/integration-arquillian/servers/auth-server/quarkus/src/main/content/conf/keycloak.properties` configuration file:
+To run tests using a different database such as PostgreSQL, add the following properties into the `testsuite/integration-arquillian/servers/auth-server/quarkus/src/main/content/conf/keycloak.conf` configuration file:
 
 ```
 # HA using PostgreSQL

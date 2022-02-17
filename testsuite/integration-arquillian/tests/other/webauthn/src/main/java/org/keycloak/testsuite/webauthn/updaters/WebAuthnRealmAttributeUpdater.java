@@ -21,6 +21,9 @@ import org.keycloak.admin.client.resource.RealmResource;
 
 import java.util.List;
 
+/**
+ * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
+ */
 public class WebAuthnRealmAttributeUpdater extends AbstractWebAuthnRealmUpdater<WebAuthnRealmAttributeUpdater> {
     public WebAuthnRealmAttributeUpdater(RealmResource resource) {
         super(resource);

@@ -21,7 +21,7 @@
 	<parent>
 		<artifactId>keycloak-dependencies-parent</artifactId>
 		<groupId>org.keycloak</groupId>
-		<version>16.0.0-SNAPSHOT</version>
+		<version>18.0.0-SNAPSHOT</version>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
 
@@ -43,6 +43,10 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-map</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-map-jpa</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>

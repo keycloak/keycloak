@@ -22,7 +22,7 @@ import org.keycloak.quarkus.runtime.Environment;
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
 
-public abstract class AbstractExportImportCommand extends AbstractCommand implements Runnable {
+public abstract class AbstractExportImportCommand extends AbstractStartCommand implements Runnable {
 
     private final String action;
 
@@ -50,7 +50,6 @@ public abstract class AbstractExportImportCommand extends AbstractCommand implem
 
     @Override
     public void run() {
-        doBeforeRun();
         System.setProperty("keycloak.migration.action", action);
 
         if (toDir != null) {
@@ -69,10 +68,6 @@ public abstract class AbstractExportImportCommand extends AbstractCommand implem
 
         Environment.setProfile(Environment.IMPORT_EXPORT_MODE);
 
-        new CommandLine(new Main()).execute("start");
-    }
-
-    protected void doBeforeRun() {
-
+        super.run();
     }
 }

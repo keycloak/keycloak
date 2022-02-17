@@ -17,11 +17,13 @@
 
 package org.keycloak.testsuite.webauthn.pages;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.pages.LanguageComboboxAwarePage;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
+import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
@@ -31,6 +33,12 @@ public class WebAuthnLoginPage extends LanguageComboboxAwarePage {
 
     @FindBy(id = "authenticateWebAuthnButton")
     private WebElement authenticateButton;
+
+    @FindBy(id = "kc-webauthn-authenticator-label")
+    private List<WebElement> authenticatorsLabels;
+
+    @Page
+    private WebAuthnAuthenticatorsList authenticators;
 
     public void clickAuthenticate() {
         WaitUtils.waitUntilElement(authenticateButton).is().clickable();
@@ -44,6 +52,10 @@ public class WebAuthnLoginPage extends LanguageComboboxAwarePage {
         } catch (NoSuchElementException e) {
             return false;
         }
+    }
+
+    public WebAuthnAuthenticatorsList getAuthenticators() {
+        return authenticators;
     }
 
     @Override

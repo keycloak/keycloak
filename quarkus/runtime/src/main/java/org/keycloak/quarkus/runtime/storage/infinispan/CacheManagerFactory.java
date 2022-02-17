@@ -23,18 +23,21 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
+import org.infinispan.configuration.parsing.ParserRegistry;
+import org.infinispan.jboss.marshalling.core.JBossUserMarshaller;
 import org.infinispan.manager.DefaultCacheManager;
 import org.jboss.logging.Logger;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 public class CacheManagerFactory {
 
-    private ConfigurationBuilderHolder config;
+    private String config;
     private DefaultCacheManager cacheManager;
     private Future<DefaultCacheManager> cacheManagerFuture;
     private ExecutorService executor;
     private boolean initialized;
 
-    public CacheManagerFactory(ConfigurationBuilderHolder config) {
+    public CacheManagerFactory(String config) {
         this.config = config;
         this.executor = createThreadPool();
         this.cacheManagerFuture = executor.submit(this::startCacheManager);
@@ -69,16 +72,27 @@ public class CacheManagerFactory {
     }
 
     private DefaultCacheManager startCacheManager() {
-        return new DefaultCacheManager(config, isStartEagerly());
+        ConfigurationBuilderHolder builder = new ParserRegistry().parse(config);
+
+        if (builder.getNamedConfigurationBuilders().get("sessions").clustering().cacheMode().isClustered()) {
+            configureTransportStack(builder);
+        }
+
+        // For Infinispan 10, we go with the JBoss marshalling.
+        // TODO: This should be replaced later with the marshalling recommended by infinispan. Probably protostream.
+        // See https://infinispan.org/docs/stable/titles/developing/developing.html#marshalling for the details
+        builder.getGlobalConfigurationBuilder().serialization().marshaller(new JBossUserMarshaller());
+
+        return new DefaultCacheManager(builder, isStartEagerly());
     }
 
     private boolean isStartEagerly() {
         // eagerly starts caches by default
-        return Boolean.parseBoolean(System.getProperty("kc.cache.ispn.start-eagerly", Boolean.TRUE.toString()));
+        return Boolean.parseBoolean(System.getProperty("kc.cache-ispn-start-eagerly", Boolean.TRUE.toString()));
     }
 
     private Integer getStartTimeout() {
-        return Integer.getInteger("kc.cache.ispn.start-timeout", 120);
+        return Integer.getInteger("kc.cache-ispn-start-timeout", 120);
     }
 
     private void shutdownThreadPool() {
@@ -99,6 +113,15 @@ public class CacheManagerFactory {
                 config = null;
                 initialized = true;
             }
+        }
+    }
+
+    private void configureTransportStack(ConfigurationBuilderHolder builder) {
+        String transportStack = Configuration.getRawValue("kc.cache-stack");
+
+        if (transportStack != null) {
+            builder.getGlobalConfigurationBuilder().transport().defaultTransport()
+                    .addProperty("configurationFile", "default-configs/default-jgroups-" + transportStack + ".xml");
         }
     }
 }

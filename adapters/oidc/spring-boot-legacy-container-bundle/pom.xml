@@ -4,12 +4,17 @@
     <parent>
       <artifactId>keycloak-parent</artifactId>
       <groupId>org.keycloak</groupId>
-      <version>16.0.0-SNAPSHOT</version>
+      <version>18.0.0-SNAPSHOT</version>
       <relativePath>../../../pom.xml</relativePath>
     </parent>
     <artifactId>spring-boot-legacy-container-bundle</artifactId>
     <packaging>jar</packaging>
     <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-adapter-core</artifactId>
+            <scope>compile</scope>
+        </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-tomcat-adapter</artifactId>
@@ -56,6 +61,14 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <includeDependencySources>true</includeDependencySources>
+                    <dependencySourceIncludes>org.keycloak:keycloak-adapter-core</dependencySourceIncludes>
+                </configuration>
             </plugin>
         </plugins>
     </build>

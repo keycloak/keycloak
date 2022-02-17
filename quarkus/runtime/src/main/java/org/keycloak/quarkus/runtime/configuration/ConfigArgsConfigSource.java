@@ -18,10 +18,11 @@
 package org.keycloak.quarkus.runtime.configuration;
 
 import static java.util.Arrays.asList;
-import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_SHORT_PREFIX;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_SHORT;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR_CHAR;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getMappedPropertyName;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
@@ -33,8 +34,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
-
-import org.jboss.logging.Logger;
 
 import io.smallrye.config.PropertiesConfigSource;
 
@@ -53,25 +52,20 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
  */
 public class ConfigArgsConfigSource extends PropertiesConfigSource {
 
-    private static final Logger log = Logger.getLogger(ConfigArgsConfigSource.class);
-
     public static final String CLI_ARGS = "kc.config.args";
+    public static final String NAME = "CliConfigSource";
     private static final String ARG_SEPARATOR = ";;";
     private static final Pattern ARG_SPLIT = Pattern.compile(";;");
     private static final Pattern ARG_KEY_VALUE_SPLIT = Pattern.compile("=");
     private static final ConfigArgsConfigSource INSTANCE = new ConfigArgsConfigSource();
     private static List<String> IGNORED_ARGS;
 
-    private final boolean alwaysParseArgs;
-
     public static ConfigArgsConfigSource getInstance() {
         return INSTANCE;
     }
 
-    ConfigArgsConfigSource() {
-        // higher priority over default Quarkus config sources
-        super(parseArgument(), "CliConfigSource", 500);
-        alwaysParseArgs = isTestLaunchMode();
+    protected ConfigArgsConfigSource() {
+        super(parseArgument(), NAME, 600);
     }
 
     public static void setCliArgs(String[] args) {
@@ -100,18 +94,13 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
     @Override
     public String getValue(String propertyName) {
         Map<String, String> properties = getProperties();
-
-        if (alwaysParseArgs) {
-            properties = parseArgument();
-        }
-
         String value = properties.get(propertyName);
 
         if (value != null) {
             return value;
         }
 
-        return properties.get(propertyName.replace('-', '.'));
+        return properties.get(propertyName.replace(OPTION_PART_SEPARATOR_CHAR, '.'));
     }
 
     private static Map<String, String> parseArgument() {
@@ -120,7 +109,6 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
         String rawArgs = getRawConfigArgs();
         
         if (rawArgs == null || "".equals(rawArgs.trim())) {
-            log.trace("No command-line arguments provided");
             return Collections.emptyMap();
         }
 
@@ -131,7 +119,6 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
             public void accept(String key, String value) {
                 key = NS_KEYCLOAK_PREFIX + key.substring(2);
 
-                log.tracef("Adding property [%s=%s] from command-line", key, value);
                 properties.put(key, value);
 
                 String mappedPropertyName = getMappedPropertyName(key);
@@ -143,9 +130,6 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
                 if (mapper != null) {
                     properties.put(mapper.getFrom(), value);
                 }
-
-                // to make lookup easier, we normalize the key
-                properties.put(Picocli.normalizeKey(key), value);
             }
         });
 
@@ -171,7 +155,6 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
         String rawArgs = getRawConfigArgs();
 
         if (rawArgs == null || "".equals(rawArgs.trim())) {
-            log.trace("No command-line arguments provided");
             return;
         }
 
@@ -188,7 +171,7 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
                 continue;
             }
 
-            String[] keyValue = ARG_KEY_VALUE_SPLIT.split(arg);
+            String[] keyValue = ARG_KEY_VALUE_SPLIT.split(arg, 2);
             String key = keyValue[0];
 
             if ("".equals(key.trim())) {

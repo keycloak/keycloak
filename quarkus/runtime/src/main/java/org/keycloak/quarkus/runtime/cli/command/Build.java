@@ -30,7 +30,6 @@ import io.quarkus.bootstrap.runner.RunnerClassLoader;
 
 import io.quarkus.runtime.configuration.ProfileManager;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Mixin;
 
 @Command(name = Build.NAME,
         header = "Creates a new and optimized server image.",
@@ -46,12 +45,10 @@ import picocli.CommandLine.Mixin;
             "Consider running this command before running the server in production for an optimal runtime."
         },
         footerHeading = "Examples:",
-        footer = "  Optimize the server based on a profile configuration:%n%n"
-                + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} --profile=prod ${COMMAND-NAME}%n%n"
-                + "  Change database settings:%n%n"
-                + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --db=postgres [--db-url][--db-username][--db-password]%n%n"
+        footer = "  Change the database vendor:%n%n"
+                + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --db=postgres%n%n"
                 + "  Enable a feature:%n%n"
-                + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --features-<feature_name>=[enabled|disabled]%n%n"
+                + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --features=<feature_name>%n%n"
                 + "  Or alternatively, enable all tech preview features:%n%n"
                 + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --features=preview%n%n"
                 + "  Enable metrics:%n%n"
@@ -65,9 +62,6 @@ import picocli.CommandLine.Mixin;
 public final class Build extends AbstractCommand implements Runnable {
 
     public static final String NAME = "build";
-
-    @Mixin
-    HelpAllMixin helpAllMixin;
 
     @Override
     public void run() {

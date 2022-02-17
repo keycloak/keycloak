@@ -48,34 +48,41 @@ public class Profile {
     }
 
     public enum Feature {
-        AUTHORIZATION(Type.DEFAULT),
-        ACCOUNT2(Type.DEFAULT),
-        ACCOUNT_API(Type.DEFAULT),
-        ADMIN_FINE_GRAINED_AUTHZ(Type.PREVIEW),
-        ADMIN2(Type.EXPERIMENTAL),
-        DOCKER(Type.DISABLED_BY_DEFAULT),
-        IMPERSONATION(Type.DEFAULT),
-        OPENSHIFT_INTEGRATION(Type.PREVIEW),
-        SCRIPTS(Type.PREVIEW),
-        TOKEN_EXCHANGE(Type.PREVIEW),
-        UPLOAD_SCRIPTS(DEPRECATED),
-        WEB_AUTHN(Type.DEFAULT, Type.PREVIEW),
-        CLIENT_POLICIES(Type.DEFAULT),
-        CIBA(Type.DEFAULT),
-        MAP_STORAGE(Type.EXPERIMENTAL),
-        PAR(Type.DEFAULT),
-        DECLARATIVE_USER_PROFILE(Type.PREVIEW);
+        AUTHORIZATION("Authorization Service", Type.DEFAULT),
+        ACCOUNT2("New Account Management Console", Type.DEFAULT),
+        ACCOUNT_API("Account Management REST API", Type.DEFAULT),
+        ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW),
+        ADMIN2("New Admin Console", Type.EXPERIMENTAL),
+        DOCKER("Docker Registry protocol", Type.DISABLED_BY_DEFAULT),
+        IMPERSONATION("Ability for admins to impersonate users", Type.DEFAULT),
+        OPENSHIFT_INTEGRATION("Extension to enable securing OpenShift", Type.PREVIEW),
+        SCRIPTS("Write custom authenticators using JavaScript", Type.PREVIEW),
+        TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW),
+        UPLOAD_SCRIPTS("Ability to upload custom JavaScript through Admin REST API", DEPRECATED),
+        WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT, Type.PREVIEW),
+        CLIENT_POLICIES("Client configuration policies", Type.DEFAULT),
+        CIBA("OpenID Connect Client Initiated Backchannel Authentication (CIBA)", Type.DEFAULT),
+        MAP_STORAGE("New store", Type.EXPERIMENTAL),
+        PAR("OAuth 2.0 Pushed Authorization Requests (PAR)", Type.DEFAULT),
+        DECLARATIVE_USER_PROFILE("Configure user profiles using a declarative style", Type.PREVIEW),
+        DYNAMIC_SCOPES("Dynamic OAuth 2.0 scopes", Type.EXPERIMENTAL);
 
+        private String label;
         private final Type typeProject;
         private final Type typeProduct;
 
-        Feature(Type type) {
-            this(type, type);
+        Feature(String label, Type type) {
+            this(label, type, type);
         }
 
-        Feature(Type typeProject, Type typeProduct) {
+        Feature(String label, Type typeProject, Type typeProduct) {
+            this.label = label;
             this.typeProject = typeProject;
             this.typeProduct = typeProduct;
+        }
+
+        public String getLabel() {
+            return label;
         }
 
         public Type getTypeProject() {

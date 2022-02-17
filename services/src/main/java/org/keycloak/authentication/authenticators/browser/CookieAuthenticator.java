@@ -19,11 +19,14 @@ package org.keycloak.authentication.authenticators.browser;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
+import org.keycloak.authentication.AuthenticatorUtil;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
@@ -44,16 +47,25 @@ public class CookieAuthenticator implements Authenticator {
         if (authResult == null) {
             context.attempted();
         } else {
-            AuthenticationSessionModel clientSession = context.getAuthenticationSession();
-            LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, clientSession.getProtocol());
+            AuthenticationSessionModel authSession = context.getAuthenticationSession();
+            LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, authSession.getProtocol());
+            authSession.setAuthNote(Constants.LEVEL_OF_AUTHENTICATION, authResult.getSession().getNote(Constants.LEVEL_OF_AUTHENTICATION));
+            context.setUser(authResult.getUser());
 
             // Cookie re-authentication is skipped if re-authentication is required
-            if (protocol.requireReauthentication(authResult.getSession(), clientSession)) {
+            if (protocol.requireReauthentication(authResult.getSession(), authSession)) {
+                // Full re-authentication, so we start with no loa
+                authSession.setAuthNote(Constants.LEVEL_OF_AUTHENTICATION, String.valueOf(Constants.NO_LOA));
+                context.setForwardedInfoMessage(Messages.REAUTHENTICATE);
+                context.attempted();
+            } else if (!AuthenticatorUtil.isLevelOfAuthenticationSatisfied(authSession)) {
+                // Step-up authentication, we keep the loa from the existing user session.
+                // The cookie alone is not enough and other authentications must follow.
                 context.attempted();
             } else {
-                context.getAuthenticationSession().setAuthNote(AuthenticationManager.SSO_AUTH, "true");
-
-                context.setUser(authResult.getUser());
+                // Cookie only authentication, no loa is returned
+                authSession.setAuthNote(Constants.LEVEL_OF_AUTHENTICATION, String.valueOf(Constants.NO_LOA));
+                authSession.setAuthNote(AuthenticationManager.SSO_AUTH, "true");
                 context.attachUserSession(authResult.getSession());
                 context.success();
             }

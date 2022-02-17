@@ -19,23 +19,46 @@ package org.keycloak.models.map.storage.hotRod.common;
 
 import org.infinispan.protostream.GeneratedSchema;
 import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
-import org.keycloak.models.map.storage.hotRod.client.HotRodAttributeEntity;
 import org.keycloak.models.map.storage.hotRod.client.HotRodClientEntity;
 import org.keycloak.models.map.storage.hotRod.client.HotRodProtocolMapperEntity;
+import org.keycloak.models.map.storage.hotRod.group.HotRodGroupEntity;
+import org.keycloak.models.map.storage.hotRod.role.HotRodRoleEntity;
+import org.keycloak.models.map.storage.hotRod.user.HotRodUserConsentEntity;
+import org.keycloak.models.map.storage.hotRod.user.HotRodUserCredentialEntity;
+import org.keycloak.models.map.storage.hotRod.user.HotRodUserEntity;
+import org.keycloak.models.map.storage.hotRod.user.HotRodUserFederatedIdentityEntity;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
 @AutoProtoSchemaBuilder(
         includeClasses = {
-                HotRodAttributeEntity.class,
+                // Clients
                 HotRodClientEntity.class,
                 HotRodProtocolMapperEntity.class,
-                HotRodPair.class
+
+                // Groups
+                HotRodGroupEntity.class,
+
+                // Roles
+                HotRodRoleEntity.class,
+
+                // Users
+                HotRodUserEntity.class,
+                HotRodUserConsentEntity.class,
+                HotRodUserCredentialEntity.class,
+                HotRodUserFederatedIdentityEntity.class,
+
+                // Common
+                HotRodPair.class,
+                HotRodAttributeEntity.class,
+                HotRodAttributeEntityNonIndexed.class
         },
         schemaFileName = "KeycloakHotRodMapStorage.proto",
         schemaFilePath = "proto/",
-        schemaPackageName = "org.keycloak.models.map.storage.hotrod")
+        schemaPackageName = ProtoSchemaInitializer.HOT_ROD_ENTITY_PACKAGE)
 public interface ProtoSchemaInitializer extends GeneratedSchema {
+        String HOT_ROD_ENTITY_PACKAGE = "kc";
+
         ProtoSchemaInitializer INSTANCE = new ProtoSchemaInitializerImpl();
 }

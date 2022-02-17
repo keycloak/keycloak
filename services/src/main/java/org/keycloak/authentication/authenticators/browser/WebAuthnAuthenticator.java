@@ -57,6 +57,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 
+import static org.keycloak.WebAuthnConstants.AUTH_ERR_DETAIL_LABEL;
+import static org.keycloak.WebAuthnConstants.AUTH_ERR_LABEL;
 import static org.keycloak.services.messages.Messages.*;
 
 /**
@@ -104,6 +106,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         // read options from policy
         String userVerificationRequirement = policy.getUserVerificationRequirement();
         form.setAttribute(WebAuthnConstants.USER_VERIFICATION, userVerificationRequirement);
+        form.setAttribute(WebAuthnConstants.SHOULD_DISPLAY_AUTHENTICATORS, shouldDisplayAuthenticators(context));
 
         context.challenge(form.createLoginWebAuthn());
     }
@@ -123,6 +126,9 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         return WebAuthnCredentialModel.TYPE_TWOFACTOR;
     }
 
+    protected boolean shouldDisplayAuthenticators(AuthenticationFlowContext context) {
+        return context.getUser() != null;
+    }
 
     public void action(AuthenticationFlowContext context) {
         MultivaluedMap<String, String> params = context.getHttpRequest().getDecodedFormParameters();
@@ -164,8 +170,8 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
                 String firstAuthenticatedUserId = context.getUser().getId();
                 if (firstAuthenticatedUserId != null && !firstAuthenticatedUserId.equals(userId)) {
                     context.getEvent()
-                            .detail("first_authenticated_user_id", firstAuthenticatedUserId)
-                            .detail("web_authn_authenticator_authenticated_user_id", userId);
+                            .detail(WebAuthnConstants.FIRST_AUTHENTICATED_USER_ID, firstAuthenticatedUserId)
+                            .detail(WebAuthnConstants.AUTHENTICATED_USER_ID, userId);
                     setErrorResponse(context, WEBAUTHN_ERROR_DIFFERENT_USER, null);
                     return;
                 }
@@ -214,13 +220,13 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
             logger.debugv("WebAuthn Authentication successed. isUserVerificationChecked = {0}, PublicKeyCredentialID = {1}", isUVChecked, encodedCredentialID);
             context.setUser(user);
             context.getEvent()
-                .detail("web_authn_authenticator_user_verification_checked", isUVChecked)
-                .detail("public_key_credential_id", encodedCredentialID);
+                .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, isUVChecked)
+                .detail(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, encodedCredentialID);
             context.success();
         } else {
             context.getEvent()
-                .detail("web_authn_authenticated_user_id", userId)
-                .detail("public_key_credential_id", encodedCredentialID);
+                .detail(WebAuthnConstants.AUTHENTICATED_USER_ID, userId)
+                .detail(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, encodedCredentialID);
             setErrorResponse(context, WEBAUTHN_ERROR_USER_NOT_FOUND, null);
             context.cancelLogin();
         }
@@ -255,16 +261,13 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         return (WebAuthnCredentialProvider)session.getProvider(CredentialProvider.class, WebAuthnCredentialProviderFactory.PROVIDER_ID);
     }
 
-    private static final String ERR_LABEL = "web_authn_authentication_error";
-    private static final String ERR_DETAIL_LABEL = "web_authn_authentication_error_detail";
-
     private void setErrorResponse(AuthenticationFlowContext context, final String errorCase, final String errorMessage) {
         Response errorResponse = null;
         switch (errorCase) {
         case WEBAUTHN_ERROR_REGISTRATION:
             logger.warn(errorCase);
             context.getEvent()
-                .detail(ERR_LABEL, errorCase)
+                .detail(AUTH_ERR_LABEL, errorCase)
                 .error(Errors.INVALID_USER_CREDENTIALS);
             errorResponse = createErrorResponse(context, errorCase);
             context.failure(AuthenticationFlowError.INVALID_CREDENTIALS, errorResponse);
@@ -272,8 +275,8 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         case WEBAUTHN_ERROR_API_GET:
             logger.warnv("error returned from navigator.credentials.get(). {0}", errorMessage);
             context.getEvent()
-                .detail(ERR_LABEL, errorCase)
-                .detail(ERR_DETAIL_LABEL, errorMessage)
+                .detail(AUTH_ERR_LABEL, errorCase)
+                .detail(AUTH_ERR_DETAIL_LABEL, errorMessage)
                 .error(Errors.NOT_ALLOWED);
             errorResponse = createErrorResponse(context, errorCase);
             context.failure(AuthenticationFlowError.INVALID_USER, errorResponse);
@@ -281,7 +284,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         case WEBAUTHN_ERROR_DIFFERENT_USER:
             logger.warn(errorCase);
             context.getEvent()
-                .detail(ERR_LABEL, errorCase)
+                .detail(AUTH_ERR_LABEL, errorCase)
                 .error(Errors.DIFFERENT_USER_AUTHENTICATED);
             errorResponse = createErrorResponse(context, errorCase);
             context.failure(AuthenticationFlowError.USER_CONFLICT, errorResponse);
@@ -289,8 +292,8 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         case WEBAUTHN_ERROR_AUTH_VERIFICATION:
             logger.warnv("WebAuthn API .get() response validation failure. {0}", errorMessage);
             context.getEvent()
-                .detail(ERR_LABEL, errorCase)
-                .detail(ERR_DETAIL_LABEL, errorMessage)
+                .detail(AUTH_ERR_LABEL, errorCase)
+                .detail(AUTH_ERR_DETAIL_LABEL, errorMessage)
                 .error(Errors.INVALID_USER_CREDENTIALS);
             errorResponse = createErrorResponse(context, errorCase);
             context.failure(AuthenticationFlowError.INVALID_USER, errorResponse);
@@ -298,7 +301,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         case WEBAUTHN_ERROR_USER_NOT_FOUND:
             logger.warn(errorCase);
             context.getEvent()
-                    .detail(ERR_LABEL, errorCase)
+                    .detail(AUTH_ERR_LABEL, errorCase)
                     .error(Errors.USER_NOT_FOUND);
             errorResponse = createErrorResponse(context, errorCase);
             context.failure(AuthenticationFlowError.UNKNOWN_USER, errorResponse);
@@ -309,7 +312,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
     }
 
     private Response createErrorResponse(AuthenticationFlowContext context, final String errorCase) {
-        LoginFormsProvider provider = context.form().setError(errorCase);
+        LoginFormsProvider provider = context.form().setError(errorCase, "");
         UserModel user = context.getUser();
         if (user != null) {
             WebAuthnAuthenticatorsBean authenticators = new WebAuthnAuthenticatorsBean(context.getSession(), context.getRealm(), user, getCredentialType());

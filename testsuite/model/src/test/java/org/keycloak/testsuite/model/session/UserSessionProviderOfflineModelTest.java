@@ -17,9 +17,11 @@
 
 package org.keycloak.testsuite.model.session;
 
+import org.infinispan.Cache;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -40,10 +42,17 @@ import org.keycloak.timer.TimerProvider;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
@@ -297,6 +306,73 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
         }
     }
 
+    @Test
+    public void testOfflineSessionLazyLoading() throws InterruptedException {
+        AtomicReference<List<UserSessionModel>> offlineUserSessions = new AtomicReference<>(new LinkedList<>());
+        AtomicReference<List<AuthenticatedClientSessionModel>> offlineClientSessions = new AtomicReference<>(new LinkedList<>());
+        createOfflineSessions("user1", 10, offlineUserSessions, offlineClientSessions);
+
+        closeKeycloakSessionFactory();
+
+        AtomicBoolean result = new AtomicBoolean(true);
+        CountDownLatch latch = new CountDownLatch(4);
+        inIndependentFactories(4, 300, () -> {
+            withRealm(realmId, (session, realm) -> {
+                final UserModel user = session.users().getUserByUsername(realm, "user1");
+                result.set(result.get() && assertOfflineSession(offlineUserSessions, session.sessions().getOfflineUserSessionsStream(realm, user).collect(Collectors.toList())));
+                return null;
+            });
+
+            latch.countDown();
+
+            awaitLatch(latch);
+        });
+
+        Assert.assertTrue(result.get());
+    }
+
+    @Test
+    public void testOfflineSessionLazyLoadingPropagationBetweenNodes() throws InterruptedException {
+        AtomicReference<List<UserSessionModel>> offlineUserSessions = new AtomicReference<>(new LinkedList<>());
+        AtomicReference<List<AuthenticatedClientSessionModel>> offlineClientSessions = new AtomicReference<>(new LinkedList<>());
+        AtomicBoolean result = new AtomicBoolean(true);
+        AtomicInteger index = new AtomicInteger();
+        CountDownLatch latch = new CountDownLatch(4);
+        CountDownLatch afterFirstNodeLatch = new CountDownLatch(1);
+
+        inIndependentFactories(4, 300, () -> {
+            if (index.incrementAndGet() == 1) {
+                createOfflineSessions("user1", 10, offlineUserSessions, offlineClientSessions);
+
+                afterFirstNodeLatch.countDown();
+            }
+            awaitLatch(afterFirstNodeLatch);
+
+            log.debug("Joining the cluster");
+            inComittedTransaction(session -> {
+                InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
+                Cache<String, Object> cache = provider.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
+                do {
+                    try { Thread.sleep(1000); } catch (InterruptedException ex) { Thread.currentThread().interrupt(); throw new RuntimeException(ex); }
+                } while (! cache.getAdvancedCache().getDistributionManager().isJoinComplete());
+                cache.keySet().forEach(s -> {});
+            });
+            log.debug("Cluster joined");
+
+            withRealm(realmId, (session, realm) -> {
+                final UserModel user = session.users().getUserByUsername(realm, "user1");
+                result.set(result.get() && assertOfflineSession(offlineUserSessions, session.sessions().getOfflineUserSessionsStream(realm, user).collect(Collectors.toList())));
+                return null;
+            });
+
+            latch.countDown();
+
+            awaitLatch(latch);
+        });
+
+        Assert.assertTrue(result.get());
+    }
+
     private static Set<String> createOfflineSessionIncludeClientSessions(KeycloakSession session, UserSessionModel
             userSession) {
         Set<String> offlineSessions = new HashSet<>();
@@ -307,5 +383,41 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
         }
 
         return offlineSessions;
+    }
+
+    private void createOfflineSessions(String username, int sessionsPerUser, AtomicReference<List<UserSessionModel>> offlineUserSessions, AtomicReference<List<AuthenticatedClientSessionModel>> offlineClientSessions) {
+        withRealm(realmId, (session, realm) -> {
+            final UserModel user = session.users().getUserByUsername(realm, username);
+            ClientModel testAppClient = realm.getClientByClientId("test-app");
+            ClientModel thirdPartyClient = realm.getClientByClientId("third-party");
+
+            IntStream.range(0, sessionsPerUser)
+                    .mapToObj(index -> session.sessions().createUserSession(realm, user, username + index, "ip" + index, "auth", false, null, null))
+                    .forEach(userSession -> {
+                        AuthenticatedClientSessionModel testAppClientSession = session.sessions().createClientSession(realm, testAppClient, userSession);
+                        AuthenticatedClientSessionModel thirdPartyClientSession = session.sessions().createClientSession(realm, thirdPartyClient, userSession);
+                        UserSessionModel offlineUserSession = session.sessions().createOfflineUserSession(userSession);
+                        offlineUserSessions.get().add(offlineUserSession);
+                        offlineClientSessions.get().add(session.sessions().createOfflineClientSession(testAppClientSession, offlineUserSession));
+                        offlineClientSessions.get().add(session.sessions().createOfflineClientSession(thirdPartyClientSession, offlineUserSession));
+                    });
+
+            return null;
+        });
+    }
+
+    private boolean assertOfflineSession(AtomicReference<List<UserSessionModel>> expectedUserSessions, List<UserSessionModel> actualUserSessions) {
+        boolean result = expectedUserSessions.get().size() == actualUserSessions.size();
+        for (UserSessionModel userSession: expectedUserSessions.get()) {
+            result = result && actualUserSessions.contains(userSession);
+        }
+        return result;
+    }
+
+    private void awaitLatch(CountDownLatch latch) {
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+        }
     }
 }

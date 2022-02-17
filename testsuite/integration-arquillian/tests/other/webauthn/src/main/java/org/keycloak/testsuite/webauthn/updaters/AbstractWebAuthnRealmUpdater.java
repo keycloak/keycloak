@@ -22,6 +22,9 @@ import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 
 import java.util.List;
 
+/**
+ * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
+ */
 public abstract class AbstractWebAuthnRealmUpdater<T extends AbstractWebAuthnRealmUpdater> extends RealmAttributeUpdater {
 
     public AbstractWebAuthnRealmUpdater(RealmResource resource) {
@@ -47,4 +50,10 @@ public abstract class AbstractWebAuthnRealmUpdater<T extends AbstractWebAuthnRea
     public abstract T setWebAuthnPolicyUserVerificationRequirement(String webAuthnPolicyUserVerificationRequirement);
 
     public abstract T setWebAuthnPolicyAcceptableAaguids(List<String> webAuthnPolicyAcceptableAaguids);
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public AbstractWebAuthnRealmUpdater<T> update() {
+        return (AbstractWebAuthnRealmUpdater<T>) super.update();
+    }
 }

@@ -34,8 +34,10 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.OfflineUserSessionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.changes.Tasks;
 import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStore;
@@ -108,7 +110,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     protected final RemoteCacheInvoker remoteCacheInvoker;
     protected final InfinispanKeyGenerator keyGenerator;
 
-    protected final boolean loadOfflineSessionsStatsFromDatabase;
+    protected final boolean loadOfflineSessionsFromDatabase;
 
     public InfinispanUserSessionProvider(KeycloakSession session,
                                          RemoteCacheInvoker remoteCacheInvoker,
@@ -120,7 +122,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                                          Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineSessionCache,
                                          Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache,
                                          Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> offlineClientSessionCache,
-                                         boolean loadOfflineSessionsStatsFromDatabase) {
+                                         boolean loadOfflineSessionsFromDatabase) {
         this.session = session;
 
         this.sessionCache = sessionCache;
@@ -140,7 +142,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         this.persisterLastSessionRefreshStore = persisterLastSessionRefreshStore;
         this.remoteCacheInvoker = remoteCacheInvoker;
         this.keyGenerator = keyGenerator;
-        this.loadOfflineSessionsStatsFromDatabase = loadOfflineSessionsStatsFromDatabase;
+        this.loadOfflineSessionsFromDatabase = loadOfflineSessionsFromDatabase;
 
         session.getTransactionManager().enlistAfterCompletion(clusterEventsSenderTx);
         session.getTransactionManager().enlistAfterCompletion(sessionTx);
@@ -341,28 +343,39 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     protected Stream<UserSessionModel> getUserSessionsStream(RealmModel realm, UserSessionPredicate predicate, boolean offline) {
 
-        if (offline && loadOfflineSessionsStatsFromDatabase) {
+        if (offline && loadOfflineSessionsFromDatabase) {
 
             // fetch the offline user-sessions from the persistence provider
             UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
 
-            UserModel user = session.users().getUserById(realm, predicate.getUserId());
-            if (user != null) {
-                return persister.loadUserSessionsStream(realm, user, offline, 0, null);
+            if (predicate.getUserId() != null) {
+                UserModel user = session.users().getUserById(realm, predicate.getUserId());
+                if (user != null) {
+                    return persister.loadUserSessionsStream(realm, user, true, 0, null);
+                }
+            }
+
+            if (predicate.getBrokerUserId() != null) {
+                String[] idpAliasSessionId = predicate.getBrokerUserId().split("\\.");
+
+                Map<String, String> attributes = new HashMap<>();
+                attributes.put(UserModel.IDP_ALIAS, idpAliasSessionId[0]);
+                attributes.put(UserModel.IDP_USER_ID, idpAliasSessionId[1]);
+
+                UserProvider userProvider = session.getProvider(UserProvider.class);
+                UserModel userModel = userProvider.searchForUserStream(realm, attributes, 0, null).findFirst().orElse(null);
+                return userModel != null ?
+                        persister.loadUserSessionsStream(realm, userModel, true, 0, null) :
+                        Stream.empty();
             }
 
             if (predicate.getBrokerSessionId() != null) {
                 // TODO add support for offline user-session lookup by brokerSessionId
                 // currently it is not possible to access the brokerSessionId in offline user-session in a database agnostic way
-                throw new ModelException("Dynamic database lookup for offline user-sessions by brokerSessionId is currently only supported for preloaded sessions.");
+                throw new ModelException("Dynamic database lookup for offline user-sessions by broker session ID is currently only supported for preloaded sessions. " +
+                        "Set preloadOfflineSessionsFromDatabase option to \"true\" in " + UserSessionSpi.NAME + " SPI in "
+                        + InfinispanUserSessionProviderFactory.PROVIDER_ID + " provider to enable the lookup.");
             }
-
-            if (predicate.getBrokerUserId() != null) {
-                // TODO add support for offline user-session lookup by brokerUserId
-                // currently it is not possible to access the brokerUserId in offline user-session in a database agnostic way
-                throw new ModelException("Dynamic database lookup for offline user-sessions by brokerUserId is currently only supported for preloaded sessions.");
-            }
-
         }
 
         Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
@@ -421,10 +434,10 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     protected Stream<UserSessionModel> getUserSessionsStream(final RealmModel realm, ClientModel client, Integer firstResult, Integer maxResults, final boolean offline) {
 
-        if (offline && loadOfflineSessionsStatsFromDatabase) {
+        if (offline && loadOfflineSessionsFromDatabase) {
             // fetch the actual offline user session count from the database
             UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-            return persister.loadUserSessionsStream(realm, client, offline, firstResult, maxResults);
+            return persister.loadUserSessionsStream(realm, client, true, firstResult, maxResults);
         }
 
         final String clientUuid = client.getId();
@@ -516,9 +529,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     @Override
     public Map<String, Long> getActiveClientSessionStats(RealmModel realm, boolean offline) {
 
-        if (offline && loadOfflineSessionsStatsFromDatabase) {
+        if (offline && loadOfflineSessionsFromDatabase) {
             UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-            return persister.getUserSessionsCountsByClients(realm, offline);
+            return persister.getUserSessionsCountsByClients(realm, true);
         }
 
         Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
@@ -536,10 +549,10 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
      protected long getUserSessionsCount(RealmModel realm, ClientModel client, boolean offline) {
 
-        if (offline && loadOfflineSessionsStatsFromDatabase) {
+        if (offline && loadOfflineSessionsFromDatabase) {
             // fetch the actual offline user session count from the database
             UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-            return persister.getUserSessionsCount(realm, client, offline);
+            return persister.getUserSessionsCount(realm, client, true);
         }
 
         Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
@@ -782,7 +795,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     @Override
     public Stream<UserSessionModel> getOfflineUserSessionsStream(RealmModel realm, UserModel user) {
 
-        if (loadOfflineSessionsStatsFromDatabase) {
+        if (loadOfflineSessionsFromDatabase) {
             return getUserSessionsFromPersistenceProviderStream(realm, user, true);
         }
 

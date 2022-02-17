@@ -1,0 +1,146 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+
+<@tmpl.guide
+title="Configuring distributed caches"
+summary="Understand how to configure the caching layer"
+includedOptions="cache cache-*">
+
+Keycloak is designed for high availability and multi-node clustered setups.
+The current distributed cache implementation is built on top of https://infinispan.org[Infinispan], a high-performance, distributable in-memory data grid.
+
+All available cache options are build options, so they need to be applied to a `build` of Keycloak before starting.
+
+== Enable distributed caching
+When you start Keycloak in production mode, by using the `start` command, caching is enabled and all Keycloak nodes in your network are discovered.
+
+To explicitly enable distributed infinispan caching, enter this command:
+
+<@kc.build parameters="--cache=ispn"/>
+
+When you start Keycloak in development mode, by using the `start-dev` command, Keycloak uses only local caches, applying the `--cache=local` option.
+The `local` cache mode is intended only for development and testing purposes.
+
+== Configuring caches
+Keycloak provides a cache configuration file with sensible defaults located at `conf/cache-ispn.xml`.
+
+The cache configuration is a regular https://infinispan.org/docs/stable/titles/configuring/configuring.html[Infinispan configuration file].
+
+=== Cache types and defaults
+
+.Local caches
+Keycloak caches persistent data locally to avoid unnecessary database requests.
+The following caches are used:
+
+* realms
+* users
+* authorization
+* keys
+
+.Invalidation of local caches
+Local caching improves performance, but adds a challenge in multi-node setups.
+When one Keycloak node updates data in the shared database, all other nodes need to be aware of it, so they invalidate that data from their caches.
+The `work` cache is used for sending these invalidation messages.
+
+.Authentication sessions
+Authentication sessions are started when an unauthenticated user or service tries to log in to Keycloak.
+The `authenticationSessions` distributed cache is used to save data during authentication of a particular user.
+
+.User sessions
+The following are the distributed caches for sessions of authenticated users and services:
+
+* sessions
+* clientSessions
+* offlineSessions
+* offlineClientSessions
+
+These caches are used to save data about user sessions and clients attached to the sessions.
+
+.Password brute force detection
+The `loginFailures` distributed cache is used to track data about failed login attempts.
+This cache is needed for the Brute Force Protection feature to work in a multi-node Keycloak setup.
+
+.Action tokens
+Action tokens are used for scenarios when a user needs to confirm an action asynchronously, for example in the emails sent by the forgot password flow.
+The `actionTokens` distributed cache is used to track metadata about action tokens.
+
+The following table gives an overview of the specific caches Keycloak uses.
+You configure these caches in `conf/cache-ispn.xml`:
+
+|====
+|Cache name|Cache Type|Description
+|realms|Local|Cache persisted realm data
+|users|Local|Cache persisted user data
+|authorization|Local|Cache persisted authorization data
+|keys|Local|Cache external public keys
+|work|Replicated|Propagate invalidation messages across nodes
+|sessions|Distributed|Caches user sessions, when user is authenticated
+|authenticationSessions|Distributed|Caches authentication sessions, when user is authenticating
+|offlineSessions|Distributed|Caches offline sessions
+|clientSessions|Distributed|Caches sessions for each client a user is authenticated with
+|offlineClientSessions|Distributed|Caches offline client sessions
+|loginFailures|Distributed|keep track of failed logins, fraud detection
+|actionTokens|Distributed|Caches action Tokens
+|====
+
+Local caches for realms, users, and authorization are configured to have 10,000 entries per default.
+The local key cache can hold up to 1,000 entries per default and defaults to expire every one hour.
+Therefore, keys are forced to be periodically downloaded from external clients or identity providers.
+
+Each distributed cache has two owners per default, which means that two nodes have a copy of the specific cache entries.
+Non-owner nodes query the owners of a specific cache to obtain data.
+When both owner nodes are offline, all data is lost.
+This situation usually leads to users being logged out at the next request and having to log in again.
+
+=== Specify your own cache configuration file
+
+To specify your own cache configuration file, enter this command:
+
+<@kc.build parameters="--cache-config-file=my-cache-file.xml"/>
+
+== Transport stacks
+Transport stacks ensure that distributed cache nodes in a cluster communicate in a reliable fashion.
+Keycloak supports a wide range of transport stacks:
+
+<@opts.expectedValues option="cache-stack"/>
+
+To apply a specific cache stack, enter this command:
+
+<@kc.build parameters="--cache-stack=<stack>"/>
+
+The default stack is set to `UDP` when distributed caches are enabled.
+
+=== Available transport stacks
+The following table shows transport stacks that are available without any further configuration than using the `--cache-stack` build option:
+|===
+|Stack name|Transport protocol|Discovery
+|tcp|TCP|MPING (uses UDP multicast).
+|udp|UDP|UDP multicast
+|kubernetes|TCP|DNS_PING
+|===
+
+=== Additional transport stacks
+The following table shows transport stacks that are supported by Keycloak, but need some extra steps to work.
+Note that _none_  of these stacks are Kubernetes / OpenShift stacks, so no need exists to enable the "google" stack if you want to run Keycloak on top of the Google Kubernetes engine.
+In that case, use the `kubernetes` stack.
+Instead, when you have a distributed cache setup running on AWS EC2 instances, you would need to set the stack to `ec2`, because ec2 does not support a default discovery mechanism such as `UDP`.
+
+|===
+|Stack name|Transport protocol|Discovery
+|ec2|TCP|NATIVE_S3_PING
+|google|TCP|GOOGLE_PING2
+|azure|TCP|AZURE_PING
+|===
+
+Cloud vendor specific stacks have additional dependencies for Keycloak.
+For more information and links to repositories with these dependencies, see the https://infinispan.org/docs/dev/titles/embedding/embedding.html#jgroups-cloud-discovery-protocols_cluster-transport[Infinispan documentation].
+
+To provide the dependencies to Keycloak, put the respective JAR in the `providers` directory and `build` Keycloak by entering this command:
+
+<@kc.build parameters="--cache-stack=<ec2|google|azure>"/>
+
+=== Securing cache communication
+The current Infinispan cache implementation should be secured by various security measures such as RBAC, ACLs, and Transport stack encryption. For more information about securing cache communication, see the https://infinispan.org/docs/dev/titles/security/security.html#[Infinispan security guide].
+
+</@tmpl.guide>

@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-other</artifactId>
-        <version>16.0.0-SNAPSHOT</version>
+        <version>18.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-console</artifactId>
@@ -33,7 +33,7 @@
 
     <properties>
         <keycloak.theme.dir>${auth.server.home}/themes</keycloak.theme.dir>
-        <supportedBrowsers>firefox|chrome|internetExplorer|safari</supportedBrowsers>
+        <supportedBrowsers>firefox|chrome|internetExplorer|safari|chromeHeadless</supportedBrowsers>
     </properties>
 
     <build>

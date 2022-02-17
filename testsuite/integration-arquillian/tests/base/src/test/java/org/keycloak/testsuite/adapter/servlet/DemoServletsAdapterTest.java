@@ -855,7 +855,9 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
             String appUri = tokenMinTTLPage.getUriBuilder().queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN).build().toString();
             URLUtils.navigateToUri(appUri);
             assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
-            testRealmLoginPage.form().login("bburke@redhat.com", "password");
+            WaitUtils.waitForPageToLoad();
+            testRealmLoginPage.form().setPassword("password");
+            testRealmLoginPage.form().login();
             AccessToken token = tokenMinTTLPage.getAccessToken();
             int authTime = token.getAuthTime();
             assertThat(authTime, is(greaterThanOrEqualTo(currentTime + 10)));

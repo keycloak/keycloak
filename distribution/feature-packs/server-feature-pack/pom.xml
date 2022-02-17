@@ -19,7 +19,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>feature-packs-parent</artifactId>
-        <version>16.0.0-SNAPSHOT</version>
+        <version>18.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -79,25 +79,20 @@
                     </execution>
                 </executions>
             </plugin>
-
             <plugin>
-                <groupId>org.wildfly.build</groupId>
-                <artifactId>wildfly-feature-pack-build-maven-plugin</artifactId>
-                <version>${wildfly.build-tools.version}</version>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
                 <executions>
+                    <!-- Disable the standard copy-resources -->
                     <execution>
-                        <id>feature-pack-build</id>
+                        <id>copy-resources</id>
+                        <phase>none</phase>
                         <goals>
-                            <goal>build</goal>
+                            <goal>copy-resources</goal>
                         </goals>
-                        <phase>compile</phase>
-                        <configuration>
-                            <config-file>feature-pack-build.xml</config-file>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -113,77 +108,17 @@
                                 <descriptor>assembly.xml</descriptor>
                             </descriptors>
                             <recompressZippedFiles>true</recompressZippedFiles>
+                            <finalName>${project.build.finalName}</finalName>
                             <appendAssemblyId>false</appendAssemblyId>
-                            <outputDirectory>target/</outputDirectory>
-                            <workDirectory>target/assembly/work</workDirectory>
+                            <outputDirectory>${project.build.directory}</outputDirectory>
+                            <workDirectory>${project.build.directory}/assembly/work</workDirectory>
+                            <tarLongFileMode>${assembly.tarLongFileMode}</tarLongFileMode>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
-
-            <plugin>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-distribution-licenses-maven-plugin</artifactId>
-            </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>community</id>
-            <activation>
-                <property>
-                    <name>!product</name>
-                </property>
-            </activation>
-
-            <properties>
-                <feature.parent>org.wildfly:wildfly-feature-pack</feature.parent>
-            </properties>
-
-            <dependencies>
-                <dependency>
-                    <groupId>org.wildfly</groupId>
-                    <artifactId>wildfly-feature-pack</artifactId>
-                    <type>zip</type>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>*</groupId>
-                            <artifactId>*</artifactId>
-                        </exclusion>
-                    </exclusions>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <profile>
-            <id>product</id>
-            <activation>
-                <property>
-                    <name>product</name>
-                </property>
-            </activation>
-
-            <properties>
-                <feature.parent>org.jboss.eap:wildfly-feature-pack</feature.parent>
-            </properties>
-
-            <dependencies>
-                <dependency>
-                    <groupId>org.jboss.eap</groupId>
-                    <artifactId>wildfly-feature-pack</artifactId>
-                    <version>${eap.version}</version>
-                    <type>zip</type>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>*</groupId>
-                            <artifactId>*</artifactId>
-                        </exclusion>
-                    </exclusions>
-                </dependency>
-            </dependencies>
-        </profile>
-    </profiles>
 
 </project>
 

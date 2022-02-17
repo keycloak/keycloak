@@ -173,6 +173,34 @@ public class ComponentsTest extends AbstractAdminTest {
     }
 
     @Test
+    public void failCreateWithLongName() {
+        StringBuilder name = new StringBuilder();
+
+        while (name.length() < 30) {
+            name.append("invalid");
+        }
+
+        ComponentRepresentation rep = createComponentRepresentation(name.toString());
+
+        rep.getConfig().addFirst("required", "foo");
+
+        ComponentsResource components = realm.components();
+
+        try (Response response = components.add(rep)) {
+            if (Response.Status.INTERNAL_SERVER_ERROR.getStatusCode() == response.getStatus()) {
+                // using database should fail due to constraint violations
+                assertFalse(components.query().stream().map(ComponentRepresentation::getName).anyMatch(name.toString()::equals));
+            } else if (Response.Status.CREATED.getStatusCode() == response.getStatus()) {
+                // using the map storage should work because there are no constraints
+                String id = ApiUtil.getCreatedId(response);
+                assertNotNull(components.component(id).toRepresentation());
+            } else {
+                fail("Unexpected response");
+            }
+        }
+    }
+
+    @Test
     public void testUpdate() {
         ComponentRepresentation rep = createComponentRepresentation("mycomponent");
 

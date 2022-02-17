@@ -3,7 +3,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>16.0.0-SNAPSHOT</version>
+        <version>18.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -17,21 +17,6 @@
         <dir.account2>src/main/resources/theme/keycloak.v2/account/src</dir.account2>
         <args.npm.install>ci --no-optional --ignore-scripts</args.npm.install>
     </properties>
-
-    <repositories>
-        <repository>
-            <id>github</id>
-            <!-- Do not decode the PAT below, as it will force Github to revoke it. -->
-            <url>https://keycloak-packages:&#103;hp_BSAWrTDzsvUequSs6YumzVxEzI7CYc4Tqgox@maven.pkg.github.com/keycloak/keycloak-admin-ui</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>always</updatePolicy>
-            </snapshots>
-        </repository>
-    </repositories>
 
     <build>
         <plugins>
@@ -86,7 +71,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <nodeVersion>v16.13.0</nodeVersion>
+                    <nodeVersion>${node.version}</nodeVersion>
                     <installDirectory>${project.basedir}</installDirectory>
                 </configuration>
             </plugin>
@@ -147,12 +132,7 @@
 
     <profiles>
         <profile>
-            <id>community</id>
-            <activation>
-                <property>
-                    <name>!product</name>
-                </property>
-            </activation>
+            <id>admin-preview</id>
             <dependencies>
                 <dependency>
                     <groupId>org.keycloak</groupId>
@@ -160,11 +140,6 @@
                 </dependency>
             </dependencies>
             <build>
-                <resources>
-                    <resource>
-                        <directory>src/main/resources-community</directory>
-                    </resource>
-                </resources>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
@@ -191,6 +166,22 @@
                         </executions>
                     </plugin>
                 </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>src/main/resources-community</directory>
+                    </resource>
+                </resources>
             </build>
         </profile>
         <profile>

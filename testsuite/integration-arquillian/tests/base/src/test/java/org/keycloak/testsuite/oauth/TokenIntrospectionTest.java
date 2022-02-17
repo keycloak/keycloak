@@ -27,6 +27,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -51,10 +52,12 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.oidc.OIDCScopeTest;
 import org.keycloak.testsuite.oidc.AbstractOIDCScopeTest;
+import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 
@@ -79,6 +82,9 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
+
+    @Page
+    protected LoginPage loginPage;
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -227,7 +233,8 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
         setTimeOffset(2);
 
-        oauth.fillLoginForm("test-user@localhost", "password");
+        WaitUtils.waitForPageToLoad();
+        loginPage.login("password");
         events.expectLogin().assertEvent();
 
         Assert.assertFalse(loginPage.isCurrent());

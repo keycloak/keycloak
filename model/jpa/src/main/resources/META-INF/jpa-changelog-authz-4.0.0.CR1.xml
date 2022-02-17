@@ -18,6 +18,7 @@
 
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd">
     <changeSet author="psilva@redhat.com" id="authz-4.0.0.CR1">
+        <validCheckSum>7:57960fc0b0f0dd0563ea6f8b2e4a1707</validCheckSum>
         <createTable tableName="RESOURCE_SERVER_PERM_TICKET">
             <column name="ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>

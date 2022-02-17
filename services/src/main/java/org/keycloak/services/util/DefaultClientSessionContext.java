@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -41,6 +42,8 @@ import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.rar.AuthorizationRequestContext;
+import org.keycloak.rar.AuthorizationRequestSource;
 import org.keycloak.util.TokenUtil;
 
 /**
@@ -154,6 +157,15 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     @Override
     public String getScopeString() {
+        if(Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+            String scopeParam = buildScopesStringFromAuthorizationRequest();
+            logger.tracef("Generated scope param with Dynamic Scopes enabled: %1s", scopeParam);
+            String scopeSent = clientSession.getNote(OAuth2Constants.SCOPE);
+            if (TokenUtil.isOIDCRequest(scopeSent)) {
+                scopeParam = TokenUtil.attachOIDCScope(scopeParam);
+            }
+            return scopeParam;
+        }
         // Add both default and optional scopes to scope parameter. Don't add client itself
         String scopeParam = getClientScopesStream()
                 .filter(((Predicate<ClientScopeModel>) ClientModel.class::isInstance).negate())
@@ -170,6 +182,22 @@ public class DefaultClientSessionContext implements ClientSessionContext {
         return scopeParam;
     }
 
+    /**
+     * Get all the scopes from the {@link AuthorizationRequestContext} by filtering entries by Source and by whether
+     * they should be included in tokens or not.
+     * Then return the scope name from the data stored in the RAR object representation.
+     *
+     * @return see description
+     */
+    private String buildScopesStringFromAuthorizationRequest() {
+        return AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, clientSession.getNote(OAuth2Constants.SCOPE)).getAuthorizationDetailEntries().stream()
+                .filter(authorizationDetails -> authorizationDetails.getSource().equals(AuthorizationRequestSource.SCOPE))
+                .filter(authorizationDetails -> authorizationDetails.getClientScope().isIncludeInTokenScope())
+                .filter(authorizationDetails -> isClientScopePermittedForUser(authorizationDetails.getClientScope()))
+                .map(authorizationDetails -> authorizationDetails.getAuthorizationDetails().getScopeNameFromCustomData())
+                .collect(Collectors.joining(" "));
+    }
+
 
     @Override
     public void setAttribute(String name, Object value) {
@@ -183,6 +211,10 @@ public class DefaultClientSessionContext implements ClientSessionContext {
         return clazz.cast(value);
     }
 
+    @Override
+    public AuthorizationRequestContext getAuthorizationRequestContext() {
+        return AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, clientSession.getNote(OAuth2Constants.SCOPE));
+    }
 
     // Loading data
 

@@ -1,0 +1,96 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Configuring logging"
+summary="Learn how to configure Logging"
+includedOptions="log-*">
+
+Logging is done on a per-category basis in Keycloak. You can configure logging for the root log level, or for more specific categories like `org.hibernate` or `org.keycloak`. In this guide, you will learn how to configure the log level and format.
+
+== Log level
+The available log levels are listed in the following Table:
+
+|====
+|Level|Description
+|FATAL|critical failures / complete inability to serve requests of any kind.
+|ERROR|significant error or problem leading to the inability to process requests.
+|WARN|A non-critical error or problem that may not require immediate correction.
+|INFO|Keycloak lifecycle events or important information. Low frequency.
+|DEBUG|More detailed information for debugging purposes, including e.g. database logs. Higher frequency.
+|TRACE|Most detailed debugging information. Very high frequency.
+|ALL|Special level for all log messages
+|OFF|Special level to turn logging off entirely (not recommended)
+|====
+
+=== Configuring the root log level
+The root loggers log level can be set using the following command:
+
+<@kc.start parameters="--log-level=<root-level>"/>
+
+using one of the levels mentioned in the table above. When no log level configuration exists for a more specific category logger, the enclosing category is used instead. When there is no enclosing category, the root logger level is used.
+
+Setting the log level is case-insensitive, so you could either use for example `DEBUG` or `debug`.
+
+When you accidentally set the log level twice, for example when you invoke `--log-level=info,...,debug,...` the last occurence in the list will be used as the log level, so for the example the root logger would be set to `DEBUG`.
+
+=== Configuring category-specific log levels
+It is possible to set a different log level for specific areas in Keycloak. To enable category-specific logging, provide a comma-separated list containing the categories you want another log level than for the root category to the `--log-level` configuration:
+
+<@kc.start parameters="--log-level=<root-level>,<org.category1>:<org.category1-level>"/>
+
+A configuration that applies to a category also applies to all sub-categories of that category, unless a more specific matching sub-category configuration is provided in the list.
+
+.Example
+<@kc.start parameters="--log-level=INFO,org.hibernate:debug,org.hibernate.hql.internal.ast:info"/>
+The example above sets the root log level for all loggers to INFO, and the hibernate log level in general to debug. But as we don't want SQL abstract syntax trees to make the log output verbose, we set the more specific sub category `org.hibernate.hql.internal.ast` to info, so the SQL abstract syntax trees, which would be shown at `debug` level, don't show up anymore.
+
+== Configuring the logging format
+Keycloak uses a pattern-based logging formatter that generates human-readable text logs by default.
+
+The logging format template for these lines can be applied at the root level.
+
+The default format template is:
+
+* `%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n`
+
+The format string supports the following symbols:
+
+|====
+|Symbol|Summary|Description
+|%%|%|Renders a simple % character.
+|%c|Category|Renders the log category name.
+|%d{xxx}|Date|Renders a date with the given date format string.String syntax defined by `java.text.SimpleDateFormat`
+|%e|Exception|Renders the thrown exception, if any.
+|%h|Hostname|Renders the simple host name.
+|%H|Qualified host name|Renders the fully qualified hostname, which may be the same as the simple host name, depending on the OS configuration.
+|%i|Process ID|Renders the current process PID.
+|%m|Full Message|Renders the log message plus exception (if any).
+|%n |Newline|Renders the platform-specific line separator string.
+|%N|Process name|Renders the name of the current process.
+|%p|Level|Renders the log level of the message.
+|%r|Relative time|Render the time in milliseconds since the start of the application log.
+|%s|Simple message|Renders only the log message, without exception trace.
+|%t|Thread name|Renders the thread name.
+|%t{id}|Thread ID|Render the thread ID.
+|%z{<zone name>}|Time zone|Set the time zone of log output to <zone name>.
+|====
+
+=== Set the logging format
+To set the logging format for a logged line, build your desired format template using the table above and run the following command:
+<@kc.start parameters="--log-format=\"\'<format>\'\""/>
+Be aware that you need to escape characters when invoking commands containing special shell characters such as `;` using the CLI, so you might want to set it in the configuration file instead.
+
+.Example: Abbreviate the fully qualified category name
+<@kc.start parameters="\"\'%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{3.}] (%t) %s%e%n\'\""/>
+The example above abbreviates the category name, which could get rather long in some cases, to three characters by setting `[%c{3.}]` in the template instead of the default `[%c]`.
+
+== Configuring raw quarkus logging properties
+At the time of writing, the logging features of the quarkus based Keycloak are basic, yet powerful. Nevertheless, expect more to come and feel free to join the https://github.com/keycloak/keycloak/discussions/8870[discussion] at GitHub.
+
+When you need a temporary solution, e.g. for logging to a file or using syslog isntead of console, you can check out the https://github.com/keycloak/keycloak/discussions/8870[Quarkus logging guide]. It is possible to use all properties mentioned there, as long as no other than the base logging dependency is involved. For example it is possible to set the log handler to file, but not to use json output, yet, as you would need to provide another dependency for json output to work.
+
+To use raw quarkus properties, please refer to the <@links.server id="configuration"/> guide at section _Using unsupported server options_.
+
+</@tmpl.guide>

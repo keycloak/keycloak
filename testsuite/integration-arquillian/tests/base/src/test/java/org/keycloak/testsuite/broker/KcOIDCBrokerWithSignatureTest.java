@@ -111,7 +111,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         // Set time offset. New keys can be downloaded. Check that user is able to login.
         setTimeOffset(20);
 
-        logInAsUserInIDP();
+        logInAsUserInIDPWithReAuthenticate();
         assertLoggedInAccountManagement();
     }
 
@@ -159,7 +159,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         // Even after time offset is user not able to login, because it uses old key hardcoded in identityProvider config
         setTimeOffset(20);
 
-        logInAsUserInIDP();
+        logInAsUserInIDPWithReAuthenticate();
         assertErrorPage("Unexpected error when authenticating with identity provider");
     }
 
@@ -193,7 +193,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         // Set key id to a valid one
         cfg.setPublicKeySignatureVerifierKeyId(expectedKeyId);
         updateIdentityProvider(idpRep);
-        logInAsUserInIDP();
+        logInAsUserInIDPWithReAuthenticate();
         assertLoggedInAccountManagement();
         logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 

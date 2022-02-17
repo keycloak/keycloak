@@ -1,0 +1,94 @@
+Creates a new and optimized server image.
+
+Usage:
+
+kc.sh build [OPTIONS]
+
+Creates a new and optimized server image based on the configuration options
+passed to this command. Once created, the configuration will be persisted and
+read during startup without having to pass them over again.
+
+Some configuration options require this command to be executed in order to
+actually change a configuration. For instance
+
+- Change database vendor
+- Enable/disable features
+- Enable/Disable providers or set a default
+
+Consider running this command before running the server in production for an
+optimal runtime.
+
+Options:
+
+-h, --help           This help message.
+
+Cluster:
+
+--cache <type>       Defines the cache mechanism for high-availability. By default, a 'ispn' cache
+                       is used to create a cluster between multiple server nodes. A 'local' cache
+                       disables clustering and is intended for development and testing purposes.
+                       Default: ispn.
+--cache-config-file <file>
+                     Defines the file from which cache configuration should be loaded from.
+--cache-stack <stack>
+                     Define the default stack to use for cluster communication and node discovery.
+                       This option only takes effect if 'cache' is set to 'ispn'. Default: udp.
+
+Database:
+
+--db <vendor>        The database vendor. Possible values are: dev-file, dev-mem, mariadb, mssql,
+                       mysql, oracle, postgres
+
+Feature:
+
+--features <feature> Enables a set of one or more features.
+--features-disabled <feature>
+                     Disables a set of one or more features.
+
+HTTP/TLS:
+
+--http-relative-path <path>
+                     Set the path relative to '/' for serving resources. Default: /.
+
+Metrics:
+
+--metrics-enabled <true|false>
+                     If the server should expose metrics and healthcheck. If enabled, metrics are
+                       available at the '/metrics' endpoint and healthcheck at the '/health'
+                       endpoint. Default: false.
+
+Vault:
+
+--vault <provider>   Enables a vault provider.
+
+Examples:
+
+  Change the database vendor:
+
+      $ kc.sh build --db=postgres
+
+  Enable a feature:
+
+      $ kc.sh build --features=<feature_name>
+
+  Or alternatively, enable all tech preview features:
+
+      $ kc.sh build --features=preview
+
+  Enable metrics:
+
+      $ kc.sh build --metrics-enabled=true
+
+  Change the relative path:
+
+      $ kc.sh build --http-relative-path=/auth
+
+You can also use the "--auto-build" option when starting the server to avoid
+running this command every time you change a configuration:
+
+    $ kc.sh start --auto-build <OPTIONS>
+
+By doing that you have an additional overhead when the server is starting.
+
+Use 'kc.sh build --help-all' to list all available options, including the start
+options.

@@ -32,6 +32,7 @@ import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ClusterProviderFactory;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.TopologyInfo;
 import org.keycloak.models.KeycloakSession;
@@ -70,7 +71,13 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
     // Just to extract notifications related stuff to separate class
     private InfinispanNotificationsManager notificationsManager;
 
-    private ExecutorService localExecutor = Executors.newCachedThreadPool();
+    private ExecutorService localExecutor = Executors.newCachedThreadPool(r -> {
+        Thread thread = Executors.defaultThreadFactory().newThread(r);
+        thread.setName(this.getClass().getName() + "-" + thread.getName());
+        return thread;
+    });
+
+    private ViewChangeListener workCacheListener;
 
     @Override
     public ClusterProvider create(KeycloakSession session) {
@@ -86,7 +93,8 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
                     InfinispanConnectionProvider ispnConnections = session.getProvider(InfinispanConnectionProvider.class);
                     workCache = ispnConnections.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
 
-                    workCache.getCacheManager().addListener(new ViewChangeListener());
+                    workCacheListener = new ViewChangeListener();
+                    workCache.getCacheManager().addListener(workCacheListener);
 
                     // See if we have RemoteStore (external JDG) configured for cross-Data-Center scenario
                     Set<RemoteStore> remoteStores = InfinispanUtil.getRemoteStores(workCache);
@@ -168,7 +176,13 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
 
     @Override
     public void close() {
-
+        synchronized (this) {
+            if (workCache != null && workCacheListener != null) {
+                workCache.removeListener(workCacheListener);
+                workCacheListener = null;
+                localExecutor.shutdown();
+            }
+        }
     }
 
     @Override
@@ -200,8 +214,15 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
                     }
 
                     logger.debugf("Nodes %s removed from cluster. Removing tasks locked by this nodes", removedNodesAddresses.toString());
-
-                    workCache.entrySet().removeIf(new LockEntryPredicate(removedNodesAddresses));
+                    /*
+                        workaround for Infinispan 12.1.7.Final to prevent a deadlock while
+                        DefaultInfinispanConnectionProviderFactory is shutting down PersistenceManagerImpl
+                        that acquires a writeLock and this removal that acquires a readLock.
+                        https://issues.redhat.com/browse/ISPN-13664
+                    */
+                    synchronized (DefaultInfinispanConnectionProviderFactory.class) {
+                        workCache.entrySet().removeIf(new LockEntryPredicate(removedNodesAddresses));
+                    }
                 }
             });
         }

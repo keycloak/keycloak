@@ -26,6 +26,9 @@ import org.keycloak.models.credential.dto.WebAuthnCredentialData;
 import org.keycloak.models.credential.dto.WebAuthnSecretData;
 import org.keycloak.util.JsonSerialization;
 
+import java.util.Collections;
+import java.util.Set;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -48,8 +51,13 @@ public class WebAuthnCredentialModel extends CredentialModel {
     }
 
     public static WebAuthnCredentialModel create(String credentialType, String userLabel, String aaguid, String credentialId,
-                                                     String attestationStatement, String credentialPublicKey, long counter, String attestationStatementFormat) {
-        WebAuthnCredentialData credentialData = new WebAuthnCredentialData(aaguid, credentialId, counter, attestationStatement, credentialPublicKey, attestationStatementFormat);
+                                                 String attestationStatement, String credentialPublicKey, long counter, String attestationStatementFormat) {
+        return create(credentialType, userLabel, aaguid, credentialId, attestationStatement, credentialPublicKey, counter, attestationStatementFormat, Collections.emptySet());
+    }
+
+    public static WebAuthnCredentialModel create(String credentialType, String userLabel, String aaguid, String credentialId,
+                                                 String attestationStatement, String credentialPublicKey, long counter, String attestationStatementFormat, Set<String> transports) {
+        WebAuthnCredentialData credentialData = new WebAuthnCredentialData(aaguid, credentialId, counter, attestationStatement, credentialPublicKey, attestationStatementFormat, transports);
         WebAuthnSecretData secretData = new WebAuthnSecretData();
 
         WebAuthnCredentialModel credentialModel = new WebAuthnCredentialModel(credentialType, credentialData, secretData);

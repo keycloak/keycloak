@@ -31,7 +31,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public class VirtualAuthenticatorManager {
     private final HasVirtualAuthenticator driver;
-    private KcVirtualAuthenticator actualAuthenticator;
+    private KcVirtualAuthenticator currentAuthenticator;
 
     public VirtualAuthenticatorManager(WebDriver driver) {
         assertThat("Driver must support Virtual Authenticators", driver, CoreMatchers.instanceOf(HasVirtualAuthenticator.class));
@@ -39,18 +39,22 @@ public class VirtualAuthenticatorManager {
     }
 
     public KcVirtualAuthenticator useAuthenticator(VirtualAuthenticatorOptions options) {
-        this.actualAuthenticator = new KcVirtualAuthenticator(driver.addVirtualAuthenticator(options), options);
-        return actualAuthenticator;
+        if (options == null) return null;
+
+        removeAuthenticator();
+        this.currentAuthenticator = new KcVirtualAuthenticator(driver.addVirtualAuthenticator(options), options);
+        return currentAuthenticator;
     }
 
-    public KcVirtualAuthenticator getActualAuthenticator() {
-        return actualAuthenticator;
+    public KcVirtualAuthenticator getCurrent() {
+        return currentAuthenticator;
     }
 
     public void removeAuthenticator() {
-        if (actualAuthenticator != null) {
-            driver.removeVirtualAuthenticator(actualAuthenticator.getAuthenticator());
-            this.actualAuthenticator = null;
+        if (currentAuthenticator != null) {
+            currentAuthenticator.getAuthenticator().removeAllCredentials();
+            driver.removeVirtualAuthenticator(currentAuthenticator.getAuthenticator());
+            this.currentAuthenticator = null;
         }
     }
 }
