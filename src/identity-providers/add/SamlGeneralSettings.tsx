@@ -9,12 +9,20 @@ import { TextField } from "../component/TextField";
 import { DisplayOrder } from "../component/DisplayOrder";
 import { useParams } from "react-router";
 import type { IdentityProviderParams } from "../routes/IdentityProvider";
+import { FormattedLink } from "../../components/external-link/FormattedLink";
+import { useRealm } from "../../context/realm-context/RealmContext";
+import environment from "../../environment";
+
+import "./saml-general-settings.css";
 
 export const SamlGeneralSettings = ({ id }: { id: string }) => {
   const { t } = useTranslation("identity-providers");
+  const { realm } = useRealm();
   const { tab } = useParams<IdentityProviderParams>();
 
-  const { register, errors } = useFormContext();
+  const { register, errors, watch } = useFormContext();
+
+  const alias = watch("alias");
 
   return (
     <>
@@ -51,6 +59,23 @@ export const SamlGeneralSettings = ({ id }: { id: string }) => {
 
       <TextField field="displayName" label="displayName" />
       <DisplayOrder />
+      <FormGroup
+        label={t("endpoints")}
+        fieldId="endpoints"
+        labelIcon={
+          <HelpItem
+            helpText="identity-providers-help:alias"
+            fieldLabelId="identity-providers:alias"
+          />
+        }
+        className="keycloak__identity-providers__saml_link"
+      >
+        <FormattedLink
+          title={t("samlEndpointsLabel")}
+          href={`${environment.authUrl}/realms/${realm}/broker/${alias}/endpoint/descriptor`}
+          isInline
+        />
+      </FormGroup>
     </>
   );
 };

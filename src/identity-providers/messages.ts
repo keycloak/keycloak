@@ -39,6 +39,8 @@ export default {
     clientId: "Client ID",
     clientSecret: "Client Secret",
     displayOrder: "Display order",
+    endpoints: "Endpoints",
+    samlEndpointsLabel: "SAML 2.0 Service Provider Metadata",
     createSuccess: "Identity provider successfully created",
     createError: "Could not create the identity provider: {{error}}",
     orderDialogIntro:

@@ -53,6 +53,24 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
   return (
     <div className="pf-c-form pf-m-horizontal">
       <FormGroup
+        label={t("serviceProviderEntityId")}
+        fieldId="kc-service-provider-entity-id"
+        labelIcon={
+          <HelpItem
+            helpText="identity-providers-help:serviceProviderEntityId"
+            fieldLabelId="identity-providers:serviceProviderEntityId"
+          />
+        }
+      >
+        <TextInput
+          type="text"
+          name="config.entityId"
+          data-testid="serviceProviderEntityId"
+          id="kc-service-provider-entity-id"
+          ref={register()}
+        />
+      </FormGroup>
+      <FormGroup
         label={t("ssoServiceUrl")}
         labelIcon={
           <HelpItem

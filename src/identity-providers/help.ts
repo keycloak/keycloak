@@ -10,6 +10,7 @@ export default {
       "The client secret registered with the identity provider. This field is able to obtain its value from vault, use ${vault.ID} format.",
     displayOrder:
       "Number defining the order of the providers in GUI (for example, on the Login page). The lowest number will be applied first.",
+    endpoints: "Shows the configuration of the Service Provider endpoint",
     useDiscoveryEndpoint:
       "If this setting is enabled, the discovery endpoint will be used to fetch the provider config. Keycloak can load the config from the endpoint and automatically update the config if the source has any updates",
     discoveryEndpoint:
