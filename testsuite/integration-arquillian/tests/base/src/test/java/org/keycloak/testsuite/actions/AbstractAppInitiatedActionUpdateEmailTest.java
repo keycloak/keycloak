@@ -32,8 +32,9 @@ public abstract class AbstractAppInitiatedActionUpdateEmailTest extends Abstract
 	@Page
 	protected EmailUpdatePage emailUpdatePage;
 
-	public AbstractAppInitiatedActionUpdateEmailTest() {
-		super(UserModel.RequiredAction.UPDATE_EMAIL.name());
+	@Override
+	protected String getAiaAction() {
+		return UserModel.RequiredAction.UPDATE_EMAIL.name();
 	}
 
 	@Override
