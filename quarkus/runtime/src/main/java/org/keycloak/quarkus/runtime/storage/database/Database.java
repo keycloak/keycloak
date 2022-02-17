@@ -68,14 +68,18 @@ public final class Database {
         return Optional.of(vendor.defaultUrl.apply(alias));
     }
 
-    public static Optional<String> getDriver(String alias) {
+    public static Optional<String> getDriver(String alias, boolean isXaEnabled) {
         Vendor vendor = DATABASES.get(alias);
 
         if (vendor == null) {
             return Optional.empty();
         }
 
-        return Optional.of(vendor.driver);
+        if (isXaEnabled) {
+            return Optional.of(vendor.xaDriver);
+        }
+
+        return Optional.of(vendor.nonXaDriver);
     }
 
     public static Optional<String> getDialect(String alias) {
@@ -95,6 +99,7 @@ public final class Database {
     private enum Vendor {
         H2("h2",
                 "org.h2.jdbcx.JdbcDataSource",
+                "org.h2.Driver",
                 "io.quarkus.hibernate.orm.runtime.dialect.QuarkusH2Dialect",
                 new Function<String, String>() {
                     @Override
@@ -112,19 +117,21 @@ public final class Database {
         ),
         MYSQL("mysql",
                 "com.mysql.cj.jdbc.MysqlXADataSource",
+                "com.mysql.cj.jdbc.Driver",
                 "org.hibernate.dialect.MySQL8Dialect",
-
                 "jdbc:mysql://${kc.db-url-host:localhost}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",
                 asList("org.keycloak.connections.jpa.updater.liquibase.UpdatedMySqlDatabase")
         ),
         MARIADB("mariadb",
                 "org.mariadb.jdbc.MySQLDataSource",
+                "org.mariadb.jdbc.Driver",
                 "org.hibernate.dialect.MariaDBDialect",
                 "jdbc:mariadb://${kc.db-url-host:localhost}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",
                 asList("org.keycloak.connections.jpa.updater.liquibase.UpdatedMariaDBDatabase")
         ),
         POSTGRES("postgresql",
                 "org.postgresql.xa.PGXADataSource",
+                "org.postgresql.Driver",
                 "io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL10Dialect",
                 "jdbc:postgresql://${kc.db-url-host:localhost}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",
                 asList("liquibase.database.core.PostgresDatabase",
@@ -133,6 +140,7 @@ public final class Database {
         ),
         MSSQL("mssql",
                 "com.microsoft.sqlserver.jdbc.SQLServerXADataSource",
+                "com.microsoft.sqlserver.jdbc.SQLServerDriver",
                 "org.hibernate.dialect.SQLServer2016Dialect",
                 "jdbc:sqlserver://${kc.db-url-host:localhost}:1433;databaseName=${kc.db-url-database:keycloak}${kc.db-url-properties:}",
                 asList("org.keycloak.quarkus.runtime.storage.database.liquibase.database.CustomMSSQLDatabase"),
@@ -140,38 +148,36 @@ public final class Database {
         ),
         ORACLE("oracle",
                 "oracle.jdbc.xa.client.OracleXADataSource",
+                "oracle.jdbc.driver.OracleDriver",
                 "org.hibernate.dialect.Oracle12cDialect",
                 "jdbc:oracle:thin:@//${kc.db-url-host:localhost}:1521/${kc.db-url-database:keycloak}",
                 asList("liquibase.database.core.OracleDatabase")
         );
 
         final String databaseKind;
-        final String driver;
+        final String xaDriver;
+        final String nonXaDriver;
         final Function<String, String> dialect;
         final Function<String, String> defaultUrl;
         final List<String> liquibaseTypes;
         final String[] aliases;
 
-        Vendor(String databaseKind, String driver, String dialect, String defaultUrl, List<String> liquibaseTypes,
-                String... aliases) {
-            this(databaseKind, driver, alias -> dialect, alias -> defaultUrl, liquibaseTypes, aliases);
+        Vendor(String databaseKind, String xaDriver, String nonXaDriver, String dialect, String defaultUrl, List<String> liquibaseTypes,
+               String... aliases) {
+            this(databaseKind, xaDriver, nonXaDriver, alias -> dialect, alias -> defaultUrl, liquibaseTypes, aliases);
         }
 
-        Vendor(String databaseKind, String driver, String dialect, Function<String, String> defaultUrl,
-                List<String> liquibaseTypes, String... aliases) {
-            this(databaseKind, driver, alias -> dialect, defaultUrl, liquibaseTypes, aliases);
+        Vendor(String databaseKind, String xaDriver, String nonXaDriver, String dialect, Function<String, String> defaultUrl,
+               List<String> liquibaseTypes, String... aliases) {
+            this(databaseKind, xaDriver, nonXaDriver, alias -> dialect, defaultUrl, liquibaseTypes, aliases);
         }
 
-        Vendor(String databaseKind, String driver, Function<String, String> dialect, String defaultUrl,
-                List<String> liquibaseTypes, String... aliases) {
-            this(databaseKind, driver, dialect, alias -> defaultUrl, liquibaseTypes, aliases);
-        }
-
-        Vendor(String databaseKind, String driver, Function<String, String> dialect, Function<String, String> defaultUrl,
-                List<String> liquibaseTypes,
-                String... aliases) {
+        Vendor(String databaseKind, String xaDriver, String nonXaDriver, Function<String, String> dialect, Function<String, String> defaultUrl,
+               List<String> liquibaseTypes,
+               String... aliases) {
             this.databaseKind = databaseKind;
-            this.driver = driver;
+            this.xaDriver = xaDriver;
+            this.nonXaDriver = nonXaDriver;
             this.dialect = dialect;
             this.defaultUrl = defaultUrl;
             this.liquibaseTypes = liquibaseTypes;
