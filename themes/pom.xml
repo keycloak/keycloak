@@ -25,54 +25,9 @@
                 <configuration>
                     <filesets>
                         <fileset>
-                            <directory>${dir.account2}/web_modules</directory>
-                        </fileset>
-                        <fileset>
                             <directory>${dir.common}/web_modules</directory>
                         </fileset>
                     </filesets>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>com.github.eirslett</groupId>
-                <artifactId>frontend-maven-plugin</artifactId>
-                <executions>
-                    <!-- Download NPM tools -->
-                    <execution>
-                        <id>setup-node</id>
-                        <goals>
-                            <goal>install-node-and-npm</goal>
-                        </goals>
-                        <phase>initialize</phase>
-                    </execution>
-                    <!-- Compile stuff -->
-                    <execution>
-                        <id>compile-account2</id>
-                        <goals>
-                            <goal>npm</goal>
-                        </goals>
-                        <phase>generate-resources</phase>
-                        <configuration>
-                            <workingDirectory>${dir.account2}</workingDirectory>
-                            <arguments>run build --scripts-prepend-node-path</arguments>
-                        </configuration>
-                    </execution>
-                    <!-- Download NPM packages -->
-                    <execution>
-                        <id>npm-install-account2</id>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>npm</goal>
-                        </goals>
-                        <configuration>
-                            <workingDirectory>${dir.account2}</workingDirectory>
-                            <arguments>${args.npm.install}</arguments>
-                        </configuration>
-                    </execution>
-                </executions>
-                <configuration>
-                    <nodeVersion>${node.version}</nodeVersion>
-                    <installDirectory>${project.basedir}</installDirectory>
                 </configuration>
             </plugin>
         </plugins>
@@ -131,6 +86,71 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>account2</id>
+            <activation>
+                <property>
+                    <name>!skipAccount2</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-clean-plugin</artifactId>
+                        <configuration>
+                            <filesets>
+                                <fileset>
+                                    <directory>${dir.account2}/web_modules</directory>
+                                </fileset>
+                            </filesets>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.github.eirslett</groupId>
+                        <artifactId>frontend-maven-plugin</artifactId>
+                        <executions>
+                            <!-- Download NPM tools -->
+                            <execution>
+                                <id>setup-node</id>
+                                <goals>
+                                    <goal>install-node-and-npm</goal>
+                                </goals>
+                                <phase>initialize</phase>
+                            </execution>
+                            <!-- Compile stuff -->
+                            <execution>
+                                <id>compile-account2</id>
+                                <goals>
+                                    <goal>npm</goal>
+                                </goals>
+                                <phase>generate-resources</phase>
+                                <configuration>
+                                    <workingDirectory>${dir.account2}</workingDirectory>
+                                    <arguments>run build --scripts-prepend-node-path</arguments>
+                                </configuration>
+                            </execution>
+                            <!-- Download NPM packages -->
+                            <execution>
+                                <id>npm-install-account2</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>npm</goal>
+                                </goals>
+                                <configuration>
+                                    <workingDirectory>${dir.account2}</workingDirectory>
+                                    <arguments>${args.npm.install}</arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <nodeVersion>${node.version}</nodeVersion>
+                            <installDirectory>${project.basedir}</installDirectory>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
         <profile>
             <id>admin-preview</id>
             <dependencies>
