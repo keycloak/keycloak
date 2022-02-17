@@ -314,33 +314,24 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
 
         closeKeycloakSessionFactory();
 
-        AtomicBoolean result = new AtomicBoolean(true);
-        CountDownLatch latch = new CountDownLatch(4);
-        inIndependentFactories(4, 300, () -> {
+        inIndependentFactories(4, 60, () -> {
             withRealm(realmId, (session, realm) -> {
                 final UserModel user = session.users().getUserByUsername(realm, "user1");
-                result.set(result.get() && assertOfflineSession(offlineUserSessions, session.sessions().getOfflineUserSessionsStream(realm, user).collect(Collectors.toList())));
+                Assert.assertTrue(assertOfflineSession(offlineUserSessions, session.sessions().getOfflineUserSessionsStream(realm, user).collect(Collectors.toList())));
                 return null;
             });
-
-            latch.countDown();
-
-            awaitLatch(latch);
         });
 
-        Assert.assertTrue(result.get());
     }
 
     @Test
     public void testOfflineSessionLazyLoadingPropagationBetweenNodes() throws InterruptedException {
         AtomicReference<List<UserSessionModel>> offlineUserSessions = new AtomicReference<>(new LinkedList<>());
         AtomicReference<List<AuthenticatedClientSessionModel>> offlineClientSessions = new AtomicReference<>(new LinkedList<>());
-        AtomicBoolean result = new AtomicBoolean(true);
         AtomicInteger index = new AtomicInteger();
-        CountDownLatch latch = new CountDownLatch(4);
         CountDownLatch afterFirstNodeLatch = new CountDownLatch(1);
 
-        inIndependentFactories(4, 300, () -> {
+        inIndependentFactories(4, 60, () -> {
             if (index.incrementAndGet() == 1) {
                 createOfflineSessions("user1", 10, offlineUserSessions, offlineClientSessions);
 
@@ -352,25 +343,24 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
             inComittedTransaction(session -> {
                 InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
                 Cache<String, Object> cache = provider.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
-                do {
+                while (! cache.getAdvancedCache().getDistributionManager().isJoinComplete()) {
                     try { Thread.sleep(1000); } catch (InterruptedException ex) { Thread.currentThread().interrupt(); throw new RuntimeException(ex); }
-                } while (! cache.getAdvancedCache().getDistributionManager().isJoinComplete());
+                }
                 cache.keySet().forEach(s -> {});
             });
             log.debug("Cluster joined");
 
             withRealm(realmId, (session, realm) -> {
                 final UserModel user = session.users().getUserByUsername(realm, "user1");
-                result.set(result.get() && assertOfflineSession(offlineUserSessions, session.sessions().getOfflineUserSessionsStream(realm, user).collect(Collectors.toList())));
+                // it might take a moment to propagate, therefore loop
+                while (! assertOfflineSession(offlineUserSessions, session.sessions().getOfflineUserSessionsStream(realm, user).collect(Collectors.toList()))) {
+                    try { Thread.sleep(1000); } catch (InterruptedException ex) { Thread.currentThread().interrupt(); throw new RuntimeException(ex); }
+                }
                 return null;
             });
 
-            latch.countDown();
-
-            awaitLatch(latch);
         });
 
-        Assert.assertTrue(result.get());
     }
 
     private static Set<String> createOfflineSessionIncludeClientSessions(KeycloakSession session, UserSessionModel
@@ -418,6 +408,8 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
         try {
             latch.await();
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
         }
     }
 }
