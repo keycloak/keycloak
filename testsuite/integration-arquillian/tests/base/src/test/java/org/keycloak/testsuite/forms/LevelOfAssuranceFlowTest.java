@@ -29,6 +29,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
 import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
 import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticator;
@@ -38,12 +39,15 @@ import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.IDToken;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.PasswordPage;
@@ -81,53 +85,61 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         try {
-            Map<String, Integer> acrLoaMap = new HashMap<>();
-            acrLoaMap.put("copper", 0);
-            acrLoaMap.put("silver", 1);
-            acrLoaMap.put("gold", 2);
-            findTestApp(testRealm).setAttributes(Collections.singletonMap(Constants.ACR_LOA_MAP, JsonSerialization.writeValueAsString(acrLoaMap)));
+            findTestApp(testRealm).setAttributes(Collections.singletonMap(Constants.ACR_LOA_MAP, getAcrToLoaMappingForClient()));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
+    private String getAcrToLoaMappingForClient() throws IOException {
+        Map<String, Integer> acrLoaMap = new HashMap<>();
+        acrLoaMap.put("copper", 0);
+        acrLoaMap.put("silver", 1);
+        acrLoaMap.put("gold", 2);
+        return JsonSerialization.writeValueAsString(acrLoaMap);
+    }
+
     @Before
     public void setupFlow() {
+        configureStepUpFlow(testingClient);
+    }
+
+    public static void configureStepUpFlow(KeycloakTestingClient testingClient) {
         final String newFlowAlias = "browser -  Level of Authentication FLow";
         testingClient.server(TEST_REALM_NAME).run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
         testingClient.server(TEST_REALM_NAME)
-            .run(session -> FlowUtil.inCurrentRealm(session).selectFlow(newFlowAlias).inForms(forms -> forms.clear()
-                // level 1 authentication
-                .addSubFlowExecution(Requirement.CONDITIONAL, subFlow -> {
-                    subFlow.addAuthenticatorExecution(Requirement.REQUIRED, ConditionalLoaAuthenticatorFactory.PROVIDER_ID,
-                        config -> {
-                            config.getConfig().put(ConditionalLoaAuthenticator.LEVEL, "1");
-                            config.getConfig().put(ConditionalLoaAuthenticator.STORE_IN_USER_SESSION, "true");
-                        });
+                .run(session -> FlowUtil.inCurrentRealm(session).selectFlow(newFlowAlias).inForms(forms -> forms.clear()
+                        // level 1 authentication
+                        .addSubFlowExecution(Requirement.CONDITIONAL, subFlow -> {
+                            subFlow.addAuthenticatorExecution(Requirement.REQUIRED, ConditionalLoaAuthenticatorFactory.PROVIDER_ID,
+                                    config -> {
+                                        config.getConfig().put(ConditionalLoaAuthenticator.LEVEL, "1");
+                                        config.getConfig().put(ConditionalLoaAuthenticator.STORE_IN_USER_SESSION, "true");
+                                    });
 
-                    // username input for level 1
-                    subFlow.addAuthenticatorExecution(Requirement.REQUIRED, UsernameFormFactory.PROVIDER_ID);
-                })
+                            // username input for level 1
+                            subFlow.addAuthenticatorExecution(Requirement.REQUIRED, UsernameFormFactory.PROVIDER_ID);
+                        })
 
-                // level 2 authentication
-                .addSubFlowExecution(Requirement.CONDITIONAL, subFlow -> {
-                    subFlow.addAuthenticatorExecution(Requirement.REQUIRED, ConditionalLoaAuthenticatorFactory.PROVIDER_ID,
-                        config -> config.getConfig().put(ConditionalLoaAuthenticator.LEVEL, "2"));
+                        // level 2 authentication
+                        .addSubFlowExecution(Requirement.CONDITIONAL, subFlow -> {
+                            subFlow.addAuthenticatorExecution(Requirement.REQUIRED, ConditionalLoaAuthenticatorFactory.PROVIDER_ID,
+                                    config -> config.getConfig().put(ConditionalLoaAuthenticator.LEVEL, "2"));
 
-                    // password required for level 2
-                    subFlow.addAuthenticatorExecution(Requirement.REQUIRED, PasswordFormFactory.PROVIDER_ID);
-                })
+                            // password required for level 2
+                            subFlow.addAuthenticatorExecution(Requirement.REQUIRED, PasswordFormFactory.PROVIDER_ID);
+                        })
 
-                // level 3 authentication
-                .addSubFlowExecution(Requirement.CONDITIONAL, subFlow -> {
-                    subFlow.addAuthenticatorExecution(Requirement.REQUIRED, ConditionalLoaAuthenticatorFactory.PROVIDER_ID,
-                        config -> config.getConfig().put(ConditionalLoaAuthenticator.LEVEL, "3"));
+                        // level 3 authentication
+                        .addSubFlowExecution(Requirement.CONDITIONAL, subFlow -> {
+                            subFlow.addAuthenticatorExecution(Requirement.REQUIRED, ConditionalLoaAuthenticatorFactory.PROVIDER_ID,
+                                    config -> config.getConfig().put(ConditionalLoaAuthenticator.LEVEL, "3"));
 
-                    // simply push button for level 3
-                    subFlow.addAuthenticatorExecution(Requirement.REQUIRED, PushButtonAuthenticatorFactory.PROVIDER_ID);
-                })
+                            // simply push button for level 3
+                            subFlow.addAuthenticatorExecution(Requirement.REQUIRED, PushButtonAuthenticatorFactory.PROVIDER_ID);
+                        })
 
-            ).defineAsBrowserFlow());
+                ).defineAsBrowserFlow());
     }
 
     @After
@@ -286,6 +298,45 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         assertLoggedInWithAcr("gold");
     }
 
+
+    @Test
+    public void testRealmAcrLoaMapping() throws IOException {
+        // Setup realm acr-to-loa mapping
+        RealmRepresentation realmRep = testRealm().toRepresentation();
+        Map<String, Integer> acrLoaMap = new HashMap<>();
+        acrLoaMap.put("realm:copper", 0);
+        acrLoaMap.put("realm:silver", 1);
+        acrLoaMap.put("realm:gold", 2);
+        realmRep.getAttributes().put(Constants.ACR_LOA_MAP, JsonSerialization.writeValueAsString(acrLoaMap));
+        testRealm().update(realmRep);
+
+        // Remove acr-to-loa mapping from the client. It should use realm acr-to-loa mapping
+        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientRepresentation testClientRep = testClient.toRepresentation();
+        testClientRep.getAttributes().put(Constants.ACR_LOA_MAP, "{}");
+        testClient.update(testClientRep);
+
+        openLoginFormWithAcrClaim(true, "realm:gold");
+        authenticateWithUsername();
+        authenticateWithPassword();
+        assertLoggedInWithAcr("realm:gold");
+
+        // Add "acr-to-loa" back to the client. Client mapping will be used instead of realm mapping
+        testClientRep.getAttributes().put(Constants.ACR_LOA_MAP, getAcrToLoaMappingForClient());
+        testClient.update(testClientRep);
+
+        openLoginFormWithAcrClaim(true, "realm:gold");
+        assertErrorPage("Invalid parameter: claims");
+
+        openLoginFormWithAcrClaim(true, "gold");
+        authenticateWithPassword();
+        assertLoggedInWithAcr("gold");
+
+        // Rollback
+        realmRep.getAttributes().remove(Constants.ACR_LOA_MAP);
+        testRealm().update(realmRep);
+    }
+
     public void openLoginFormWithAcrClaim(boolean essential, String... acrValues) {
         openLoginFormWithAcrClaim(oauth, essential, acrValues);
     }
@@ -326,5 +377,6 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
     private void assertErrorPage(String expectedError) {
         Assert.assertThat(true, is(errorPage.isCurrent()));
         Assert.assertEquals(expectedError, errorPage.getError());
+        events.clear();
     }
 }
