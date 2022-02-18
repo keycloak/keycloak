@@ -50,6 +50,10 @@ public class ClientStorageManager implements ClientProvider {
 
     private long clientStorageProviderTimeout;
 
+    private ClientProvider localStorage() {
+        return session.getProvider(ClientProvider.class);
+    }
+
     public static boolean isStorageProviderEnabled(RealmModel realm, String providerId) {
         ClientStorageProviderModel model = getStorageProviderModel(realm, providerId);
         return model.isEnabled();
@@ -131,7 +135,7 @@ public class ClientStorageManager implements ClientProvider {
     public ClientModel getClientById(RealmModel realm, String id) {
         StorageId storageId = new StorageId(id);
         if (storageId.getProviderId() == null) {
-            return session.clientLocalStorage().getClientById(realm, id);
+            return localStorage().getClientById(realm, id);
         }
         ClientLookupProvider provider = (ClientLookupProvider)getStorageProvider(session, realm, storageId.getProviderId());
         if (provider == null) return null;
@@ -141,7 +145,7 @@ public class ClientStorageManager implements ClientProvider {
 
     @Override
     public ClientModel getClientByClientId(RealmModel realm, String clientId) {
-        ClientModel client = session.clientLocalStorage().getClientByClientId(realm, clientId);
+        ClientModel client = localStorage().getClientByClientId(realm, clientId);
         if (client != null) {
             return client;
         }
@@ -174,7 +178,7 @@ public class ClientStorageManager implements ClientProvider {
         // how many results there will be; i.e. we need to query the clients without paginating them and perform pagination
         // later at this level
         if (hasEnabledStorageProviders(session, realm, ClientLookupProvider.class)) {
-            Stream<ClientLookupProvider> providersStream = Stream.concat(Stream.of(session.clientLocalStorage()), getEnabledStorageProviders(session, realm, ClientLookupProvider.class));
+            Stream<ClientLookupProvider> providersStream = Stream.concat(Stream.of(localStorage()), getEnabledStorageProviders(session, realm, ClientLookupProvider.class));
 
             /*
               Obtaining clients from an external client storage is time-bounded. In case the external client storage
@@ -196,7 +200,7 @@ public class ClientStorageManager implements ClientProvider {
             return paginatedStream(res, firstResult, maxResults);
         }
         else {
-            return paginatedQuery.query(session.clientLocalStorage(), firstResult, maxResults);
+            return paginatedQuery.query(localStorage(), firstResult, maxResults);
         }
     }
 
@@ -204,7 +208,7 @@ public class ClientStorageManager implements ClientProvider {
     public Map<String, ClientScopeModel> getClientScopes(RealmModel realm, ClientModel client, boolean defaultScopes) {
         StorageId storageId = new StorageId(client.getId());
         if (storageId.getProviderId() == null) {
-            return session.clientLocalStorage().getClientScopes(realm, client, defaultScopes);
+            return localStorage().getClientScopes(realm, client, defaultScopes);
         }
         ClientLookupProvider provider = (ClientLookupProvider)getStorageProvider(session, client.getRealm(), storageId.getProviderId());
         if (provider == null) return null;
@@ -214,37 +218,37 @@ public class ClientStorageManager implements ClientProvider {
 
     @Override
     public ClientModel addClient(RealmModel realm, String clientId) {
-        return session.clientLocalStorage().addClient(realm, clientId);
+        return localStorage().addClient(realm, clientId);
     }
 
     @Override
     public ClientModel addClient(RealmModel realm, String id, String clientId) {
-        return session.clientLocalStorage().addClient(realm, id, clientId);
+        return localStorage().addClient(realm, id, clientId);
     }
 
     @Override
     public Stream<ClientModel> getClientsStream(RealmModel realm, Integer firstResult, Integer maxResults) {
-       return session.clientLocalStorage().getClientsStream(realm, firstResult, maxResults);
+       return localStorage().getClientsStream(realm, firstResult, maxResults);
     }
 
     @Override
     public Stream<ClientModel> getClientsStream(RealmModel realm) {
-        return session.clientLocalStorage().getClientsStream(realm);
+        return localStorage().getClientsStream(realm);
     }
 
     @Override
     public long getClientsCount(RealmModel realm) {
-        return session.clientLocalStorage().getClientsCount(realm);
+        return localStorage().getClientsCount(realm);
     }
 
     @Override
     public Stream<ClientModel> getAlwaysDisplayInConsoleClientsStream(RealmModel realm) {
-        return session.clientLocalStorage().getAlwaysDisplayInConsoleClientsStream(realm);
+        return localStorage().getAlwaysDisplayInConsoleClientsStream(realm);
     }
 
     @Override
     public void removeClients(RealmModel realm) {
-        session.clientLocalStorage().removeClients(realm);
+        localStorage().removeClients(realm);
     }
 
     @Override
@@ -252,7 +256,7 @@ public class ClientStorageManager implements ClientProvider {
         if (!StorageId.isLocalStorage(client.getId())) {
             throw new RuntimeException("Federated clients do not support this operation");
         }
-        session.clientLocalStorage().addClientScopes(realm, client, clientScopes, defaultScope);
+        localStorage().addClientScopes(realm, client, clientScopes, defaultScope);
     }
 
     @Override
@@ -260,12 +264,12 @@ public class ClientStorageManager implements ClientProvider {
         if (!StorageId.isLocalStorage(client.getId())) {
             throw new RuntimeException("Federated clients do not support this operation");
         }
-        session.clientLocalStorage().removeClientScope(realm, client, clientScope);
+        localStorage().removeClientScope(realm, client, clientScope);
     }
 
     @Override
     public Map<ClientModel, Set<String>> getAllRedirectUrisOfEnabledClients(RealmModel realm) {
-        return session.clientLocalStorage().getAllRedirectUrisOfEnabledClients(realm);
+        return localStorage().getAllRedirectUrisOfEnabledClients(realm);
     }
 
     @Override
@@ -278,7 +282,7 @@ public class ClientStorageManager implements ClientProvider {
         if (!StorageId.isLocalStorage(id)) {
             throw new RuntimeException("Federated clients do not support this operation");
         }
-        return session.clientLocalStorage().removeClient(realm, id);
+        return localStorage().removeClient(realm, id);
     }
 
 

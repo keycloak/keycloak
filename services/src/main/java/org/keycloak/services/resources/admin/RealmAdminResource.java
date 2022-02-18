@@ -49,6 +49,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
@@ -99,6 +101,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
@@ -113,12 +116,8 @@ import org.keycloak.services.managers.UserStorageSyncManager;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
-import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.ReservedCharValidator;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.keycloak.utils.ServicesUtils;
 
 /**
  * Base resource class for the admin REST api of one realm
@@ -1037,7 +1036,7 @@ public class RealmAdminResource {
     public Stream<GroupRepresentation> getDefaultGroups() {
         auth.realm().requireViewRealm();
 
-        return realm.getDefaultGroupsStream().map(ServicesUtils::groupToBriefRepresentation);
+        return realm.getDefaultGroupsStream().map(ModelToRepresentation::groupToBriefRepresentation);
     }
     @PUT
     @NoCache

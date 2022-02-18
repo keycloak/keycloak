@@ -37,11 +37,15 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
 
     /* GROUP PROVIDER LOOKUP METHODS - implemented by group storage providers */
 
+    private GroupProvider localStorage() {
+        return session.getProvider(GroupProvider.class);
+    }
+
     @Override
     public GroupModel getGroupById(RealmModel realm, String id) {
         StorageId storageId = new StorageId(id);
         if (storageId.getProviderId() == null) {
-            return session.groupLocalStorage().getGroupById(realm, id);
+            return localStorage().getGroupById(realm, id);
         }
 
         GroupLookupProvider provider = getStorageProviderInstance(realm, storageId.getProviderId(), GroupLookupProvider.class);
@@ -60,7 +64,7 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
      */
     @Override
     public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
-        Stream<GroupModel> local = session.groupLocalStorage().searchForGroupByNameStream(realm, search,  firstResult, maxResults);
+        Stream<GroupModel> local = localStorage().searchForGroupByNameStream(realm, search,  firstResult, maxResults);
         Stream<GroupModel> ext = flatMapEnabledStorageProvidersWithTimeout(realm, GroupLookupProvider.class,
                         p -> p.searchForGroupByNameStream(realm, search, firstResult, maxResults));
         
@@ -71,57 +75,57 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
 
     @Override
     public Stream<GroupModel> getGroupsStream(RealmModel realm) {
-        return session.groupLocalStorage().getGroupsStream(realm);
+        return localStorage().getGroupsStream(realm);
     }
 
     @Override
     public Stream<GroupModel> getGroupsStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max) {
-        return session.groupLocalStorage().getGroupsStream(realm, ids, search, first, max);
+        return localStorage().getGroupsStream(realm, ids, search, first, max);
     }
 
     @Override
     public Long getGroupsCount(RealmModel realm, Boolean onlyTopGroups) {
-        return session.groupLocalStorage().getGroupsCount(realm, onlyTopGroups);
+        return localStorage().getGroupsCount(realm, onlyTopGroups);
     }
 
     @Override
     public Long getGroupsCountByNameContaining(RealmModel realm, String search) {
-        return session.groupLocalStorage().getGroupsCountByNameContaining(realm, search);
+        return localStorage().getGroupsCountByNameContaining(realm, search);
     }
 
     @Override
     public Stream<GroupModel> getGroupsByRoleStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults) {
-        return session.groupLocalStorage().getGroupsByRoleStream(realm, role, firstResult, maxResults);
+        return localStorage().getGroupsByRoleStream(realm, role, firstResult, maxResults);
     }
 
     @Override
     public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm) {
-        return session.groupLocalStorage().getTopLevelGroupsStream(realm);
+        return localStorage().getTopLevelGroupsStream(realm);
     }
 
     @Override
     public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, Integer firstResult, Integer maxResults) {
-        return session.groupLocalStorage().getTopLevelGroupsStream(realm, firstResult, maxResults);
+        return localStorage().getTopLevelGroupsStream(realm, firstResult, maxResults);
     }
 
     @Override
     public GroupModel createGroup(RealmModel realm, String id, String name, GroupModel toParent) {
-        return session.groupLocalStorage().createGroup(realm, id, name, toParent);
+        return localStorage().createGroup(realm, id, name, toParent);
     }
 
     @Override
     public boolean removeGroup(RealmModel realm, GroupModel group) {
-        return session.groupLocalStorage().removeGroup(realm, group);
+        return localStorage().removeGroup(realm, group);
     }
 
     @Override
     public void moveGroup(RealmModel realm, GroupModel group, GroupModel toParent) {
-        session.groupLocalStorage().moveGroup(realm, group, toParent);
+        localStorage().moveGroup(realm, group, toParent);
     }
 
     @Override
     public void addTopLevelGroup(RealmModel realm, GroupModel subGroup) {
-        session.groupLocalStorage().addTopLevelGroup(realm, subGroup);
+        localStorage().addTopLevelGroup(realm, subGroup);
     }
 
     @Override

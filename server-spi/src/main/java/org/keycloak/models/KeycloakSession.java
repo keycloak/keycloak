@@ -225,6 +225,7 @@ public interface KeycloakSession {
 
     /**
      * @return ClientScopeStorageManager instance
+     * @deprecated Use {@link #clientScopes()} instead
      */
     ClientScopeProvider clientScopeStorageManager();
 
@@ -271,6 +272,7 @@ public interface KeycloakSession {
     /**
      * Keycloak specific local storage for client scopes.  No cache in front, this api talks directly to database configured for Keycloak
      *
+     * @deprecated Use {@link #clientScopes()} instead
      * @return
      */
     ClientScopeProvider clientScopeLocalStorage();
