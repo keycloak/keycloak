@@ -6,8 +6,8 @@ export default {
     providerDetails: "Provider details",
     addProvider: "Add provider",
     addMapper: "Add mapper",
-    addIdPMapper: "Add {{providerId}} Identity Provider Mapper",
-    editIdPMapper: "Edit {{providerId}} Identity Provider Mapper",
+    addIdPMapper: "Add Identity Provider Mapper",
+    editIdPMapper: "Edit Identity Provider Mapper",
     mappersList: "Mappers list",
     noMappers: "No Mappers",
     noMappersInstructions:
