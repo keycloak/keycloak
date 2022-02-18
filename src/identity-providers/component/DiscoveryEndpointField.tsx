@@ -125,7 +125,7 @@ export const DiscoveryEndpointField = ({
             }
             customIconUrl={
               discovering
-                ? environment.resourceUrl + "./discovery-load-indicator.svg"
+                ? environment.resourceUrl + "/discovery-load-indicator.svg"
                 : ""
             }
             ref={register({ required: true })}
