@@ -54,6 +54,8 @@ export const ClientSettings = ({
       result = [...result, "samlCapabilityConfig", "signatureAndEncryption"];
     } else if (!client.bearerOnly) {
       result = [...result, "capabilityConfig"];
+    } else {
+      return [...result, "accessSettings"];
     }
 
     return [...result, "accessSettings", "loginSettings"];
@@ -74,72 +76,76 @@ export const ClientSettings = ({
       )}
       {protocol === "saml" && <SamlSignature />}
       <FormAccess isHorizontal role="manage-clients">
-        <FormGroup
-          label={t("rootUrl")}
-          fieldId="kc-root-url"
-          labelIcon={
-            <HelpItem
-              helpText="clients-help:rootUrl"
-              fieldLabelId="clients:rootUrl"
-            />
-          }
-        >
-          <TextInput
-            type="text"
-            id="kc-root-url"
-            name="rootUrl"
-            ref={register}
-          />
-        </FormGroup>
-        <FormGroup
-          label={t("validRedirectUri")}
-          fieldId="kc-redirect"
-          labelIcon={
-            <HelpItem
-              helpText="clients-help:validRedirectURIs"
-              fieldLabelId="clients:validRedirectUri"
-            />
-          }
-        >
-          <MultiLineInput
-            name="redirectUris"
-            aria-label={t("validRedirectUri")}
-            addButtonLabel="clients:addRedirectUri"
-          />
-        </FormGroup>
-        <FormGroup
-          label={t("homeURL")}
-          fieldId="kc-home-url"
-          labelIcon={
-            <HelpItem
-              helpText="clients-help:homeURL"
-              fieldLabelId="clients:homeURL"
-            />
-          }
-        >
-          <TextInput
-            type="text"
-            id="kc-home-url"
-            name="baseUrl"
-            ref={register}
-          />
-        </FormGroup>
-        <FormGroup
-          label={t("webOrigins")}
-          fieldId="kc-web-origins"
-          labelIcon={
-            <HelpItem
-              helpText="clients-help:webOrigins"
-              fieldLabelId="clients:webOrigins"
-            />
-          }
-        >
-          <MultiLineInput
-            name="webOrigins"
-            aria-label={t("webOrigins")}
-            addButtonLabel="clients:addWebOrigins"
-          />
-        </FormGroup>
+        {!client.bearerOnly && (
+          <>
+            <FormGroup
+              label={t("rootUrl")}
+              fieldId="kc-root-url"
+              labelIcon={
+                <HelpItem
+                  helpText="clients-help:rootUrl"
+                  fieldLabelId="clients:rootUrl"
+                />
+              }
+            >
+              <TextInput
+                type="text"
+                id="kc-root-url"
+                name="rootUrl"
+                ref={register}
+              />
+            </FormGroup>
+            <FormGroup
+              label={t("validRedirectUri")}
+              fieldId="kc-redirect"
+              labelIcon={
+                <HelpItem
+                  helpText="clients-help:validRedirectURIs"
+                  fieldLabelId="clients:validRedirectUri"
+                />
+              }
+            >
+              <MultiLineInput
+                name="redirectUris"
+                aria-label={t("validRedirectUri")}
+                addButtonLabel="clients:addRedirectUri"
+              />
+            </FormGroup>
+            <FormGroup
+              label={t("homeURL")}
+              fieldId="kc-home-url"
+              labelIcon={
+                <HelpItem
+                  helpText="clients-help:homeURL"
+                  fieldLabelId="clients:homeURL"
+                />
+              }
+            >
+              <TextInput
+                type="text"
+                id="kc-home-url"
+                name="baseUrl"
+                ref={register}
+              />
+            </FormGroup>
+            <FormGroup
+              label={t("webOrigins")}
+              fieldId="kc-web-origins"
+              labelIcon={
+                <HelpItem
+                  helpText="clients-help:webOrigins"
+                  fieldLabelId="clients:webOrigins"
+                />
+              }
+            >
+              <MultiLineInput
+                name="webOrigins"
+                aria-label={t("webOrigins")}
+                addButtonLabel="clients:addWebOrigins"
+              />
+            </FormGroup>
+          </>
+        )}
         <FormGroup
           label={t("adminURL")}
           fieldId="kc-admin-url"
@@ -157,6 +163,14 @@ export const ClientSettings = ({
             ref={register}
           />
         </FormGroup>
+        {client.bearerOnly && (
+          <SaveReset
+            className="keycloak__form_actions"
+            name="settings"
+            save={save}
+            reset={reset}
+          />
+        )}
       </FormAccess>
       <FormAccess isHorizontal role="manage-clients">
         <FormGroup
