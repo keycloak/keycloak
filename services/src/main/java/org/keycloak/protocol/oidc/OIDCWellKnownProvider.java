@@ -259,15 +259,15 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
     }
 
     private List<String> getAcrValuesSupported(RealmModel realm) {
+        // Values explicitly set on the realm mapping
         Map<String, Integer> realmAcrLoaMap = AcrUtils.getAcrLoaMap(realm);
-        if (realmAcrLoaMap != null && !realmAcrLoaMap.isEmpty()) {
-            return new ArrayList<>(realmAcrLoaMap.keySet());
-        }
+        List<String> result = new ArrayList<>(realmAcrLoaMap.keySet());
 
-        // Fallback to LoA levels configured in authentication flow in case the map is not explicitly set on the realm
-        return AuthenticatorUtil.getLoAConfiguredInRealmBrowserFlow(realm)
+        // Add LoA levels configured in authentication flow in addition to the realm values
+        result.addAll(AuthenticatorUtil.getLoAConfiguredInRealmBrowserFlow(realm)
                 .map(String::valueOf)
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()));
+        return result;
     }
 
     private List<String> getSupportedEncryptionAlgorithms() {

@@ -315,20 +315,33 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             oidcConfig = getOIDCDiscoveryRepresentation(client, OAuthClient.AUTH_SERVER_ROOT);
             Assert.assertNames(oidcConfig.getAcrValuesSupported(), "0", "1", "2", "3");
 
-            // Configure "ACR-To-Loa" mapping and doublecheck it has preference
+            // Configure "ACR-To-Loa" mapping and check it has both configured values and numbers from authentication flow
             RealmResource testRealm = adminClient.realm("test");
             RealmRepresentation realmRep = testRealm.toRepresentation();
             Map<String, Integer> acrToLoa = new HashMap<>();
             acrToLoa.put("poor", 0);
             acrToLoa.put("silver", 1);
             acrToLoa.put("gold", 2);
-            acrToLoa.put("platinum", 3);
             String acrToLoaAttr = JsonSerialization.writeValueAsString(acrToLoa);
             realmRep.getAttributes().put(Constants.ACR_LOA_MAP, acrToLoaAttr);
             testRealm.update(realmRep);
 
             oidcConfig = getOIDCDiscoveryRepresentation(client, OAuthClient.AUTH_SERVER_ROOT);
-            Assert.assertNames(oidcConfig.getAcrValuesSupported(), "poor", "silver", "gold", "platinum");
+            Assert.assertNames(oidcConfig.getAcrValuesSupported(), "poor", "silver", "gold", "0", "1", "2", "3");
+
+            // Use mappings even with values not included in the authentication flow
+            acrToLoa = new HashMap<>();
+            acrToLoa.put("poor", 0);
+            acrToLoa.put("silver", 1);
+            acrToLoa.put("gold", 2);
+            acrToLoa.put("platinum", 3);
+            acrToLoa.put("diamond", 4);
+            acrToLoaAttr = JsonSerialization.writeValueAsString(acrToLoa);
+            realmRep.getAttributes().put(Constants.ACR_LOA_MAP, acrToLoaAttr);
+            testRealm.update(realmRep);
+
+            oidcConfig = getOIDCDiscoveryRepresentation(client, OAuthClient.AUTH_SERVER_ROOT);
+            Assert.assertNames(oidcConfig.getAcrValuesSupported(), "poor", "silver", "gold", "platinum", "diamond", "0", "1", "2", "3");
 
             // Revert realm and flow
             realmRep.getAttributes().remove(Constants.ACR_LOA_MAP);
