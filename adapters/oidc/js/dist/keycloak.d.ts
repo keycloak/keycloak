@@ -23,6 +23,7 @@ export type KeycloakResponseMode = 'query'|'fragment';
 export type KeycloakResponseType = 'code'|'id_token token'|'code id_token token';
 export type KeycloakFlow = 'standard'|'implicit'|'hybrid';
 export type KeycloakPkceMethod = 'S256';
+export type KeycloakHttpRequestType = 'refresh_token'|'authorization_code'|'load_config'|'openid_configuration'|'load_user_profile'|'load_user_info';
 
 export interface KeycloakConfig {
 	/**
@@ -175,6 +176,11 @@ export interface KeycloakInitOptions {
 	 * @default 10000
 	 */
 	messageReceiveTimeout?: number
+
+	/**
+	 * Set additional headers for each HTTP requests.
+	 */
+	httpRequestHeaders?: { [headerName: string]: string | string[] }
 }
 
 export interface KeycloakLoginOptions {
@@ -505,6 +511,11 @@ declare class Keycloak {
 	* Called when a AIA has been requested by the application.
 	*/
 	onActionUpdate?(status: 'success'|'cancelled'|'error'): void;
+
+	/**
+	 * Called when HTTP request is sent to allow customization.
+	 */
+	onHttpRequestSend?(req: XMLHttpRequest, type: KeycloakHttpRequestType): void;
 
 	/**
 	* Called to initialize the adapter.

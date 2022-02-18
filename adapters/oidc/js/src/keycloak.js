@@ -157,6 +157,12 @@ function Keycloak (config) {
             } else {
                 kc.messageReceiveTimeout = 10000;
             }
+
+            if (typeof initOptions.httpRequestHeaders === 'object') {
+                kc.httpRequestHeaders = initOptions.httpRequestHeaders;
+            } else {
+                kc.httpRequestHeaders = {};
+            }
         }
 
         if (!kc.responseMode) {
@@ -531,6 +537,11 @@ function Keycloak (config) {
             }
         }
 
+        applyHttpRequestHeaders(req)
+        if (kc.onHttpRequestSend) {
+            kc.onHttpRequestSend(req, 'load_user_profile')
+        }
+
         req.send();
 
         return promise.promise;
@@ -554,6 +565,11 @@ function Keycloak (config) {
                     promise.setError();
                 }
             }
+        }
+
+        applyHttpRequestHeaders(req)
+        if (kc.onHttpRequestSend) {
+            kc.onHttpRequestSend(req, 'load_user_info')
         }
 
         req.send();
@@ -649,6 +665,11 @@ function Keycloak (config) {
                         }
                     };
 
+                    applyHttpRequestHeaders(req)
+                    if (kc.onHttpRequestSend) {
+                        kc.onHttpRequestSend(req, 'refresh_token')
+                    }
+
                     req.send(params);
                 }
             }
@@ -674,6 +695,19 @@ function Keycloak (config) {
             kc.onAuthLogout && kc.onAuthLogout();
             if (kc.loginRequired) {
                 kc.login();
+            }
+        }
+    }
+
+    function applyHttpRequestHeaders(req) {
+        for (var headerName in kc.httpRequestHeaders) {
+            var headerValue = kc.httpRequestHeaders[headerName];
+            if (Array.isArray(headerValue)) {
+                for (var i = 0; i < headerValue.length; i++) {
+                    req.setRequestHeader(headerName, headerValue[i]);
+                }
+            } else {
+                req.setRequestHeader(headerName, headerValue);
             }
         }
     }
@@ -752,6 +786,11 @@ function Keycloak (config) {
                     }
                 }
             };
+
+            applyHttpRequestHeaders(req)
+            if (kc.onHttpRequestSend) {
+                kc.onHttpRequestSend(req, 'authorization_code')
+            }
 
             req.send(params);
         }
@@ -875,6 +914,11 @@ function Keycloak (config) {
                 }
             };
 
+            applyHttpRequestHeaders(req)
+            if (kc.onHttpRequestSend) {
+                kc.onHttpRequestSend(req, 'load_config')
+            }
+
             req.send();
         } else {
             if (!config.clientId) {
@@ -925,6 +969,11 @@ function Keycloak (config) {
                             }
                         }
                     };
+
+                    applyHttpRequestHeaders(req)
+                    if (kc.onHttpRequestSend) {
+                        kc.onHttpRequestSend(req, 'openid_configuration')
+                    }
 
                     req.send();
                 } else {
