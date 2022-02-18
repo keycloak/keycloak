@@ -49,15 +49,18 @@ export const AddClientProfileModal = (props: AddClientProfileModalProps) => {
     []
   );
 
-  const loader = async () => tableProfiles ?? [];
+  const loader = async () =>
+    tableProfiles?.filter((item) => !props.allProfiles.includes(item.name!)) ??
+    [];
 
   if (!tableProfiles) {
     return <KeycloakSpinner />;
   }
 
-  const AliasRenderer = ({ name }: ClientProfile) => (
+  const AliasRenderer = ({ name, global }: ClientProfile) => (
     <>
-      {name && <Label color="blue">{name}</Label>} {name}
+      {name}{" "}
+      {global && <Label color="blue">{t("realm-settings:global")}</Label>}
     </>
   );
 
@@ -94,9 +97,6 @@ export const AddClientProfileModal = (props: AddClientProfileModalProps) => {
     >
       <KeycloakDataTable
         loader={loader}
-        isRowDisabled={(value) =>
-          props.allProfiles.includes(value.name!) || false
-        }
         ariaLabelKey="realm-settings:profilesList"
         searchPlaceholderKey="realm-settings:searchProfile"
         canSelectAll

@@ -387,7 +387,7 @@ export default function NewClientPolicyForm() {
   const addProfiles = async (profiles: string[]) => {
     const createdPolicy = {
       ...currentPolicy,
-      profiles: (currentPolicy?.profiles ?? []).concat(profiles),
+      profiles: policyProfiles.concat(profiles),
       conditions: currentPolicy?.conditions,
     };
 
