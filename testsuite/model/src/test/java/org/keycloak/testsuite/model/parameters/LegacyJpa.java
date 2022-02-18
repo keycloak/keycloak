@@ -38,6 +38,8 @@ import org.keycloak.models.jpa.JpaRoleProviderFactory;
 import org.keycloak.models.jpa.JpaUserProviderFactory;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
+import org.keycloak.storage.DatastoreSpi;
+import org.keycloak.storage.datastore.LegacyDatastoreProviderFactory;
 import org.keycloak.testsuite.model.Config;
 import com.google.common.collect.ImmutableSet;
 import java.util.Set;
@@ -48,7 +50,7 @@ import org.keycloak.protocol.LoginProtocolSpi;
  *
  * @author hmlnarik
  */
-public class Jpa extends KeycloakModelParameters {
+public class LegacyJpa extends KeycloakModelParameters {
 
     static final Set<Class<? extends Spi>> ALLOWED_SPIS = ImmutableSet.<Class<? extends Spi>>builder()
       // jpa-specific
@@ -56,6 +58,8 @@ public class Jpa extends KeycloakModelParameters {
       .add(JpaUpdaterSpi.class)
       .add(LiquibaseConnectionSpi.class)
       .add(UserSessionPersisterSpi.class)
+
+      .add(DatastoreSpi.class)
 
       //required for migrateModel
       .add(MigrationSpi.class)
@@ -65,6 +69,8 @@ public class Jpa extends KeycloakModelParameters {
 
     static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = ImmutableSet.<Class<? extends ProviderFactory>>builder()
       // jpa-specific
+      .add(LegacyDatastoreProviderFactory.class)
+
       .add(DefaultJpaConnectionProviderFactory.class)
       .add(JPAAuthorizationStoreFactory.class)
       .add(JpaClientProviderFactory.class)
@@ -85,7 +91,7 @@ public class Jpa extends KeycloakModelParameters {
 
       .build();
 
-    public Jpa() {
+    public LegacyJpa() {
         super(ALLOWED_SPIS, ALLOWED_FACTORIES);
     }
 

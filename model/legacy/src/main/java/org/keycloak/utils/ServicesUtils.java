@@ -34,7 +34,6 @@ import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 
 /**
  * Utility class for general helper methods used across the keycloak-services.
- * @deprecated - DELETE once only used from within legacy datastore module
  */
 public class ServicesUtils {
 

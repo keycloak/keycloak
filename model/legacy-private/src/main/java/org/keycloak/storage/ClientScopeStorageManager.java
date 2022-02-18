@@ -33,13 +33,17 @@ public class ClientScopeStorageManager extends AbstractStorageManager<ClientScop
                 ClientScopeStorageProviderModel::new, "clientscope");
     }
 
+    private ClientScopeProvider localStorage() {
+        return session.getProvider(ClientScopeProvider.class);
+    }
+
     /* CLIENT SCOPE PROVIDER LOOKUP METHODS - implemented by client scope storage providers */
 
     @Override
     public ClientScopeModel getClientScopeById(RealmModel realm, String id) {
         StorageId storageId = new StorageId(id);
         if (storageId.getProviderId() == null) {
-            return session.clientScopeLocalStorage().getClientScopeById(realm, id);
+            return localStorage().getClientScopeById(realm, id);
         }
 
         ClientScopeLookupProvider provider = getStorageProviderInstance(realm, storageId.getProviderId(), ClientScopeLookupProvider.class);
@@ -52,22 +56,22 @@ public class ClientScopeStorageManager extends AbstractStorageManager<ClientScop
 
     @Override
     public Stream<ClientScopeModel> getClientScopesStream(RealmModel realm) {
-        return session.clientScopeLocalStorage().getClientScopesStream(realm);
+        return localStorage().getClientScopesStream(realm);
     }
 
     @Override
     public ClientScopeModel addClientScope(RealmModel realm, String id, String name) {
-        return session.clientScopeLocalStorage().addClientScope(realm, id, name);
+        return localStorage().addClientScope(realm, id, name);
     }
 
     @Override
     public boolean removeClientScope(RealmModel realm, String id) {
-        return session.clientScopeLocalStorage().removeClientScope(realm, id);
+        return localStorage().removeClientScope(realm, id);
     }
 
     @Override
     public void removeClientScopes(RealmModel realm) {
-        session.clientScopeLocalStorage().removeClientScopes(realm);
+        localStorage().removeClientScopes(realm);
     }
 
     @Override

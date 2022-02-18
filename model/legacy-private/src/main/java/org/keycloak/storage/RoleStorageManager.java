@@ -45,6 +45,10 @@ public class RoleStorageManager implements RoleProvider {
         this.roleStorageProviderTimeout = roleStorageProviderTimeout;
     }
 
+    private RoleProvider localStorage() {
+        return session.getProvider(RoleProvider.class);
+    }
+
     public static boolean isStorageProviderEnabled(RealmModel realm, String providerId) {
         RoleStorageProviderModel model = getStorageProviderModel(realm, providerId);
         return model.isEnabled();
@@ -114,17 +118,17 @@ public class RoleStorageManager implements RoleProvider {
 
     @Override
     public RoleModel addRealmRole(RealmModel realm, String name) {
-        return session.roleLocalStorage().addRealmRole(realm, name);
+        return localStorage().addRealmRole(realm, name);
     }
 
     @Override
     public RoleModel addRealmRole(RealmModel realm, String id, String name) {
-        return session.roleLocalStorage().addRealmRole(realm, id, name);
+        return localStorage().addRealmRole(realm, id, name);
     }
 
     @Override
     public RoleModel getRealmRole(RealmModel realm, String name) {
-        RoleModel realmRole = session.roleLocalStorage().getRealmRole(realm, name);
+        RoleModel realmRole = localStorage().getRealmRole(realm, name);
         if (realmRole != null) return realmRole;
         return getEnabledStorageProviders(session, realm, RoleLookupProvider.class)
                 .map(provider -> provider.getRealmRole(realm, name))
@@ -137,7 +141,7 @@ public class RoleStorageManager implements RoleProvider {
     public RoleModel getRoleById(RealmModel realm, String id) {
         StorageId storageId = new StorageId(id);
         if (storageId.getProviderId() == null) {
-            return session.roleLocalStorage().getRoleById(realm, id);
+            return localStorage().getRoleById(realm, id);
         }
         RoleLookupProvider provider = (RoleLookupProvider)getStorageProvider(session, realm, storageId.getProviderId());
         if (provider == null) return null;
@@ -147,12 +151,12 @@ public class RoleStorageManager implements RoleProvider {
 
     @Override
     public Stream<RoleModel> getRealmRolesStream(RealmModel realm, Integer first, Integer max) {
-        return session.roleLocalStorage().getRealmRolesStream(realm, first, max);
+        return localStorage().getRealmRolesStream(realm, first, max);
     }
 
     @Override
     public Stream<RoleModel> getRolesStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max) {
-        return session.roleLocalStorage().getRolesStream(realm, ids, search, first, max);
+        return localStorage().getRolesStream(realm, ids, search, first, max);
     }
 
     /**
@@ -164,7 +168,7 @@ public class RoleStorageManager implements RoleProvider {
      */
     @Override
     public Stream<RoleModel> searchForRolesStream(RealmModel realm, String search, Integer first, Integer max) {
-        Stream<RoleModel> local = session.roleLocalStorage().searchForRolesStream(realm, search, first, max);
+        Stream<RoleModel> local = localStorage().searchForRolesStream(realm, search, first, max);
         Stream<RoleModel> ext = getEnabledStorageProviders(session, realm, RoleLookupProvider.class)
                 .flatMap(ServicesUtils.timeBound(session,
                         roleStorageProviderTimeout,
@@ -178,32 +182,32 @@ public class RoleStorageManager implements RoleProvider {
         if (!StorageId.isLocalStorage(role.getId())) {
             throw new RuntimeException("Federated roles do not support this operation");
         }
-        return session.roleLocalStorage().removeRole(role);
+        return localStorage().removeRole(role);
     }
 
     @Override
     public void removeRoles(RealmModel realm) {
-        session.roleLocalStorage().removeRoles(realm);
+        localStorage().removeRoles(realm);
     }
 
     @Override
     public void removeRoles(ClientModel client) {
-        session.roleLocalStorage().removeRoles(client);
+        localStorage().removeRoles(client);
     }
 
     @Override
     public RoleModel addClientRole(ClientModel client, String name) {
-        return session.roleLocalStorage().addClientRole(client, name);
+        return localStorage().addClientRole(client, name);
     }
 
     @Override
     public RoleModel addClientRole(ClientModel client, String id, String name) {
-        return session.roleLocalStorage().addClientRole(client, id, name);
+        return localStorage().addClientRole(client, id, name);
     }
 
     @Override
     public RoleModel getClientRole(ClientModel client, String name) {
-        RoleModel clientRole = session.roleLocalStorage().getClientRole(client, name);
+        RoleModel clientRole = localStorage().getClientRole(client, name);
         if (clientRole != null) return clientRole;
         return getEnabledStorageProviders(session, client.getRealm(), RoleLookupProvider.class)
                 .map(provider -> provider.getClientRole(client, name))
@@ -214,12 +218,12 @@ public class RoleStorageManager implements RoleProvider {
 
     @Override
     public Stream<RoleModel> getClientRolesStream(ClientModel client) {
-        return session.roleLocalStorage().getClientRolesStream(client);
+        return localStorage().getClientRolesStream(client);
     }
 
     @Override
     public Stream<RoleModel> getClientRolesStream(ClientModel client, Integer first, Integer max) {
-        return session.roleLocalStorage().getClientRolesStream(client, first, max);
+        return localStorage().getClientRolesStream(client, first, max);
     }
 
     /**
@@ -231,7 +235,7 @@ public class RoleStorageManager implements RoleProvider {
      */
     @Override
     public Stream<RoleModel> searchForClientRolesStream(ClientModel client, String search, Integer first, Integer max) {
-        Stream<RoleModel> local = session.roleLocalStorage().searchForClientRolesStream(client, search, first, max);
+        Stream<RoleModel> local = localStorage().searchForClientRolesStream(client, search, first, max);
         Stream<RoleModel> ext = getEnabledStorageProviders(session, client.getRealm(), RoleLookupProvider.class)
                 .flatMap(ServicesUtils.timeBound(session,
                         roleStorageProviderTimeout,

@@ -124,6 +124,10 @@ public class ModelToRepresentation {
     }
 
 
+    public static GroupRepresentation groupToBriefRepresentation(GroupModel g) {
+        return toRepresentation(g, false);
+    }
+
     public static GroupRepresentation toRepresentation(GroupModel group, boolean full) {
         GroupRepresentation rep = new GroupRepresentation();
         rep.setId(group.getId());
