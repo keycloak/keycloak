@@ -50,9 +50,10 @@ public interface UserLookupProvider {
     UserModel getUserById(String id, RealmModel realm);
 
     /**
+     * Exact search for a user by its username.
      * Returns a user with the given username belonging to the realm
      *
-     * @param username case insensitive username (case-sensitivity is controlled by storage)
+     * @param username username (case-sensitivity is controlled by storage)
      * @param realm the realm model
      * @return found user model, or {@code null} if no such user exists
      */
@@ -66,9 +67,10 @@ public interface UserLookupProvider {
     UserModel getUserByUsername(String username, RealmModel realm);
 
     /**
+     * Exact search for a user by its email.
      * Returns a user with the given email belonging to the realm
      *
-     * @param email case insensitive email address (case-sensitivity is controlled by storage)
+     * @param email email address (case-sensitivity is controlled by storage)
      * @param realm the realm model
      * @return found user model, or {@code null} if no such user exists
      *

@@ -193,6 +193,6 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRo
     @Override
     public MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session) {
         Map<SearchableModelField<? super M>, MapModelCriteriaBuilder.UpdatePredicatesFunc<K, V, M>> fieldPredicates = MapFieldPredicates.getPredicates((Class<M>) storedEntityDescriptor.getModelTypeClass());
-        return new ConcurrentHashMapKeycloakTransaction<>(this, keyConvertor, cloner, fieldPredicates);
+        return new ConcurrentHashMapKeycloakTransaction<>(this, keyConvertor, cloner, fieldPredicates, null);
     }
 }

@@ -27,6 +27,9 @@ import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+import static org.jboss.resteasy.mock.MockHttpRequest.options;
+import org.keycloak.Config.Scope;
+import org.keycloak.models.UserModel;
 
 /**
  *
@@ -45,16 +48,18 @@ public class MapModelCriteriaBuilder<K, V extends AbstractEntity, M> implements 
     private final Predicate<? super V> entityFilter;
     private final Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates;
     private final StringKeyConvertor<K> keyConvertor;
+    private final Scope config;
 
-    public MapModelCriteriaBuilder(StringKeyConvertor<K> keyConvertor, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates) {
-        this(keyConvertor, fieldPredicates, ALWAYS_TRUE, ALWAYS_TRUE);
+    public MapModelCriteriaBuilder(StringKeyConvertor<K> keyConvertor, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates, Scope config) {
+        this(keyConvertor, fieldPredicates, ALWAYS_TRUE, ALWAYS_TRUE, config);
     }
 
-    private MapModelCriteriaBuilder(StringKeyConvertor<K> keyConvertor, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates, Predicate<? super K> indexReadFilter, Predicate<? super V> sequentialReadFilter) {
+    private MapModelCriteriaBuilder(StringKeyConvertor<K> keyConvertor, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates, Predicate<? super K> indexReadFilter, Predicate<? super V> sequentialReadFilter, Scope config) {
         this.keyConvertor = keyConvertor;
         this.fieldPredicates = fieldPredicates;
         this.keyFilter = indexReadFilter;
         this.entityFilter = sequentialReadFilter;
+        this.config = config;
     }
 
     @Override
@@ -62,6 +67,10 @@ public class MapModelCriteriaBuilder<K, V extends AbstractEntity, M> implements 
         UpdatePredicatesFunc<K, V, M> method = fieldPredicates.get(modelField);
         if (method == null) {
             throw new IllegalArgumentException("Filter not implemented for field " + modelField);
+        }
+
+        if (modelField.equals(UserModel.SearchableFields.USERNAME)) {
+            updateUsernameLettercase(values);
         }
 
         return method.apply(this, op, values);
@@ -73,7 +82,7 @@ public class MapModelCriteriaBuilder<K, V extends AbstractEntity, M> implements 
     public final MapModelCriteriaBuilder<K, V, M> and(MapModelCriteriaBuilder<K, V, M>... builders) {
         Predicate<? super K> resIndexFilter = Stream.of(builders).map(MapModelCriteriaBuilder.class::cast).map(MapModelCriteriaBuilder::getKeyFilter).reduce(keyFilter, Predicate::and);
         Predicate<V> resEntityFilter = Stream.of(builders).map(MapModelCriteriaBuilder.class::cast).map(MapModelCriteriaBuilder::getEntityFilter).reduce(entityFilter, Predicate::and);
-        return new MapModelCriteriaBuilder<>(keyConvertor, fieldPredicates, resIndexFilter, resEntityFilter);
+        return new MapModelCriteriaBuilder<>(keyConvertor, fieldPredicates, resIndexFilter, resEntityFilter, config);
     }
 
     @SafeVarargs
@@ -86,7 +95,8 @@ public class MapModelCriteriaBuilder<K, V extends AbstractEntity, M> implements 
           keyConvertor,
           fieldPredicates,
           v -> keyFilter.test(v) && resIndexFilter.test(v),
-          v -> entityFilter.test(v) && resEntityFilter.test(v)
+          v -> entityFilter.test(v) && resEntityFilter.test(v),
+          config
         );
     }
 
@@ -101,7 +111,8 @@ public class MapModelCriteriaBuilder<K, V extends AbstractEntity, M> implements 
           keyConvertor,
           fieldPredicates,
           v -> keyFilter.test(v) && resIndexFilter.test(v),
-          v -> entityFilter.test(v) && resEntityFilter.test(v)
+          v -> entityFilter.test(v) && resEntityFilter.test(v),
+          config
         );
     }
 
@@ -125,7 +136,7 @@ public class MapModelCriteriaBuilder<K, V extends AbstractEntity, M> implements 
             case EXISTS:
             case NOT_EXISTS:
             case IN:
-                return new MapModelCriteriaBuilder<>(keyConvertor, fieldPredicates, this.keyFilter.and(CriteriaOperator.predicateFor(op, convertedValues)), this.entityFilter);
+                return new MapModelCriteriaBuilder<>(keyConvertor, fieldPredicates, this.keyFilter.and(CriteriaOperator.predicateFor(op, convertedValues)), this.entityFilter, config);
             default:
                 throw new AssertionError("Invalid operator: " + op);
         }
@@ -167,6 +178,26 @@ public class MapModelCriteriaBuilder<K, V extends AbstractEntity, M> implements 
             final Predicate<V> p = v -> valueComparator.test(getter.apply(v));
             resEntityFilter = p.and(entityFilter);
         }
-        return new MapModelCriteriaBuilder<>(keyConvertor, fieldPredicates, this.keyFilter, resEntityFilter);
+        return new MapModelCriteriaBuilder<>(keyConvertor, fieldPredicates, this.keyFilter, resEntityFilter, config);
+    }
+
+    private void updateUsernameLettercase(Object[] values) throws IllegalStateException {
+        if (config == null || values.length != 1 || ! (values[0] instanceof String)) {
+            throw new IllegalStateException();
+        }
+        String lettercase = config.get("username-lettercase", "lowercase");
+        switch (lettercase) {
+            case "lowercase":
+                values[0] = ((String) values[0]).toLowerCase();
+                break;
+            case "uppercase":
+                values[0] = ((String) values[0]).toUpperCase();
+                break;
+            case "as_is":
+                // do nothing
+                break;
+            default:
+                throw new IllegalStateException("Unknown username lettercase: " + config.get("username-lettercase"));
+        }
     }
 }

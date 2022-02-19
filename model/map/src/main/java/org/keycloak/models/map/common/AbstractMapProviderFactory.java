@@ -78,4 +78,8 @@ public abstract class AbstractMapProviderFactory<T extends Provider, V extends A
     public boolean isSupported() {
         return Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
+
+    public Scope getStorageConfigScope() {
+        return storageConfigScope;
+    }
 }

@@ -65,11 +65,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import org.keycloak.Config;
+import org.keycloak.models.UserModel;
 
 import static org.keycloak.models.map.storage.ModelEntityUtil.getModelName;
 import static org.keycloak.models.map.storage.ModelEntityUtil.getModelNames;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
+import org.keycloak.models.map.user.MapUserProviderFactory;
 
 /**
  *
@@ -90,6 +93,8 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
     private String suffix;
 
     private StringKeyConvertor defaultKeyConvertor;
+
+    private Scope userStorageConfigScope;
 
     private final static DeepCloner CLONER = new DeepCloner.Builder()
       .genericCloner(Serialization::from)
@@ -167,6 +172,8 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        MapUserProviderFactory providerFactory = (MapUserProviderFactory) factory.getProviderFactory(org.keycloak.models.UserProvider.class, "map");
+        userStorageConfigScope = providerFactory.getStorageConfigScope();
     }
 
     @Override
@@ -203,6 +210,13 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
         if (modelType == UserSessionModel.class) {
             ConcurrentHashMapStorage clientSessionStore = getStorage(AuthenticatedClientSessionModel.class);
             store = new UserSessionConcurrentHashMapStorage(clientSessionStore, kc, CLONER) {
+                @Override
+                public String toString() {
+                    return "ConcurrentHashMapStorage(" + mapName + suffix + ")";
+                }
+            };
+        } else if (modelType == UserModel.class) {
+            store = new UserConcurrentHashMapStorage(modelType, kc, CLONER, userStorageConfigScope) {
                 @Override
                 public String toString() {
                     return "ConcurrentHashMapStorage(" + mapName + suffix + ")";

@@ -240,6 +240,7 @@ public class UserCacheSession implements UserCache.Streams {
     @Override
     public UserModel getUserByUsername(RealmModel realm, String username) {
         logger.tracev("getUserByUsername: {0}", username);
+        //TODO remove following line?
         username = username.toLowerCase();
         if (realmInvalidations.contains(realm.getId())) {
             logger.tracev("realmInvalidations");

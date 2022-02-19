@@ -58,7 +58,7 @@ public class UserSessionConcurrentHashMapStorage<K> extends ConcurrentHashMapSto
                                UpdatePredicatesFunc<K,
                                        MapUserSessionEntity,
                                        UserSessionModel>> fieldPredicates) {
-            super(UserSessionConcurrentHashMapStorage.this, keyConvertor, cloner, fieldPredicates);
+            super(UserSessionConcurrentHashMapStorage.this, keyConvertor, cloner, fieldPredicates, null);
             this.clientSessionTr = clientSessionTr;
         }
 

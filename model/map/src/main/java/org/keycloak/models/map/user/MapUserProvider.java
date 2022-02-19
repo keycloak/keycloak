@@ -334,7 +334,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         entity.setId(id);
         entity.setRealmId(realm.getId());
         entity.setEmailConstraint(KeycloakModelUtils.generateId());
-        entity.setUsername(username.toLowerCase());
+        entity.setUsername(username);
         entity.setCreatedTimestamp(Time.currentTimeMillis());
 
         entity = tx.create(entity);
@@ -508,7 +508,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         LOG.tracef("getUserByUsername(%s, %s)%s", realm, username, getShortStackTrace());
         DefaultModelCriteria<UserModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.USERNAME, Operator.ILIKE, username);
+          .compare(SearchableFields.USERNAME, Operator.EQ, username);
 
         try (Stream<MapUserEntity> s = tx.read(withCriteria(mcb))) {
             return s.findFirst()
@@ -521,7 +521,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         LOG.tracef("getUserByEmail(%s, %s)%s", realm, email, getShortStackTrace());
         DefaultModelCriteria<UserModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.EMAIL, Operator.EQ, email);
+          .compare(SearchableFields.EMAIL, Operator.EQ, email.toLowerCase());
 
         List<MapUserEntity> usersWithEmail = tx.read(withCriteria(mcb))
                 .filter(userEntity -> Objects.equals(userEntity.getEmail(), email))
@@ -719,7 +719,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
 
     @Override
     public UserModel addUser(RealmModel realm, String username) {
-        return addUser(realm, null, username.toLowerCase(), true, true);
+        return addUser(realm, null, username, true, true);
     }
 
     @Override

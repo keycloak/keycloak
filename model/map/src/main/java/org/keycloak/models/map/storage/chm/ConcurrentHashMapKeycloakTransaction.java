@@ -30,6 +30,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jboss.logging.Logger;
+import org.keycloak.Config.Scope;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder.UpdatePredicatesFunc;
@@ -47,16 +48,18 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
     protected final StringKeyConvertor<K> keyConvertor;
     protected final DeepCloner cloner;
     protected final Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates;
+    private final Scope config;
 
     enum MapOperation {
         CREATE, UPDATE, DELETE,
     }
 
-    public ConcurrentHashMapKeycloakTransaction(ConcurrentHashMapCrudOperations<V, M> map, StringKeyConvertor<K> keyConvertor, DeepCloner cloner, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates) {
+    public ConcurrentHashMapKeycloakTransaction(ConcurrentHashMapCrudOperations<V, M> map, StringKeyConvertor<K> keyConvertor, DeepCloner cloner, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates, Scope config) {
         this.map = map;
         this.keyConvertor = keyConvertor;
         this.cloner = cloner;
         this.fieldPredicates = fieldPredicates;
+        this.config = config;
     }
 
     @Override
@@ -99,7 +102,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
     }
 
     private MapModelCriteriaBuilder<K, V, M> createCriteriaBuilder() {
-        return new MapModelCriteriaBuilder<K, V, M>(keyConvertor, fieldPredicates);
+        return new MapModelCriteriaBuilder<>(keyConvertor, fieldPredicates, config);
     }
 
     /**

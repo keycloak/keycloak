@@ -244,7 +244,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
                 .map(provider -> provider.addUser(realm, username))
                 .filter(Objects::nonNull)
                 .findFirst()
-                .orElseGet(() -> localStorage().addUser(realm, username.toLowerCase()));
+                .orElseGet(() -> localStorage().addUser(realm, username.toLowerCase())); //TODO remove toLowerCase?
     }
 
     @Override
