@@ -1973,7 +1973,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
         List<String> ignoreList = Arrays.asList(ignore);
 
         for (Method m : rep.getClass().getDeclaredMethods()) {
-            if (m.getParameters().length == 0 && m.getName().startsWith("get") && !ignoreList.contains(m.getName())) {
+            if (m.getParameterCount() == 0 && m.getName().startsWith("get") && !ignoreList.contains(m.getName())) {
                     try {
                     Object o = m.invoke(rep);
                     assertNull("Expected " + m.getName() + " to be null", o);
