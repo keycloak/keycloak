@@ -68,14 +68,21 @@ abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper 
             realmRoleNames = rolesToAdd;
         }
 
-        Object claimValue = realmRoleNames;
+        // Convert the set of role names to an array
+        String[] roles = new String[realmRoleNames.size()];
+        realmRoleNames.toArray(roles);
 
         boolean multiValued = "true".equals(mappingModel.getConfig().get(ProtocolMapperUtils.MULTIVALUED));
+        Object claimValue = roles;
+
         if (!multiValued) {
-            claimValue = realmRoleNames.toString();
+            if(roles.length > 0 ) {
+                claimValue = roles[0]; // Get the first value of the array, which will be just a string value
+            } else {
+                claimValue = ""; // There were no roles available so the claim is blank
+            }
         }
 
-        //OIDCAttributeMapperHelper.mapClaim(token, mappingModel, claimValue);
         mapClaim(token, mappingModel, claimValue, clientId);
     }
 
