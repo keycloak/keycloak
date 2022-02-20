@@ -594,6 +594,53 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         }
     }
 
+    /**
+     * KEYCLOAK-10325
+     * 
+     * Chris Nurse 20-Feb-2022
+     * 
+     * PR-4205 serialised single values as an array. This is not desired when the Multivalued options is set to false.
+     * 
+     * Test PR-10325 to ensure singular values are not wrapped as array.
+     * 
+     * The subsequent test for PR-4205 will continue to test functionality where multivalued = true
+     * 
+     * @throws Exception
+     */
+    @Test
+    public void testUserRoleToAttributeMappersWithMultiValuedRolesEqualsFalse() throws Exception {
+        // Add mapper for realm roles
+        ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm-role", true, true, false);
+        ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper("test-app", null, "Client roles mapper", "roles-custom.client-role", true, true, false);
+
+        ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
+        protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
+
+        // Login user
+        OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+        IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+
+        // Verify attribute is filled
+        Map<String, Object> roleMappings = (Map<String, Object>)idToken.getOtherClaims().get("roles-custom");
+
+        // Did the mappers insert values into the token?
+        Assert.assertThat(roleMappings.keySet(), containsInAnyOrder("realm-role", "client-role"));
+
+        // Are the values string types?
+        Assert.assertThat(roleMappings.get("realm-role"), CoreMatchers.instanceOf(java.lang.String));
+        Assert.assertThat(roleMappings.get("client-role"), CoreMatchers.instanceOf(java.lang.String));
+
+        // Get the values
+        String realm_role = roleMappings.get("realm-role");
+        String client_role = roleMappings.get("client-role");
+
+        // Are the values wrapped as arrays
+        Assert.assertNotEquals(realm_role.substring(0,1), "[");
+        Assert.assertNotEquals(client_role.substring(0,1), "[");
+
+        // Revert
+        deleteMappers(protocolMappers);
+    }
 
     /**
      * KEYCLOAK-4205
