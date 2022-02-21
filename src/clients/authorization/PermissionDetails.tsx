@@ -190,6 +190,7 @@ export default function PermissionDetails() {
           <FormProvider {...form}>
             <FormGroup
               label={t("common:name")}
+              isRequired
               fieldId="name"
               labelIcon={
                 <HelpItem
@@ -198,7 +199,11 @@ export default function PermissionDetails() {
                 />
               }
             >
-              <TextInput id="name" name="name" ref={register} />
+              <TextInput
+                id="name"
+                name="name"
+                ref={register({ required: true })}
+              />
             </FormGroup>
             <FormGroup
               label={t("common:description")}
