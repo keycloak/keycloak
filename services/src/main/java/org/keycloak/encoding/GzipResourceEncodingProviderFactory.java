@@ -68,7 +68,7 @@ public class GzipResourceEncodingProviderFactory implements ResourceEncodingProv
         }
 
         if (!cacheDir.isDirectory() && !cacheDir.mkdirs()) {
-            logger.warn("Failed to create gzip cache directory");
+            logger.warn("Failed to create gzip cache directory: {}", cacheDir);
             return null;
         }
 
