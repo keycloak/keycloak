@@ -14,7 +14,7 @@ A lot of effort went into polishing and improving the Quarkus distribution to ma
 
 * A new approach to documentation in form of server guides to help you install and configure Keycloak
 * Upgraded Quarkus to 2.7.0.Final
-* Configuration file is on longer Java specific, and aligns configuration keys with CLI arguments
+* Configuration file is no longer Java specific, and aligns configuration keys with CLI arguments
 * Clearer separation between `build options` and `runtime configuration`.
 * `h2-mem` and `h2-file` databases renamed to `dev-mem` and `dev-file`.
 * Simplified enabling and disabling features
