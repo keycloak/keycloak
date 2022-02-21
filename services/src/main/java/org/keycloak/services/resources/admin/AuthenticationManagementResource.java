@@ -567,6 +567,7 @@ public class AuthenticationManagementResource {
                 String providerId = execution.getAuthenticator();
                 ConfigurableAuthenticatorFactory factory = CredentialHelper.getConfigurableAuthenticatorFactory(session, providerId);
                 if (factory == null) {
+                    logger.warnf("Cannot find authentication provider implementation with provider ID '%s'", providerId);
                     throw new NotFoundException("Could not find authenticator provider");
                 }
                 rep.setDisplayName(factory.getDisplayType());
