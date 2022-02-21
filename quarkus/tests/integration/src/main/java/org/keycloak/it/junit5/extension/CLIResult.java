@@ -107,6 +107,8 @@ public interface CLIResult extends LaunchResult {
         String[] split = getOutput().split(System.lineSeparator());
         for (String l: split) {
             if (!l.trim().startsWith("{")) {
+                //we ignore non-json output for now. Problem is the build does not know about the runtime configuration,
+                // so when invoking start-dev and a build is done, the output is not json but unstructured console output
                 continue;
             }
             JsonNode json = objectMapper.readTree(l);

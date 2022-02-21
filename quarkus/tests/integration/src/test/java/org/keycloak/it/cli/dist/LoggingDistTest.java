@@ -79,8 +79,16 @@ public class LoggingDistTest {
     }
 
     @Test
-    @Launch({"start-dev", "--log-json=true"})
+    @Launch({"start-dev", "--log-json-enabled=true"})
     void testEnableJsonLogging(LaunchResult result) throws Exception {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertJsonLogDefaultsApplied();
+        cliResult.assertStartedDevMode();
+    }
+
+    @Test
+    @Launch({"start-dev", "--log-json-enabled=true --log-json-format=ecs"})
+    void testEnableJsonEcsFormat(LaunchResult result) throws Exception {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertJsonLogDefaultsApplied();
         cliResult.assertStartedDevMode();

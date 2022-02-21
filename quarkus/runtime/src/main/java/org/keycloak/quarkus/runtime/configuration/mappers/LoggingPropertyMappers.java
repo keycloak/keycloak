@@ -79,7 +79,7 @@ final class LoggingPropertyMappers {
                         .description("The format of log entries. If the format has spaces in it, you need to escape the value such as \"<format>\".")
                         .paramLabel("format")
                         .build(),
-                builder().from("log-json")
+                builder().from("log-json-enabled")
                         .to("quarkus.log.console.json")
                         .defaultValue(Boolean.FALSE.toString())
                         .description("Enable or disable JSON logging")
@@ -89,7 +89,7 @@ final class LoggingPropertyMappers {
 
                 //from --log-json-fields-disable=...,... to multiple keys on quarkus side -> quarkus.log.console.json.fields.error-type.enabled
                 //TODO
-                builder().from("log-json-fields-disable")
+                builder().from("log-json-fields-disabled")
                         .defaultValue(String.join(",", JSON_FIELD_DEFAULT_DISABLED))
                         .description("Comma-separated list of Keys to disable in JSON log output")
                         .paramLabel("<key>")

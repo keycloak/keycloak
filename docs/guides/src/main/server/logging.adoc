@@ -99,7 +99,7 @@ Keycloak provides support to log in JSON format instead of plain console format.
 === Configuring JSON logging
 To enable logging messages in JSON format, run the following command:
 
-<@kc.start parameters="log-json=true"/>
+<@kc.start parameters="log-json-enabled=true"/>
 
 This results in log messages shown in json format instead of plain text.
 
@@ -124,25 +124,16 @@ The following table provides an overview about the available JSON fields:
 .Example Log Message
 [source, json]
 ----
-{"timestamp":"2022-02-15T12:27:32.697+01:00","sequence":8441,"loggerClassName":"org.keycloak.services.ServicesLogger_$logger","loggerName":"org.keycloak.services","level":"INFO","message":"KC-SERVICES0009: Added user 'admin' to realm 'master'","threadName":"main","threadId":1,"mdc":{},"ndc":"","hostName":"my-host","processName":"QuarkusEntryPoint","processId":9973}
+{"timestamp":"2022-02-15T12:27:32.697+01:00","sequence":8441,"loggerClassName":"org.keycloak.services.ServicesLogger_$logger","loggerName":"org.keycloak.services","level":"INFO","message":"KC-SERVICES0009: Added user 'admin' to realm 'master'","threadName":"main","threadId":1,"hostName":"my-host","processName":"QuarkusEntryPoint","processId":9973}
 ----
 
 === Formatting the JSON output
 Enabling JSON output replaces the default format configuration, so the `--log-format` string and colors will not get picked up.
 
-.Configuring the JSON timestamp Date format
-To set the format for the timestamp used in JSON Logs, ...
+There are two general JSON output formats available. The default one, providing structured JSON, and the https://www.elastic.co/guide/en/ecs-logging/overview/master/intro.html[Elastic Common Scheme] format, providing the necessary fields to comply with ECS.
 
-.Configuring the JSON timestamp timezone
-To set the timezone for the timestamp, ... (default: system)
+To switch the JSON format, run the following command:
 
-.Configuring the JSON exception details
-You can log exceptions on different detail levels by ...
-
-.Configuring more detailed logging
-On cost of performance, you can configure more detailed logging, including source class name, source file name, source method name and source line number, by...
-
-.Pretty Print JSON
-To pretty print the JSON output, ...
+<@kc.start parameters="--log-json-format=<ecs|default>"/>
 
 </@tmpl.guide>
