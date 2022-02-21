@@ -17,39 +17,49 @@ export const OpenIdConnectSettings = () => {
 
   const adminClient = useAdminClient();
   const { realm } = useRealm();
-  const { setValue, errors, setError } = useFormContext();
+  const { setValue, errors, setError, clearErrors } = useFormContext();
 
   const setupForm = (result: any) => {
     Object.keys(result).map((k) => setValue(`config.${k}`, result[k]));
   };
 
   const fileUpload = async (obj?: object) => {
-    if (obj) {
-      const formData = new FormData();
-      formData.append("providerId", id);
-      formData.append("file", new Blob([JSON.stringify(obj)]));
+    clearErrors("discoveryError");
+    if (!obj) {
+      return;
+    }
 
-      try {
-        const response = await fetch(
-          `${getBaseUrl(
-            adminClient
-          )}admin/realms/${realm}/identity-provider/import-config`,
-          {
-            method: "POST",
-            body: formData,
-            headers: {
-              Authorization: `bearer ${await adminClient.getAccessToken()}`,
-            },
-          }
-        );
+    const formData = new FormData();
+    formData.append("providerId", id);
+    formData.append("file", new Blob([JSON.stringify(obj)]));
+
+    try {
+      const response = await fetch(
+        `${getBaseUrl(
+          adminClient
+        )}admin/realms/${realm}/identity-provider/import-config`,
+        {
+          method: "POST",
+          body: formData,
+          headers: {
+            Authorization: `Bearer ${await adminClient.getAccessToken()}`,
+          },
+        }
+      );
+      if (response.ok) {
         const result = await response.json();
         setupForm(result);
-      } catch (error) {
+      } else {
         setError("discoveryError", {
           type: "manual",
-          message: (error as Error).message,
+          message: response.statusText,
         });
       }
+    } catch (error) {
+      setError("discoveryError", {
+        type: "manual",
+        message: (error as Error).message,
+      });
     }
   };
 
@@ -72,7 +82,7 @@ export const OpenIdConnectSettings = () => {
               />
             }
             validated={errors.discoveryError ? "error" : "default"}
-            helperTextInvalid={errors.discoveryError}
+            helperTextInvalid={errors.discoveryError?.message}
           >
             <JsonFileUpload
               id="kc-import-config"

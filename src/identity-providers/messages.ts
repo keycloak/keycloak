@@ -98,7 +98,8 @@ export default {
     importConfig: "Import config from file",
     showMetaData: "Show metadata",
     hideMetaData: "Hide metadata",
-    noValidMetaDataFound: "No valid metadata was found at this URL",
+    noValidMetaDataFound:
+      "No valid metadata was found at this URL: '{{error}}'",
     advanced: "Advanced",
     metadataOfDiscoveryEndpoint: "Metadata of the discovery endpoint",
     authorizationUrl: "Authorization URL",

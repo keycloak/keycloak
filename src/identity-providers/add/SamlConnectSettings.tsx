@@ -20,7 +20,8 @@ export const SamlConnectSettings = () => {
 
   const adminClient = useAdminClient();
   const { realm } = useRealm();
-  const { setValue, register, errors, setError } = useFormContext();
+  const { setValue, register, errors, setError, clearErrors } =
+    useFormContext();
 
   const setupForm = (result: IdentityProviderRepresentation) => {
     Object.entries(result).map(([key, value]) =>
@@ -29,6 +30,10 @@ export const SamlConnectSettings = () => {
   };
 
   const fileUpload = async (xml: string) => {
+    clearErrors("discoveryError");
+    if (!xml) {
+      return;
+    }
     const formData = new FormData();
     formData.append("providerId", id);
     formData.append("file", new Blob([xml]));
@@ -46,8 +51,15 @@ export const SamlConnectSettings = () => {
           },
         }
       );
-      const result = await response.json();
-      setupForm(result);
+      if (response.ok) {
+        const result = await response.json();
+        setupForm(result);
+      } else {
+        setError("discoveryError", {
+          type: "manual",
+          message: response.statusText,
+        });
+      }
     } catch (error) {
       setError("discoveryError", {
         type: "manual",
@@ -99,7 +111,7 @@ export const SamlConnectSettings = () => {
               />
             }
             validated={errors.discoveryError ? "error" : "default"}
-            helperTextInvalid={errors.discoveryError}
+            helperTextInvalid={errors.discoveryError?.message}
           >
             <FileUploadForm
               id="kc-import-config"
