@@ -30,16 +30,8 @@ import {
   toEditClientPolicy,
 } from "./routes/EditClientPolicy";
 import type { EditClientPolicyConditionParams } from "./routes/EditCondition";
-import {
-  convertToMultiline,
-  toValue,
-} from "../components/multi-line-input/multi-line-convert";
-import {
-  COMPONENTS,
-  isValidComponentType,
-} from "../components/dynamic/components";
-import { MultivaluedChipsComponent } from "../components/dynamic/MultivaluedChipsComponent";
-import { MultivaluedRoleComponent } from "../components/dynamic/MultivaluedRoleComponent";
+import { DynamicComponents } from "../components/dynamic/DynamicComponents";
+
 export type ItemType = { value: string };
 
 type ConfigProperty = ConfigPropertyRepresentation & {
@@ -69,7 +61,7 @@ export default function NewClientPolicyCondition() {
   const { conditionName } = useParams<EditClientPolicyConditionParams>();
 
   const serverInfo = useServerInfo();
-  const form = useForm<ClientPolicyConditionRepresentation>({
+  const form = useForm({
     shouldUnregister: false,
   });
 
@@ -80,28 +72,8 @@ export default function NewClientPolicyCondition() {
 
   const adminClient = useAdminClient();
 
-  const setupForm = (
-    condition: ClientPolicyConditionRepresentation,
-    properties: ConfigPropertyRepresentation[]
-  ) => {
-    form.reset();
-
-    Object.entries(condition.configuration!).map(([key, value]) => {
-      const formKey = `config.${key}`;
-
-      const property = properties.find((p) => p.name === key);
-      if (
-        property?.type === "MultivaluedString" &&
-        property.name !== "scopes" &&
-        property.name !== "groups"
-      ) {
-        form.setValue(formKey, convertToMultiline(value));
-      } else if (property?.name === "client-scopes") {
-        form.setValue("config.scopes", value);
-      } else {
-        form.setValue(formKey, value);
-      }
-    });
+  const setupForm = (condition: ClientPolicyConditionRepresentation) => {
+    form.reset({ config: condition.configuration || {} });
   };
 
   useFetch(
@@ -125,7 +97,7 @@ export default function NewClientPolicyCondition() {
 
         setConditionData(typeAndConfigData!);
         setConditionProperties(currentCondition?.properties!);
-        setupForm(typeAndConfigData!, currentCondition?.properties!);
+        setupForm(typeAndConfigData!);
       }
     },
     []
@@ -136,11 +108,7 @@ export default function NewClientPolicyCondition() {
 
     const writeConfig = () => {
       return conditionProperties.reduce((r: any, p) => {
-        p.type === "MultivaluedString" &&
-        p.name !== "scopes" &&
-        p.name !== "groups"
-          ? (r[p.name!] = toValue(configValues[p.name!]))
-          : (r[p.name!] = configValues[p.name!]);
+        r[p.name!] = configValues[p.name!];
         return r;
       }, {});
     };
@@ -284,32 +252,7 @@ export default function NewClientPolicyCondition() {
           </FormGroup>
 
           <FormProvider {...form}>
-            {conditionProperties.map((property) => {
-              const componentType = property.type!;
-              if (property.name === "roles") {
-                return <MultivaluedRoleComponent {...property} />;
-              }
-
-              if (property.name === "scopes" || property.name === "groups") {
-                return (
-                  <MultivaluedChipsComponent
-                    defaultValue={
-                      property.name === "scopes" ? "offline_access" : "topgroup"
-                    }
-                    {...property}
-                  />
-                );
-              }
-
-              if (isValidComponentType(componentType)) {
-                const Component = COMPONENTS[componentType];
-                return <Component key={property.name} {...property} />;
-              } else {
-                console.warn(
-                  `There is no editor registered for ${componentType}`
-                );
-              }
-            })}
+            <DynamicComponents properties={conditionProperties} />
           </FormProvider>
           <ActionGroup>
             <Button

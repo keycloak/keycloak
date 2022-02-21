@@ -158,7 +158,6 @@ describe("Realm settings client policies tab tests", () => {
     // TODO: UNCOMMENT WHEN THE ISSUE 2050 IS FIXED
     //realmSettingsPage.checkAlertMessage("Could not create client policy: 'proposed client policy name duplicated.'");
 
-    sidebarPage.waitForPageLoad();
     sidebarPage.goToRealmSettings();
 
     realmSettingsPage

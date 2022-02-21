@@ -1,7 +1,7 @@
 import type { LocationDescriptorObject } from "history";
+import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
-import NewClientPolicyCondition from "../NewClientPolicyCondition";
 
 export type EditClientPolicyConditionParams = {
   realm: string;
@@ -11,7 +11,7 @@ export type EditClientPolicyConditionParams = {
 
 export const EditClientPolicyConditionRoute: RouteDef = {
   path: "/:realm/realm-settings/clientPolicies/:policyName?/edit-policy/:conditionName/edit-condition",
-  component: NewClientPolicyCondition,
+  component: lazy(() => import("../NewClientPolicyCondition")),
   breadcrumb: (t) => t("realm-settings:editCondition"),
   access: "manage-clients",
 };
