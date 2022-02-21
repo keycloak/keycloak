@@ -7,8 +7,10 @@ import io.fabric8.kubernetes.client.extended.run.RunConfigBuilder;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.keycloak.operator.v2alpha1.crds.Keycloak;
 import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImport;
 import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImportStatusCondition;
 
@@ -36,11 +38,14 @@ public class RealmImportE2EIT extends ClusterOperatorTest {
                 .get();
     }
 
+    @BeforeEach
+    public void cleanResources() {
+        k8sclient.resources(Keycloak.class).inNamespace(namespace).delete();
+    }
+
     @Test
     public void testWorkingRealmImport() {
-        Log.info(((operatorDeployment == OperatorDeployment.remote) ? "Remote " : "Local ") + "Run Test :" + namespace);
         // Arrange
-        k8sclient.load(getClass().getResourceAsStream("/example-postgres.yaml")).inNamespace(namespace).createOrReplace();
         k8sclient.load(getClass().getResourceAsStream("/example-keycloak.yml")).inNamespace(namespace).createOrReplace();
 
         k8sclient.services().inNamespace(namespace).create(
@@ -139,9 +144,7 @@ public class RealmImportE2EIT extends ClusterOperatorTest {
 
     @Test
     public void testNotWorkingRealmImport() {
-        Log.info(((operatorDeployment == OperatorDeployment.remote) ? "Remote " : "Local ") + "Run Test :" + namespace);
         // Arrange
-        k8sclient.load(getClass().getResourceAsStream("/example-postgres.yaml")).inNamespace(namespace).createOrReplace();
         k8sclient.load(getClass().getResourceAsStream("/example-keycloak.yml")).inNamespace(namespace).createOrReplace();
 
         // Act
