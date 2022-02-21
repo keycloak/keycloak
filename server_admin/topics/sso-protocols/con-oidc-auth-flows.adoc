@@ -131,6 +131,13 @@ The CIBA grant uses the following two providers.
 
 {project_name} has both default providers. However, the administrator needs to set up Authentication Channel Provider like this:
 
+ifeval::["{kc_dist}" == "quarkus"]
+[source,bash,subs="attributes+"]
+----
+kc.[sh|bat] start --spi-ciba-auth-channel-ciba-http-auth-channel-http-authentication-channel-uri=https://backend.internal.example.com{kc_base_path}
+----
+endif::[]
+ifeval::["{kc_dist}" == "wildfly"]
 [source,xml,subs="attributes+"]
 ----
 <spi name="ciba-auth-channel">
@@ -142,13 +149,19 @@ The CIBA grant uses the following two providers.
     </provider>
 </spi>
 ----
+endif::[]
 
 The configurable items and their description follow.
 
 |===
 |Configuration|Description
 
+ifeval::["{kc_dist}" == "quarkus"]
+|http-authentication-channel-uri
+endif::[]
+ifeval::["{kc_dist}" == "wildfly"]
 |httpAuthenticationChannelUri
+endif::[]
 |Specifying URI of the entity that actually authenticates the user via AD (Authentication Device).
 
 |===
