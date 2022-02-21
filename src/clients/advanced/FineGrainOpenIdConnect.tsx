@@ -268,7 +268,7 @@ export const FineGrainOpenIdConnect = ({
         }
       >
         <Controller
-          name="attributes.request_object_signature_alg"
+          name="attributes.request.object.signature.alg"
           defaultValue=""
           control={control}
           render={({ onChange, value }) => (
