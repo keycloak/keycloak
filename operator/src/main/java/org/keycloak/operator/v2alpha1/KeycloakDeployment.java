@@ -20,11 +20,12 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.VolumeBuilder;
-import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.VolumeBuilder;
+import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -36,25 +37,28 @@ import org.keycloak.operator.OperatorManagedResource;
 import org.keycloak.operator.StatusUpdater;
 import org.keycloak.operator.v2alpha1.crds.Keycloak;
 import org.keycloak.operator.v2alpha1.crds.KeycloakStatusBuilder;
+import org.keycloak.operator.v2alpha1.crds.ValueOrSecret;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class KeycloakDeployment extends OperatorManagedResource implements StatusUpdater<KeycloakStatusBuilder> {
-
-//    public static final Pattern CONFIG_SECRET_PATTERN = Pattern.compile("^\\$\\{secret:([^:]+):(.+)}$");
 
     private final Config config;
     private final Keycloak keycloakCR;
     private final Deployment existingDeployment;
     private final Deployment baseDeployment;
     private final String adminSecretName;
+
+    private Set<String> serverConfigSecretsNames;
 
     public KeycloakDeployment(KubernetesClient client, Config config, Keycloak keycloakCR, Deployment existingDeployment, String adminSecretName) {
         super(client, keycloakCR);
@@ -84,9 +88,18 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         }
         else {
             Log.info("Existing Deployment found, updating specs");
-            reconciledDeployment = existingDeployment;
-            // don't override metadata, just specs
+            reconciledDeployment = new DeploymentBuilder(existingDeployment).build();
+
+            // don't overwrite metadata, just specs
             reconciledDeployment.setSpec(baseDeployment.getSpec());
+
+            // don't overwrite annotations in pod templates to support rolling restarts
+            if (existingDeployment.getSpec() != null && existingDeployment.getSpec().getTemplate() != null) {
+                mergeMaps(
+                        Optional.ofNullable(reconciledDeployment.getSpec().getTemplate().getMetadata()).map(m -> m.getAnnotations()).orElse(null),
+                        Optional.ofNullable(existingDeployment.getSpec().getTemplate().getMetadata()).map(m -> m.getAnnotations()).orElse(null),
+                        annotations -> reconciledDeployment.getSpec().getTemplate().getMetadata().setAnnotations(annotations));
+            }
         }
 
         return Optional.of(reconciledDeployment);
@@ -453,67 +466,62 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         addInitContainer(baseDeployment, keycloakCR.getSpec().getExtensions());
         mergePodTemplate(baseDeployment.getSpec().getTemplate());
 
-//        Set<String> configSecretsNames = new HashSet<>();
-//        List<EnvVar> configEnvVars = serverConfig.entrySet().stream()
-//                .map(e -> {
-//                    EnvVarBuilder builder = new EnvVarBuilder().withName(e.getKey());
-//                    Matcher matcher = CONFIG_SECRET_PATTERN.matcher(e.getValue());
-//                    // check if given config var is actually a secret reference
-//                    if (matcher.matches()) {
-//                        builder.withValueFrom(
-//                                new EnvVarSourceBuilder()
-//                                        .withNewSecretKeyRef(matcher.group(2), matcher.group(1), false)
-//                                        .build());
-//                        configSecretsNames.add(matcher.group(1)); // for watching it later
-//                    } else {
-//                        builder.withValue(e.getValue());
-//                    }
-//                    builder.withValue(e.getValue());
-//                    return builder.build();
-//                })
-//                .collect(Collectors.toList());
-//        container.setEnv(configEnvVars);
-//        this.configSecretsNames = Collections.unmodifiableSet(configSecretsNames);
-//        Log.infof("Found config secrets names: %s", configSecretsNames);
-
         return baseDeployment;
     }
 
     private List<EnvVar> getEnvVars() {
-        var serverConfig = new HashMap<>(Constants.DEFAULT_DIST_CONFIG);
-        serverConfig.put("jgroups.dns.query", getName() + Constants.KEYCLOAK_DISCOVERY_SERVICE_SUFFIX +"." + getNamespace());
-        if (keycloakCR.getSpec().getServerConfiguration() != null) {
-            serverConfig.putAll(keycloakCR.getSpec().getServerConfiguration());
-        }
-        var envVars = serverConfig.entrySet().stream()
-                .map(e -> new EnvVarBuilder()
-                        .withName(e.getKey())
-                        .withValue(e.getValue())
-                        .build())
+        // default config values
+        List<ValueOrSecret> serverConfig = Constants.DEFAULT_DIST_CONFIG.entrySet().stream()
+                .map(e -> new ValueOrSecret(e.getKey(), e.getValue()))
                 .collect(Collectors.toList());
+        serverConfig.add(new ValueOrSecret("jgroups.dns.query", getName() + Constants.KEYCLOAK_DISCOVERY_SERVICE_SUFFIX +"." + getNamespace()));
+
+        // merge with the CR; the values in CR take precedence
+        if (keycloakCR.getSpec().getServerConfiguration() != null) {
+            serverConfig.removeAll(keycloakCR.getSpec().getServerConfiguration());
+            serverConfig.addAll(keycloakCR.getSpec().getServerConfiguration());
+        }
+
+        // set env vars
+        serverConfigSecretsNames = new HashSet<>();
+        List<EnvVar> envVars = serverConfig.stream()
+                .map(v -> {
+                    var envBuilder = new EnvVarBuilder().withName(v.getName());
+                    var secret = v.getSecret();
+                    if (secret != null) {
+                        envBuilder.withValueFrom(
+                                new EnvVarSourceBuilder().withSecretKeyRef(secret).build());
+                        serverConfigSecretsNames.add(secret.getName()); // for watching it later
+                    } else {
+                        envBuilder.withValue(v.getValue());
+                    }
+                    return envBuilder.build();
+                })
+                .collect(Collectors.toList());
+        Log.infof("Found config secrets names: %s", serverConfigSecretsNames);
 
         envVars.add(
-            new EnvVarBuilder()
-                    .withName("KEYCLOAK_ADMIN")
-                    .withNewValueFrom()
-                    .withNewSecretKeyRef()
-                    .withName(this.adminSecretName)
-                    .withKey("username")
-                    .withOptional(false)
-                    .endSecretKeyRef()
-                    .endValueFrom()
-                    .build());
+                new EnvVarBuilder()
+                        .withName("KEYCLOAK_ADMIN")
+                        .withNewValueFrom()
+                        .withNewSecretKeyRef()
+                        .withName(adminSecretName)
+                        .withKey("username")
+                        .withOptional(false)
+                        .endSecretKeyRef()
+                        .endValueFrom()
+                        .build());
         envVars.add(
-            new EnvVarBuilder()
-                    .withName("KEYCLOAK_ADMIN_PASSWORD")
-                    .withNewValueFrom()
-                    .withNewSecretKeyRef()
-                    .withName(this.adminSecretName)
-                    .withKey("password")
-                    .withOptional(false)
-                    .endSecretKeyRef()
-                    .endValueFrom()
-                    .build());
+                new EnvVarBuilder()
+                        .withName("KEYCLOAK_ADMIN_PASSWORD")
+                        .withNewValueFrom()
+                        .withNewSecretKeyRef()
+                        .withName(adminSecretName)
+                        .withKey("password")
+                        .withOptional(false)
+                        .endSecretKeyRef()
+                        .endValueFrom()
+                        .build());
 
         return envVars;
     }
@@ -537,13 +545,27 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
                 || existingDeployment.getStatus().getReadyReplicas() == null
                 || existingDeployment.getStatus().getReadyReplicas() < keycloakCR.getSpec().getInstances()) {
             status.addNotReadyMessage("Waiting for more replicas");
-            return;
         }
+
+        var progressing = existingDeployment.getStatus().getConditions().stream()
+                .filter(c -> c.getType().equals("Progressing")).findFirst();
+        progressing.ifPresent(p -> {
+            String reason = p.getReason();
+            // https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#progressing-deployment
+            if (p.getStatus().equals("True") &&
+                    (reason.equals("NewReplicaSetCreated") || reason.equals("FoundNewReplicaSet") || reason.equals("ReplicaSetUpdated"))) {
+                status.addRollingUpdateMessage("Rolling out deployment update");
+            }
+        });
     }
 
-//    public Set<String> getConfigSecretsNames() {
-//        return configSecretsNames;
-//    }
+    public Set<String> getConfigSecretsNames() {
+        Set<String> ret = new HashSet<>(serverConfigSecretsNames);
+        if (!keycloakCR.getSpec().isHttp()) {
+            ret.add(keycloakCR.getSpec().getTlsSecret());
+        }
+        return ret;
+    }
 
     @Override
     public String getName() {

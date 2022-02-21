@@ -38,7 +38,7 @@ spec:
               - https://127.0.0.1:8443/health/live
           initialDelaySeconds: 20
           periodSeconds: 2
-          failureThreshold: 100
+          failureThreshold: 150
         readinessProbe:
           exec:
             command:
@@ -50,7 +50,7 @@ spec:
               - https://127.0.0.1:8443/health/ready
           initialDelaySeconds: 20
           periodSeconds: 2
-          failureThreshold: 200
+          failureThreshold: 250
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       terminationGracePeriodSeconds: 30

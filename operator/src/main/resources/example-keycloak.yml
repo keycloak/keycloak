@@ -5,12 +5,18 @@ metadata:
 spec:
   instances: 1
   serverConfiguration:
-    KC_DB: postgres
-    KC_DB_URL_HOST: postgres-db
-#    KC_DB_USERNAME: ${secret:keycloak-db-secret:username}
-#    KC_DB_PASSWORD: ${secret:keycloak-db-secret:password}
-    KC_DB_USERNAME: postgres
-    KC_DB_PASSWORD: testpassword
+    - name: KC_DB
+      value: postgres
+    - name: KC_DB_URL_HOST
+      value: postgres-db
+    - name: KC_DB_USERNAME
+      secret:
+        name: keycloak-db-secret
+        key: username
+    - name: KC_DB_PASSWORD
+      secret:
+        name: keycloak-db-secret
+        key: password
   hostname: example.com
   tlsSecret: example-tls-secret
 ---
