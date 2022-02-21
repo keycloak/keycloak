@@ -88,7 +88,7 @@ To disable user creation:
 . Set *Create User If Unique* to *DISABLED*.
 . Set *Confirm Link Existing Account* to *DISABLED*.
 
-This configuration also implies that Keycloak itself won't be able to determine which internal account would correspond to the external identity.
+This configuration also implies that {project_name} itself won't be able to determine which internal account would correspond to the external identity.
 Therefore, the `Verify Existing Account By Re-authentication` authenticator will ask the user to provide both username and password.
 
 [[_detect_existing_user_first_loging_flow]]
