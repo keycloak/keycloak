@@ -64,11 +64,15 @@ export const DiscoveryEndpointField = ({
   return (
     <>
       <FormGroup
-        label={t("useDiscoveryEndpoint")}
-        fieldId="kc-discovery-endpoint-switch"
+        label={t(
+          id === "oidc" ? "useDiscoveryEndpoint" : "useEntityDescriptor"
+        )}
+        fieldId="kc-discovery-endpoint"
         labelIcon={
           <HelpItem
-            helpText="identity-providers-help:useDiscoveryEndpoint"
+            helpText={`identity-providers-help:${
+              id === "oidc" ? "useDiscoveryEndpoint" : "useEntityDescriptor"
+            }`}
             fieldLabelId="identity-providers:discoveryEndpoint"
           />
         }
@@ -83,11 +87,15 @@ export const DiscoveryEndpointField = ({
       </FormGroup>
       {discovery && (
         <FormGroup
-          label={t("discoveryEndpoint")}
+          label={t(
+            id === "oidc" ? "discoveryEndpoint" : "samlEntityDescriptor"
+          )}
           fieldId="kc-discovery-endpoint"
           labelIcon={
             <HelpItem
-              helpText="identity-providers-help:discoveryEndpoint"
+              helpText={`identity-providers-help:${
+                id === "oidc" ? "discoveryEndpoint" : "samlEntityDescriptor"
+              }`}
               fieldLabelId="identity-providers:discoveryEndpoint"
             />
           }
@@ -113,7 +121,7 @@ export const DiscoveryEndpointField = ({
             placeholder={
               id === "oidc"
                 ? "https://hostname/auth/realms/master/.well-known/openid-configuration"
-                : "https://hostname/context/saml/discovery"
+                : ""
             }
             onBlur={() => setDiscovering(true)}
             validated={

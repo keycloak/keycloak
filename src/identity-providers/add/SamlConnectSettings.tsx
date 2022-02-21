@@ -12,6 +12,7 @@ import { useRealm } from "../../context/realm-context/RealmContext";
 import { DescriptorSettings } from "./DescriptorSettings";
 import { getBaseUrl } from "../../util";
 import { DiscoveryEndpointField } from "../component/DiscoveryEndpointField";
+import environment from "../../environment";
 
 export const SamlConnectSettings = () => {
   const { t } = useTranslation("identity-providers");
@@ -70,13 +71,18 @@ export const SamlConnectSettings = () => {
             fieldLabelId="identity-providers:serviceProviderEntityId"
           />
         }
+        isRequired
+        helperTextInvalid={t("common:required")}
+        validated={errors.config?.entityId ? "error" : "default"}
       >
         <TextInput
           type="text"
           name="config.entityId"
           data-testid="serviceProviderEntityId"
           id="kc-service-provider-entity-id"
-          ref={register()}
+          ref={register({ required: true })}
+          validated={errors.config?.entityId ? "error" : "default"}
+          defaultValue={`${environment.authServerUrl}/realms/${realm}`}
         />
       </FormGroup>
 
