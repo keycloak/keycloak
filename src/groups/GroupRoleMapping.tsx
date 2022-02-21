@@ -92,7 +92,7 @@ export const GroupRoleMapping = ({ id, name }: GroupRoleMappingProps) => {
     <RoleMapping
       name={name}
       id={id}
-      type="group"
+      type="groups"
       loader={loader}
       save={assignRoles}
       onHideRolesToggle={() => setHide(!hide)}

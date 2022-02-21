@@ -16,18 +16,21 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
 import { useFetch, useAdminClient } from "../../context/auth/AdminClient";
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { FilterIcon } from "@patternfly/react-icons";
-import { Row, ServiceRole } from "./RoleMapping";
-import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
-
-export type MappingType = "service-account" | "client-scope" | "role" | "group";
+import {
+  castAdminClient,
+  mapping,
+  ResourcesKey,
+  Row,
+  ServiceRole,
+} from "./RoleMapping";
 
 type AddRoleMappingModalProps = {
   id: string;
-  type: MappingType;
+  type: ResourcesKey;
   name?: string;
   isRadio?: boolean;
   onAssign: (rows: Row[]) => void;
@@ -59,10 +62,12 @@ export const AddRoleMappingModal = ({
   const [searchToggle, setSearchToggle] = useState(false);
 
   const [key, setKey] = useState(0);
-  const refresh = () => setKey(new Date().getTime());
+  const refresh = () => setKey(key + 1);
 
   const [selectedClients, setSelectedClients] = useState<ClientRole[]>([]);
   const [selectedRows, setSelectedRows] = useState<Row[]>([]);
+
+  const mapType = mapping.find((m) => m.resource === type)!;
 
   useFetch(
     async () => {
@@ -70,39 +75,15 @@ export const AddRoleMappingModal = ({
       return (
         await Promise.all(
           clients.map(async (client) => {
-            let roles: RoleRepresentation[] = [];
+            const roles = await castAdminClient(
+              adminClient,
+              mapType.resource === "roles" ? "clients" : mapType.resource
+            )[mapType.functions.list[0]]({
+              id: mapType.resource === "roles" ? client.id : id,
+              clientUniqueId: client.id,
+              client: client.id,
+            });
 
-            switch (type) {
-              case "group":
-                roles =
-                  await adminClient.groups.listAvailableClientRoleMappings({
-                    id: id,
-                    clientUniqueId: client.id!,
-                  });
-                break;
-
-              case "service-account":
-                roles = await adminClient.users.listAvailableClientRoleMappings(
-                  {
-                    id: id,
-                    clientUniqueId: client.id!,
-                  }
-                );
-                break;
-
-              case "client-scope":
-                roles =
-                  await adminClient.clientScopes.listAvailableClientScopeMappings(
-                    {
-                      id,
-                      client: client.id!,
-                    }
-                  );
-                break;
-              case "role":
-                roles = await adminClient.clients.listRoles({ id: client.id! });
-                break;
-            }
             return {
               roles,
               client,
@@ -138,32 +119,11 @@ export const AddRoleMappingModal = ({
       );
     }
 
-    let availableRoles: RoleRepresentation[] = [];
-
-    switch (type) {
-      case "group":
-        availableRoles =
-          await adminClient.groups.listAvailableRealmRoleMappings({
-            id,
-          });
-        break;
-      case "service-account":
-        availableRoles = await adminClient.users.listAvailableRealmRoleMappings(
-          {
-            id,
-          }
-        );
-        break;
-      case "client-scope":
-        availableRoles =
-          await adminClient.clientScopes.listAvailableRealmScopeMappings({
-            id,
-          });
-        break;
-      case "role":
-        availableRoles = await adminClient.roles.find();
-        break;
-    }
+    const availableRoles = await castAdminClient(adminClient, mapType.resource)[
+      mapType.functions.list[1]
+    ]({
+      id,
+    });
 
     const realmRoles = availableRoles.map((role) => {
       return {
@@ -181,35 +141,14 @@ export const AddRoleMappingModal = ({
     const roles = (
       await Promise.all(
         allClients.map(async (client) => {
-          let clientAvailableRoles: RoleRepresentation[] = [];
-
-          switch (type) {
-            case "group":
-              clientAvailableRoles =
-                await adminClient.groups.listAvailableClientRoleMappings({
-                  id,
-                  clientUniqueId: client.id!,
-                });
-              break;
-            case "service-account":
-              clientAvailableRoles =
-                await adminClient.users.listAvailableClientRoleMappings({
-                  id,
-                  clientUniqueId: client.id!,
-                });
-              break;
-            case "client-scope":
-              clientAvailableRoles =
-                await adminClient.clientScopes.listAvailableClientScopeMappings(
-                  { id, client: client.id! }
-                );
-              break;
-            case "role":
-              clientAvailableRoles = await adminClient.clients.listRoles({
-                id: client.id!,
-              });
-              break;
-          }
+          const clientAvailableRoles = await castAdminClient(
+            adminClient,
+            mapType.resource === "roles" ? "clients" : mapType.resource
+          )[mapType.functions.list[0]]({
+            id: mapType.resource === "roles" ? client.id : id,
+            client: client.id,
+            clientUniqueId: client.id,
+          });
 
           return clientAvailableRoles.map((role) => {
             return {

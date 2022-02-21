@@ -298,7 +298,7 @@ export default function ClientScopeForm() {
               <RoleMapping
                 id={id}
                 name={clientScope.name!}
-                type={"client-scope"}
+                type="clientScopes"
                 loader={loader}
                 save={assignRoles}
                 onHideRolesToggle={toggleHide}

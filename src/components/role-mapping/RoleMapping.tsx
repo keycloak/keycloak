@@ -11,15 +11,20 @@ import {
 
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
-import { AddRoleMappingModal, MappingType } from "./AddRoleMappingModal";
+import type { ClientScopes } from "@keycloak/keycloak-admin-client/lib/resources/clientScopes";
+import type { Groups } from "@keycloak/keycloak-admin-client/lib/resources/groups";
+import type { Roles } from "@keycloak/keycloak-admin-client/lib/resources/roles";
+import type { Clients } from "@keycloak/keycloak-admin-client/lib/resources/clients";
+import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
+import { AddRoleMappingModal } from "./AddRoleMappingModal";
 import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
 import { emptyFormatter } from "../../util";
-
-import "./role-mapping.css";
+import { useAlerts } from "../alert/Alerts";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 import { useAdminClient } from "../../context/auth/AdminClient";
-import { useAlerts } from "../alert/Alerts";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
+
+import "./role-mapping.css";
 
 export type CompositeRole = RoleRepresentation & {
   parent: RoleRepresentation;
@@ -72,14 +77,88 @@ export const ServiceRole = ({ role, client }: Row) => (
   </>
 );
 
+export type ResourcesKey = keyof KeycloakAdminClient;
+
 type RoleMappingProps = {
   name: string;
   id: string;
-  type: MappingType;
+  type: ResourcesKey;
   loader: () => Promise<Row[]>;
   save: (rows: Row[]) => Promise<void>;
   onHideRolesToggle: () => void;
 };
+
+type DeleteFunctions =
+  | keyof Pick<Groups, "delClientRoleMappings" | "delRealmRoleMappings">
+  | keyof Pick<
+      ClientScopes,
+      "delClientScopeMappings" | "delRealmScopeMappings"
+    >;
+
+type ListFunction =
+  | keyof Pick<
+      Groups,
+      "listAvailableClientRoleMappings" | "listAvailableRealmRoleMappings"
+    >
+  | keyof Pick<
+      ClientScopes,
+      "listAvailableClientScopeMappings" | "listAvailableRealmScopeMappings"
+    >
+  | keyof Pick<Roles, "find">
+  | keyof Pick<Clients, "listRoles">;
+
+type FunctionMapping = { delete: DeleteFunctions[]; list: ListFunction[] };
+
+type ResourceMapping = {
+  resource: ResourcesKey;
+  functions: FunctionMapping;
+};
+
+const groupFunctions: FunctionMapping = {
+  delete: ["delClientRoleMappings", "delRealmRoleMappings"],
+  list: ["listAvailableClientRoleMappings", "listAvailableRealmRoleMappings"],
+};
+
+const clientFunctions: FunctionMapping = {
+  delete: ["delClientScopeMappings", "delRealmScopeMappings"],
+  list: ["listAvailableClientScopeMappings", "listAvailableRealmScopeMappings"],
+};
+
+export const mapping: ResourceMapping[] = [
+  {
+    resource: "groups",
+    functions: groupFunctions,
+  },
+  {
+    resource: "users",
+    functions: groupFunctions,
+  },
+  {
+    resource: "clientScopes",
+    functions: clientFunctions,
+  },
+  {
+    resource: "clients",
+    functions: clientFunctions,
+  },
+  {
+    resource: "roles",
+    functions: {
+      delete: [],
+      list: ["listRoles", "find"],
+    },
+  },
+];
+
+export const castAdminClient = (
+  adminClient: KeycloakAdminClient,
+  resource: ResourcesKey
+) =>
+  adminClient[resource] as unknown as {
+    [index in DeleteFunctions | ListFunction]: (
+      ...params: any
+    ) => Promise<RoleRepresentation[]>;
+  };
 
 export const RoleMapping = ({
   name,
@@ -94,7 +173,7 @@ export const RoleMapping = ({
   const { addAlert, addError } = useAlerts();
 
   const [key, setKey] = useState(0);
-  const refresh = () => setKey(new Date().getTime());
+  const refresh = () => setKey(key + 1);
 
   const [hide, setHide] = useState(false);
   const [showAssign, setShowAssign] = useState(false);
@@ -112,69 +191,23 @@ export const RoleMapping = ({
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
-        switch (type) {
-          case "group":
-            await Promise.all(
-              selected.map((row) => {
-                const role = { id: row.role.id!, name: row.role.name! };
-                if (row.client) {
-                  return adminClient.groups.delClientRoleMappings({
-                    id,
-                    clientUniqueId: row.client!.id!,
-                    roles: [role],
-                  });
-                } else {
-                  return adminClient.groups.delRealmRoleMappings({
-                    id,
-                    roles: [role],
-                  });
-                }
-              })
+        const mapType = mapping.find((m) => m.resource === type)!;
+        await Promise.all(
+          selected.map((row) => {
+            const role = { id: row.role.id!, name: row.role.name! };
+            castAdminClient(adminClient, mapType.resource)[
+              mapType.functions.delete[row.client ? 0 : 1]
+            ](
+              {
+                id,
+                clientUniqueId: row.client?.id,
+                client: row.client?.id,
+                roles: [role],
+              },
+              [role]
             );
-            break;
-          case "service-account":
-            await Promise.all(
-              selected.map((row) => {
-                const role = { id: row.role.id!, name: row.role.name! };
-                if (row.client) {
-                  return adminClient.users.delClientRoleMappings({
-                    id,
-                    clientUniqueId: row.client!.id!,
-                    roles: [role],
-                  });
-                } else {
-                  return adminClient.users.delRealmRoleMappings({
-                    id,
-                    roles: [role],
-                  });
-                }
-              })
-            );
-            break;
-          case "client-scope":
-            await Promise.all(
-              selected.map((row) => {
-                const role = { id: row.role.id!, name: row.role.name! };
-                if (row.client) {
-                  return adminClient.clientScopes.delClientScopeMappings(
-                    {
-                      id,
-                      client: row.client!.id!,
-                    },
-                    [role]
-                  );
-                } else {
-                  return adminClient.clientScopes.delRealmScopeMappings(
-                    {
-                      id,
-                    },
-                    [role]
-                  );
-                }
-              })
-            );
-            break;
-        }
+          })
+        );
         addAlert(t("clientScopeRemoveSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {

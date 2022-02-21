@@ -77,7 +77,7 @@ export const ServiceAccount = ({ client }: ServiceAccountProps) => {
         .filter((row) => row.client === undefined)
         .map((row) => row.role as RoleMappingPayload)
         .flat();
-      adminClient.users.addRealmRoleMappings({
+      await adminClient.users.addRealmRoleMappings({
         id: serviceAccount?.id!,
         roles: realmRoles,
       });
@@ -101,7 +101,7 @@ export const ServiceAccount = ({ client }: ServiceAccountProps) => {
     <RoleMapping
       name={client.clientId!}
       id={serviceAccount.id!}
-      type="service-account"
+      type="users"
       loader={loader}
       save={assignRoles}
       onHideRolesToggle={() => setHide(!hide)}

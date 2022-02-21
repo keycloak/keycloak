@@ -79,7 +79,7 @@ export const Role = () => {
             {open && (
               <AddRoleMappingModal
                 id="role"
-                type="role"
+                type="roles"
                 onAssign={(rows) => {
                   onChange([
                     ...value,

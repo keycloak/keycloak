@@ -15,6 +15,7 @@ import { NewPolicyRoute } from "./routes/NewPolicy";
 import { PolicyDetailsRoute } from "./routes/PolicyDetails";
 import { NewPermissionRoute } from "./routes/NewPermission";
 import { PermissionDetailsRoute } from "./routes/PermissionDetails";
+import { DedicatedScopeDetailsRoute } from "./routes/DedicatedScopeDetails";
 
 const routes: RouteDef[] = [
   AddClientRoute,
@@ -23,6 +24,7 @@ const routes: RouteDef[] = [
   CreateInitialAccessTokenRoute,
   ClientRoute,
   MapperRoute,
+  DedicatedScopeDetailsRoute,
   ClientScopesRoute,
   AuthorizationRoute,
   NewResourceRoute,

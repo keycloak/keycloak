@@ -297,6 +297,7 @@ describe("Clients test", () => {
   });
 
   describe("Mapping tab", () => {
+    const clientScopeTab = new ClientScopesTab();
     const mappingClient = "mapping-client";
     beforeEach(() => {
       keycloakBefore();
@@ -318,6 +319,7 @@ describe("Clients test", () => {
     });
 
     it("Add mapping to openid client", () => {
+      clientScopeTab.goToClientScopesTab().clickDedicatedScope(mappingClient);
       cy.findByTestId("mappersTab").click();
       cy.findByText("Add predefined mapper").click();
       cy.get("table input").first().click();

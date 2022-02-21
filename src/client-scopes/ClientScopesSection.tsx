@@ -27,6 +27,7 @@ import {
   ClientScopeDefaultOptionalType,
   changeScope,
   removeScope,
+  AllClientScopeType,
 } from "../components/client-scope/ClientScopeTypes";
 import { ChangeTypeDropdown } from "./ChangeTypeDropdown";
 import { toNewClientScope } from "./routes/NewClientScope";
@@ -140,7 +141,7 @@ export default function ClientScopesSection() {
       all
       onSelect={async (value) => {
         try {
-          await changeScope(adminClient, scope, value);
+          await changeScope(adminClient, scope, value as AllClientScopeType);
           addAlert(t("clientScopeSuccess"), AlertVariant.success);
           refresh();
         } catch (error) {

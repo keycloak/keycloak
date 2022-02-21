@@ -2,7 +2,12 @@ import React, { useState } from "react";
 
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
-import { DropdownItem, Select, SelectOption } from "@patternfly/react-core";
+import {
+  DropdownItem,
+  Select,
+  SelectOption,
+  SelectProps,
+} from "@patternfly/react-core";
 
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
@@ -46,7 +51,7 @@ export const clientScopeTypesDropdown = (
     </DropdownItem>
   ));
 
-type CellDropdownProps = {
+type CellDropdownProps = Omit<SelectProps, "onToggle"> & {
   clientScope: ClientScopeRepresentation;
   type: ClientScopeType | AllClientScopeType;
   all?: boolean;
@@ -58,6 +63,7 @@ export const CellDropdown = ({
   type,
   onSelect,
   all = false,
+  ...props
 }: CellDropdownProps) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -75,6 +81,7 @@ export const CellDropdown = ({
         );
         setOpen(false);
       }}
+      {...props}
     >
       {clientScopeTypesSelectOptions(
         t,

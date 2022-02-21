@@ -92,7 +92,7 @@ export const UserRoleMapping = ({ id, name }: UserRoleMappingProps) => {
     <RoleMapping
       name={name}
       id={id}
-      type="service-account"
+      type="users"
       loader={loader}
       save={assignRoles}
       onHideRolesToggle={() => setHide(!hide)}

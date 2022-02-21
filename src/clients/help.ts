@@ -190,6 +190,9 @@ export default {
     type: "The type of this resource. It can be used to group different resource instances with the same type.",
     uris: "Set of URIs which are protected by resource.",
     scopes: "The scopes associated with this resource.",
+    dedicatedScopeExplain:
+      "This is a client scope which includes the dedicated mappers and scope",
+    fullScopeAllowed: "Allows you to disable all restrictions.",
     iconUri: "A URI pointing to an icon.",
     ownerManagedAccess:
       "If enabled, the access to this resource can be managed by the resource owner.",

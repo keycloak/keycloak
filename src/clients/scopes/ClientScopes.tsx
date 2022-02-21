@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
@@ -31,9 +32,11 @@ import {
   SearchType,
   typeFilter,
 } from "../../client-scopes/details/SearchFilter";
+import { ChangeTypeDropdown } from "../../client-scopes/ChangeTypeDropdown";
 
 import "./client-scopes.css";
-import { ChangeTypeDropdown } from "../../client-scopes/ChangeTypeDropdown";
+import { toDedicatedScope } from "../routes/DedicatedScopeDetails";
+import { useRealm } from "../../context/realm-context/RealmContext";
 
 export type ClientScopesProps = {
   clientId: string;
@@ -46,6 +49,8 @@ export type Row = ClientScopeRepresentation & {
   description?: string;
 };
 
+const DEDICATED_ROW = "dedicated";
+
 export const ClientScopes = ({
   clientId,
   protocol,
@@ -54,6 +59,7 @@ export const ClientScopes = ({
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
+  const { realm } = useRealm();
 
   const [searchType, setSearchType] = useState<SearchType>("name");
 
@@ -68,7 +74,9 @@ export const ClientScopes = ({
   const [selectedRows, setSelectedRows] = useState<Row[]>([]);
 
   const [key, setKey] = useState(0);
-  const refresh = () => setKey(new Date().getTime());
+  const refresh = () => setKey(key + 1);
+
+  const isDedicatedRow = (value: Row) => value.id === DEDICATED_ROW;
 
   const loader = async (first?: number, max?: number, search?: string) => {
     const defaultClientScopes =
@@ -110,11 +118,25 @@ export const ClientScopes = ({
 
     const filter =
       searchType === "name" ? nameFilter(search) : typeFilter(searchTypeType);
-    return rows.filter(filter).slice(first, Number(first) + Number(max));
+    const firstNum = Number(first);
+    const page = rows.filter(filter).slice(firstNum, firstNum + Number(max));
+    if (firstNum === 0) {
+      return [
+        {
+          id: DEDICATED_ROW,
+          name: t("dedicatedScopeName", { clientName }),
+          type: AllClientScopes.none,
+          description: t("dedicatedScopeDescription"),
+        },
+        ...page,
+      ];
+    }
+    return page;
   };
 
   const TypeSelector = (scope: Row) => (
     <CellDropdown
+      isDisabled={isDedicatedRow(scope)}
       clientScope={scope}
       type={scope.type}
       onSelect={async (value) => {
@@ -251,6 +273,16 @@ export const ClientScopes = ({
           {
             name: "name",
             displayKey: "clients:assignedClientScope",
+            cellRenderer: (row) => {
+              if (isDedicatedRow(row)) {
+                return (
+                  <Link to={toDedicatedScope({ realm, clientId })}>
+                    {row.name}
+                  </Link>
+                );
+              }
+              return row.name;
+            },
           },
           {
             name: "type",
