@@ -80,7 +80,7 @@ public class LoggingDistTest {
 
     @Test
     @Launch({"start-dev", "--log-json=true"})
-    void testEnableJsonLogging(LaunchResult result) {
+    void testEnableJsonLogging(LaunchResult result) throws Exception {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertJsonLogDefaultsApplied();
         cliResult.assertStartedDevMode();

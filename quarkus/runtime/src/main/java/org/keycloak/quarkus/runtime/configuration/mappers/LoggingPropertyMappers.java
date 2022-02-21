@@ -20,7 +20,9 @@ final class LoggingPropertyMappers {
     private static final List<String> JSON_FIELD_LIST = List.of("timestamp", "hostname", "sequence", "logger-class-name",
             "logger-name", "level", "message", "thread-name", "thread-id","process-name", "process-id",
             "stack-trace", "error-type", "error-message");
-    private static final List<String> JSON_FIELD_DEFAULT_DISABLED = List.of("sequence", "mdc","ndc","process-name", "process-id");
+    private static final List<String> JSON_FIELD_DEFAULT_DISABLED = List.of(
+            "hostname", "mdc","ndc","process-name", "process-id", "logger-class-name", "thread-name",
+            "thread-id","process-name", "process-id");
 
     private LoggingPropertyMappers(){}
 

@@ -21,10 +21,15 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.approvaltests.Approvals;
 import io.quarkus.test.junit.main.LaunchResult;
 
 public interface CLIResult extends LaunchResult {
+
+    static ObjectMapper objectMapper = new ObjectMapper();
 
     static Object create(List<String> outputStream, List<String> errStream, int exitCode) {
         return new CLIResult() {
@@ -98,9 +103,16 @@ public interface CLIResult extends LaunchResult {
         assertTrue(isClustered());
     }
 
-    default void assertJsonLogDefaultsApplied() {
-        assertTrue(getOutput().contains("{\"timestamp\""));
-        assertFalse(getOutput().contains("\"mdc\""));
-        assertFalse(getOutput().contains("\"ndc\""));
+    default void assertJsonLogDefaultsApplied() throws Exception {
+        String[] split = getOutput().split(System.lineSeparator());
+        for (String l: split) {
+            if (!l.trim().startsWith("{")) {
+                continue;
+            }
+            JsonNode json = objectMapper.readTree(l);
+            assertTrue(json.has("timestamp"));
+            assertFalse(json.has("mdc"));
+            assertFalse(json.has("ndc"));
+        }
     }
 }
