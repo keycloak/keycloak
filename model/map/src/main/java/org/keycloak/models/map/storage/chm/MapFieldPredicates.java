@@ -143,7 +143,9 @@ public class MapFieldPredicates {
         put(AUTHENTICATION_SESSION_PREDICATES, RootAuthenticationSessionModel.SearchableFields.REALM_ID,    MapRootAuthenticationSessionEntity::getRealmId);
         put(AUTHENTICATION_SESSION_PREDICATES, RootAuthenticationSessionModel.SearchableFields.TIMESTAMP,   MapRootAuthenticationSessionEntity::getTimestamp);
 
-        put(AUTHZ_RESOURCE_SERVER_PREDICATES, ResourceServer.SearchableFields.ID, predicateForKeyField(MapResourceServerEntity::getId));
+        put(AUTHZ_RESOURCE_SERVER_PREDICATES, ResourceServer.SearchableFields.ID,           predicateForKeyField(MapResourceServerEntity::getId));
+        put(AUTHZ_RESOURCE_SERVER_PREDICATES, ResourceServer.SearchableFields.CLIENT_ID,    MapResourceServerEntity::getClientId);
+        put(AUTHZ_RESOURCE_SERVER_PREDICATES, ResourceServer.SearchableFields.REALM_ID,     MapResourceServerEntity::getRealmId);
 
         put(AUTHZ_RESOURCE_PREDICATES, Resource.SearchableFields.ID, predicateForKeyField(MapResourceEntity::getId));
         put(AUTHZ_RESOURCE_PREDICATES, Resource.SearchableFields.NAME, MapResourceEntity::getName);

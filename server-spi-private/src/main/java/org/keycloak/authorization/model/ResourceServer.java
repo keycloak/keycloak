@@ -31,7 +31,10 @@ import org.keycloak.storage.SearchableModelField;
 public interface ResourceServer {
 
     public static class SearchableFields {
-        public static final SearchableModelField<ResourceServer> ID = new SearchableModelField<>("id", String.class);
+        public static final SearchableModelField<ResourceServer> ID =           new SearchableModelField<>("id", String.class);
+        /** ID of the client (not the clientId) associated with resource server*/
+        public static final SearchableModelField<ResourceServer> CLIENT_ID =    new SearchableModelField<>("clientId", String.class);
+        public static final SearchableModelField<ResourceServer> REALM_ID =     new SearchableModelField<>("realmId", String.class);
     }
 
     /**
