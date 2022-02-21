@@ -246,9 +246,6 @@ export default function ClientScopesSection() {
           }
           actions={[
             {
-              title: t("common:export"),
-            },
-            {
               title: t("common:delete"),
               onRowClick: (clientScope) => {
                 setSelectedScopes([clientScope]);
