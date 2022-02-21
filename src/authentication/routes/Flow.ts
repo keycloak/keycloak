@@ -14,7 +14,7 @@ export const FlowRoute: RouteDef = {
   path: "/:realm/authentication/:id/:usedBy/:builtIn?",
   component: lazy(() => import("../FlowDetails")),
   breadcrumb: (t) => t("authentication:flowDetails"),
-  access: "manage-authorization",
+  access: "view-authorization",
 };
 
 export const toFlow = (params: FlowParams): LocationDescriptorObject => ({

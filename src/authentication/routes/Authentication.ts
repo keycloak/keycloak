@@ -9,7 +9,7 @@ export const AuthenticationRoute: RouteDef = {
   path: "/:realm/authentication/:tab?",
   component: lazy(() => import("../AuthenticationSection")),
   breadcrumb: (t) => t("authentication"),
-  access: "view-realm",
+  access: ["view-realm", "view-identity-providers", "view-clients"],
 };
 
 export const toAuthentication = (

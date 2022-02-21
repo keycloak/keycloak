@@ -9,7 +9,7 @@ export const AddRealmRoute: RouteDef = {
   path: "/:realm/add-realm",
   component: lazy(() => import("../add/NewRealmForm")),
   breadcrumb: (t) => t("realm:createRealm"),
-  access: "manage-realm",
+  access: "view-realm",
 };
 
 export const toAddRealm = (

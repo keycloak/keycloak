@@ -24,7 +24,7 @@ import { toDashboard } from "../../dashboard/routes/Dashboard";
 export default function NewRealmForm() {
   const { t } = useTranslation("realm");
   const history = useHistory();
-  const { refresh } = useWhoAmI();
+  const { refresh, whoAmI } = useWhoAmI();
   const { refresh: refreshRealms } = useRealms();
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
@@ -59,7 +59,8 @@ export default function NewRealmForm() {
         <FormAccess
           isHorizontal
           onSubmit={handleSubmit(save)}
-          role="manage-realm"
+          role="view-realm"
+          isReadOnly={!whoAmI.canCreateRealm()}
         >
           <JsonFileUpload
             id="kc-realm-filename"

@@ -9,7 +9,7 @@ export const SessionsRoute: RouteDef = {
   path: "/:realm/sessions",
   component: lazy(() => import("../SessionsSection")),
   breadcrumb: (t) => t("sessions:title"),
-  access: "view-realm",
+  access: ["view-realm", "view-clients", "view-users"],
 };
 
 export const toSessions = (
