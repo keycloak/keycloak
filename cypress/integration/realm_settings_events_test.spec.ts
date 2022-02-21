@@ -63,6 +63,14 @@ describe("Realm settings events tab tests", () => {
       .contains("test_rsa-generated")
       .click();
 
+    sidebarPage.goToRealmSettings();
+
+    cy.findByTestId("rs-keys-tab").click();
+    cy.findByTestId("rs-providers-tab").click();
+    cy.findAllByTestId("provider-name-link")
+      .contains("test_rsa-enc-generated")
+      .click();
+
     cy.wait(["@keysFetch"]);
 
     return this;
@@ -154,6 +162,12 @@ describe("Realm settings events tab tests", () => {
 
     cy.findByTestId("option-rsa-generated").click();
     realmSettingsPage.enterConsoleDisplayName("test_rsa-generated");
+    realmSettingsPage.addProvider();
+
+    realmSettingsPage.toggleAddProviderDropdown();
+
+    cy.findByTestId("option-rsa-enc-generated").click();
+    realmSettingsPage.enterConsoleDisplayName("test_rsa-enc-generated");
     realmSettingsPage.addProvider();
   });
 

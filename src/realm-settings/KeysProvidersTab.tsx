@@ -43,6 +43,7 @@ import { JavaKeystoreModal } from "./key-providers/java-keystore/JavaKeystoreMod
 import { HMACGeneratedModal } from "./key-providers/hmac-generated/HMACGeneratedModal";
 import { ECDSAGeneratedModal } from "./key-providers/ecdsa-generated/ECDSAGeneratedModal";
 import { RSAModal } from "./RSAModal";
+import { RSAEncGeneratedModal } from "./key-providers/rsa-enc-generated/RSAEncGeneratedModal";
 import { RSAGeneratedModal } from "./key-providers/rsa-generated/RSAGeneratedModal";
 import { KEY_PROVIDER_TYPE } from "../util";
 
@@ -247,6 +248,14 @@ export const KeysTabInner = ({ components, refresh }: KeysTabInnerProps) => {
       )}
       {defaultConsoleDisplayName === "rsa-generated" && (
         <RSAGeneratedModal
+          handleModalToggle={handleModalToggle}
+          providerType={defaultConsoleDisplayName}
+          refresh={refresh}
+          open={isCreateModalOpen}
+        />
+      )}
+      {defaultConsoleDisplayName === "rsa-enc-generated" && (
+        <RSAEncGeneratedModal
           handleModalToggle={handleModalToggle}
           providerType={defaultConsoleDisplayName}
           refresh={refresh}

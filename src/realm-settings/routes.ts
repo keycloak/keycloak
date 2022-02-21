@@ -18,6 +18,7 @@ import { EditClientPolicyConditionRoute } from "./routes/EditCondition";
 import { UserProfileRoute } from "./routes/UserProfile";
 import { AddAttributeRoute } from "./routes/AddAttribute";
 import { KeysRoute } from "./routes/KeysTab";
+import { RsaEncGeneratedSettingsRoute } from "./routes/RsaEncGeneratedSettings";
 
 const routes: RouteDef[] = [
   RealmSettingsRoute,
@@ -26,6 +27,7 @@ const routes: RouteDef[] = [
   EcdsaGeneratedSettingsRoute,
   HmacGeneratedSettingsRoute,
   JavaKeystoreSettingsRoute,
+  RsaEncGeneratedSettingsRoute,
   RsaGeneratedSettingsRoute,
   RsaSettingsRoute,
   ClientPoliciesRoute,

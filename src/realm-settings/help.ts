@@ -37,6 +37,7 @@ export default {
     "user-clearEvents": "Deletes all user events in the database.",
     ellipticCurve: "Elliptic curve used in ECDSA",
     secretSize: "Size in bytes for the generated secret",
+    keySize: "Size for the generated keys",
     algorithm: "Intended algorithm for the key",
     keystore: "Path to keys file",
     keystorePassword: "Password for the keys",

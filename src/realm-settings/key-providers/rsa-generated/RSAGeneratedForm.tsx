@@ -30,6 +30,7 @@ type RSAGeneratedFormProps = {
   refresh?: () => void;
   editMode?: boolean;
   providerType?: string;
+  isRSAEncGenerated?: boolean;
 };
 
 export interface MatchParams {
@@ -41,9 +42,9 @@ export const RSAGeneratedForm = ({
   providerType,
   handleModalToggle,
   refresh,
+  isRSAEncGenerated,
 }: RSAGeneratedFormProps) => {
   const { t } = useTranslation("realm-settings");
-  const serverInfo = useServerInfo();
   const [isKeySizeDropdownOpen, setIsKeySizeDropdownOpen] = useState(false);
   const [isEllipticCurveDropdownOpen, setIsEllipticCurveDropdownOpen] =
     useState(false);
@@ -52,9 +53,36 @@ export const RSAGeneratedForm = ({
   const { addAlert, addError } = useAlerts();
 
   const { id } = useParams<{ id: string }>();
+  const { url } = useRouteMatch();
+
+  const serverInfo = useServerInfo();
+  const form = useForm<ComponentRepresentation>({ mode: "onChange" });
+
+  const setupForm = (component: ComponentRepresentation) => {
+    form.reset();
+    convertToFormValues(component, form.setValue);
+  };
 
   const providerId =
     useRouteMatch<MatchParams>("/:providerType?")?.params.providerType;
+
+  const isTypeRSAEncGenerated =
+    url.includes("rsa-enc-generated") || isRSAEncGenerated;
+
+  const allComponentTypes =
+    serverInfo.componentTypes?.[KEY_PROVIDER_TYPE] ?? [];
+
+  const rsaGeneratedKeySizeOptions =
+    allComponentTypes[6].properties[3].options!;
+
+  const rsaGeneratedAlgorithmOptions =
+    allComponentTypes[6].properties[4].options!;
+
+  const rsaEncGeneratedKeySizeOptions =
+    allComponentTypes[5].properties[3].options!;
+
+  const rsaEncGeneratedAlgorithmOptions =
+    allComponentTypes[5].properties[4].options!;
 
   const save = async (component: ComponentRepresentation) => {
     try {
@@ -86,13 +114,6 @@ export const RSAGeneratedForm = ({
     }
   };
 
-  const form = useForm<ComponentRepresentation>({ mode: "onChange" });
-
-  const setupForm = (component: ComponentRepresentation) => {
-    form.reset();
-    convertToFormValues(component, form.setValue);
-  };
-
   useFetch(
     async () => {
       if (editMode) return await adminClient.components.findOne({ id: id });
@@ -104,15 +125,6 @@ export const RSAGeneratedForm = ({
     },
     []
   );
-
-  const allComponentTypes =
-    serverInfo.componentTypes?.[KEY_PROVIDER_TYPE] ?? [];
-
-  const rsaGeneratedKeySizeOptions =
-    allComponentTypes[5].properties[4].options!;
-
-  const rsaGeneratedAlgorithmOptions =
-    allComponentTypes[5].properties[3].options;
 
   return (
     <FormAccess
@@ -256,19 +268,19 @@ export const RSAGeneratedForm = ({
         />
       </FormGroup>
       <FormGroup
-        label={t("secretSize")}
+        label={t("keySize")}
         fieldId="kc-rsa-generated-keysize"
         labelIcon={
           <HelpItem
-            helpText="realm-settings-help:secretSize"
-            fieldLabelId="realm-settings:secretSize"
+            helpText="realm-settings-help:keySize"
+            fieldLabelId="realm-settings:keySize"
           />
         }
       >
         <Controller
-          name="config.secretSize"
+          name="config.keySize"
           control={form.control}
-          defaultValue={["2048"]}
+          defaultValue={isTypeRSAEncGenerated ? ["4096"] : ["2048"]}
           render={({ onChange, value }) => (
             <Select
               toggleId="kc-rsa-generated-keysize"
@@ -283,7 +295,10 @@ export const RSAGeneratedForm = ({
               aria-label={t("KeySize")}
               data-testid="select-secret-size"
             >
-              {rsaGeneratedKeySizeOptions!.map((item) => (
+              {(isTypeRSAEncGenerated
+                ? rsaEncGeneratedKeySizeOptions
+                : rsaGeneratedKeySizeOptions
+              ).map((item) => (
                 <SelectOption
                   selected={item === value}
                   key={item}
@@ -307,7 +322,7 @@ export const RSAGeneratedForm = ({
         <Controller
           name="config.algorithm"
           control={form.control}
-          defaultValue={["RS256"]}
+          defaultValue={isTypeRSAEncGenerated ? ["RSA-OAEP"] : ["RS256"]}
           render={({ onChange, value }) => (
             <Select
               toggleId="kc-elliptic"
@@ -325,7 +340,10 @@ export const RSAGeneratedForm = ({
               placeholderText="Select one..."
               data-testid="select-email-theme"
             >
-              {rsaGeneratedAlgorithmOptions!.map((p, idx) => (
+              {(isTypeRSAEncGenerated
+                ? rsaEncGeneratedAlgorithmOptions
+                : rsaGeneratedAlgorithmOptions
+              ).map((p, idx) => (
                 <SelectOption
                   selected={p === value}
                   key={`email-theme-${idx}`}
@@ -362,6 +380,7 @@ export default function RSAGeneratedSettings() {
   const providerId = useRouteMatch<MatchParams>(
     "/:realm/realm-settings/keys/:id?/:providerType?/settings"
   )?.params.providerType;
+
   return (
     <>
       <ViewHeader titleKey={t("editProvider")} subKey={providerId} />

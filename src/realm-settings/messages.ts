@@ -87,6 +87,7 @@ export default {
     x509Certificate: "X509 Certificate",
     ellipticCurve: "Elliptic Curve",
     secretSize: "Secret size",
+    keySize: "Key size",
     type: "Type",
     name: "Name",
     providerId: "ID",

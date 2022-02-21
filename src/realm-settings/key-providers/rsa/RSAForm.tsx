@@ -330,7 +330,7 @@ export const RSAForm = ({
       </FormGroup>
       <FormGroup
         label={t("x509Certificate")}
-        fieldId="kc-aes-keysize"
+        fieldId="kc-x509Certificate"
         labelIcon={
           <HelpItem
             helpText="realm-settings-help:x509Certificate"
