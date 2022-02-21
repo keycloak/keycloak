@@ -412,7 +412,7 @@ export default function ClientDetails() {
                 messageBundle="clients"
               />
             </Tab>
-            {!isRealmClient(client) && (
+            {!isRealmClient(client) && !client.bearerOnly && (
               <Tab
                 id="clientScopes"
                 data-testid="clientScopesTab"
