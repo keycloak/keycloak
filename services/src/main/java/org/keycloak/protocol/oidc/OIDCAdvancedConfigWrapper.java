@@ -375,13 +375,13 @@ public class OIDCAdvancedConfigWrapper {
         }
     }
 
-    private List<String> getAttributeMultivalued(String attrKey) {
+    public List<String> getAttributeMultivalued(String attrKey) {
         String attrValue = getAttribute(attrKey);
         if (attrValue == null) return Collections.emptyList();
         return Arrays.asList(Constants.CFG_DELIMITER_PATTERN.split(attrValue));
     }
 
-    private void setAttributeMultivalued(String attrKey, List<String> attrValues) {
+    public void setAttributeMultivalued(String attrKey, List<String> attrValues) {
         if (attrValues == null || attrValues.size() == 0) {
             // Remove attribute
             setAttribute(attrKey, null);

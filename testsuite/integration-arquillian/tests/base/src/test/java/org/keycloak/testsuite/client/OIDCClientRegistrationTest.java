@@ -32,6 +32,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.CibaConfig;
+import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
@@ -44,6 +45,7 @@ import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
+import org.keycloak.util.JsonSerialization;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -728,5 +730,39 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         ClientRepresentation kcClient = getClient(response.getClientId());
         OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
         Assert.assertTrue(config.isUseRefreshToken());
+    }
+
+    @Test
+    public void testDefaultAcrValues() throws Exception {
+        // Set realm acr-to-loa mapping
+        RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+        Map<String, Integer> acrLoaMap = new HashMap<>();
+        acrLoaMap.put("copper", 0);
+        acrLoaMap.put("silver", 1);
+        acrLoaMap.put("gold", 2);
+        realmRep.getAttributes().put(Constants.ACR_LOA_MAP, JsonSerialization.writeValueAsString(acrLoaMap));
+        adminClient.realm("test").update(realmRep);
+
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setDefaultAcrValues(Arrays.asList("silver", "foo"));
+        try {
+            OIDCClientRepresentation response = reg.oidc().create(clientRep);
+            fail("Expected 400");
+        } catch (ClientRegistrationException e) {
+            assertEquals(400, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+        }
+
+        clientRep.setDefaultAcrValues(Arrays.asList("silver", "gold"));
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        Assert.assertNames(response.getDefaultAcrValues(), "silver", "gold");
+
+        // Test Keycloak representation
+        ClientRepresentation kcClient = getClient(response.getClientId());
+        OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+        Assert.assertNames(config.getAttributeMultivalued(Constants.DEFAULT_ACR_VALUES), "silver", "gold");
+
+        // Revert realm acr-to-loa mappings
+        realmRep.getAttributes().remove(Constants.ACR_LOA_MAP);
+        adminClient.realm("test").update(realmRep);
     }
 }
