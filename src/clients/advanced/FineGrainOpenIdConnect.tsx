@@ -14,6 +14,7 @@ import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { sortProviders } from "../../util";
+import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 
 type FineGrainOpenIdConnectProps = {
   control: Control<Record<string, any>>;
@@ -43,6 +44,17 @@ export const FineGrainOpenIdConnect = ({
     useState(false);
   const [requestObjectRequiredOpen, setRequestObjectRequiredOpen] =
     useState(false);
+  const [requestObjectEncryptionOpen, setRequestObjectEncryptionOpen] =
+    useState(false);
+  const [requestObjectEncodingOpen, setRequestObjectEncodingOpen] =
+    useState(false);
+  const [authorizationSignedOpen, setAuthorizationSignedOpen] = useState(false);
+  const [authorizationEncryptedOpen, setAuthorizationEncryptedOpen] =
+    useState(false);
+  const [
+    authorizationEncryptedResponseOpen,
+    setAuthorizationEncryptedResponseOpen,
+  ] = useState(false);
 
   const keyOptions = [
     <SelectOption key="empty" value="">
@@ -85,6 +97,33 @@ export const FineGrainOpenIdConnect = ({
       {t("common:none")}
     </SelectOption>,
     ...sortProviders(clientSignatureProviders!).map((p) => (
+      <SelectOption key={p} value={p} />
+    )),
+  ];
+
+  const requestObjectEncryptionOptions = [
+    <SelectOption key="any" value="any">
+      {t("common:any")}
+    </SelectOption>,
+    ...sortProviders(cekManagementProviders!).map((p) => (
+      <SelectOption key={p} value={p} />
+    )),
+  ];
+
+  const requestObjectEncodingOptions = [
+    <SelectOption key="any" value="any">
+      {t("common:any")}
+    </SelectOption>,
+    ...sortProviders(contentEncryptionProviders!).map((p) => (
+      <SelectOption key={p} value={p} />
+    )),
+  ];
+
+  const authorizationSignedResponseOptions = [
+    <SelectOption key="empty" value="">
+      {t("common:choose")}
+    </SelectOption>,
+    ...sortProviders(signatureProviders!).map((p) => (
       <SelectOption key={p} value={p} />
     )),
   ];
@@ -289,6 +328,68 @@ export const FineGrainOpenIdConnect = ({
         />
       </FormGroup>
       <FormGroup
+        label={t("requestObjectEncryption")}
+        fieldId="requestObjectEncryption"
+        labelIcon={
+          <HelpItem
+            helpText="clients-help:requestObjectEncryption"
+            fieldLabelId="clients:requestObjectEncryption"
+          />
+        }
+      >
+        <Controller
+          name="attributes.request.object.encryption.alg"
+          defaultValue=""
+          control={control}
+          render={({ onChange, value }) => (
+            <Select
+              toggleId="requestObjectEncryption"
+              variant={SelectVariant.single}
+              onToggle={setRequestObjectEncryptionOpen}
+              isOpen={requestObjectEncryptionOpen}
+              onSelect={(_, value) => {
+                onChange(value);
+                setRequestObjectEncryptionOpen(false);
+              }}
+              selections={value}
+            >
+              {requestObjectEncryptionOptions}
+            </Select>
+          )}
+        />
+      </FormGroup>
+      <FormGroup
+        label={t("requestObjectEncoding")}
+        fieldId="requestObjectEncoding"
+        labelIcon={
+          <HelpItem
+            helpText="clients-help:requestObjectEncoding"
+            fieldLabelId="clients:requestObjectEncoding"
+          />
+        }
+      >
+        <Controller
+          name="attributes.request.object.encryption.enc"
+          defaultValue=""
+          control={control}
+          render={({ onChange, value }) => (
+            <Select
+              toggleId="requestObjectEncoding"
+              variant={SelectVariant.single}
+              onToggle={setRequestObjectEncodingOpen}
+              isOpen={requestObjectEncodingOpen}
+              onSelect={(_, value) => {
+                onChange(value);
+                setRequestObjectEncodingOpen(false);
+              }}
+              selections={value}
+            >
+              {requestObjectEncodingOptions}
+            </Select>
+          )}
+        />
+      </FormGroup>
+      <FormGroup
         label={t("requestObjectRequired")}
         fieldId="requestObjectRequired"
         labelIcon={
@@ -315,6 +416,115 @@ export const FineGrainOpenIdConnect = ({
               selections={value}
             >
               {requestObjectRequiredOptions}
+            </Select>
+          )}
+        />
+      </FormGroup>
+      <FormGroup
+        label={t("validRequestURIs")}
+        fieldId="validRequestURIs"
+        labelIcon={
+          <HelpItem
+            helpText="clients-help:validRequestURIs"
+            fieldLabelId="clients:validRequestURIs"
+          />
+        }
+      >
+        <MultiLineInput
+          name="requestUris"
+          aria-label={t("validRequestURIs")}
+          addButtonLabel="clients:addRequestUri"
+        />
+      </FormGroup>
+      <FormGroup
+        label={t("authorizationSignedResponseAlg")}
+        fieldId="authorizationSignedResponseAlg"
+        labelIcon={
+          <HelpItem
+            helpText="clients-help:authorizationSignedResponseAlg"
+            fieldLabelId="clients:authorizationSignedResponseAlg"
+          />
+        }
+      >
+        <Controller
+          name="attributes.authorization.signed.response.alg"
+          defaultValue=""
+          control={control}
+          render={({ onChange, value }) => (
+            <Select
+              toggleId="authorizationSignedResponseAlg"
+              variant={SelectVariant.single}
+              onToggle={setAuthorizationSignedOpen}
+              isOpen={authorizationSignedOpen}
+              onSelect={(_, value) => {
+                onChange(value);
+                setAuthorizationSignedOpen(false);
+              }}
+              selections={value}
+            >
+              {authorizationSignedResponseOptions}
+            </Select>
+          )}
+        />
+      </FormGroup>
+      <FormGroup
+        label={t("authorizationEncryptedResponseAlg")}
+        fieldId="authorizationEncryptedResponseAlg"
+        labelIcon={
+          <HelpItem
+            helpText="clients-help:authorizationEncryptedResponseAlg"
+            fieldLabelId="clients:authorizationEncryptedResponseAlg"
+          />
+        }
+      >
+        <Controller
+          name="attributes.authorization.encrypted.response.alg"
+          defaultValue=""
+          control={control}
+          render={({ onChange, value }) => (
+            <Select
+              toggleId="authorizationEncryptedResponseAlg"
+              variant={SelectVariant.single}
+              onToggle={setAuthorizationEncryptedOpen}
+              isOpen={authorizationEncryptedOpen}
+              onSelect={(_, value) => {
+                onChange(value);
+                setAuthorizationEncryptedOpen(false);
+              }}
+              selections={value}
+            >
+              {cekManagementOptions}
+            </Select>
+          )}
+        />
+      </FormGroup>
+      <FormGroup
+        label={t("authorizationEncryptedResponseEnc")}
+        fieldId="authorizationEncryptedResponseEnc"
+        labelIcon={
+          <HelpItem
+            helpText="clients-help:authorizationEncryptedResponseEnc"
+            fieldLabelId="clients:authorizationEncryptedResponseEnc"
+          />
+        }
+      >
+        <Controller
+          name="attributes.authorization.encrypted.response.enc"
+          defaultValue=""
+          control={control}
+          render={({ onChange, value }) => (
+            <Select
+              toggleId="authorizationEncryptedResponseEnc"
+              variant={SelectVariant.single}
+              onToggle={setAuthorizationEncryptedResponseOpen}
+              isOpen={authorizationEncryptedResponseOpen}
+              onSelect={(_, value) => {
+                onChange(value);
+                setAuthorizationEncryptedResponseOpen(false);
+              }}
+              selections={value}
+            >
+              {contentOptions}
             </Select>
           )}
         />

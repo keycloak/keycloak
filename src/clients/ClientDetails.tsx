@@ -23,7 +23,11 @@ import {
   useConfirmDialog,
 } from "../components/confirm-dialog/ConfirmDialog";
 import { DownloadDialog } from "../components/download-dialog/DownloadDialog";
-import type { MultiLine } from "../components/multi-line-input/multi-line-convert";
+import {
+  MultiLine,
+  stringToMultiline,
+  toStringValue,
+} from "../components/multi-line-input/multi-line-convert";
 import {
   ViewHeader,
   ViewHeaderBadge,
@@ -172,6 +176,7 @@ export type ClientForm = Omit<
 > & {
   redirectUris: MultiLine[];
   webOrigins: MultiLine[];
+  requestUris?: MultiLine[];
 };
 
 export type SaveOptions = {
@@ -242,6 +247,10 @@ export default function ClientDetails() {
 
   const setupForm = (client: ClientRepresentation) => {
     convertToFormValues(client, form.setValue, ["redirectUris", "webOrigins"]);
+    form.setValue(
+      "requestUris",
+      stringToMultiline(client.attributes?.["request.uris"])
+    );
   };
 
   useFetch(
@@ -271,10 +280,18 @@ export default function ClientDetails() {
         toggleChangeAuthenticatorOpen();
         return;
       }
-      const submittedClient = convertFormValuesToObject(form.getValues(), [
-        "redirectUris",
-        "webOrigins",
-      ]);
+
+      const values = form.getValues();
+
+      if (values.requestUris) {
+        values.attributes!["request.uris"] = toStringValue(values.requestUris);
+        delete values.requestUris;
+      }
+
+      const submittedClient = convertFormValuesToObject<
+        ClientForm,
+        ClientRepresentation
+      >(values, ["redirectUris", "webOrigins"]);
 
       try {
         const newClient: ClientRepresentation = {

@@ -89,7 +89,10 @@ export default function ResourceDetails() {
   );
 
   const save = async (submitted: SubmittedResource) => {
-    const resource = convertFormValuesToObject(submitted, ["uris"]);
+    const resource = convertFormValuesToObject<
+      SubmittedResource,
+      ResourceRepresentation
+    >(submitted, ["uris"]);
 
     try {
       if (resourceId) {

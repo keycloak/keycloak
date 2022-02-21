@@ -36,7 +36,7 @@ export const GroupAttributes = () => {
   const { currentGroup, subGroups, setSubGroups } = useSubGroups();
 
   const convertAttributes = (attr?: Record<string, any>) => {
-    return attributesToArray(attr || currentGroup().attributes!);
+    return attributesToArray(attr || currentGroup()?.attributes!);
   };
 
   useEffect(() => {

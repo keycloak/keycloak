@@ -137,4 +137,17 @@ describe("Tests the form convert util functions", () => {
       redirectUris: ["http://bla.nl", "http://test.nl"],
     });
   });
+
+  it("convert empty multi-lines", () => {
+    const values: { [index: string]: any } = {};
+    const spy = (name: string, value: any) => (values[name] = value);
+
+    //when
+    convertToFormValues({}, spy, ["redirectUris"]);
+
+    //then
+    expect(values).toEqual({
+      redirectUris: [{ value: "" }],
+    });
+  });
 });

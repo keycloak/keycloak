@@ -465,6 +465,16 @@ export default {
       "request only": "Request only",
       "request_uri only": "Request URI only",
     },
+    requestObjectEncryption: "Request object encryption algorithm",
+    requestObjectEncoding: "Request object content encryption algorithm",
+    validRequestURIs: "Valid request URIs",
+    addRequestUri: "Add valid request URIs",
+    authorizationSignedResponseAlg:
+      "Authorization response signature algorithm",
+    authorizationEncryptedResponseAlg:
+      "Authorization response encryption key management algorithm",
+    authorizationEncryptedResponseEnc:
+      "Authorization response encryption content encryption algorithm",
     openIdConnectCompatibilityModes: "Open ID Connect Compatibly Modes",
     excludeSessionStateFromAuthenticationResponse:
       "Exclude Session State From Authentication Response",

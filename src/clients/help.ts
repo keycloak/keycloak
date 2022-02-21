@@ -120,6 +120,18 @@ export default {
       "JWA algorithm, which client needs to use when sending OIDC request object specified by 'request' or 'request_uri' parameters. If set to 'any', Request object can be signed by any algorithm (including 'none' ).",
     requestObjectRequired:
       'Specifies if the client needs to provide a request object with their authorization requests, and what method they can use for this. If set to "not required", providing a request object is optional. In all other cases, providing a request object is mandatory. If set to "request", the request object must be provided by value. If set to "request_uri", the request object must be provided by reference. If set to "request or request_uri", either method can be used.',
+    requestObjectEncryption:
+      "JWE algorithm, which client needs to use when sending OIDC request object specified by 'request' or 'request_uri' parameters. If set to 'any', encryption is optional and any algorithm is allowed.",
+    requestObjectEncoding:
+      "JWE algorithm, which client needs to use when encrypting the content of the OIDC request object specified by 'request' or 'request_uri' parameters. If set to 'any', any algorithm is allowed.",
+    validRequestURIs:
+      "List of valid URIs, which can be used as values of 'request_uri' parameter during OpenID Connect authentication request. There is support for the same capabilities like for Valid Redirect URIs. For example wildcards or relative paths.",
+    authorizationSignedResponseAlg:
+      "JWA algorithm used for signing authorization response tokens when the response mode is jwt.",
+    authorizationEncryptedResponseAlg:
+      "JWA Algorithm used for key management in encrypting the authorization response when the response mode is jwt. This option is needed if you want encrypted authorization response. If left empty, the authorization response is just signed, but not encrypted.",
+    authorizationEncryptedResponseEnc:
+      "JWA Algorithm used for content encryption in encrypting the authorization response when the response mode is jwt. This option is needed if you want encrypted authorization response. If left empty, the authorization response is just signed, but not encrypted.",
     openIdConnectCompatibilityModes:
       "This section is used to configure settings for backward compatibility with older OpenID Connect / OAuth 2 adaptors. It's useful especially if your client uses older version of Keycloak / RH-SSO adapter.",
     excludeSessionStateFromAuthenticationResponse:

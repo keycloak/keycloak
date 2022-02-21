@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect } from "react";
+import React, { Fragment } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import {
   TextInput,
@@ -21,7 +21,7 @@ export const MultiLineInput = ({
   ...rest
 }: MultiLineInputProps) => {
   const { t } = useTranslation();
-  const { register, control, reset } = useFormContext();
+  const { register, control } = useFormContext();
   const { fields, append, remove } = useFieldArray({
     name,
     control,
@@ -29,11 +29,6 @@ export const MultiLineInput = ({
   const currentValues: { [name: string]: { value: string } } | undefined =
     useWatch({ control, name });
 
-  useEffect(() => {
-    reset({
-      [name]: [{ value: "" }],
-    });
-  }, []);
   return (
     <>
       {fields.map(({ id, value }, index) => (

@@ -99,12 +99,17 @@ export const convertToFormValues = (
       setValue(key, value);
     }
   });
+  multiline?.map((line) => {
+    if (!Object.keys(obj).includes(line)) {
+      setValue(line, convertToMultiline([""]));
+    }
+  });
 };
 
-export function convertFormValuesToObject<T>(
+export function convertFormValuesToObject<T, G = T>(
   obj: T,
   multiline: string[] | undefined = []
-): Omit<T, typeof multiline[number] | "attributes" | "config"> {
+): G {
   const result: any = {};
   Object.entries(obj).map(([key, value]) => {
     if (isAttributeArray(value)) {
