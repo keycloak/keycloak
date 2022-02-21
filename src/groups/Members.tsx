@@ -68,7 +68,7 @@ export const Members = () => {
     });
 
     if (includeSubGroup) {
-      const subGroups = getSubGroups(currentGroup().subGroups!);
+      const subGroups = getSubGroups(currentGroup()?.subGroups!);
       for (const group of subGroups) {
         members = members.concat(
           await adminClient.groups.listMembers({ id: group.id! })

@@ -7,7 +7,7 @@ type SubGroupsProps = {
   setSubGroups: (group: GroupRepresentation[]) => void;
   clear: () => void;
   remove: (group: GroupRepresentation) => void;
-  currentGroup: () => GroupRepresentation;
+  currentGroup: () => GroupRepresentation | undefined;
 };
 
 const SubGroupContext = createContext<SubGroupsProps | undefined>(undefined);

@@ -26,9 +26,9 @@ import { GroupsModal } from "./GroupsModal";
 import { toGroups } from "./routes/Groups";
 import { toGroupsSearch } from "./routes/GroupsSearch";
 import { GroupRoleMapping } from "./GroupRoleMapping";
+import helpUrls from "../help-urls";
 
 import "./GroupsSection.css";
-import helpUrls from "../help-urls";
 
 export default function GroupsSection() {
   const { t } = useTranslation("groups");
@@ -106,7 +106,7 @@ export default function GroupsSection() {
         />
       )}
       <ViewHeader
-        titleKey={!id ? "groups:groups" : currentGroup().name!}
+        titleKey={!id ? "groups:groups" : currentGroup()?.name!}
         subKey={!id ? "groups:groupsDescription" : ""}
         helpUrl={!id ? helpUrls.groupsUrl : ""}
         divider={!id}
@@ -117,7 +117,7 @@ export default function GroupsSection() {
                 <DropdownItem
                   data-testid="renameGroupAction"
                   key="renameGroup"
-                  onClick={() => setRename(currentGroup().name)}
+                  onClick={() => setRename(currentGroup()?.name)}
                 >
                   {t("renameGroup")}
                 </DropdownItem>,
@@ -174,7 +174,7 @@ export default function GroupsSection() {
               data-testid="role-mapping-tab"
               title={<TabTitleText>{t("roleMapping")}</TabTitleText>}
             >
-              <GroupRoleMapping id={id!} name={currentGroup().name!} />
+              <GroupRoleMapping id={id!} name={currentGroup()?.name!} />
             </Tab>
           </Tabs>
         )}
