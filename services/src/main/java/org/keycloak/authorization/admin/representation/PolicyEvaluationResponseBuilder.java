@@ -64,7 +64,7 @@ public class PolicyEvaluationResponseBuilder {
         authorizationData.setPermissions(decision.results());
         accessToken.setAuthorization(authorizationData);
 
-        ClientModel clientModel = authorization.getRealm().getClientById(resourceServer.getId());
+        ClientModel clientModel = authorization.getRealm().getClientById(resourceServer.getClientId());
 
         if (!accessToken.hasAudience(clientModel.getClientId())) {
             accessToken.audience(clientModel.getClientId());

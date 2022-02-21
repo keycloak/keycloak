@@ -254,7 +254,7 @@ public class PolicyEvaluationService {
                 String clientId = representation.getClientId();
 
                 if (clientId == null) {
-                    clientId = resourceServer.getId();
+                    clientId = resourceServer.getClientId();
                 }
 
                 if (clientId != null) {
@@ -287,7 +287,7 @@ public class PolicyEvaluationService {
             }
 
             if (client == null) {
-                client = realm.getClientById(resourceServer.getId());
+                client = realm.getClientById(resourceServer.getClientId());
             }
 
             accessToken.issuedFor(client.getClientId());

@@ -105,9 +105,9 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
         Scope manageMembershipScope = root.initializeRealmScope(MANAGE_MEMBERSHIP_SCOPE);
 
         String groupResourceName = getGroupResourceName(group);
-        Resource groupResource = resourceStore.findByName(groupResourceName, server.getId());
+        Resource groupResource = resourceStore.findByName(groupResourceName, server);
         if (groupResource == null) {
-            groupResource = resourceStore.create(groupResourceName, server, server.getId());
+            groupResource = resourceStore.create(groupResourceName, server, server.getClientId());
             Set<Scope> scopeset = new HashSet<>();
             scopeset.add(manageScope);
             scopeset.add(viewScope);
@@ -162,7 +162,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
         ResourceServer server = root.realmResourceServer();
         if (server == null) return false;
 
-        return resourceStore.findByName(getGroupResourceName(group), server.getId()) != null;
+        return resourceStore.findByName(getGroupResourceName(group), server) != null;
     }
 
     @Override
@@ -213,7 +213,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
     public Resource resource(GroupModel group) {
         ResourceServer server = root.realmResourceServer();
         if (server == null) return null;
-        Resource resource =  resourceStore.findByName(getGroupResourceName(group), server.getId());
+        Resource resource =  resourceStore.findByName(getGroupResourceName(group), server);
         if (resource == null) return null;
         return resource;
     }
@@ -400,7 +400,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
             return false;
         }
 
-        Resource resource =  resourceStore.findByName(getGroupResourceName(group), server.getId());
+        Resource resource =  resourceStore.findByName(getGroupResourceName(group), server);
 
         if (resource == null) {
             return false;
@@ -437,7 +437,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
         ResourceServer server = root.realmResourceServer();
         if (server == null) return null;
         String groupResourceName = getGroupResourceName(group);
-        return resourceStore.findByName(groupResourceName, server.getId());
+        return resourceStore.findByName(groupResourceName, server);
     }
 
     private void deletePermissions(GroupModel group) {

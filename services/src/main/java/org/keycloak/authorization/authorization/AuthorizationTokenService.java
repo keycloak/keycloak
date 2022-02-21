@@ -224,7 +224,7 @@ public class AuthorizationTokenService {
 
             if (isGranted(ticket, request, permissions)) {
                 AuthorizationProvider authorization = request.getAuthorization();
-                ClientModel targetClient = authorization.getRealm().getClientById(resourceServer.getId());
+                ClientModel targetClient = authorization.getRealm().getClientById(resourceServer.getClientId());
                 Metadata metadata = request.getMetadata();
                 String responseMode = metadata != null ? metadata.getResponseMode() : null;
 
@@ -610,7 +610,7 @@ public class AuthorizationTokenService {
         } else if (resourceId.startsWith("resource-type:")) {
             // only resource types, no resource instances. resource types are owned by the resource server
             String resourceType = resourceId.substring("resource-type:".length());
-            resourceStore.findByType(resourceType, resourceServer.getId(), resourceServer.getId(),
+            resourceStore.findByType(resourceType, resourceServer.getClientId(), resourceServer.getId(),
                     resource1 -> addPermission(request, resourceServer, authorization, permissionsToEvaluate, limit, requestedScopesModel, resource1));
         } else if (resourceId.startsWith("resource-type-any:")) {
             // any resource with a given type
@@ -620,7 +620,7 @@ public class AuthorizationTokenService {
         } else if (resourceId.startsWith("resource-type-instance:")) {
             // only resource instances with a given type
             String resourceType = resourceId.substring("resource-type-instance:".length());
-            resourceStore.findByTypeInstance(resourceType, resourceServer.getId(),
+            resourceStore.findByTypeInstance(resourceType, resourceServer,
                     resource13 -> addPermission(request, resourceServer, authorization, permissionsToEvaluate, limit, requestedScopesModel, resource13));
         } else if (resourceId.startsWith("resource-type-owner:")) {
             // only resources where the current identity is the owner
@@ -635,7 +635,7 @@ public class AuthorizationTokenService {
                 addPermission(request, resourceServer, authorization, permissionsToEvaluate, limit, requestedScopesModel, ownerResource);
             }
 
-            if (!identity.isResourceServer() || !identity.getId().equals(resourceServer.getId())) {
+            if (!identity.isResourceServer() || !identity.getId().equals(resourceServer.getClientId())) {
                 List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().findGranted(resourceId, identity.getId(), resourceServer.getId());
 
                 if (!tickets.isEmpty()) {
@@ -656,7 +656,7 @@ public class AuthorizationTokenService {
                     resourcePermission.setGranted(true);
                 }
 
-                Resource serverResource = resourceStore.findByName(resourceId, resourceServer.getId());
+                Resource serverResource = resourceStore.findByName(resourceId, resourceServer);
 
                 if (serverResource != null) {
                     permission.setResourceId(serverResource.getId());

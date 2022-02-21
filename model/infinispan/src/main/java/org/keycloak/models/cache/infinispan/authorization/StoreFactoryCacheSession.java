@@ -640,11 +640,6 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public Resource findByName(String name, String resourceServerId) {
-            return findByName(name, resourceServerId, resourceServerId);
-        }
-
-        @Override
         public Resource findByName(String name, String ownerId, String resourceServerId) {
             if (name == null) return null;
             String cacheKey = getResourceByNameCacheKey(name, ownerId, resourceServerId);
@@ -808,20 +803,20 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public List<Resource> findByTypeInstance(String type, String resourceServerId) {
+        public List<Resource> findByTypeInstance(String type, ResourceServer resourceServer) {
             if (type == null) return Collections.emptyList();
-            String cacheKey = getResourceByTypeInstanceCacheKey(type, resourceServerId);
-            return cacheQuery(cacheKey, ResourceListQuery.class, () -> getResourceStoreDelegate().findByTypeInstance(type, resourceServerId),
-                    (revision, resources) -> new ResourceListQuery(revision, cacheKey, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId);
+            String cacheKey = getResourceByTypeInstanceCacheKey(type, resourceServer.getId());
+            return cacheQuery(cacheKey, ResourceListQuery.class, () -> getResourceStoreDelegate().findByTypeInstance(type, resourceServer),
+                    (revision, resources) -> new ResourceListQuery(revision, cacheKey, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServer.getId()), resourceServer.getId());
         }
 
         @Override
-        public void findByTypeInstance(String type, String resourceServerId, Consumer<Resource> consumer) {
+        public void findByTypeInstance(String type, ResourceServer resourceServer, Consumer<Resource> consumer) {
             if (type == null) return;
-            String cacheKey = getResourceByTypeInstanceCacheKey(type, resourceServerId);
+            String cacheKey = getResourceByTypeInstanceCacheKey(type, resourceServer.getId());
             cacheQuery(cacheKey, ResourceListQuery.class, () -> {
                         List<Resource> resources = new ArrayList<>();
-                        getResourceStoreDelegate().findByTypeInstance(type, resourceServerId, new Consumer<Resource>() {
+                        getResourceStoreDelegate().findByTypeInstance(type, resourceServer, new Consumer<Resource>() {
                             @Override
                             public void accept(Resource resource) {
                                 consumer.andThen(resources::add)
@@ -831,7 +826,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                         });
                         return resources;
                     },
-                    (revision, resources) -> new ResourceListQuery(revision, cacheKey, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId, consumer);
+                    (revision, resources) -> new ResourceListQuery(revision, cacheKey, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServer.getId()), resourceServer.getId(), consumer);
         }
 
         private <R extends Resource, Q extends ResourceQuery> List<R> cacheQuery(String cacheKey, Class<Q> queryType, Supplier<List<R>> resultSupplier, BiFunction<Long, List<R>, Q> querySupplier, String resourceServerId, Consumer<R> consumer) {

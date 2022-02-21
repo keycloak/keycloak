@@ -113,7 +113,7 @@ public class ResourceSetService {
 
         if (owner == null) {
             owner = new ResourceOwnerRepresentation();
-            owner.setId(resourceServer.getId());
+            owner.setId(resourceServer.getClientId());
             resource.setOwner(owner);
         }
 
@@ -129,7 +129,7 @@ public class ResourceSetService {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Resource with name [" + resource.getName() + "] already exists.", Status.CONFLICT);
         }
 
-        return toRepresentation(toModel(resource, this.resourceServer, authorization), resourceServer.getId(), authorization);
+        return toRepresentation(toModel(resource, this.resourceServer, authorization), resourceServer, authorization);
     }
 
     @Path("{id}")
@@ -167,7 +167,7 @@ public class ResourceSetService {
 
         storeFactory.getResourceStore().delete(id);
 
-        audit(toRepresentation(resource, resourceServer.getId(), authorization), OperationType.DELETE);
+        audit(toRepresentation(resource, resourceServer, authorization), OperationType.DELETE);
 
         return Response.noContent().build();
     }
@@ -177,7 +177,7 @@ public class ResourceSetService {
     @NoCache
     @Produces("application/json")
     public Response findById(@PathParam("id") String id) {
-        return findById(id, resource -> toRepresentation(resource, resourceServer.getId(), authorization, true));
+        return findById(id, resource -> toRepresentation(resource, resourceServer, authorization, true));
     }
 
     public Response findById(String id, Function<Resource, ? extends ResourceRepresentation> toRepresentation) {
@@ -214,10 +214,10 @@ public class ResourceSetService {
             return representation;
         }).collect(Collectors.toList());
 
-        if (model.getType() != null && !model.getOwner().equals(resourceServer.getId())) {
+        if (model.getType() != null && !model.getOwner().equals(resourceServer.getClientId())) {
             ResourceStore resourceStore = authorization.getStoreFactory().getResourceStore();
             for (Resource typed : resourceStore.findByType(model.getType(), resourceServer.getId())) {
-                if (typed.getOwner().equals(resourceServer.getId()) && !typed.getId().equals(model.getId())) {
+                if (typed.getOwner().equals(resourceServer.getClientId()) && !typed.getId().equals(model.getId())) {
                     scopes.addAll(typed.getScopes().stream().map(model1 -> {
                         ScopeRepresentation scope = new ScopeRepresentation();
                         scope.setId(model1.getId());
@@ -259,7 +259,7 @@ public class ResourceSetService {
 
             Map<Resource.FilterOption, String[]> resourceFilter = new EnumMap<>(Resource.FilterOption.class);
 
-            resourceFilter.put(Resource.FilterOption.OWNER, new String[]{resourceServer.getId()});
+            resourceFilter.put(Resource.FilterOption.OWNER, new String[]{resourceServer.getClientId()});
             resourceFilter.put(Resource.FilterOption.TYPE, new String[]{model.getType()});
 
             for (Resource resourceType : resourceStore.findByResourceServer(resourceFilter, resourceServer.getId(), -1, -1)) {
@@ -317,13 +317,13 @@ public class ResourceSetService {
             return Response.status(Status.BAD_REQUEST).build();
         }
 
-        Resource model = storeFactory.getResourceStore().findByName(name, this.resourceServer.getId());
+        Resource model = storeFactory.getResourceStore().findByName(name, this.resourceServer);
 
         if (model == null) {
             return Response.status(Status.NO_CONTENT).build();
         }
 
-        return Response.ok(toRepresentation(model, this.resourceServer.getId(), authorization)).build();
+        return Response.ok(toRepresentation(model, this.resourceServer, authorization)).build();
     }
 
     @GET
@@ -340,7 +340,7 @@ public class ResourceSetService {
                          @QueryParam("deep") Boolean deep,
                          @QueryParam("first") Integer firstResult,
                          @QueryParam("max") Integer maxResult) {
-        return find(id, name, uri, owner, type, scope, matchingUri, exactName, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toRepresentation(resource, resourceServer.getId(), authorization, deep1));
+        return find(id, name, uri, owner, type, scope, matchingUri, exactName, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toRepresentation(resource, resourceServer, authorization, deep1));
     }
 
     public Response find(@QueryParam("_id") String id,
@@ -418,7 +418,7 @@ public class ResourceSetService {
             Map<Resource.FilterOption, String[]> attributes = new EnumMap<>(Resource.FilterOption.class);
 
             attributes.put(Resource.FilterOption.URI_NOT_NULL, new String[] {"true"});
-            attributes.put(Resource.FilterOption.OWNER, new String[] {resourceServer.getId()});
+            attributes.put(Resource.FilterOption.OWNER, new String[] {resourceServer.getClientId()});
 
             List<Resource> serverResources = storeFactory.getResourceStore().findByResourceServer(attributes, this.resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : -1);
 

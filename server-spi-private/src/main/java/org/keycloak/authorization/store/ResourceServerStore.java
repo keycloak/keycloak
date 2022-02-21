@@ -50,9 +50,7 @@ public interface ResourceServerStore {
      * @param id the identifier of an existing resource server instance
      *
      * @return the resource server instance with the given identifier or null if no instance was found
-     * @deprecated use {@code findByClient} instead.
      */
-    @Deprecated
     ResourceServer findById(String id);
 
     /**

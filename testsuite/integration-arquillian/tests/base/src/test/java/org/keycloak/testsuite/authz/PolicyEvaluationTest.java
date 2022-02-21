@@ -619,7 +619,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         Policy policy = storeFactory.getPolicyStore().create(policyRepresentation, resourceServer);
         PolicyProvider provider = authorization.getProvider(policy.getType());
-        Resource resource = storeFactory.getResourceStore().create("testCheckResourceAttributesResource", resourceServer, resourceServer.getId());
+        Resource resource = storeFactory.getResourceStore().create("testCheckResourceAttributesResource", resourceServer, resourceServer.getClientId());
 
         resource.setAttribute("a1", Arrays.asList("1", "2"));
         resource.setAttribute("a2", Arrays.asList("3"));
@@ -653,7 +653,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         Policy policy = storeFactory.getPolicyStore().create(policyRepresentation, resourceServer);
 
-        Resource resource = storeFactory.getResourceStore().create("Resource A", resourceServer, resourceServer.getId());
+        Resource resource = storeFactory.getResourceStore().create("Resource A", resourceServer, resourceServer.getClientId());
         Scope scope = storeFactory.getScopeStore().create("Scope A", resourceServer);
 
         resource.updateScopes(new HashSet<>(Arrays.asList(scope)));
@@ -716,7 +716,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         storeFactory.getPolicyStore().create(writePermission, resourceServer);
 
-        Resource resource = storeFactory.getResourceStore().create(KeycloakModelUtils.generateId(), resourceServer, resourceServer.getId());
+        Resource resource = storeFactory.getResourceStore().create(KeycloakModelUtils.generateId(), resourceServer, resourceServer.getClientId());
 
         PermissionEvaluator evaluator = authorization.evaluators().from(Arrays.asList(new ResourcePermission(resource, Arrays.asList(readScope, writeScope), resourceServer)), createEvaluationContext(session, Collections.emptyMap()));
         Collection<Permission> permissions = evaluator.evaluate(resourceServer, null);

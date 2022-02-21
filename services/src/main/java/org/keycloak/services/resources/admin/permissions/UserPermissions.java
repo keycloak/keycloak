@@ -104,9 +104,9 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
         Scope userImpersonatedScope = root.initializeRealmScope(USER_IMPERSONATED_SCOPE);
         Scope manageGroupMembershipScope = root.initializeRealmScope(MANAGE_GROUP_MEMBERSHIP_SCOPE);
 
-        Resource usersResource = resourceStore.findByName(USERS_RESOURCE, server.getId());
+        Resource usersResource = resourceStore.findByName(USERS_RESOURCE, server);
         if (usersResource == null) {
-            usersResource = resourceStore.create(USERS_RESOURCE, server, server.getId());
+            usersResource = resourceStore.create(USERS_RESOURCE, server, server.getClientId());
             Set<Scope> scopeset = new HashSet<>();
             scopeset.add(manageScope);
             scopeset.add(viewScope);
@@ -160,7 +160,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
         ResourceServer server = root.realmResourceServer();
         if (server == null) return false;
 
-        Resource resource =  resourceStore.findByName(USERS_RESOURCE, server.getId());
+        Resource resource =  resourceStore.findByName(USERS_RESOURCE, server);
         if (resource == null) return false;
 
         Policy policy = managePermission();
@@ -186,7 +186,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
         ResourceServer server = root.realmResourceServer();
         if (server == null) return null;
 
-        return  resourceStore.findByName(USERS_RESOURCE, server.getId());
+        return  resourceStore.findByName(USERS_RESOURCE, server);
     }
 
     @Override
@@ -373,7 +373,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
             return true;
         }
 
-        Resource resource =  resourceStore.findByName(USERS_RESOURCE, server.getId());
+        Resource resource =  resourceStore.findByName(USERS_RESOURCE, server);
 
         if (resource == null) {
             return true;
@@ -481,7 +481,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
             return false;
         }
 
-        Resource resource =  resourceStore.findByName(USERS_RESOURCE, server.getId());
+        Resource resource =  resourceStore.findByName(USERS_RESOURCE, server);
         List<String> expectedScopes = Arrays.asList(scopes);
 
         if (resource == null) {
@@ -540,7 +540,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
             policyStore.delete(policy.getId());
 
         }
-        Resource usersResource = resourceStore.findByName(USERS_RESOURCE, server.getId());
+        Resource usersResource = resourceStore.findByName(USERS_RESOURCE, server);
         if (usersResource != null) {
             resourceStore.delete(usersResource.getId());
         }

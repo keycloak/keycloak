@@ -25,6 +25,7 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.map.authorization.adapter.MapResourceAdapter;
 import org.keycloak.models.map.authorization.entity.MapResourceEntity;
 import org.keycloak.models.map.authorization.entity.MapResourceEntityImpl;
@@ -204,11 +205,6 @@ public class MapResourceStore implements ResourceStore {
     }
 
     @Override
-    public Resource findByName(String name, String resourceServerId) {
-        return findByName(name, resourceServerId, resourceServerId);
-    }
-
-    @Override
     public Resource findByName(String name, String ownerId, String resourceServerId) {
         LOG.tracef("findByName(%s, %s, %s)%s", name, ownerId, resourceServerId, getShortStackTrace());
         return tx.read(withCriteria(forResourceServer(resourceServerId)
@@ -244,12 +240,14 @@ public class MapResourceStore implements ResourceStore {
                 .forEach(consumer);
     }
 
+
     @Override
-    public void findByTypeInstance(String type, String resourceServerId, Consumer<Resource> consumer) {
-        LOG.tracef("findByTypeInstance(%s, %s, %s)%s", type, resourceServerId, consumer, getShortStackTrace());
-        tx.read(withCriteria(forResourceServer(resourceServerId)
-                .compare(SearchableFields.OWNER, Operator.NE, resourceServerId)
-                .compare(SearchableFields.TYPE, Operator.EQ, type)))
+    public void findByTypeInstance(String type, ResourceServer resourceServer, Consumer<Resource> consumer) {
+        LOG.tracef("findByTypeInstance(%s, %s, %s)%s", type, resourceServer, consumer, getShortStackTrace());
+
+        tx.read(withCriteria(forResourceServer(resourceServer.getId())
+                        .compare(SearchableFields.OWNER, Operator.NE, resourceServer.getClientId())
+                        .compare(SearchableFields.TYPE, Operator.EQ, type)))
                 .map(this::entityToAdapter)
                 .forEach(consumer);
     }

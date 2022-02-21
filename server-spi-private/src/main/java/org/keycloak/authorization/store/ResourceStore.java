@@ -136,10 +136,12 @@ public interface ResourceStore {
      * Find a {@link Resource} by its name where the owner is the resource server itself.
      *
      * @param name the name of the resource
-     * @param resourceServerId the identifier of the resource server
+     * @param resourceServer the resource server
      * @return a resource with the given name
      */
-    Resource findByName(String name, String resourceServerId);
+    default Resource findByName(String name, ResourceServer resourceServer) {
+        return findByName(name, resourceServer.getClientId(), resourceServer.getId());
+    }
 
     /**
      * Find a {@link Resource} by its name where the owner is the given <code>ownerId</code>.
@@ -201,13 +203,14 @@ public interface ResourceStore {
      */
     void findByType(String type, String owner, String resourceServerId, Consumer<Resource> consumer);
 
-    default List<Resource> findByTypeInstance(String type, String resourceServerId) {
+    default List<Resource> findByTypeInstance(String type, ResourceServer resourceServer) {
         List<Resource> list = new LinkedList<>();
 
-        findByTypeInstance(type, resourceServerId, list::add);
+        findByTypeInstance(type, resourceServer, list::add);
 
         return list;
     }
 
-    void findByTypeInstance(String type, String resourceServerId, Consumer<Resource> consumer);
+
+    void findByTypeInstance(String type, ResourceServer resourceServer, Consumer<Resource> consumer);
 }

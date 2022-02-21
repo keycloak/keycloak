@@ -260,11 +260,6 @@ public class JPAResourceStore implements ResourceStore {
     }
 
     @Override
-    public Resource findByName(String name, String resourceServerId) {
-        return findByName(name, resourceServerId, resourceServerId);
-    }
-
-    @Override
     public Resource findByName(String name, String ownerId, String resourceServerId) {
         TypedQuery<ResourceEntity> query = entityManager.createNamedQuery("findResourceIdByName", ResourceEntity.class);
 
@@ -311,12 +306,12 @@ public class JPAResourceStore implements ResourceStore {
     }
 
     @Override
-    public void findByTypeInstance(String type, String resourceServerId, Consumer<Resource> consumer) {
+    public void findByTypeInstance(String type, ResourceServer resourceServer, Consumer<Resource> consumer) {
         TypedQuery<ResourceEntity> query = entityManager.createNamedQuery("findResourceIdByTypeInstance", ResourceEntity.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("type", type);
-        query.setParameter("serverId", resourceServerId);
+        query.setParameter("serverId", resourceServer.getId());
 
         StoreFactory storeFactory = provider.getStoreFactory();
 
