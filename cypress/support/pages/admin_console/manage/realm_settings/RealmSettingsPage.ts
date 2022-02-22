@@ -555,7 +555,7 @@ export default class RealmSettingsPage {
 
   shouldRemoveEventFromEventListener() {
     cy.get(this.eventListenerRemove).last().click();
-    cy.findByTestId(this.eventListenersSaveBtn).click();
+    cy.findByTestId(this.eventListenersSaveBtn).click({ force: true });
     cy.get(this.alertMessage).should(
       "be.visible",
       "Event listener has been updated."
