@@ -1,5 +1,4 @@
 export default class SessionsPage {
-  sessionTypeDrpDwn = ".pf-c-select__toggle";
   sessionTypeList = ".pf-c-select__toggle + ul";
   allSessionTypesOption = "all-sessions-option";
   regularSSOOption = "regular-sso-option";
@@ -14,47 +13,6 @@ export default class SessionsPage {
   notBeforeInput = "not-before-input";
   logoutAll = "logout-all";
   logoutAllConfirm = "logout-all-confirm-button";
-
-  shouldDisplay() {
-    cy.get(this.sessionTypeDrpDwn).should("exist");
-  }
-
-  shouldNotBeEmpty() {
-    cy.get(this.sessionTypeDrpDwn).should("exist").click();
-    cy.get(this.sessionTypeList).should("exist");
-
-    return this;
-  }
-
-  selectAllSessionsType() {
-    cy.get(this.sessionTypeDrpDwn).should("exist").click();
-    cy.findByTestId(this.allSessionTypesOption).should("exist").click();
-    cy.get(this.selectedType).should("have.text", "All session types");
-  }
-
-  selectRegularSSO() {
-    cy.get(this.sessionTypeDrpDwn).should("exist").click();
-    cy.findByTestId(this.regularSSOOption).should("exist").click();
-    cy.get(this.selectedType).should("have.text", "Regular SSO");
-  }
-
-  selectOffline() {
-    cy.get(this.sessionTypeDrpDwn).should("exist").click();
-    cy.findByTestId(this.offlineOption).should("exist").click();
-    cy.get(this.selectedType).should("have.text", "Offline");
-  }
-
-  selectDirectGrant() {
-    cy.get(this.sessionTypeDrpDwn).should("exist").click();
-    cy.findByTestId(this.directGrantOption).should("exist").click();
-    cy.get(this.selectedType).should("have.text", "Direct grant");
-  }
-
-  selectServiceAccount() {
-    cy.get(this.sessionTypeDrpDwn).should("exist").click();
-    cy.findByTestId(this.serviceAccountOption).should("exist").click();
-    cy.get(this.selectedType).should("have.text", "Service account");
-  }
 
   setToNow() {
     cy.findByTestId(this.actionDropdown).should("exist").click();

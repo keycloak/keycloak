@@ -2,27 +2,20 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import moment from "moment";
-import {
-  DropdownItem,
-  PageSection,
-  Select,
-  SelectOption,
-  SelectVariant,
-} from "@patternfly/react-core";
-import { FilterIcon } from "@patternfly/react-icons";
+import { DropdownItem, PageSection } from "@patternfly/react-core";
+import { CubesIcon } from "@patternfly/react-icons";
 
 import type UserSessionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userSessionRepresentation";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAdminClient } from "../context/auth/AdminClient";
-
-import { CubesIcon } from "@patternfly/react-icons";
-import "./SessionsSection.css";
 import { RevocationModal } from "./RevocationModal";
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { LogoutAllSessionsModal } from "./LogoutAllSessionsModal";
 import helpUrls from "../help-urls";
+
+import "./SessionsSection.css";
 
 const Clients = (row: UserSessionRepresentation) => {
   return (
@@ -39,22 +32,13 @@ const Clients = (row: UserSessionRepresentation) => {
 export default function SessionsSection() {
   const { t } = useTranslation("sessions");
   const adminClient = useAdminClient();
-  const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
   const [revocationModalOpen, setRevocationModalOpen] = useState(false);
   const [logoutAllSessionsModalOpen, setLogoutAllSessionsModalOpen] =
     useState(false);
   const [activeClientDetails, setActiveClientDetails] = useState<
     ClientRepresentation[]
   >([]);
-  const [filterType, setFilterType] = useState(
-    t("sessionsType.allSessions").toString()
-  );
-  const [key, setKey] = useState(0);
   const [noSessions, setNoSessions] = useState(false);
-
-  const refresh = () => {
-    setKey(new Date().getTime());
-  };
 
   const handleRevocationModalToggle = () => {
     setRevocationModalOpen(!revocationModalOpen);
@@ -140,48 +124,9 @@ export default function SessionsSection() {
           />
         )}
         <KeycloakDataTable
-          key={key}
           loader={loader}
           ariaLabelKey="session:title"
           searchPlaceholderKey="sessions:searchForSession"
-          searchTypeComponent={
-            <Select
-              data-testid="filter-session-type-select"
-              isOpen={filterDropdownOpen}
-              className="kc-filter-session-type-select"
-              variant={SelectVariant.single}
-              onToggle={(isExpanded) => setFilterDropdownOpen(isExpanded)}
-              toggleIcon={<FilterIcon />}
-              onSelect={(_, value) => {
-                setFilterType(value.toString());
-                refresh();
-                setFilterDropdownOpen(false);
-              }}
-              selections={filterType}
-            >
-              <SelectOption
-                data-testid="all-sessions-option"
-                value={t("sessionsType.allSessions")}
-                isPlaceholder
-              />
-              <SelectOption
-                data-testid="regular-sso-option"
-                value={t("sessionsType.regularSSO")}
-              />
-              <SelectOption
-                data-testid="offline-option"
-                value={t("sessionsType.offline")}
-              />
-              <SelectOption
-                data-testid="direct-grant-option"
-                value={t("sessionsType.directGrant")}
-              />
-              <SelectOption
-                data-testid="service-account-option"
-                value={t("sessionsType.serviceAccount")}
-              />
-            </Select>
-          }
           columns={[
             {
               name: "username",
