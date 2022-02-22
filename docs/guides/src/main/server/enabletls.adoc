@@ -57,7 +57,7 @@ You can configure the location of this truststore by running the following comma
 
 === Setting the truststore password
 You can set a secure password for your truststore using the `https.trust-store.password` option:
-<@kc.start parameters="--https.trust-store.password=<value>"/>
+<@kc.start parameters="--https-trust-store-password=<value>"/>
 If no password is set, the default password `password` is used.
 
 == Securing credentials
