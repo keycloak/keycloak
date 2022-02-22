@@ -24,6 +24,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -80,10 +82,11 @@ public class JpaMapStorageProviderFactory implements
         EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "jpa-map-storage";
+    private static final Logger logger = Logger.getLogger(JpaMapStorageProviderFactory.class);
 
     private volatile EntityManagerFactory emf;
+    private final Set<Class<?>> validatedModels = ConcurrentHashMap.newKeySet();
     private Config.Scope config;
-    private static final Logger logger = Logger.getLogger(JpaMapStorageProviderFactory.class);
 
     public final static DeepCloner CLONER = new DeepCloner.Builder()
             //client
@@ -144,6 +147,7 @@ public class JpaMapStorageProviderFactory implements
         if (emf != null) {
             emf.close();
         }
+        this.validatedModels.clear();
     }
 
     private void lazyInit() {
@@ -231,23 +235,24 @@ public class JpaMapStorageProviderFactory implements
     }
 
     public void validateAndUpdateSchema(KeycloakSession session, Class<?> modelType) {
-        Connection connection = getConnection();
+        if (this.validatedModels.add(modelType)) {
+            Connection connection = getConnection();
+            try {
+                if (logger.isDebugEnabled()) printOperationalInfo(connection);
 
-        try {
-            if (logger.isDebugEnabled()) printOperationalInfo(connection);
+                MapJpaUpdaterProvider updater = session.getProvider(MapJpaUpdaterProvider.class);
+                MapJpaUpdaterProvider.Status status = updater.validate(modelType, connection, config.get("schema"));
 
-            MapJpaUpdaterProvider updater = session.getProvider(MapJpaUpdaterProvider.class);
-            MapJpaUpdaterProvider.Status status = updater.validate(modelType, connection, config.get("schema"));
-
-            if (! status.equals(VALID)) {
-                update(modelType, connection, session);
-            }
-        } finally {
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-                    logger.warn("Can't close connection", e);
+                if (!status.equals(VALID)) {
+                    update(modelType, connection, session);
+                }
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        logger.warn("Can't close connection", e);
+                    }
                 }
             }
         }
