@@ -92,18 +92,14 @@ The federation provider obtains the data from SSSD using D-BUS. It authenticates
 $ sudo yum install sssd-dbus
 ----
 
-ifeval::[{project_community}==true]
-
-. Run the provisioning script available from the Keycloak distribution:
+. Run the following provisioning script:
 +
 [source,bash,subs=+attributes]
 ----
-  $ bin/federation-sssd-setup.sh
+$ bin/federation-sssd-setup.sh
 ----
-
-endif::[]
 +
-This provisioning script makes the following changes to `/etc/sssd/sssd.conf`:
+This script makes the following changes to `/etc/sssd/sssd.conf`:
 +
 [source,bash,subs=+attributes]
 ----
