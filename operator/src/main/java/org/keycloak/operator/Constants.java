@@ -33,6 +33,6 @@ public final class Constants {
     );
 
     public static final Map<String, String> DEFAULT_DIST_CONFIG = Map.of(
-        "KC_METRICS_ENABLED", "true"
+        "KC_HEALTH_ENABLED", "true"
     );
 }

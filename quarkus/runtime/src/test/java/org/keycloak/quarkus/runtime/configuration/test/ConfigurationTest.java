@@ -405,6 +405,12 @@ public class ConfigurationTest {
         assertEquals("com.microsoft.sqlserver.jdbc.SQLServerXADataSource", config2.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
         assertEquals("xa", config2.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
     }
+    
+    public void testResolveHealthOption() {
+        System.setProperty(CLI_ARGS, "--health-enabled=true");
+        SmallRyeConfig config = createConfig();
+        assertEquals("true", config.getConfigValue("quarkus.datasource.health.enabled").getValue());
+    }
 
     @Test
     public void testResolveMetricsOption() {

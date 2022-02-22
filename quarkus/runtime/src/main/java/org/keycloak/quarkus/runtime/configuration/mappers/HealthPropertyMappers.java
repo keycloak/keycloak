@@ -3,17 +3,17 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 import java.util.Arrays;
 
 
-final class MetricsPropertyMappers {
+final class HealthPropertyMappers {
 
-    private MetricsPropertyMappers(){}
+    private HealthPropertyMappers(){}
 
-    public static PropertyMapper[] getMetricsPropertyMappers() {
+    public static PropertyMapper[] getHealthPropertyMappers() {
         return new PropertyMapper[] {
-                builder().from("metrics-enabled")
-                        .to("quarkus.datasource.metrics.enabled")
+                builder().from("health-enabled")
+                        .to("quarkus.datasource.health.enabled")
                         .isBuildTimeProperty(true)
                         .defaultValue(Boolean.FALSE.toString())
-                        .description("If the server should expose metrics. If enabled, metrics are available at the '/metrics' endpoint.")
+                        .description("If the server should expose health check endpoints. If enabled, health checks are available at the '/health', '/health/ready' and '/health/live' endpoints.")
                         .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
                         .expectedValues(Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString()))
                         .build()
@@ -21,6 +21,6 @@ final class MetricsPropertyMappers {
     }
 
     private static PropertyMapper.Builder builder() {
-        return PropertyMapper.builder(ConfigCategory.METRICS);
+        return PropertyMapper.builder(ConfigCategory.HEALTH);
     }
 }
