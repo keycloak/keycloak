@@ -60,15 +60,15 @@
                 <p class="alert error">${errorMessage}</p>
                 <h3><img src="welcome-content/user.png">Administration Console</h3>
             <#elseif bootstrap>
-                <#if localUser>
-                    <h3><img src="welcome-content/user.png">Administration Console</h3>
-                    <p>Please create an initial admin user to get started.</p>
-                <#else>
-                    <p class="welcome-message">
-                        <img src="welcome-content/alert.png">You need local access to create the initial admin user. <br><br>Open <a href="http://localhost:8080/auth">http://localhost:8080/auth</a>
-                        <br>or use the add-user-keycloak script.
-                    </p>
-                </#if>
+            <#if localUser>
+                <h3><img src="welcome-content/user.png">Administration Console</h3>
+                <p>Please create an initial admin user to get started.</p>
+            <#else>
+                <p class="welcome-message">
+                    <img src="welcome-content/alert.png">You need local access to create the initial admin user. <br><br>Open <a href="${localAdminUrl}">${localAdminUrl}</a>
+                    <br>${adminUserCreationMessage}.
+                </p>
+            </#if>
             </#if>
 
             <#if bootstrap && localUser>
