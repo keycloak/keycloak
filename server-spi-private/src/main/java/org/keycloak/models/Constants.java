@@ -135,6 +135,7 @@ public final class Constants {
     public static final String REQUESTED_LEVEL_OF_AUTHENTICATION = "requested-level-of-authentication";
     public static final String FORCE_LEVEL_OF_AUTHENTICATION = "force-level-of-authentication";
     public static final String ACR_LOA_MAP = "acr.loa.map";
+    public static final String DEFAULT_ACR_VALUES = "default.acr.values";
     public static final int MINIMUM_LOA = 0;
     public static final int NO_LOA = -1;
 }

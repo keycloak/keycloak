@@ -903,7 +903,7 @@ public class TokenManager {
         if (acr == null) {
             acr = AcrUtils.mapLoaToAcr(loa, acrLoaMap, AcrUtils.getAcrValues(
                 clientSession.getNote(OIDCLoginProtocol.CLAIMS_PARAM),
-                clientSession.getNote(OIDCLoginProtocol.ACR_PARAM)));
+                clientSession.getNote(OIDCLoginProtocol.ACR_PARAM), clientSession.getClient()));
             if (acr == null) {
                 acr = AcrUtils.mapLoaToAcr(loa, acrLoaMap, acrLoaMap.keySet());
                 if (acr == null) {

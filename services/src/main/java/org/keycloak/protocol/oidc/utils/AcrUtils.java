@@ -29,6 +29,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.IDToken;
 import org.keycloak.util.JsonSerialization;
@@ -41,8 +42,14 @@ public class AcrUtils {
         return getAcrValues(claimsParam, null, true);
     }
 
-    public static List<String> getAcrValues(String claimsParam, String acrValuesParam) {
-        return getAcrValues(claimsParam, acrValuesParam, false);
+    public static List<String> getAcrValues(String claimsParam, String acrValuesParam, ClientModel client) {
+        List<String> fromParams = getAcrValues(claimsParam, acrValuesParam, false);
+        if (!fromParams.isEmpty()) {
+            return fromParams;
+        }
+
+        // Fallback to default ACR values of client (if configured)
+        return getDefaultAcrValues(client);
     }
 
     private static List<String> getAcrValues(String claimsParam, String acrValuesParam, boolean essential) {
@@ -139,5 +146,10 @@ public class AcrUtils {
             }
         }
         return acr;
+    }
+
+
+    public static List<String> getDefaultAcrValues(ClientModel client) {
+        return OIDCAdvancedConfigWrapper.fromClientModel(client).getAttributeMultivalued(Constants.DEFAULT_ACR_VALUES);
     }
 }

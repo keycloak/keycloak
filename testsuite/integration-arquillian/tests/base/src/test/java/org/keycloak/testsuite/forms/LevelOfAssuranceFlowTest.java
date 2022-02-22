@@ -22,6 +22,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
@@ -37,6 +39,7 @@ import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuth
 import org.keycloak.events.Details;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.Constants;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -333,6 +336,79 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
         assertLoggedInWithAcr("gold");
 
         // Rollback
+        realmRep.getAttributes().remove(Constants.ACR_LOA_MAP);
+        testRealm().update(realmRep);
+    }
+
+    @Test
+    public void testClientDefaultAcrValues() {
+        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientRepresentation testClientRep = testClient.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setAttributeMultivalued(Constants.DEFAULT_ACR_VALUES, Arrays.asList("silver", "gold"));
+        testClient.update(testClientRep);
+
+        // Should request client to authenticate with silver
+        oauth.openLoginForm();
+        authenticateWithUsername();
+        assertLoggedInWithAcr("silver");
+
+        // Re-configure to level gold
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setAttributeMultivalued(Constants.DEFAULT_ACR_VALUES, Arrays.asList("gold"));
+        testClient.update(testClientRep);
+        oauth.openLoginForm();
+        authenticateWithPassword();
+        assertLoggedInWithAcr("gold");
+
+        // Value from essential ACR should have preference
+        openLoginFormWithAcrClaim(true, "silver");
+        assertLoggedInWithAcr("0");
+
+        // Value from non-essential ACR should have preference
+        openLoginFormWithAcrClaim(false, "silver");
+        assertLoggedInWithAcr("0");
+
+        // Revert
+        testClientRep.getAttributes().put(Constants.DEFAULT_ACR_VALUES, null);
+        testClient.update(testClientRep);
+    }
+
+    @Test
+    public void testClientDefaultAcrValuesValidation() throws IOException {
+        // Setup realm acr-to-loa mapping
+        RealmRepresentation realmRep = testRealm().toRepresentation();
+        Map<String, Integer> acrLoaMap = new HashMap<>();
+        acrLoaMap.put("realm:copper", 0);
+        acrLoaMap.put("realm:silver", 1);
+        realmRep.getAttributes().put(Constants.ACR_LOA_MAP, JsonSerialization.writeValueAsString(acrLoaMap));
+        testRealm().update(realmRep);
+
+        // Value "foo" not used in any ACR-To-Loa mapping
+        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientRepresentation testClientRep = testClient.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setAttributeMultivalued(Constants.DEFAULT_ACR_VALUES, Arrays.asList("silver", "2", "foo"));
+        try {
+            testClient.update(testClientRep);
+            Assert.fail("Should not successfully update client");
+        } catch (BadRequestException bre) {
+            // Expected
+        }
+
+        // Value "5" too big
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setAttributeMultivalued(Constants.DEFAULT_ACR_VALUES, Arrays.asList("silver", "2", "5"));
+        try {
+            testClient.update(testClientRep);
+            Assert.fail("Should not successfully update client");
+        } catch (BadRequestException bre) {
+            // Expected
+        }
+
+        // Should be fine
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setAttributeMultivalued(Constants.DEFAULT_ACR_VALUES, Arrays.asList("silver", "2"));
+        testClient.update(testClientRep);
+
+        // Revert
+        testClientRep.getAttributes().put(Constants.DEFAULT_ACR_VALUES, null);
+        testClient.update(testClientRep);
         realmRep.getAttributes().remove(Constants.ACR_LOA_MAP);
         testRealm().update(realmRep);
     }
