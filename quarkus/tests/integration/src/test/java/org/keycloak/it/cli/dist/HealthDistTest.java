@@ -17,44 +17,45 @@
 
 package org.keycloak.it.cli.dist;
 
-import static io.restassured.RestAssured.when;
-import static org.hamcrest.Matchers.containsString;
-
+import io.quarkus.test.junit.main.Launch;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.DistributionTest;
 
-import io.quarkus.test.junit.main.Launch;
+import static io.restassured.RestAssured.when;
+import static org.hamcrest.Matchers.containsString;
 
 @DistributionTest(keepAlive =true)
-public class MetricsDistTest {
+public class HealthDistTest {
 
     @Test
     @Launch({ "start-dev" })
-    void testMetricsEndpointNotEnabled() {
+    void testHealthEndpointNotEnabled() {
+        when().get("/health").then()
+                .statusCode(404);
+        when().get("/health/live").then()
+                .statusCode(404);
+        when().get("/health/ready").then()
+                .statusCode(404);
+    }
+
+    @Test
+    @Launch({ "start-dev", "--health-enabled=true" })
+    void testHealthEndpoint() {
+        when().get("/health").then()
+                .statusCode(200);
+        when().get("/health/live").then()
+                .statusCode(200);
+        when().get("/health/ready").then()
+                .statusCode(200);
+        // Metrics is endpoint independent
         when().get("/metrics").then()
                 .statusCode(404);
     }
 
     @Test
-    @Launch({ "start-dev", "--metrics-enabled=true" })
-    void testMetricsEndpoint() {
+    @Launch({ "start-dev", "--health-enabled=true" })
+    void testHealthEndpointDoesNotEnableMetrics() {
         when().get("/metrics").then()
-                .statusCode(200)
-                .body(containsString("base_gc_total"));
-    }
-
-    @Test
-    @Launch({ "start-dev", "--http-relative-path=/auth", "--metrics-enabled=true" })
-    void testMetricsEndpointUsingRelativePath() {
-        when().get("/auth/metrics").then()
-                .statusCode(200)
-                .body(containsString("base_gc_total"));
-    }
-
-    @Test
-    @Launch({ "start-dev", "--metrics-enabled=true" })
-    void testMetricsEndpointDoesNotEnableHealth() {
-        when().get("/health").then()
                 .statusCode(404);
     }
 }

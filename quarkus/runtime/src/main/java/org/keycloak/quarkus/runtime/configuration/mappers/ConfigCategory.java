@@ -8,10 +8,11 @@ public enum ConfigCategory {
     FEATURE("Feature", 40),
     HOSTNAME("Hostname", 50),
     HTTP("HTTP/TLS", 60),
-    METRICS("Metrics", 70),
-    PROXY("Proxy", 80),
-    VAULT("Vault", 90),
-    LOGGING("Logging", 100),
+    HEALTH("Health", 70),
+    METRICS("Metrics", 80),
+    PROXY("Proxy", 90),
+    VAULT("Vault", 100),
+    LOGGING("Logging", 110),
     GENERAL("General", 999);
 
     private final String heading;

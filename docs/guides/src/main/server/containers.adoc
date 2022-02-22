@@ -6,7 +6,7 @@
 <@tmpl.guide
 title="Running Keycloak in a container"
 summary="Learn how to run Keycloak from a container image"
-includedOptions="db db-url db-username db-password features hostname https-key-store-file https-key-store-password metrics-enabled">
+includedOptions="db db-url db-username db-password features hostname https-key-store-file https-key-store-password health-enabled metrics-enabled">
 
 Keycloak handles containerized environments such as Kubernetes or OpenShift as first-class citizens. This guide describes how to optimize and run the Keycloak container image to provide the best experience running a Keycloak container.
 
@@ -14,13 +14,14 @@ Keycloak handles containerized environments such as Kubernetes or OpenShift as f
 For the best start up of your Keycloak container, build an optimized container image by running the `build` step before starting.
 
 === Building your optimized Keycloak docker image
-The following `Dockerfile` creates a pre-configured Keycloak image that enables the metrics endpoint, enables the token exchange feature, and uses a PostgreSQL database.
+The following `Dockerfile` creates a pre-configured Keycloak image that enables the health and metrics endpoints, enables the token exchange feature, and uses a PostgreSQL database.
 
 .Dockerfile:
 [source, dockerfile]
 ----
 FROM quay.io/keycloak/keycloak:latest as builder
 
+ENV KC_HEALTH_ENABLED=true
 ENV KC_METRICS_ENABLED=true
 ENV KC_FEATURES=token-exchange
 ENV KC_DB=postgres
@@ -70,6 +71,8 @@ Notice that the startup log contains the following line:
 INFO  [org.key.com.Profile] (main) Preview feature enabled: token_exchange
 ----
 This message shows the desired feature is enabled.
+
+Health check endpoints are available at `https://localhost:8443/health`, `https://localhost:8443/health/ready` and `https://localhost:8443/health/live`.
 
 Opening up `https://localhost:8443/metrics` leads to a page containing operational metrics that could be used by your monitoring solution.
 
