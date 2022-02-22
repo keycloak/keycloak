@@ -164,6 +164,12 @@ export default {
       "SAML ARTIFACT Binding URL for the client's single logout service. You can leave this blank if you are using a different binding.",
     artifactBindingUrl:
       "URL to send the HTTP ARTIFACT messages to. You can leave this blank if you are using a different binding. This value should be set when forcing ARTIFACT binding together with IdP initiated login.",
+    backchannelLogoutUrl:
+      "URL that will cause the client to log itself out when a logout request is sent to this realm (via end_session_endpoint). If omitted, no logout request will be sent to the client is this case.",
+    backchannelLogoutSessionRequired:
+      "Specifying whether a sid (session ID) Claim is included in the Logout Token when the Backchannel Logout URL is used.",
+    backchannelLogoutRevokeOfflineSessions:
+      'Specifying whether a "revoke_offline_access" event is included in the Logout Token when the Backchannel Logout URL is used. Keycloak will revoke offline sessions when receiving a Logout Token with this event.',
     artifactResolutionService:
       "SAML Artifact resolution service for the client. This is the endpoint to which Keycloak will send a SOAP ArtifactResolve message. You can leave this blank if you do not have a URL for this binding.",
     authenticationOverrides: "Override realm authentication flow bindings.",

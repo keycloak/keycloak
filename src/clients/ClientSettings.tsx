@@ -10,6 +10,7 @@ import {
   Select,
   SelectVariant,
   SelectOption,
+  ValidatedOptions,
 } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 
@@ -36,7 +37,7 @@ export const ClientSettings = ({
   save,
   reset,
 }: ClientSettingsProps) => {
-  const { register, control, watch } = useFormContext<ClientForm>();
+  const { register, control, watch, errors } = useFormContext<ClientForm>();
   const { t } = useTranslation("clients");
 
   const [loginThemeOpen, setLoginThemeOpen] = useState(false);
@@ -58,7 +59,7 @@ export const ClientSettings = ({
       return [...result, "accessSettings"];
     }
 
-    return [...result, "accessSettings", "loginSettings"];
+    return [...result, "accessSettings", "loginSettings", "logoutSettings"];
   }, [protocol, client]);
 
   return (
@@ -200,20 +201,18 @@ export const ClientSettings = ({
                 aria-label={t("loginTheme")}
                 isOpen={loginThemeOpen}
               >
-                <SelectOption key="empty" value="">
-                  {t("common:choose")}
-                </SelectOption>
-                {/* The type for the children of Select are incorrect, so we need a fragment here. */}
-                {/* eslint-disable-next-line react/jsx-no-useless-fragment */}
-                <>
-                  {loginThemes.map((theme) => (
+                {[
+                  <SelectOption key="empty" value="">
+                    {t("common:choose")}
+                  </SelectOption>,
+                  ...loginThemes.map((theme) => (
                     <SelectOption
                       selected={theme.name === value}
                       key={theme.name}
                       value={theme.name}
                     />
-                  ))}
-                </>
+                  )),
+                ]}
               </Select>
             )}
           />
@@ -286,6 +285,96 @@ export const ClientSettings = ({
             name="attributes.consent.screen.text"
             ref={register}
             isDisabled={!(consentRequired && displayOnConsentScreen === "true")}
+          />
+        </FormGroup>
+      </FormAccess>
+      <FormAccess isHorizontal role="manage-clients">
+        <FormGroup
+          label={t("backchannelLogoutUrl")}
+          fieldId="backchannelLogoutUrl"
+          labelIcon={
+            <HelpItem
+              helpText="clients-help:backchannelLogoutUrl"
+              fieldLabelId="clients:backchannelLogoutUrl"
+            />
+          }
+          helperTextInvalid={
+            errors.attributes?.backchannel?.logout?.url?.message
+          }
+          validated={
+            errors.attributes?.backchannel?.logout?.url?.message
+              ? ValidatedOptions.error
+              : ValidatedOptions.default
+          }
+        >
+          <TextInput
+            type="text"
+            id="backchannelLogoutUrl"
+            name="attributes.backchannel.logout.url"
+            ref={register({
+              validate: (uri) =>
+                ((uri.startsWith("https://") || uri.startsWith("http://")) &&
+                  uri.indexOf("*") === -1) ||
+                uri === "" ||
+                t("backchannelUrlInvalid").toString(),
+            })}
+            validated={
+              errors.attributes?.backchannel?.logout?.url?.message
+                ? ValidatedOptions.error
+                : ValidatedOptions.default
+            }
+          />
+        </FormGroup>
+        <FormGroup
+          label={t("backchannelLogoutSessionRequired")}
+          labelIcon={
+            <HelpItem
+              helpText="clients-help:backchannelLogoutSessionRequired"
+              fieldLabelId="clients:backchannelLogoutSessionRequired"
+            />
+          }
+          fieldId="backchannelLogoutSessionRequired"
+          hasNoPaddingTop
+        >
+          <Controller
+            name="attributes.backchannel.logout.session.required"
+            defaultValue="true"
+            control={control}
+            render={({ onChange, value }) => (
+              <Switch
+                id="backchannelLogoutSessionRequired"
+                label={t("common:on")}
+                labelOff={t("common:off")}
+                isChecked={value === "true"}
+                onChange={(value) => onChange(value.toString())}
+              />
+            )}
+          />
+        </FormGroup>
+        <FormGroup
+          label={t("backchannelLogoutRevokeOfflineSessions")}
+          labelIcon={
+            <HelpItem
+              helpText="clients-help:backchannelLogoutRevokeOfflineSessions"
+              fieldLabelId="clients:backchannelLogoutRevokeOfflineSessions"
+            />
+          }
+          fieldId="backchannelLogoutRevokeOfflineSessions"
+          hasNoPaddingTop
+        >
+          <Controller
+            name="attributes.backchannel.logout.revoke.offline.tokens"
+            defaultValue="false"
+            control={control}
+            render={({ onChange, value }) => (
+              <Switch
+                id="backchannelLogoutRevokeOfflineSessions"
+                label={t("common:on")}
+                labelOff={t("common:off")}
+                isChecked={value === "true"}
+                onChange={(value) => onChange(value.toString())}
+              />
+            )}
           />
         </FormGroup>
         <SaveReset

@@ -348,6 +348,12 @@ export default {
     displayOnClient: "Display client on screen",
     consentScreenText: "Client consent screen text",
     loginSettings: "Login settings",
+    logoutSettings: "Logout settings",
+    backchannelLogoutUrl: "Backchannel logout URL",
+    backchannelUrlInvalid: "Backchannel logout URL is not a valid URL",
+    backchannelLogoutSessionRequired: "Backchannel logout session required",
+    backchannelLogoutRevokeOfflineSessions:
+      "Backchannel logout revoke offline sessions",
     accessSettings: "Access settings",
     rootUrl: "Root URL",
     validRedirectUri: "Valid redirect URIs",
