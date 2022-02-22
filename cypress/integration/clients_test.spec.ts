@@ -1,6 +1,9 @@
 import LoginPage from "../support/pages/LoginPage";
 import Masthead from "../support/pages/admin_console/Masthead";
-import ListingPage from "../support/pages/admin_console/ListingPage";
+import ListingPage, {
+  Filter,
+  FilterAssignedType,
+} from "../support/pages/admin_console/ListingPage";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import CreateClientPage from "../support/pages/admin_console/manage/clients/CreateClientPage";
 import ModalUtils from "../support/util/ModalUtils";
@@ -25,10 +28,12 @@ const modalUtils = new ModalUtils();
 
 describe("Clients test", () => {
   describe("Client details - Client scopes subtab", () => {
-    const clientScopesTab = new ClientScopesTab();
     const client = new AdminClient();
+    const clientScopesTab = new ClientScopesTab();
     const clientId = "client-scopes-subtab-test";
     const clientScopeName = "client-scope-test";
+    const clientScopeNameDefaultType = "client-scope-test-default-type";
+    const clientScopeNameOptionalType = "client-scope-test-optional-type";
     const clientScope = {
       name: clientScopeName,
       description: "",
@@ -40,6 +45,7 @@ describe("Clients test", () => {
         "consent.screen.text": "",
       },
     };
+    const msgScopeMappingRemoved = "Scope mapping successfully removed";
 
     before(async () => {
       client.createClient({
@@ -55,6 +61,10 @@ describe("Clients test", () => {
           clientId
         );
       }
+      clientScope.name = clientScopeNameDefaultType;
+      await client.createClientScope(clientScope);
+      clientScope.name = clientScopeNameOptionalType;
+      await client.createClientScope(clientScope);
     });
 
     beforeEach(() => {
@@ -72,12 +82,124 @@ describe("Clients test", () => {
       for (let i = 0; i < 5; i++) {
         await client.deleteClientScope(clientScopeName + i);
       }
+      await client.deleteClientScope(clientScopeNameDefaultType);
+      await client.deleteClientScope(clientScopeNameOptionalType);
+    });
+
+    it("should list client scopes", () => {
+      listingPage.itemsGreaterThan(1).itemExist(clientScopeName + 0);
+    });
+
+    it("should search existing client scope by name", () => {
+      listingPage
+        .searchItem(clientScopeName + 0, false)
+        .itemExist(clientScopeName + 0)
+        .itemsEqualTo(2);
+    });
+
+    it("should search non-existent client scope by name", () => {
+      const itemName = "non-existent-item";
+      listingPage.searchItem(itemName, false).checkTableExists(false);
+    });
+
+    it("should search existing client scope by assigned type", () => {
+      listingPage
+        .selectFilter(Filter.AssignedType)
+        .selectSecondaryFilterAssignedType(FilterAssignedType.Default)
+        .itemExist(FilterAssignedType.Default)
+        .itemExist(FilterAssignedType.Optional, false)
+        .selectSecondaryFilterAssignedType(FilterAssignedType.Optional)
+        .itemExist(FilterAssignedType.Default, false)
+        .itemExist(FilterAssignedType.Optional)
+        .selectSecondaryFilterAssignedType(FilterAssignedType.AllTypes)
+        .itemExist(FilterAssignedType.Default)
+        .itemExist(FilterAssignedType.Optional);
+    });
+
+    /*it("should empty search", () => {
+
+    });*/
+
+    const newItemsWithExpectedAssignedTypes = [
+      [clientScopeNameOptionalType, FilterAssignedType.Optional],
+      [clientScopeNameDefaultType, FilterAssignedType.Default],
+    ];
+    newItemsWithExpectedAssignedTypes.forEach(($type) => {
+      const [itemName, assignedType] = $type;
+      it(`should add client scope ${itemName} with ${assignedType} assigned type`, () => {
+        listingPage.clickPrimaryButton();
+        modalUtils.checkModalTitle("Add client scopes to " + clientId);
+        listingPage.clickItemCheckbox(itemName);
+        modalUtils.confirmModalWithItem(assignedType);
+        masthead.checkNotificationMessage("Scope mapping successfully updated");
+        listingPage
+          .searchItem(itemName, false)
+          .itemExist(itemName)
+          .itemExist(assignedType);
+      });
+    });
+
+    const expectedItemAssignedTypes = [
+      FilterAssignedType.Optional,
+      FilterAssignedType.Default,
+    ];
+    expectedItemAssignedTypes.forEach(($assignedType) => {
+      const itemName = clientScopeName + 0;
+      it(`should change item ${itemName} AssignedType to ${$assignedType} from search bar`, () => {
+        listingPage
+          .searchItem(itemName, false)
+          .clickItemCheckbox(itemName)
+          .changeTypeToOfSelectedItems($assignedType);
+        masthead.checkNotificationMessage("Scope mapping updated");
+        listingPage.searchItem(itemName, false).itemExist($assignedType);
+      });
     });
 
     it("should show items on next page are more than 11", () => {
-      listingPage.showNextPageTableItems();
-      cy.get(listingPage.tableRowItem).its("length").should("be.gt", 1);
+      listingPage.showNextPageTableItems().itemsGreaterThan(1);
     });
+
+    it("should remove client scope from item bar", () => {
+      const itemName = clientScopeName + 0;
+      listingPage.searchItem(itemName, false).removeItem(itemName);
+      masthead.checkNotificationMessage(msgScopeMappingRemoved);
+      listingPage.searchItem(itemName, false).checkTableExists(false);
+    });
+
+    /*it("should remove client scope from search bar", () => {
+      //covered by next test
+    });*/
+
+    // TODO: https://github.com/keycloak/keycloak-admin-ui/issues/1854
+    it("should remove multiple client scopes from search bar", () => {
+      const itemName1 = clientScopeName + 1;
+      const itemName2 = clientScopeName + 2;
+      listingPage
+        .clickSearchBarActionButton()
+        .checkDropdownItemIsDisabled("Remove")
+        .searchItem(clientScopeName, false)
+        .clickItemCheckbox(itemName1)
+        .clickItemCheckbox(itemName2)
+        .clickSearchBarActionButton()
+        .clickSearchBarActionItem("Remove");
+      masthead.checkNotificationMessage(msgScopeMappingRemoved);
+      listingPage
+        .searchItem(clientScopeName, false)
+        .itemExist(itemName1, false)
+        .itemExist(itemName2, false)
+        .clickSearchBarActionButton();
+      //.checkDropdownItemIsDisabled("Remove");
+    });
+
+    //TODO: https://github.com/keycloak/keycloak-admin-ui/issues/1874
+    /* it("should show initial items after filtering", () => { 
+      listingPage
+        .selectFilter(Filter.AssignedType)
+        .selectFilterAssignedType(FilterAssignedType.Optional)
+        .selectFilter(Filter.Name)
+        .itemExist(FilterAssignedType.Default)
+        .itemExist(FilterAssignedType.Optional);
+    });*/
   });
 
   describe("Client creation", () => {

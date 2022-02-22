@@ -75,7 +75,6 @@ export const ClientScopes = ({
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
-
   const isDedicatedRow = (value: Row) => value.id === DEDICATED_ROW;
 
   const loader = async (first?: number, max?: number, search?: string) => {

@@ -32,7 +32,7 @@ export const ChangeTypeDropdown = ({
 
   return (
     <Select
-      id="change-type-dropdown"
+      toggleId="change-type-dropdown"
       isOpen={open}
       selections={[]}
       isDisabled={selectedRows.length === 0}

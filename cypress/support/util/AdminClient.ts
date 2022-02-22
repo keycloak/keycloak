@@ -113,6 +113,15 @@ export default class AdminClient {
     return await this.client.clientScopes.del({ id: clientScope?.id! });
   }
 
+  async existsClientScope(clientScopeName: string) {
+    await this.login();
+    return (await this.client.clientScopes.findOneByName({
+      name: clientScopeName,
+    })) == undefined
+      ? false
+      : true;
+  }
+
   async addDefaultClientScopeInClient(
     clientScopeName: string,
     clientId: string

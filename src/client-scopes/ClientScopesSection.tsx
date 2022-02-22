@@ -56,9 +56,6 @@ export default function ClientScopesSection() {
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
-  const [key, setKey] = useState(0);
-  const refresh = () => setKey(new Date().getTime());
-
   const [kebabOpen, setKebabOpen] = useState(false);
   const [selectedScopes, setSelectedScopes] = useState<
     ClientScopeDefaultOptionalType[]
@@ -69,6 +66,12 @@ export default function ClientScopesSection() {
     AllClientScopes.none
   );
   const [searchProtocol, setSearchProtocol] = useState<ProtocolType>("all");
+
+  const [key, setKey] = useState(0);
+  const refresh = () => {
+    setSelectedScopes([]);
+    setKey(key + 1);
+  };
 
   const loader = async (first?: number, max?: number, search?: string) => {
     const defaultScopes =

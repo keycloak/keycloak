@@ -1,9 +1,16 @@
 import LoginPage from "../support/pages/LoginPage";
 import Masthead from "../support/pages/admin_console/Masthead";
-import ListingPage from "../support/pages/admin_console/ListingPage";
+import ListingPage, {
+  Filter,
+  FilterAssignedType,
+  FilterProtocol,
+} from "../support/pages/admin_console/ListingPage";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import CreateClientScopePage from "../support/pages/admin_console/manage/client_scopes/CreateClientScopePage";
-import { keycloakBefore } from "../support/util/keycloak_hooks";
+import {
+  keycloakBefore,
+  keycloakBeforeEach,
+} from "../support/util/keycloak_hooks";
 import RoleMappingTab from "../support/pages/admin_console/manage/RoleMappingTab";
 import ModalUtils from "../support/util/ModalUtils";
 import AdminClient from "../support/util/AdminClient";
@@ -17,56 +24,261 @@ const createClientScopePage = new CreateClientScopePage();
 const modalUtils = new ModalUtils();
 
 describe("Client Scopes test", () => {
-  describe("Client Scope list items ", () => {
-    const clientScopeName = "client-scope-test";
-    const clientScope = {
-      name: clientScopeName,
-      description: "",
-      protocol: "openid-connect",
-      attributes: {
-        "include.in.token.scope": "true",
-        "display.on.consent.screen": "true",
-        "gui.order": "1",
-        "consent.screen.text": "",
-      },
-    };
+  const modalMessageDeleteConfirmation =
+    "Are you sure you want to delete this client scope";
+  const notificationMessageDeletionConfirmation =
+    "The client scope has been deleted";
+  const clientScopeName = "client-scope-test";
+  const openIDConnectItemText = "OpenID Connect";
+  const clientScope = {
+    name: clientScopeName,
+    description: "",
+    protocol: "openid-connect",
+    attributes: {
+      "include.in.token.scope": "true",
+      "display.on.consent.screen": "true",
+      "gui.order": "1",
+      "consent.screen.text": "",
+    },
+  };
 
-    before(async () => {
-      const client = new AdminClient();
-      for (let i = 0; i < 5; i++) {
-        clientScope.name = clientScopeName + i;
-        await client.createClientScope(clientScope);
+  before(async () => {
+    const client = new AdminClient();
+    for (let i = 0; i < 5; i++) {
+      clientScope.name = clientScopeName + i;
+      await client.createClientScope(clientScope);
+    }
+  });
+
+  after(async () => {
+    const client = new AdminClient();
+    for (let i = 0; i < 5; i++) {
+      if (await client.existsClientScope(clientScopeName + i)) {
+        await client.deleteClientScope(clientScopeName + i);
       }
+    }
+  });
+
+  describe("Client Scope filter list items", () => {
+    before(() => {
+      keycloakBefore();
+      loginPage.logIn();
     });
 
     beforeEach(() => {
-      keycloakBefore();
-      loginPage.logIn();
+      keycloakBeforeEach();
       sidebarPage.goToClientScopes();
     });
 
-    after(async () => {
-      const client = new AdminClient();
-      for (let i = 0; i < 5; i++) {
-        await client.deleteClientScope(clientScopeName + i);
-      }
+    it("should filter item by name", () => {
+      const itemName = clientScopeName + 0;
+      listingPage
+        .searchItem(itemName, false)
+        .itemsEqualTo(1)
+        .itemExist(itemName, true);
+    });
+
+    it("should filter items by Assigned type All types", () => {
+      listingPage
+        .selectFilter(Filter.AssignedType)
+        .selectSecondaryFilterAssignedType(FilterAssignedType.AllTypes)
+        .itemExist(FilterAssignedType.Default, true)
+        .itemExist(FilterAssignedType.Optional, true)
+        .itemExist(FilterAssignedType.None, true);
+    });
+
+    it("should filter items by Assigned type Default", () => {
+      listingPage
+        .selectFilter(Filter.AssignedType)
+        .selectSecondaryFilterAssignedType(FilterAssignedType.Default)
+        .itemExist(FilterAssignedType.Default, true)
+        .itemExist(FilterAssignedType.Optional, false)
+        .itemExist(FilterAssignedType.None, false);
+    });
+
+    it("should filter items by Assigned type Optional", () => {
+      listingPage
+        .selectFilter(Filter.AssignedType)
+        .selectSecondaryFilterAssignedType(FilterAssignedType.Optional)
+        .itemExist(FilterAssignedType.Default, false)
+        .itemExist(FilterAssignedType.Optional, true)
+        .itemExist(FilterAssignedType.None, false);
+    });
+
+    //TODO https://github.com/keycloak/keycloak-admin-ui/issues/1959
+    it("should filter items by Protocol All", () => {
+      listingPage
+        .selectFilter(Filter.Protocol)
+        .selectSecondaryFilterProtocol(FilterProtocol.All)
+        .showNextPageTableItems()
+        .itemExist(FilterProtocol.SAML, true)
+        .itemExist(openIDConnectItemText, true); //using FilterProtocol.OpenID will fail, text does not match.
+    });
+
+    //TODO https://github.com/keycloak/keycloak-admin-ui/issues/1959
+    it("should filter items by Protocol SAML", () => {
+      listingPage
+        .selectFilter(Filter.Protocol)
+        .selectSecondaryFilterProtocol(FilterProtocol.SAML)
+        .itemExist(FilterProtocol.SAML, true)
+        .itemExist(openIDConnectItemText, false); //using FilterProtocol.OpenID will fail, text does not match.
+    });
+
+    //TODO https://github.com/keycloak/keycloak-admin-ui/issues/1959
+    it("should filter items by Protocol OpenID", () => {
+      listingPage
+        .selectFilter(Filter.Protocol)
+        .selectSecondaryFilterProtocol(FilterProtocol.OpenID)
+        .itemExist(FilterProtocol.SAML, false)
+        .itemExist(openIDConnectItemText, true); //using FilterProtocol.OpenID will fail, text does not match.
     });
 
     it("should show items on next page are more than 11", () => {
       listingPage.showNextPageTableItems();
+      listingPage.itemsGreaterThan(1);
+    });
+  });
 
-      cy.get(listingPage.tableRowItem).its("length").should("be.gt", 1);
+  describe("Client Scope modify list items", () => {
+    const itemName = clientScopeName + 0;
+    before(() => {
+      keycloakBefore();
+      loginPage.logIn();
+    });
+
+    beforeEach(() => {
+      keycloakBeforeEach();
+      sidebarPage.goToClientScopes();
+    });
+
+    it("should modify selected item type to Default from search bar", () => {
+      listingPage
+        .clickItemCheckbox(itemName)
+        .changeTypeToOfSelectedItems(FilterAssignedType.Default);
+      listingPage.itemContainValue(itemName, 2, FilterAssignedType.Default);
+    });
+
+    it("should modify selected item type to Optional from search bar", () => {
+      listingPage
+        .clickItemCheckbox(itemName)
+        .changeTypeToOfSelectedItems(FilterAssignedType.Optional);
+      listingPage.itemContainValue(itemName, 2, FilterAssignedType.Optional);
+    });
+
+    const expectedItemAssignedTypes = [
+      FilterAssignedType.Default,
+      FilterAssignedType.Optional,
+      FilterAssignedType.None,
+    ];
+    expectedItemAssignedTypes.forEach(($assignedType) => {
+      const itemName = clientScopeName + 0;
+      it(`should modify item ${itemName} AssignedType to ${$assignedType} from item bar`, () => {
+        listingPage
+          .searchItem(clientScopeName, false)
+          .clickRowSelectItem(itemName, $assignedType);
+        // sidebarPage.waitForPageLoad(); //not working
+        cy.wait(2000);
+        listingPage.searchItem(itemName, false).itemExist($assignedType);
+      });
+    });
+
+    it("should not allow to modify item AssignedType from search bar when no item selected", () => {
+      const itemName = clientScopeName + 0;
+      listingPage
+        .searchItem(itemName, false)
+        .checkInSearchBarChangeTypeToButtonIsDisabled()
+        .clickSearchBarActionButton()
+        .checkDropdownItemIsDisabled("Delete")
+        .clickItemCheckbox(itemName)
+        .checkInSearchBarChangeTypeToButtonIsDisabled(false)
+        .clickSearchBarActionButton()
+        .checkDropdownItemIsDisabled("Delete", false)
+        .clickItemCheckbox(itemName)
+        .checkInSearchBarChangeTypeToButtonIsDisabled()
+        .clickSearchBarActionButton()
+        .checkDropdownItemIsDisabled("Delete");
+    });
+
+    //TODO: blocked by https://github.com/keycloak/keycloak-admin-ui/issues/1952
+    //it("should export item from item bar", () => {
+
+    //});
+  });
+
+  describe("Client Scope delete list items ", () => {
+    before(() => {
+      keycloakBefore();
+      loginPage.logIn();
+    });
+
+    beforeEach(() => {
+      keycloakBeforeEach();
+      sidebarPage.goToClientScopes();
+    });
+
+    //TODO: Partially blocked by https://github.com/keycloak/keycloak-admin-ui/issues/1854
+    it("should delete item from item bar", () => {
+      listingPage
+        .checkInSearchBarChangeTypeToButtonIsDisabled()
+        .clickItemCheckbox(clientScopeName + 0)
+        .deleteItem(clientScopeName + 0);
+      modalUtils
+        .checkModalMessage(modalMessageDeleteConfirmation)
+        .confirmModal();
+      masthead.checkNotificationMessage(
+        notificationMessageDeletionConfirmation
+      );
+      //listingPage.checkInSearchBarChangeTypeToButtonIsDisabled();
+    });
+
+    //TODO: Partially blocked by https://github.com/keycloak/keycloak-admin-ui/issues/1854
+    it("should delete selected item from search bar", () => {
+      listingPage
+        .checkInSearchBarChangeTypeToButtonIsDisabled()
+        .clickItemCheckbox(clientScopeName + 1)
+        .clickSearchBarActionButton()
+        .clickSearchBarActionItem("Delete");
+      modalUtils
+        .checkModalMessage(modalMessageDeleteConfirmation)
+        .confirmModal();
+      masthead.checkNotificationMessage(
+        notificationMessageDeletionConfirmation
+      );
+      //listingPage.checkInSearchBarChangeTypeToButtonIsDisabled();
+    });
+
+    //TODO: Partially blocked by https://github.com/keycloak/keycloak-admin-ui/issues/1854
+    it("should delete multiple selected items from search bar", () => {
+      listingPage
+        .checkInSearchBarChangeTypeToButtonIsDisabled()
+        .clickItemCheckbox(clientScopeName + 2)
+        .clickItemCheckbox(clientScopeName + 3)
+        .clickItemCheckbox(clientScopeName + 4)
+        .clickSearchBarActionButton()
+        .clickSearchBarActionItem("Delete");
+      modalUtils
+        .checkModalMessage(modalMessageDeleteConfirmation)
+        .confirmModal();
+      masthead.checkNotificationMessage(
+        notificationMessageDeletionConfirmation
+      );
+      //listingPage.checkInSearchBarChangeTypeToButtonIsDisabled();
     });
   });
 
   describe("Client Scope creation", () => {
-    beforeEach(() => {
+    before(() => {
       keycloakBefore();
       loginPage.logIn();
+    });
+
+    beforeEach(() => {
+      keycloakBeforeEach();
       sidebarPage.goToClientScopes();
     });
 
     it("should fail creating client scope", () => {
+      sidebarPage.waitForPageLoad();
       listingPage.goToCreateItem();
 
       createClientScopePage.save().checkClientNameRequiredMessage();
@@ -102,7 +314,7 @@ describe("Client Scopes test", () => {
         .deleteItem(itemId);
 
       modalUtils
-        .checkModalMessage("Are you sure you want to delete this client scope")
+        .checkModalMessage(modalMessageDeleteConfirmation)
         .confirmModal();
 
       masthead.checkNotificationMessage("The client scope has been deleted");
@@ -114,12 +326,6 @@ describe("Client Scopes test", () => {
   describe("Scope test", () => {
     const scopeTab = new RoleMappingTab();
     const scopeName = "address";
-
-    beforeEach(() => {
-      keycloakBefore();
-      loginPage.logIn();
-      sidebarPage.goToClientScopes();
-    });
 
     it("Assign role", () => {
       const role = "offline_access";

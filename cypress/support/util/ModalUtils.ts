@@ -6,6 +6,8 @@ export default class ModalUtils {
   private cancelModalBtn = "cancel";
   private closeModalBtn = ".pf-c-modal-box .pf-m-plain";
   private copyToClipboardBtn = '[id*="copy-button"]';
+  private addModalDropdownBtn = "#add-dropdown > button";
+  private addModalDropdownItem = "#add-dropdown [role='menuitem']";
 
   confirmModal() {
     cy.findByTestId(this.confirmModalBtn).click({ force: true });
@@ -15,6 +17,13 @@ export default class ModalUtils {
 
   checkConfirmButtonText(text: string) {
     cy.findByTestId(this.confirmModalBtn).contains(text);
+
+    return this;
+  }
+
+  confirmModalWithItem(itemName: string) {
+    cy.get(this.addModalDropdownBtn).click();
+    cy.get(this.addModalDropdownItem).contains(itemName).click();
 
     return this;
   }
