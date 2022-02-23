@@ -4,6 +4,7 @@ import { AlertVariant } from "@patternfly/react-core";
 import type { AxiosError } from "axios";
 
 import useRequiredContext from "../../utils/useRequiredContext";
+import useSetTimeout from "../../utils/useSetTimeout";
 import { AlertPanel, AlertType } from "./AlertPanel";
 
 type AlertProps = {
@@ -23,6 +24,7 @@ export const useAlerts = () => useRequiredContext(AlertContext);
 export const AlertProvider: FunctionComponent = ({ children }) => {
   const { t } = useTranslation();
   const [alerts, setAlerts] = useState<AlertType[]>([]);
+  const setTimeout = useSetTimeout();
 
   const createId = () => new Date().getTime();
 
