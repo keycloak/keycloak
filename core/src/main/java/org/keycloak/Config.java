@@ -17,6 +17,7 @@
 
 package org.keycloak;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -158,7 +159,16 @@ public class Config {
 
         @Override
         public Set<String> getPropertyNames() {
-            throw new UnsupportedOperationException("Not implemented");
+            Set<String> propertyNames = new HashSet<>();
+            for (Object key : System.getProperties().keySet()) {
+                String keyString = (String) key;
+                if (keyString.startsWith(this.prefix)) {
+                    String suffix = keyString.substring(this.prefix.length());
+                    int dotPosition = suffix.indexOf(".");
+                    propertyNames.add(suffix.substring(0, dotPosition == -1 ? suffix.length() : dotPosition));
+                }
+            }
+            return propertyNames;
         }
 
     }

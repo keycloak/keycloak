@@ -23,6 +23,7 @@ import org.keycloak.common.util.StackUtil;
 import org.keycloak.component.ComponentFactoryProviderFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentModelScope;
+import org.keycloak.component.ProfileEnabledProviderFactory;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.InvalidationHandler;
@@ -40,6 +41,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.jboss.logging.Logger;
+import org.keycloak.util.ConfigUtil;
 
 /**
  * @author hmlnarik
@@ -124,7 +126,9 @@ public class DefaultComponentFactoryProviderFactory implements ComponentFactoryP
             return null;
         }
 
-        Scope scope = Config.scope(factory.getSpi(clazz).getName(), provider);
+        Scope scope = (newFactory instanceof ProfileEnabledProviderFactory) ?
+                ConfigUtil.getProviderScope(factory.getSpi(clazz).getName(), provider, cm.get("provider-profile")) :
+                Config.scope(factory.getSpi(clazz).getName(), provider);
         ComponentModelScope configScope = new ComponentModelScope(scope, cm);
 
         ProviderFactory<T> providerFactory;

@@ -24,6 +24,7 @@ import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageSpi;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
@@ -46,7 +47,6 @@ public abstract class AbstractMapProviderFactory<T extends Provider, V extends A
 
     private Scope storageConfigScope;
 
-    @SuppressWarnings("unchecked")
     protected AbstractMapProviderFactory(Class<M> modelType) {
         this.modelType = modelType;
     }
@@ -58,7 +58,7 @@ public abstract class AbstractMapProviderFactory<T extends Provider, V extends A
 
     protected MapStorage<V, M> getStorage(KeycloakSession session) {
         ProviderFactory<MapStorageProvider> storageProviderFactory = getComponentFactory(session.getKeycloakSessionFactory(),
-          MapStorageProvider.class, storageConfigScope, MapStorageSpi.NAME);
+          MapStorageProvider.class, storageConfigScope, MapStorageSpi.NAME, ModelEntityUtil.getModelName(this.modelType));
         final MapStorageProvider factory = storageProviderFactory.create(session);
 
         return factory.getStorage(modelType);

@@ -18,13 +18,14 @@ package org.keycloak.services;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentFactoryProvider;
 import org.keycloak.component.ComponentFactoryProviderFactory;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.component.ProfileEnabledProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.InvalidationHandler;
 import org.keycloak.provider.KeycloakDeploymentInfo;
@@ -38,6 +39,7 @@ import org.keycloak.provider.ProviderManagerRegistry;
 import org.keycloak.provider.Spi;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.theme.DefaultThemeManagerFactory;
+import org.keycloak.util.ConfigUtil;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -292,7 +294,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
 
             } else {
                 for (ProviderFactory factory : pm.load(spi)) {
-                    Config.Scope scope = Config.scope(spi.getName(), factory.getId());
+                    Config.Scope scope = this.getProviderFactoryScope(spi.getName(), factory);
                     if (isEnabled(factory, scope)) {
                         factory.init(scope);
 
@@ -307,6 +309,14 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
             }
         }
         return factoryMap;
+    }
+
+    protected Config.Scope getProviderFactoryScope(final String spiName, final ProviderFactory provider) {
+        if (provider instanceof ProfileEnabledProviderFactory) {
+            // we have a factory that supports profiles - determine the profile that should be used to init the root factory provider.
+            return ConfigUtil.getProviderScope(spiName, provider.getId(), "default");
+        }
+        return Config.scope(spiName, provider.getId());
     }
 
     protected boolean isEnabled(ProviderFactory factory, Config.Scope scope) {

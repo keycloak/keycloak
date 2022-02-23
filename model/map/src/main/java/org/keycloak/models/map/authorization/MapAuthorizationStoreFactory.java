@@ -26,6 +26,7 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.AuthorizationStoreFactory;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.authorization.store.StoreFactorySpi;
 import org.keycloak.common.Profile;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.models.KeycloakSession;
@@ -54,7 +55,7 @@ public class MapAuthorizationStoreFactory implements AmphibianProviderFactory<St
     @Override
     public StoreFactory create(KeycloakSession session) {
         MapStorageProviderFactory storageProviderFactory = (MapStorageProviderFactory) getComponentFactory(session.getKeycloakSessionFactory(),
-          MapStorageProvider.class, storageConfigScope, MapStorageSpi.NAME);
+          MapStorageProvider.class, storageConfigScope, MapStorageSpi.NAME, "authorizationPersister");
         final MapStorageProvider mapStorageProvider = storageProviderFactory.create(session);
         AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
 

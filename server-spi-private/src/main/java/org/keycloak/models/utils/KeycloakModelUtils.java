@@ -69,6 +69,8 @@ import java.util.stream.Stream;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.util.ConfigUtil;
+
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
@@ -304,12 +306,13 @@ public final class KeycloakModelUtils {
         return cm.get();
     }
 
-    public static <T extends Provider> ProviderFactory<T> getComponentFactory(KeycloakSessionFactory factory, Class<T> providerClass, Scope config, String spiName) {
+    public static <T extends Provider> ProviderFactory<T> getComponentFactory(final KeycloakSessionFactory factory, final Class<T> providerClass,
+                                                                              final Scope config, final String spiName, final String modelName) {
         String realmId = config.get("realmId");
         String componentId = config.get("componentId");
         if (realmId == null || componentId == null) {
             realmId = "ROOT";
-            ComponentModel cm = new ScopeComponentModel(providerClass, config, spiName, realmId);
+            ComponentModel cm = new ScopeComponentModel(providerClass, config, spiName, realmId, modelName);
             return factory.getProviderFactory(providerClass, realmId, cm.getId(), k -> cm);
         } else {
             return factory.getProviderFactory(providerClass, realmId, componentId, componentModelGetter(realmId, componentId));
@@ -321,17 +324,21 @@ public final class KeycloakModelUtils {
         private final String componentId;
         private final String providerId;
         private final String providerType;
+        private final String providerProfile;
         private final String realmId;
         private final Scope config;
 
-        public ScopeComponentModel(Class<?> providerClass, Scope baseConfiguration, String spiName, String realmId) {
-            final String pr = baseConfiguration.get("provider", Config.getProvider(spiName));
-
-            this.providerId = pr == null ? "default" : pr;
-            this.config = baseConfiguration.scope(this.providerId);
-            this.componentId = spiName + "- " + (realmId == null ? "" : "f:" + realmId + ":") + this.providerId;
-            this.realmId = realmId;
+        public ScopeComponentModel(final Class<?> providerClass, final Scope baseConfiguration, final String spiName, final String realmId,
+                                   final String modelName) {
+            String str = baseConfiguration.get("provider", Config.getProvider(spiName));
+            String[] providerAndProfile = (str != null) ? str.split("/") : new String[]{"default"};
+            this.providerId = providerAndProfile[0];
             this.providerType = providerClass.getName();
+            this.providerProfile = providerAndProfile.length > 1 ? providerAndProfile[1] : "default";
+            this.config = baseConfiguration.scope(this.providerId);
+            this.componentId = spiName + "-" + (realmId == null ? "" : "f:" + realmId + ":") + this.providerId + ":" +
+                    (this.config.getPropertyNames().isEmpty() ? this.providerProfile : modelName);
+            this.realmId = realmId;
         }
 
         @Override
@@ -376,6 +383,9 @@ public final class KeycloakModelUtils {
 
         @Override
         public String get(String key, String defaultValue) {
+            if ("provider-profile".equals(key)) {
+                return this.providerProfile;
+            }
             return config.get(key, defaultValue);
         }
 

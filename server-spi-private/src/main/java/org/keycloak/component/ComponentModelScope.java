@@ -16,6 +16,7 @@
  */
 package org.keycloak.component;
 
+import java.util.HashSet;
 import java.util.Set;
 import org.keycloak.Config.Scope;
 
@@ -116,7 +117,16 @@ public class ComponentModelScope implements Scope {
 
     @Override
     public Set<String> getPropertyNames() {
-        throw new UnsupportedOperationException("Not implemented");
+        Set<String> keys = new HashSet<>();
+        for (String key : this.componentConfig.getConfig().keySet()) {
+            if (key.startsWith(this.prefix)) {
+                String suffix = key.substring(this.prefix.length());
+                int dotPosition = suffix.indexOf(".");
+                keys.add(suffix.substring(0, dotPosition == -1 ? suffix.length() : dotPosition));
+            }
+        }
+        keys.addAll(this.origScope.getPropertyNames());
+        return keys;
     }
 
     public ComponentModel getComponentModel() {

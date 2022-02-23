@@ -47,6 +47,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.StackUtil;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.component.AmphibianProviderFactory;
+import org.keycloak.component.ProfileEnabledProviderFactory;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -79,7 +80,8 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 public class JpaMapStorageProviderFactory implements 
         AmphibianProviderFactory<MapStorageProvider>,
         MapStorageProviderFactory,
-        EnvironmentDependentProviderFactory {
+        EnvironmentDependentProviderFactory,
+        ProfileEnabledProviderFactory {
 
     public static final String PROVIDER_ID = "jpa-map-storage";
     private static final Logger logger = Logger.getLogger(JpaMapStorageProviderFactory.class);

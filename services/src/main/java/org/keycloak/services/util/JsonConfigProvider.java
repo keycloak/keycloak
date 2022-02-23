@@ -21,6 +21,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.keycloak.Config;
 import org.keycloak.common.util.StringPropertyReplacer;
 
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Properties;
 import java.util.Set;
 
@@ -186,7 +188,14 @@ public class JsonConfigProvider implements Config.ConfigProvider {
 
         @Override
         public Set<String> getPropertyNames() {
-            throw new UnsupportedOperationException("Not implemented");
+            Set<String> result = new HashSet<>();
+            if (config != null) {
+                Iterator<String> iterator = this.config.fieldNames();
+                while (iterator.hasNext()) {
+                    result.add(iterator.next());
+                }
+            }
+            return result;
         }
 
     }
