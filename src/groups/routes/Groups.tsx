@@ -3,10 +3,10 @@ import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
 
-export type GroupsParams = { realm: string };
+export type GroupsParams = { realm: string; id?: string };
 
 export const GroupsRoute: RouteDef = {
-  path: "/:realm/groups",
+  path: "/:realm/groups/:id?",
   component: lazy(() => import("../GroupsSection")),
   access: "query-groups",
   matchOptions: {

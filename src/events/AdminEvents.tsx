@@ -15,7 +15,6 @@ import {
   SelectOption,
   SelectVariant,
   TextInput,
-  Tooltip,
 } from "@patternfly/react-core";
 import {
   cellWidth,
@@ -30,7 +29,6 @@ import moment from "moment";
 import React, { FunctionComponent, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
 import { pickBy } from "lodash-es";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
@@ -38,6 +36,8 @@ import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { prettyPrintJSON } from "../util";
+import { CellResourceLinkRenderer } from "./ResourceLinks";
+
 import "./events.css";
 
 type DisplayDialogProps = {
@@ -84,27 +84,6 @@ const DisplayDialog: FunctionComponent<DisplayDialogProps> = ({
     >
       {children}
     </Modal>
-  );
-};
-
-const MAX_TEXT_LENGTH = 38;
-const Truncate = ({
-  text,
-  children,
-}: {
-  text?: string;
-  children: (text: string) => any;
-}) => {
-  const definedText = text || "";
-  const needsTruncation = definedText.length > MAX_TEXT_LENGTH;
-  const truncatedText = definedText.substr(0, MAX_TEXT_LENGTH);
-  return (
-    <>
-      {needsTruncation && (
-        <Tooltip content={text}>{children(truncatedText + "...")}</Tooltip>
-      )}
-      {!needsTruncation && <>{children(definedText)}</>}
-    </>
   );
 };
 
@@ -203,25 +182,6 @@ export const AdminEvents = () => {
   function refresh() {
     commitFilters();
   }
-
-  const LinkResource = (row: AdminEventRepresentation) => (
-    <Truncate text={row.resourcePath}>
-      {(text) => (
-        <>
-          {row.resourceType !== "COMPONENT" && (
-            <Link
-              to={`/${realm}/${row.resourcePath}${
-                row.resourceType !== "GROUP" ? "/settings" : ""
-              }`}
-            >
-              {text}
-            </Link>
-          )}
-          {row.resourceType === "COMPONENT" && <span>{text}</span>}
-        </>
-      )}
-    </Truncate>
-  );
 
   const adminEventSearchFormDisplay = () => {
     return (
@@ -606,7 +566,7 @@ export const AdminEvents = () => {
           {
             name: "resourcePath",
             displayKey: "events:resourcePath",
-            cellRenderer: LinkResource,
+            cellRenderer: CellResourceLinkRenderer,
           },
           {
             name: "resourceType",

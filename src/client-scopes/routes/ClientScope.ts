@@ -8,12 +8,12 @@ export type ClientScopeTab = "settings" | "mappers" | "scope";
 export type ClientScopeParams = {
   realm: string;
   id: string;
-  type: string;
   tab: ClientScopeTab;
+  type?: string;
 };
 
 export const ClientScopeRoute: RouteDef = {
-  path: "/:realm/client-scopes/:id/:type/:tab",
+  path: "/:realm/client-scopes/:id/:tab/:type?",
   component: lazy(() => import("../form/ClientScopeForm")),
   breadcrumb: (t) => t("client-scopes:clientScopeDetails"),
   access: "view-clients",
