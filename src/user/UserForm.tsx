@@ -20,12 +20,13 @@ import { FormAccess } from "../components/form-access/FormAccess";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { useAdminClient } from "../context/auth/AdminClient";
+import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import { useAlerts } from "../components/alert/Alerts";
 import { emailRegexPattern } from "../util";
 import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
 import moment from "moment";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 
 export type BruteForced = {
   isBruteForceProtected?: boolean;
@@ -49,7 +50,7 @@ export const UserForm = ({
   onGroupsUpdate,
 }: UserFormProps) => {
   const { t } = useTranslation("users");
-  const { realm } = useRealm();
+  const { realm: realmName } = useRealm();
 
   const [
     isRequiredUserActionsDropdownOpen,
@@ -67,6 +68,21 @@ export const UserForm = ({
   );
   const [open, setOpen] = useState(false);
   const [locked, setLocked] = useState(isLocked);
+  const [realm, setRealm] = useState<RealmRepresentation>();
+
+  useFetch(
+    async () => {
+      const realm = await adminClient.realms.findOne({ realm: realmName });
+      if (!realm) {
+        throw new Error(t("common:notFound"));
+      }
+      return realm;
+    },
+    (realm) => {
+      setRealm(realm);
+    },
+    []
+  );
 
   const unLockUser = async () => {
     try {
@@ -148,7 +164,7 @@ export const UserForm = ({
           filterGroups={selectedGroups.map((group) => group.name!)}
         />
       )}
-      {user?.id ? (
+      {user?.id && (
         <>
           <FormGroup label={t("common:id")} fieldId="kc-id" isRequired>
             <TextInput id={user.id} value={user.id} type="text" isReadOnly />
@@ -165,7 +181,8 @@ export const UserForm = ({
             />
           </FormGroup>
         </>
-      ) : (
+      )}
+      {!realm?.registrationEmailAsUsername && (
         <FormGroup
           label={t("username")}
           fieldId="kc-username"
@@ -178,7 +195,7 @@ export const UserForm = ({
             type="text"
             id="kc-username"
             name="username"
-            isReadOnly={!!user?.id}
+            isReadOnly={!!user?.id && !realm?.editUsernameAllowed}
           />
         </FormGroup>
       )}
@@ -401,7 +418,7 @@ export const UserForm = ({
         <Button
           data-testid="cancel-create-user"
           onClick={() =>
-            user?.id ? reset(user) : history.push(`/${realm}/users`)
+            user?.id ? reset(user) : history.push(`/${realmName}/users`)
           }
           variant="link"
         >

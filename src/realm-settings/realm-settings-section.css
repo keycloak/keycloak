@@ -1,5 +1,6 @@
 .pf-c-card.pf-m-flat.kc-login-screen,
 .pf-c-card.pf-m-flat.kc-email-settings,
+.pf-c-card.pf-m-flat.kc-user-info-settings,
 .pf-c-card.pf-m-flat.kc-email-template,
 .pf-c-card.pf-m-flat.kc-email-connection,
 .pf-c-card.pf-m-flat.kc-message-bundles,
@@ -24,14 +25,16 @@ article.pf-c-card.pf-m-flat.kc-email-connection
 }
 
 .kc-login-screen > div.pf-c-card__header.kc-form-panel__header,
-.kc-email-settings > div.pf-c-card__header.kc-form-panel__header {
+.kc-email-settings > div.pf-c-card__header.kc-form-panel__header,
+.kc-user-info-settings > div.pf-c-card__header.kc-form-panel__header {
   padding-bottom: 0px;
   padding-left: 0px;
   padding-top: 0px;
 }
 
 .kc-email-settings > div.pf-c-card__body.kc-form-panel__body,
-.kc-login-screen > div.pf-c-card__body.kc-form-panel__body {
+.kc-login-screen > div.pf-c-card__body.kc-form-panel__body,
+.kc-user-info-settings > div.pf-c-card__body.kc-form-panel__body {
   padding-left: 0px;
   padding-bottom: var(--pf-global--spacer--2xl);
 }
@@ -219,7 +222,8 @@ article.pf-c-card.pf-m-flat.kc-login-settings-template
   padding: 0 var(--pf-global--spacer--md) 0 var(--pf-global--spacer--md);
 }
 
-.kc-backToPolicies, .kc-backToPolicies {
+.kc-backToPolicies,
+.kc-backToPolicies {
   width: 5rem;
 }
 
@@ -228,20 +232,20 @@ article.pf-c-card.pf-m-flat.kc-login-settings-template
 }
 
 .kc-executor-trash-icon {
-  margin-left: .5rem;
+  margin-left: 0.5rem;
   color: var(--pf-global--Color--200);
 }
 
 .kc-executor-trash-icon:hover {
   filter: brightness(55%);
-} 
+}
 
 .kc-condition-link {
   margin-right: 0.625rem;
 }
 
 .kc-conditionType-trash-icon {
-  margin-left: .5rem;
+  margin-left: 0.5rem;
   color: var(--pf-global--Color--400);
 }
 
@@ -255,7 +259,7 @@ article.pf-c-card.pf-m-flat.kc-login-settings-template
 
 input#kc-scopes {
   width: 630px;
-  
+
   margin-right: 24px;
 }
 

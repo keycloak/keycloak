@@ -34,7 +34,10 @@ export const RealmSettingsLoginTab = ({
 
   return (
     <PageSection variant="light">
-      <FormPanel className="kc-login-screen" title="Login screen customization">
+      <FormPanel
+        className="kc-login-screen"
+        title={t("loginScreenCustomization")}
+      >
         <FormAccess isHorizontal role="manage-realm">
           <FormGroup
             label={t("userRegistration")}
@@ -128,7 +131,7 @@ export const RealmSettingsLoginTab = ({
           </FormGroup>
         </FormAccess>
       </FormPanel>
-      <FormPanel className="kc-email-settings" title="Email settings">
+      <FormPanel className="kc-email-settings" title={t("emailSettings")}>
         <FormAccess isHorizontal role="manage-realm">
           <FormGroup
             label={t("emailAsUsername")}
@@ -261,6 +264,43 @@ export const RealmSettingsLoginTab = ({
                   isChecked={value}
                   onChange={(value) => {
                     updateSwitchValue(onChange, value, "verifyEmail");
+                  }}
+                />
+              )}
+            />
+          </FormGroup>
+        </FormAccess>
+      </FormPanel>
+      <FormPanel
+        className="kc-user-info-settings"
+        title={t("userInfoSettings")}
+      >
+        <FormAccess isHorizontal role="manage-realm">
+          <FormGroup
+            label={t("editUsername")}
+            fieldId="kc-edit-username"
+            labelIcon={
+              <HelpItem
+                helpText="realm-settings-help:editUsername"
+                fieldLabelId="realm-settings:editUsername"
+              />
+            }
+            hasNoPaddingTop
+          >
+            <Controller
+              name="editUsernameAllowed"
+              defaultValue={realm.editUsernameAllowed}
+              control={form.control}
+              render={({ onChange, value }) => (
+                <Switch
+                  id="kc-edit-username-switch"
+                  data-testid="edit-username-switch"
+                  name="editUsernameAllowed"
+                  label={t("common:on")}
+                  labelOff={t("common:off")}
+                  isChecked={value}
+                  onChange={(value) => {
+                    updateSwitchValue(onChange, value, "editUsernameAllowed");
                   }}
                 />
               )}

@@ -146,5 +146,7 @@ export default {
       "The condition is checked during client registration/update requests and it evaluates to true if the entity (usually user), who is creating/updating client is member of the specified role. For reference the realm role, you can use the realm role name like 'my_realm_role' . For reference client role, you can use the client_id.role_name for example 'my_client.my_client_role' will refer to client role 'my_client_role' of client 'my_client'. ",
     defaultGroups:
       "Default groups allow you to automatically assign groups membership whenever any new user is created or imported through <1>identity brokering</1>.",
+    editUsername:
+      "If enabled, the username field is editable, readonly otherwise.",
   },
 };

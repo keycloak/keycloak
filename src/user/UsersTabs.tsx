@@ -70,7 +70,7 @@ const UsersTabs = () => {
       setBruteForced(bruteForced);
       user && setupForm(user);
     },
-    []
+    [user?.username]
   );
 
   const setupForm = (user: UserRepresentation) => {
@@ -152,7 +152,9 @@ const UsersTabs = () => {
       <ImpersonateConfirm />
       <DeleteConfirm />
       <ViewHeader
-        titleKey={user?.username || t("createUser")}
+        titleKey={
+          userForm.getValues().username || user?.username || t("createUser")
+        }
         divider={!id}
         dropdownItems={[
           <DropdownItem
