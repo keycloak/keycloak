@@ -79,8 +79,8 @@ export default {
     lastName: "Last name",
     firstName: "First name",
     clearAllFilters: "Clear all filters",
-    noRolesAssociated: "No roles where associated",
+    noRolesAssociated: "No associated roles",
     noRolesAssociatedInstructions:
-      "To add roles to the this role press that 'Add role' button",
+      "To add roles to this role press the 'Add role' button",
   },
 };
