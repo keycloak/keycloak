@@ -18,24 +18,35 @@
 package org.keycloak.testsuite.admin.authentication;
 
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.testsuite.util.AdminEventPaths;
+import org.keycloak.testsuite.util.ContainerAssume;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.util.Matchers.body;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIs;
 
@@ -428,4 +439,37 @@ public class FlowTest extends AbstractAuthenticationTest {
         Assert.assertEquals("This is another child flow3", executionReps.get(0).getDescription());
     }
 
+    @Test
+    public void failWithLongDescription() {
+        ContainerAssume.assumeAuthServerQuarkus();
+        AuthenticationFlowRepresentation rep = authMgmtResource.getFlows().stream()
+                .filter(new Predicate<AuthenticationFlowRepresentation>() {
+                    @Override
+                    public boolean test(AuthenticationFlowRepresentation rep) {
+                        return "docker auth".equals(rep.getAlias());
+                    }
+                }).findAny().orElse(null);
+
+        assertNotNull(rep);
+
+        StringBuilder name = new StringBuilder();
+
+        while (name.length() < 300) {
+            name.append("invalid");
+        }
+
+        rep.setDescription(name.toString());
+
+        try {
+            authMgmtResource.updateFlow(rep.getId(), rep);
+        } catch (InternalServerErrorException isee) {
+            try (Response response = isee.getResponse()) {
+                assertEquals(500, response.getStatus());
+                assertEquals(0, response.getLength());
+                assertEquals(0, ByteArrayInputStream.class.cast(response.getEntity()).available());
+            }
+        } catch (Exception e) {
+            fail("Unexpected exception");
+        }
+    }
 }
