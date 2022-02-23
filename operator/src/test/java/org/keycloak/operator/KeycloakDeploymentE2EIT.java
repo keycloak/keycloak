@@ -5,7 +5,6 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentSpecBuilder;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.v2alpha1.crds.Keycloak;
 
@@ -111,12 +110,6 @@ public class KeycloakDeploymentE2EIT extends ClusterOperatorTest {
             savePodLogs();
             throw e;
         }
-    }
-
-    @AfterEach
-    public void cleanup() {
-        Log.info("Deleting Keycloak CR");
-        k8sclient.resources(Keycloak.class).delete(getDefaultKeycloakDeployment());
     }
 
 }
