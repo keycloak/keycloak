@@ -18,12 +18,13 @@
 package org.keycloak.testsuite.forms;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.authentication.authenticators.access.AllowAccessAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticator;
 import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticatorFactory;
-import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
@@ -36,7 +37,6 @@ import org.keycloak.testsuite.util.FlowUtil;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assume.assumeThat;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
@@ -44,6 +44,8 @@ import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerEx
  */
 @AuthServerContainerExclude(REMOTE)
 public class AuthenticationFlowCallbackProviderTest extends AbstractTestRealmKeycloakTest {
+
+    protected static final String DEFAULT_FLOW = "newCallbackFlow";
 
     @Page
     protected LoginPage loginPage;
@@ -55,9 +57,18 @@ public class AuthenticationFlowCallbackProviderTest extends AbstractTestRealmKey
     public void configureTestRealm(RealmRepresentation testRealm) {
     }
 
+    @Before
+    public void setUpFlow() {
+        setBrowserFlow();
+    }
+
+    @After
+    public void revertFlow() {
+        BrowserFlowTest.revertFlows(testRealm(), DEFAULT_FLOW);
+    }
+
     @Test
     public void loaEssentialNonExisting() {
-        setBrowserFlow();
         LevelOfAssuranceFlowTest.openLoginFormWithAcrClaim(oauth, true, "4");
 
         loginPage.assertCurrent();
@@ -69,10 +80,6 @@ public class AuthenticationFlowCallbackProviderTest extends AbstractTestRealmKey
 
     @Test
     public void errorWithCustomProvider() {
-        // Ignore test case for Map Storage - GitHub Issue #10225
-        assumeThat("This test case does not work properly with Map Storage", Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE), is(false));
-
-        setBrowserFlow();
         LevelOfAssuranceFlowTest.openLoginFormWithAcrClaim(oauth, true, "1");
 
         loginPage.assertCurrent();
@@ -83,9 +90,9 @@ public class AuthenticationFlowCallbackProviderTest extends AbstractTestRealmKey
     }
 
     protected void setBrowserFlow() {
-        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow("newFlow"));
-        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
-                .selectFlow("newFlow")
+        testingClient.server(TEST_REALM_NAME).run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(DEFAULT_FLOW));
+        testingClient.server(TEST_REALM_NAME).run(session -> FlowUtil.inCurrentRealm(session)
+                .selectFlow(DEFAULT_FLOW)
                 .inForms(forms -> forms
                         .clear()
                         .addSubFlowExecution(AuthenticationExecutionModel.Requirement.CONDITIONAL, subflow -> subflow
