@@ -164,6 +164,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 page = LoginFormsPages.LOGIN_UPDATE_PASSWORD;
                 break;
             case VERIFY_EMAIL:
+                this.attributes.put("verifiedEmail",user.getEmail());
                 actionMessage = Messages.VERIFY_EMAIL;
                 page = LoginFormsPages.LOGIN_VERIFY_EMAIL;
                 break;
@@ -266,7 +267,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 attributes.put("profile", new IdpReviewProfileBean(idpCtx, formData, session));
                 break;
         }
-
         return processTemplate(theme, Templates.getTemplate(page), locale);
     }
     
