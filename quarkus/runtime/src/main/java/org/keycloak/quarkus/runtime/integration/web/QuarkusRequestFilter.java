@@ -31,7 +31,9 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
 
 /**
@@ -60,7 +62,7 @@ public class QuarkusRequestFilter implements Handler<RoutingContext> {
             KeycloakSession session = sessionFactory.create();
 
             configureContextualData(context, createClientConnection(context.request()), session);
-            configureEndHandler(context, promise, session);
+            configureEndHandler(context, session);
 
             KeycloakTransactionManager tx = session.getTransactionManager();
 
@@ -87,18 +89,24 @@ public class QuarkusRequestFilter implements Handler<RoutingContext> {
      * Creates a handler to close the {@link KeycloakSession} before the response is written to response but after Resteasy
      * is done with processing its output.
      */
-    private void configureEndHandler(RoutingContext context, Promise<Object> promise, KeycloakSession session) {
+    private void configureEndHandler(RoutingContext context, KeycloakSession session) {
         context.addHeadersEndHandler(event -> {
             try {
                 close(session);
             } catch (Throwable cause) {
-                promise.fail(cause);
-                context.response().headers().clear();
-                context.response().putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.TEXT_PLAIN);
-                context.response().putHeader(HttpHeaderNames.CONTENT_LENGTH, "0");
-                context.response().setStatusCode(HttpResponseStatus.INTERNAL_SERVER_ERROR.code());
+                unexpectedErrorResponse(context.response());
             }
         });
+    }
+
+    private void unexpectedErrorResponse(HttpServerResponse response) {
+        response.headers().clear();
+        response.putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.TEXT_PLAIN);
+        response.putHeader(HttpHeaderNames.CONTENT_LENGTH, "0");
+        response.setStatusCode(HttpResponseStatus.INTERNAL_SERVER_ERROR.code());
+        response.putHeader(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
+        // writes an empty buffer to replace any data previously written
+        response.write(Buffer.buffer(""));
     }
 
     private void configureContextualData(RoutingContext context, ClientConnection connection, KeycloakSession session) {
