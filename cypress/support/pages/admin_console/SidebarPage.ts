@@ -55,7 +55,6 @@ export default class SidebarPage {
   }
 
   goToRealmRoles() {
-    this.waitForPageLoad();
     cy.get(this.realmRolesBtn).click();
     this.waitForPageLoad();
 

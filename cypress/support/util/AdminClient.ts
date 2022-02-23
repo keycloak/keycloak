@@ -4,6 +4,7 @@ import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import { merge } from "lodash-es";
 
 export default class AdminClient {
@@ -160,5 +161,16 @@ export default class AdminClient {
     await this.client.users.updateProfile(
       merge(currentProfile, payload, { realm })
     );
+  }
+
+  async createRealmRole(payload: RoleRepresentation) {
+    await this.login();
+
+    return await this.client.roles.create(payload);
+  }
+
+  async deleteRealmRole(name: string) {
+    await this.login();
+    return await this.client.roles.delByName({ name });
   }
 }

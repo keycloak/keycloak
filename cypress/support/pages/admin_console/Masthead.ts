@@ -53,10 +53,14 @@ export default class Masthead {
   }
 
   checkNotificationMessage(message: string, closeNotification?: boolean) {
-    cy.get(this.alertMessage).should("contain.text", message);
-    if (closeNotification) {
-      this.closeLastAlertMessage();
-    }
+    cy.get(this.alertMessage)
+      .should("contain.text", message)
+      .parent()
+      .within(() => {
+        if (closeNotification) {
+          cy.get(".pf-c-alert__action").click();
+        }
+      });
     return this;
   }
 

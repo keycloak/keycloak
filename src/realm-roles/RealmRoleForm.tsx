@@ -44,7 +44,11 @@ export const RealmRoleForm = ({
           helperTextInvalid={t("common:required")}
         >
           <TextInput
-            ref={register({ required: !editMode })}
+            ref={register({
+              required: !editMode,
+              validate: (value: string) =>
+                !!value.trim() || t("common:required").toString(),
+            })}
             type="text"
             id="kc-name"
             name="name"

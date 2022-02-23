@@ -22,10 +22,9 @@ export default class CreateRealmRolePage {
       cy.get(this.realmRoleNameInput).type(name);
     }
 
-    if (description) {
-      cy.get(this.realmRoleDescriptionInput).type(description);
+    if (description !== "") {
+      this.updateDescription(description);
     }
-
     return this;
   }
 
@@ -35,6 +34,30 @@ export default class CreateRealmRolePage {
     return this;
   }
   //#endregion
+
+  clickActionMenu(item: string) {
+    cy.findByTestId("action-dropdown")
+      .click()
+      .within(() => {
+        cy.findByText(item).click();
+      });
+    return this;
+  }
+
+  checkNameDisabled() {
+    cy.get(this.realmRoleNameInput).should("have.attr", "readonly", "readonly");
+    return this;
+  }
+
+  checkDescription(description: string) {
+    cy.get(this.realmRoleDescriptionInput).should("have.value", description);
+    return this;
+  }
+
+  updateDescription(description: string) {
+    cy.get(this.realmRoleDescriptionInput).clear().type(description);
+    return this;
+  }
 
   save() {
     cy.findByTestId(this.saveBtn).click();
