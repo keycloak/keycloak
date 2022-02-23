@@ -45,17 +45,40 @@ describe("useSetTimeout", () => {
 
   it("clears a timeout if the component unmounts", () => {
     const { result, unmount } = renderHook(() => useSetTimeout());
-    const timerId = 42;
-    const setTimeoutSpy = jest
-      .spyOn(global, "setTimeout")
-      .mockReturnValueOnce(timerId as unknown as NodeJS.Timeout);
+    const setTimeoutSpy = jest.spyOn(global, "setTimeout");
     const clearTimeoutSpy = jest.spyOn(global, "clearTimeout");
+    const callback = jest.fn();
 
-    result.current(jest.fn(), 1000);
+    result.current(callback, 1000);
+
+    // Timeout should be cleared after unmounting.
     unmount();
+    expect(clearTimeoutSpy).toBeCalled();
 
-    expect(clearTimeoutSpy).toBeCalledWith(timerId);
+    // And the callback should no longer be called.
+    jest.runOnlyPendingTimers();
+    expect(callback).not.toBeCalled();
 
     setTimeoutSpy.mockRestore();
+    clearTimeoutSpy.mockRestore();
+  });
+
+  it("clears a timeout when cancelled", () => {
+    const { result } = renderHook(() => useSetTimeout());
+    const setTimeoutSpy = jest.spyOn(global, "setTimeout");
+    const clearTimeoutSpy = jest.spyOn(global, "clearTimeout");
+    const callback = jest.fn();
+    const cancel = result.current(callback, 1000);
+
+    // Timeout should be cleared when cancelling.
+    cancel();
+    expect(clearTimeoutSpy).toBeCalled();
+
+    // And the callback should no longer be called.
+    jest.runOnlyPendingTimers();
+    expect(callback).not.toBeCalled();
+
+    setTimeoutSpy.mockRestore();
+    clearTimeoutSpy.mockRestore();
   });
 });

@@ -1,7 +1,5 @@
 import {
   ClipboardCopy,
-  EmptyState,
-  EmptyStateBody,
   Form,
   FormGroup,
   Grid,
@@ -17,9 +15,7 @@ import {
   Tabs,
   TabTitleText,
   Text,
-  TextArea,
   TextContent,
-  Title,
 } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
@@ -36,6 +32,7 @@ import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { prettyPrintJSON } from "../../util";
+import { GeneratedCodeTab } from "./GeneratedCodeTab";
 
 import "./evaluate.css";
 
@@ -140,10 +137,14 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
     ProtocolMapperRepresentation[]
   >([]);
   const [accessToken, setAccessToken] = useState("");
+  const [userInfo, setUserInfo] = useState("");
+  const [idToken, setIdToken] = useState("");
 
   const tabContent1 = useRef(null);
   const tabContent2 = useRef(null);
   const tabContent3 = useRef(null);
+  const tabContent4 = useRef(null);
+  const tabContent5 = useRef(null);
 
   useFetch(
     () => adminClient.clients.listOptionalClientScopes({ id: clientId }),
@@ -221,20 +222,32 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
   );
 
   useFetch(
-    () => {
+    async () => {
       const scope = selected.join(" ");
-      if (user) {
-        return adminClient.clients.evaluateGenerateAccessToken({
+      if (!user) return [];
+
+      return await Promise.all([
+        adminClient.clients.evaluateGenerateAccessToken({
           id: clientId,
           userId: user.id!,
           scope,
-        });
-      } else {
-        return Promise.resolve({});
-      }
+        }),
+        adminClient.clients.evaluateGenerateUserInfo({
+          id: clientId,
+          userId: user.id!,
+          scope,
+        }),
+        adminClient.clients.evaluateGenerateIdToken({
+          id: clientId,
+          userId: user.id!,
+          scope,
+        }),
+      ]);
     },
-    (accessToken) => {
+    ([accessToken, userInfo, idToken]) => {
       setAccessToken(prettyPrintJSON(accessToken));
+      setUserInfo(prettyPrintJSON(userInfo));
+      setIdToken(prettyPrintJSON(idToken));
     },
     [user, selected]
   );
@@ -350,25 +363,43 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             <EffectiveRoles effectiveRoles={effectiveRoles} />
           </TabContent>
           <TabContent
-            aria-labelledby="pf-tab-0-generatedAccessToken"
+            aria-labelledby={t("generatedAccessToken")}
             eventKey={2}
-            id="generatedAccessToken"
+            id="tab-generated-access-token"
             ref={tabContent3}
             hidden
           >
-            {user && (
-              <TextArea rows={20} id="accessToken" value={accessToken} />
-            )}
-            {!user && (
-              <EmptyState variant="large">
-                <Title headingLevel="h4" size="lg">
-                  {t("noGeneratedAccessToken")}
-                </Title>
-                <EmptyStateBody>
-                  {t("generatedAccessTokenIsDisabled")}
-                </EmptyStateBody>
-              </EmptyState>
-            )}
+            <GeneratedCodeTab
+              text={accessToken}
+              user={user}
+              label="generatedAccessToken"
+            />
+          </TabContent>
+          <TabContent
+            aria-labelledby={t("generatedIdToken")}
+            eventKey={3}
+            id="tab-generated-id-token"
+            ref={tabContent4}
+            hidden
+          >
+            <GeneratedCodeTab
+              text={idToken}
+              user={user}
+              label="generatedIdToken"
+            />
+          </TabContent>
+          <TabContent
+            aria-labelledby={t("generatedUserInfo")}
+            eventKey={4}
+            id="tab-generated-user-info"
+            ref={tabContent5}
+            hidden
+          >
+            <GeneratedCodeTab
+              text={userInfo}
+              user={user}
+              label="generatedUserInfo"
+            />
           </TabContent>
         </GridItem>
         <GridItem span={4}>
@@ -429,6 +460,40 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
                 </TabTitleText>
               }
               tabContentRef={tabContent3}
+            />
+            <Tab
+              id="generatedIdToken"
+              aria-controls="generatedIdToken"
+              eventKey={3}
+              title={
+                <TabTitleText>
+                  {t("generatedIdToken")}{" "}
+                  <HelpItem
+                    fieldLabelId="clients:generatedIdToken"
+                    helpText="clients-help:generatedIdToken"
+                    noVerticalAlign={false}
+                    unWrap
+                  />
+                </TabTitleText>
+              }
+              tabContentRef={tabContent4}
+            />
+            <Tab
+              id="generatedUserInfo"
+              aria-controls="generatedUserInfo"
+              eventKey={4}
+              title={
+                <TabTitleText>
+                  {t("generatedUserInfo")}{" "}
+                  <HelpItem
+                    fieldLabelId="clients:generatedUserInfo"
+                    helpText="clients-help:generatedUserInfo"
+                    noVerticalAlign={false}
+                    unWrap
+                  />
+                </TabTitleText>
+              }
+              tabContentRef={tabContent5}
             />
           </Tabs>
         </GridItem>

@@ -92,7 +92,12 @@ export default {
       "Contains all default client scopes and selected optional scopes. All protocol mappers and role scope mappings of all those client scopes will be used when generating access token issued for your client",
     effectiveRoleScopeMappings:
       "Selected Optional Client Scopes, which will be used when issuing access token for this client. You can see above what value of OAuth Scope Parameter needs to be used when you want to have these optional client scopes applied when the initial OpenID Connect Authentication request will be sent from your client adapter",
-    generatedAccessToken: "Example access token",
+    generatedAccessToken:
+      "See the example access token, which will be generated and sent to the client when selected user is authenticated. You can see claims and roles that the token will contain based on the effective protocol mappers and role scope mappings and also based on the claims/roles assigned to user himself",
+    generatedIdToken:
+      "See the example ID Token, which will be generated and sent to the client when selected user is authenticated. You can see claims and roles that the token will contain based on the effective protocol mappers and role scope mappings and also based on the claims/roles assigned to user himself",
+    generatedUserInfo:
+      "See the example User Info, which will be provided by the User Info Endpoint",
     scopeParameter:
       "You can copy/paste this value of scope parameter and use it in initial OpenID Connect Authentication Request sent from this client adapter. Default client scopes and selected optional client scopes will be used when generating token issued for this client",
     user: "Optionally select user, for whom the example access token will be generated. If you do not select a user, example access token will not be generated during evaluation",

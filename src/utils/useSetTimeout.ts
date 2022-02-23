@@ -30,5 +30,10 @@ export default function useSetTimeout() {
       scheduledTimers.delete(timer);
       callback();
     }
+
+    return function cancelTimeout() {
+      clearTimeout(timer);
+      scheduledTimers.delete(timer);
+    };
   };
 }

@@ -273,12 +273,20 @@ export default {
     effectiveProtocolMappers: "Effective protocol mappers",
     effectiveRoleScopeMappings: "Effective role scope mappings",
     generatedAccessToken: "Generated access token",
+    generatedIdToken: "Generated ID token",
+    generatedIdTokenNo: "No generated id token",
+    generatedIdTokenIsDisabled:
+      "Generated id token is disabled when no user is selected",
+    generatedUserInfo: "Generated user info",
+    generatedUserInfoNo: "No generated user info",
+    generatedUserInfoIsDisabled:
+      "Generated user info is disabled when no user is selected",
     searchForProtocol: "Search protocol mapper",
     parentClientScope: "Parent client scope",
     searchForRole: "Search role",
     origin: "Origin",
     user: "User",
-    noGeneratedAccessToken: "No generated access token",
+    generatedAccessTokenNo: "No generated access token",
     generatedAccessTokenIsDisabled:
       "Generated access token is disabled when no user is selected",
     clientList: "Clients",
@@ -330,6 +338,9 @@ export default {
     initialAccessTokenDetails: "Initial access token details",
     copyInitialAccessToken:
       "Please copy and paste the initial access token before closing as it can not be retrieved later.",
+    copySuccess: "Successfully copied to clipboard!",
+    clipboardCopyError: "Error copying to clipboard.",
+    copyToClipboard: "Copy to clipboard",
     clientAuthentication: "Client authentication",
     authentication: "Authentication",
     authenticationFlow: "Authentication flow",
