@@ -143,6 +143,9 @@ public class AuthenticationManager {
     // clientSession note with flag that clientSession was authenticated through SSO cookie
     public static final String SSO_AUTH = "SSO_AUTH";
 
+    // authSession note with flag that is true if user is forced to re-authenticate by client (EG. in case of OIDC client by sending "prompt=login")
+    public static final String FORCED_REAUTHENTICATION = "FORCED_REAUTHENTICATION";
+
     protected static final Logger logger = Logger.getLogger(AuthenticationManager.class);
 
     public static final String FORM_USERNAME = "username";

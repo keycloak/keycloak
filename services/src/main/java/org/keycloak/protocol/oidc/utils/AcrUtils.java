@@ -127,7 +127,7 @@ public class AcrUtils {
     public static String mapLoaToAcr(int loa, Map<String, Integer> acrLoaMap, Collection<String> acrValues) {
         String acr = null;
         if (!acrLoaMap.isEmpty() && !acrValues.isEmpty()) {
-            int maxLoa = 0;
+            int maxLoa = -1;
             for (String acrValue : acrValues) {
                 Integer mappedLoa = acrLoaMap.get(acrValue);
                 // if there is no mapping for the acrValue, it may be an integer itself

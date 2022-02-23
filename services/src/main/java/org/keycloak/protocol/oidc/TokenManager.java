@@ -24,7 +24,8 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenCategory;
 import org.keycloak.TokenVerifier;
-import org.keycloak.authentication.AuthenticatorUtil;
+import org.keycloak.authentication.authenticators.util.AcrStore;
+import org.keycloak.authentication.authenticators.util.LoAUtil;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.cluster.ClusterProvider;
@@ -565,7 +566,7 @@ public class TokenManager {
             userSession.setNote(entry.getKey(), entry.getValue());
         }
 
-        clientSession.setNote(Constants.LEVEL_OF_AUTHENTICATION, String.valueOf(AuthenticatorUtil.getCurrentLevelOfAuthentication(authSession)));
+        clientSession.setNote(Constants.LEVEL_OF_AUTHENTICATION, String.valueOf(new AcrStore(authSession).getLevelOfAuthenticationFromCurrentAuthentication()));
         clientSession.setTimestamp(Time.currentTime());
 
         // Remove authentication session now
@@ -901,7 +902,7 @@ public class TokenManager {
     }
 
     private String getAcr(AuthenticatedClientSessionModel clientSession) {
-        int loa = AuthenticatorUtil.getCurrentLevelOfAuthentication(clientSession);
+        int loa = LoAUtil.getCurrentLevelOfAuthentication(clientSession);
         if (loa < Constants.MINIMUM_LOA) {
             loa = AuthenticationManager.isSSOAuthentication(clientSession) ? 0 : 1;
         }
@@ -920,6 +921,8 @@ public class TokenManager {
                 }
             }
         }
+
+        logger.tracef("Level sent in the token to client %s: %s. Original loa from the authentication: %d", clientSession.getClient().getClientId(), acr, loa);
         return acr;
     }
 

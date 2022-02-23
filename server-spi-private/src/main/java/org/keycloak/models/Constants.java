@@ -131,7 +131,13 @@ public final class Constants {
     public static final String CLIENT_POLICIES = "client-policies.policies";
 
 
+    // Authentication session note, which contains loa of current authentication in progress
     public static final String LEVEL_OF_AUTHENTICATION = "level-of-authentication";
+
+    // Authentication session (and user session) note, which contains map with authenticated levels and the times of their authentications,
+    // so it is possible to check when particular level expires and needs to be re-authenticated
+    public static final String LOA_MAP = "loa-map";
+
     public static final String REQUESTED_LEVEL_OF_AUTHENTICATION = "requested-level-of-authentication";
     public static final String FORCE_LEVEL_OF_AUTHENTICATION = "force-level-of-authentication";
     public static final String ACR_LOA_MAP = "acr.loa.map";
