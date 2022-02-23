@@ -526,6 +526,16 @@ public class ClientModelLazyDelegate implements ClientModel {
     }
 
     @Override
+    public boolean isIncludedInOpenIDProviderMetadata() {
+        return getDelegate().isIncludedInOpenIDProviderMetadata();
+    }
+
+    @Override
+    public void setIncludedInOpenIDProviderMetadata(boolean hideFromOpenIDProviderMetadata) {
+        getDelegate().setIncludedInOpenIDProviderMetadata(hideFromOpenIDProviderMetadata);
+    }
+
+    @Override
     public Stream<RoleModel> getScopeMappingsStream() {
         return getDelegate().getScopeMappingsStream();
     }

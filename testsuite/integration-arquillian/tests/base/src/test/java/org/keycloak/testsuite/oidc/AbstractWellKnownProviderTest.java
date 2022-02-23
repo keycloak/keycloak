@@ -36,13 +36,16 @@ import org.keycloak.crypto.Algorithm;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.representations.MTLSEndpointAliases;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.IDToken;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.clientregistration.ClientRegistrationService;
 import org.keycloak.services.clientregistration.oidc.OIDCClientRegistrationProviderFactory;
@@ -51,6 +54,7 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AbstractAdminTest;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.forms.BrowserFlowTest;
 import org.keycloak.testsuite.forms.LevelOfAssuranceFlowTest;
@@ -60,6 +64,7 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
+import org.keycloak.testsuite.wellknown.CustomOIDCWellKnownProviderFactory;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
@@ -67,6 +72,8 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static jakarta.ws.rs.core.HttpHeaders.ACCEPT;
 import static jakarta.ws.rs.core.HttpHeaders.CONTENT_TYPE;
@@ -386,6 +393,55 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
         } finally {
             client.close();
         }
+    }
+
+    @Test
+    public void testDefaultProviderCustomizations() throws IOException {
+        Client client = AdminClientUtil.createResteasyClient();
+        String showScopeId = null;
+        String hideScopeId = null;
+        try {
+            OIDCConfigurationRepresentation oidcConfig = getOIDCDiscoveryRepresentation(client, OAuthClient.AUTH_SERVER_ROOT);
+
+            // Exact names already tested in OIDC
+            assertScopesSupportedMatchesWithRealm(oidcConfig);
+
+            //create 2 client scope - one with hideFromOpenIDProviderMetadata equal to true
+            ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
+            clientScope.setName("show-scope");
+            clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            Response resp = adminClient.realm("test").clientScopes().create(clientScope);
+            showScopeId = ApiUtil.getCreatedId(resp);
+            resp.close();
+
+            ClientScopeRepresentation clientScope2 = new ClientScopeRepresentation();
+            clientScope2.setName("hidden-scope");
+            clientScope2.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            Map<String,String> attributes = new HashMap<>();
+            attributes.put(ClientScopeModel.INCLUDE_IN_OPENID_PROVIDER_METADATA,"false");
+            clientScope2.setAttributes(attributes);
+            Response resp2 = adminClient.realm("test").clientScopes().create(clientScope2);
+            hideScopeId = ApiUtil.getCreatedId(resp2);
+            resp2.close();
+
+            List<String> expectedScopeList = Stream.of(OAuth2Constants.SCOPE_OPENID, OAuth2Constants.OFFLINE_ACCESS,
+                    OAuth2Constants.SCOPE_PROFILE, OAuth2Constants.SCOPE_EMAIL, OAuth2Constants.SCOPE_PHONE, OAuth2Constants.SCOPE_ADDRESS, OIDCLoginProtocolFactory.ACR_SCOPE, OIDCLoginProtocolFactory.BASIC_SCOPE,
+                    OIDCLoginProtocolFactory.ROLES_SCOPE, OIDCLoginProtocolFactory.WEB_ORIGINS_SCOPE, OIDCLoginProtocolFactory.MICROPROFILE_JWT_SCOPE, OAuth2Constants.ORGANIZATION,
+                    ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE, "show-scope").collect(Collectors.toList());
+            oidcConfig = getOIDCDiscoveryRepresentation(client, OAuthClient.AUTH_SERVER_ROOT);
+            assertScopesSupportedMatchesWithRealm(oidcConfig, expectedScopeList);
+        } finally {
+            getTestingClient().testing().setSystemPropertyOnServer(CustomOIDCWellKnownProviderFactory.INCLUDE_CLIENT_SCOPES, null);
+            if ( showScopeId != null)
+                adminClient.realm("test").clientScopes().get(showScopeId).remove();
+            if ( hideScopeId != null)
+                adminClient.realm("test").clientScopes().get(hideScopeId).remove();
+            client.close();
+        }
+    }
+
+    private void assertScopesSupportedMatchesWithRealm(OIDCConfigurationRepresentation oidcConfig, List<String> expectedScopeList) {
+        Assert.assertNames(oidcConfig.getScopesSupported(), expectedScopeList.toArray(new String[expectedScopeList.size()]) );
     }
 
     protected void assertScopesSupportedMatchesWithRealm(OIDCConfigurationRepresentation oidcConfig) {
