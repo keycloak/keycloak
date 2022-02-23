@@ -43,11 +43,11 @@ public class ConditionalLoaAuthenticatorFactory implements ConditionalAuthentica
             .type(ProviderConfigProperty.STRING_TYPE)
             .add()
             .property()
-            .name(ConditionalLoaAuthenticator.STORE_IN_USER_SESSION)
-            .label(ConditionalLoaAuthenticator.STORE_IN_USER_SESSION)
-            .helpText(ConditionalLoaAuthenticator.STORE_IN_USER_SESSION + ".tooltip")
-            .type(ProviderConfigProperty.BOOLEAN_TYPE)
-            .defaultValue("true")
+            .name(ConditionalLoaAuthenticator.MAX_AGE)
+            .label(ConditionalLoaAuthenticator.MAX_AGE)
+            .helpText(ConditionalLoaAuthenticator.MAX_AGE + ".tooltip")
+            .type(ProviderConfigProperty.STRING_TYPE)
+            .defaultValue(ConditionalLoaAuthenticator.DEFAULT_MAX_AGE) // 10 hours
             .add()
             .build();
 
