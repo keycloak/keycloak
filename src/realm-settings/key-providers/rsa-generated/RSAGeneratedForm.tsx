@@ -73,16 +73,16 @@ export const RSAGeneratedForm = ({
     serverInfo.componentTypes?.[KEY_PROVIDER_TYPE] ?? [];
 
   const rsaGeneratedKeySizeOptions =
-    allComponentTypes[6].properties[3].options!;
+    allComponentTypes[6].properties[3].options ?? [];
 
   const rsaGeneratedAlgorithmOptions =
-    allComponentTypes[6].properties[4].options!;
+    allComponentTypes[6].properties[4].options ?? [];
 
   const rsaEncGeneratedKeySizeOptions =
-    allComponentTypes[5].properties[3].options!;
+    allComponentTypes[5].properties[3].options ?? [];
 
   const rsaEncGeneratedAlgorithmOptions =
-    allComponentTypes[5].properties[4].options!;
+    allComponentTypes[5].properties[4].options ?? [];
 
   const save = async (component: ComponentRepresentation) => {
     try {
