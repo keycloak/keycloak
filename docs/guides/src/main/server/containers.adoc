@@ -62,7 +62,7 @@ podman|docker build . -t prebuilt_keycloak
 To start the image, run:
 [source, bash]
 ----
-podman|docker run --name optimized_keycloak -p 8443:8443 prebuilt_keycloak
+podman|docker run --name optimized_keycloak -p 8443:8443 -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=change_me prebuilt_keycloak
 ----
 Keycloak starts in production mode, using only secured HTTPS communication, and is available on `https://localhost:8443`.
 Notice that the startup log contains the following line:
@@ -116,5 +116,19 @@ In the example, the line  `--db=postgres --features=token-exchange` sets the dat
 
 Keycloak then starts up and applies the configuration for the specific environment.
 This approach significantly increases startup time and creates an image that is mutable, which is not the best practice.
+
+== Provide initial admin credentials when running in a container
+Keycloak only allows to create the initial admin user from a local network connection. This is not the case when running in a container, so you have to provide the following environment variables when you run the image:
+
+[source, bash]
+----
+# setting the admin username
+-e KEYCLOAK_ADMIN=<admin-user-name>
+
+# setting the initial password
+-e KEYCLOAK_ADMIN_PASSWORD=change_me
+----
+
+Feel free to join the open https://github.com/keycloak/keycloak/discussions/8549[GitHub Discussion] around enhancements of the admin bootstrapping process.
 
 </@tmpl.guide>
