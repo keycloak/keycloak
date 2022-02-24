@@ -297,7 +297,7 @@ public class ExportUtils {
         AuthorizationProviderFactory providerFactory = (AuthorizationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(AuthorizationProvider.class);
         AuthorizationProvider authorization = providerFactory.create(session, client.getRealm());
         StoreFactory storeFactory = authorization.getStoreFactory();
-        ResourceServer settingsModel = authorization.getStoreFactory().getResourceServerStore().findById(client.getId());
+        ResourceServer settingsModel = authorization.getStoreFactory().getResourceServerStore().findByClient(client);
 
         if (settingsModel == null) {
             return null;

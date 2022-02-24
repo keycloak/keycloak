@@ -689,7 +689,7 @@ public class ModelToRepresentation {
 
         if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
             AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
-            ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findById(clientModel.getId());
+            ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findByClient(clientModel);
 
             if (resourceServer != null) {
                 rep.setAuthorizationServicesEnabled(true);
