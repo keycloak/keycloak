@@ -34,6 +34,15 @@
     </description>
 
     <dependencies>
+        <!--
+            required for fixing error : java.lang.ClassNotFoundException: org.keycloak.testsuite.KerberosEmbeddedServer
+            when running this command : mvn exec:java -Pkerberos
+        -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-testsuite-utils</artifactId>
+        </dependency>
+      
         <dependency>
             <groupId>org.jboss.spec.javax.servlet</groupId>
             <artifactId>jboss-servlet-api_3.0_spec</artifactId>
