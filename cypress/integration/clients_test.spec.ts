@@ -8,7 +8,7 @@ import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import CreateClientPage from "../support/pages/admin_console/manage/clients/CreateClientPage";
 import ModalUtils from "../support/util/ModalUtils";
 import AdvancedTab from "../support/pages/admin_console/manage/clients/AdvancedTab";
-import AdminClient from "../support/util/AdminClient";
+import adminClient from "../support/util/AdminClient";
 import InitialAccessTokenTab from "../support/pages/admin_console/manage/clients/InitialAccessTokenTab";
 import {
   keycloakBefore,
@@ -28,7 +28,6 @@ const modalUtils = new ModalUtils();
 
 describe("Clients test", () => {
   describe("Client details - Client scopes subtab", () => {
-    const client = new AdminClient();
     const clientScopesTab = new ClientScopesTab();
     const clientId = "client-scopes-subtab-test";
     const clientScopeName = "client-scope-test";
@@ -48,23 +47,23 @@ describe("Clients test", () => {
     const msgScopeMappingRemoved = "Scope mapping successfully removed";
 
     before(async () => {
-      client.createClient({
+      adminClient.createClient({
         clientId,
         protocol: "openid-connect",
         publicClient: false,
       });
       for (let i = 0; i < 5; i++) {
         clientScope.name = clientScopeName + i;
-        await client.createClientScope(clientScope);
-        await client.addDefaultClientScopeInClient(
+        await adminClient.createClientScope(clientScope);
+        await adminClient.addDefaultClientScopeInClient(
           clientScopeName + i,
           clientId
         );
       }
       clientScope.name = clientScopeNameDefaultType;
-      await client.createClientScope(clientScope);
+      await adminClient.createClientScope(clientScope);
       clientScope.name = clientScopeNameOptionalType;
-      await client.createClientScope(clientScope);
+      await adminClient.createClientScope(clientScope);
     });
 
     beforeEach(() => {
@@ -78,12 +77,12 @@ describe("Clients test", () => {
     });
 
     after(async () => {
-      client.deleteClient(clientId);
+      adminClient.deleteClient(clientId);
       for (let i = 0; i < 5; i++) {
-        await client.deleteClientScope(clientScopeName + i);
+        await adminClient.deleteClientScope(clientScopeName + i);
       }
-      await client.deleteClientScope(clientScopeNameDefaultType);
-      await client.deleteClientScope(clientScopeNameOptionalType);
+      await adminClient.deleteClientScope(clientScopeNameDefaultType);
+      await adminClient.deleteClientScope(clientScopeNameOptionalType);
     });
 
     it("should list client scopes", () => {
@@ -345,7 +344,7 @@ describe("Clients test", () => {
     });
 
     afterEach(() => {
-      new AdminClient().deleteClient(client);
+      adminClient.deleteClient(client);
     });
 
     it("Clustering", () => {
@@ -375,7 +374,7 @@ describe("Clients test", () => {
     before(() => {
       keycloakBefore();
       loginPage.logIn();
-      new AdminClient().createClient({
+      adminClient.createClient({
         protocol: "openid-connect",
         clientId: serviceAccountName,
         publicClient: false,
@@ -391,7 +390,7 @@ describe("Clients test", () => {
     });
 
     after(() => {
-      new AdminClient().deleteClient(serviceAccountName);
+      adminClient.deleteClient(serviceAccountName);
     });
 
     it("List", () => {
@@ -429,7 +428,7 @@ describe("Clients test", () => {
     });
 
     before(() => {
-      new AdminClient().createClient({
+      adminClient.createClient({
         protocol: "openid-connect",
         clientId: mappingClient,
         publicClient: false,
@@ -437,7 +436,7 @@ describe("Clients test", () => {
     });
 
     after(() => {
-      new AdminClient().deleteClient(mappingClient);
+      adminClient.deleteClient(mappingClient);
     });
 
     it("Add mapping to openid client", () => {
@@ -455,7 +454,7 @@ describe("Clients test", () => {
     before(() => {
       keycloakBefore();
       loginPage.logIn();
-      new AdminClient().createClient({
+      adminClient.createClient({
         protocol: "openid-connect",
         clientId: keysName,
         publicClient: false,
@@ -469,7 +468,7 @@ describe("Clients test", () => {
     });
 
     after(() => {
-      new AdminClient().deleteClient(keysName);
+      adminClient.deleteClient(keysName);
     });
 
     it("Change use JWKS Url", () => {
@@ -530,7 +529,7 @@ describe("Clients test", () => {
     before(() => {
       keycloakBefore();
       loginPage.logIn();
-      new AdminClient().createClient({
+      adminClient.createClient({
         clientId,
         protocol: "openid-connect",
         publicClient: false,
@@ -543,7 +542,7 @@ describe("Clients test", () => {
     });
 
     after(() => {
-      new AdminClient().deleteClient(clientId);
+      adminClient.deleteClient(clientId);
     });
 
     beforeEach(() => {

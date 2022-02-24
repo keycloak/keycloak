@@ -7,17 +7,14 @@ import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/use
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import { merge } from "lodash-es";
 
-export default class AdminClient {
-  private client: KeycloakAdminClient;
-  constructor() {
-    this.client = new KeycloakAdminClient({
-      baseUrl: `${Cypress.env("KEYCLOAK_SERVER")}/auth`,
-      realmName: "master",
-    });
-  }
+class AdminClient {
+  private readonly client = new KeycloakAdminClient({
+    baseUrl: `${Cypress.env("KEYCLOAK_SERVER")}/auth`,
+    realmName: "master",
+  });
 
-  private async login() {
-    await this.client.auth({
+  private login() {
+    return this.client.auth({
       username: "admin",
       password: "admin",
       grantType: "password",
@@ -174,3 +171,7 @@ export default class AdminClient {
     return await this.client.roles.delByName({ name });
   }
 }
+
+const adminClient = new AdminClient();
+
+export default adminClient;

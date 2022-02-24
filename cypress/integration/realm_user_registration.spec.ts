@@ -5,7 +5,7 @@ import UserRegistration, {
 import Masthead from "../support/pages/admin_console/Masthead";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
-import AdminClient from "../support/util/AdminClient";
+import adminClient from "../support/util/AdminClient";
 import {
   keycloakBefore,
   keycloakBeforeEach,
@@ -17,7 +17,6 @@ describe("Realm settings - User registration tab", () => {
   const sidebarPage = new SidebarPage();
   const modalUtils = new ModalUtils();
   const masthead = new Masthead();
-  const adminClient = new AdminClient();
 
   const listingPage = new ListingPage();
   const groupPicker = new GroupPickerDialog();

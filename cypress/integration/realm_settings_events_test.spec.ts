@@ -5,7 +5,7 @@ import Masthead from "../support/pages/admin_console/Masthead";
 import ModalUtils from "../support/util/ModalUtils";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
 import ListingPage from "../support/pages/admin_console/ListingPage";
-import AdminClient from "../support/util/AdminClient";
+import adminClient from "../support/util/AdminClient";
 
 const loginPage = new LoginPage();
 const sidebarPage = new SidebarPage();
@@ -24,11 +24,11 @@ describe("Realm settings events tab tests", () => {
   });
 
   before(async () => {
-    await new AdminClient().createRealm(realmName);
+    await adminClient.createRealm(realmName);
   });
 
   after(async () => {
-    await new AdminClient().deleteRealm(realmName);
+    await adminClient.deleteRealm(realmName);
   });
 
   const goToDetails = () => {

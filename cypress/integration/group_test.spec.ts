@@ -8,7 +8,7 @@ import Masthead from "../support/pages/admin_console/Masthead";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
 import ViewHeaderPage from "../support/pages/ViewHeaderPage";
-import AdminClient from "../support/util/AdminClient";
+import adminClient from "../support/util/AdminClient";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
 import ModalUtils from "../support/util/ModalUtils";
 
@@ -147,13 +147,12 @@ describe("Group test", () => {
     const detailPage = new GroupDetailPage();
 
     before(async () => {
-      const client = new AdminClient();
-      const createdGroups = await client.createSubGroups(groups);
+      const createdGroups = await adminClient.createSubGroups(groups);
       for (let i = 0; i < 5; i++) {
         const username = "user" + i;
-        client.createUserInGroup(username, createdGroups[i % 3].id);
+        adminClient.createUserInGroup(username, createdGroups[i % 3].id);
       }
-      client.createUser({ username: "new", enabled: true });
+      adminClient.createUser({ username: "new", enabled: true });
     });
 
     beforeEach(() => {
@@ -163,7 +162,6 @@ describe("Group test", () => {
     });
 
     after(async () => {
-      const adminClient = new AdminClient();
       await adminClient.deleteGroups();
       for (let i = 0; i < 5; i++) {
         const username = "user" + i;

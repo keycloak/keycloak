@@ -7,7 +7,7 @@ import {
   keycloakBefore,
   keycloakBeforeEach,
 } from "../support/util/keycloak_hooks";
-import AdminClient from "../support/util/AdminClient";
+import adminClient from "../support/util/AdminClient";
 
 describe("Partial import test", () => {
   const TEST_REALM = "partial-import-test-realm";
@@ -33,8 +33,7 @@ describe("Partial import test", () => {
   });
 
   afterEach(async () => {
-    const client = new AdminClient();
-    await client.deleteRealm(TEST_REALM);
+    await adminClient.deleteRealm(TEST_REALM);
   });
 
   it("Opens and closes partial import dialog", () => {

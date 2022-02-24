@@ -2,7 +2,7 @@ import LoginPage from "../support/pages/LoginPage";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import CreateRealmPage from "../support/pages/admin_console/CreateRealmPage";
 import Masthead from "../support/pages/admin_console/Masthead";
-import AdminClient from "../support/util/AdminClient";
+import adminClient from "../support/util/AdminClient";
 import {
   keycloakBefore,
   keycloakBeforeEach,
@@ -12,7 +12,6 @@ const masthead = new Masthead();
 const loginPage = new LoginPage();
 const sidebarPage = new SidebarPage();
 const createRealmPage = new CreateRealmPage();
-const adminClient = new AdminClient();
 
 describe("Realms test", () => {
   const testRealmName =

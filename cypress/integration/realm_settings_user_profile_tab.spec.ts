@@ -2,14 +2,13 @@ import ListingPage from "../support/pages/admin_console/ListingPage";
 import UserProfile from "../support/pages/admin_console/manage/realm_settings/UserProfile";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
-import AdminClient from "../support/util/AdminClient";
+import adminClient from "../support/util/AdminClient";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
 import ModalUtils from "../support/util/ModalUtils";
 
 const loginPage = new LoginPage();
 const sidebarPage = new SidebarPage();
 const userProfileTab = new UserProfile();
-const adminClient = new AdminClient();
 const listingPage = new ListingPage();
 const modalUtils = new ModalUtils();
 

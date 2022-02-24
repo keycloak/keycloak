@@ -2,15 +2,14 @@ import PartialExportModal from "../support/pages/admin_console/configure/realm_s
 import RealmSettings from "../support/pages/admin_console/configure/realm_settings/RealmSettings";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
-import AdminClient from "../support/util/AdminClient";
+import adminClient from "../support/util/AdminClient";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
 
 describe("Partial realm export", () => {
   const REALM_NAME = "Partial-export-test-realm";
-  const client = new AdminClient();
 
-  before(() => client.createRealm(REALM_NAME));
-  after(() => client.deleteRealm(REALM_NAME));
+  before(() => adminClient.createRealm(REALM_NAME));
+  after(() => adminClient.deleteRealm(REALM_NAME));
 
   const loginPage = new LoginPage();
   const sidebarPage = new SidebarPage();

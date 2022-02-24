@@ -2,7 +2,7 @@ import {
   keycloakBefore,
   keycloakBeforeEach,
 } from "../support/util/keycloak_hooks";
-import AdminClient from "../support/util/AdminClient";
+import adminClient from "../support/util/AdminClient";
 import LoginPage from "../support/pages/LoginPage";
 import ListingPage from "../support/pages/admin_console/ListingPage";
 import Masthead from "../support/pages/admin_console/Masthead";
@@ -11,7 +11,6 @@ import AuthorizationTab from "../support/pages/admin_console/manage/clients/Auth
 import ModalUtils from "../support/util/ModalUtils";
 
 describe("Client authentication subtab", () => {
-  const adminClient = new AdminClient();
   const loginPage = new LoginPage();
   const listingPage = new ListingPage();
   const masthead = new Masthead();

@@ -5,7 +5,7 @@ import {
   keycloakBefore,
   keycloakBeforeEach,
 } from "../support/util/keycloak_hooks";
-import AdminClient from "../support/util/AdminClient";
+import adminClient from "../support/util/AdminClient";
 import ModalUtils from "../support/util/ModalUtils";
 import Masthead from "../support/pages/admin_console/Masthead";
 
@@ -28,12 +28,12 @@ describe("Realm settings client profiles tab tests", () => {
 
   before(() => {
     keycloakBefore();
-    new AdminClient().createRealm(realmName);
+    adminClient.createRealm(realmName);
     loginPage.logIn();
   });
 
   after(async () => {
-    await new AdminClient().deleteRealm(realmName);
+    await adminClient.deleteRealm(realmName);
   });
 
   it("Go to client policies profiles tab", () => {

@@ -9,7 +9,7 @@ import {
   keycloakBefore,
   keycloakBeforeEach,
 } from "../support/util/keycloak_hooks";
-import AdminClient from "../support/util/AdminClient";
+import adminClient from "../support/util/AdminClient";
 
 let itemId = "realm_role_crud";
 const loginPage = new LoginPage();
@@ -110,7 +110,6 @@ describe("Realm roles test", () => {
   describe("edit role details", () => {
     const editRoleName = "going to edit";
     const description = "some description";
-    const adminClient = new AdminClient();
     before(() => {
       adminClient.createRealmRole({
         name: editRoleName,

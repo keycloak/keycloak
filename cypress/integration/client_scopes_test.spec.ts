@@ -13,7 +13,7 @@ import {
 } from "../support/util/keycloak_hooks";
 import RoleMappingTab from "../support/pages/admin_console/manage/RoleMappingTab";
 import ModalUtils from "../support/util/ModalUtils";
-import AdminClient from "../support/util/AdminClient";
+import adminClient from "../support/util/AdminClient";
 
 let itemId = "client_scope_crud";
 const loginPage = new LoginPage();
@@ -43,18 +43,16 @@ describe("Client Scopes test", () => {
   };
 
   before(async () => {
-    const client = new AdminClient();
     for (let i = 0; i < 5; i++) {
       clientScope.name = clientScopeName + i;
-      await client.createClientScope(clientScope);
+      await adminClient.createClientScope(clientScope);
     }
   });
 
   after(async () => {
-    const client = new AdminClient();
     for (let i = 0; i < 5; i++) {
-      if (await client.existsClientScope(clientScopeName + i)) {
-        await client.deleteClientScope(clientScopeName + i);
+      if (await adminClient.existsClientScope(clientScopeName + i)) {
+        await adminClient.deleteClientScope(clientScopeName + i);
       }
     }
   });

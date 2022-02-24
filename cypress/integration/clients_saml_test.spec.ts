@@ -3,7 +3,7 @@ import Masthead from "../support/pages/admin_console/Masthead";
 import ListingPage from "../support/pages/admin_console/ListingPage";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import ModalUtils from "../support/util/ModalUtils";
-import AdminClient from "../support/util/AdminClient";
+import adminClient from "../support/util/AdminClient";
 import {
   keycloakBefore,
   keycloakBeforeEach,
@@ -20,7 +20,7 @@ describe("Clients SAML tests", () => {
     const samlClientName = "saml";
 
     before(() => {
-      new AdminClient().createClient({
+      adminClient.createClient({
         protocol: "saml",
         clientId: samlClientName,
         publicClient: false,
@@ -30,7 +30,7 @@ describe("Clients SAML tests", () => {
     });
 
     after(() => {
-      new AdminClient().deleteClient(samlClientName);
+      adminClient.deleteClient(samlClientName);
     });
 
     beforeEach(() => {
@@ -62,7 +62,7 @@ describe("Clients SAML tests", () => {
     const clientId = "saml-keys";
 
     before(() => {
-      new AdminClient().createClient({
+      adminClient.createClient({
         clientId,
         protocol: "saml",
       });
@@ -71,7 +71,7 @@ describe("Clients SAML tests", () => {
     });
 
     after(() => {
-      new AdminClient().deleteClient(clientId);
+      adminClient.deleteClient(clientId);
     });
 
     beforeEach(() => {

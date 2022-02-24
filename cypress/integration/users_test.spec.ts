@@ -11,7 +11,7 @@ import {
   keycloakBeforeEach,
 } from "../support/util/keycloak_hooks";
 import UserGroupsPage from "../support/pages/admin_console/manage/users/UserGroupsPage";
-import AdminClient from "../support/util/AdminClient";
+import adminClient from "../support/util/AdminClient";
 import CredentialsPage from "../support/pages/admin_console/manage/users/CredentialsPage";
 
 let groupName = "group";
@@ -31,7 +31,6 @@ describe("User creation", () => {
 
   let itemId = "user_crud";
   let itemIdWithCred = "user_crud_cred";
-  const adminClient = new AdminClient();
 
   before(() => {
     for (let i = 0; i <= 2; i++) {

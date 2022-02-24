@@ -6,7 +6,7 @@ import ListingPage from "../support/pages/admin_console/ListingPage";
 import DuplicateFlowModal from "../support/pages/admin_console/manage/authentication/DuplicateFlowModal";
 import FlowDetails from "../support/pages/admin_console/manage/authentication/FlowDetail";
 import RequiredActions from "../support/pages/admin_console/manage/authentication/RequiredActions";
-import AdminClient from "../support/util/AdminClient";
+import adminClient from "../support/util/AdminClient";
 import PasswordPolicies from "../support/pages/admin_console/manage/authentication/PasswordPolicies";
 
 describe("Authentication test", () => {
@@ -122,11 +122,11 @@ describe("Authentication test", () => {
     });
 
     before(() => {
-      new AdminClient().createRealm("Test");
+      adminClient.createRealm("Test");
     });
 
     after(() => {
-      new AdminClient().deleteRealm("Test");
+      adminClient.deleteRealm("Test");
     });
 
     it("should enable delete account", () => {
