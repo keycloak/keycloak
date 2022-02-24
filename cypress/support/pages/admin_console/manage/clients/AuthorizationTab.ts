@@ -1,6 +1,7 @@
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
 import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
+import grantClipboardAccess from "../../../../util/grantClipboardAccess";
 
 type PermissionType = "resource" | "scope";
 
@@ -133,6 +134,7 @@ export default class AuthorizationTab {
   }
 
   copy() {
+    grantClipboardAccess();
     cy.findByTestId(this.exportCopyButton).click();
     return this;
   }
