@@ -41,7 +41,7 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>2.7.1.Final</quarkus.version>
+        <quarkus.version>2.7.2.Final</quarkus.version>
 
         <!--
         Performing a Wildfly upgrade? Run the:
