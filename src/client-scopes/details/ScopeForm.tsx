@@ -122,7 +122,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
       >
         <Controller
           name="type"
-          defaultValue=""
+          defaultValue={allClientScopeTypes[0]}
           control={control}
           render={({ onChange, value }) => (
             <Select
