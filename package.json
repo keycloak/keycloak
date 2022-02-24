@@ -19,7 +19,7 @@
     "start:rh-sso": "THEME_NAME=rh-sso snowpack dev",
     "test": "jest",
     "start:cypress": "cypress open",
-    "start:cypress-tests": "cypress run",
+    "start:cypress-tests": "cypress run --browser chrome",
     "prepare": "husky install"
   },
   "dependencies": {
