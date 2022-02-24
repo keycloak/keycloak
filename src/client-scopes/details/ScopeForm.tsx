@@ -3,7 +3,6 @@ import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import {
-  Form,
   FormGroup,
   ValidatedOptions,
   TextInput,
@@ -14,7 +13,6 @@ import {
   ActionGroup,
   Button,
   TextArea,
-  NumberInput,
 } from "@patternfly/react-core";
 
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
@@ -29,6 +27,7 @@ import { convertToFormValues } from "../../util";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { getProtocolName } from "../../clients/utils";
 import { toClientScopes } from "../routes/ClientScopes";
+import { FormAccess } from "../../components/form-access/FormAccess";
 
 type ScopeFormProps = {
   clientScope: ClientScopeRepresentation;
@@ -59,7 +58,11 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   }, [clientScope]);
 
   return (
-    <Form isHorizontal onSubmit={handleSubmit(save)} className="pf-u-mt-md">
+    <FormAccess
+      isHorizontal
+      onSubmit={handleSubmit(save)}
+      role="manage-clients"
+    >
       <FormGroup
         label={t("common:name")}
         labelIcon={
@@ -268,27 +271,17 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
       >
         <Controller
           name="attributes.gui.order"
-          defaultValue={1}
+          defaultValue=""
           control={control}
-          render={({ onChange, value }) => {
-            const MIN_VALUE = 0;
-            const setValue = (newValue: number) =>
-              onChange(Math.max(newValue, MIN_VALUE));
-
-            return (
-              <NumberInput
-                id="kc-gui-order"
-                value={value}
-                min={MIN_VALUE}
-                onPlus={() => setValue(value + 1)}
-                onMinus={() => setValue(value - 1)}
-                onChange={(event) => {
-                  const newValue = Number(event.currentTarget.value);
-                  setValue(!isNaN(newValue) ? newValue : 0);
-                }}
-              />
-            );
-          }}
+          render={({ onChange, value }) => (
+            <TextInput
+              type="number"
+              value={value}
+              data-testid="displayOrder"
+              min={0}
+              onChange={onChange}
+            />
+          )}
         />
       </FormGroup>
       <ActionGroup>
@@ -304,6 +297,6 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           {t("common:cancel")}
         </Button>
       </ActionGroup>
-    </Form>
+    </FormAccess>
   );
 };
