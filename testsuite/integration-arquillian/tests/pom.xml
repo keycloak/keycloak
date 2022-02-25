@@ -1501,6 +1501,7 @@
                                     <keycloak.group.map.storage.provider>hotrod</keycloak.group.map.storage.provider>
                                     <keycloak.role.map.storage.provider>hotrod</keycloak.role.map.storage.provider>
                                     <keycloak.user.map.storage.provider>hotrod</keycloak.user.map.storage.provider>
+                                    <keycloak.authorizationCache.enabled>false</keycloak.authorizationCache.enabled>
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>

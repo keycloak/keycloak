@@ -840,7 +840,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         byResourceServer = management.authz().getStoreFactory().getResourceStore().findByResourceServer(management.realmResourceServer().getId());
         Assert.assertEquals(1, byResourceServer.size());
         management.users().setPermissionsEnabled(false);
-        Resource userResource = management.authz().getStoreFactory().getResourceStore().findByName("Users", management.realmResourceServer().getId());
+        Resource userResource = management.authz().getStoreFactory().getResourceStore().findByName("Users", management.realmResourceServer());
         Assert.assertNull(userResource);
         byResourceServer = management.authz().getStoreFactory().getResourceStore().findByResourceServer(management.realmResourceServer().getId());
         Assert.assertEquals(0, byResourceServer.size());

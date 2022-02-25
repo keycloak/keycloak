@@ -35,6 +35,11 @@ public class MapResourceServerAdapter extends AbstractResourceServerModel<MapRes
     }
 
     @Override
+    public String getClientId() {
+        return entity.getClientId();
+    }
+
+    @Override
     public boolean isAllowRemoteResourceManagement() {
         Boolean isARRM = entity.isAllowRemoteResourceManagement();
         return isARRM == null ? false : isARRM;

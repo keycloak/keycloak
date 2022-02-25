@@ -68,7 +68,6 @@ public class MapResourceServerStore implements ResourceServerStore {
 
     @Override
     public ResourceServer create(ClientModel client) {
-        System.out.println("MapResourceServerStore:create " + client.getClientId());
         LOG.tracef("create(%s)%s", client.getClientId(), getShortStackTrace());
 
         String clientId = client.getId();
@@ -93,7 +92,6 @@ public class MapResourceServerStore implements ResourceServerStore {
 
     @Override
     public void delete(ClientModel client) {
-        System.out.println("MapResourceServerStore:delete " + client.getClientId());
         LOG.tracef("delete(%s, %s)%s", client.getClientId(), getShortStackTrace());
 
         ResourceServer resourceServer = findByClient(client);
@@ -127,7 +125,6 @@ public class MapResourceServerStore implements ResourceServerStore {
 
     @Override
     public ResourceServer findById(String id) {
-        System.out.println("MapResourceServerStore:findById " + id);
         LOG.tracef("findById(%s)%s", id, getShortStackTrace());
 
         if (id == null) {
@@ -140,7 +137,6 @@ public class MapResourceServerStore implements ResourceServerStore {
 
     @Override
     public ResourceServer findByClient(ClientModel client) {
-        System.out.println("MapResourceServerStore:findByClient " + client.getClientId());
         LOG.tracef("findByClient(%s) in realm(%s)%s", client.getClientId(), client.getRealm().getName(), getShortStackTrace());
 
         DefaultModelCriteria<ResourceServer> mcb = criteria();

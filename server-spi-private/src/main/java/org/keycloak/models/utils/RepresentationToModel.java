@@ -2324,7 +2324,7 @@ public class RepresentationToModel {
 
             if (owner == null) {
                 owner = new ResourceOwnerRepresentation();
-                owner.setId(resourceServer.getId());
+                owner.setId(resourceServer.getClientId());
                 resource.setOwner(owner);
             } else if (owner.getName() != null) {
                 UserModel user = session.users().getUserByUsername(realm, owner.getName());
@@ -2595,7 +2595,7 @@ public class RepresentationToModel {
                     Resource resource = storeFactory.getResourceStore().findById(resourceId, policy.getResourceServer().getId());
 
                     if (resource == null) {
-                        resource = storeFactory.getResourceStore().findByName(resourceId, policy.getResourceServer().getId());
+                        resource = storeFactory.getResourceStore().findByName(resourceId, policy.getResourceServer());
                         if (resource == null) {
                             throw new RuntimeException("Resource with id or name [" + resourceId + "] does not exist or is not owned by the resource server");
                         }
@@ -2629,16 +2629,16 @@ public class RepresentationToModel {
 
         if (owner == null) {
             owner = new ResourceOwnerRepresentation();
-            owner.setId(resourceServer.getId());
+            owner.setId(resourceServer.getClientId());
         }
 
         String ownerId = owner.getId();
 
         if (ownerId == null) {
-            ownerId = resourceServer.getId();
+            ownerId = resourceServer.getClientId();
         }
 
-        if (!resourceServer.getId().equals(ownerId)) {
+        if (!resourceServer.getClientId().equals(ownerId)) {
             RealmModel realm = authorization.getRealm();
             KeycloakSession keycloakSession = authorization.getKeycloakSession();
             UserProvider users = keycloakSession.users();

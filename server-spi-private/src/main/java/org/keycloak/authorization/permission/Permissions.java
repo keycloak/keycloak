@@ -73,14 +73,14 @@ public final class Permissions {
         }
 
         // obtain all resources where owner is the resource server
-        resourceStore.findByOwner(resourceServer.getId(), resourceServer.getId(), resource -> {
+        resourceStore.findByOwner(resourceServer.getClientId(), resourceServer.getId(), resource -> {
             if (limit.decrementAndGet() >= 0) {
                 evaluator.accept(createResourcePermissions(resource, resourceServer, resource.getScopes(), authorization, request));
             }
         });
 
         // resource server isn't current user
-        if (resourceServer.getId() != identity.getId()) {
+        if (resourceServer.getClientId() != identity.getId()) {
             // obtain all resources where owner is the current user
             resourceStore.findByOwner(identity.getId(), resourceServer.getId(), resource -> {
                 if (limit.decrementAndGet() >= 0) {

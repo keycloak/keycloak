@@ -86,7 +86,7 @@ public class AbstractPermissionService {
                     }
 
                     if (!identity.isResourceServer()) {
-                        Resource serverResource = resourceStore.findByName(resourceSetId, this.resourceServer.getId());
+                        Resource serverResource = resourceStore.findByName(resourceSetId, this.resourceServer);
 
                         if (serverResource != null) {
                             resources.add(serverResource);

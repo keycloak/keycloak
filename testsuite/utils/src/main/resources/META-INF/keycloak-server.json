@@ -146,6 +146,12 @@
         }
     },
 
+    "authorizationCache": {
+        "default": {
+            "enabled": "${keycloak.authorizationCache.enabled:true}"
+        }
+    },
+
     "theme": {
         "staticMaxAge": "${keycloak.theme.staticMaxAge:}",
         "cacheTemplates": "${keycloak.theme.cacheTemplates:}",

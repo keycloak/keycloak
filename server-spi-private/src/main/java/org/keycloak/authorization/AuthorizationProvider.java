@@ -300,7 +300,7 @@ public final class AuthorizationProvider implements Provider {
                         Resource resource = storeFactory.getResourceStore().findById(id, resourceServer.getId());
 
                         if (resource == null) {
-                            resource = storeFactory.getResourceStore().findByName(id, resourceServer.getId());
+                            resource = storeFactory.getResourceStore().findByName(id, resourceServer);
                         }
 
                         if (resource == null) {
@@ -529,11 +529,6 @@ public final class AuthorizationProvider implements Provider {
             @Override
             public void findByScope(List<String> scopes, String resourceServerId, Consumer<Resource> consumer) {
                 delegate.findByScope(scopes, resourceServerId, consumer);
-            }
-
-            @Override
-            public Resource findByName(String name, String resourceServerId) {
-                return delegate.findByName(name, resourceServerId);
             }
 
             @Override

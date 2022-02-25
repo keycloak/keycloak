@@ -260,11 +260,6 @@ public class JPAResourceStore implements ResourceStore {
     }
 
     @Override
-    public Resource findByName(String name, String resourceServerId) {
-        return findByName(name, resourceServerId, resourceServerId);
-    }
-
-    @Override
     public Resource findByName(String name, String ownerId, String resourceServerId) {
         TypedQuery<ResourceEntity> query = entityManager.createNamedQuery("findResourceIdByName", ResourceEntity.class);
 

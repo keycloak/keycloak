@@ -86,4 +86,9 @@ public interface ResourceServer {
      * @return the decision strategy
      */
     DecisionStrategy getDecisionStrategy();
+
+    /**
+     * TODO javadoc
+     */
+    String getClientId();
 }

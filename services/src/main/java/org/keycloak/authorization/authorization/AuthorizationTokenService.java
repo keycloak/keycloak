@@ -224,7 +224,7 @@ public class AuthorizationTokenService {
 
             if (isGranted(ticket, request, permissions)) {
                 AuthorizationProvider authorization = request.getAuthorization();
-                ClientModel targetClient = authorization.getRealm().getClientById(resourceServer.getId());
+                ClientModel targetClient = authorization.getRealm().getClientById(resourceServer.getClientId());
                 Metadata metadata = request.getMetadata();
                 String responseMode = metadata != null ? metadata.getResponseMode() : null;
 
@@ -657,7 +657,7 @@ public class AuthorizationTokenService {
                     resourcePermission.setGranted(true);
                 }
 
-                Resource serverResource = resourceStore.findByName(resourceId, resourceServer.getId());
+                Resource serverResource = resourceStore.findByName(resourceId, resourceServer);
 
                 if (serverResource != null) {
                     permission.setResourceId(serverResource.getId());

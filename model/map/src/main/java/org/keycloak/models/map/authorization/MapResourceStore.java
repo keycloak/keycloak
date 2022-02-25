@@ -204,11 +204,6 @@ public class MapResourceStore implements ResourceStore {
     }
 
     @Override
-    public Resource findByName(String name, String resourceServerId) {
-        return findByName(name, resourceServerId, resourceServerId);
-    }
-
-    @Override
     public Resource findByName(String name, String ownerId, String resourceServerId) {
         LOG.tracef("findByName(%s, %s, %s)%s", name, ownerId, resourceServerId, getShortStackTrace());
         return tx.read(withCriteria(forResourceServer(resourceServerId)

@@ -311,9 +311,9 @@ public class ExportUtils {
 
         List<ResourceRepresentation> resources = storeFactory.getResourceStore().findByResourceServer(settingsModel.getId())
                 .stream().map(resource -> {
-                    ResourceRepresentation rep = toRepresentation(resource, settingsModel.getId(), authorization);
+                    ResourceRepresentation rep = toRepresentation(resource, settingsModel, authorization);
 
-                    if (rep.getOwner().getId().equals(settingsModel.getId())) {
+                    if (rep.getOwner().getId().equals(settingsModel.getClientId())) {
                         rep.setOwner((ResourceOwnerRepresentation) null);
                     } else {
                         rep.getOwner().setId(null);
