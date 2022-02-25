@@ -640,11 +640,6 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public Resource findByName(String name, String resourceServerId) {
-            return findByName(name, resourceServerId, resourceServerId);
-        }
-
-        @Override
         public Resource findByName(String name, String ownerId, String resourceServerId) {
             if (name == null) return null;
             String cacheKey = getResourceByNameCacheKey(name, ownerId, resourceServerId);
