@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 import base64 from 'base64-js';
-import { sha256 } from 'js-sha256';
+import sha256 from 'js-sha256';
 
 if (typeof Promise === 'undefined') {
     throw Error('Keycloak requires an environment that supports Promises. Make sure that you include the appropriate polyfill.');
