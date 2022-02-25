@@ -65,7 +65,5 @@ jobs:
           mvn clean verify \
               -Dquarkus.container-image.build=true -Dquarkus.container-image.tag=test \
               -Dquarkus.kubernetes.deployment-target=kubernetes \
-              -Dquarkus.jib.jvm-arguments="-Djava.util.logging.manager=org.jboss.logmanager.LogManager",\
-                  "-Doperator.keycloak.image=keycloak:${GITHUB_SHA}", \
-                  "-Doperator.keycloak.image-pull-policy=Never" \
+              -Dquarkus.jib.jvm-arguments="-Djava.util.logging.manager=org.jboss.logmanager.LogManager","-Doperator.keycloak.image=keycloak:${GITHUB_SHA}","-Doperator.keycloak.image-pull-policy=Never" \
               --no-transfer-progress -Dtest.operator.deployment=remote
