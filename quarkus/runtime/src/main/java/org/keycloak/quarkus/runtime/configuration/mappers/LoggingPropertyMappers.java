@@ -2,6 +2,7 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import static org.keycloak.quarkus.runtime.integration.QuarkusPlatform.addInitializationException;
 
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.function.BiFunction;
 import java.util.logging.Level;
@@ -69,6 +70,13 @@ final class LoggingPropertyMappers {
                         .defaultValue("%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n")
                         .description("The format of log entries. If the format has spaces in it, you need to escape the value such as \"<format>\".")
                         .paramLabel("format")
+                        .build(),
+                builder().from("log-json-enabled")
+                        .to("quarkus.log.console.json")
+                        .defaultValue(Boolean.FALSE.toString())
+                        .description("Enable or disable logging to console using structured JSON.")
+                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
+                        .expectedValues(Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString()))
                         .build()
         };
     }

@@ -21,10 +21,16 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.approvaltests.Approvals;
 import io.quarkus.test.junit.main.LaunchResult;
 
 public interface CLIResult extends LaunchResult {
+
+    static ObjectMapper objectMapper = new ObjectMapper();
 
     static Object create(List<String> outputStream, List<String> errStream, int exitCode) {
         return new CLIResult() {
@@ -96,5 +102,20 @@ public interface CLIResult extends LaunchResult {
 
     default void assertClusteredCache() {
         assertTrue(isClustered());
+    }
+
+    default void assertJsonLogDefaultsApplied() throws JsonProcessingException {
+        String[] split = getOutput().split(System.lineSeparator());
+        for (String l: split) {
+            if (!l.trim().startsWith("{")) {
+                //we ignore non-json output for now. Problem is the build does not know about the runtime configuration,
+                // so when invoking start-dev and a build is done, the output is not json but unstructured console output
+                continue;
+            }
+            JsonNode json = objectMapper.readTree(l);
+            assertTrue(json.has("timestamp"));
+            assertTrue(json.has("message"));
+            assertTrue(json.has("level"));
+        }
     }
 }

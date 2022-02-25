@@ -86,6 +86,17 @@ Be aware that you need to escape characters when invoking commands containing sp
 <@kc.start parameters="\"\'%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{3.}] (%t) %s%e%n\'\""/>
 The example above abbreviates the category name, which could get rather long in some cases, to three characters by setting `[%c{3.}]` in the template instead of the default `[%c]`.
 
+== Logging in JSON format
+To use structured JSON log output, run the following command:
+
+<@kc.start parameters="--log-json-enabled=true"/>
+
+.Example Log Message
+[source, json]
+----
+{"timestamp":"2022-02-25T10:31:32.452+01:00","sequence":8442,"loggerClassName":"org.jboss.logging.Logger","loggerName":"io.quarkus","level":"INFO","message":"Keycloak 18.0.0-SNAPSHOT on JVM (powered by Quarkus 2.7.2.Final) started in 3.253s. Listening on: http://0.0.0.0:8080","threadName":"main","threadId":1,"mdc":{},"ndc":"","hostName":"host-name","processName":"QuarkusEntryPoint","processId":36946}
+----
+
 == Configuring raw quarkus logging properties
 At the time of writing, the logging features of the quarkus based Keycloak are basic, yet powerful. Nevertheless, expect more to come and feel free to join the https://github.com/keycloak/keycloak/discussions/8870[discussion] at GitHub.
 

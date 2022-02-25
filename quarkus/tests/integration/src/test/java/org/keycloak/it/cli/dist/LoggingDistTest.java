@@ -20,9 +20,8 @@ package org.keycloak.it.cli.dist;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
@@ -32,7 +31,6 @@ import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest(reInstall = DistributionTest.ReInstall.NEVER)
 @RawDistOnly(reason = "Too verbose for docker and enough to check raw dist")
-@TestMethodOrder(OrderAnnotation.class)
 public class LoggingDistTest {
 
     @Test
@@ -76,5 +74,22 @@ public class LoggingDistTest {
         CLIResult cliResult = (CLIResult) result;
         assertFalse(cliResult.getOutput().contains("(keycloak-cache-init)"));
         cliResult.assertStartedDevMode();
+    }
+
+    @Test
+    @Launch({ "start-dev", "--log-json-enabled=true" })
+    void testJsonFormatApplied(LaunchResult result) throws JsonProcessingException {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertJsonLogDefaultsApplied();
+        cliResult.assertStartedDevMode();
+    }
+
+    @Test
+    @Launch({ "start-dev", "--log-level=off,org.keycloak:debug,org.infinispan:info", "--log-json-enabled=true" })
+    void testLogLevelSettingsAppliedWhenJsonEnabled(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        assertFalse(cliResult.getOutput().contains("\"loggerName\":\"io.quarkus\",\"level\":\"INFO\")"));
+        assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory\",\"level\":\"DEBUG\""));
+        assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.infinispan.CONTAINER\",\"level\":\"INFO\""));
     }
 }

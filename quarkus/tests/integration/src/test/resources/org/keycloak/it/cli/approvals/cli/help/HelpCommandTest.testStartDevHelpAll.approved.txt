@@ -148,6 +148,8 @@ Logging:
                      The format of log entries. If the format has spaces in it, you need to escape
                        the value such as "<format>". Default: %d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c]
                        (%t) %s%e%n.
+--log-json-enabled <true|false>
+                     Enable or disable logging to console using structured JSON. Default: false.
 --log-level <category:level>
                      The log level of the root category or a comma-separated list of individual
                        categories and their levels. For the root category, you don't need to
