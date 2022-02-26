@@ -23,6 +23,7 @@ import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.ClientSecretConfig;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -49,6 +50,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import org.keycloak.utils.ClockUtil;
 
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
@@ -376,6 +378,8 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             // if client is confidential, generate a secret if none is defined
             if (newClient.getSecret() == null) {
                 KeycloakModelUtils.generateSecret(newClient);
+                rep.getAttributes().put(
+                    ClientSecretConfig.CLIENT_SECRET_CREATION_TIME,String.valueOf(ClockUtil.currentTimeInSeconds()));
             }
         }
         if (rep.isBearerOnly() == null) newClient.setBearerOnly(false);

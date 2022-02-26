@@ -136,7 +136,10 @@ module.controller('ClientCredentialsCtrl', function($scope, $location, realm, cl
     };
 });
 
-module.controller('ClientSecretCtrl', function($scope, $location, Client, ClientSecret, Notifications) {
+module.controller('ClientSecretCtrl', function($scope, $location, Client, ClientSecret, Notifications, $route) {
+
+    $scope.changed = false;
+
     var secret = ClientSecret.get({ realm : $scope.realm.realm, client : $scope.client.id },
         function() {
             $scope.secret = secret.value;
@@ -157,6 +160,17 @@ module.controller('ClientSecretCtrl', function($scope, $location, Client, Client
     };
 
     $scope.tokenEndpointAuthSigningAlg = $scope.client.attributes['token.endpoint.auth.signing.alg'];
+
+    $scope.clientSecretRotationEnabled = false;
+    if ($scope.client.attributes["client.secret.rotation.enabled"]) {
+       if ($scope.client.attributes["client.secret.rotation.enabled"] == "true") {
+           $scope.clientSecretRotationEnabled = true;
+       }
+    }
+
+    if ($scope.client.attributes["client.secret.rotated"]) {
+        $scope.secretRotated = $scope.client.attributes["client.secret.rotated"];
+    }
 
     $scope.switchChange = function() {
         $scope.changed = true;
@@ -183,7 +197,9 @@ module.controller('ClientSecretCtrl', function($scope, $location, Client, Client
 
     $scope.cancel = function() {
         $location.url("/realms/" + $scope.realm.realm + "/clients/" + $scope.client.id + "/credentials");
+        $route.reload();
     };
+
 });
 
 module.controller('ClientX509Ctrl', function($scope, $location, Client, Notifications) {

@@ -30,6 +30,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.ClientSecretConfig;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -69,6 +70,7 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import org.keycloak.utils.ClockUtil;
 
 /**
  * Set of helper methods, which are useful in various model implementations.
@@ -148,6 +150,7 @@ public final class KeycloakModelUtils {
     public static String generateSecret(ClientModel client) {
         String secret = SecretGenerator.getInstance().randomString();
         client.setSecret(secret);
+        client.setAttribute(ClientSecretConfig.CLIENT_SECRET_CREATION_TIME,String.valueOf(ClockUtil.currentTimeInSeconds()));
         return secret;
     }
 
