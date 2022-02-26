@@ -43,6 +43,7 @@ import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.ModelException;
@@ -434,17 +435,19 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
 
     protected class ResourceServerCache implements ResourceServerStore {
         @Override
-        public ResourceServer create(String clientId) {
+        public ResourceServer create(ClientModel client) {
+            String clientId = client.getId();
             if (!StorageId.isLocalStorage(clientId)) {
                 throw new ModelException("Creating resource server from federated ClientModel not supported");
             }
-            ResourceServer server = getResourceServerStoreDelegate().create(clientId);
+            ResourceServer server = getResourceServerStoreDelegate().create(client);
             registerResourceServerInvalidation(server.getId());
             return server;
         }
 
         @Override
-        public void delete(String id) {
+        public void delete(ClientModel client) {
+            String id = client.getId();
             if (id == null) return;
             ResourceServer server = findById(id);
             if (server == null) return;
@@ -452,7 +455,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             cache.invalidateObject(id);
             invalidationEvents.add(ResourceServerRemovedEvent.create(id, server.getId()));
             cache.resourceServerRemoval(id, invalidations);
-            getResourceServerStoreDelegate().delete(id);
+            getResourceServerStoreDelegate().delete(client);
 
         }
 
@@ -483,6 +486,11 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             ResourceServerAdapter adapter = new ResourceServerAdapter(cached, StoreFactoryCacheSession.this);
              managedResourceServers.put(id, adapter);
             return adapter;
+        }
+
+        @Override
+        public ResourceServer findByClient(ClientModel client) {
+            return findById(client.getId());
         }
     }
 

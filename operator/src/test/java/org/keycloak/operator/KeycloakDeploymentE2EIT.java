@@ -5,15 +5,17 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentSpecBuilder;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.v2alpha1.crds.Keycloak;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.keycloak.operator.Constants.DEFAULT_LABELS;
 import static org.keycloak.operator.utils.K8sUtils.deployKeycloak;
 import static org.keycloak.operator.utils.K8sUtils.getDefaultKeycloakDeployment;
 import static org.keycloak.operator.utils.K8sUtils.waitForKeycloakToBeReady;
@@ -113,10 +115,34 @@ public class KeycloakDeploymentE2EIT extends ClusterOperatorTest {
         }
     }
 
-    @AfterEach
-    public void cleanup() {
-        Log.info("Deleting Keycloak CR");
-        k8sclient.resources(Keycloak.class).delete(getDefaultKeycloakDeployment());
+    @Test
+    public void testExtensions() {
+        try {
+            var kc = getDefaultKeycloakDeployment();
+            kc.getSpec().setExtensions(
+                    Collections.singletonList(
+                            "https://github.com/aerogear/keycloak-metrics-spi/releases/download/2.5.3/keycloak-metrics-spi-2.5.3.jar"));
+            deployKeycloak(k8sclient, kc, true);
+
+            var kcPod = k8sclient
+                    .pods()
+                    .inNamespace(namespace)
+                    .withLabels(DEFAULT_LABELS)
+                    .list()
+                    .getItems()
+                    .get(0);
+
+            Awaitility.await()
+                    .ignoreExceptions()
+                    .untilAsserted(() -> {
+                        var logs = k8sclient.pods().inNamespace(namespace).withName(kcPod.getMetadata().getName()).getLog();
+
+                        assertTrue(logs.contains("metrics-listener (org.jboss.aerogear.keycloak.metrics.MetricsEventListenerFactory) is implementing the internal SPI"));
+                    });
+        } catch (Exception e) {
+            savePodLogs();
+            throw e;
+        }
     }
 
 }

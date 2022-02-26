@@ -380,13 +380,36 @@ public class ConfigurationTest {
     public void testDatabaseDriverSetExplicitly() {
         System.setProperty(CLI_ARGS, "--db=mssql" + ARG_SEPARATOR + "--db-url=jdbc:sqlserver://localhost/keycloak");
         System.setProperty("kc.db-driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver");
-        System.setProperty("kc.db-tx-type", "enabled");
+        System.setProperty("kc.transaction-xa-enabled", "false");
         assertTrue(System.getProperty(CLI_ARGS, "").contains("mssql"));
         SmallRyeConfig config = createConfig();
         assertEquals("jdbc:sqlserver://localhost/keycloak", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
         assertEquals("mssql", config.getConfigValue("quarkus.datasource.db-kind").getValue());
         assertEquals("com.microsoft.sqlserver.jdbc.SQLServerDriver", config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
         assertEquals("enabled", config.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
+    }
+
+    @Test
+    public void testTransactionTypeChangesDriver() {
+        System.setProperty(CLI_ARGS, "--db=mssql" + ARG_SEPARATOR + "--transaction-xa-enabled=false");
+        assertTrue(System.getProperty(CLI_ARGS, "").contains("mssql"));
+
+        SmallRyeConfig config = createConfig();
+        assertEquals("com.microsoft.sqlserver.jdbc.SQLServerDriver", config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
+        assertEquals("enabled", config.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
+
+        System.setProperty(CLI_ARGS, "--db=mssql" + ARG_SEPARATOR + "--transaction-xa-enabled=true");
+        assertTrue(System.getProperty(CLI_ARGS, "").contains("mssql"));
+        SmallRyeConfig config2 = createConfig();
+
+        assertEquals("com.microsoft.sqlserver.jdbc.SQLServerXADataSource", config2.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
+        assertEquals("xa", config2.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
+    }
+    
+    public void testResolveHealthOption() {
+        System.setProperty(CLI_ARGS, "--health-enabled=true");
+        SmallRyeConfig config = createConfig();
+        assertEquals("true", config.getConfigValue("quarkus.datasource.health.enabled").getValue());
     }
 
     @Test

@@ -1123,7 +1123,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
     }
     $scope.flows.push(emptyFlow)
     $scope.clientFlows.push(emptyFlow)
-
+    var deletedSomeDefaultAcrValue = false;
 
 
     $scope.accessTypes = [
@@ -1493,6 +1493,13 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             $scope.client.requestUris = [];
         }
 
+        if ($scope.client.attributes["default.acr.values"] && $scope.client.attributes["default.acr.values"].length > 0) {
+            $scope.defaultAcrValues = $scope.client.attributes["default.acr.values"].split("##");
+        } else {
+            $scope.defaultAcrValues = [];
+        }
+        deletedSomeDefaultAcrValue = false;
+
         try {
           $scope.acrLoaMap = JSON.parse($scope.client.attributes["acr.loa.map"] || "{}");
         } catch (e) {
@@ -1696,6 +1703,10 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         if ($scope.newRequestUri && $scope.newRequestUri.length > 0) {
             return true;
         }
+        if ($scope.newDefaultAcrValue && $scope.newDefaultAcrValue.length > 0) {
+            return true;
+        }
+        if (deletedSomeDefaultAcrValue) return true;
         if ($scope.newAcr && $scope.newAcr.length > 0 && $scope.newLoa && $scope.newLoa.length > 0) {
             return true;
         }
@@ -1811,6 +1822,10 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         $scope.changed = isChanged();
     }, true);
 
+    $scope.$watch('newDefaultAcrValue', function() {
+        $scope.changed = isChanged();
+    }, true);
+
     $scope.deleteWebOrigin = function(index) {
         $scope.clientEdit.webOrigins.splice(index, 1);
     }
@@ -1824,6 +1839,15 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
     $scope.addRequestUri = function() {
         $scope.clientEdit.requestUris.push($scope.newRequestUri);
         $scope.newRequestUri = "";
+    }
+    $scope.deleteDefaultAcrValue = function(index) {
+        $scope.defaultAcrValues.splice(index, 1);
+        deletedSomeDefaultAcrValue = true;
+        $scope.changed = isChanged();
+    }
+    $scope.addDefaultAcrValue = function() {
+        $scope.defaultAcrValues.push($scope.newDefaultAcrValue);
+        $scope.newDefaultAcrValue = "";
     }
     $scope.deleteRedirectUri = function(index) {
         $scope.clientEdit.redirectUris.splice(index, 1);
@@ -1855,6 +1879,15 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             $scope.clientEdit.attributes["frontchannel.logout.url"] = null;
         }
         delete $scope.clientEdit.requestUris;
+
+        if ($scope.newDefaultAcrValue && $scope.newDefaultAcrValue.length > 0) {
+            $scope.addDefaultAcrValue();
+        }
+        if ($scope.defaultAcrValues && $scope.defaultAcrValues.length > 0) {
+            $scope.clientEdit.attributes["default.acr.values"] = $scope.defaultAcrValues.join("##");
+        } else {
+            $scope.clientEdit.attributes["default.acr.values"] = null;
+        }
 
         if ($scope.samlArtifactBinding == true) {
             $scope.clientEdit.attributes["saml.artifact.binding"] = "true";

@@ -4,13 +4,15 @@ public enum ConfigCategory {
     // ordered by name asc
     CLUSTERING("Cluster", 10),
     DATABASE("Database", 20),
-    FEATURE("Feature", 30),
-    HOSTNAME("Hostname", 40),
-    HTTP("HTTP/TLS", 50),
-    METRICS("Metrics", 60),
-    PROXY("Proxy", 70),
-    VAULT("Vault", 80),
-    LOGGING("Logging", 90),
+    TRANSACTION("Transaction",30),
+    FEATURE("Feature", 40),
+    HOSTNAME("Hostname", 50),
+    HTTP("HTTP/TLS", 60),
+    HEALTH("Health", 70),
+    METRICS("Metrics", 80),
+    PROXY("Proxy", 90),
+    VAULT("Vault", 100),
+    LOGGING("Logging", 110),
     GENERAL("General", 999);
 
     private final String heading;

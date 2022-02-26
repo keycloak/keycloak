@@ -438,7 +438,7 @@ public class AuthorizationTokenService {
             throw unknownServerIdException;
         }
 
-        ResourceServer resourceServer = resourceServerStore.findById(clientModel.getId());
+        ResourceServer resourceServer = resourceServerStore.findByClient(clientModel);
 
         if (resourceServer == null) {
             CorsErrorResponseException unsupportedPermissionsException = new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "Client does not support permissions", Status.BAD_REQUEST);

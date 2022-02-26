@@ -23,6 +23,7 @@ import static org.keycloak.quarkus.runtime.Environment.forceTestLaunchMode;
 import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
 import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_SHORT_NAME;
 
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -45,6 +46,7 @@ import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import org.keycloak.quarkus.runtime.configuration.KeycloakPropertiesConfigSource;
 import org.keycloak.quarkus.runtime.configuration.test.TestConfigArgsConfigSource;
+import org.keycloak.quarkus.runtime.integration.QuarkusPlatform;
 
 public class CLITestExtension extends QuarkusMainTestExtension {
 
@@ -217,6 +219,9 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             setProperty("kc.db", database.alias());
             // databases like mssql are very strict about password policy
             setProperty("kc.db-password", "Password1!");
+        } else {
+            // This is for re-creating the H2 database instead of using the default in home
+            setProperty("kc.db-url-path", new QuarkusPlatform().getTmpDirectory().getAbsolutePath());
         }
     }
 

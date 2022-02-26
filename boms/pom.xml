@@ -48,7 +48,24 @@
         <module>spi</module>
         <module>misc</module>
     </modules>
-
+    
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.sonatype.plugins</groupId>
+                    <artifactId>nexus-staging-maven-plugin</artifactId>
+                    <version>1.6.5</version>
+                    <extensions>true</extensions>
+                    <configuration>
+                        <nexusUrl>https://repository.jboss.org/nexus</nexusUrl>
+                        <serverId>jboss-releases-repository</serverId>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+    
     <profiles>
         <profile>
             <id>nexus-staging</id>

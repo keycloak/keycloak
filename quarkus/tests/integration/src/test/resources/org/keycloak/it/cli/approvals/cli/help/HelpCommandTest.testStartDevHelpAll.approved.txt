@@ -52,6 +52,12 @@ Database:
 --db-username <username>
                      The username of the database user.
 
+Transaction:
+
+--transaction-xa-enabled <true|false>
+                     Manually override the transaction type. Transaction type XA and the
+                       appropriate driver is used by default. Default: true.
+
 Feature:
 
 --features <feature> Enables a set of one or more features.
@@ -112,12 +118,18 @@ HTTP/TLS:
                      The type of the trust store file. If not given, the type is automatically
                        detected based on the file name.
 
+Health:
+
+--health-enabled <true|false>
+                     If the server should expose health check endpoints. If enabled, health checks
+                       are available at the '/health', '/health/ready' and '/health/live'
+                       endpoints. Default: false.
+
 Metrics:
 
 --metrics-enabled <true|false>
-                     If the server should expose metrics and healthcheck. If enabled, metrics are
-                       available at the '/metrics' endpoint and healthcheck at the '/health'
-                       endpoint. Default: false.
+                     If the server should expose metrics. If enabled, metrics are available at the
+                       '/metrics' endpoint. Default: false.
 
 Proxy:
 

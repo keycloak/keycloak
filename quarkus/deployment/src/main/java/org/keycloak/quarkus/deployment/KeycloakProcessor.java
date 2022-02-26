@@ -400,15 +400,13 @@ class KeycloakProcessor {
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
     void initializeMetrics(KeycloakRecorder recorder, BuildProducer<RouteBuildItem> routes, NonApplicationRootPathBuildItem nonAppRootPath) {
-        Handler<RoutingContext> healthHandler;
+        final Handler<RoutingContext> healthHandler = (isHealthEnabled()) ? new SmallRyeHealthHandler() : new NotFoundHandler();
         Handler<RoutingContext> metricsHandler;
 
         if (isMetricsEnabled()) {
-            healthHandler = new SmallRyeHealthHandler();
             String rootPath = nonAppRootPath.getNormalizedHttpRootPath();
             metricsHandler = recorder.createMetricsHandler(rootPath.concat(DEFAULT_METRICS_ENDPOINT).replace("//", "/"));
         } else {
-            healthHandler = new NotFoundHandler();
             metricsHandler = new NotFoundHandler();
         }
 
@@ -619,5 +617,9 @@ class KeycloakProcessor {
 
     private boolean isMetricsEnabled() {
         return Configuration.getOptionalBooleanValue(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.concat("metrics-enabled")).orElse(false);
+    }
+
+    private boolean isHealthEnabled() {
+        return Configuration.getOptionalBooleanValue(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.concat("health-enabled")).orElse(false);
     }
 }

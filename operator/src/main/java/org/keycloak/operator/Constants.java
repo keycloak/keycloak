@@ -33,6 +33,13 @@ public final class Constants {
     );
 
     public static final Map<String, String> DEFAULT_DIST_CONFIG = Map.of(
-        "KC_METRICS_ENABLED", "true"
+        "KC_HEALTH_ENABLED", "true"
     );
+
+    // Init container
+    public static final String EXTENSIONS_VOLUME_NAME = "extensions";
+    public static final String KEYCLOAK_PROVIDERS_FOLDER = "/opt/keycloak/providers";
+    public static final String INIT_CONTAINER_NAME = "keycloak-extensions";
+    public static final String INIT_CONTAINER_EXTENSIONS_FOLDER = "/opt/extensions";
+    public static final String INIT_CONTAINER_EXTENSIONS_ENV_VAR = "KEYCLOAK_EXTENSIONS";
 }

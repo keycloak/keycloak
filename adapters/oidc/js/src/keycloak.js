@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 import base64 from 'base64-js';
-import { sha256 } from 'js-sha256';
+import sha256 from 'js-sha256';
 
 if (typeof Promise === 'undefined') {
     throw Error('Keycloak requires an environment that supports Promises. Make sure that you include the appropriate polyfill.');
@@ -378,6 +378,15 @@ function Keycloak (config) {
         }
     }
 
+    function buildClaimsParameter(requestedAcr){
+        var claims = {
+            id_token: {
+                acr: requestedAcr
+            }
+        }
+        return JSON.stringify(claims);
+    }
+
     kc.createLoginUrl = function(options) {
         var state = createUUID();
         var nonce = createUUID();
@@ -443,6 +452,11 @@ function Keycloak (config) {
 
         if (options && options.locale) {
             url += '&ui_locales=' + encodeURIComponent(options.locale);
+        }
+
+        if (options && options.acr) {
+            var claimsParameter = buildClaimsParameter(options.acr);
+            url += '&claims=' + encodeURIComponent(claimsParameter);
         }
 
         if (kc.pkceMethod) {

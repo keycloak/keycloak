@@ -15,8 +15,10 @@ import io.quarkus.logging.Log;
 import org.awaitility.Awaitility;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.keycloak.operator.v2alpha1.crds.Keycloak;
 
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.CDI;
@@ -28,6 +30,7 @@ import java.io.FileWriter;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -61,10 +64,10 @@ public abstract class ClusterOperatorTest {
     setDefaultAwaitilityTimings();
     calculateNamespace();
     createK8sClient();
+    createCRDs();
     createNamespace();
 
     if (operatorDeployment == OperatorDeployment.remote) {
-      createCRDs();
       createRBACresourcesAndOperatorDeployment();
     } else {
       createOperator();
@@ -107,8 +110,17 @@ public abstract class ClusterOperatorTest {
   }
   private static void createCRDs() throws FileNotFoundException {
     Log.info("Creating CRDs");
-    k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaks.keycloak.org-v1.yml")).createOrReplace();
-    k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloakrealmimports.keycloak.org-v1.yml")).createOrReplace();
+    try {
+      var deploymentCRD = k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaks.keycloak.org-v1.yml"));
+      deploymentCRD.createOrReplace();
+      deploymentCRD.waitUntilReady(5, TimeUnit.SECONDS);
+      var realmImportCRD = k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloakrealmimports.keycloak.org-v1.yml"));
+      realmImportCRD.createOrReplace();
+      realmImportCRD.waitUntilReady(5, TimeUnit.SECONDS);
+    } catch (Exception e) {
+      Log.warn("Failed to create Keycloak CRD, retrying", e);
+      createCRDs();
+    }
   }
 
   private static void registerReconcilers() {
@@ -170,6 +182,23 @@ public abstract class ClusterOperatorTest {
   private static void setDefaultAwaitilityTimings() {
     Awaitility.setDefaultPollInterval(Duration.ofSeconds(1));
     Awaitility.setDefaultTimeout(Duration.ofSeconds(180));
+  }
+
+  @AfterEach
+  public void cleanup() {
+    Log.info("Deleting Keycloak CR");
+    k8sclient.resources(Keycloak.class).delete();
+    Awaitility.await()
+            .untilAsserted(() -> {
+              var kcDeployments = k8sclient
+                      .apps()
+                      .deployments()
+                      .inNamespace(namespace)
+                      .withLabels(Constants.DEFAULT_LABELS)
+                      .list()
+                      .getItems();
+              assertThat(kcDeployments.size()).isEqualTo(0);
+            });
   }
 
   @AfterAll

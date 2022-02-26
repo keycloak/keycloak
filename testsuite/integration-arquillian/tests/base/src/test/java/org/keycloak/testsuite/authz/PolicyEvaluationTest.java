@@ -135,7 +135,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
         ClientModel clientModel = session.clients().getClientByClientId(session.getContext().getRealm(), "resource-server-test");
         StoreFactory storeFactory = authorization.getStoreFactory();
-        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel);
         TimePolicyRepresentation policyRepresentation = new TimePolicyRepresentation();
         policyRepresentation.setName("testCheckDateAndTime");
 
@@ -170,7 +170,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
         ClientModel clientModel = session.clients().getClientByClientId(session.getContext().getRealm(), "resource-server-test");
         StoreFactory storeFactory = authorization.getStoreFactory();
-        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel);
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
 
         policyRepresentation.setName("testCheckUserInGroup");
@@ -329,7 +329,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
         ClientModel clientModel = session.clients().getClientByClientId(session.getContext().getRealm(), "resource-server-test");
         StoreFactory storeFactory = authorization.getStoreFactory();
-        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel);
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
 
         policyRepresentation.setName("testCheckUserInRole");
@@ -376,7 +376,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
         ClientModel clientModel = session.clients().getClientByClientId(session.getContext().getRealm(), "resource-server-test");
         StoreFactory storeFactory = authorization.getStoreFactory();
-        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel);
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
 
         policyRepresentation.setName("testCheckUserInClientRole");
@@ -423,7 +423,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
         ClientModel clientModel = session.clients().getClientByClientId(session.getContext().getRealm(), "resource-server-test");
         StoreFactory storeFactory = authorization.getStoreFactory();
-        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel);
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
 
         policyRepresentation.setName("testCheckGroupInRole");
@@ -470,7 +470,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
         ClientModel clientModel = session.clients().getClientByClientId(session.getContext().getRealm(), "resource-server-test");
         StoreFactory storeFactory = authorization.getStoreFactory();
-        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel);
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
 
         policyRepresentation.setName("testCheckUserRealmRoles");
@@ -502,7 +502,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
         ClientModel clientModel = session.clients().getClientByClientId(session.getContext().getRealm(), "resource-server-test");
         StoreFactory storeFactory = authorization.getStoreFactory();
-        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel);
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
 
         policyRepresentation.setName("testCheckUserClientRoles");
@@ -534,7 +534,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
         ClientModel clientModel = session.clients().getClientByClientId(session.getContext().getRealm(), "resource-server-test");
         StoreFactory storeFactory = authorization.getStoreFactory();
-        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel);
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
 
         policyRepresentation.setName("testCheckUserGroups");
@@ -572,7 +572,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
         ClientModel clientModel = session.clients().getClientByClientId(session.getContext().getRealm(), "resource-server-test");
         StoreFactory storeFactory = authorization.getStoreFactory();
-        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel);
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
 
         policyRepresentation.setName("testCheckUserAttributes");
@@ -604,7 +604,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
         ClientModel clientModel = session.clients().getClientByClientId(session.getContext().getRealm(), "resource-server-test");
         StoreFactory storeFactory = authorization.getStoreFactory();
-        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel);
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
 
         policyRepresentation.setName("testCheckResourceAttributes");
@@ -641,7 +641,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
         ClientModel clientModel = session.clients().getClientByClientId(session.getContext().getRealm(), "resource-server-test");
         StoreFactory storeFactory = authorization.getStoreFactory();
-        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel);
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
 
         policyRepresentation.setName("testCheckReadOnlyInstances");
@@ -687,7 +687,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
         ClientModel clientModel = session.clients().getClientByClientId(session.getContext().getRealm(), "resource-server-test");
         StoreFactory storeFactory = authorization.getStoreFactory();
-        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel);
 
         Scope readScope = storeFactory.getScopeStore().create("read", resourceServer);
         Scope writeScope = storeFactory.getScopeStore().create("write", resourceServer);

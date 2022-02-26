@@ -39,6 +39,12 @@ Database:
 --db <vendor>        The database vendor. Possible values are: dev-file, dev-mem, mariadb, mssql,
                        mysql, oracle, postgres
 
+Transaction:
+
+--transaction-xa-enabled <true|false>
+                     Manually override the transaction type. Transaction type XA and the
+                       appropriate driver is used by default. Default: true.
+
 Feature:
 
 --features <feature> Enables a set of one or more features.
@@ -50,12 +56,18 @@ HTTP/TLS:
 --http-relative-path <path>
                      Set the path relative to '/' for serving resources. Default: /.
 
+Health:
+
+--health-enabled <true|false>
+                     If the server should expose health check endpoints. If enabled, health checks
+                       are available at the '/health', '/health/ready' and '/health/live'
+                       endpoints. Default: false.
+
 Metrics:
 
 --metrics-enabled <true|false>
-                     If the server should expose metrics and healthcheck. If enabled, metrics are
-                       available at the '/metrics' endpoint and healthcheck at the '/health'
-                       endpoint. Default: false.
+                     If the server should expose metrics. If enabled, metrics are available at the
+                       '/metrics' endpoint. Default: false.
 
 Vault:
 
@@ -75,7 +87,11 @@ Examples:
 
       $ kc.sh build --features=preview
 
-  Enable metrics:
+  Enable health endpoints:
+
+      $ kc.sh build --health-enabled=true
+
+  Enable metrics endpoints:
 
       $ kc.sh build --metrics-enabled=true
 

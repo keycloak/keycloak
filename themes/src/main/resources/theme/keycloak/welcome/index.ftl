@@ -19,8 +19,8 @@
   ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
- 
+<!DOCTYPE html>
+
 <html>
 <head>
     <title>Welcome to ${productNameFull}</title>
@@ -60,15 +60,15 @@
                 <p class="alert error">${errorMessage}</p>
                 <h3><img src="welcome-content/user.png">Administration Console</h3>
             <#elseif bootstrap>
-                <#if localUser>
-                    <h3><img src="welcome-content/user.png">Administration Console</h3>
-                    <p>Please create an initial admin user to get started.</p>
-                <#else>
-                    <p class="welcome-message">
-                        <img src="welcome-content/alert.png">You need local access to create the initial admin user. <br><br>Open <a href="http://localhost:8080/auth">http://localhost:8080/auth</a>
-                        <br>or use the add-user-keycloak script.
-                    </p>
-                </#if>
+            <#if localUser>
+                <h3><img src="welcome-content/user.png">Administration Console</h3>
+                <p>Please create an initial admin user to get started.</p>
+            <#else>
+                <p class="welcome-message">
+                    <img src="welcome-content/alert.png">You need local access to create the initial admin user. <br><br>Open <a href="${localAdminUrl}">${localAdminUrl}</a>
+                    <br>${adminUserCreationMessage}.
+                </p>
+            </#if>
             </#if>
 
             <#if bootstrap && localUser>

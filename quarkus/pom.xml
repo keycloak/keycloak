@@ -42,8 +42,8 @@
         <jackson.databind.version>${jackson.version}</jackson.databind.version>
         <hibernate.core.version>5.6.5.Final</hibernate.core.version>
         <mysql.driver.version>8.0.28</mysql.driver.version>
-        <postgresql.version>42.3.1</postgresql.version>
-        <microprofile-metrics-api.version>3.0</microprofile-metrics-api.version>
+        <postgresql.version>42.3.3</postgresql.version>
+        <microprofile-metrics-api.version>3.0.1</microprofile-metrics-api.version>
         <wildfly.common.version>1.5.4.Final-format-001</wildfly.common.version>
         <infinispan.version>13.0.5.Final</infinispan.version>
         <!--
