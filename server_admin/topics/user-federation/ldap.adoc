@@ -43,7 +43,7 @@ READONLY::
 You cannot change the username, email, first name, last name, and other mapped attributes. {project_name} shows an error anytime a user attempts to update these fields. Password updates are not supported.
 
 WRITABLE::
-You cannot change the username, email, first name, last name, and other mapped attributes and passwords and synchronize them automatically with the LDAP store.
+You can change the username, email, first name, last name, and other mapped attributes and passwords and synchronize them automatically with the LDAP store.
 
 UNSYNCED::
 {project_name} stores changes to the username, email, first name, last name, and passwords in {project_name} local storage, so the administrator must synchronize this data back to LDAP. In this mode, {project_name} deployments can update user metadata on read-only LDAP servers. This option also applies when importing users from LDAP into the local {project_name} user database.
