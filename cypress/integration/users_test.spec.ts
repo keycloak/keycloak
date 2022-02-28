@@ -30,6 +30,7 @@ describe("User creation", () => {
   const attributesTab = new AttributesTab();
 
   let itemId = "user_crud";
+  let itemIdWithGroups = "user_with_groups_crud";
   let itemIdWithCred = "user_crud_cred";
 
   before(() => {
@@ -63,11 +64,22 @@ describe("User creation", () => {
 
   it("Create user test", () => {
     itemId += "_" + (Math.random() + 1).toString(36).substring(7);
-
     // Create
     createUserPage.goToCreateUser();
 
     createUserPage.createUser(itemId);
+
+    createUserPage.save();
+
+    masthead.checkNotificationMessage("The user has been created");
+  });
+
+  it("Create user with groups test", () => {
+    itemIdWithGroups += (Math.random() + 1).toString(36).substring(7);
+    // Add user from search bar
+    createUserPage.goToCreateUser();
+
+    createUserPage.createUser(itemIdWithGroups);
 
     createUserPage.toggleAddGroupModal();
 
@@ -87,6 +99,7 @@ describe("User creation", () => {
   it("Create user with credentials test", () => {
     itemIdWithCred += "_" + (Math.random() + 1).toString(36).substring(7);
 
+    // Add user from search bar
     createUserPage.goToCreateUser();
 
     createUserPage.createUser(itemIdWithCred);
@@ -102,6 +115,15 @@ describe("User creation", () => {
       .fillPasswordForm()
       .clickConfirmationBtn()
       .clickSetPasswordBtn();
+  });
+
+  it("Search existing user test", () => {
+    listingPage.searchItem(itemId).itemExist(itemId);
+  });
+
+  it("Search non-existing user test", () => {
+    listingPage.searchItem("user_DNE");
+    cy.findByTestId(listingPage.emptyState).should("exist");
   });
 
   it("User details test", () => {
@@ -162,7 +184,7 @@ describe("User creation", () => {
     userGroupsPage.goToGroupsTab();
     userGroupsPage.toggleAddGroupModal();
 
-    const groupsListCopy = groupsList.slice(1, 2);
+    const groupsListCopy = groupsList.slice(0, 1);
 
     groupsListCopy.forEach((element) => {
       cy.findByTestId(`${element}-check`).click();
@@ -213,10 +235,12 @@ describe("User creation", () => {
     );
   });
 
-  // TODO: Fix this test so it passes.
-  it.skip("Delete user test", () => {
+  it("Delete user from search bar test", () => {
     // Delete
-    listingPage.deleteItem(itemId);
+    sidebarPage.waitForPageLoad();
+
+    listingPage.searchItem(itemId).itemExist(itemId);
+    listingPage.deleteItemFromSearchBar(itemId);
 
     modalUtils.checkModalTitle("Delete user?").confirmModal();
 
@@ -224,6 +248,18 @@ describe("User creation", () => {
     sidebarPage.waitForPageLoad();
 
     listingPage.itemExist(itemId, false);
+  });
+
+  it("Delete user with groups test", () => {
+    // Delete
+    listingPage.deleteItem(itemIdWithGroups);
+
+    modalUtils.checkModalTitle("Delete user?").confirmModal();
+
+    masthead.checkNotificationMessage("The user has been deleted");
+    sidebarPage.waitForPageLoad();
+
+    listingPage.itemExist(itemIdWithGroups, false);
   });
 
   it("Delete user with credential test", () => {

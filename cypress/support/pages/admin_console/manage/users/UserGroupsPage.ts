@@ -16,7 +16,7 @@ export default class UserGroupsPage {
   }
 
   toggleAddGroupModal() {
-    cy.findByTestId(this.addGroupButton).click();
+    cy.findByTestId(this.addGroupButton).click({ force: true });
 
     return this;
   }

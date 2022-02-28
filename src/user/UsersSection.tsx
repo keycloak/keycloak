@@ -223,6 +223,7 @@ export default function UsersSection() {
           <Button
             variant={ButtonVariant.plain}
             onClick={toggleDeleteDialog}
+            data-testid="delete-user-btn"
             isDisabled={selectedRows.length === 0}
           >
             {t("deleteUser")}

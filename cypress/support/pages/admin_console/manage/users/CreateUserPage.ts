@@ -36,9 +36,9 @@ export default class CreateUserPage {
   goToCreateUser() {
     cy.get("body").then((body) => {
       if (body.find("[data-testid=search-users-title]").length > 0) {
-        cy.findByTestId(this.searchPgCreateUserBtn).click();
+        cy.findByTestId(this.searchPgCreateUserBtn).click({ force: true });
       } else {
-        cy.findByTestId(this.addUserBtn).click();
+        cy.findByTestId(this.addUserBtn).click({ force: true });
       }
     });
 

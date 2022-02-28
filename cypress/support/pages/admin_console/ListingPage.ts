@@ -29,8 +29,10 @@ export default class ListingPage {
   private searchInput = '.pf-c-toolbar__item [type="search"]:visible';
   private tableToolbar = ".pf-c-toolbar";
   private itemsRows = "table:visible";
+  private deleteUserButton = "delete-user-btn";
   private emptyListImg =
     '[role="tabpanel"]:not([hidden]) [data-testid="empty-state"]';
+  public emptyState = "empty-state";
   private progressBar = '[role="progressbar"]';
   private itemRowDrpDwn = ".pf-c-dropdown__toggle";
   private itemRowSelect = ".pf-c-select__toggle:nth-child(1)";
@@ -205,6 +207,13 @@ export default class ListingPage {
   deleteItem(itemName: string) {
     this.clickRowDetails(itemName);
     this.clickDetailMenu("Delete");
+
+    return this;
+  }
+
+  deleteItemFromSearchBar(itemName: string) {
+    this.markItemRow(itemName);
+    cy.findByTestId(this.deleteUserButton).click();
 
     return this;
   }
