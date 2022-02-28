@@ -7,7 +7,9 @@ import org.keycloak.Config.Scope;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
-
+/**
+ * @author <a href="mailto:masales@redhat.com">Marcelo Sales</a>
+ */
 public class ClientSecretRotationExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
   public static final String PROVIDER_ID = "secret-rotation";

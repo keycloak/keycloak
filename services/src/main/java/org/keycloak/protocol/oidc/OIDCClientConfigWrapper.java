@@ -14,7 +14,9 @@ import org.keycloak.models.ClientSecretConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.utils.ClockUtil;
 import org.keycloak.utils.StringUtil;
-
+/**
+ * @author <a href="mailto:masales@redhat.com">Marcelo Sales</a>
+ */
 public class OIDCClientConfigWrapper {
 
   private final ClientModel clientModel;

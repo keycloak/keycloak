@@ -1,5 +1,7 @@
 package org.keycloak.models;
-
+/**
+ * @author <a href="mailto:masales@redhat.com">Marcelo Sales</a>
+ */
 public class ClientSecretConfig extends AbstractConfig{
 
   // client attribute names

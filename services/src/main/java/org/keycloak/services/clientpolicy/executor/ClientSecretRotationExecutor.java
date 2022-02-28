@@ -25,7 +25,9 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
 import org.keycloak.services.clientpolicy.context.ClientSecretRotationContext;
 import org.keycloak.utils.ClockUtil;
-
+/**
+ * @author <a href="mailto:masales@redhat.com">Marcelo Sales</a>
+ */
 public class ClientSecretRotationExecutor implements
     ClientPolicyExecutorProvider<ClientSecretRotationExecutor.Configuration> {
 
