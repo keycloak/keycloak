@@ -63,6 +63,7 @@ public class MigrationTest extends AbstractMigrationTest {
     public void migration17_xTest() throws Exception{
         testMigratedData(false);
         testMigrationTo18_x();
+        testMigrationTo20_x();
 
         // Always test offline-token login during migration test
         testOfflineTokenLogin();
@@ -70,4 +71,5 @@ public class MigrationTest extends AbstractMigrationTest {
 
         testMigrationTo20_x();
     }
+    
 }

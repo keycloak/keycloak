@@ -1431,6 +1431,8 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         Assert.assertThat(accountEntry.getRolesAvailable(), containsInAnyOrder(
           "Manage account links in Account",
           "Manage account in Account",
+          "Manage basic authentication in Account",
+          "Manage two factor authentication in Account",
           "View profile in Account",
           "Offline access"
         ));
@@ -1438,7 +1440,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test/account/", accountEntry.getHref());
 
         AccountApplicationsPage.AppEntry testAppEntry = apps.get("test-app");
-        Assert.assertEquals(6, testAppEntry.getRolesAvailable().size());
+        Assert.assertEquals(8, testAppEntry.getRolesAvailable().size());
         Assert.assertTrue(testAppEntry.getRolesAvailable().contains("Offline access"));
         Assert.assertTrue(testAppEntry.getClientScopesGranted().contains("Full Access"));
         Assert.assertEquals(oauth.APP_AUTH_ROOT, testAppEntry.getHref());

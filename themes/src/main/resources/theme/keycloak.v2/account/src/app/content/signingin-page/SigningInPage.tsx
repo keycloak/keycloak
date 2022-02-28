@@ -62,7 +62,7 @@ interface PasswordDetails {
     lastUpdate: number;
 }
 
-type CredCategory = "password" | "two-factor" | "passwordless";
+type CredCategory = 'basic-authentication' | 'two-factor' | 'passwordless';
 type CredType = string;
 type CredTypeMap = Map<CredType, CredentialContainer>;
 type CredContainerMap = Map<CredCategory, CredTypeMap>;
@@ -172,7 +172,8 @@ class SigningInPage extends React.Component<
     private renderCategories(): React.ReactNode {
       return Array.from(this.state.credentialContainers.keys()).map(
           (category) => (
-            <PageSection key={category} variant={PageSectionVariants.light}>
+            (('basic-authentication' == category && features.manageAccountBasicAuthAllowed) || ('basic-authentication' != category &&
+features.manageAccount2faAllowed)) && <PageSection key={category} variant={PageSectionVariants.light}>
               <Title
                   id={`${category}-categ-title`}
                   headingLevel="h2"

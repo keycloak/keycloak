@@ -46,8 +46,10 @@ import { ContinueCancelModal } from '../../widgets/ContinueCancelModal';
 import { HttpResponse } from '../../account-service/account.service';
 import { AccountServiceContext } from '../../account-service/AccountServiceContext';
 import { Msg } from '../../widgets/Msg';
+import { Features } from '../../widgets/features';
 
 declare const locale: string;
+declare const features: Features;
 
 export interface ApplicationsPageProps {
 }
@@ -263,7 +265,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                         </React.Fragment>
                       }
                     </DescriptionList>
-                    {(application.consent || application.offlineAccess) &&
+                    {(application.consent || application.offlineAccess) && features.manageConsentAllowed &&
                     <Grid hasGutter>
                       <hr />
                       <GridItem>

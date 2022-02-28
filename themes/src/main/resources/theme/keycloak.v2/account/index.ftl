@@ -48,8 +48,7 @@
                 isTotpConfigured : ${isTotpConfigured?c},
                 deleteAccountAllowed : ${deleteAccountAllowed?c},
                 updateEmailFeatureEnabled: ${updateEmailFeatureEnabled?c},
-                updateEmailActionEnabled: ${updateEmailActionEnabled?c},
-                isViewGroupsEnabled : ${isViewGroupsEnabled?c}
+                updateEmailActionEnabled: ${updateEmailActionEnabled?c}
             }
 
             var availableLocales = [];
@@ -140,12 +139,31 @@
                     document.getElementById("landingSignOutButton").style.display='inline';
                     document.getElementById("landingSignOutLink").style.display='inline';
                     document.getElementById("landingLoggedInUser").innerHTML = loggedInUserName('${msg("unknownUser")}', '${msg("fullName")}');
+                    features.manageAccountAllowed = keycloak.hasResourceRole("manage-account","account");
+                    features.manageAccountLinkAllowed = ["manage-account","manage-account-links"].some(role => keycloak.hasResourceRole(role, "account"));
+                    features.manageConsentAllowed = ["manage-account","manage-consent"].some(role => keycloak.hasResourceRole(role, "account"));
+                    features.manageAccountBasicAuthAllowed = ["manage-account","manage-account-basic-auth"].some(role => keycloak.hasResourceRole(role, "account"));
+                    features.manageAccount2faAllowed = ["manage-account","manage-account-2fa"].some(role => keycloak.hasResourceRole(role, "account"));
+                    features.viewApplicationAllowed = ["manage-account","view-applications","manage-consent"].some(role => keycloak.hasResourceRole(role, "account"));
+                    features.isViewGroupsEnabled = keycloak.hasResourceRole("view-groups","account");
                 }
 
                 loadjs("/Main.js");
             }).catch(() => {
                 alert('failed to initialize keycloak');
+            })
+           .finally(() => {
+               removeHidden(content);
             });
+
+           const removeHidden = (content) => {
+               content.forEach(c => {
+                   if (c.hidden && eval(c.hidden)) {
+                       document.getElementById('landing-' + c.id).remove();
+                   }
+                   if (c.content) removeHidden(c.content);
+               });
+           }
         </script>
 
 <div id="main_react_container" style="display:none;height:100%"></div>
@@ -279,18 +297,6 @@
       </main>
     </div>
 </div>
-
-    <script>
-      const removeHidden = (content) => {
-        content.forEach(c => {
-          if (c.hidden && eval(c.hidden)) {
-            document.getElementById('landing-' + c.id).remove();
-          }
-          if (c.content) removeHidden(c.content);
-        });
-      }
-      removeHidden(content);
-    </script>
 
     </body>
 </html>

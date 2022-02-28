@@ -96,9 +96,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
-import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
-import static org.keycloak.models.AccountRoles.VIEW_GROUPS;
+import static org.keycloak.models.AccountRoles.*;
 import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
 import static org.keycloak.testsuite.Assert.assertNames;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
@@ -323,6 +321,8 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
    protected void testMigrationTo20_0_0() {
         testViewGroups(masterRealm);
         testViewGroups(migrationRealm);
+        testNewAccountRoles(masterRealm);
+        testNewAccountRoles(migrationRealm);
     }
 
 
@@ -394,8 +394,9 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         MappingsRepresentation scopes = clientResource.getScopeMappings().getAll();
         assertNull(scopes.getRealmMappings());
         assertEquals(1, scopes.getClientMappings().size());
-        assertEquals(2, scopes.getClientMappings().get(ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings().size());
-        Assert.assertNames(scopes.getClientMappings().get(ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings(), MANAGE_ACCOUNT, VIEW_GROUPS);
+        assertEquals(10, scopes.getClientMappings().get(ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings().size());
+        Assert.assertNames(scopes.getClientMappings().get(ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings(), DELETE_ACCOUNT, MANAGE_ACCOUNT, MANAGE_ACCOUNT_2FA, MANAGE_ACCOUNT_BASIC_AUTH, MANAGE_ACCOUNT_LINKS, MANAGE_CONSENT, VIEW_APPLICATIONS, VIEW_CONSENT, VIEW_PROFILE, VIEW_GROUPS);
+
         List<ProtocolMapperRepresentation> mappers = clientResource.getProtocolMappers().getMappers();
         assertEquals(1, mappers.size());
         assertEquals("oidc-audience-resolve-mapper", mappers.get(0).getProtocolMapper());
@@ -503,6 +504,18 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         ClientResource accountResource = realm.clients().get(accountClient.getId());
         RoleRepresentation viewAppRole = accountResource.roles().get(VIEW_GROUPS).toRepresentation();
         assertNotNull(viewAppRole);
+    }
+
+    protected void testNewAccountRoles(RealmResource realm) {
+        ClientRepresentation accountClient = realm.clients().findByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
+
+        ClientResource accountResource = realm.clients().get(accountClient.getId());
+
+        RoleRepresentation manageAccountBasicAuth = accountResource.roles().get(AccountRoles.MANAGE_ACCOUNT_BASIC_AUTH).toRepresentation();
+        assertNotNull(manageAccountBasicAuth);
+
+        RoleRepresentation manageAccount2fa = accountResource.roles().get(AccountRoles.MANAGE_ACCOUNT_2FA).toRepresentation();
+        assertNotNull(manageAccount2fa);
     }
 
     protected void testRoleManageAccountLinks(RealmResource... realms) {

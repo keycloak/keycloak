@@ -438,6 +438,12 @@ public class RealmManager {
             RoleModel manageConsentRole = accountClient.addRole(AccountRoles.MANAGE_CONSENT);
             manageConsentRole.setDescription("${role_" + AccountRoles.MANAGE_CONSENT + "}");
             manageConsentRole.addCompositeRole(viewConsentRole);
+            RoleModel manageAccountBasicAuth = accountClient.addRole(AccountRoles.MANAGE_ACCOUNT_BASIC_AUTH);
+            manageAccountBasicAuth.setDescription("${role_" + AccountRoles.MANAGE_ACCOUNT_BASIC_AUTH + "}");
+            manageAccount.addCompositeRole(manageAccountBasicAuth);
+            RoleModel manageAccount2fa = accountClient.addRole(AccountRoles.MANAGE_ACCOUNT_2FA);
+            manageAccount2fa.setDescription("${role_" + AccountRoles.MANAGE_ACCOUNT_2FA + "}");
+            manageAccount.addCompositeRole(manageAccount2fa);
             RoleModel viewGroups = accountClient.addRole(AccountRoles.VIEW_GROUPS);
             viewGroups.setDescription("${role_" + AccountRoles.VIEW_GROUPS + "}");
 
@@ -459,7 +465,15 @@ public class RealmManager {
 
                 accountConsoleClient.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
+                accountConsoleClient.addScopeMapping(accountClient.getRole(AccountRoles.DELETE_ACCOUNT));
                 accountConsoleClient.addScopeMapping(accountClient.getRole(AccountRoles.MANAGE_ACCOUNT));
+                accountConsoleClient.addScopeMapping(accountClient.getRole(AccountRoles.MANAGE_ACCOUNT_2FA));
+                accountConsoleClient.addScopeMapping(accountClient.getRole(AccountRoles.MANAGE_ACCOUNT_BASIC_AUTH));
+                accountConsoleClient.addScopeMapping(accountClient.getRole(AccountRoles.MANAGE_ACCOUNT_LINKS));
+                accountConsoleClient.addScopeMapping(accountClient.getRole(AccountRoles.MANAGE_CONSENT));
+                accountConsoleClient.addScopeMapping(accountClient.getRole(AccountRoles.VIEW_APPLICATIONS));
+                accountConsoleClient.addScopeMapping(accountClient.getRole(AccountRoles.VIEW_CONSENT));
+                accountConsoleClient.addScopeMapping(accountClient.getRole(AccountRoles.VIEW_PROFILE));
                 accountConsoleClient.addScopeMapping(accountClient.getRole(AccountRoles.VIEW_GROUPS));
 
                 ProtocolMapperModel audienceMapper = new ProtocolMapperModel();
