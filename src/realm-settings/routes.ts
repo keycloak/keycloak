@@ -1,11 +1,6 @@
 import type { RouteDef } from "../route-config";
-import { AesGeneratedSettingsRoute } from "./routes/AesGeneratedSettings";
-import { EcdsaGeneratedSettingsRoute } from "./routes/EcdsaGeneratedSettings";
-import { HmacGeneratedSettingsRoute } from "./routes/HmacGeneratedSettings";
-import { JavaKeystoreSettingsRoute } from "./routes/JavaKeystoreSettings";
+import { KeyProviderFormRoute } from "./routes/KeyProvider";
 import { RealmSettingsRoute } from "./routes/RealmSettings";
-import { RsaGeneratedSettingsRoute } from "./routes/RsaGeneratedSettings";
-import { RsaSettingsRoute } from "./routes/RsaSettings";
 import { ClientPoliciesRoute } from "./routes/ClientPolicies";
 import { AddClientProfileRoute } from "./routes/AddClientProfile";
 import { ClientProfileRoute } from "./routes/ClientProfile";
@@ -18,18 +13,11 @@ import { EditClientPolicyConditionRoute } from "./routes/EditCondition";
 import { UserProfileRoute } from "./routes/UserProfile";
 import { AddAttributeRoute } from "./routes/AddAttribute";
 import { KeysRoute } from "./routes/KeysTab";
-import { RsaEncGeneratedSettingsRoute } from "./routes/RsaEncGeneratedSettings";
 
 const routes: RouteDef[] = [
   RealmSettingsRoute,
   KeysRoute,
-  AesGeneratedSettingsRoute,
-  EcdsaGeneratedSettingsRoute,
-  HmacGeneratedSettingsRoute,
-  JavaKeystoreSettingsRoute,
-  RsaEncGeneratedSettingsRoute,
-  RsaGeneratedSettingsRoute,
-  RsaSettingsRoute,
+  KeyProviderFormRoute,
   ClientPoliciesRoute,
   AddClientProfileRoute,
   AddExecutorRoute,

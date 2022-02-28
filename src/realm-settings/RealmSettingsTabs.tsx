@@ -13,7 +13,6 @@ import {
 } from "@patternfly/react-core";
 
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import {
@@ -24,20 +23,16 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { useRealms } from "../context/RealmsContext";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient } from "../context/auth/AdminClient";
-import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useAlerts } from "../components/alert/Alerts";
 import {
   convertFormValuesToObject,
   convertToFormValues,
-  KEY_PROVIDER_TYPE,
   toUpperCase,
 } from "../util";
 
 import { RealmSettingsEmailTab } from "./EmailTab";
 import { EventsTab } from "./event-config/EventsTab";
 import { RealmSettingsGeneralTab } from "./GeneralTab";
-import { KeysListTab } from "./KeysListTab";
-import { KeysProvidersTab } from "./KeysProvidersTab";
 import { RealmSettingsLoginTab } from "./LoginTab";
 import { SecurityDefences } from "./security-defences/SecurityDefences";
 import { RealmSettingsSessionsTab } from "./SessionsTab";
@@ -57,7 +52,7 @@ import helpUrls from "../help-urls";
 import { UserProfileTab } from "./user-profile/UserProfileTab";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { ClientPoliciesTab, toClientPolicies } from "./routes/ClientPolicies";
-import { KeySubTab, toKeysTab } from "./routes/KeysTab";
+import { KeysTab } from "./keys/KeysTab";
 
 type RealmSettingsHeaderProps = {
   onChange: (value: boolean) => void;
@@ -166,12 +161,10 @@ const RealmSettingsHeader = ({
 type RealmSettingsTabsProps = {
   realm: RealmRepresentation;
   refresh: () => void;
-  realmComponents: ComponentRepresentation[];
 };
 
 export const RealmSettingsTabs = ({
   realm,
-  realmComponents,
   refresh,
 }: RealmSettingsTabsProps) => {
   const { t } = useTranslation("realm-settings");
@@ -181,9 +174,6 @@ export const RealmSettingsTabs = ({
   const { refresh: refreshRealms } = useRealms();
   const history = useHistory();
   const isFeatureEnabled = useIsFeatureEnabled();
-
-  const kpComponentTypes =
-    useServerInfo().componentTypes?.[KEY_PROVIDER_TYPE] ?? [];
 
   const form = useForm({ mode: "onChange", shouldUnregister: false });
   const { control, getValues, setValue, reset: resetForm } = form;
@@ -247,11 +237,6 @@ export const RealmSettingsTabs = ({
       history,
     });
 
-  const keysRoute = (tab: KeySubTab) =>
-    routableTab({
-      to: toKeysTab({ realm: realmName, tab }),
-      history,
-    });
   return (
     <>
       <Controller
@@ -321,32 +306,7 @@ export const RealmSettingsTabs = ({
               data-testid="rs-keys-tab"
               {...route("keys")}
             >
-              <RoutableTabs
-                defaultLocation={toKeysTab({ realm: realmName, tab: "list" })}
-              >
-                <Tab
-                  id="keysList"
-                  data-testid="rs-keys-list-tab"
-                  aria-label="keys-list-subtab"
-                  title={<TabTitleText>{t("keysList")}</TabTitleText>}
-                  {...keysRoute("list")}
-                >
-                  <KeysListTab realmComponents={realmComponents} />
-                </Tab>
-                <Tab
-                  id="providers"
-                  data-testid="rs-providers-tab"
-                  aria-label="rs-providers-tab"
-                  title={<TabTitleText>{t("providers")}</TabTitleText>}
-                  {...keysRoute("providers")}
-                >
-                  <KeysProvidersTab
-                    realmComponents={realmComponents}
-                    keyProviderComponentTypes={kpComponentTypes}
-                    refresh={refresh}
-                  />
-                </Tab>
-              </RoutableTabs>
+              <KeysTab />
             </Tab>
             <Tab
               title={<TabTitleText>{t("events")}</TabTitleText>}

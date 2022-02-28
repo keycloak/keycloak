@@ -68,15 +68,15 @@ export default class RealmSettingsPage {
   enableStartTlsCheck = "enable-start-tls";
   addProviderDropdown = "addProviderDropdown";
   addProviderButton = "add-provider-button";
-  displayName = "display-name-input";
+  displayName = "name-input";
   enableEvents = "eventsEnabled";
   eventsUserSave = "save-user";
   enableAdminEvents = "adminEventsEnabled";
   eventsAdminSave = "save-admin";
   eventTypeColumn = 'tbody > tr > [data-label="Event saved type"]';
   filterSelectMenu = ".kc-filter-type-select";
-  passiveKeysOption = "passive-keys-option";
-  disabledKeysOption = "disabled-keys-option";
+  passiveKeysOption = "PASSIVE-option";
+  disabledKeysOption = "DISABLED-option";
   testConnectionButton = "test-connection-button";
   modalTestConnectionButton = "modal-test-connection-button";
   emailAddressInput = "email-address-input";

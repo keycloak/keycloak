@@ -2,7 +2,10 @@ import React, { ReactNode, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { get } from "lodash-es";
 import {
+  ActionsColumn,
+  IAction,
   TableComposable,
+  TableComposableProps,
   Tbody,
   Td,
   Th,
@@ -17,10 +20,11 @@ export type Field<T> = {
   cellRenderer?: (row: T) => ReactNode;
 };
 
-type DraggableTableProps<T> = {
+type DraggableTableProps<T> = Omit<TableComposableProps, "data" | "ref"> & {
   keyField: string;
   columns: Field<T>[];
   data: T[];
+  actions?: IAction[];
   onDragFinish: (dragged: string, newOrder: string[]) => void;
 };
 
@@ -28,7 +32,9 @@ export function DraggableTable<T>({
   keyField,
   columns,
   data,
+  actions,
   onDragFinish,
+  ...props
 }: DraggableTableProps<T>) {
   const { t } = useTranslation("authentication");
   const bodyRef = useRef<HTMLTableSectionElement>(null);
@@ -169,6 +175,7 @@ export function DraggableTable<T>({
     <TableComposable
       aria-label="Draggable table"
       className={state.dragging ? styles.modifiers.dragOver : ""}
+      {...props}
     >
       <Thead>
         <Tr>
@@ -208,6 +215,11 @@ export function DraggableTable<T>({
                   : get(row, column.name)}
               </Td>
             ))}
+            {actions && (
+              <Td isActionCell>
+                <ActionsColumn items={actions} rowData={row} />
+              </Td>
+            )}
           </Tr>
         ))}
       </Tbody>

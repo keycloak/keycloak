@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useHistory, useRouteMatch } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   Button,
@@ -10,18 +10,21 @@ import {
   SelectVariant,
 } from "@patternfly/react-core";
 import { cellWidth } from "@patternfly/react-table";
+import { FilterIcon } from "@patternfly/react-icons";
 
 import type { KeyMetadataRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/keyMetadataRepresentation";
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { emptyFormatter } from "../util";
-import { useAdminClient } from "../context/auth/AdminClient";
-import { useRealm } from "../context/realm-context/RealmContext";
+import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
+import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
+import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import { emptyFormatter } from "../../util";
+import { useAdminClient } from "../../context/auth/AdminClient";
+import { useRealm } from "../../context/realm-context/RealmContext";
+import { toKeysTab } from "../routes/KeysTab";
 
-import "./realm-settings-section.css";
-import { FilterIcon } from "@patternfly/react-icons";
+import "../realm-settings-section.css";
+
+const FILTER_OPTIONS = ["ACTIVE", "PASSIVE", "DISABLED"] as const;
 
 type KeyData = KeyMetadataRepresentation & {
   provider?: string;
@@ -32,18 +35,19 @@ type KeysListTabProps = {
 };
 
 export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
-  const { t } = useTranslation("roles");
+  const { t } = useTranslation("realm-settings");
   const history = useHistory();
-  const { url } = useRouteMatch();
 
   const [key, setKey] = useState(0);
   const [publicKey, setPublicKey] = useState("");
   const [certificate, setCertificate] = useState("");
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
-  const [filterType, setFilterType] = useState("Active keys");
+  const [filterType, setFilterType] = useState<typeof FILTER_OPTIONS[number]>(
+    FILTER_OPTIONS[0]
+  );
 
   const refresh = () => {
-    setKey(new Date().getTime());
+    setKey(key + 1);
   };
 
   const adminClient = useAdminClient();
@@ -55,57 +59,13 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
     });
 
     const keys = keysMetaData.keys;
+    const filtered =
+      filterType !== FILTER_OPTIONS[0]
+        ? keys?.filter(({ status }) => status === filterType)
+        : keys;
 
-    return keys?.map((key) => {
+    return filtered?.map((key) => {
       const provider = realmComponents.find(
-        (component: ComponentRepresentation) => component.id === key.providerId
-      );
-      return { ...key, provider: provider?.name } as KeyData;
-    })!;
-  };
-
-  const activeKeysLoader = async () => {
-    const keysMetaData = await adminClient.realms.getKeys({
-      realm: realmName,
-    });
-    const keys = keysMetaData.keys;
-
-    const activeKeysCopy = keys!.filter((i) => i.status === "ACTIVE");
-
-    return activeKeysCopy.map((key) => {
-      const provider = realmComponents.find(
-        (component: ComponentRepresentation) => component.id === key.providerId
-      );
-      return { ...key, provider: provider?.name } as KeyData;
-    })!;
-  };
-
-  const passiveKeysLoader = async () => {
-    const keysMetaData = await adminClient.realms.getKeys({
-      realm: realmName,
-    });
-    const keys = keysMetaData.keys;
-
-    const passiveKeys = keys!.filter((i) => i.status === "PASSIVE");
-
-    return passiveKeys.map((key) => {
-      const provider = realmComponents.find(
-        (component: ComponentRepresentation) => component.id === key.providerId
-      );
-      return { ...key, provider: provider?.name } as KeyData;
-    })!;
-  };
-
-  const disabledKeysLoader = async () => {
-    const keysMetaData = await adminClient.realms.getKeys({
-      realm: realmName,
-    });
-    const keys = keysMetaData.keys;
-
-    const disabledKeys = keys!.filter((i) => i.status === "DISABLED");
-
-    return disabledKeys.map((key) => {
-      const provider = realmComponents!.find(
         (component: ComponentRepresentation) => component.id === key.providerId
       );
       return { ...key, provider: provider?.name } as KeyData;
@@ -113,7 +73,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
   };
 
   const [togglePublicKeyDialog, PublicKeyDialog] = useConfirmDialog({
-    titleKey: t("realm-settings:publicKeys").slice(0, -1),
+    titleKey: t("publicKeys").slice(0, -1),
     messageKey: publicKey,
     continueButtonLabel: "common:close",
     continueButtonVariant: ButtonVariant.primary,
@@ -121,14 +81,12 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
   });
 
   const [toggleCertificateDialog, CertificateDialog] = useConfirmDialog({
-    titleKey: t("realm-settings:certificate"),
+    titleKey: t("certificate"),
     messageKey: certificate,
     continueButtonLabel: "common:close",
     continueButtonVariant: ButtonVariant.primary,
     onConfirm: () => Promise.resolve(),
   });
-
-  const goToCreate = () => history.push(`${url}/add-role`);
 
   const ProviderRenderer = ({ provider }: KeyData) => provider;
 
@@ -143,7 +101,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
           variant="secondary"
           id="kc-public-key"
         >
-          {t("realm-settings:publicKeys").slice(0, -1)}
+          {t("publicKeys").slice(0, -1)}
         </Button>
       );
     } else if (type === "RSA") {
@@ -157,7 +115,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
             variant="secondary"
             id="kc-rsa-public-key"
           >
-            {t("realm-settings:publicKeys").slice(0, -1)}
+            {t("publicKeys").slice(0, -1)}
           </Button>
           <Button
             onClick={() => {
@@ -167,31 +125,12 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
             variant="secondary"
             id="kc-certificate"
           >
-            {t("realm-settings:certificate")}
+            {t("certificate")}
           </Button>
         </div>
       );
     }
   };
-
-  const options = [
-    <SelectOption
-      key={1}
-      data-testid="active-keys-option"
-      value={t("realm-settings:activeKeys")}
-      isPlaceholder
-    />,
-    <SelectOption
-      data-testid="passive-keys-option"
-      key={2}
-      value={t("realm-settings:passiveKeys")}
-    />,
-    <SelectOption
-      data-testid="disabled-keys-option"
-      key={3}
-      value={t("realm-settings:disabledKeys")}
-    />,
-  ];
 
   return (
     <PageSection variant="light" padding={{ default: "noPadding" }}>
@@ -200,16 +139,8 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
       <KeycloakDataTable
         isNotCompact={true}
         key={key}
-        loader={
-          filterType === "Active keys"
-            ? activeKeysLoader
-            : filterType === "Passive keys"
-            ? passiveKeysLoader
-            : filterType === "Disabled keys"
-            ? disabledKeysLoader
-            : loader
-        }
-        ariaLabelKey="realm-settings:keysList"
+        loader={loader}
+        ariaLabelKey="keysList"
         searchPlaceholderKey="realm-settings:searchKey"
         searchTypeComponent={
           <Select
@@ -221,61 +152,71 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
             onToggle={() => setFilterDropdownOpen(!filterDropdownOpen)}
             toggleIcon={<FilterIcon />}
             onSelect={(_, value) => {
-              setFilterType(value as string);
+              setFilterType(
+                FILTER_OPTIONS.find((o) => o === value.toString()) ||
+                  FILTER_OPTIONS[0]
+              );
               refresh();
               setFilterDropdownOpen(false);
             }}
             selections={filterType}
           >
-            {options}
+            {FILTER_OPTIONS.map((option) => (
+              <SelectOption
+                key={option}
+                data-testid={`${option}-option`}
+                value={option}
+              >
+                {t(`keysFilter.${option}`)}
+              </SelectOption>
+            ))}
           </Select>
         }
         canSelectAll
         columns={[
           {
             name: "algorithm",
-            displayKey: "realm-settings:algorithm",
+            displayKey: "algorithm",
             cellFormatters: [emptyFormatter()],
             transforms: [cellWidth(15)],
           },
           {
             name: "type",
-            displayKey: "realm-settings:type",
+            displayKey: "type",
             cellFormatters: [emptyFormatter()],
             transforms: [cellWidth(10)],
           },
           {
             name: "kid",
-            displayKey: "realm-settings:kid",
+            displayKey: "kid",
             cellFormatters: [emptyFormatter()],
             transforms: [cellWidth(10)],
           },
           {
             name: "provider",
-            displayKey: "realm-settings:provider",
+            displayKey: "provider",
             cellRenderer: ProviderRenderer,
             cellFormatters: [emptyFormatter()],
             transforms: [cellWidth(10)],
           },
           {
             name: "publicKeys",
-            displayKey: "realm-settings:publicKeys",
+            displayKey: "publicKeys",
             cellRenderer: ButtonRenderer,
             cellFormatters: [],
             transforms: [cellWidth(20)],
           },
         ]}
-        isSearching={!!filterType}
+        isSearching={filterType !== FILTER_OPTIONS[0]}
         emptyState={
           <ListEmptyState
-            hasIcon={true}
-            message={t("realm-settings:noKeys")}
-            instructions={
-              t(`realm-settings:noKeysDescription`) +
-              `${filterType.toLocaleLowerCase()}.`
+            hasIcon
+            message={t("noKeys")}
+            instructions={t("noKeysDescription")}
+            primaryActionText={t("addProvider")}
+            onPrimaryAction={() =>
+              history.push(toKeysTab({ realm: realmName, tab: "providers" }))
             }
-            primaryActionText={t("createRole")}
-            onPrimaryAction={goToCreate}
           />
         }
       />

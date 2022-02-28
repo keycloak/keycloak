@@ -3,6 +3,7 @@ import React, {
   FunctionComponent,
   ReactNode,
   useState,
+  KeyboardEvent,
 } from "react";
 import {
   Toolbar,
@@ -55,7 +56,7 @@ export const TableToolbar: FunctionComponent<TableToolbarProps> = ({
     }
   };
 
-  const handleKeyDown = (e: any) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       onSearch();
     }

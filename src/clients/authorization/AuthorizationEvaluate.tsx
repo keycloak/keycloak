@@ -1,5 +1,5 @@
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import React, { useState } from "react";
+import React, { useState, KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import {
   FormGroup,
@@ -189,7 +189,7 @@ export const AuthorizationEvaluate = ({
     }
   };
 
-  const handleKeyDown = (e: any) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       onSearch();
     }
