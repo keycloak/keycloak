@@ -1847,7 +1847,7 @@ public class RepresentationToModel {
         if (userRep.getRequiredActions() != null) {
             for (String requiredAction : userRep.getRequiredActions()) {
                 try {
-                    user.addRequiredAction(UserModel.RequiredAction.valueOf(requiredAction.toUpperCase()));
+                    user.addRequiredAction(UserModel.RequiredAction.valueOf(requiredAction));
                 } catch (IllegalArgumentException iae) {
                     user.addRequiredAction(requiredAction);
                 }

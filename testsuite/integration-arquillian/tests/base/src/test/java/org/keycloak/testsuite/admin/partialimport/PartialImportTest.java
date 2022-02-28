@@ -57,6 +57,8 @@ import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.startsWith;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -449,6 +451,7 @@ public class PartialImportTest extends AbstractAuthTest {
             UserRepresentation user = userRsc.toRepresentation();
             assertTrue(user.getUsername().startsWith(USER_PREFIX));
             Assert.assertTrue(userIds.contains(id));
+            assertThat(user.getRequiredActions(), contains("terms_and_conditions"));
         }
     }
 
